@@ -14,7 +14,7 @@ template <typename ServerType>
 entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
 	auto scene_config_id = param.scene_conf_id_;
-	entt::entity server{entt::null};
+	entt::entity node{entt::null};
 	std::size_t min_server_player_size = UINT64_MAX;
 	for (auto entity : tls.registry.view<ServerType>())
 	{
@@ -32,17 +32,17 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 		{
 			continue;
 		}
-		server = entity;
+		node = entity;
 		min_server_player_size = server_player_size;
 	}
 
-	if (entt::null == server)
+	if (entt::null == node)
 	{
 		return entt::null;
 	}
 
 	entt::entity scene{entt::null};
-	const auto& server_comps = tls.registry.get<ServerComp>(server);
+	const auto& server_comps = tls.registry.get<ServerComp>(node);
 	return server_comps.GetMinPlayerSizeSceneByConfigId(scene_config_id);
 }
 
@@ -80,7 +80,7 @@ entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterPa
 	for (const auto& server_scenes = server_comps.GetSceneListByConfig(scene_config_id);
 	     const auto& scene_it : server_scenes)
 	{
-		if (const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
+		if (const auto scene_player_size = tls.scene_registry.get<ScenePlayers>(scene_it).size();
 			scene_player_size >= kMaxScenePlayerSize)
 		{
 			continue;
