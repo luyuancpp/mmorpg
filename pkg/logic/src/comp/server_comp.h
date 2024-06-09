@@ -8,6 +8,7 @@
 #include "src/thread_local/thread_local_storage.h"
 #include "component_proto/scene_comp.pb.h"
 
+using SceneList = std::unordered_map<Guid, entt::entity>;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
 using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
 
@@ -58,29 +59,20 @@ public:
 		return it->second;
 	}
 
-	[[nodiscard]] static entt::entity GetSceneListByGuid(const Guid guid)
-	{
-		const auto scene_it = cl_tls.scene_list().find(guid);
-		if (scene_it == cl_tls.scene_list().end())
-		{
-			return entt::null;
-		}
-		return scene_it->second;
-	}
-
 	void AddScene(entt::entity scene_eid)
 	{
-		const auto& scene_info = tls.registry.get<SceneInfo>(scene_eid);
-		cl_tls.scene_list().emplace(scene_info.guid(), scene_eid);
+		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_eid);
 		conf_scene_list_[scene_info.scene_confid()].emplace(scene_info.guid(), scene_eid);
 	}
 
-	inline void RemoveScene(const entt::entity scene)
+	inline void RemoveScene(const entt::entity scene_eid)
 	{
-		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
-		cl_tls.scene_list().erase(scene_info.guid());
-		conf_scene_list_[scene_info.scene_confid()].erase(scene_info.guid());
-		tls.registry.destroy(scene);
+		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_eid);
+		conf_scene_list_[scene_info.scene_confid()].erase(entt::to_integral(scene_eid));
+		if (tls.scene_registry.valid(scene_eid))
+		{
+            tls.scene_registry.destroy(scene_eid);
+		}
 	}
 
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(const uint32_t scene_config_id) const

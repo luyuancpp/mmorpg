@@ -27,7 +27,7 @@ void AddMainSceneNodeComponent(const entt::entity server)
 
 ScenesSystem::ScenesSystem()
 {
-	cl_tls.scene_list().clear();
+	tls.scene_registry.clear();
 }
 
 ScenesSystem::~ScenesSystem()
@@ -38,9 +38,9 @@ ScenesSystem::~ScenesSystem()
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 {
 	std::size_t scene_size = 0;
-	for (const auto server_entity : tls.registry.view<ServerComp>())
+	for (const auto server_entity : tls.scene_registry.view<ServerComp>())
 	{
-		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
+		auto& server_comp = tls.scene_registry.get<ServerComp>(server_entity);
 		scene_size += server_comp.GetSceneListByConfig(scene_config_id).size();
 	}
 	return scene_size;
@@ -48,22 +48,12 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 
 std::size_t ScenesSystem::scenes_size()
 {
-	return cl_tls.scene_list().size();
+	return tls.scene_registry.storage<SceneInfo>().size();
 }
 
 bool ScenesSystem::IsSceneEmpty()
 {
-	return cl_tls.scene_list().empty();
-}
-
-entt::entity ScenesSystem::GetSceneByGuid(Guid guid)
-{
-	const auto scene_it = cl_tls.scene_list().find(guid);
-	if (scene_it == cl_tls.scene_list().end())
-	{
-		return entt::null;
-	}
-	return scene_it->second;
+    return tls.scene_registry.storage<SceneInfo>().empty();
 }
 
 bool ScenesSystem::ConfigSceneListNotEmpty(const uint32_t scene_config_id)
@@ -93,22 +83,29 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 	{
 		scene_info.set_guid(server_sequence_.Generate());
 	}
-	const auto scene_entity = tls.registry.create();
-	tls.registry.emplace<SceneInfo>(scene_entity, scene_info);
-	tls.registry.emplace<ScenePlayers>(scene_entity);
+
+	auto eid = entt::to_entity(scene_info.guid());
+	const auto scene = tls.scene_registry.create(eid);
+	if (!tls.scene_registry.valid(scene))
+	{
+        LOG_ERROR << "scene_registry create erroe" << param.scene_config_id_;
+        return entt::null;
+	}
+	tls.scene_registry.emplace<SceneInfo>(scene, scene_info);
+	tls.scene_registry.emplace<ScenePlayers>(scene);
 
 	if (auto* server_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.node_))
 	{
-		tls.registry.emplace<GameNodePlayerInfoPtr>(scene_entity, *server_player_info);
+		tls.scene_registry.emplace<GameNodePlayerInfoPtr>(scene, *server_player_info);
 	}
 
 	if (auto* p_server_comp = tls.registry.try_get<ServerComp>(param.node_);
 		nullptr != p_server_comp)
 	{
-		p_server_comp->AddScene(scene_entity);
+		p_server_comp->AddScene(scene);
 	}
 
-	return scene_entity;
+	return scene;
 }
 
 void ScenesSystem::DestroyScene(entt::entity node, entt::entity scene)
@@ -140,11 +137,11 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 uint32_t ScenesSystem::CheckScenePlayerSize(const entt::entity scene)
 {
 	//todo weak ptr ?
-	if (tls.registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
+	if (tls.scene_registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
 	{
 		return kRetEnterSceneNotFull;
 	}
-	const auto* const gs_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(scene);
+	const auto* const gs_player_info = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(scene);
 	if (nullptr == gs_player_info)
 	{
 		LOG_ERROR << " gs null";
@@ -169,7 +166,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	before_enter_scene_event.set_entity(entt::to_integral(param.player_));
 	tls.dispatcher.trigger(before_enter_scene_event);
 
-	tls.registry.get<ScenePlayers>(param.scene_).emplace(param.player_);
+	tls.scene_registry.get<ScenePlayers>(param.scene_).emplace(param.player_);
 	tls.registry.emplace<SceneEntity>(param.player_, param.scene_);
 	// todo weak_ptr ?
 	if (const auto* const game_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
@@ -212,7 +209,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 	before_leave_scene_event.set_entity(entt::to_integral(param.leaver_));
 	tls.dispatcher.trigger(before_leave_scene_event);
 
-	tls.registry.get<ScenePlayers>(scene).erase(param.leaver_);
+	tls.scene_registry.get<ScenePlayers>(scene).erase(param.leaver_);
 	tls.registry.remove<SceneEntity>(param.leaver_);
 
 	if (const auto* const game_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(scene))
