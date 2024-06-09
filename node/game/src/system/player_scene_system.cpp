@@ -8,15 +8,9 @@
 #include "src/network/message_system.h"
 #include "src/system/gs_scene_system.h"
 
-void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t guid)
+void PlayerSceneSystem::EnterScene(entt::entity player, Guid scene)
 {
-	const auto scene = entt::to_entity(guid);
-	if (scene == entt::null)
-	{
-		LOG_ERROR << "scene not found " << guid;
-		return;
-	}
-	GsSceneSystem::EnterScene({player, scene});
+	GsSceneSystem::EnterScene({ player, entity{scene} });
 }
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)

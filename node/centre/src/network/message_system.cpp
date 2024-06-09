@@ -17,15 +17,15 @@
 #include "src/thread_local/centre_thread_local_storage.h"
 
 
-void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, uint32_t node_id)
+void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
-	auto it = centre_tls.game_node().find(node_id);
-	if (it == centre_tls.game_node().end())
+	entity game_node_id{ node_id };
+	if (!tls.game_node_registry.valid(game_node_id))
 	{
         LOG_ERROR << "gs not found ->" << node_id;
 		return;
 	}
-	auto node =  tls.registry.try_get<GameNodePtr>(it->second);
+	auto node =  tls.game_node_registry.try_get<GameNodePtr>(game_node_id);
 	if (nullptr == node)
 	{
 		LOG_ERROR << "gs not found ->" << node_id;
@@ -46,9 +46,16 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 	{
 		return;
 	}
-	const auto game_node_it = centre_tls.game_node().find(player_node_info->game_node_id());
-	if (centre_tls.game_node().end() == game_node_it)
+	entity game_node_id{ player_node_info->game_node_id() };
+	if (tls.game_node_registry.valid(game_node_id))
 	{
+		LOG_ERROR << "game node not found" << player_node_info->game_node_id();
+		return;
+	}
+	auto game_node = tls.game_node_registry.try_get<GameNodePtr>(game_node_id);
+	if (nullptr == game_node)
+	{
+        LOG_ERROR << "game node not found" << player_node_info->game_node_id();
 		return;
 	}
 	NodeRouteMessageRequest message_wrapper;
@@ -56,7 +63,7 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), static_cast<int32_t>(message.ByteSizeLong()));
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.Send(GameServiceSend2PlayerMsgId, message_wrapper);
+	(*game_node)->session_.Send(GameServiceSend2PlayerMsgId, message_wrapper);
 }
 
 
@@ -81,17 +88,24 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 	{
 		return;
 	}
-	const auto game_node_it = centre_tls.game_node().find(player_node_info->game_node_id());
-	if (centre_tls.game_node().end() == game_node_it)
-	{
-		return;
-	}
+    entity game_node_id{ player_node_info->game_node_id() };
+    if (tls.game_node_registry.valid(game_node_id))
+    {
+        LOG_ERROR << "game node not found" << player_node_info->game_node_id();
+        return;
+    }
+    auto game_node = tls.game_node_registry.try_get<GameNodePtr>(game_node_id);
+    if (nullptr == game_node)
+    {
+        LOG_ERROR << "game node not found" << player_node_info->game_node_id();
+        return;
+    }
 	NodeRouteMessageRequest message_wrapper;
 	auto byte_size = int32_t(message.ByteSizeLong());
 	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.Send(message_id, message_wrapper);
+	(*game_node)->session_.Send(message_id, message_wrapper);
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -105,16 +119,18 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	{
 		return;
 	}
-	const auto gate_it = centre_tls.gate_nodes().find(get_gate_node_id(player_node_info->gate_session_id()));
-	if (gate_it == centre_tls.gate_nodes().end())
+	entity gate_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+	if (tls.gate_node_registry.valid(gate_id))
 	{
-		LOG_ERROR << "gate not found ";
+		LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
 		return;
 	}
-	Send2Player(message_id, message, gate_it->second, player_node_info->gate_session_id());
+	Send2Player(message_id, message,  player_node_info->gate_session_id());
 }
 
-void Send2Player(uint32_t message_id, const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id)
+void Send2Player(uint32_t message_id, 
+	const google::protobuf::Message& message, 
+	GateNodePtr& gate, uint64_t session_id)
 {
 	NodeRouteMessageRequest message_wrapper;
 	const auto byte_size = static_cast<int32_t>(message.ByteSizeLong());
@@ -130,14 +146,23 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	Send2Player(message_id, message, entity{player_id});
 }
 
-void Send2Gate(const uint32_t message_id, const google::protobuf::Message& message, uint32_t gate_id)
+void Send2Gate(const uint32_t message_id, 
+	const google::protobuf::Message& message, 
+	NodeId gate_node_id)
 {
-	const auto gate_it = centre_tls.gate_nodes().find(gate_id);
-	if (gate_it == centre_tls.gate_nodes().end())
+    entity gate_id{ gate_node_id };
+    if (tls.gate_node_registry.valid(gate_id))
+    {
+        LOG_ERROR << "gate not found " << gate_node_id;
+        return;
+    }
+	auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(gate_id);
+	if (nullptr == gate_node)
 	{
-		return;
+        LOG_ERROR << "gate not found " << gate_node_id;
+        return;
 	}
-	gate_it->second->session_.Send(message_id, message);
+	(*gate_node)->session_.Send(message_id, message);
 }
 
 void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -151,27 +176,38 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 	{
 		return;
 	}
-	const auto game_node_it = centre_tls.game_node().find(player_node_info->game_node_id());
-	if (centre_tls.game_node().end() == game_node_it)
+	entity game_node_id{ player_node_info->game_node_id() };
+	if (tls.game_node_registry.valid(game_node_id))
 	{
 		return;
 	}
+    auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(game_node_id);
+    if (nullptr == gate_node)
+    {
+        LOG_ERROR << "gate not found " << player_node_info->game_node_id();
+        return;
+    }
 	NodeRouteMessageRequest message_wrapper;
 	const auto byte_size = static_cast<int32_t>(message.ByteSizeLong());
 	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
+	(*gate_node)->session_.CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
 }
 
-bool CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
+void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
-	const auto it = centre_tls.game_node().find(node_id);
-	if (it == centre_tls.game_node().end())
-	{
-		return false;
-	}
-	tls.registry.get<GameNodePtr>(it->second)->session_.CallMethod(message_id, message);
-	return true;
+    entity game_node_id{ node_id };
+    if (tls.game_node_registry.valid(game_node_id))
+    {
+        return;
+    }
+    auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(game_node_id);
+    if (nullptr == gate_node)
+    {
+        LOG_ERROR << "gate not found " << node_id;
+        return;
+    }
+	(*gate_node)->session_.CallMethod(message_id, message);
 }

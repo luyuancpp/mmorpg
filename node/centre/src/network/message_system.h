@@ -8,7 +8,7 @@
 #include "src/util/game_registry.h"
 #include "src/network/gate_node.h"
 
-void Send2Gs(uint32_t message_id, const google::protobuf::Message& message,  uint32_t game_node_id);
+void Send2Gs(uint32_t message_id, const google::protobuf::Message& message,  NodeId game_node_id);
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);//通过gs转发给客户端
@@ -21,8 +21,8 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id);
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
-void Send2Gate(uint32_t message_id, const google::protobuf::Message& message, uint32_t gate_id);
+void Send2Gate(uint32_t message_id, const google::protobuf::Message& message, NodeId gate_node_id);
 
 
 void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
-bool CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id);
+void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id);

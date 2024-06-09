@@ -84,6 +84,9 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 		LOG_INFO << "game connection not found " << request->gs_node_id();
 		return;
 	}
+    entity game_node_id{ request->gs_node_id() };
+
+	auto game_node1 = tls.game_node_registry.create(game_node_id);
 
 	auto c = tls.registry.get<RpcServerConnection>(game_node);
 	auto game_node_ptr = std::make_shared<GameNodePtr::element_type>(c.conn_);
@@ -92,38 +95,37 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 	game_node_ptr->node_inet_addr_ = service_addr; //为了停掉gs，或者gs断线用
 	game_node_ptr->server_entity_ = game_node;
 	AddMainSceneNodeComponent(game_node);
-	tls.registry.emplace<GameNodePtr>(game_node, game_node_ptr);
+	tls.game_node_registry.emplace<GameNodePtr>(game_node1, game_node_ptr);
 	if (request->server_type() == kMainSceneServer)
 	{
 		const auto& config_all = mainscene_config::GetSingleton().all();
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			auto scene_entity = ScenesSystem::CreateScene2GameNode({.node_ = game_node, .scene_config_id_ = config_all.data(i).id()});
-			tls.registry.emplace<GameNodePtr>(scene_entity, game_node_ptr);
+			tls.game_node_registry.emplace<GameNodePtr>(scene_entity, game_node_ptr);
 			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene_entity));
 		}
 	}
 	else if (request->server_type() == kMainSceneCrossServer)
 	{
-		tls.registry.remove<MainSceneServer>(game_node);
-		tls.registry.emplace<CrossMainSceneServer>(game_node);
+		tls.game_node_registry.remove<MainSceneServer>(game_node);
+		tls.game_node_registry.emplace<CrossMainSceneServer>(game_node);
 	}
 	else if (request->server_type() == kRoomSceneCrossServer)
 	{
-		tls.registry.remove<MainSceneServer>(game_node);
-		tls.registry.emplace<CrossRoomSceneServer>(game_node);
+		tls.game_node_registry.remove<MainSceneServer>(game_node);
+		tls.game_node_registry.emplace<CrossRoomSceneServer>(game_node);
 	}
 	else
 	{
-		tls.registry.remove<MainSceneServer>(game_node);
-		tls.registry.emplace<RoomSceneServer>(game_node);
+		tls.game_node_registry.remove<MainSceneServer>(game_node);
+		tls.game_node_registry.emplace<RoomSceneServer>(game_node);
 	}
 
 	for (auto gate : tls.registry.view<GateNodePtr>())
 	{
 		g_centre_node->LetGateConnect2Gs(game_node, gate);
 	}
-	centre_tls.game_node().emplace(request->gs_node_id(), game_node);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE
 }
