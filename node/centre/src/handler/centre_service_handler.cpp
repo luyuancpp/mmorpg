@@ -308,7 +308,8 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 			}
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
-			Send2Gate(GateServiceKickConnByCentreMsgId, message, get_gate_node_id(player_node_info->gate_session_id()));
+			Send2Gate(GateServiceKickConnByCentreMsgId, message, 
+				get_gate_node_id(player_node_info->gate_session_id()));
 
 			player_node_info->set_gate_session_id(cl_tls.session_id());
 		}
