@@ -116,9 +116,9 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
         }
     }
 
-    for (auto& it : game_tls.centre_node())
+    for (auto& it : tls.centre_node_registry.view<CentreNodePtr>())
     {
-        auto& controller_node = it.second;
+        auto& controller_node = tls.centre_node_registry.get<CentreNodePtr>(it);
         auto& controller_session = controller_node->session_;
         if (conn->connected() &&
             IsSameAddr(controller_session->peer_addr(), conn->peerAddress()))
@@ -166,7 +166,8 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
 			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
-                game_tls.gate_node().erase((*gatenode)->node_info_.node_id());
+                entity game_node_id{ (*gatenode)->node_info_.node_id()  };
+                tls.game_node_registry.destroy(game_node_id);
 			}
 			tls.registry.destroy(e);
 			break;

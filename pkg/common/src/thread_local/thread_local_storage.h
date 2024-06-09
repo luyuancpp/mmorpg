@@ -12,8 +12,12 @@ public:
 	entt::registry session_registry;
     entt::registry scene_registry;
     entt::registry player_registry;
-    entt::registry gamenode_registry;
+    entt::registry game_node_registry;
+    entt::registry gate_node_registry;
+    entt::registry centre_node_registry;
+
 	entt::dispatcher dispatcher;
+
 	entt::entity op_entity{entt::null};
 	entt::entity error_entity{entt::null};
 	entt::entity global_entity{entt::null};

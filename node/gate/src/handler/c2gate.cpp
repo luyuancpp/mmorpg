@@ -136,12 +136,12 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
         entity game_node_id{ session->game_node_id_ };
-		if (tls.gamenode_registry.valid(game_node_id))
+		if (tls.game_node_registry.valid(game_node_id))
 		{
             Tip(conn, kRetServerCrush);
 			return;
 		}
-        auto game_node = tls.gamenode_registry.try_get<GameNode>(game_node_id);
+        auto game_node = tls.game_node_registry.try_get<GameNode>(game_node_id);
         if (nullptr == game_node)
         {
             Tip(conn, kRetServerCrush);

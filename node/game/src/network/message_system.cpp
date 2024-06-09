@@ -16,13 +16,7 @@
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	auto it = game_tls.player_list().find(player_id);
-	if (it == game_tls.player_list().end())
-	{
-		LOG_DEBUG << "Send2Player player not found " << player_id;
-		return;
-	}
-	Send2Player(message_id, message, it->second);
+	Send2Player(message_id, message, {player_id});
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -37,28 +31,28 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	const auto gate_it = game_tls.gate_node().find(get_gate_node_id(player_node_info->gate_session_id()));
-	if (game_tls.gate_node().end() == gate_it)
+	entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+	if (tls.gate_node_registry.valid(gate_node_id))
 	{
 		LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
+		return;
+	}
+	auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(gate_node_id);
+	if (nullptr == gate_node)
+	{
+        LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
 	NodeRouteMessageRequest message_wrapper;
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	gate_it->second->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
+	(*gate_node)->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	auto it = game_tls.player_list().find(player_id);
-	if (it == game_tls.player_list().end())
-	{
-		LOG_DEBUG << " Send2CentrePlayer player not found " << player_id;
-		return;
-	}
-	Send2CentrePlayer(message_id, message, it->second);
+	Send2CentrePlayer(message_id, message, {player_id});
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
@@ -73,13 +67,14 @@ void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg
 		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	const auto centre_it = game_tls.centre_node().find(player_node_info->centre_node_id());
-	if (centre_it == game_tls.centre_node().end())
+	entity centre_node_id{ player_node_info->centre_node_id() };
+	if (tls.centre_node_registry.valid(centre_node_id))
 	{
 		LOG_ERROR << "centre not found" << player_node_info->centre_node_id();
 		return;
 	}
-	if (!centre_it->second->session_->connected())
+	auto centre_node = tls.centre_node_registry.try_get<CentreNodePtr>(centre_node_id);
+	if (nullptr == centre_node)
 	{
 		LOG_ERROR << "Send2CentrePlayer centre disconnect" << tls.registry.get<Guid>(player);
 		return;
@@ -88,39 +83,56 @@ void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg
 	msg_wrapper.mutable_msg()->set_message_id(message_id);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	centre_it->second->session_->Send(CentreServiceGsPlayerServiceMsgId, msg_wrapper);
+	(*centre_node)->session_->Send(CentreServiceGsPlayerServiceMsgId, msg_wrapper);
 }
 
-void Send2Centre(const uint32_t message_id, const google::protobuf::Message& messag, uint32_t centre_node_id)
+void Send2Centre(const uint32_t message_id, const google::protobuf::Message& messag, NodeId node_id)
 {
-	const auto centre_it = game_tls.centre_node().find(centre_node_id);
-	if (centre_it == game_tls.centre_node().end())
-	{
-		LOG_ERROR << "Send2CentrePlayer centre not found" << centre_node_id;
-		return;
-	}
-	centre_it->second->session_->Send(message_id, messag);
+    entity centre_node_id{ node_id };
+    if (tls.centre_node_registry.valid(centre_node_id))
+    {
+        LOG_ERROR << "centre not found" << node_id;
+        return;
+    }
+    auto centre_node = tls.centre_node_registry.try_get<CentreNodePtr>(centre_node_id);
+    if (nullptr == centre_node)
+    {
+        LOG_ERROR << "Send2CentrePlayer centre disconnect" << node_id;
+        return;
+    }
+	(*centre_node)->session_->Send(message_id, messag);
 }
 
-void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, uint32_t gate_node_id)
+void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, NodeId node_id)
 {
-	auto gate_it = game_tls.gate_node().find(gate_node_id);
-	if (gate_it == game_tls.gate_node().end())
-	{
-		LOG_ERROR << "Send2Gate gate not found" << gate_node_id;
-		return;
-	}
-	gate_it->second->session_.Send(GateServicePlayerMessageMsgId, messag);
+    entity gate_node_id{ get_gate_node_id(node_id) };
+    if (tls.gate_node_registry.valid(gate_node_id))
+    {
+        LOG_INFO << "gate not found " << get_gate_node_id(node_id);
+        return;
+    }
+    auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(gate_node_id);
+    if (nullptr == gate_node)
+    {
+        LOG_INFO << "gate not found " << get_gate_node_id(node_id);
+        return;
+    }
+	(*gate_node)->session_.Send(GateServicePlayerMessageMsgId, messag);
 }
 
-bool CallCentreNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
+void CallCentreNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
 {
-	const auto centre_it = game_tls.centre_node().find(node_id);
-	if (centre_it == game_tls.centre_node().end())
-	{
-		LOG_ERROR << "centre not found" << node_id;
-		return false;
-	}
-	centre_it->second->session_->CallMethod(message_id, message);
-	return true;
+    entity centre_node_id{ node_id };
+    if (tls.centre_node_registry.valid(centre_node_id))
+    {
+        LOG_ERROR << "centre not found" << node_id;
+        return;
+    }
+    auto centre_node = tls.centre_node_registry.try_get<CentreNodePtr>(centre_node_id);
+    if (nullptr == centre_node)
+    {
+        LOG_ERROR << "Send2CentrePlayer centre disconnect" << node_id;
+        return;
+    }
+	(*centre_node)->session_->CallMethod(message_id, message);
 }

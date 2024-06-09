@@ -9,6 +9,7 @@
 #include "service/centre_service_service.h"
 #include "service/centre_scene_server_player_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
+#include "src/util/defer.h"
 
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
@@ -25,23 +26,23 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 		LOG_INFO << "player disconnect" << player_id;
 		return;
 	}
-	auto ret = game_tls.player_list().emplace(player_id, tls.registry.create());
-	if (!ret.second)
+
+	defer(game_tls.async_player_data().erase(player_id));
+
+	auto player = tls.player_registry.create(entity{ player_id });
+	if (player != entity{ player_id })
 	{
 		LOG_ERROR << "server emplace error" << player_id;
-		game_tls.async_player_data().erase(async_it);
 		return;
 	}
 	// on loaded db
-	entt::entity player = ret.first->second;
 	tls.registry.emplace<Player>(player);
 	tls.registry.emplace<Guid>(player, player_id);
 	tls.registry.emplace<Vector3>(player, message.pos());
 	tls.registry.emplace<PlayerNodeInfo>(player);
 	// on load db complete
 
-	EnterGs(player, tls.registry.get<EnterGsInfo>(async_it->second));
-	game_tls.async_player_data().erase(async_it);
+	EnterGs(player, async_it->second);
 }
 
 void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& message)
@@ -50,7 +51,8 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
 	Send2CentrePlayer(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
 
-	game_tls.player_list().erase(player_id);//存储完毕从gs删除玩家
+	tls.player_registry.destroy(entity{ player_id });
+	//存储完毕从gs删除玩家
 }
 
 void PlayerCommonSystem::SavePlayer(entt::entity player)
@@ -111,12 +113,7 @@ void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)
 //todo 检测
 void PlayerCommonSystem::RemovePlayerSession(const Guid player_id)
 {
-	const auto player_it = game_tls.player_list().find(player_id);
-	if (player_it == game_tls.player_list().end())
-	{
-		return;
-	}
-	RemovePlayerSession(player_it->second);
+	RemovePlayerSession(entity{player_id});
 }
 
 void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
@@ -127,5 +124,5 @@ void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 		return;
 	}
 	player_node_info->set_gate_session_id(kInvalidSessionId);
-	game_tls.gate_sessions().erase(player_node_info->gate_session_id());
+	tls.gate_node_registry.destroy(entity{player_node_info->gate_session_id()});
 }

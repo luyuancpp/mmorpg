@@ -135,9 +135,9 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
     else
     {
         //todo 断线重连
-        for (auto& it : tls.gamenode_registry.view<GameNode>())
+        for (auto& it : tls.game_node_registry.view<GameNode>())
         {
-            auto& game_node = tls.gamenode_registry.get<GameNode>(it);
+            auto& game_node = tls.game_node_registry.get<GameNode>(it);
 
             if (!IsSameAddr(game_node.gs_session_->peer_addr(), conn->peerAddress()))
             {

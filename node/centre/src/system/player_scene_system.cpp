@@ -14,6 +14,8 @@
 #include "service/game_service_service.h"
 #include "service/game_scene_server_player_service.h"
 #include "src/thread_local/centre_thread_local_storage.h"
+#include "src/network//game_node.h"
+
 #include "component_proto/player_network_comp.pb.h"
 
 NodeId centre_node_id();
@@ -61,7 +63,7 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 
 NodeId PlayerSceneSystem::GetGameNodeIdByScene(const entt::entity scene)
 {
-    const auto* game_node_info = tls.registry.try_get<GameNodePtr>(scene);
+    const auto* game_node_info = tls.scene_registry.try_get<GameNodePtr>(scene);
     //找不到gs了，放到好的gs里面
     if (nullptr == game_node_info)
     {
@@ -144,9 +146,10 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    auto from_gs_it = centre_tls.game_node().find((*from_scene_game_node)->node_id());
-    auto to_gs_it = centre_tls.game_node().find((*game_node)->node_id());
-    if (from_gs_it == centre_tls.game_node().end() || to_gs_it == centre_tls.game_node().end())
+    entity from_game_node{ (*from_scene_game_node)->node_id() };
+    entity to_game_node{ (*game_node)->node_id()};
+    if (!tls.game_node_registry.valid(from_game_node) ||
+        !tls.game_node_registry.valid(to_game_node))
     {
         //服务器已经崩溃了
         LOG_ERROR << " gs not found  : " <<
@@ -155,10 +158,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
-    entt::entity from_gs = from_gs_it->second;
-    entt::entity to_gs = to_gs_it->second;
-    bool is_from_gs_is_cross_server = tls.registry.any_of<CrossMainSceneServer>(from_gs);
-    bool is_to_gs_is_cross_server = tls.registry.any_of<CrossMainSceneServer>(to_gs);
+    bool is_from_gs_is_cross_server = tls.game_node_registry.any_of<CrossMainSceneServer>(from_game_node);
+    bool is_to_gs_is_cross_server = tls.game_node_registry.any_of<CrossMainSceneServer>(to_game_node);
 
     //不是跨服才在本地判断,跨服有自己的判断
     if (!change_scene_info.ignore_full() && !is_to_gs_is_cross_server)
@@ -172,13 +173,13 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         }
     }
 
-    if (entt::null != from_gs)
+    if (entt::null != from_game_node)
     {
-        if (from_gs == to_gs)
+        if (from_game_node == to_game_node)
         {
             change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eSameGs);
         }
-        else if (from_gs != to_gs)
+        else if (from_game_node != to_game_node)
         {
             change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
         }
