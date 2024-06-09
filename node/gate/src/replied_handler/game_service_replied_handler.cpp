@@ -39,16 +39,22 @@ void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, 
 {
 ///<<< BEGIN WRITING YOUR CODE
     MessageBody message;
-    const auto it = gate_tls.sessions().find(replied->session_id());
-    if (it == gate_tls.sessions().end())
+    entity session_id{ replied->session_id() };
+    if (!tls.session_registry.valid(session_id))
     {
-        LOG_ERROR << "session id not found  player id " << replied->session_id();
+        LOG_ERROR << "session id not found   " << replied->session_id();
+        return;
+    }
+    auto session = tls.session_registry.try_get<Session>(session_id);
+    if (nullptr == session)
+    {
+        LOG_ERROR << "session id not found   " << replied->session_id();
         return;
     }
     message.set_body(replied->response());
     message.set_id(replied->id());
     message.set_message_id(replied->message_id());
-    g_gate_node->codec().send(it->second.conn_, message);
+    g_gate_node->codec().send(session->conn_, message);
 ///<<< END WRITING YOUR CODE
 }
 

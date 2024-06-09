@@ -10,11 +10,9 @@ class GateThreadLocalStorage
 {
 public:
 	GateThreadLocalStorage();
-	inline ClientSessions& sessions() { return *sessions_; }
 	inline LoginNodes& login_nodes() { return *login_nodes_; }
 	inline GameNodeList& game_nodes() { return *game_nodes_; }
 private:
-	std::unique_ptr<ClientSessions> sessions_;
 	std::unique_ptr<LoginNodes> login_nodes_;
 	std::unique_ptr<GameNodeList> game_nodes_;
 };

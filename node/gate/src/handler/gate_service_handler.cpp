@@ -66,14 +66,20 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto it = gate_tls.sessions().find(request->session_id());
-	if (it == gate_tls.sessions().end())
+	entity session_id{ request->session_id() };
+	if (!tls.session_registry.valid(session_id))
 	{
-		LOG_ERROR << "conn id not found   " << request->session_id();
+		LOG_ERROR << "session id not found   " << request->session_id();
+		return;
+	}
+	auto session = tls.session_registry.try_get<Session>(session_id);
+	if (nullptr == session)
+	{
+        LOG_ERROR << "session id not found   " << request->session_id();
 		return;
 	}
 	//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉controller 让ms去通知gs去发送信息
-	it->second.game_node_id_ = request->game_node_id();
+	session->game_node_id_ = request->game_node_id();
 	response->set_session_id(request->session_id());
 	///<<< END WRITING YOUR CODE
 }
@@ -84,13 +90,20 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto it = gate_tls.sessions().find(request->ex().session_id());
-	if (it == gate_tls.sessions().end())
-	{
-		LOG_ERROR << "session id not found  player id " << request->ex().session_id();
-		return;
-	}
-	g_gate_node->Send2Client(it->second.conn_, request->msg());
+    entity session_id{ request->ex().session_id() };
+    if (tls.session_registry.valid(session_id))
+    {
+        LOG_ERROR << "conn id not found  session id " << "," << request->ex().session_id();
+        return;
+    }
+
+    auto session = tls.session_registry.try_get<Session>(session_id);
+    if (nullptr == session)
+    {
+        LOG_ERROR << "conn id not found  session id " << "," << request->ex().session_id();
+        return;
+    }
+	g_gate_node->Send2Client(session->conn_, request->msg());
 	///<<< END WRITING YOUR CODE
 }
 
@@ -100,7 +113,7 @@ void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	gate_tls.sessions().erase(request->session_id());
+	tls.scene_registry.destroy(entity{request->session_id()});
 	LOG_INFO << "conn id be kick " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }

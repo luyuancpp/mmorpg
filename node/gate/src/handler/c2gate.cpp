@@ -29,12 +29,19 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
 }
 
-RpcClientPtr& ClientReceiver::GetLoginNode(uint64_t session_id)
+RpcClientPtr& ClientReceiver::GetLoginNode(uint64_t session_uid)
 {
     static RpcClientPtr null_session;
-    const auto session_it = gate_tls.sessions().find(session_id);
-    if (gate_tls.sessions().end() == session_it)
+    entity session_id{ session_uid };
+    if (!tls.session_registry.valid(session_id))
     {
+        LOG_ERROR << "session id not found   " << session_uid;
+        return null_session;
+    }
+    auto session = tls.session_registry.try_get<Session>(session_id);
+    if (nullptr == session)
+    {
+        LOG_ERROR << "session id not found   " << session_uid;
         return null_session;
     }
 
@@ -43,23 +50,23 @@ RpcClientPtr& ClientReceiver::GetLoginNode(uint64_t session_id)
         return null_session;
     }
     
-    if (!session_it->second.HasLoginNodeId())
+    if (!session->HasLoginNodeId())
     {
-        auto login_node_it = gate_tls.login_nodes().get_by_hash(session_id);
+        auto login_node_it = gate_tls.login_nodes().get_by_hash(session_uid);
         if (gate_tls.login_nodes().end() == login_node_it)
         {
-            LOG_ERROR << "player login server not found session id : " << session_id;
+            LOG_ERROR << "player login server not found session id : " << session_uid;
             return null_session;
         }
         //考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
-        session_it->second.login_node_id_ = login_node_it->first;
+        session->login_node_id_ = login_node_it->first;
     }
-    auto login_node_id = session_it->second.login_node_id_;
+    auto login_node_id = session->login_node_id_;
     const auto login_node_it = gate_tls.login_nodes().get_by_id(login_node_id);
     if (gate_tls.login_nodes().end() == login_node_it)
     {
-        session_it->second.login_node_id_ = kInvalidNodeId;
-        LOG_ERROR << "player found login server crash : " << session_it->second.login_node_id_;
+        session->login_node_id_ = kInvalidNodeId;
+        LOG_ERROR << "player found login server crash : " << session->login_node_id_;
         return null_session;
     }
     return login_node_it->second.login_session_;
@@ -91,19 +98,19 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             rq.set_session_id(session_id);
             g_gate_node->controller_node_session()->CallMethod(CentreServiceGateDisconnectMsgId, rq);
         }
-        gate_tls.sessions().erase(session_id);
+        tls.session_registry.destroy(entity{ session_id });
     }
     else
     {
         auto session_id = g_server_sequence_.Generate();
-        while (gate_tls.sessions().contains(session_id))
+        while (tls.session_registry.valid(entity{session_id}))
         {
             session_id = g_server_sequence_.Generate();
         }
         conn->setContext(session_id);
         Session session;
         session.conn_ = conn;
-        gate_tls.sessions().emplace(session_id, std::move(session));
+        tls.scene_registry.emplace<Session>(entity{session_id}, session);
     }
 }
 
@@ -111,17 +118,24 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
-    const auto session_id = tcp_session_id(conn);
-    const auto it = gate_tls.sessions().find(session_id);
-	if (it == gate_tls.sessions().end())
-	{
-		return;
-	}
+    const auto session_uid = tcp_session_id(conn);
+    entity session_id{ session_uid };
+    if (!tls.session_registry.valid(session_id))
+    {
+        LOG_ERROR << "session id not found   " << session_uid;
+        return ;
+    }
+    auto session = tls.session_registry.try_get<Session>(session_id);
+    if (nullptr == session)
+    {
+        LOG_ERROR << "session id not found   " << session_uid;
+        return ;
+    }
     //todo msg id error
     if (g_c2s_service_id.contains(request->message_id()))
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
-		auto gs = gate_tls.game_nodes().find(it->second.game_node_id_);
+		auto gs = gate_tls.game_nodes().find(session->game_node_id_);
 		if (gate_tls.game_nodes().end() == gs)
 		{
             Tip(conn, kRetServerCrush);
@@ -129,7 +143,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		}
         GameNodeRpcClientRequest rq;
         rq.set_request(request->request());
-        rq.set_session_id(session_id);
+        rq.set_session_id(session_uid);
         rq.set_id(request->id());
         rq.set_message_id(request->message_id());
         gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMsgId, rq);
@@ -139,12 +153,12 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         //发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
         RouteMsgStringRequest rq;
         rq.set_body(request->request());
-        rq.set_session_id(session_id);
+        rq.set_session_id(session_uid);
         rq.set_id(request->id());
         const auto message = rq.add_route_data_list();
         message->set_message_id(request->message_id());
         message->mutable_node_info()->CopyFrom(g_gate_node->node_info());
-        const auto& login_node = GetLoginNode(session_id);
+        const auto& login_node = GetLoginNode(session_uid);
         if (nullptr == login_node)
         {
             return;
@@ -156,7 +170,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id)
 {
     TipS2C tips;
-    tips.mutable_tips()->set_id(tip_id);//tips_id.h 暂时写死，错误码不用编译
+    tips.mutable_tips()->set_id(tip_id);
     MessageBody msg;
     msg.set_body(tips.SerializeAsString());
     msg.set_message_id(ClientPlayerCommonServicePushTipS2CMsgId);
