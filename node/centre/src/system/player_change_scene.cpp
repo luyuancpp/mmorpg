@@ -186,7 +186,8 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
         //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
         ScenesSystem::LeaveScene({player});
     }
-    else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eEnterGsSceneSucceed)
+    else if (change_info.change_gs_status() == 
+        ControllerChangeSceneInfo::eEnterGsSceneSucceed)
     {
         //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
         if (const auto dest_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().guid());
