@@ -79,14 +79,14 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "message_id not found " << replied->msg().message_id() ;
 		return;
 	}
-	auto eid = static_cast<entt::entity>(replied->ex().session_id());
-	if (!tls.session_registry.valid(eid))
+	auto sid = entt::to_entity(replied->ex().session_id());
+	if (!tls.session_registry.valid(sid))
 	{
 		LOG_ERROR << "can not find session id " << replied->ex().session_id();
 		return;
 	}
 	const auto player_info = 
-		tls.session_registry.try_get<PlayerSessionInfo>(eid);
+		tls.session_registry.try_get<PlayerSessionInfo>(sid);
 	if (nullptr == player_info)
 	{
 		LOG_ERROR << "session not found " << replied->ex().session_id();

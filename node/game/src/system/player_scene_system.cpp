@@ -10,7 +10,7 @@
 
 void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t guid)
 {
-	const auto scene = ScenesSystem::GetSceneByGuid(guid);
+	const auto scene = entt::to_entity(guid);
 	if (scene == entt::null)
 	{
 		LOG_ERROR << "scene not found " << guid;

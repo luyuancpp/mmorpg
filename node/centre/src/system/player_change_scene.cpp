@@ -152,7 +152,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
         return kRetChangeScenePlayerQueueComponentEmpty;
     }
     const auto& change_info = change_scene_queue->change_scene_queue_.front();
-    const auto dest_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().guid());
+    entt::entity dest_scene = entt::entity{ change_info.scene_info().guid() };
     //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
     if (entt::null == dest_scene)
     {
@@ -161,7 +161,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
         return kRetEnterSceneSceneNotFound;
     }
     ScenesSystem::LeaveScene({player});
-    ScenesSystem::EnterScene({dest_scene, player});
+    ScenesSystem::EnterScene({ dest_scene , player});
     change_scene_queue->change_scene_queue_.pop_front();
     OnEnterSceneOk(player);
     return kRetOK;
@@ -190,7 +190,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
         ControllerChangeSceneInfo::eEnterGsSceneSucceed)
     {
         //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
-        if (const auto dest_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().guid());
+        if (const auto dest_scene = entt::entity{ change_info.scene_info().guid() };
             entt::null == dest_scene)
         {
             //todo 考虑直接删除了会不会有异常

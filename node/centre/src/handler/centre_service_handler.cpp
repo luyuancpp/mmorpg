@@ -37,7 +37,7 @@ NodeId centre_node_id();
 
 Guid GetPlayerIdByConnId(const uint64_t session_id)
 {
-    auto eid = static_cast<entt::entity>(session_id);
+    auto eid = entt::to_entity(session_id);
     if (!tls.session_registry.valid(eid))
     {
 		LOG_ERROR << "find session id" << session_id;
@@ -182,13 +182,13 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto eid = static_cast<entt::entity>(cl_tls.session_id());
-	if (!tls.session_registry.valid(eid))
+	auto sid = entt::to_entity(cl_tls.session_id());
+	if (!tls.session_registry.valid(sid))
 	{
 		LOG_DEBUG << "can not find " << cl_tls.session_id();
 		return;
 	}
-    defer(tls.session_registry.destroy(eid));
+    defer(tls.session_registry.destroy(sid));
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
 	const auto player = GetPlayerByConnId(request->session_id());
@@ -301,10 +301,10 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 			beKickTip.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
 			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTip, request->player_id());
 			//删除老会话,需要玩家收到消息后再删除gate连接
-			auto eid = static_cast<entt::entity>(player_node_info->gate_session_id());
-			if (tls.session_registry.valid(eid))
+			auto sid = entt::to_entity(player_node_info->gate_session_id());
+			if (tls.session_registry.valid(sid))
 			{
-                tls.session_registry.destroy(eid);
+                tls.session_registry.destroy(sid);
 			}
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
@@ -340,7 +340,7 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    defer(tls.registry.destroy(static_cast<entt::entity>(cl_tls.session_id())));
+    defer(tls.registry.destroy(entt::to_entity(cl_tls.session_id())));
 	const auto player_id = GetPlayerIdByConnId(cl_tls.session_id());
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
@@ -352,13 +352,13 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto eid = static_cast<entt::entity>(request->ex().session_id());
-	if (!tls.session_registry.valid(eid))
+	auto sid = entt::to_entity(request->ex().session_id());
+	if (!tls.session_registry.valid(sid))
 	{
 		return;
 	}
     const auto player_info =
-	tls.session_registry.try_get<PlayerSessionInfo>(eid);
+	tls.session_registry.try_get<PlayerSessionInfo>(sid);
     if (nullptr == player_info)
     {
         LOG_ERROR << "session not found " << request->ex().session_id();
