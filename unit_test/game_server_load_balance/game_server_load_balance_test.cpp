@@ -1,12 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "src/common_type/common_type.h"
-#include "src/game_logic/scene/scene_system.h"
-#include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/system/scene/scene_system.h"
+#include "src/comp/scene_comp.h"
+#include "src/thread_local/thread_local_storage.h"
 
-#include "component_proto/gs_node_comp.pb.h"
-#include "src/pb/pbc/component_proto/scene_comp.pb.h"
+#include "src/component_proto/gs_node_comp.pb.h"
+#include "src/component_proto/scene_comp.pb.h"
 
 using GameNodeInfoPtr = std::shared_ptr<GameNodeInfo>;
 
@@ -245,7 +244,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 {
     tls.registry.clear();
     ScenesSystem sm;
-    ServerNodeSystem node_system;
+    NodeSceneSystem node_system;
     EntitySet server_entities;
     const uint32_t server_size = 2;
     const uint32_t per_server_scene = 2;
@@ -288,7 +287,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
             sm.EnterScene(enter_param1);
         }
     }
-    ServerNodeSystem::SetNodeState(*server_entities.begin(), NodeState::kMaintain);
+    NodeSceneSystem::SetNodeState(*server_entities.begin(), NodeState::kMaintain);
 
     GetSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_conf_id_ = 0;
@@ -362,7 +361,7 @@ TEST(GS, CompelToChangeScene)
 TEST(GS, CrashWeightRoundRobinMainScene)
 {
     ScenesSystem sm;
-    ServerNodeSystem snsys;
+    NodeSceneSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
@@ -426,7 +425,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 TEST(GS, CrashMovePlayer2NewServer)
 {
     ScenesSystem sm;
-    ServerNodeSystem snsys;
+    NodeSceneSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
@@ -490,7 +489,7 @@ TEST(GS, WeightRoundRobinMainScene)
 {
     tls.registry.clear();
     ScenesSystem sm;
-    ServerNodeSystem snsys;
+    NodeSceneSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 10;
     uint32_t per_server_scene = 10;
@@ -613,7 +612,7 @@ TEST(GS, ServerEnterLeavePressure)
 {
     tls.registry.clear();
     ScenesSystem sm;
-    ServerNodeSystem snsys;
+    NodeSceneSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 10;
@@ -703,7 +702,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 {
 	tls.registry.clear();
 	ScenesSystem sm;
-	ServerNodeSystem snsys;
+	NodeSceneSystem snsys;
 	EntitySet server_entities;
 	uint32_t server_size = 10;
 	uint32_t per_server_scene = 10;

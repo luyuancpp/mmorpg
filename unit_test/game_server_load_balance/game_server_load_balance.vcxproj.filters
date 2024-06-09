@@ -18,60 +18,60 @@
     <ClCompile Include="game_server_load_balance_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc">
+    <ClCompile Include="..\..\pkg\logic\src\system\scene\scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\scene\servernode_system.cpp">
+    <ClCompile Include="..\..\pkg\logic\src\system\scene\servernode_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.cc">
+    <ClCompile Include="..\..\pkg\common\src\thread_local\thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.cc">
+    <ClCompile Include="..\..\pkg\pbc\src\event_proto\scene_event.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\thread_local\thread_local_storage.cpp">
+    <ClCompile Include="..\..\pkg\pbc\src\component_proto\scene_comp.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\scene\scene_system.cpp">
+    <ClCompile Include="..\..\pkg\pbc\src\component_proto\gs_node_comp.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\util\game_registry.cpp">
+    <ClCompile Include="..\..\pkg\common\src\util\game_registry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.cpp">
+    <ClCompile Include="..\..\pkg\common\src\thread_local\thread_local_storage_common_logic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pkg\pbc\src\common_proto\node_common.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h">
+    <ClInclude Include="..\..\pkg\logic\src\system\scene\scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\scene\servernode_system.h">
+    <ClInclude Include="..\..\pkg\logic\src\system\scene\servernode_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.h">
+    <ClInclude Include="..\..\pkg\common\src\thread_local\thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\comp\scene_comp.h">
+    <ClInclude Include="..\..\pkg\pbc\src\event_proto\scene_event.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.h">
+    <ClInclude Include="..\..\pkg\pbc\src\component_proto\scene_comp.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h">
+    <ClInclude Include="..\..\pkg\pbc\src\component_proto\gs_node_comp.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\comp\server_comp.h">
+    <ClInclude Include="..\..\pkg\common\src\util\game_registry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\constants\server_constants.h">
+    <ClInclude Include="..\..\pkg\common\src\thread_local\thread_local_storage_common_logic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\scene\scene_system.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.h">
+    <ClInclude Include="..\..\pkg\pbc\src\common_proto\node_common.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
