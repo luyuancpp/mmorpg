@@ -135,18 +135,24 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     if (g_c2s_service_id.contains(request->message_id()))
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
-		auto gs = gate_tls.game_nodes().find(session->game_node_id_);
-		if (gate_tls.game_nodes().end() == gs)
+        entity game_node_id{ session->game_node_id_ };
+		if (tls.gamenode_registry.valid(game_node_id))
 		{
             Tip(conn, kRetServerCrush);
 			return;
 		}
+        auto game_node = tls.gamenode_registry.try_get<GameNode>(game_node_id);
+        if (nullptr == game_node)
+        {
+            Tip(conn, kRetServerCrush);
+            return;
+        }
         GameNodeRpcClientRequest rq;
         rq.set_request(request->request());
         rq.set_session_id(session_uid);
         rq.set_id(request->id());
         rq.set_message_id(request->message_id());
-        gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMsgId, rq);
+        game_node->gs_session_->CallMethod(GameServiceClientSend2PlayerMsgId, rq);
     }
     else
     {
