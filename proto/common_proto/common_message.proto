@@ -5,5 +5,5 @@ import "common_proto/common.proto";
 message GateConnectRequest
 {
   IpPort rpc_client = 1;
-  uint32 gate_node_id = 2;
+  uint64 gate_node_id = 2;
 }

@@ -6,7 +6,7 @@ import "common_proto/tip.proto";
 
 message NodeInfo
 {
-  uint32 node_id = 1;
+  uint64 node_id = 1;
   uint32 node_type = 2;
   uint64 launch_time = 3;
 }
@@ -26,7 +26,7 @@ message MessageBody
 
 message NodeMessageBody
 {
-  uint32 node_id = 1;
+  uint64 node_id = 1;
   uint64 session_id = 2;
 }
 
