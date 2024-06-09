@@ -103,7 +103,7 @@ entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterPa
 	return scene;
 }
 
-entt::entity ServerNodeSystem::GetSceneOnMinPlayerSizeNode(const GetSceneParam& param)
+entt::entity NodeSceneSystem::GetSceneOnMinPlayerSizeNode(const GetSceneParam& param)
 {
 	constexpr GetSceneFilterParam get_scene_filter_param;
 	if (const auto scene = GetSceneOnMinPlayerSizeNodeT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene)
@@ -113,7 +113,7 @@ entt::entity ServerNodeSystem::GetSceneOnMinPlayerSizeNode(const GetSceneParam& 
 	return GetSceneOnMinPlayerSizeNodeT<MainSceneServer>(param, get_scene_filter_param);
 }
 
-entt::entity ServerNodeSystem::GetNotFullScene(const GetSceneParam& param)
+entt::entity NodeSceneSystem::GetNotFullScene(const GetSceneParam& param)
 {
 	GetSceneFilterParam get_scene_filter_param;
 	if (const auto scene_entity = GetNotFullSceneT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
@@ -124,7 +124,7 @@ entt::entity ServerNodeSystem::GetNotFullScene(const GetSceneParam& param)
 	return GetNotFullSceneT<MainSceneServer>(param, get_scene_filter_param);
 }
 
-void ServerNodeSystem::NodeEnterPressure(entt::entity node)
+void NodeSceneSystem::NodeEnterPressure(entt::entity node)
 {
 	auto* const server_comp = tls.registry.try_get<ServerComp>(node);
 	if (nullptr == server_comp)
@@ -134,7 +134,7 @@ void ServerNodeSystem::NodeEnterPressure(entt::entity node)
 	server_comp->SetNodePressureState(NodePressureState::kPressure);
 }
 
-void ServerNodeSystem::NodeEnterNoPressure(entt::entity node)
+void NodeSceneSystem::NodeEnterNoPressure(entt::entity node)
 {
 	auto* const server_comp = tls.registry.try_get<ServerComp>(node);
 	if (nullptr == server_comp)
@@ -144,7 +144,7 @@ void ServerNodeSystem::NodeEnterNoPressure(entt::entity node)
 	server_comp->SetNodePressureState(NodePressureState::kNoPressure);
 }
 
-void ServerNodeSystem::SetNodeState(entt::entity node, NodeState node_state)
+void NodeSceneSystem::SetNodeState(entt::entity node, NodeState node_state)
 {
 	auto* const try_server_comp = tls.registry.try_get<ServerComp>(node);
 	if (nullptr == try_server_comp)

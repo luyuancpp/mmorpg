@@ -28,10 +28,10 @@ struct CompelChangeSceneParam
 	uint32_t scene_conf_id_{0};
 };
 
-class ServerNodeSystem
+class NodeSceneSystem
 {
 public:
-	//得到有该场景的人数最少的服务器
+	//得到有该场景的人数最少的服务器,效率会低点
 	static entt::entity GetSceneOnMinPlayerSizeNode(const GetSceneParam& param);
 
 	//得到有该场景的人数不满的服务器,效率比上面函数高一点点

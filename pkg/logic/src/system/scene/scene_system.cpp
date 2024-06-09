@@ -189,7 +189,7 @@ void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param)
 		LOG_INFO << "param null error";
 		return;
 	}
-	const auto default_scene = ServerNodeSystem::GetNotFullScene({});
+	const auto default_scene = NodeSceneSystem::GetNotFullScene({});
 	EnterScene({default_scene, param.player_});
 }
 

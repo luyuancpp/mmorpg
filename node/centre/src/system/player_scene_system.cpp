@@ -108,7 +108,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     {
         GetSceneParam getp;
         getp.scene_conf_id_ = change_scene_info.scene_info().scene_confid();
-        to_scene = ServerNodeSystem::GetSceneOnMinPlayerSizeNode(getp);
+        to_scene = NodeSceneSystem::GetNotFullScene(getp);
         if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
