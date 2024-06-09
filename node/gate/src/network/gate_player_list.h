@@ -13,5 +13,4 @@ struct Session
 	muduo::net::TcpConnectionPtr conn_;
 };
 
-using ClientSessions = std::unordered_map<uint64_t, Session>;
 

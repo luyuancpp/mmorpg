@@ -35,18 +35,25 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		return;
 	}
 	//gate 和其他服务器不一样，直接返回消息给客户端
-	auto it = gate_tls.sessions().find(replied->session_id());
-	if (it == gate_tls.sessions().end())
+	entity session_id{replied->session_id()};
+	if (tls.session_registry.valid(session_id))
 	{
 		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
 		return;
+	}
+
+	auto session = tls.session_registry.try_get<Session>(session_id);
+	if (nullptr == session)
+	{
+        LOG_ERROR << "conn id not found  session id " << "," << replied->session_id();
+        return;
 	}
 
 	MessageBody message;
 	message.set_body(replied->body());
 	message.set_id(replied->id());
 	message.set_message_id(route_data.message_id());;
-	g_gate_node->Send2Client(it->second.conn_, message);
+	g_gate_node->Send2Client(session->conn_, message);
 
 	///<<< END WRITING YOUR CODE
 }
