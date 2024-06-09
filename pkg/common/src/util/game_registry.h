@@ -21,8 +21,12 @@ private:
 namespace entt
 {
 	[[nodiscard]] static constexpr entt::entity to_entity(uint64_t value)  {
-		return static_cast<entt::entity>(value);
+		return entt::entity{ value };
 	}
+
+    [[nodiscard]] static constexpr uint64_t to_uint64(entt::entity value) {
+		return entt::to_integral(value);
+    }
 }//namespace entt
 
 
