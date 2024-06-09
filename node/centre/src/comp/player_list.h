@@ -6,7 +6,6 @@
 class ControllerPlayerSystem
 {
 public:
-    static entt::entity  GetPlayer(Guid guid);
 
-    static void LeaveGame(Guid guid);
+    static void LeaveGame(entity player);
 };

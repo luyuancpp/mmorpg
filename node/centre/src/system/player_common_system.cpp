@@ -16,7 +16,6 @@
 
 void PlayerCommonSystem::InitPlayerComponent(entt::entity eid, Guid player_id)
 {
-    centre_tls.player_list().emplace(player_id, eid);
     tls.registry.emplace<Guid>(eid, player_id);
     tls.registry.emplace<Player>(eid);
     //PlayerChangeSceneSystem::InitChangeSceneQueue(player);
