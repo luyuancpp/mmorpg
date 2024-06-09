@@ -9,7 +9,7 @@
 
 using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
-//从当前服务器中找到一个对应场景人数最少的
+//从人数少的服务器中找到一个对应场景人数最少的,效率有些低
 template <typename ServerType>
 entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
@@ -43,19 +43,7 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 
 	entt::entity scene{entt::null};
 	const auto& server_comps = tls.registry.get<ServerComp>(server);
-	std::size_t min_scene_player_size = UINT64_MAX;
-	for (const auto& server_scenes = server_comps.GetSceneListByConfig(scene_config_id);
-		const auto& scene_it : server_scenes | std::views::values)
-	{
-		const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
-		if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
-		{
-			continue;
-		}
-		min_scene_player_size = scene_player_size;
-		scene = scene_it;
-	}
-	return scene;
+	return server_comps.GetMinPlayerSizeSceneByConfigId(scene_config_id);
 }
 
 //选择不满人的服务器场景

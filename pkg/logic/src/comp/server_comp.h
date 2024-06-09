@@ -34,13 +34,13 @@ class ServerComp
 public:
 	[[nodiscard]] const ConfigSceneListType& GetSceneList() const
 	{
-		return conf_id_scene_list_;
+		return conf_scene_list_;
 	}
 
 	inline std::size_t GetSceneSize() const
 	{
 		std::size_t size = 0;
-		for (const auto& val : conf_id_scene_list_ | std::views::values)
+		for (const auto& val : conf_scene_list_ | std::views::values)
 		{
 			size += val.size();
 		}
@@ -49,8 +49,8 @@ public:
 
 	[[nodiscard]] const SceneList& GetSceneListByConfig(uint32_t scene_config_id) const
 	{
-		const auto it = conf_id_scene_list_.find(scene_config_id);
-		if (it == conf_id_scene_list_.end())
+		const auto it = conf_scene_list_.find(scene_config_id);
+		if (it == conf_scene_list_.end())
 		{
 			static const SceneList empty_result;
 			return empty_result;
@@ -68,18 +68,18 @@ public:
 		return scene_it->second;
 	}
 
-	void AddScene(entt::entity scene)
+	void AddScene(entt::entity scene_eid)
 	{
-		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
-		cl_tls.scene_list().emplace(scene_info.guid(), scene);
-		conf_id_scene_list_[scene_info.scene_confid()].emplace(scene_info.guid(), scene);
+		const auto& scene_info = tls.registry.get<SceneInfo>(scene_eid);
+		cl_tls.scene_list().emplace(scene_info.guid(), scene_eid);
+		conf_scene_list_[scene_info.scene_confid()].emplace(scene_info.guid(), scene_eid);
 	}
 
 	inline void RemoveScene(const entt::entity scene)
 	{
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
 		cl_tls.scene_list().erase(scene_info.guid());
-		conf_id_scene_list_[scene_info.scene_confid()].erase(scene_info.guid());
+		conf_scene_list_[scene_info.scene_confid()].erase(scene_info.guid());
 		tls.registry.destroy(scene);
 	}
 
@@ -115,7 +115,7 @@ public:
 	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
 
 private:
-	ConfigSceneListType conf_id_scene_list_; //配置表对应的场景列表,不要对它进行任何操作了,只是用来优化性能用
+	ConfigSceneListType conf_scene_list_; //配置表对应的场景列表,不要对它进行任何操作了,只是用来优化性能用
 	NodeState node_state_{NodeState::kNormal};
 	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
 };
