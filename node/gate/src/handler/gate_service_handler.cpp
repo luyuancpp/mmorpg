@@ -35,7 +35,8 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 	game_node.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
 	tls.registry.emplace<InetAddress>(gs, gs_addr);
 	game_node.gs_session_->connect();
-	gate_tls.game_nodes().emplace(request->game_node_id(), std::move(game_node));
+	auto game_node_id = tls.gamenode_registry.create(entity{ request->game_node_id() });
+	tls.gamenode_registry.emplace<GameNode>(game_node_id, std::move(game_node));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->game_node_id();
 	///<<< END WRITING YOUR CODE
 }
