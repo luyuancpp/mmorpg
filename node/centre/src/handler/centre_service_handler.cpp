@@ -464,7 +464,8 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		LOG_ERROR << "player session not found" << request->player_id();
 		return;
 	}
-	const auto gate_it = centre_tls.gate_nodes().find(get_gate_node_id(player_node_info->gate_session_id()));
+	const auto gate_it = centre_tls.gate_nodes().find(
+		get_gate_node_id(player_node_info->gate_session_id()));
 	if (gate_it == centre_tls.gate_nodes().end())
 	{
 		LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
@@ -487,7 +488,8 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	rq.set_session_id(player_node_info->gate_session_id());
 	rq.set_game_node_id(player_node_info->game_node_id());
 	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMsgId, rq);
-	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
+	PlayerChangeSceneSystem::SetChangeGsStatus(player, 
+		ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }

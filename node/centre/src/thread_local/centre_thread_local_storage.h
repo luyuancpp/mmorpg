@@ -12,13 +12,11 @@ class CentreThreadLocalStorage
 public:
 	inline PlayerListMap& player_list() { return player_list_; }
 	inline GameNodeList& game_node() { return game_node_list_; }
-	inline LoginNodes& login_node() { return login_nodes_; }
 	inline GateNodes& gate_nodes() { return gate_nodes_; }
 private:
 	PlayerListMap player_list_;
 	GameNodeList game_node_list_;
 	GateNodes gate_nodes_;
-	LoginNodes login_nodes_;
 };
 
 extern thread_local CentreThreadLocalStorage centre_tls;
