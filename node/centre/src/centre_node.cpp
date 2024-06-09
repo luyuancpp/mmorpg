@@ -192,13 +192,6 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 				//todo
                 centre_tls.gate_nodes().erase((*gatenode)->node_info_.node_id());
 			}
-			auto login_node = tls.registry.try_get<LoginNode>(e);
-			if (nullptr != login_node && (*login_node).node_info_.node_type() == kLoginNode)
-			{
-				//todo
-				centre_tls.login_node().erase((*login_node).node_info_.node_id());
-			}
-			tls.registry.destroy(e);
 			break;
 		}
     }

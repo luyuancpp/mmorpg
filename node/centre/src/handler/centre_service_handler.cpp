@@ -220,41 +220,6 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::StartLs(::google::protobuf::RpcController* controller,
-	const ::StartLsRequest* request,
-	::StartLsResponse* response,
-	 ::google::protobuf::Closure* done)
-{
-///<<< BEGIN WRITING YOUR CODE
-	response->set_centre_node_id(centre_node_id());
-	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
-	entt::entity login{ entt::null };
-	for (auto e : tls.registry.view<RpcServerConnection>())
-	{
-		if (tls.registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
-		{
-			continue;
-		}
-		login = e;
-		break;
-	}
-	if (login == entt::null)
-	{
-		//todo
-		LOG_INFO << "login connection not found " << request->login_node_id();
-		return;
-	}
-
-	auto c = tls.registry.get<RpcServerConnection>(login);
-	auto& login_node = tls.registry.emplace<LoginNode>(login, c.conn_);
-	login_node.node_info_.set_node_id(request->login_node_id());
-	login_node.node_info_.set_node_type(kGameNode);
-	centre_tls.game_node().emplace(request->login_node_id(), login);
-	LOG_DEBUG << "login connect node id: " << request->login_node_id() << response->DebugString() << "server type:" << request->server_type();
-///<<< END WRITING YOUR CODE
-}
-
 void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,
 	const ::LoginRequest* request,
 	::LoginResponse* response,
@@ -614,28 +579,6 @@ mutable_request->set_body(cl_tls.route_msg_body());
 
     switch (cl_tls.next_route_node_type())
     {
-    case kLoginNode:
-	{
-		auto login_node_it = centre_tls.login_node().find(cl_tls.next_route_node_id());
-		if (login_node_it == centre_tls.login_node().end())
-		{
-			LOG_ERROR << "login not found node id "  << cl_tls.next_route_node_id() << request->DebugString();
-			return;
-		}
-		auto login = tls.registry.try_get<LoginNode>(login_node_it->second);
-		if (nullptr == login)
-		{
-			LOG_ERROR << "login not found node id " << cl_tls.next_route_node_id() << request->DebugString();
-			return;
-		}
-		//(*login).session_.Route2Node(LoginServiceRouteNodeStringMsgMsgId, *mutable_request);
-	}
-	    break;
-    case kDatabaseNode:
-	{
-		//g_controller_node->database_node()->Route2Node(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
-	}
-	    break;
     case kGateNode:
 	{
 		auto gate_it = centre_tls.gate_nodes().find(cl_tls.next_route_node_id());
