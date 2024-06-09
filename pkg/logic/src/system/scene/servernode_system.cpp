@@ -78,7 +78,7 @@ entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterPa
 	entt::entity scene{entt::null};
 	const auto& server_comps = tls.registry.get<ServerComp>(server);
 	for (const auto& server_scenes = server_comps.GetSceneListByConfig(scene_config_id);
-	     const auto& scene_it : server_scenes | std::views::values)
+	     const auto& scene_it : server_scenes)
 	{
 		if (const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
 			scene_player_size >= kMaxScenePlayerSize)

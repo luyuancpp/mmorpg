@@ -8,7 +8,7 @@
 #include "src/thread_local/thread_local_storage.h"
 #include "component_proto/scene_comp.pb.h"
 
-using SceneList = std::unordered_map<Guid, entt::entity>;
+using SceneList = EntitySet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
 using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
 
@@ -62,13 +62,13 @@ public:
 	void AddScene(entt::entity scene_eid)
 	{
 		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_eid);
-		conf_scene_list_[scene_info.scene_confid()].emplace(scene_info.guid(), scene_eid);
+		conf_scene_list_[scene_info.scene_confid()].emplace(scene_eid);
 	}
 
 	inline void RemoveScene(const entt::entity scene_eid)
 	{
 		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_eid);
-		conf_scene_list_[scene_info.scene_confid()].erase(entt::to_integral(scene_eid));
+		conf_scene_list_[scene_info.scene_confid()].erase(scene_eid);
 		if (tls.scene_registry.valid(scene_eid))
 		{
             tls.scene_registry.destroy(scene_eid);
@@ -84,7 +84,7 @@ public:
 		}
 		entt::entity scene{entt::null};
 		std::size_t min_scene_player_size = UINT64_MAX;
-		for (const auto& scene_it : scene_list | std::views::values)
+		for (const auto& scene_it : scene_list)
 		{
 			const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
 			if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
