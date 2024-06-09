@@ -94,8 +94,8 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 	}
 	auto player_id = player_info->player_id();
 	const auto& message_info = g_message_info.at(replied->msg().message_id() );
-	const auto player_it = centre_tls.player_list().find(player_id);
-	if (player_it == centre_tls.player_list().end())
+	const auto player = entt::entity{ player_id };
+	if (tls.player_registry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
 			<< replied->msg().message_id();
@@ -124,7 +124,7 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
         LOG_ERROR << "ParsePartialFromArray " << message_info.method;
         return;
 	}
-	service_impl->CallMethod(method, player_it->second, nullptr, boost::get_pointer(player_response));
+	service_impl->CallMethod(method, player, nullptr, boost::get_pointer(player_response));
 ///<<< END WRITING YOUR CODE
 }
 

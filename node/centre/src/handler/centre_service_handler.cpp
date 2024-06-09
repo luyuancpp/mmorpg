@@ -31,35 +31,31 @@
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
-constexpr std::size_t kMaxPlayerSize{1000};
+constexpr std::size_t kMaxPlayerSize{50000};
 
 NodeId centre_node_id();
 
-Guid GetPlayerIdByConnId(const uint64_t session_id)
+entity GetPlayerIdBySessionId(const uint64_t session_id)
 {
     auto eid = entt::to_entity(session_id);
     if (!tls.session_registry.valid(eid))
     {
 		LOG_ERROR << "find session id" << session_id;
-        return kInvalidGuid;
+        return entt::null;
     }
     auto player_session_info = 
 		tls.session_registry.try_get<PlayerSessionInfo>(eid);
 	if (nullptr == player_session_info)
 	{
-        return kInvalidGuid;
+        return entt::null;
 	}
-	return player_session_info->player_id();
+	return entity{ player_session_info->player_id() };
 }
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
 {
-	const auto player_it = centre_tls.player_list().find(GetPlayerIdByConnId(session_id));
-	if (player_it == centre_tls.player_list().end())
-	{
-		return entt::null;
-	}
-	return player_it->second;
+	entity player{ GetPlayerIdBySessionId(session_id) };
+	return player;
 }
 
 ///<<< END WRITING YOUR CODE
@@ -216,7 +212,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
 	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
-	ControllerPlayerSystem::LeaveGame(player_id);
+	ControllerPlayerSystem::LeaveGame(player);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -226,7 +222,7 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (centre_tls.player_list().size() >= kMaxPlayerSize)
+	if (tls.player_registry.storage<Player>().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -251,13 +247,22 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
 	auto session = tls.session_registry.create(entt::entity(cl_tls.session_id()));
+	if (session != entt::entity(cl_tls.session_id()))
+	{
+		LOG_ERROR << "session not equal " << cl_tls.session_id() << " " << entt::to_integral(session);
+	}
 	tls.session_registry.emplace<PlayerSessionInfo>(session).set_player_id(request->player_id());
 
-	if (const auto player_it = centre_tls.player_list().find(request->player_id());
-	player_it == centre_tls.player_list().end())
+	auto player = entt::to_entity(request->player_id());
+	if (!tls.player_registry.valid(player))
 	{
 		//把旧的connection 断掉
-		const auto player = tls.registry.create();
+		auto old_id = player;
+		const auto player = tls.registry.create(old_id);
+		if (old_id != player)
+		{
+			LOG_ERROR << "create player " << request->player_id() << " " << entt::to_integral(player);
+		}
 		tls.registry.emplace<PlayerAccount>(player, std::make_shared<PlayerAccount::element_type>());
 		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(cl_tls.session_id());
 
@@ -289,7 +294,6 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 		//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
-		const auto player = player_it->second;
 		//告诉账号被顶
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
@@ -329,7 +333,7 @@ void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	ControllerPlayerSystem::LeaveGame(GetPlayerIdByConnId(cl_tls.session_id()));
+	ControllerPlayerSystem::LeaveGame(GetPlayerIdBySessionId(cl_tls.session_id()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -341,7 +345,7 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 {
 ///<<< BEGIN WRITING YOUR CODE
     defer(tls.registry.destroy(entt::to_entity(cl_tls.session_id())));
-	const auto player_id = GetPlayerIdByConnId(cl_tls.session_id());
+	const auto player_id = GetPlayerIdBySessionId(cl_tls.session_id());
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -364,11 +368,10 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
         LOG_ERROR << "session not found " << request->ex().session_id();
         return;
     }
-    auto player_id = player_info->player_id();
-	const auto it = centre_tls.player_list().find(player_id);
-	if (it == centre_tls.player_list().end())
+	entt::entity player{ player_info->player_id() };
+	if (tls.player_registry.valid(player))
 	{
-		LOG_ERROR << "player not found " << player_id;
+		LOG_ERROR << "player not found " << player_info->player_id();
 		return;
 	}
 	if (request->msg().message_id() >= g_message_info.size())
@@ -400,7 +403,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
         return;
 	}
 	const MessagePtr player_response(service->GetResponsePrototype(method).New());
-	service_handler->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+	service_handler->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
 	{
 		return;
@@ -452,13 +455,12 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto it = centre_tls.player_list().find(request->player_id());
-	if (it == centre_tls.player_list().end())
+	entity player{ request->player_id() };
+	if (!tls.player_registry.valid(player))
 	{
 		LOG_ERROR << "player not found" << request->player_id();
 		return;
 	}
-	const auto player = it->second;
 	auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
