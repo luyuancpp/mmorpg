@@ -9,7 +9,6 @@
 10=GateServiceStopGS
 11=GateServicePlayerEnterGs
 12=GateServicePlayerMessage
-13=CentreServiceStartLs
 14=GateServiceRouteNodeStringMsg
 15=GateServiceRoutePlayerStringMsg
 16=ClientPlayerSceneServiceEnterSceneC2S
