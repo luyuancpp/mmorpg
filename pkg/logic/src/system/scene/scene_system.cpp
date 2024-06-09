@@ -41,7 +41,7 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
 		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-		scene_size += server_comp.GetScenesListByConfig(scene_config_id).size();
+		scene_size += server_comp.GetSceneListByConfig(scene_config_id).size();
 	}
 	return scene_size;
 }
@@ -71,7 +71,7 @@ bool ScenesSystem::ConfigSceneListNotEmpty(const uint32_t scene_config_id)
 	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
 		if (auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-			!server_comp.GetScenesListByConfig(scene_config_id).empty())
+			!server_comp.GetSceneListByConfig(scene_config_id).empty())
 		{
 			return true;
 		}
@@ -126,7 +126,7 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 {
 	// todo 人得换场景
 	//需要拷贝，否则迭代器失效
-	for (const auto& conf_id_scene_list = tls.registry.get<ServerComp>(node).GetScenesList();
+	for (const auto& conf_id_scene_list = tls.registry.get<ServerComp>(node).GetSceneList();
 		auto val : conf_id_scene_list | std::views::values)
 	{
 		for (const auto scene : val | std::views::values)
@@ -248,7 +248,7 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 
 void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node)
 {
-	for (const auto& scene_list : tls.registry.get<ServerComp>(crash_node).GetScenesList() |
+	for (const auto& scene_list : tls.registry.get<ServerComp>(crash_node).GetSceneList() |
 		std::views::values)
 	{
 		for (const auto scene : scene_list | std::views::values)

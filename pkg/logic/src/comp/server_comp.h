@@ -32,7 +32,7 @@ struct CrossRoomSceneServer
 class ServerComp
 {
 public:
-	[[nodiscard]] const ConfigSceneListType& GetScenesList() const
+	[[nodiscard]] const ConfigSceneListType& GetSceneList() const
 	{
 		return conf_id_scene_list_;
 	}
@@ -47,18 +47,18 @@ public:
 		return size;
 	}
 
-	[[nodiscard]] const SceneList& GetScenesListByConfig(uint32_t scene_config_id) const
+	[[nodiscard]] const SceneList& GetSceneListByConfig(uint32_t scene_config_id) const
 	{
-		const auto list_const_iterator = conf_id_scene_list_.find(scene_config_id);
-		if (list_const_iterator == conf_id_scene_list_.end())
+		const auto it = conf_id_scene_list_.find(scene_config_id);
+		if (it == conf_id_scene_list_.end())
 		{
 			static const SceneList empty_result;
 			return empty_result;
 		}
-		return list_const_iterator->second;
+		return it->second;
 	}
 
-	[[nodiscard]] static entt::entity GetScenesListByGuid(const Guid guid)
+	[[nodiscard]] static entt::entity GetSceneListByGuid(const Guid guid)
 	{
 		const auto scene_it = cl_tls.scene_list().find(guid);
 		if (scene_it == cl_tls.scene_list().end())
@@ -85,7 +85,7 @@ public:
 
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(const uint32_t scene_config_id) const
 	{
-		const auto& scene_list = GetScenesListByConfig(scene_config_id);
+		const auto& scene_list = GetSceneListByConfig(scene_config_id);
 		if (scene_list.empty())
 		{
 			return entt::null;
