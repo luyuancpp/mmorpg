@@ -59,10 +59,10 @@ public:
 		return it->second;
 	}
 
-	void AddScene(entt::entity scene_eid)
+	void AddScene(entt::entity scene_id)
 	{
-		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_eid);
-		conf_scene_list_[scene_info.scene_confid()].emplace(scene_eid);
+		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_id);
+		auto ret = conf_scene_list_[scene_info.scene_confid()].emplace(scene_id);
 	}
 
 	inline void RemoveScene(const entt::entity scene_eid)
@@ -86,7 +86,7 @@ public:
 		std::size_t min_scene_player_size = UINT64_MAX;
 		for (const auto& scene_it : scene_list)
 		{
-			const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
+			const auto scene_player_size = tls.scene_registry.get<ScenePlayers>(scene_it).size();
 			if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
 			{
 				continue;

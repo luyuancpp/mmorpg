@@ -18,11 +18,11 @@ using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
 void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_sequence_node_id(node_id); }
 
-void AddMainSceneNodeComponent(const entt::entity server)
+void AddMainSceneNodeComponent(const entt::entity node)
 {
-	tls.registry.emplace<MainSceneServer>(server);
-	tls.registry.emplace<ServerComp>(server);
-	tls.registry.emplace<GameNodePlayerInfoPtr>(server, std::make_shared<GameNodePlayerInfoPtr::element_type>());
+	tls.registry.emplace<MainSceneServer>(node);
+	tls.registry.emplace<ServerComp>(node);
+	tls.registry.emplace<GameNodePlayerInfoPtr>(node, std::make_shared<GameNodePlayerInfoPtr::element_type>());
 }
 
 ScenesSystem::ScenesSystem()
@@ -38,9 +38,9 @@ ScenesSystem::~ScenesSystem()
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 {
 	std::size_t scene_size = 0;
-	for (const auto server_entity : tls.scene_registry.view<ServerComp>())
+	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
-		auto& server_comp = tls.scene_registry.get<ServerComp>(server_entity);
+		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
 		scene_size += server_comp.GetSceneListByConfig(scene_config_id).size();
 	}
 	return scene_size;
@@ -58,9 +58,9 @@ bool ScenesSystem::IsSceneEmpty()
 
 bool ScenesSystem::ConfigSceneListNotEmpty(const uint32_t scene_config_id)
 {
-	for (const auto server_entity : tls.registry.view<ServerComp>())
+	for (const auto node_eid : tls.registry.view<ServerComp>())
 	{
-		if (auto& server_comp = tls.registry.get<ServerComp>(server_entity);
+		if (auto& server_comp = tls.registry.get<ServerComp>(node_eid);
 			!server_comp.GetSceneListByConfig(scene_config_id).empty())
 		{
 			return true;
@@ -83,10 +83,9 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 	{
 		scene_info.set_guid(server_sequence_.Generate());
 	}
-
-	auto eid = entt::to_entity(scene_info.guid());
-	const auto scene = tls.scene_registry.create(eid);
-	if (!tls.scene_registry.valid(scene))
+	auto id = entt::entity{ scene_info.guid() };
+	const auto scene = tls.scene_registry.create(id);
+	if (scene != id)
 	{
         LOG_ERROR << "scene_registry create erroe" << param.scene_config_id_;
         return entt::null;
@@ -169,7 +168,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	tls.scene_registry.get<ScenePlayers>(param.scene_).emplace(param.player_);
 	tls.registry.emplace<SceneEntity>(param.player_, param.scene_);
 	// todo weak_ptr ?
-	if (const auto* const game_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
+	if (const auto* const game_player_info = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
 	{
 		(*game_player_info)->set_player_size((*game_player_info)->player_size() + 1);
 	}
@@ -212,7 +211,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 	tls.scene_registry.get<ScenePlayers>(scene).erase(param.leaver_);
 	tls.registry.remove<SceneEntity>(param.leaver_);
 
-	if (const auto* const game_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(scene))
+	if (const auto* const game_player_info = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(scene))
 	{
 		(*game_player_info)->set_player_size((*game_player_info)->player_size() - 1);
 	}
