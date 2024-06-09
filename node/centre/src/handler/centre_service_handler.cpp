@@ -265,7 +265,7 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 
 		GetSceneParam get_scene_param;
 		get_scene_param.scene_conf_id_ = 1;
-		const auto scene = ServerNodeSystem::GetNotFullScene(get_scene_param);
+		const auto scene = NodeSceneSystem::GetNotFullScene(get_scene_param);
 		//找不到上次的场景，放到默认场景里面
 		if (scene == entt::null)
 		{
