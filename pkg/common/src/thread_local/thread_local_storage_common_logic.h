@@ -3,7 +3,6 @@
 #include "common_proto/node_common.pb.h"
 #include "src/type_define/type_define.h"
 
-using SceneList = std::unordered_map<Guid, entt::entity>;
 using PlayerList = std::unordered_map<Guid, entt::entity>;
 
 class ThreadLocalStorageCommonLogic
@@ -17,8 +16,6 @@ public:
     uint32_t next_route_node_id() const { return next_route_node_id_; }
     void set_current_session_id(const uint64_t current_session_id) { current_session_id_ = current_session_id; }
     uint64_t session_id() const { return current_session_id_; }
-    SceneList& scene_list() { return scene_list_; }
-    const SceneList& scene_list() const { return scene_list_; }
     PlayerList& player_list() { return players_; }
     const PlayerList& player_list() const { return players_; }
 private:
@@ -28,7 +25,6 @@ private:
     uint32_t next_route_node_id_{UINT32_MAX};
     uint64_t current_session_id_{kInvalidSessionId};
     std::string prev_node_replied_;
-    SceneList scene_list_;
     PlayerList players_;
 };
 
