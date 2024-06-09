@@ -126,7 +126,7 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 	for (const auto& conf_id_scene_list = tls.registry.get<ServerComp>(node).GetSceneList();
 		auto val : conf_id_scene_list | std::views::values)
 	{
-		for (const auto scene : val | std::views::values)
+		for (const auto scene : val)
 		{
 			DestroyScene(node, scene);
 		}
@@ -248,7 +248,7 @@ void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest
 	for (const auto& scene_list : tls.registry.get<ServerComp>(crash_node).GetSceneList() |
 		std::views::values)
 	{
-		for (const auto scene : scene_list | std::views::values)
+		for (const auto scene : scene_list)
 		{
 			const auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene);
 			if (nullptr == p_scene_info)
