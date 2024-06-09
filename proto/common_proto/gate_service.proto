@@ -18,7 +18,7 @@ message GateNodeStartGSRequest
 {
   string ip = 1;
   uint32 port = 2;
-  uint32 game_node_id = 3;
+  uint64 game_node_id = 3;
 }
 
 message GateNodeStopGSRequest
@@ -30,7 +30,7 @@ message GateNodeStopGSRequest
 message GateNodePlayerUpdateGameNodeRequest
 {
   uint64 session_id = 1;
-  uint32 game_node_id = 2;
+  uint64 game_node_id = 2;
 }
 
 message GateNodePlayerUpdateGameNodeResponese
