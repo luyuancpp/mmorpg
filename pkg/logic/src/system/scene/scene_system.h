@@ -85,5 +85,5 @@ public:
 	static void ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node);
 
 private:
-	inline static ServerSequence24 server_sequence_;
+	inline static NodeBit16Sequence server_sequence_;
 };

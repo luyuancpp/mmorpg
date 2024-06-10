@@ -4,7 +4,7 @@
 
 NodeId get_gate_node_id(Guid session_id)
 {
-    return static_cast<NodeId>(session_id >> ServerSequence32::node_bit());
+    return static_cast<NodeId>(session_id >> NodeBit15Sequence::node_bit());
 }
 
 uint64_t tcp_session_id(const muduo::net::TcpConnectionPtr& conn)

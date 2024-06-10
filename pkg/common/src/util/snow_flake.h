@@ -101,40 +101,41 @@ mutable MutexLock mutex_;
 };
 
 
-
 //服务器重启以后失效的
-template <size_t kNodeBit>
-class ServerSequence
+template <class T, size_t kNodeBit>
+class NodeSequence
 {
 public:
     static size_t node_bit() { return kNodeBit; }
     
-void set_node_id(uint64_t node_id)
+void set_node_id(T node_id)
 {
     node_id_ = node_id << kNodeBit;
 }
 
-uint32_t node_id(Guid guid)
+T node_id(T guid)
 {
     return guid >> kNodeBit;
 }
 
-Guid Generate()
+T Generate()
 {
 	return node_id_ | ++seq_;
 }
 
 //for test
-Guid LastId()
+T LastId()
 {
     return  node_id_ | seq_;
 }
 private:
-uint64_t node_id_{ 0 };
-uint64_t seq_{ 0 };
+T node_id_{ 0 };
+T seq_{ 0 };
 };
 
-using ServerSequence16 = ServerSequence<16>;
-using ServerSequence24 = ServerSequence<24>;
-using ServerSequence32 = ServerSequence<32>;
+using NodeBit16Sequence = NodeSequence<uint32_t, 16>;
+using NodeBit15Sequence = NodeSequence<uint32_t, 15>;
+using NodeBit14Sequence = NodeSequence<uint32_t, 14>;
+
+
 

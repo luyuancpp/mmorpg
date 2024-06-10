@@ -6,7 +6,7 @@
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/util/snow_flake.h"
 
-extern ServerSequence32 g_server_sequence_;
+extern NodeBit15Sequence g_server_sequence_;
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
