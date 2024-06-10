@@ -138,24 +138,11 @@ void CentreNode::Receive1(const OnConnected2ServerEvent& es)
 	auto& conn = es.conn_;
     if (conn->connected())
     {
-		// started 
-		if (nullptr == server_)
-		{
-			{
-              
-			}
-			
-            {
-
-            }
-		}
-		
     }
 	else
 	{
 		
 	}
-	
 }
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)
@@ -163,20 +150,20 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
     auto& conn = es.conn_;
     if (conn->connected())
     {
-		auto e = tls.registry.create();
-		tls.registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+		auto e = tls.network_registry.create();
+		tls.network_registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
     }
     else
     {
 		auto& peer_addr = conn->peerAddress();
-		for (auto e : tls.registry.view<RpcServerConnection>())
+		for (auto e : tls.network_registry.view<RpcServerConnection>())
 		{
-			auto& local_addr = tls.registry.get<RpcServerConnection>(e).conn_->peerAddress();
+			auto& local_addr = tls.network_registry.get<RpcServerConnection>(e).conn_->peerAddress();
 			if (local_addr.toIpPort() != peer_addr.toIpPort())
 			{
 				continue;
 			}
-            auto gsnode = tls.registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
+            auto gsnode = tls.network_registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
             {
                 //remove AfterChangeGsEnterScene
@@ -189,6 +176,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 				//todo
                 Destroy(tls.centre_node_registry, entt::entity{ (*gatenode)->node_info_.node_id() });
 			}
+            Destroy(tls.network_registry, e);
 			break;
 		}
     }

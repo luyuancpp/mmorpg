@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "common_proto/common.proto";
 
-message GateConnectRequest
+message RegsiterGateRequest
 {
   IpPort rpc_client = 1;
   uint32 gate_node_id = 2;
