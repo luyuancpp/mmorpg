@@ -58,9 +58,9 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 }
 
 ///<<< END WRITING YOUR CODE
-void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller,
-	const ::CtrlStartGsRequest* request,
-	::CtrlStartGsResponse* response,
+void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,
+	const ::RegisterGameRequest* request,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE

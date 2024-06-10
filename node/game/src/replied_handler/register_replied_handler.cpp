@@ -3,7 +3,7 @@ void InitRepliedHandler()
 	void InitCentreSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
 	InitCentreSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
 
-	void InitCentreServiceStartGsRepliedHandler();
-	InitCentreServiceStartGsRepliedHandler();
+	void InitCentreServiceRegisterGameRepliedHandler();
+	InitCentreServiceRegisterGameRepliedHandler();
 
 }

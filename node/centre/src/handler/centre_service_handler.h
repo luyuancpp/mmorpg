@@ -3,9 +3,9 @@
 class CentreServiceHandler : public ::CentreService
 {
 public:
-	void StartGs(::google::protobuf::RpcController* controller,
-		const ::CtrlStartGsRequest* request,
-		::CtrlStartGsResponse* response,
+	void RegisterGame(::google::protobuf::RpcController* controller,
+		const ::RegisterGameRequest* request,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void RegisterGate(::google::protobuf::RpcController* controller,
