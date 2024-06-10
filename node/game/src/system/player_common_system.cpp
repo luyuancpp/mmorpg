@@ -29,7 +29,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 
 	defer(game_tls.async_player_data().erase(player_id));
 
-	auto player = tls.player_registry.create();
+	auto player = tls.registry.create();
 	auto ret = cl_tls.player_list().emplace(player_id, player);
 	if (!ret.second)
 	{
@@ -53,7 +53,7 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 	Send2CentrePlayer(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
     
 	defer(cl_tls.player_list().erase(player_id));
-    Destroy(tls.player_registry, cl_tls.get_player(player_id));
+    Destroy(tls.registry, cl_tls.get_player(player_id));
 
 	//存储完毕从gs删除玩家
 }
@@ -72,16 +72,16 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 //考虑: 没load 完再次进入别的gs
 void PlayerCommonSystem::EnterGs(const entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto* player_node_info = tls.player_registry.try_get<PlayerNodeInfo>(player);
+	auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
 		LOG_ERROR << "player node info  not found" << enter_info.centre_node_id();
-		player_node_info = &tls.player_registry.emplace<PlayerNodeInfo>(player);
+		player_node_info = &tls.registry.emplace<PlayerNodeInfo>(player);
 	}
 	player_node_info->set_centre_node_id(enter_info.centre_node_id());
 	//todo Centre 重新启动以后
 	EnterGameNodeSucceedRequest request;
-	request.set_player_id(tls.player_registry.get<Guid>(player));
+	request.set_player_id(tls.registry.get<Guid>(player));
 	request.set_game_node_id(get_gate_node_id());
 	CallCentreNodeMethod(CentreServiceEnterGsSucceedMsgId, request, enter_info.centre_node_id());
 	//todo gs更新了对应的gate之后 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，

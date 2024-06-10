@@ -269,7 +269,7 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
     if (player_it == cl_tls.player_list().end())
 	{
 		//把旧的connection 断掉
-		const auto player = tls.player_registry.create();
+		const auto player = tls.registry.create();
 		auto ret = cl_tls.player_list().emplace(request->player_id(), player);
 		if (!ret.second)
 		{
@@ -312,7 +312,7 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 		//告诉账号被顶
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
-		if (auto* const player_node_info = tls.player_registry.try_get<PlayerNodeInfo>(player);
+		if (auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 			nullptr != player_node_info)
 		{
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
@@ -380,7 +380,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
         return;
     }
     auto player = cl_tls.get_player(player_info->player_id());
-    if (tls.player_registry.valid(player))
+    if (tls.registry.valid(player))
     {
         LOG_ERROR << "player not found " << player_info->player_id();
         return;
@@ -466,7 +466,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto player = cl_tls.get_player(request->player_id());
-    if (!tls.player_registry.valid(player))
+    if (!tls.registry.valid(player))
     {
         LOG_ERROR << "player not found " << request->player_id();
         return;

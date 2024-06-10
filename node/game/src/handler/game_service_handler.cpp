@@ -184,7 +184,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
     LeaveSceneParam lp;
     lp.leaver_ = player;
     //ScenesSystem::LeaveScene(lp);
-    Destroy(tls.player_registry,player);
+    Destroy(tls.registry,player);
    //todo  应该是controller 通知过来
 
 ///<<< END WRITING YOUR CODE
@@ -264,7 +264,7 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
         return;
     }
     auto player = cl_tls.get_player(*player_guid);
-    if (!tls.player_registry.valid(player))
+    if (!tls.registry.valid(player))
     {
         LOG_ERROR << "player not found" << *player_guid;
         return;
@@ -344,7 +344,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
     }
 
     auto player = cl_tls.get_player(request->player_id());
-    if (tls.player_registry.valid(player))
+    if (tls.registry.valid(player))
     {
         LOG_ERROR << "player not found " << request->player_id();
         return;
