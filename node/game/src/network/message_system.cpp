@@ -37,7 +37,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
-	auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(gate_node_id);
+	auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_node_id);
 	if (nullptr == gate_node)
 	{
         LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
@@ -111,7 +111,7 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, Nod
         LOG_INFO << "gate not found " << get_gate_node_id(node_id);
         return;
     }
-    auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(gate_node_id);
+    auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_node_id);
     if (nullptr == gate_node)
     {
         LOG_INFO << "gate not found " << get_gate_node_id(node_id);

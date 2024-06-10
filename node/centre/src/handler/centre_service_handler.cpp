@@ -89,13 +89,13 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 	auto game_node1 = tls.game_node_registry.create(game_node_id);
 
 	auto c = tls.registry.get<RpcServerConnection>(game_node);
-	auto game_node_ptr = std::make_shared<GameNodePtr::element_type>(c.conn_);
+	auto game_node_ptr = std::make_shared<GameNodeClient::element_type>(c.conn_);
 	game_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	game_node_ptr->node_info_.set_node_type(kGameNode);
 	game_node_ptr->node_inet_addr_ = service_addr; //为了停掉gs，或者gs断线用
 	game_node_ptr->server_entity_ = game_node;
 	AddMainSceneNodeComponent(game_node);
-	tls.game_node_registry.emplace<GameNodePtr>(game_node1, game_node_ptr);
+	tls.game_node_registry.emplace<GameNodeClient>(game_node1, game_node_ptr);
 	if (request->server_type() == kMainSceneNode)
 	{
         tls.game_node_registry.emplace<MainSceneServer>(game_node);
@@ -113,7 +113,7 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 		tls.game_node_registry.emplace<RoomSceneServer>(game_node);
 	}
 
-	for (auto gate : tls.registry.view<GateNodePtr>())
+	for (auto gate : tls.registry.view<GateNodeClient>())
 	{
 		g_centre_node->LetGateConnect2Gs(game_node, gate);
 	}
@@ -139,10 +139,11 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 		auto gate_node_id = tls.gate_node_registry.create(gate);
 		if (gate_node_id != gate)
 		{
-			LOG_ERROR << "create gate erro";
+			LOG_ERROR << "create gate error";
 			return;
 		}
-		auto& gate_node = tls.registry.emplace<GateNodePtr>(gate, std::make_shared<GateNodePtr::element_type>(c.conn_));
+		auto& gate_node = tls.gate_node_registry.emplace<GateNodeClient>(gate, 
+			std::make_shared<GateNodeClient::element_type>(c.conn_));
 		gate_node->node_info_.set_node_id(request->gate_node_id());
 		gate_node->node_info_.set_node_type(kGateNode);
 		break;
@@ -151,8 +152,7 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 	{
 		return;
 	}
-	tls.registry.emplace<InetAddress>(gate, session_addr);
-	for (auto e : tls.registry.view<GameNodePtr>())
+	for (auto e : tls.registry.view<GameNodeClient>())
 	{
 		g_centre_node->LetGateConnect2Gs(e, gate);
 	}
@@ -205,7 +205,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
         LOG_ERROR << "gs not found ";
         return;
     }
-    auto game_node = tls.registry.try_get<GameNodePtr>(game_node_id);
+    auto game_node = tls.registry.try_get<GameNodeClient>(game_node_id);
     if (nullptr == game_node)
     {
         LOG_ERROR << "gs not found ";
@@ -438,7 +438,7 @@ void CentreServiceHandler::AddCrossServerScene(::google::protobuf::RpcController
 		{
 			continue;
 		}
-		auto game_node = tls.registry.try_get<GameNodePtr>(game_node_id);
+		auto game_node = tls.registry.try_get<GameNodeClient>(game_node_id);
 		if (nullptr == game_node)
 		{
             LOG_ERROR << "gs not found ";
@@ -446,7 +446,7 @@ void CentreServiceHandler::AddCrossServerScene(::google::protobuf::RpcController
 		}
 		create_scene_param.scene_info = it.scene_info();
 		auto scene = ScenesSystem::CreateScene2GameNode(create_scene_param);
-		tls.registry.emplace<GameNodePtr>(scene, *game_node);
+		tls.registry.emplace<GameNodeClient>(scene, *game_node);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -475,7 +475,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
-	auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(gate_node_id);
+	auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_node_id);
 	if (nullptr == gate_node)
 	{
         LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
@@ -487,7 +487,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
 	}
-	if (const auto* const game_node = tls.game_node_registry.try_get<GameNodePtr>(game_node_id);
+	if (const auto* const game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
 		nullptr == game_node)
 	{
 		LOG_ERROR << "game crash" << request->game_node_id();
@@ -599,7 +599,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
             LOG_ERROR << "gate crash " << cl_tls.next_route_node_id();
             return;
         }
-        auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(gate_node_id);
+        auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_node_id);
         if (nullptr == gate_node)
         {
             LOG_ERROR << "gate crash " << cl_tls.next_route_node_id();
@@ -616,7 +616,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
             LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
             return;
 		}
-		auto game_node = tls.registry.try_get<GameNodePtr>(game_node_id);
+		auto game_node = tls.registry.try_get<GameNodeClient>(game_node_id);
 		if (nullptr == game_node)
 		{
 			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();

@@ -18,7 +18,7 @@ struct GateNode
 	NodeInfo node_info_;
 	RpcServerConnection session_;
 };
-using GateNodePtr = std::shared_ptr<GateNode>;
-using GateNodes = std::unordered_map<uint32_t, GateNodePtr>;
+using GateNodeClient = std::shared_ptr<GateNode>;
+using GateNodes = std::unordered_map<uint32_t, GateNodeClient>;
 
 

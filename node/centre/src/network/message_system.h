@@ -19,7 +19,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 * 必须得replied返回给gs后再在gs返回给客户。
 */
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
-void Send2Player(uint32_t message_id, const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id);
+void Send2Player(uint32_t message_id, const google::protobuf::Message& message, GateNodeClient& gate, uint64_t session_id);
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
 void Send2Gate(uint32_t message_id, const google::protobuf::Message& message, NodeId gate_node_id);
 

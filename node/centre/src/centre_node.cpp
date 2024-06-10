@@ -111,15 +111,15 @@ void CentreNode::StartServer(const ::servers_info_data& info)
 }
 
 
-void CentreNode::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
+void CentreNode::LetGateConnect2Gs(entt::entity game_node_id, entt::entity gate)
 {
-    auto game_node_ptr = tls.game_node_registry.try_get<GameNodePtr>(gs);
+    auto game_node_ptr = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
     if (nullptr == game_node_ptr)
     {
         LOG_ERROR << "gs not found ";
         return;
     }
-	auto gate_node_ptr = tls.gate_node_registry.try_get<GateNodePtr>(gate);
+	auto gate_node_ptr = tls.gate_node_registry.try_get<GateNodeClient>(gate);
 	if (nullptr == gate_node_ptr)
 	{
 		LOG_ERROR << "gate not found ";
@@ -163,14 +163,14 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-            auto game_node = tls.game_node_registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
+            auto game_node = tls.game_node_registry.try_get<GameNodeClient>(e);//如果是游戏逻辑服则删除
             if (nullptr != game_node && (*game_node)->node_info_.node_type() == kGameNode)
             {
                 //remove AfterChangeGsEnterScene
 				//todo 
                 Destroy(tls.game_node_registry, entt::entity{ (*game_node)->node_info_.node_id() });
             }
-			auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(e);
+			auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(e);
 			if (nullptr != gate_node && (*gate_node)->node_info_.node_type() == kGateNode)
 			{
 				//todo
