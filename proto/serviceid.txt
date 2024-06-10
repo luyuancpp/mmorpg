@@ -31,6 +31,7 @@
 39=CentreServiceLsDisconnect
 42=CentreServiceRouteNodeStringMsg
 43=GamePlayerSceneServiceEnterSceneS2C
+44=GameServiceCreateScene
 45=CentreServiceRoutePlayerStringMsg
 46=GamePlayerSceneServiceEnterScene
 48=GameSceneServiceTest

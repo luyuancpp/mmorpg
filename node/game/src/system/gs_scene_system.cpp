@@ -12,10 +12,11 @@
 #include "src/thread_local/thread_local_storage.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/recast_system.h"
+#include "src/network/node_info.h"
 
 #include "component_proto/player_comp.pb.h"
 
-
+NodeId node_id();
 
 void GsSceneSystem::LoadAllMainSceneNavBin()
 {
@@ -27,6 +28,23 @@ void GsSceneSystem::LoadAllMainSceneNavBin()
         scene_nav_ptr->p_nav_query_ = std::make_unique<SceneNav::DtNavMeshQueryPtr::element_type>();
         RecastSystem::LoadNavMesh(config_all.data(i).nav_bin_file().c_str(), scene_nav_ptr->p_nav_.get());
     }    
+}
+
+void GsSceneSystem::CreateNodeScene()
+{
+    if (tls.registry.get<GsNodeType>(global_entity()).server_type_ != kMainSceneNode)
+    {
+        return;
+    }
+    const auto& config_all = mainscene_config::GetSingleton().all();
+    for (int32_t i = 0; i < config_all.data_size(); ++i)
+    {
+        auto scene_entity = 
+            ScenesSystem::CreateScene2GameNode(
+                { .node_ = entt::entity{node_id()}, 
+                .scene_config_id_ = config_all.data(i).id() }
+            );
+    }
 }
 
 void GsSceneSystem::CreateScene(CreateGameNodeSceneParam& param)

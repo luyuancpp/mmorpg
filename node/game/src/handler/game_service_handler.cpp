@@ -387,3 +387,12 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 ///<<< END WRITING YOUR CODE
 }
 
+void GameServiceHandler::CreateScene(::google::protobuf::RpcController* controller,
+	const ::CreateSceneRequest* request,
+	::CreateSceneResponse* response,
+	 ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+

@@ -11,6 +11,7 @@ class GsSceneSystem
 {
 public:
     static void LoadAllMainSceneNavBin();
+    static void CreateNodeScene();
 	static void CreateScene(CreateGameNodeSceneParam& param);
     static void EnterScene(const EnterSceneParam& param);
     static void LeaveScene(entt::entity ent);

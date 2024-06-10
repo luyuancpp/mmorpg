@@ -3,15 +3,15 @@
 
 enum e_server_type : uint32_t
 {
-	kMainSceneServer,//主世界场景
-	kRoomServer,//副本场景
-	kMainSceneCrossServer,//跨服主世界场景
-	kRoomSceneCrossServer,//跨服副本场景
+	kMainSceneNode,//主世界场景
+	kRoomNode,//副本场景
+	kMainSceneCrossNode,//跨服主世界场景
+	kRoomSceneCrossNode,//跨服副本场景
 };
 
-struct GsServerType
+struct GsNodeType
 {
-	uint32_t server_type_{ kMainSceneServer };
+	uint32_t server_type_{ kMainSceneNode };
 };
 
 enum enum_node_type : uint32_t

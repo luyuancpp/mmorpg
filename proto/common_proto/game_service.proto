@@ -5,6 +5,8 @@ option go_package = "pb/game";
 import "common_proto/empty.proto";
 import "common_proto/common.proto";
 import "common_proto/node_common.proto";
+import "component_proto/scene_comp.proto";
+
 option cc_generic_services = true;
 
 
@@ -54,6 +56,16 @@ message Ctlr2GsEnterSceneRequest
   uint64 scene_id = 2;
 }
 
+message CreateSceneRequest
+{
+  uint32 config_id = 1;
+}
+
+message CreateSceneResponse
+{
+  SceneInfo scene_info = 1;
+}
+
 service GameService {
   rpc EnterGs (GameNodeEnterGsRequest) returns (Empty);
   rpc Send2Player (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
@@ -66,4 +78,5 @@ service GameService {
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
   rpc UpdateSession (UpdatePlayerSessionRequest) returns (Empty);
   rpc EnterScene (Ctlr2GsEnterSceneRequest) returns (Empty);
+  rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
 }

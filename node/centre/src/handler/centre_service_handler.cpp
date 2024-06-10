@@ -95,29 +95,20 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 	game_node_ptr->server_entity_ = game_node;
 	AddMainSceneNodeComponent(game_node);
 	tls.game_node_registry.emplace<GameNodePtr>(game_node1, game_node_ptr);
-	if (request->server_type() == kMainSceneServer)
+	if (request->server_type() == kMainSceneNode)
 	{
-		const auto& config_all = mainscene_config::GetSingleton().all();
-		for (int32_t i = 0; i < config_all.data_size(); ++i)
-		{
-			auto scene_entity = ScenesSystem::CreateScene2GameNode({.node_ = game_node, .scene_config_id_ = config_all.data(i).id()});
-			tls.game_node_registry.emplace<GameNodePtr>(scene_entity, game_node_ptr);
-			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene_entity));
-		}
+        tls.game_node_registry.emplace<MainSceneServer>(game_node);
 	}
-	else if (request->server_type() == kMainSceneCrossServer)
+	else if (request->server_type() == kMainSceneCrossNode)
 	{
-		tls.game_node_registry.remove<MainSceneServer>(game_node);
 		tls.game_node_registry.emplace<CrossMainSceneServer>(game_node);
 	}
-	else if (request->server_type() == kRoomSceneCrossServer)
+	else if (request->server_type() == kRoomSceneCrossNode)
 	{
-		tls.game_node_registry.remove<MainSceneServer>(game_node);
 		tls.game_node_registry.emplace<CrossRoomSceneServer>(game_node);
 	}
 	else
 	{
-		tls.game_node_registry.remove<MainSceneServer>(game_node);
 		tls.game_node_registry.emplace<RoomSceneServer>(game_node);
 	}
 

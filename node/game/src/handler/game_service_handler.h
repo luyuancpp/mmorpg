@@ -58,5 +58,10 @@ public:
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
+	void CreateScene(::google::protobuf::RpcController* controller,
+		const ::CreateSceneRequest* request,
+		::CreateSceneResponse* response,
+		 ::google::protobuf::Closure* done)override;
+
 };
 
