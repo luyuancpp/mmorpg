@@ -19,7 +19,7 @@
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
-	entity game_node_id{ node_id };
+	entt::entity game_node_id{ node_id };
 	if (!tls.game_node_registry.valid(game_node_id))
 	{
         LOG_ERROR << "gs not found ->" << node_id;
@@ -46,7 +46,7 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 	{
 		return;
 	}
-	entity game_node_id{ player_node_info->game_node_id() };
+	entt::entity game_node_id{ player_node_info->game_node_id() };
 	if (tls.game_node_registry.valid(game_node_id))
 	{
 		LOG_ERROR << "game node not found" << player_node_info->game_node_id();
@@ -69,12 +69,12 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2GsPlayer(message_id, message, entity{ player_id });
+	Send2GsPlayer(message_id, message, entt::entity{ player_id });
 }
 
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2PlayerViaGs(message_id, message, entity{player_id});
+	Send2PlayerViaGs(message_id, message, entt::entity{player_id});
 }
 
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -88,7 +88,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 	{
 		return;
 	}
-    entity game_node_id{ player_node_info->game_node_id() };
+	entt::entity game_node_id{ player_node_info->game_node_id() };
     if (tls.game_node_registry.valid(game_node_id))
     {
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
@@ -119,7 +119,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	{
 		return;
 	}
-	entity gate_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+	entt::entity gate_id{ get_gate_node_id(player_node_info->gate_session_id()) };
 	if (tls.gate_node_registry.valid(gate_id))
 	{
 		LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
@@ -143,14 +143,14 @@ void Send2Player(uint32_t message_id,
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2Player(message_id, message, entity{player_id});
+	Send2Player(message_id, message, entt::entity{player_id});
 }
 
 void Send2Gate(const uint32_t message_id, 
 	const google::protobuf::Message& message, 
 	NodeId gate_node_id)
 {
-    entity gate_id{ gate_node_id };
+	entt::entity gate_id{ gate_node_id };
     if (tls.gate_node_registry.valid(gate_id))
     {
         LOG_ERROR << "gate not found " << gate_node_id;
@@ -176,7 +176,7 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 	{
 		return;
 	}
-	entity game_node_id{ player_node_info->game_node_id() };
+	entt::entity game_node_id{ player_node_info->game_node_id() };
 	if (tls.game_node_registry.valid(game_node_id))
 	{
 		return;
@@ -198,7 +198,7 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 
 void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
-    entity game_node_id{ node_id };
+	entt::entity game_node_id{ node_id };
     if (tls.game_node_registry.valid(game_node_id))
     {
         return;

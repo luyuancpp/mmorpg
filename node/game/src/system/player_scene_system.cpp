@@ -10,7 +10,7 @@
 
 void PlayerSceneSystem::EnterScene(entt::entity player, Guid scene)
 {
-	GsSceneSystem::EnterScene({ player, entity{scene} });
+	GsSceneSystem::EnterScene({ player, entt::entity{scene} });
 }
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)

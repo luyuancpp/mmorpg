@@ -61,7 +61,7 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entity sesion_id{ request->ex().session_id()};
+    entt::entity sesion_id{ request->ex().session_id()};
     if (!tls.session_registry.valid(sesion_id))
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
@@ -142,7 +142,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         LOG_ERROR << "GatePlayerService message id not found " << request->message_id();
         return;
     }
-    entity session{ request->session_id() };
+    entt::entity session{ request->session_id() };
     if (tls.session_registry.valid(session))
     {
         LOG_INFO << "GatePlayerService session not found  " << request->message_id() << "," << request->session_id();
@@ -184,10 +184,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
     LeaveSceneParam lp;
     lp.leaver_ = player;
     //ScenesSystem::LeaveScene(lp);
-    if (tls.player_registry.valid(player))
-    {
-        tls.player_registry.destroy(player);
-    }
+    Destroy(tls.player_registry,player);
    //todo  应该是controller 通知过来
 
 ///<<< END WRITING YOUR CODE
@@ -210,8 +207,8 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
         auto gate_node = std::make_shared<GateNodePtr::element_type>(conn);
         gate_node->node_info_.set_node_id(request->gate_node_id());
         gate_node->node_info_.set_node_type(kGateNode);
-        auto gate_node_id = tls.gate_node_registry.create(entity{ request->gate_node_id() });
-        assert(gate_node_id == entity{ request->gate_node_id() });
+        auto gate_node_id = tls.gate_node_registry.create(entt::entity{ request->gate_node_id() });
+        assert(gate_node_id == entt::entity{ request->gate_node_id() });
         tls.gate_node_registry.emplace<GateNodePtr>(gate_node_id, std::move(gate_node));
         LOG_INFO << "GateConnectGs gate node id " << request->gate_node_id();
         break;
@@ -225,7 +222,7 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entity session_id{ request->ex().session_id() };
+    entt::entity session_id{ request->ex().session_id() };
     if (!tls.session_registry.valid(session_id))
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
@@ -254,7 +251,7 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entity session_id{ request->ex().session_id() };
+    entt::entity session_id{ request->ex().session_id() };
     if (tls.session_registry.valid(session_id))
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
@@ -339,7 +336,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
 ///<<< BEGIN WRITING YOUR CODE
     PlayerCommonSystem::RemovePlayerSession(request->player_id());
     //todo test
-    entity gate_node_id{ get_gate_node_id(request->session_id()) };
+    entt::entity gate_node_id{ get_gate_node_id(request->session_id()) };
     if (!tls.gate_node_registry.valid(gate_node_id))
     {
         LOG_ERROR << "gate not found " << get_gate_node_id(request->session_id());
@@ -353,11 +350,11 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
         return;
     }
 
-    entity session_id{ request->session_id() };
+    entt::entity session_id{ request->session_id() };
     auto create_session_id = tls.session_registry.create(session_id);
     if (create_session_id != session_id)
     {
-        tls.session_registry.destroy(create_session_id);
+        Destroy(tls.session_registry, create_session_id);
         LOG_ERROR << "session create " << request->player_id();
 
         return;
@@ -384,7 +381,9 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE
     //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-    PlayerSceneSystem::EnterScene(entity{ request->player_id() }, request->scene_id());
+    PlayerSceneSystem::EnterScene(
+        cl_tls.get_player(request->player_id()),
+        request->scene_id());
 ///<<< END WRITING YOUR CODE
 }
 

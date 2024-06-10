@@ -35,7 +35,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		return;
 	}
 	//gate 和其他服务器不一样，直接返回消息给客户端
-	entity session_id{replied->session_id()};
+	entt::entity session_id{replied->session_id()};
 	if (tls.session_registry.valid(session_id))
 	{
 		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();

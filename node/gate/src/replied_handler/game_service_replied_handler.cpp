@@ -39,7 +39,7 @@ void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, 
 {
 ///<<< BEGIN WRITING YOUR CODE
     MessageBody message;
-    entity session_id{ replied->session_id() };
+    entt::entity session_id{ replied->session_id() };
     if (!tls.session_registry.valid(session_id))
     {
         LOG_ERROR << "session id not found   " << replied->session_id();

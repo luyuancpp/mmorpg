@@ -71,7 +71,7 @@ public:
 		conf_scene_list_[scene_info.scene_confid()].erase(scene_eid);
 		if (tls.scene_registry.valid(scene_eid))
 		{
-            tls.scene_registry.destroy(scene_eid);
+			Destroy(tls.scene_registry, scene_eid);
 		}
 	}
 

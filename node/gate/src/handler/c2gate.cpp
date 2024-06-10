@@ -32,7 +32,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 RpcClientPtr& ClientReceiver::GetLoginNode(uint64_t session_uid)
 {
     static RpcClientPtr null_session;
-    entity session_id{ session_uid };
+    entt::entity session_id{ session_uid };
     if (!tls.session_registry.valid(session_id))
     {
         LOG_ERROR << "session id not found   " << session_uid;
@@ -98,19 +98,19 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             rq.set_session_id(session_id);
             g_gate_node->controller_node_session()->CallMethod(CentreServiceGateDisconnectMsgId, rq);
         }
-        tls.session_registry.destroy(entity{ session_id });
+        Destroy(tls.session_registry, entt::entity{ session_id });
     }
     else
     {
         auto session_id = g_server_sequence_.Generate();
-        while (tls.session_registry.valid(entity{session_id}))
+        while (tls.session_registry.valid(entt::entity{session_id}))
         {
             session_id = g_server_sequence_.Generate();
         }
         conn->setContext(session_id);
         Session session;
         session.conn_ = conn;
-        tls.scene_registry.emplace<Session>(entity{session_id}, session);
+        tls.scene_registry.emplace<Session>(entt::entity{session_id}, session);
     }
 }
 
@@ -119,7 +119,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     muduo::Timestamp)
 {
     const auto session_uid = tcp_session_id(conn);
-    entity session_id{ session_uid };
+    entt::entity session_id{ session_uid };
     if (!tls.session_registry.valid(session_id))
     {
         LOG_ERROR << "session id not found   " << session_uid;
@@ -135,7 +135,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     if (g_c2s_service_id.contains(request->message_id()))
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
-        entity game_node_id{ session->game_node_id_ };
+        entt::entity game_node_id{ session->game_node_id_ };
 		if (tls.game_node_registry.valid(game_node_id))
 		{
             Tip(conn, kRetServerCrush);
