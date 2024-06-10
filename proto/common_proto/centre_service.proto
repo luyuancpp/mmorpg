@@ -22,7 +22,6 @@ message CtrlStartGsRequest
 message CtrlStartGsResponse
 {
   uint32 centre_node_id = 1;
-  repeated SceneInfo scenes_info = 2;
   uint32 gate_node_id = 3;
 }
 

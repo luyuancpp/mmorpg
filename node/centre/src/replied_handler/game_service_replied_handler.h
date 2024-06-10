@@ -25,3 +25,5 @@ void OnGameServiceUpdateSessionRepliedHandler(const TcpConnectionPtr& conn, cons
 
 void OnGameServiceEnterSceneRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp);
 
+void OnGameServiceCreateSceneRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<CreateSceneResponse>& replied, Timestamp timestamp);
+

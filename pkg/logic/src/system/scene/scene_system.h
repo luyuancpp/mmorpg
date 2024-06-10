@@ -62,7 +62,7 @@ public:
 
 	static std::size_t scenes_size(uint32_t scene_config_id);
 	static std::size_t scenes_size();
-	static void set_server_sequence_node_id(const uint32_t node_id) { server_sequence_.set_node_id(node_id); }
+	static void set_server_sequence_node_id(const uint32_t node_id) { node_sequence_.set_node_id(node_id); }
 
 
 	static bool ConfigSceneListNotEmpty(uint32_t scene_config_id);
@@ -85,5 +85,5 @@ public:
 	static void ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node);
 
 private:
-	inline static NodeBit16Sequence server_sequence_;
+	inline static NodeBit16Sequence node_sequence_;
 };

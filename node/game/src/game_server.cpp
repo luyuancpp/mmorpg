@@ -27,6 +27,11 @@ NodeId get_gate_node_id()
     return g_game_node->gs_info().id();
 }
 
+NodeId  node_id()
+{
+    return g_game_node->node_info().node_id();
+}
+
 void InitRepliedHandler();
 
 GameNode::GameNode(muduo::net::EventLoop* loop)
@@ -48,7 +53,8 @@ void GameNode::Init()
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)ZoneConfig::GetSingleton().config_info().loglevel());
     global_entity();
-    tls.registry.emplace<GsServerType>(global_entity(), GsServerType{ ZoneConfig::GetSingleton().config_info().server_type() });
+    tls.registry.emplace<GsNodeType>(global_entity(), 
+        GsNodeType{ ZoneConfig::GetSingleton().config_info().server_type() });
     LOG_INFO << "server type" << ZoneConfig::GetSingleton().config_info().server_type();
     InitMessageInfo();
     InitPlayerService();
@@ -62,9 +68,9 @@ void GameNode::Init()
 
 void GameNode::InitConfig()
 {
+    LoadAllConfig();
 	ZoneConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
-	LobbyConfig::GetSingleton().Load("lobby.json");
     LoadAllConfigAsyncWhenServerLaunch();
     ConfigSystem::OnConfigLoadSuccessful();
 }
@@ -94,7 +100,7 @@ void GameNode::CallCentreStartGs(CentreSessionPtr controller_node)
     session_info->set_port(controller_local_addr.port());
     node_info->set_ip(gs_info_.ip());
     node_info->set_port(gs_info_.port());
-    rq.set_server_type(tls.registry.get<GsServerType>(global_entity()).server_type_);
+    rq.set_server_type(tls.registry.get<GsNodeType>(global_entity()).server_type_);
     rq.set_gs_node_id(gs_info_.id());
     controller_node->CallMethod(CentreServiceStartGsMsgId,rq);
     LOG_DEBUG << "connect to controller" ;

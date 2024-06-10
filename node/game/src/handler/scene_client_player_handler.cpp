@@ -15,9 +15,9 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
         //如果是跨服副本服不能换场景
-    if (const auto [server_type_] = tls.registry.get<GsServerType>(global_entity());
-    kRoomServer == server_type_ ||
-        kRoomSceneCrossServer == server_type_)
+    if (const auto [server_type_] = tls.registry.get<GsNodeType>(global_entity());
+    kRoomNode == server_type_ ||
+        kRoomSceneCrossNode == server_type_)
     {
         response->mutable_error()->set_id(kRetEnterSceneServerType);
         return;
