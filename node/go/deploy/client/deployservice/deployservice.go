@@ -13,7 +13,7 @@ import (
 )
 
 type (
-	ControllerServerDb    = game.ControllerServerDb
+	CentreServerDb        = game.CentreServerDb
 	DatabaseServerDb      = game.DatabaseServerDb
 	GameServerDb          = game.GameServerDb
 	GateServerDb          = game.GateServerDb

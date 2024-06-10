@@ -64,7 +64,7 @@ func OpenDB(path string) error {
 	}
 	PbDb.AddMysqlTable(&game.DatabaseServerDb{})
 	PbDb.AddMysqlTable(&game.LoginServerDb{})
-	PbDb.AddMysqlTable(&game.ControllerServerDb{})
+	PbDb.AddMysqlTable(&game.CentreServerDb{})
 	PbDb.AddMysqlTable(&game.RedisServerDb{})
 	PbDb.AddMysqlTable(&game.GateServerDb{})
 
@@ -82,7 +82,7 @@ func InitDBTables() {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.ControllerServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.CentreServerDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
