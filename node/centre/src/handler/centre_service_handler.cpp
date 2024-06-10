@@ -64,10 +64,9 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->set_centre_node_id(centre_node_id());
 	const InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	const InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
-	entt::entity game_node{entt::null};
+	entt::entity game_node_id{request->game_node_id()};
 	for (auto e : tls.network_registry.view<RpcServerConnection>())
 	{
 		if (tls.network_registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != 
@@ -75,49 +74,48 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 		{
 			continue;
 		}
-		game_node = e;
+        auto game_node = tls.game_node_registry.create(game_node_id);
+        if (game_node != game_node_id)
+        {
+            //todo
+            LOG_INFO << "game connection not found " << request->game_node_id();
+            return;
+        }
+        auto c = tls.network_registry.get<RpcServerConnection>(e);
+
+        auto game_node_ptr = std::make_shared<GameNodeClient::element_type>(c.conn_);
+        game_node_ptr->node_info_.set_node_id(request->game_node_id());
+        game_node_ptr->node_info_.set_node_type(kGameNode);
+        game_node_ptr->node_inet_addr_ = service_addr; //为了停掉gs，或者gs断线用
+        AddMainSceneNodeComponent(game_node);
+        tls.game_node_registry.emplace<GameNodeClient>(game_node, game_node_ptr);
+
 		break;
 	}
-	if (game_node == entt::null)
-	{
-		//todo
-		LOG_INFO << "game connection not found " << request->gs_node_id();
-		return;
-	}
-	entt::entity game_node_id{ request->gs_node_id() };
-
-	auto game_node1 = tls.game_node_registry.create(game_node_id);
-
-	auto c = tls.registry.get<RpcServerConnection>(game_node);
-	auto game_node_ptr = std::make_shared<GameNodeClient::element_type>(c.conn_);
-	game_node_ptr->node_info_.set_node_id(request->gs_node_id());
-	game_node_ptr->node_info_.set_node_type(kGameNode);
-	game_node_ptr->node_inet_addr_ = service_addr; //为了停掉gs，或者gs断线用
-	game_node_ptr->server_entity_ = game_node;
-	AddMainSceneNodeComponent(game_node);
-	tls.game_node_registry.emplace<GameNodeClient>(game_node1, game_node_ptr);
+	
 	if (request->server_type() == kMainSceneNode)
 	{
-        tls.game_node_registry.emplace<MainSceneServer>(game_node);
+        tls.game_node_registry.emplace<MainSceneServer>(game_node_id);
 	}
 	else if (request->server_type() == kMainSceneCrossNode)
 	{
-		tls.game_node_registry.emplace<CrossMainSceneServer>(game_node);
+		tls.game_node_registry.emplace<CrossMainSceneServer>(game_node_id);
 	}
 	else if (request->server_type() == kRoomSceneCrossNode)
 	{
-		tls.game_node_registry.emplace<CrossRoomSceneServer>(game_node);
+		tls.game_node_registry.emplace<CrossRoomSceneServer>(game_node_id);
 	}
 	else
 	{
-		tls.game_node_registry.emplace<RoomSceneServer>(game_node);
+		tls.game_node_registry.emplace<RoomSceneServer>(game_node_id);
 	}
 
-	for (auto gate : tls.registry.view<GateNodeClient>())
+	for (auto gate : tls.gate_node_registry.view<GateNodeClient>())
 	{
-		g_centre_node->LetGateConnect2Gs(game_node, gate);
+		g_centre_node->BroadCastRegisterGameToGate(game_node_id, gate);
 	}
-	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
+	LOG_DEBUG << "gs connect node id: " << request->game_node_id() 
+		<< response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE
 }
 
@@ -144,8 +142,6 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 		}
 		auto& gate_node = tls.gate_node_registry.emplace<GateNodeClient>(gate, 
 			std::make_shared<GateNodeClient::element_type>(c.conn_));
-		gate_node->node_info_.set_node_id(request->gate_node_id());
-		gate_node->node_info_.set_node_type(kGateNode);
 		break;
 	}
 	if (entt::null == gate)
@@ -154,7 +150,7 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 	}
 	for (auto e : tls.registry.view<GameNodeClient>())
 	{
-		g_centre_node->LetGateConnect2Gs(e, gate);
+		g_centre_node->BroadCastRegisterGameToGate(e, gate);
 	}
 ///<<< END WRITING YOUR CODE
 }

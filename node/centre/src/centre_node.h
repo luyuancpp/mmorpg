@@ -25,7 +25,7 @@ public:
 	inline const NodeInfo& node_info()const { return node_info_; }
 
 	void Init();
-	void LetGateConnect2Gs(entt::entity gs, entt::entity gate);
+	void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
 
     void StartServer(const ::servers_info_data& info);
 
