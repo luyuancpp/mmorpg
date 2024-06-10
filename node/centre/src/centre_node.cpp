@@ -163,18 +163,18 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-            auto gsnode = tls.network_registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
-            if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
+            auto game_node = tls.game_node_registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
+            if (nullptr != game_node && (*game_node)->node_info_.node_type() == kGameNode)
             {
                 //remove AfterChangeGsEnterScene
 				//todo 
-                Destroy(tls.game_node_registry, entt::entity{ (*gsnode)->node_info_.node_id() });
+                Destroy(tls.game_node_registry, entt::entity{ (*game_node)->node_info_.node_id() });
             }
-			auto gatenode = tls.registry.try_get<GateNodePtr>(e);
-			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
+			auto gate_node = tls.gate_node_registry.try_get<GateNodePtr>(e);
+			if (nullptr != gate_node && (*gate_node)->node_info_.node_type() == kGateNode)
 			{
 				//todo
-                Destroy(tls.centre_node_registry, entt::entity{ (*gatenode)->node_info_.node_id() });
+                Destroy(tls.centre_node_registry, entt::entity{ (*gate_node)->node_info_.node_id() });
 			}
             Destroy(tls.network_registry, e);
 			break;
