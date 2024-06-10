@@ -12,9 +12,11 @@
 #include "src/handler/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
+#include "src/thread_local/thread_local_storage_common_logic.h"
 #include "src/system/player_scene_system.h"
-#include "component_proto/player_network_comp.pb.h"
+#include "src/util/defer.h"
 
+#include "component_proto/player_network_comp.pb.h"
 #include "component_proto/player_async_comp.pb.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
@@ -29,20 +31,20 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
     //连续顶号进入，还在加载中的话继续加载
     PlayerCommonSystem::RemovePlayerSession(request->player_id());
     //已经在线，直接进入,判断是需要发送哪些信息
-    entity player_id{ request->player_id() };
-    if ( tls.player_registry.valid(player_id))
+    auto player_it = cl_tls.player_list().find(request->player_id());
+    if (player_it != cl_tls.player_list().end())
     {
         EnterGsInfo enter_info;
         enter_info.set_centre_node_id(request->centre_node_id());
-        PlayerCommonSystem::EnterGs(player_id, enter_info);
+        PlayerCommonSystem::EnterGs(player_it->second, enter_info);
         return;
     }
 
     //todo 异步加载不了
     EnterGsInfo enter_info;
     enter_info.set_centre_node_id(request->centre_node_id());
-    const auto player_it = game_tls.async_player_data().emplace(request->player_id(), enter_info);
-    if (!player_it.second)
+    const auto async_player_it = game_tls.async_player_data().emplace(request->player_id(), enter_info);
+    if (!async_player_it.second)
     {
         LOG_ERROR << "EnterGs emplace player  " << request->player_id();
         return;
@@ -67,15 +69,19 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
         return;
     }
     auto player_guid = tls.session_registry.try_get<Guid>(sesion_id);
-    if (nullptr == player_guid || !tls.player_registry.valid(entity{ *player_guid }))
+    if (nullptr == player_guid)
     {
         LOG_INFO << "session player id not found " << request->ex().session_id() << ","
             << " message id " << request->msg().message_id();
         return;
     }
     
-    auto player = entity{ *player_guid };
-
+    auto player_it = cl_tls.player_list().find(*player_guid);
+    if (player_it == cl_tls.player_list().end())
+    {
+        return;
+    }
+    auto player = player_it->second;
 	if (request->msg().message_id() >= g_message_info.size())
 	{
 		LOG_ERROR << "message_id not found " << request->msg().message_id();
@@ -143,12 +149,17 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         return;
     }
     auto player_guid = tls.session_registry.try_get<Guid>(session);
-    if (nullptr == player_guid || !tls.player_registry.valid(entity{*player_guid }))
+    if (nullptr == player_guid )
     {
         LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
-    auto player = entity{ *player_guid };
+    auto player = cl_tls.get_player(*player_guid );
+    if (entt::null == player)
+    {
+        LOG_ERROR << "GatePlayerService player not loading";
+        return;
+    }
     const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromArray(request->request().data(), int32_t(request->request().size()));
     const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
@@ -167,7 +178,8 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE
         //异步加载过程中断开了？
-    entity player{ request->player_id() };
+    auto player = cl_tls.get_player(request->player_id());
+    defer(cl_tls.player_list().erase(request->player_id()));
     PlayerCommonSystem::RemovePlayerSession(request->player_id());
     LeaveSceneParam lp;
     lp.leaver_ = player;
@@ -221,12 +233,17 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
         return;
     }
     auto player_guid = tls.session_registry.try_get<Guid>(session_id);
-    if (nullptr == player_guid || !tls.player_registry.valid(entity{ *player_guid }))
+    if (nullptr == player_guid)
     {
         LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
-    auto player = entity{ *player_guid };
+    auto player = cl_tls.get_player(*player_guid);
+    if (entt::null == player)
+    {
+        LOG_ERROR << "GatePlayerService player not loading";
+        return;
+    }
     ::Send2Player(request->msg().message_id(), request->msg(), player);
 ///<<< END WRITING YOUR CODE
 }
@@ -245,12 +262,16 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
         return;
     }
     auto player_guid = tls.session_registry.try_get<Guid>(session_id);
-    if (nullptr == player_guid || !tls.player_registry.valid(entity{ *player_guid }))
+    if (nullptr == player_guid)
     {
-        LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
-    entity player{ *player_guid };
+    auto player = cl_tls.get_player(*player_guid);
+    if (!tls.player_registry.valid(player))
+    {
+        LOG_ERROR << "player not found" << *player_guid;
+        return;
+    }
 	if (request->msg().message_id() >= g_message_info.size())
 	{
 		LOG_ERROR << "message_id not found " << request->msg().message_id();
@@ -325,7 +346,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
         return;
     }
 
-    entity player{ request->player_id() };
+    auto player = cl_tls.get_player(request->player_id());
     if (tls.player_registry.valid(player))
     {
         LOG_ERROR << "player not found " << request->player_id();

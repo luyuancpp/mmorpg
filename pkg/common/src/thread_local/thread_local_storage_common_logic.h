@@ -16,8 +16,10 @@ public:
     uint32_t next_route_node_id() const { return next_route_node_id_; }
     void set_current_session_id(const uint64_t current_session_id) { current_session_id_ = current_session_id; }
     uint64_t session_id() const { return current_session_id_; }
-    PlayerList& player_list() { return players_; }
-    const PlayerList& player_list() const { return players_; }
+
+    entt::entity get_player(Guid player_uid);
+    inline PlayerList& player_list() { return players_list_; }
+    inline const PlayerList& player_list() const { return players_list_; }
 private:
     RouteNodeInfo route_data_;
     std::string route_msg_body_;
@@ -25,7 +27,7 @@ private:
     uint32_t next_route_node_id_{UINT32_MAX};
     uint64_t current_session_id_{kInvalidSessionId};
     std::string prev_node_replied_;
-    PlayerList players_;
+    PlayerList players_list_;
 };
 
 extern thread_local ThreadLocalStorageCommonLogic cl_tls;

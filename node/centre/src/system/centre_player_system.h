@@ -7,5 +7,5 @@ class CenterPlayerSystem
 {
 public:
 
-    static void LeaveGame(entity player);
+    static void LeaveGame(Guid player_uid);
 };
