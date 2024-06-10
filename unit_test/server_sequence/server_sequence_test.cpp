@@ -12,10 +12,12 @@
 using guid_vetcor = std::vector<Guid>;
 using guid_set = std::unordered_set<Guid>;
 
+using ServerSequence32 = NodeSequence<uint64_t, 32>;
+
 ServerSequence32 sf;
 
 
-static const std::size_t kTestSize = 1000000;
+static const std::size_t kTestSize = 0xffffff;
 
 void EmplaceToVector(guid_vetcor& v)
 {
