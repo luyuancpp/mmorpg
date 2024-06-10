@@ -126,11 +126,11 @@ void CentreNode::LetGateConnect2Gs(entt::entity game_node_id, entt::entity gate)
 		return;
 	}
     auto& game_node = *game_node_ptr;
-    GateNodeStartGSRequest request;
+    RegisterGameRequest request;
     request.set_ip(game_node->node_inet_addr_.toIp());
     request.set_port(game_node->node_inet_addr_.port());
     request.set_game_node_id(game_node->node_id());
-    (*gate_node_ptr)->session_.Send(GateServiceStartGSMsgId, request);
+    (*gate_node_ptr)->session_.Send(GateServiceRegisterGameMsgId, request);
 }
 
 void CentreNode::Receive1(const OnConnected2ServerEvent& es)
