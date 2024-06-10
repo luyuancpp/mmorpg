@@ -146,8 +146,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    entity from_game_node{ (*from_scene_game_node)->node_id() };
-    entity to_game_node{ (*game_node)->node_id()};
+    entt::entity from_game_node{ (*from_scene_game_node)->node_id() };
+    entt::entity to_game_node{ (*game_node)->node_id()};
     if (!tls.game_node_registry.valid(from_game_node) ||
         !tls.game_node_registry.valid(to_game_node))
     {

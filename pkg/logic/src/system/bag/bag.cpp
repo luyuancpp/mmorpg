@@ -324,7 +324,7 @@ void Bag::Neaten()
 
 uint32_t Bag::AddItem(const Item& add_item)
 {
-	auto p_item_base = item_reg.try_get<ItemBaseDb>(add_item.entity());
+	auto p_item_base = tls.item_registry.try_get<ItemBaseDb>(add_item.entity());
 	if (nullptr == p_item_base)
 	{
 		return kRetBagAddItemHasNotBaseComponent;
@@ -430,7 +430,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 		for (auto& it : can_stack)
 		{
 			auto& item = *it;
-			auto& item_base_db = item_reg.get<ItemBaseDb>(it->entity());
+			auto& item_base_db = tls.item_registry.get<ItemBaseDb>(it->entity());
 			auto remain_stack_size = p_c_item->max_statck_size() - item.size();
 			if (remain_stack_size >= need_stack_size)
 			{

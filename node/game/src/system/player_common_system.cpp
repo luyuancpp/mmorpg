@@ -53,12 +53,7 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 	Send2CentrePlayer(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
     
 	defer(cl_tls.player_list().erase(player_id));
-
-	auto player = cl_tls.get_player(player_id);
-	if (tls.player_registry.valid(player))
-	{
-        tls.player_registry.destroy(player);
-	}
+    Destroy(tls.player_registry, cl_tls.get_player(player_id));
 
 	//存储完毕从gs删除玩家
 }
@@ -121,7 +116,7 @@ void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)
 //todo 检测
 void PlayerCommonSystem::RemovePlayerSession(const Guid player_id)
 {
-	RemovePlayerSession(entity{player_id});
+	RemovePlayerSession(entt::entity{player_id});
 }
 
 void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
@@ -132,5 +127,5 @@ void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 		return;
 	}
 	player_node_info->set_gate_session_id(kInvalidSessionId);
-	tls.gate_node_registry.destroy(entity{player_node_info->gate_session_id()});
+	Destroy(tls.gate_node_registry, entt::entity{player_node_info->gate_session_id()});
 }

@@ -16,7 +16,7 @@
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2Player(message_id, message, entity{player_id});
+	Send2Player(message_id, message, entt::entity{player_id});
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -31,7 +31,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+	entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
 	if (tls.gate_node_registry.valid(gate_node_id))
 	{
 		LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
@@ -52,7 +52,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2CentrePlayer(message_id, message, entity{player_id});
+	Send2CentrePlayer(message_id, message, entt::entity{player_id});
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
@@ -67,7 +67,7 @@ void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg
 		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	entity centre_node_id{ player_node_info->centre_node_id() };
+	entt::entity centre_node_id{ player_node_info->centre_node_id() };
 	if (tls.centre_node_registry.valid(centre_node_id))
 	{
 		LOG_ERROR << "centre not found" << player_node_info->centre_node_id();
@@ -88,7 +88,7 @@ void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg
 
 void Send2Centre(const uint32_t message_id, const google::protobuf::Message& messag, NodeId node_id)
 {
-    entity centre_node_id{ node_id };
+	entt::entity centre_node_id{ node_id };
     if (tls.centre_node_registry.valid(centre_node_id))
     {
         LOG_ERROR << "centre not found" << node_id;
@@ -105,7 +105,7 @@ void Send2Centre(const uint32_t message_id, const google::protobuf::Message& mes
 
 void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, NodeId node_id)
 {
-    entity gate_node_id{ get_gate_node_id(node_id) };
+	entt::entity gate_node_id{ get_gate_node_id(node_id) };
     if (tls.gate_node_registry.valid(gate_node_id))
     {
         LOG_INFO << "gate not found " << get_gate_node_id(node_id);
@@ -122,7 +122,7 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, Nod
 
 void CallCentreNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
 {
-    entity centre_node_id{ node_id };
+	entt::entity centre_node_id{ node_id };
     if (tls.centre_node_registry.valid(centre_node_id))
     {
         LOG_ERROR << "centre not found" << node_id;

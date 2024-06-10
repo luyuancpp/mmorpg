@@ -130,7 +130,7 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 			DestroyScene(node, scene);
 		}
 	}
-	tls.registry.destroy(node);
+	Destroy(tls.registry, node);
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(const entt::entity scene)
@@ -257,6 +257,6 @@ void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest
 			CreateScene2GameNode({.node_ = dest_node, .scene_config_id_ = p_scene_info->scene_confid()});
 		}
 	}
-	tls.registry.destroy(crash_node);
+	Destroy(tls.registry, crash_node);
 }
 

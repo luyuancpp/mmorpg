@@ -468,6 +468,6 @@ void TeamSystem::ClearApplyList(const Guid team_id)
 
 void TeamSystem::EraseTeam(entt::entity team_id)
 {
-	tls.registry.destroy(team_id);
+	Destroy(tls.registry, team_id);
 }
 

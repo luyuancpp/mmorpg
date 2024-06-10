@@ -3,8 +3,6 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include "entt/src/entt/signal/dispatcher.hpp"
 
-using namespace entt;
-
 class ThreadLocalStorage
 {
 public:
@@ -15,6 +13,7 @@ public:
     entt::registry game_node_registry;
     entt::registry gate_node_registry;
     entt::registry centre_node_registry;
+    entt::registry item_registry;
 
 	entt::dispatcher dispatcher;
 
@@ -24,5 +23,7 @@ public:
 
 	void ClearForTest();
 };
+
+void Destroy(entt::registry& registry, entt::entity entity);
 
 extern thread_local ThreadLocalStorage tls;

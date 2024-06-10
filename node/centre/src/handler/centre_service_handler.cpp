@@ -54,8 +54,7 @@ Guid GetPlayerIdBySessionId(const uint64_t session_id)
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
 {
-	entity player{ GetPlayerIdBySessionId(session_id) };
-	return player;
+	return entt::entity{ GetPlayerIdBySessionId(session_id) };
 }
 
 ///<<< END WRITING YOUR CODE
@@ -84,7 +83,7 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 		LOG_INFO << "game connection not found " << request->gs_node_id();
 		return;
 	}
-    entity game_node_id{ request->gs_node_id() };
+	entt::entity game_node_id{ request->gs_node_id() };
 
 	auto game_node1 = tls.game_node_registry.create(game_node_id);
 
@@ -189,7 +188,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 		LOG_DEBUG << "can not find " << cl_tls.session_id();
 		return;
 	}
-    defer(Destory(tls.session_registry, sid));
+    defer(Destroy(tls.session_registry, sid));
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
 	const auto player = GetPlayerByConnId(request->session_id());
@@ -208,7 +207,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 	{
 		return;
 	}
-    entity game_node_id{ player_node_info->game_node_id() };
+	entt::entity game_node_id{ player_node_info->game_node_id() };
     if (!tls.game_node_registry.valid(game_node_id))
     {
         LOG_ERROR << "gs not found ";
@@ -321,7 +320,7 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 			beKickTip.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
 			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTip, request->player_id());
 			//删除老会话,需要玩家收到消息后再删除gate连接
-			Destory(tls.session_registry, entt::entity{ player_node_info->gate_session_id() });
+			Destroy(tls.session_registry, entt::entity{ player_node_info->gate_session_id() });
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
 			Send2Gate(GateServiceKickConnByCentreMsgId, message, 
@@ -356,7 +355,7 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    defer(tls.registry.destroy(entt::to_entity(cl_tls.session_id())));
+	defer(Destroy(tls.registry, entt::entity{ cl_tls.session_id() }));
 	const auto player_id = GetPlayerIdBySessionId(cl_tls.session_id());
 	CenterPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
@@ -442,7 +441,7 @@ void CentreServiceHandler::AddCrossServerScene(::google::protobuf::RpcController
 	CreateGameNodeSceneParam create_scene_param;
 	for (auto& it : request->cross_scenes_info())
 	{
-		entity game_node_id{it.gs_node_id()};
+		entt::entity game_node_id{it.gs_node_id()};
 		if (!tls.game_node_registry.valid(game_node_id))
 		{
 			continue;
@@ -478,7 +477,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		LOG_ERROR << "player session not found" << request->player_id();
 		return;
 	}
-	entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+	entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
 	if (tls.gate_node_registry.valid(gate_node_id))
 	{
 		LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
@@ -490,7 +489,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
         LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
         return;
 	}
-	entity game_node_id{ request->game_node_id() };
+	entt::entity game_node_id{ request->game_node_id() };
 	if (!tls.game_node_registry.valid(game_node_id))
 	{
         LOG_ERROR << "game crash" << request->game_node_id();
@@ -602,7 +601,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
     {
     case kGateNode:
 	{
-        entity gate_node_id{ cl_tls.next_route_node_id() };
+		entt::entity gate_node_id{ cl_tls.next_route_node_id() };
         if (tls.gate_node_registry.valid(gate_node_id))
         {
             LOG_ERROR << "gate crash " << cl_tls.next_route_node_id();
@@ -619,7 +618,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
 	break;
     case kGameNode:
 	{
-		entity game_node_id{ cl_tls.next_route_node_id() };
+		entt::entity game_node_id{ cl_tls.next_route_node_id() };
 		if (!tls.game_node_registry.valid(game_node_id))
 		{
             LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();

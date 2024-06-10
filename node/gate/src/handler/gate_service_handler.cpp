@@ -35,7 +35,7 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 	game_node.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
 	tls.registry.emplace<InetAddress>(gs, gs_addr);
 	game_node.gs_session_->connect();
-	auto game_node_id = tls.game_node_registry.create(entity{ request->game_node_id() });
+	auto game_node_id = tls.game_node_registry.create(entt::entity{ request->game_node_id() });
 	tls.game_node_registry.emplace<GameNode>(game_node_id, std::move(game_node));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->game_node_id();
 	///<<< END WRITING YOUR CODE
@@ -55,7 +55,7 @@ void GateServiceHandler::StopGS(::google::protobuf::RpcController* controller,
 		{
 			continue;
 		}
-		tls.registry.destroy(e);
+		Destroy(tls.registry, e);
 		break;
 	}
 	///<<< END WRITING YOUR CODE
@@ -67,7 +67,7 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	entity session_id{ request->session_id() };
+	entt::entity session_id{ request->session_id() };
 	if (!tls.session_registry.valid(session_id))
 	{
 		LOG_ERROR << "session id not found   " << request->session_id();
@@ -91,7 +91,7 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-    entity session_id{ request->ex().session_id() };
+	entt::entity session_id{ request->ex().session_id() };
     if (tls.session_registry.valid(session_id))
     {
         LOG_ERROR << "conn id not found  session id " << "," << request->ex().session_id();
@@ -114,7 +114,7 @@ void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	tls.scene_registry.destroy(entity{request->session_id()});
+	Destroy(tls.scene_registry, entt::entity{request->session_id()});
 	LOG_INFO << "conn id be kick " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }

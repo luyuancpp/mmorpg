@@ -11,3 +11,14 @@ void ThreadLocalStorage::ClearForTest()
 	error_entity = entt::null;
 	global_entity = entt::null;
 }
+
+
+//to check 
+void Destroy(entt::registry& registry, entt::entity entity)
+{
+    if (!registry.valid(entity))
+    {
+        return;
+    }
+    registry.destroy(entity);
+}

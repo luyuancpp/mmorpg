@@ -18,8 +18,6 @@ private:
 	entt::entity event_owner_{ entt::null };
 };
 
-void Destory(entt::registry& registry, entt::entity entity);
-
 namespace entt
 {
 	[[nodiscard]] static constexpr entt::entity to_entity(uint64_t value)  {
