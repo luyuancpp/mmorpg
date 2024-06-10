@@ -16,7 +16,7 @@
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2Player(message_id, message, {player_id});
+	Send2Player(message_id, message, entity{player_id});
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -52,7 +52,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2CentrePlayer(message_id, message, {player_id});
+	Send2CentrePlayer(message_id, message, entity{player_id});
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
