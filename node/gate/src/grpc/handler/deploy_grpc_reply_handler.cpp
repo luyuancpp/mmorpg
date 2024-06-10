@@ -12,6 +12,7 @@ void AsyncCompleteGrpc()
 {
     void* got_tag;
     bool ok = false;
+   
     gpr_timespec tm;
     tm.tv_sec = 0;
     tm.tv_nsec = 0;
