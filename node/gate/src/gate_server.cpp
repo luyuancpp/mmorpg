@@ -3,15 +3,16 @@
 #include <grpcpp/grpcpp.h>
 
 #include "src/game_config/deploy_json.h"
-#include "src/network/game_node.h"
-#include "src/network/login_node.h"
 #include "src/network/server_component.h"
+#include "src/network/game_node.h"
+#include "src/network/node_info.h"
 #include "service/service.h"
 #include "service/centre_service_service.h"
 #include "service/grpc/deploy_service.grpc.pb.h"
 #include "service/game_service_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/grpc/deploy/deployclient.h"
+
 #include "common_proto/game_service.pb.h"
 
 GateNode* g_gate_node = nullptr; 
@@ -139,28 +140,6 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
             {
                 //g_game_nodes.erase()
             }
-        }
-        for (const auto& it : gate_tls.login_nodes())
-        {
-            LOG_INFO << it.second.login_session_->peer_addr().toIpPort() << "," << conn->peerAddress().toIpPort();
-            if (!IsSameAddr(it.second.login_session_->peer_addr(), conn->peerAddress()))
-            {
-                continue;
-            }
-            if (conn->connected())
-            {
-                EventLoop::getEventLoopOfCurrentThread()->queueInLoop([&it, this]() -> void
-                {
-                    const auto& login_node_addr = it.second.login_session_->local_addr();
-                    RegisterGateRequest connect2login_request;
-                    connect2login_request.mutable_rpc_client()->set_ip(login_node_addr.toIp());
-                    connect2login_request.mutable_rpc_client()->set_port(login_node_addr.port());
-                    connect2login_request.set_gate_node_id(gate_node_id());
-                });
-                break;
-            }
-            gate_tls.login_nodes().remove(it.first);
-            break;
         }
     }
 }

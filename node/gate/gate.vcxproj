@@ -42,8 +42,7 @@
     <ClInclude Include="src\handler\c2gate.h" />
     <ClInclude Include="src\handler\gate_service_handler.h" />
     <ClInclude Include="src\network\game_node.h" />
-    <ClInclude Include="src\network\gate_player_list.h" />
-    <ClInclude Include="src\network\login_node.h" />
+    <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\message_system.h" />
     <ClInclude Include="src\replied_handler\centre_service_replied_handler.h" />
     <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h" />
