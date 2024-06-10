@@ -1,7 +1,7 @@
 #include "item.h"
 
 
-ServerSequence16 g_bag_server_sequence;
+NodeBit16Sequence g_bag_server_sequence;
 
 void BagEntityPtrDeleter(entt::entity* p)
 {

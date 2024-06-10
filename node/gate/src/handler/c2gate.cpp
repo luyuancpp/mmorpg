@@ -17,7 +17,7 @@
 
 #include "tip_code_proto/common_tip_code.pb.h"
 
-ServerSequence32 g_server_sequence_;
+NodeBit15Sequence g_server_sequence_;
 extern std::unordered_set<uint32_t> g_c2s_service_id;
 
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 

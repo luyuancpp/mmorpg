@@ -7,7 +7,7 @@
 
 #include "component_proto/item_base_comp.pb.h"
 
-extern ServerSequence16 g_bag_server_sequence;
+extern NodeBit16Sequence g_bag_server_sequence;
 
 class ItemEntity
 {
