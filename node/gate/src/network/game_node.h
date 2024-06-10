@@ -13,6 +13,3 @@ struct GameNode
 	RpcClientPtr gs_session_;
 	NodeInfo node_info_;
 };
-
-using GameNodeList = std::unordered_map<uint32_t, GameNode>;
-

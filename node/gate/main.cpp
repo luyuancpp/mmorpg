@@ -1,5 +1,5 @@
 #include "src/gate_server.h"
-#include "src/network/gate_player_list.h"
+#include "src/network/gate_session.h"
 
 int main(int argc, char* argv[])
 {
