@@ -11,6 +11,7 @@
 #include "service/service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/thread_local/centre_thread_local_storage.h"
+#include "src/thread_local/thread_local_storage_common_logic.h"
 
 #include "component_proto/player_network_comp.pb.h"
 
@@ -94,7 +95,8 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 	}
 	auto player_id = player_info->player_id();
 	const auto& message_info = g_message_info.at(replied->msg().message_id() );
-	const auto player = entt::entity{ player_id };
+
+    auto player = cl_tls.get_player(player_id);
 	if (tls.player_registry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"

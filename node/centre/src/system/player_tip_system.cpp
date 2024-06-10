@@ -6,6 +6,7 @@
 #include "service/common_client_player_service.h"
 #include "src/thread_local/centre_thread_local_storage.h"
 #include "src/thread_local/thread_local_storage.h"
+#include "src/thread_local/thread_local_storage_common_logic.h"
 
 
 void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVector& str_param)
@@ -21,10 +22,10 @@ void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVect
 
 void PlayerTipSystem::Tip(Guid player_id, uint32_t tip_id, const StringVector& str_param)
 {
-	auto eid = entt::entity{ player_id };
-    if (!tls.player_registry.valid(eid))
-	{
-		return;
-	}
-	Tip(eid, tip_id, str_param);
+    auto player_it = cl_tls.player_list().find(player_id);
+    if (player_it == cl_tls.player_list().end())
+    {
+        return;
+    }
+	Tip(player_it->second, tip_id, str_param);
 }
