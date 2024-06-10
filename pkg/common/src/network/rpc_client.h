@@ -120,6 +120,6 @@ private:
     std::map<std::string, ::google::protobuf::Service*> services_;
 };
 
-using RpcClientPtr = std::unique_ptr<RpcClient>;
+using RpcClientPtr = std::shared_ptr<RpcClient>;
 
 #endif // SRC_SERVER_RPCCLIENT_RPC_STUB_CLIENT_H_

@@ -98,8 +98,5 @@
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\game_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,7 +4,6 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/network/server_component.h"
-#include "src/network/game_node.h"
 #include "src/network/node_info.h"
 #include "service/service.h"
 #include "service/centre_service_service.h"
@@ -115,24 +114,24 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
     else
     {
         //todo 断线重连
-        for (auto& it : tls.game_node_registry.view<GameNode>())
+        for (auto& it : tls.game_node_registry.view<RpcClientPtr>())
         {
-            auto& game_node = tls.game_node_registry.get<GameNode>(it);
+            auto& game_node = tls.game_node_registry.get<RpcClientPtr>(it);
 
-            if (!IsSameAddr(game_node.gs_session_->peer_addr(), conn->peerAddress()))
+            if (!IsSameAddr(game_node->peer_addr(), conn->peerAddress()))
             {
                 continue;
             }
             if (conn->connected())
             {
                 EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                    [this, &game_node, &conn]() ->void
+                    [this, game_node, conn]() ->void
                     {
                         GameNodeConnectRequest rq;
                         rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
                         rq.mutable_rpc_client()->set_port(conn->localAddress().port());
                         rq.set_gate_node_id(gate_node_id());
-                        game_node.gs_session_->CallMethod(GameServiceGateConnectGsMsgId, rq);
+                        game_node->CallMethod(GameServiceGateConnectGsMsgId, rq);
                     }
                 );
             }
