@@ -135,7 +135,6 @@ T seq_{ 0 };
 
 using NodeBit16Sequence = NodeSequence<uint32_t, 16>;
 using NodeBit15Sequence = NodeSequence<uint32_t, 15>;
-using NodeBit14Sequence = NodeSequence<uint32_t, 14>;
 
 
 
