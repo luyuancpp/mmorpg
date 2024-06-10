@@ -3,7 +3,6 @@
 4=CentreScenePlayerServiceEnterScene
 5=CentreScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
 6=CentrePlayerServiceTest
-7=CentreServiceStartGs
 8=CentreSceneServiceUpdateCrossMainSceneInfo
 10=GateServiceStopGS
 11=GateServicePlayerEnterGs
@@ -24,6 +23,7 @@
 28=CentreServiceLsLoginAccount
 29=CentreServiceAddCrossServerScene
 30=CentreServiceLsEnterGame
+31=CentreServiceRegisterGame
 32=GamePlayerServiceOnCentreEnterGateSucceed
 36=CentreServiceGatePlayerService
 37=ClientPlayerCommonServiceBeKick
