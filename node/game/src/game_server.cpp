@@ -169,7 +169,7 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//如果是gate
+			auto gatenode = tls.registry.try_get<GateNodeClient>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
                 entt::entity game_node_id{ (*gatenode)->node_info_.node_id()  };
