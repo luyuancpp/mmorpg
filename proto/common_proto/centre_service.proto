@@ -68,7 +68,7 @@ message EnterGameNodeSucceedRequest
 
 service CentreService {
   rpc StartGs (CtrlStartGsRequest) returns (CtrlStartGsResponse);
-  rpc GateConnect (GateConnectRequest) returns (Empty);
+  rpc RegisterGate (RegisterGateRequest) returns (Empty);
   rpc GatePlayerService (GateClientMessageRequest) returns (Empty);
   rpc GateDisconnect (GateDisconnectRequest) returns (Empty); 
   rpc LsLoginAccount (LoginRequest) returns (LoginResponse);

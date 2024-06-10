@@ -18,13 +18,13 @@
 20=GamePlayerServiceCentre2GsLogin
 21=GateServiceKickConnByCentre
 22=CentreServiceGateDisconnect
+24=CentreServiceRegisterGate
 25=GameServiceCentreSend2PlayerViaGs
 26=CentreServiceGsPlayerService
 28=CentreServiceLsLoginAccount
 29=CentreServiceAddCrossServerScene
 30=CentreServiceLsEnterGame
 32=GamePlayerServiceOnCentreEnterGateSucceed
-35=CentreServiceGateConnect
 36=CentreServiceGatePlayerService
 37=ClientPlayerCommonServiceBeKick
 38=CentreServiceEnterGsSucceed
