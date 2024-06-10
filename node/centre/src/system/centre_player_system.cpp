@@ -12,11 +12,11 @@ void CenterPlayerSystem::LeaveGame(Guid player_uid)
     //没进入场景，只是登录，或者切换场景过程中
     defer(cl_tls.player_list().erase(player_uid));
     auto player = cl_tls.get_player(player_uid);
-    if (!tls.player_registry.valid(player))
+    if (!tls.registry.valid(player))
     {
         return;
     }
-    if (nullptr == tls.player_registry.try_get<SceneEntity>(player))
+    if (nullptr == tls.registry.try_get<SceneEntity>(player))
     {
     }
     else

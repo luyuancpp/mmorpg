@@ -9,11 +9,12 @@ public:
 	entt::registry registry;
 	entt::registry session_registry;
     entt::registry scene_registry;
-    entt::registry player_registry;
     entt::registry game_node_registry;
     entt::registry gate_node_registry;
     entt::registry centre_node_registry;
     entt::registry item_registry;
+    entt::registry network_registry;
+    entt::registry team_registry;
 
 	entt::dispatcher dispatcher;
 

@@ -106,13 +106,13 @@ void CentreNode::StartServer(const ::servers_info_data& info)
 
 void CentreNode::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
-    auto game_node_ptr = tls.registry.try_get<GameNodePtr>(gs);
+    auto game_node_ptr = tls.game_node_registry.try_get<GameNodePtr>(gs);
     if (nullptr == game_node_ptr)
     {
         LOG_ERROR << "gs not found ";
         return;
     }
-	auto gate_node_ptr = tls.registry.try_get<GateNodePtr>(gate);
+	auto gate_node_ptr = tls.gate_node_registry.try_get<GateNodePtr>(gate);
 	if (nullptr == gate_node_ptr)
 	{
 		LOG_ERROR << "gate not found ";
