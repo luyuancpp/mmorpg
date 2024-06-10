@@ -6,7 +6,7 @@
 #include <boost/get_pointer.hpp>
 #include <muduo/base/Logging.h>
 
-#include "src/comp/player_list.h"
+#include "src/system/centre_player_system.h"
 #include "src/thread_local/thread_local_storage.h"
 #include "service/service.h"
 #include "src/replied_handler/player_service_replied.h"
