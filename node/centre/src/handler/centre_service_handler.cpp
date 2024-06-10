@@ -6,7 +6,7 @@
 
 #include "src/centre_node.h"
 #include "src/system/scene/servernode_system.h"
-#include "src/comp/player_list.h"
+#include "src/system/centre_player_system.h"
 #include "src/comp/account_comp.h"
 #include "src/comp/player_comp.h"
 #include "src/constants/tips_id.h"
@@ -224,7 +224,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
 	(*game_node)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
-	ControllerPlayerSystem::LeaveGame(player);
+	CenterPlayerSystem::LeaveGame(player);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -345,7 +345,7 @@ void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	ControllerPlayerSystem::LeaveGame(GetPlayerIdBySessionId(cl_tls.session_id()));
+	CenterPlayerSystem::LeaveGame(GetPlayerIdBySessionId(cl_tls.session_id()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -358,7 +358,7 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 ///<<< BEGIN WRITING YOUR CODE
     defer(tls.registry.destroy(entt::to_entity(cl_tls.session_id())));
 	const auto player_id = GetPlayerIdBySessionId(cl_tls.session_id());
-	ControllerPlayerSystem::LeaveGame(player_id);
+	CenterPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
 

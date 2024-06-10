@@ -1,6 +1,6 @@
 #include "player_tip_system.h"
 
-#include "src/comp/player_list.h"
+#include "src/system/centre_player_system.h"
 #include "src/constants/tips_id.h"
 #include "src/network/message_system.h"
 #include "service/common_client_player_service.h"

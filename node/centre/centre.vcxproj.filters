@@ -24,7 +24,7 @@
     <ClCompile Include="src\network\message_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\comp\player_list.cpp">
+    <ClCompile Include="src\system\centre_player_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\centre_service_handler.cpp">
@@ -125,7 +125,7 @@
     <ClInclude Include="src\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\comp\player_list.h">
+    <ClInclude Include="src\system\centre_player_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\centre_service_handler.h">

@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/comp/player_list.h"
+#include "src/system/centre_player_system.h"
 #include "src/centre_node.h"
 #include "src/comp/scene_comp.h"
 #include "src/system/scene/scene_system.h"
