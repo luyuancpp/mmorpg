@@ -111,7 +111,7 @@ void CentreNode::StartServer(const ::servers_info_data& info)
 }
 
 
-void CentreNode::LetGateConnect2Gs(entt::entity game_node_id, entt::entity gate)
+void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::entity gate)
 {
     auto game_node_ptr = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
     if (nullptr == game_node_ptr)
@@ -127,9 +127,9 @@ void CentreNode::LetGateConnect2Gs(entt::entity game_node_id, entt::entity gate)
 	}
     auto& game_node = *game_node_ptr;
     RegisterGameRequest request;
-    request.set_ip(game_node->node_inet_addr_.toIp());
-    request.set_port(game_node->node_inet_addr_.port());
-    request.set_game_node_id(game_node->node_id());
+    request.mutable_rpc_server()->set_ip(game_node->node_inet_addr_.toIp());
+    request.mutable_rpc_server()->set_port(game_node->node_inet_addr_.port());
+    request.set_game_node_id(entt::to_integral(game_node_id));
     (*gate_node_ptr)->session_.Send(GateServiceRegisterGameMsgId, request);
 }
 
@@ -155,27 +155,38 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
     }
     else
     {
-		auto& peer_addr = conn->peerAddress();
+		auto& current_addr = conn->peerAddress();
 		for (auto e : tls.network_registry.view<RpcServerConnection>())
 		{
-			auto& local_addr = tls.network_registry.get<RpcServerConnection>(e).conn_->peerAddress();
-			if (local_addr.toIpPort() != peer_addr.toIpPort())
+			auto& sesion_addr = 
+                tls.network_registry.get<RpcServerConnection>(e).conn_->peerAddress();
+			if (sesion_addr.toIpPort() != current_addr.toIpPort())
 			{
 				continue;
 			}
-            auto game_node = tls.game_node_registry.try_get<GameNodeClient>(e);//如果是游戏逻辑服则删除
-            if (nullptr != game_node && (*game_node)->node_info_.node_type() == kGameNode)
+            for (auto game_e : tls.game_node_registry.view<GameNodeClient>())
             {
-                //remove AfterChangeGsEnterScene
-				//todo 
-                Destroy(tls.game_node_registry, entt::entity{ (*game_node)->node_info_.node_id() });
+                auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_e);//如果是游戏逻辑服则删除
+                if (nullptr != game_node && 
+                    (*game_node)->session_.conn_->peerAddress().toIpPort() == current_addr.toIpPort())
+                {
+                    Destroy(tls.game_node_registry, game_e);
+                    break;
+                }
             }
-			auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(e);
-			if (nullptr != gate_node && (*gate_node)->node_info_.node_type() == kGateNode)
-			{
-				//todo
-                Destroy(tls.centre_node_registry, entt::entity{ (*gate_node)->node_info_.node_id() });
-			}
+            
+            for (auto gate_e : tls.gate_node_registry.view<GateNodeClient>())
+            {
+                auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_e);//如果是游戏逻辑服则删除
+                if (nullptr != gate_node &&
+                    (*gate_node)->session_.conn_->peerAddress().toIpPort() == current_addr.toIpPort())
+                {
+                    //remove AfterChangeGsEnterScene
+                    //todo 
+                    Destroy(tls.gate_node_registry, gate_e);
+                    break;
+                }
+            }
             Destroy(tls.network_registry, e);
 			break;
 		}

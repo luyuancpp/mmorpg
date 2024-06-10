@@ -13,9 +13,6 @@ struct GateNode
 	GateNode(const muduo::net::TcpConnectionPtr& conn)
 		: session_(conn) {}
 
-	inline uint32_t node_id() const { return node_info_.node_id(); }
-
-	NodeInfo node_info_;
 	RpcServerConnection session_;
 };
 using GateNodeClient = std::shared_ptr<GateNode>;

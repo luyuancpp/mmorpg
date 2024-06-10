@@ -19,13 +19,10 @@ public:
 	NodeInfo node_info_;
 	RpcServerConnection session_;
 	muduo::net::InetAddress node_inet_addr_;
-	entt::entity server_entity_{entt::null};
 };
 
 using GameNodeClient = std::shared_ptr<GameNode>;
-using GsNodeWPtr = std::weak_ptr<GameNode>; //todo
 using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
-using GameNodeList = std::unordered_map<uint32_t, entt::entity>;
 
 

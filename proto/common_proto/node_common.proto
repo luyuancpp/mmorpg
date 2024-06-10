@@ -44,7 +44,8 @@ message RoutePlayerMsgStringResponse
 
 message RegisterGameRequest
 {
-  IpPort rpc_server = 1;
-  uint32 game_node_id = 2;
-  uint32 server_type = 3;
+  IpPort rpc_client = 1;
+  IpPort rpc_server = 2;
+  uint32 game_node_id = 3;
+  uint32 server_type = 4;
 }

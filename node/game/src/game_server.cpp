@@ -93,7 +93,7 @@ void GameNode::ServerInfo(const ::servers_info_data& info)
 void GameNode::CallCentreStartGs(CentreSessionPtr controller_node)
 {
     auto& controller_local_addr = controller_node->local_addr();
-    CtrlStartGsRequest rq;
+    RegisterGameRequest rq;
     auto session_info = rq.mutable_rpc_client();
     auto node_info = rq.mutable_rpc_server();
     session_info->set_ip(controller_local_addr.toIp());
@@ -101,8 +101,8 @@ void GameNode::CallCentreStartGs(CentreSessionPtr controller_node)
     node_info->set_ip(gs_info_.ip());
     node_info->set_port(gs_info_.port());
     rq.set_server_type(tls.registry.get<GsNodeType>(global_entity()).server_type_);
-    rq.set_gs_node_id(gs_info_.id());
-    controller_node->CallMethod(CentreServiceStartGsMsgId,rq);
+    rq.set_game_node_id(gs_info_.id());
+    controller_node->CallMethod(CentreServiceRegisterGameMsgId,rq);
     LOG_DEBUG << "connect to controller" ;
 }
 
@@ -161,23 +161,29 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
 	}
     else
     {
-		auto& peer_addr = conn->peerAddress();
-		for (auto e : tls.registry.view<RpcServerConnection>())
-		{
-			auto& local_addr = tls.registry.get<RpcServerConnection>(e).conn_->peerAddress();
-			if (local_addr.toIpPort() != peer_addr.toIpPort())
-			{
-				continue;
-			}
-			auto gatenode = tls.registry.try_get<GateNodeClient>(e);//如果是gate
-			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
-			{
-                entt::entity game_node_id{ (*gatenode)->node_info_.node_id()  };
-                Destroy(tls.game_node_registry, game_node_id);
-			}
-            Destroy(tls.registry, e);
-			break;
-		}
+        auto& current_addr = conn->peerAddress();
+        for (auto e : tls.network_registry.view<RpcServerConnection>())
+        {
+            auto& sesion_addr =
+                tls.network_registry.get<RpcServerConnection>(e).conn_->peerAddress();
+            if (sesion_addr.toIpPort() != current_addr.toIpPort())
+            {
+                continue;
+            }
+            
+            for (auto gate_e : tls.gate_node_registry.view<GateNodeClient>())
+            {
+                auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_e);
+                if (nullptr != gate_node &&
+                    (*gate_node)->session_.conn_->peerAddress().toIpPort() == current_addr.toIpPort())
+                {
+                    Destroy(tls.gate_node_registry, gate_e);
+                    break;
+                }
+            }
+            Destroy(tls.network_registry, e);
+            break;
+        }
     }
 }
 
