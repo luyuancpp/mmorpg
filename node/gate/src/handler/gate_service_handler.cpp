@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
-#include "src/network/game_node.h"
 #include "src/thread_local/thread_local_storage.h"
 #include "src/gate_server.h"
 #include "src/network/rpc_msg_route.h"
@@ -27,14 +26,15 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 		LOG_ERROR << "create game node ";
 		return;
 	}
-	GameNode game_node;
-	game_node.node_info_.set_node_id(request->game_node_id());
-	game_node.node_info_.set_node_type(kGameNode);
-	game_node.gs_session_ = 
-		std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
-	game_node.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
-	game_node.gs_session_->connect();
-	tls.game_node_registry.emplace<GameNode>(request_game_node_id, std::move(game_node));
+	RpcClientPtr game_node;
+	game_node = 
+		std::make_unique<RpcClientPtr::element_type>(
+			EventLoop::getEventLoopOfCurrentThread(), 
+			gs_addr);
+	game_node->registerService(&g_gate_node->gate_service_hanlder());
+	game_node->connect();
+	tls.game_node_registry.emplace<RpcClientPtr>(request_game_node_id,
+		std::move(game_node));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->game_node_id();
 	///<<< END WRITING YOUR CODE
 }

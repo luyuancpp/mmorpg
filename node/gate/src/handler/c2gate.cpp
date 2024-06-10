@@ -6,7 +6,6 @@
 
 #include "src/gate_server.h"
 #include "src/util/game_registry.h"
-#include "src/network/game_node.h"
 #include "service/centre_service_service.h"
 #include "service/game_service_service.h"
 #include "service/common_client_player_service.h"
@@ -136,7 +135,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
             Tip(conn, kRetServerCrush);
 			return;
 		}
-        auto game_node = tls.game_node_registry.try_get<GameNode>(game_node_id);
+        auto game_node = tls.game_node_registry.get<RpcClientPtr>(game_node_id);
         if (nullptr == game_node)
         {
             Tip(conn, kRetServerCrush);
@@ -147,7 +146,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_session_id(session_uid);
         rq.set_id(request->id());
         rq.set_message_id(request->message_id());
-        game_node->gs_session_->CallMethod(GameServiceClientSend2PlayerMsgId, rq);
+        game_node->CallMethod(GameServiceClientSend2PlayerMsgId, rq);
     }
     else
     {
