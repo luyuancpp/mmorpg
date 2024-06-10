@@ -184,13 +184,13 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
             {
                 //remove AfterChangeGsEnterScene
 				//todo 
-                tls.game_node_registry.destroy(entity{ (*gsnode)->node_info_.node_id() });
+                Destory(tls.game_node_registry, entity{ (*gsnode)->node_info_.node_id() });
             }
 			auto gatenode = tls.registry.try_get<GateNodePtr>(e);
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
 				//todo
-                tls.centre_node_registry.destroy(entity{ (*gatenode)->node_info_.node_id() });
+                Destory(tls.centre_node_registry, entity{ (*gatenode)->node_info_.node_id() });
 			}
 			break;
 		}

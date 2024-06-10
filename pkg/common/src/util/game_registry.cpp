@@ -33,3 +33,12 @@ entt::entity global_entity()
     }
     return tls.global_entity;
 }
+
+void Destory(entt::registry& registry, entt::entity entity)
+{
+    if (!registry.valid(entity))
+    {
+        return;
+    }
+    registry.destroy(entity);
+}
