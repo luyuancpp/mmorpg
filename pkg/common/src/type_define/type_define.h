@@ -10,7 +10,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 using Guid = uint64_t;
-using NodeId = uint64_t;
+using NodeId = uint32_t;
 using SessionId = uint64_t;
 using GuidVector = std::vector<Guid>;
 using StringVector = std::vector<std::string>;
@@ -38,4 +38,4 @@ using GuidUint64Map = std::unordered_map<Guid, uint64_t>;
 static constexpr Guid kInvalidGuid{UINT64_MAX};
 static constexpr uint64_t kInvalidSessionId{UINT64_MAX};
 static constexpr uint32_t kInvalidU32Id{UINT32_MAX};
-static constexpr NodeId kInvalidNodeId{UINT64_MAX};
+static constexpr NodeId kInvalidNodeId{UINT32_MAX};
