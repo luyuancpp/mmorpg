@@ -22,8 +22,6 @@ public:
 
 	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
 	inline uint32_t center_node_id()const { return serverinfos_.centre_info().id(); }
-	inline RpcClientPtr& lobby_node() { return lobby_session_; }
-	inline RpcClientPtr& database_node() { return db_session_; }
 	inline const NodeInfo& node_info()const { return node_info_; }
 
 	void Init();
@@ -38,17 +36,13 @@ private:
 
 	void InitConfig();
 
-	void Connect2Deploy();
+	void InitNodeByReqInfo();
 
 	void InitNodeServer();
 
 	muduo::net::EventLoop* loop_{ nullptr };
 	PbSyncRedisClientPtr redis_;
 	RpcServerPtr server_;
-
-	RpcClientPtr deploy_session_;
-	RpcClientPtr lobby_session_;
-	RpcClientPtr db_session_;
 
 	CentreServiceHandler contoller_service_;
 

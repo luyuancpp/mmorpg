@@ -30,6 +30,7 @@ CentreNode* g_centre_node = nullptr;
 
 void set_server_sequence_node_id(uint32_t node_id);
 void InitRepliedHandler();
+void AsyncCompleteGrpc();
 
 NodeId centre_node_id()
 {
@@ -58,7 +59,7 @@ void CentreNode::Init()
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)ZoneConfig::GetSingleton().config_info().loglevel());
 
 
-	Connect2Deploy();
+	InitNodeByReqInfo();
 
     InitNodeServer();
 
@@ -71,23 +72,29 @@ void CentreNode::Init()
     InitServiceHandler();
 }
 
-void CentreNode::Connect2Deploy()
+void CentreNode::InitNodeByReqInfo()
 {
+    auto& zone = ZoneConfig::GetSingleton().config_info();
+
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&CentreNode::Receive1>(*this);
-    deploy_session_->connect();
+    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+    extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
+    g_deploy_stub = DeployService::NewStub(deploy_channel);
+    g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+
+    {
+        NodeInfoRequest req;
+        req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
+        void SendGetNodeInfo(NodeInfoRequest & request);
+        SendGetNodeInfo(req);
+    }
 }
 
 void CentreNode::StartServer(const ::servers_info_data& info)
 {
     serverinfos_ = info;
-    auto& database_info = serverinfos_.database_info();
-    InetAddress database_addr(database_info.ip(), database_info.port());
-    db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
-    db_session_->connect();    
-
 	
     auto& my_node_info = serverinfos_.centre_info();
     node_info_.set_node_id(my_node_info.id());
@@ -143,16 +150,6 @@ void CentreNode::Receive1(const OnConnected2ServerEvent& es)
             }
 		}
 		
-		if (nullptr != lobby_session_)
-		{
-			if (conn->connected() && IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
-			{
-			}
-			else if(!conn->connected() && IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
-			{
-
-			}
-		}
     }
 	else
 	{

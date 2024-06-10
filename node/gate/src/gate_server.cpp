@@ -34,7 +34,7 @@ void GateNode::Init()
     g_gate_node = this;
 
     LoadNodeConfig();
-    InitNodeServer();
+    InitNodeByReqInfo();
 
     node_info_.set_node_type(kGateNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
@@ -47,7 +47,7 @@ void GateNode::Init()
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateNode::Receive1>(*this);
 }
 
-void GateNode::InitNodeServer()
+void GateNode::InitNodeByReqInfo()
 {
     auto& zone = ZoneConfig::GetSingleton().config_info();
 
@@ -81,11 +81,11 @@ void GateNode::StartServer()
     EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
         [this]() ->void
         {
-            auto& controller_node_info = conf_info_.centre_info();
-            InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
-            controller_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
-            controller_node_->registerService(&gate_service_handler_);
-            //controller_node_->connect();
+            auto& centre_node_info = conf_info_.centre_info();
+            InetAddress controller_addr(centre_node_info.ip(), centre_node_info.port());
+            centre_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
+            centre_node_->registerService(&gate_service_handler_);
+            centre_node_->connect();
         }
     );
 }
@@ -123,7 +123,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                auto& controller_node_addr = controller_node_->local_addr();
+                auto& controller_node_addr = centre_node_->local_addr();
                 GateConnectRequest rq;
                 rq.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
                 rq.mutable_rpc_client()->set_port(controller_node_addr.port());

@@ -30,11 +30,11 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 
 	response := &game.NodeInfoResponse{
 		Info: &game.ServersInfoData{
-			DatabaseInfo:   &game.DatabaseServerDb{},
-			LoginInfo:      &game.LoginServerDb{},
-			ControllerInfo: &game.ControllerServerDb{},
-			GateInfo:       &game.GateServerDb{},
-			RedisInfo:      &game.RedisServerDb{},
+			DatabaseInfo: &game.DatabaseServerDb{},
+			LoginInfo:    &game.LoginServerDb{},
+			CentreInfo:   &game.CentreServerDb{},
+			GateInfo:     &game.GateServerDb{},
+			RedisInfo:    &game.RedisServerDb{},
 		},
 	}
 	//log.Println(strconv.FormatUint(uint64(in.GetZoneId()), 10))
@@ -42,7 +42,7 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 	zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
 	pkg.PbDb.LoadOneByKV(response.Info.GetDatabaseInfo(), "zone_id", zoneId)
 	pkg.PbDb.LoadOneByKV(response.Info.GetLoginInfo(), "zone_id", zoneId)
-	pkg.PbDb.LoadOneByKV(response.Info.GetControllerInfo(), "zone_id", zoneId)
+	pkg.PbDb.LoadOneByKV(response.Info.GetCentreInfo(), "zone_id", zoneId)
 	pkg.PbDb.LoadOneByKV(response.Info.GetGateInfo(), "zone_id", zoneId)
 	return response, nil
 }

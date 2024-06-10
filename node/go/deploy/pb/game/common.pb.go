@@ -570,16 +570,16 @@ func (x *NodeRouteMessageBody) GetNodeInfo() *NodeInfo {
 	return nil
 }
 
-type TipsS2C struct {
+type TipS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Tips *Tips `protobuf:"bytes,1,opt,name=tips,proto3" json:"tips,omitempty"`
+	Tips *Tip `protobuf:"bytes,1,opt,name=tips,proto3" json:"tips,omitempty"`
 }
 
-func (x *TipsS2C) Reset() {
-	*x = TipsS2C{}
+func (x *TipS2C) Reset() {
+	*x = TipS2C{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_common_proto_common_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -587,13 +587,13 @@ func (x *TipsS2C) Reset() {
 	}
 }
 
-func (x *TipsS2C) String() string {
+func (x *TipS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TipsS2C) ProtoMessage() {}
+func (*TipS2C) ProtoMessage() {}
 
-func (x *TipsS2C) ProtoReflect() protoreflect.Message {
+func (x *TipS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_common_proto_common_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -605,12 +605,12 @@ func (x *TipsS2C) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TipsS2C.ProtoReflect.Descriptor instead.
-func (*TipsS2C) Descriptor() ([]byte, []int) {
+// Deprecated: Use TipS2C.ProtoReflect.Descriptor instead.
+func (*TipS2C) Descriptor() ([]byte, []int) {
 	return file_common_proto_common_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *TipsS2C) GetTips() *Tips {
+func (x *TipS2C) GetTips() *Tip {
 	if x != nil {
 		return x.Tips
 	}
@@ -673,10 +673,10 @@ var file_common_proto_common_proto_rawDesc = []byte{
 	0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x12, 0x26, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65,
 	0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x4e, 0x6f,
 	0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x08, 0x6e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f,
-	0x22, 0x24, 0x0a, 0x07, 0x54, 0x69, 0x70, 0x73, 0x53, 0x32, 0x43, 0x12, 0x19, 0x0a, 0x04, 0x74,
-	0x69, 0x70, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x05, 0x2e, 0x54, 0x69, 0x70, 0x73,
-	0x52, 0x04, 0x74, 0x69, 0x70, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d,
-	0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x22, 0x0a, 0x06, 0x54, 0x69, 0x70, 0x53, 0x32, 0x43, 0x12, 0x18, 0x0a, 0x04, 0x74, 0x69,
+	0x70, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x04, 0x2e, 0x54, 0x69, 0x70, 0x52, 0x04,
+	0x74, 0x69, 0x70, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -703,8 +703,8 @@ var file_common_proto_common_proto_goTypes = []interface{}{
 	(*PlayerNodeServiceRequest)(nil), // 7: PlayerNodeServiceRequest
 	(*PlayerMessageRespone)(nil),     // 8: PlayerMessageRespone
 	(*NodeRouteMessageBody)(nil),     // 9: NodeRouteMessageBody
-	(*TipsS2C)(nil),                  // 10: TipsS2C
-	(*Tips)(nil),                     // 11: Tips
+	(*TipS2C)(nil),                   // 10: TipS2C
+	(*Tip)(nil),                      // 11: Tip
 }
 var file_common_proto_common_proto_depIdxs = []int32{
 	2,  // 0: NodeRouteMessageRequest.msg:type_name -> MessageBody
@@ -716,7 +716,7 @@ var file_common_proto_common_proto_depIdxs = []int32{
 	2,  // 6: PlayerMessageRespone.msg:type_name -> MessageBody
 	6,  // 7: PlayerMessageRespone.ex:type_name -> PlayerMessageExtern
 	0,  // 8: NodeRouteMessageBody.node_info:type_name -> NodeInfo
-	11, // 9: TipsS2C.tips:type_name -> Tips
+	11, // 9: TipS2C.tips:type_name -> Tip
 	10, // [10:10] is the sub-list for method output_type
 	10, // [10:10] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
@@ -852,7 +852,7 @@ func file_common_proto_common_proto_init() {
 			}
 		}
 		file_common_proto_common_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TipsS2C); i {
+			switch v := v.(*TipS2C); i {
 			case 0:
 				return &v.state
 			case 1:

@@ -23,7 +23,14 @@ void AsyncCompleteGrpc()
     std::unique_ptr<AsyncClientCall> call (static_cast<AsyncClientCall*>(got_tag));
 
     CHECK(ok);
-
+    if (call->status.ok())
+    {
+        g_centre_node->StartServer(call->reply.info());
+    }
+    else
+    {
+        LOG_INFO << "RPC failed";
+    }
 }
 
 void DeployGrpcReplyHandler()
