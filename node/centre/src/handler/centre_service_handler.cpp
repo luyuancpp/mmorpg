@@ -189,7 +189,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 		LOG_DEBUG << "can not find " << cl_tls.session_id();
 		return;
 	}
-    defer(tls.session_registry.destroy(sid));
+    defer(Destory(tls.session_registry, sid));
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
 	const auto player = GetPlayerByConnId(request->session_id());
@@ -321,11 +321,7 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 			beKickTip.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
 			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTip, request->player_id());
 			//删除老会话,需要玩家收到消息后再删除gate连接
-			auto sid = entt::to_entity(player_node_info->gate_session_id());
-			if (tls.session_registry.valid(sid))
-			{
-                tls.session_registry.destroy(sid);
-			}
+			Destory(tls.session_registry, entt::entity{ player_node_info->gate_session_id() });
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
 			Send2Gate(GateServiceKickConnByCentreMsgId, message, 
