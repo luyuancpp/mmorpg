@@ -6,7 +6,7 @@ void InitRepliedHandler()
 	void InitGameServiceEnterGsRepliedHandler();
 	InitGameServiceEnterGsRepliedHandler();
 
-	void InitGateServiceStartGSRepliedHandler();
-	InitGateServiceStartGSRepliedHandler();
+	void InitGateServiceRegisterGameRepliedHandler();
+	InitGateServiceRegisterGameRepliedHandler();
 
 }
