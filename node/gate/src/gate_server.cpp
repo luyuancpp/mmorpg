@@ -94,27 +94,7 @@ void GateNode::StartServer()
 void GateNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
-    if (IsSameAddr(conn->peerAddress(), DeployConfig::GetSingleton().deploy_info()))
-    {
-        // started 
-        if (nullptr != server_)//断线重连
-        {
-            return;
-        }
-        if (!conn->connected())
-        {
-            return;
-        }
-        EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-            [this]() ->void
-            {
-                /*ServerInfoRequest rq;
-                rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
-                deploy_session()->CallMethod(DeployServiceServerInfoMsgId, rq);*/
-            }
-        );
-    }
-    else if (IsSameAddr(conn->peerAddress(), conf_info_.centre_info()))
+    if (IsSameAddr(conn->peerAddress(), conf_info_.centre_info()))
     {
         if (!conn->connected())
         {
