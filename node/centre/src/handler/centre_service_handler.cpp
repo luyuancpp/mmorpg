@@ -68,9 +68,10 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 	const InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	const InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity game_node{entt::null};
-	for (auto e : tls.registry.view<RpcServerConnection>())
+	for (auto e : tls.network_registry.view<RpcServerConnection>())
 	{
-		if (tls.registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
+		if (tls.network_registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != 
+			session_addr.toIpPort())
 		{
 			continue;
 		}
@@ -120,17 +121,17 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::GateConnect(::google::protobuf::RpcController* controller,
-	const ::GateConnectRequest* request,
+void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* controller,
+	const ::RegisterGateRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	entt::entity gate{ request->gate_node_id() };
-	for (auto e : tls.registry.view<RpcServerConnection>())
+	for (auto e : tls.network_registry.view<RpcServerConnection>())
 	{
-		auto c = tls.registry.get<RpcServerConnection>(e);
+		auto c = tls.network_registry.get<RpcServerConnection>(e);
 		if (c.conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;

@@ -103,12 +103,11 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                auto& controller_node_addr = centre_node_->local_addr();
-                GateConnectRequest rq;
-                rq.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
-                rq.mutable_rpc_client()->set_port(controller_node_addr.port());
+                RegisterGateRequest rq;
+                rq.mutable_rpc_client()->set_ip(centre_node_->local_addr().toIp());
+                rq.mutable_rpc_client()->set_port(centre_node_->local_addr().port());
                 rq.set_gate_node_id(gate_node_id());
-                controller_node_session()->CallMethod(CentreServiceGateConnectMsgId, rq);
+                controller_node_session()->CallMethod(CentreServiceRegisterGateMsgId, rq);
             }
         );
     }
@@ -153,7 +152,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
                 EventLoop::getEventLoopOfCurrentThread()->queueInLoop([&it, this]() -> void
                 {
                     const auto& login_node_addr = it.second.login_session_->local_addr();
-                    GateConnectRequest connect2login_request;
+                    RegisterGateRequest connect2login_request;
                     connect2login_request.mutable_rpc_client()->set_ip(login_node_addr.toIp());
                     connect2login_request.mutable_rpc_client()->set_port(login_node_addr.port());
                     connect2login_request.set_gate_node_id(gate_node_id());

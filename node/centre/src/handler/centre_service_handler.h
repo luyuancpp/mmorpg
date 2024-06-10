@@ -8,8 +8,8 @@ public:
 		::CtrlStartGsResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void GateConnect(::google::protobuf::RpcController* controller,
-		const ::GateConnectRequest* request,
+	void RegisterGate(::google::protobuf::RpcController* controller,
+		const ::RegisterGateRequest* request,
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
