@@ -10,7 +10,7 @@
 #include "src/network/gate_node.h"
 #include "src/thread_local/thread_local_storage_common_logic.h"
 #include "service/service.h"
-#include "src/network/session.h"
+#include "src/network/gate_session.h"
 #include "src/handler/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"

@@ -15,7 +15,7 @@
 #include "src/network/game_node.h"
 #include "src/network/login_node.h"
 #include "src/network/rpc_msg_route.h"
-#include "src/network/session.h"
+#include "src/network/gate_session.h"
 #include "service/gate_service_service.h"
 #include "service/game_service_service.h"
 #include "service/service.h"
