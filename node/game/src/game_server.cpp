@@ -94,9 +94,8 @@ void GameNode::RegisterGameToCentre(CentreSessionPtr centre_node)
 {
     auto& controller_local_addr = centre_node->local_addr();
     RegisterGameRequest rq;
-    auto session_info = rq.mutable_rpc_client();
-    session_info->set_ip(controller_local_addr.toIp());
-    session_info->set_port(controller_local_addr.port());
+    rq.mutable_rpc_client()->set_ip(controller_local_addr.toIp());
+    rq.mutable_rpc_client()->set_port(controller_local_addr.port());
     rq.mutable_rpc_server()->set_ip(game_info_.ip());
     rq.mutable_rpc_server()->set_port(game_info_.port());
 

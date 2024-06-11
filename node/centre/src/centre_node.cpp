@@ -11,6 +11,7 @@
 #include "src/event_handler/event_handler.h"
 #include "src/network/gate_node.h"
 #include "src/network/game_node.h"
+#include "src/network/node_info.h"
 
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
@@ -154,11 +155,11 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-            for (auto game_e : tls.game_node_registry.view<GameNodeClient>())
+            for (auto game_e : tls.game_node_registry.view<RpcSessionPtr>())
             {
-                auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_e);//如果是游戏逻辑服则删除
+                auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_e);//如果是游戏逻辑服则删除
                 if (nullptr != game_node && 
-                    (*game_node)->session_.conn_->peerAddress().toIpPort() == current_addr.toIpPort())
+                    (*game_node)->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
                 {
                     Destroy(tls.game_node_registry, game_e);
                     break;
