@@ -13,7 +13,7 @@ void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
     tls.registry.emplace<PlayerCentreChangeSceneQueue>(player);
 }
 
-uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const ControllerChangeSceneInfo& change_info)
+uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& change_info)
 {
     auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
@@ -47,7 +47,7 @@ void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
     change_scene_queue->change_scene_queue_.pop_front();
 }
 
-void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerChangeSceneInfo::eChangeGsStatus s)
+void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s)
 {
     auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
@@ -61,7 +61,7 @@ void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerC
     change_scene_queue->change_scene_queue_.front().set_change_gs_status(s);
 }
 
-void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, ControllerChangeSceneInfo::eChangeCrossServerStatus s)
+void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, CentreChangeSceneInfo::eChangeCrossServerStatus s)
 {
     auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
@@ -88,18 +88,18 @@ void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity playe
         return;
     }
     //不走跨服，只在区服务器
-    if (change_scene_queue.front().change_cross_server_type() != ControllerChangeSceneInfo::eDotnotCrossServer)
+    if (change_scene_queue.front().change_cross_server_type() != CentreChangeSceneInfo::eDotnotCrossServer)
     {
         return;
     }
     //同一个gs切换
-    if (change_scene_queue.front().change_gs_type() == ControllerChangeSceneInfo::eSameGs)
+    if (change_scene_queue.front().change_gs_type() == CentreChangeSceneInfo::eSameGs)
     {
         //就算同gs,队列有消息也不能直接切换，
         TryChangeSameGsScene(player);
         return;
     }
-    if (change_scene_queue.front().change_gs_type() == ControllerChangeSceneInfo::eDifferentGs)
+    if (change_scene_queue.front().change_gs_type() == CentreChangeSceneInfo::eDifferentGs)
     {
         //正在切换
         //切换gs  存储完毕之后才能进入下一个场景
@@ -116,22 +116,22 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
         return;
     }
     //不跨服不走这里
-    if (change_scene_queue->change_scene_queue_.front().change_cross_server_type() != ControllerChangeSceneInfo::eCrossServer)
+    if (change_scene_queue->change_scene_queue_.front().change_cross_server_type() != CentreChangeSceneInfo::eCrossServer)
     {
         return;
     }
     //cross server 处理完了
-    if (change_scene_queue->change_scene_queue_.front().change_cross_server_status() != ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed)
+    if (change_scene_queue->change_scene_queue_.front().change_cross_server_status() != CentreChangeSceneInfo::eEnterCrossServerSceneSucceed)
     {
         return;
     }
-    if (change_scene_queue->change_scene_queue_.front().change_gs_type() == ControllerChangeSceneInfo::eSameGs)//跨服同一个gs
+    if (change_scene_queue->change_scene_queue_.front().change_gs_type() == CentreChangeSceneInfo::eSameGs)//跨服同一个gs
     {
         //就算同gs,队列有消息也不能直接切换，要统一走正常流程
         TryChangeSameGsScene(player);
         return;
     }
-    if (change_scene_queue->change_scene_queue_.front().change_gs_type() == ControllerChangeSceneInfo::eDifferentGs)
+    if (change_scene_queue->change_scene_queue_.front().change_gs_type() == CentreChangeSceneInfo::eDifferentGs)
     {
         ChangeDiffGsScene(player);
         return;
@@ -179,7 +179,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
         return kRetChangeScenePlayerQueueComponentEmpty;
     }
     if (const auto& change_info = change_scene_queue->change_scene_queue_.front();
-        change_info.change_gs_status() == ControllerChangeSceneInfo::eLeaveGsScene)
+        change_info.change_gs_status() == CentreChangeSceneInfo::eLeaveGsScene)
     {
         //正在切换
         //切换gs  存储完毕之后才能进入下一个场景
@@ -187,7 +187,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
         ScenesSystem::LeaveScene({player});
     }
     else if (change_info.change_gs_status() == 
-        ControllerChangeSceneInfo::eEnterGsSceneSucceed)
+        CentreChangeSceneInfo::eEnterGsSceneSucceed)
     {
         //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
         if (const auto dest_scene = entt::entity{ change_info.scene_info().guid() };
@@ -202,7 +202,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
             ScenesSystem::EnterScene({dest_scene, player});
         }
     }
-    else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eGateEnterGsSceneSucceed)
+    else if (change_info.change_gs_status() == CentreChangeSceneInfo::eGateEnterGsSceneSucceed)
     {
         change_scene_queue->change_scene_queue_.pop_front();
         OnEnterSceneOk(player);

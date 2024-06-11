@@ -4,7 +4,6 @@
 #include "src/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
-#include "src/network/centre_node.h"
 #include "src/network/session.h"
 #include "service/centre_service_service.h"
 #include "service/centre_scene_server_player_service.h"

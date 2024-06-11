@@ -130,7 +130,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 
 void Send2Player(uint32_t message_id, 
 	const google::protobuf::Message& message, 
-	GateNodeClient& gate, uint64_t session_id)
+	RpcSessionPtr& gate, uint64_t session_id)
 {
 	NodeRouteMessageRequest message_wrapper;
 	const auto byte_size = static_cast<int32_t>(message.ByteSizeLong());
@@ -156,7 +156,7 @@ void Send2Gate(const uint32_t message_id,
         LOG_ERROR << "gate not found " << gate_node_id;
         return;
     }
-	auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_id);
+	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_id);
 	if (nullptr == gate_node)
 	{
         LOG_ERROR << "gate not found " << gate_node_id;
@@ -181,7 +181,7 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 	{
 		return;
 	}
-    auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(game_node_id);
+    auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == gate_node)
     {
         LOG_ERROR << "gate not found " << player_node_info->game_node_id();
@@ -203,7 +203,7 @@ void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& me
     {
         return;
     }
-    auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(game_node_id);
+    auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == gate_node)
     {
         LOG_ERROR << "gate not found " << node_id;

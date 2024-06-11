@@ -2,7 +2,9 @@
 #include "src/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
-///
+
+#include "muduo/net/InetAddress.h"
+
 #include "src/game_server.h"
 #include "src/system/scene/scene_system.h"
 #include "src/network/gate_node.h"
@@ -20,6 +22,8 @@
 #include "component_proto/player_async_comp.pb.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
+
+using namespace muduo::net;
 
 ///<<< END WRITING YOUR CODE
 void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
@@ -204,10 +208,10 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
         {
             continue;
         }
-        auto gate_node = std::make_shared<GateNodeClient::element_type>(conn);
+        auto gate_node = std::make_shared<RpcSessionPtr::element_type>(conn);
         auto gate_node_id = tls.gate_node_registry.create(entt::entity{ request->gate_node_id() });
         assert(gate_node_id == entt::entity{ request->gate_node_id() });
-        tls.gate_node_registry.emplace<GateNodeClient>(gate_node_id, std::move(gate_node));
+        tls.gate_node_registry.emplace<RpcSessionPtr>(gate_node_id, std::move(gate_node));
         LOG_INFO << "GateConnectGs gate node id " << request->gate_node_id();
         break;
     }

@@ -3,9 +3,9 @@
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
 
-#include "src/network/centre_node.h"
 #include "src/handler/game_service_handler.h"
 #include "src/network/rpc_server.h"
+#include "src/network/rpc_client.h"
 
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_msg_route.h"
@@ -34,7 +34,7 @@ public:
 
     void ServerInfo(const ::servers_info_data& info);
 
-    void RegisterGameToCentre(CentreSessionPtr controller_session);
+    void RegisterGameToCentre(RpcClientPtr& controller_session);
     void CallLobbyStartGs();
 
     void Receive1(const OnConnected2ServerEvent& es);

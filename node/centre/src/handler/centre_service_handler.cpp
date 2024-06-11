@@ -108,7 +108,7 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 		tls.game_node_registry.emplace<RoomSceneServer>(game_node_id);
 	}
 
-	for (auto gate : tls.gate_node_registry.view<GateNodeClient>())
+	for (auto gate : tls.gate_node_registry.view<RpcSessionPtr>())
 	{
 		g_centre_node->BroadCastRegisterGameToGate(game_node_id, gate);
 	}
@@ -138,8 +138,8 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 			LOG_ERROR << "create gate error";
 			return;
 		}
-		auto& gate_node = tls.gate_node_registry.emplace<GateNodeClient>(gate, 
-			std::make_shared<GateNodeClient::element_type>(c.conn_));
+		auto& gate_node = tls.gate_node_registry.emplace<RpcSessionPtr>(gate, 
+			std::make_shared<RpcSessionPtr::element_type>(c.conn_));
 		break;
 	}
 	if (entt::null == gate)
@@ -283,10 +283,10 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 		//todo 会话没有了玩家还在
 
 		PlayerSceneSystem::CallPlayerEnterGs(player, ScenesSystem::get_game_node_id(scene), cl_tls.session_id());
-		ControllerChangeSceneInfo change_scene_info;
+		CentreChangeSceneInfo change_scene_info;
 		change_scene_info.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
-		change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
-		change_scene_info.set_change_gs_status(ControllerChangeSceneInfo::eEnterGsSceneSucceed);
+		change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
+		change_scene_info.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
 		PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
 	}
 	else
@@ -451,7 +451,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
-	auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_node_id);
+	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
 	if (nullptr == gate_node)
 	{
         LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
@@ -468,7 +468,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	rq.set_game_node_id(player_node_info->game_node_id());
 	(*gate_node)->CallMethod(GateServicePlayerEnterGsMsgId, rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, 
-		ControllerChangeSceneInfo::eEnterGsSceneSucceed);
+		CentreChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }
@@ -568,7 +568,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
             LOG_ERROR << "gate crash " << cl_tls.next_route_node_id();
             return;
         }
-        auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_node_id);
+        auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
         if (nullptr == gate_node)
         {
             LOG_ERROR << "gate crash " << cl_tls.next_route_node_id();

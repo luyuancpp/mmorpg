@@ -1,6 +1,7 @@
 #include "game_server.h"
 
 #include "muduo/base/Logging.h"
+#include "muduo/net/InetAddress.h"
 
 #include "all_config.h"
 #include "src/game_config/deploy_json.h"
@@ -20,7 +21,12 @@
 #include "service/service.h"
 #include "src/system/logic/config_system.h"
 
+#include "src/network/node_info.h"
+#include "src/util/game_registry.h"
+
 GameNode* g_game_node = nullptr;
+
+using namespace muduo::net;
 
 NodeId get_gate_node_id()
 {
@@ -90,19 +96,19 @@ void GameNode::ServerInfo(const ::servers_info_data& info)
     game_tls.redis_system().Init(serverAddr);
 }
 
-void GameNode::RegisterGameToCentre(CentreSessionPtr centre_node)
+void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)
 {
-    auto& controller_local_addr = centre_node->local_addr();
+    auto& centre_local_addr = centre_node->local_addr();
     RegisterGameRequest rq;
-    rq.mutable_rpc_client()->set_ip(controller_local_addr.toIp());
-    rq.mutable_rpc_client()->set_port(controller_local_addr.port());
+    rq.mutable_rpc_client()->set_ip(centre_local_addr.toIp());
+    rq.mutable_rpc_client()->set_port(centre_local_addr.port());
     rq.mutable_rpc_server()->set_ip(game_info_.ip());
     rq.mutable_rpc_server()->set_port(game_info_.port());
 
     rq.set_server_type(tls.registry.get<GsNodeType>(global_entity()).server_type_);
     rq.set_game_node_id(game_node_id());
     centre_node->CallMethod(CentreServiceRegisterGameMsgId,rq);
-    LOG_DEBUG << "connect to controller" ;
+    LOG_DEBUG << "connect to centre" ;
 }
 
 void GameNode::CallLobbyStartGs()
@@ -121,17 +127,17 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
         }
     }
 
-    for (auto& it : tls.centre_node_registry.view<CentreNodePtr>())
+    for (auto& it : tls.centre_node_registry.view<RpcClientPtr>())
     {
-        auto& controller_node = tls.centre_node_registry.get<CentreNodePtr>(it);
-        auto& controller_session = controller_node->session_;
+        auto& centre_node = tls.centre_node_registry.get<RpcClientPtr>(it);
         if (conn->connected() &&
-            IsSameAddr(controller_session->peer_addr(), conn->peerAddress()))
+            IsSameAddr(centre_node->peer_addr(), conn->peerAddress()))
         {
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameNode::RegisterGameToCentre, this, controller_session));
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+                std::bind(&GameNode::RegisterGameToCentre, this, centre_node));
             break;
         }
-        // ms 走断线重连，不删除
+        // centre 走断线重连，不删除
     }
 
     if (nullptr != lobby_node_)
@@ -170,9 +176,9 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
                 continue;
             }
             
-            for (auto gate_e : tls.gate_node_registry.view<GateNodeClient>())
+            for (auto gate_e : tls.gate_node_registry.view<RpcSessionPtr>())
             {
-                auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_e);
+                auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_e);
                 if (nullptr != gate_node &&
                     (*gate_node)->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
                 {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "src/network/centre_node.h"
 #include "src/system/redis_system.h"
 #include "src/comp/gs_scene_comp.h"
 
