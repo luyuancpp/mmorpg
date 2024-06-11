@@ -22,7 +22,7 @@ public:
     ~GameNode();
 
     inline RpcClientPtr& lobby_node() { return lobby_node_; }
-    const ::game_server_db& gs_info() const { return gs_info_; }
+    const ::game_server_db& gs_info() const { return game_info_; }
     inline const NodeInfo& node_info()const { return node_info_; }
 
     void Init();
@@ -53,7 +53,7 @@ private:
 
     RpcClientPtr lobby_node_;
 
-    ::game_server_db gs_info_;
+    ::game_server_db game_info_;
     NodeInfo node_info_;
 
     GameServiceHandler gs_service_impl_;
