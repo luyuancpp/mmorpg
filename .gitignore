@@ -30,9 +30,8 @@ bin/config/cpp/
 bin/zlib*
 pkg/config/src/
 bin/config/
-proto/md5/
-proto/pbgen/.idea/
-proto/pbgen/bin/
+tools/server/pbgen/.idea/
+tools/server/pbgen/bin/
 common/src/pb/pb2sol2/
 build/
 Cmake/
