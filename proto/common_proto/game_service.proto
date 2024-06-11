@@ -71,7 +71,7 @@ service GameService {
   rpc Send2Player (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc ClientSend2Player (GameNodeRpcClientRequest) returns (GameNodeRpcClientResponse);
   rpc Disconnect (GameNodeDisconnectRequest) returns (Empty); 
-  rpc GateConnectGs (GameNodeConnectRequest) returns (Empty); 
+  rpc RegisterGate (RegisterGateRequest) returns (Empty);
   rpc CentreSend2PlayerViaGs (NodeRouteMessageRequest) returns (Empty);
   rpc CallPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);

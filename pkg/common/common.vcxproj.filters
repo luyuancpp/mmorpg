@@ -36,6 +36,7 @@
     <ClInclude Include="src\network\process_info.h" />
     <ClInclude Include="src\grpc\deploy\deployclient.h" />
     <ClInclude Include="src\util\consistent_hash_node.h" />
+    <ClInclude Include="src\util\pb_util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />
@@ -60,6 +61,7 @@
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\grpc\deploy\deployclient.cpp" />
     <ClCompile Include="src\util\consistent_hash_node.cpp" />
+    <ClCompile Include="src\util\pb_util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\game_rpc.proto" />

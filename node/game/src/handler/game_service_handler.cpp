@@ -17,6 +17,7 @@
 #include "src/thread_local/thread_local_storage_common_logic.h"
 #include "src/system/player_scene_system.h"
 #include "src/util/defer.h"
+#include "src/util/pb_util.h"
 
 #include "component_proto/player_network_comp.pb.h"
 #include "component_proto/player_async_comp.pb.h"
@@ -194,8 +195,8 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* controller,
-	const ::GameNodeConnectRequest* request,
+void GameServiceHandler::RegisterGate(::google::protobuf::RpcController* controller,
+	const ::RegisterGateRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
@@ -208,11 +209,12 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
         {
             continue;
         }
-        auto gate_node = std::make_shared<RpcSessionPtr::element_type>(conn);
         auto gate_node_id = tls.gate_node_registry.create(entt::entity{ request->gate_node_id() });
+        auto& gate_node =
+            tls.gate_node_registry.emplace<RpcSessionPtr>(gate_node_id, 
+                std::make_shared<RpcSessionPtr::element_type>(conn));
         assert(gate_node_id == entt::entity{ request->gate_node_id() });
-        tls.gate_node_registry.emplace<RpcSessionPtr>(gate_node_id, std::move(gate_node));
-        LOG_INFO << "GateConnectGs gate node id " << request->gate_node_id();
+        LOG_INFO << " gate register: " << MessageToJsonString(request);
         break;
     }
 ///<<< END WRITING YOUR CODE

@@ -23,8 +23,8 @@ public:
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void GateConnectGs(::google::protobuf::RpcController* controller,
-		const ::GameNodeConnectRequest* request,
+	void RegisterGate(::google::protobuf::RpcController* controller,
+		const ::RegisterGateRequest* request,
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 

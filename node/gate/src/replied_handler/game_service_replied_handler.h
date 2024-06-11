@@ -11,7 +11,7 @@ void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, 
 
 void OnGameServiceDisconnectRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp);
 
-void OnGameServiceGateConnectGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp);
+void OnGameServiceRegisterGateRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp);
 
 void OnGameServiceCentreSend2PlayerViaGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp);
 
