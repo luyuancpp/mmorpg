@@ -29,7 +29,7 @@ TEST(GS, CreateMainScene)
     create_gs_scene_param.node_ = server_entity1;
     for (uint32_t i = 0; i < kConfigSceneListSize; ++i)
     {
-        create_gs_scene_param.scene_config_id_ = i;
+        create_gs_scene_param.scene_info.set_scene_confid(i);
         for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
         {
             sm.CreateScene2GameNode(create_gs_scene_param);
@@ -49,10 +49,10 @@ TEST(GS, CreateScene2Sever)
     CreateGameNodeSceneParam create_gs_scene_param1;
     CreateGameNodeSceneParam create_gs_scene_param2;
 
-    create_gs_scene_param1.scene_config_id_ = 2;
+    create_gs_scene_param1.scene_info.set_scene_confid(2);
     create_gs_scene_param1.node_ = node1;
 
-    create_gs_scene_param2.scene_config_id_ = 3;
+    create_gs_scene_param2.scene_info.set_scene_confid(3);
     create_gs_scene_param2.node_ = node2;
 
     sm.CreateScene2GameNode(create_gs_scene_param1);
@@ -70,9 +70,9 @@ TEST(GS, CreateScene2Sever)
 		EXPECT_EQ(1, nodecomp2->GetSceneSize());
     }
 
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_config_id_));
+    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_info.scene_confid()));
 
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_config_id_));
+    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_info.scene_confid()));
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 }
@@ -88,7 +88,7 @@ TEST(GS, DestroyScene)
     const auto scene_entity = sm.CreateScene2GameNode(create_gs_scene_param1);
 
     EXPECT_EQ(1, sm.scenes_size());
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_config_id_));
+    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_info.scene_confid()));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 
 	auto servercomp1 = tls.registry.try_get<ServerComp>(server_entity1);
@@ -99,7 +99,7 @@ TEST(GS, DestroyScene)
 
     sm.DestroyScene(server_entity1, scene_entity);
     EXPECT_TRUE(sm.IsSceneEmpty());
-    EXPECT_FALSE(sm.ConfigSceneListNotEmpty(create_gs_scene_param1.scene_config_id_));
+    EXPECT_FALSE(sm.ConfigSceneListNotEmpty(create_gs_scene_param1.scene_info.scene_confid()));
     EXPECT_TRUE(sm.IsSceneEmpty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(scene_entity));
@@ -114,10 +114,10 @@ TEST(GS, DestroySever)
 
     CreateGameNodeSceneParam create_gs_scene_param1;
     CreateGameNodeSceneParam create_gs_scene_param2;
-    create_gs_scene_param1.scene_config_id_ = 3;
+    create_gs_scene_param1.scene_info.set_scene_confid( 3);
     create_gs_scene_param1.node_ = node1;
 
-    create_gs_scene_param2.scene_config_id_ = 2;
+    create_gs_scene_param2.scene_info.set_scene_confid(2);
     create_gs_scene_param2.node_ = node2;
 
     auto scene1 = sm.CreateScene2GameNode(create_gs_scene_param1);
@@ -138,8 +138,8 @@ TEST(GS, DestroySever)
 
     EXPECT_EQ(1, tls.registry.get<ServerComp>(node2).GetSceneSize());
     EXPECT_EQ(1, sm.scenes_size());
-    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_config_id_));
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_config_id_));
+    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_info.scene_confid()));
+    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_info.scene_confid()));
 
     sm.OnDestroyServer(node2);
 
@@ -149,8 +149,8 @@ TEST(GS, DestroySever)
     EXPECT_FALSE(tls.registry.valid(node2));
     EXPECT_FALSE(tls.scene_registry.valid(scene2));
 
-    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_config_id_));
-    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param2.scene_config_id_));
+    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_info.scene_confid()));
+    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param2.scene_info.scene_confid()));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 }
 
@@ -164,10 +164,10 @@ TEST(GS, PlayerLeaveEnterScene)
     CreateGameNodeSceneParam create_gs_scene_param1;
     CreateGameNodeSceneParam create_gs_scene_param2;
 
-    create_gs_scene_param1.scene_config_id_ = 3;
+    create_gs_scene_param1.scene_info.set_scene_confid(3);
     create_gs_scene_param1.node_ = node1;
 
-    create_gs_scene_param2.scene_config_id_ = 2;
+    create_gs_scene_param2.scene_info.set_scene_confid(2);
     create_gs_scene_param2.node_ = node2;
 
     auto scene1 = sm.CreateScene2GameNode(create_gs_scene_param1);
@@ -258,7 +258,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     CreateGameNodeSceneParam create_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_config_id_ = i;
+        create_server_scene_param.scene_info.set_scene_confid(i);
         for (auto& it : server_entities)
         {
             create_server_scene_param.node_ = it;
@@ -315,10 +315,10 @@ TEST(GS, CompelToChangeScene)
     CreateGameNodeSceneParam server1_param;
     CreateGameNodeSceneParam server2_param;
 
-    server1_param.scene_config_id_ = 2;
+    server1_param.scene_info.set_scene_confid( 2);
     server1_param.node_ = node1;
 
-    server2_param.scene_config_id_ = 2;
+    server2_param.scene_info.set_scene_confid( 2);
     server2_param.node_ = node2;
 
     const auto scene1 = sm.CreateScene2GameNode(server1_param);
@@ -342,7 +342,7 @@ TEST(GS, CompelToChangeScene)
 
     CompelChangeSceneParam compel_change_param1;
     compel_change_param1.dest_node_ = node2;
-    compel_change_param1.scene_conf_id_ = server2_param.scene_config_id_;
+    compel_change_param1.scene_conf_id_ = server2_param.scene_info.scene_confid();
     for (auto& it : player_list1)
     {
         compel_change_param1.player_ = it;
@@ -376,7 +376,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     CreateGameNodeSceneParam create_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_config_id_ = i;
+        create_server_scene_param.scene_info.set_scene_confid(i);
         for (auto& it : server_entities)
         {
             create_server_scene_param.node_ = it;
@@ -439,7 +439,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     CreateGameNodeSceneParam create_node_scene_param;
     for (uint32_t i = 0; i < per_node_scene; ++i)
     {
-        create_node_scene_param.scene_config_id_ = i;
+        create_node_scene_param.scene_info.set_scene_confid(i);
         for (auto& it : node_list)
         {
             create_node_scene_param.node_ = it;
@@ -501,7 +501,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_config_id_ = i;
+        create_server_scene_param.scene_info.set_scene_confid(i);
         for (auto& it :node_list)
         {
             create_server_scene_param.node_ = it;
@@ -624,7 +624,7 @@ TEST(GS, ServerEnterLeavePressure)
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_config_id_ = i;
+        create_server_scene_param.scene_info.set_scene_confid(i);
         for (auto& it : server_entities)
         {
             create_server_scene_param.node_ = it;
@@ -677,7 +677,7 @@ TEST(GS, EnterDefaultScene)
     CreateGameNodeSceneParam create_gs_scene_param{game_node};
     for (uint32_t i = 1; i < kConfigSceneListSize; ++i)
     {
-        create_gs_scene_param.scene_config_id_ = i;
+        create_gs_scene_param.scene_info.set_scene_confid(i);
         for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
         {
             ScenesSystem::CreateScene2GameNode(create_gs_scene_param);
@@ -716,7 +716,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 
 	for (uint32_t i = 0; i < per_server_scene; ++i)
 	{
-		create_server_scene_param.scene_config_id_ = i;
+		create_server_scene_param.scene_info.set_scene_confid(i);
 		for (auto& it : server_entities)
 		{
 			create_server_scene_param.node_ = it;
