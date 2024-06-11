@@ -14,12 +14,6 @@ message GsMessageExtern
   uint64 session_id = 1;
 }
 
-
-message UnregisterGameRequest
-{
-  uint32 game_node_id = 1;
-}
-
 message GateNodePlayerUpdateGameNodeRequest
 {
   uint64 session_id = 1;

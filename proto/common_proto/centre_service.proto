@@ -66,4 +66,5 @@ service CentreService {
   rpc EnterGsSucceed (EnterGameNodeSucceedRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc UnRegisterGame (UnRegisterGameRequest) returns (Empty);
 }

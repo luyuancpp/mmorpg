@@ -55,3 +55,8 @@ message RegisterGateRequest
   IpPort rpc_client = 1;
   uint32 gate_node_id = 2;
 }
+
+message UnRegisterGameRequest
+{
+  uint32 game_node_id = 1;
+}

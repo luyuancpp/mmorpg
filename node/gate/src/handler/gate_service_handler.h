@@ -9,7 +9,7 @@ public:
 		 ::google::protobuf::Closure* done)override;
 
 	void UnRegisterGame(::google::protobuf::RpcController* controller,
-		const ::UnregisterGameRequest* request,
+		const ::UnRegisterGameRequest* request,
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 

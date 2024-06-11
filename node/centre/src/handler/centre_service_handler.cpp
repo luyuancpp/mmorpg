@@ -602,3 +602,24 @@ void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcControlle
 ///<<< END WRITING YOUR CODE
 }
 
+void CentreServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,
+	const ::UnRegisterGameRequest* request,
+	::Empty* response,
+	 ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+    for (auto gate : tls.gate_node_registry.view<RpcSessionPtr>())
+    {
+        auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate);
+        if (nullptr == gate_node)
+        {
+            LOG_ERROR << "gate not found ";
+            continue;
+        }
+		UnRegisterGameRequest message;
+		message.set_game_node_id(request->game_node_id());
+        (*gate_node)->Send(GateServiceRegisterGameMsgId, message);
+    }
+///<<< END WRITING YOUR CODE
+}
+
