@@ -36,7 +36,7 @@
     <ClCompile Include="src\thread_local\gate_thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gate_server.cpp">
+    <ClCompile Include="src\gate_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -74,7 +74,7 @@
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\gate_server.h">
+    <ClInclude Include="src\gate_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\async_client_call.h">

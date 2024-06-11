@@ -81,7 +81,7 @@ void GameNode::InitConfig()
 
 void GameNode::StartServer(const ::servers_info_data& info)
 {
-    serverinfos_ = info;
+    node_net_info_ = info;
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
     game_tls.redis_system().Init(serverAddr);
 
@@ -96,6 +96,25 @@ void GameNode::StartServer(const ::servers_info_data& info)
     }
     server_->start();
     LOG_INFO << "game node  start " << game_node_info().DebugString();
+
+    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+        [this]() ->void
+        {
+            auto& centre_node_info = node_net_info_.centre_info();
+            auto eid = entt::entity{ centre_node_info.id() };
+            auto centre_node_id = tls.centre_node_registry.create(eid);
+            if (centre_node_id != eid)
+            {
+                LOG_ERROR << "create centre error ";
+            }
+            InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
+            auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(
+                centre_node_id,
+                std::make_unique<RpcClientPtr::element_type>(loop_, centre_addr));
+            centre_node->registerService(&game_service_);
+            centre_node->connect();
+        }
+    );
 }
 
 void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)

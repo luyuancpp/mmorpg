@@ -16,12 +16,12 @@ public:
 	inline RedisSystem& redis_system() { return redis_system_; }
 	inline PlayerDataRedisSystemPtr& player_data_redis_system() { return player_data_redis_system_; }
 	inline PlayerEnterGSInfoList& async_player_data() { return async_player_data_; }
-	inline SceneNavs& scene_nav() { return g_scene_nav; }
+	inline SceneNavs& scene_nav() { return scene_nav_; }
 private:
 	RedisSystem redis_system_;
 	PlayerDataRedisSystemPtr player_data_redis_system_;
 	PlayerEnterGSInfoList async_player_data_;
-	SceneNavs g_scene_nav;
+	SceneNavs scene_nav_;
 };
 
 extern thread_local GameThreadLocalStorage game_tls;
