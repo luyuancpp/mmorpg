@@ -3,11 +3,11 @@ package gen
 import (
 	"bytes"
 	"fmt"
-	"gengo/config"
-	"gengo/util"
 	"log"
 	"os"
 	"os/exec"
+	"pbgen/config"
+	"pbgen/util"
 	"runtime"
 	"strings"
 )

@@ -2,13 +2,13 @@ package gen
 
 import (
 	"bufio"
-	"gengo/config"
-	"gengo/util"
 	cases "golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"log"
 	"os"
 	"path/filepath"
+	"pbgen/config"
+	"pbgen/util"
 	"strings"
 )
 

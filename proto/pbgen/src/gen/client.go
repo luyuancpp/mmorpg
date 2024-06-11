@@ -1,8 +1,8 @@
 package gen
 
 import (
-	"gengo/config"
-	"gengo/util"
+	"pbgen/config"
+	"pbgen/util"
 	"strconv"
 	"strings"
 )

@@ -3,11 +3,11 @@ package gen
 import (
 	"bufio"
 	"fmt"
-	"gengo/config"
-	"gengo/util"
 	"log"
 	"math"
 	"os"
+	"pbgen/config"
+	"pbgen/util"
 	"sort"
 	"strconv"
 	"strings"

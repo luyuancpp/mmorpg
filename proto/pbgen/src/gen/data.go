@@ -1,7 +1,7 @@
 package gen
 
 import (
-	"gengo/config"
+	"pbgen/config"
 	"strings"
 	"sync"
 )

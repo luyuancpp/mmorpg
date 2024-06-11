@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"gengo/config"
-	"gengo/gen"
-	"gengo/util"
 	"os"
 	"path"
+	"pbgen/config"
+	"pbgen/gen"
+	"pbgen/util"
 )
 
 func MakeProjectMd5Dir(src string, dst string) error {
