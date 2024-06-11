@@ -86,7 +86,7 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
         auto c = tls.network_registry.get<RpcSession>(e);
 
         auto game_node_ptr = std::make_shared<RpcSessionPtr::element_type>(c.conn_);
-        AddMainSceneNodeComponent(game_node);
+        AddMainSceneNodeComponent(tls.game_node_registry, game_node);
         tls.game_node_registry.emplace<RpcSessionPtr>(game_node, game_node_ptr);
         tls.game_node_registry.emplace<InetAddress>(game_node, service_addr);
 		break;

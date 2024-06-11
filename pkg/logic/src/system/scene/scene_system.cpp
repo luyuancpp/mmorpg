@@ -18,11 +18,11 @@ using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
 void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_sequence_node_id(node_id); }
 
-void AddMainSceneNodeComponent(const entt::entity node)
+void AddMainSceneNodeComponent(entt::registry& reg, const entt::entity node)
 {
-	tls.registry.emplace<MainSceneServer>(node);
-	tls.registry.emplace<ServerComp>(node);
-	tls.registry.emplace<GameNodePlayerInfoPtr>(node, std::make_shared<GameNodePlayerInfoPtr::element_type>());
+	reg.emplace<MainSceneServer>(node);
+	reg.emplace<ServerComp>(node);
+	reg.emplace<GameNodePlayerInfoPtr>(node, std::make_shared<GameNodePlayerInfoPtr::element_type>());
 }
 
 ScenesSystem::ScenesSystem()
