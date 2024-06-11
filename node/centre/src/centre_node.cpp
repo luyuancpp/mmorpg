@@ -41,7 +41,6 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 
 CentreNode::~CentreNode()
 {
-	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&CentreNode::Receive1>(*this);
 	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
 }
 
@@ -117,18 +116,6 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::en
     RegisterGameRequest request;
     request.set_game_node_id(entt::to_integral(game_node_id));
     (*gate_node_ptr)->Send(GateServiceRegisterGameMsgId, request);
-}
-
-void CentreNode::Receive1(const OnConnected2ServerEvent& es)
-{
-	auto& conn = es.conn_;
-    if (conn->connected())
-    {
-    }
-	else
-	{
-		
-	}
 }
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)

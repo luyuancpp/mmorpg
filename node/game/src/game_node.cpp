@@ -88,6 +88,7 @@ void GameNode::StartServer(const ::servers_info_data& info)
     node_info_.set_node_id(game_node_info().id());
     InetAddress servcie_addr(game_node_info().ip(), game_node_info().port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, servcie_addr);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&GameNode::Receive2>(*this);
     server_->registerService(&game_service_);
     for (auto& it : g_server_service)
@@ -97,24 +98,7 @@ void GameNode::StartServer(const ::servers_info_data& info)
     server_->start();
     LOG_INFO << "game node  start " << game_node_info().DebugString();
 
-    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-        [this]() ->void
-        {
-            auto& centre_node_info = node_net_info_.centre_info();
-            auto eid = entt::entity{ centre_node_info.id() };
-            auto centre_node_id = tls.centre_node_registry.create(eid);
-            if (centre_node_id != eid)
-            {
-                LOG_ERROR << "create centre error ";
-            }
-            InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-            auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(
-                centre_node_id,
-                std::make_unique<RpcClientPtr::element_type>(loop_, centre_addr));
-            centre_node->registerService(&game_service_);
-            centre_node->connect();
-        }
-    );
+    Connect2Centre();
 }
 
 void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)
@@ -135,19 +119,26 @@ void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)
 void GameNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
-
-    for (auto& it : tls.centre_node_registry.view<RpcClientPtr>())
+    if (conn->connected())
     {
-        auto& centre_node = tls.centre_node_registry.get<RpcClientPtr>(it);
-        if (conn->connected() &&
-            IsSameAddr(centre_node->peer_addr(), conn->peerAddress()))
+        for (auto& it : tls.centre_node_registry.view<RpcClientPtr>())
         {
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                std::bind(&GameNode::RegisterGameToCentre, this, centre_node));
-            break;
+            auto& centre_node = tls.centre_node_registry.get<RpcClientPtr>(it);
+            if (conn->connected() &&
+                IsSameAddr(centre_node->peer_addr(), conn->peerAddress()))
+            {
+                EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+                    std::bind(&GameNode::RegisterGameToCentre, this, centre_node));
+                break;
+            }
+            // centre 走断线重连，不删除
         }
-        // centre 走断线重连，不删除
     }
+    else
+    {
+
+    }
+
 }
 
 void GameNode::Receive2(const OnBeConnectedEvent& es)
@@ -203,4 +194,21 @@ void GameNode::InitNodeByReqInfo()
         void SendGetNodeInfo(NodeInfoRequest & request);
         SendGetNodeInfo(req);
     }
+}
+
+void GameNode::Connect2Centre()
+{
+    auto& centre_node_info = node_net_info_.centre_info();
+    auto eid = entt::entity{ centre_node_info.id() };
+    auto centre_node_id = tls.centre_node_registry.create(eid);
+    if (centre_node_id != eid)
+    {
+        LOG_ERROR << "create centre error ";
+    }
+    InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
+    auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(
+        centre_node_id,
+        std::make_unique<RpcClientPtr::element_type>(loop_, centre_addr));
+    centre_node->registerService(&game_service_);
+    centre_node->connect();
 }

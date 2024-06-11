@@ -109,7 +109,6 @@ private:
         {
             connected_ = false;
         }
-        //todo 这里如果把自己删除了怎么办
         tls.dispatcher.trigger<OnConnected2ServerEvent>(conn);
     }
 

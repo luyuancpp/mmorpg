@@ -88,10 +88,11 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
         AddMainSceneNodeComponent(game_node);
         tls.game_node_registry.emplace<RpcSessionPtr>(game_node, game_node_ptr);
         tls.game_node_registry.emplace<InetAddress>(game_node, service_addr);
-
 		break;
 	}
 	
+	LOG_INFO << " game register" << request->DebugString();
+
 	if (request->server_type() == kMainSceneNode)
 	{
         tls.game_node_registry.emplace<MainSceneServer>(game_node_id);
@@ -143,10 +144,7 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 			std::make_shared<RpcSessionPtr::element_type>(c.conn_));
 		break;
 	}
-	if (entt::null == gate)
-	{
-		return;
-	}
+	LOG_INFO << "gate register " << request->DebugString();
 	for (auto e : tls.game_node_registry.view<RpcSessionPtr>())
 	{
 		g_centre_node->BroadCastRegisterGameToGate(e, gate);
