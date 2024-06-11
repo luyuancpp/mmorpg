@@ -3,6 +3,7 @@
 4=CentreScenePlayerServiceEnterScene
 5=CentreScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
 6=CentrePlayerServiceTest
+7=GameServiceRegisterGate
 8=CentreSceneServiceUpdateCrossMainSceneInfo
 10=GateServiceStopGS
 11=GateServicePlayerEnterGs
@@ -41,7 +42,6 @@
 58=GameServiceSend2Player
 59=GameServiceClientSend2Player
 60=GameServiceDisconnect
-61=GameServiceGateConnectGs
 63=GameServiceCallPlayer
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg

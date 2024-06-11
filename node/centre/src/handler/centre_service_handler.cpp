@@ -27,6 +27,7 @@
 #include "src/util/defer.h"
 #include "src/network/gate_session.h"
 #include "src/network/node_info.h"
+#include "src/util/pb_util.h"
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
@@ -91,7 +92,7 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 		break;
 	}
 	
-	LOG_INFO << " game register" << request->DebugString();
+    LOG_INFO << " game register: " << MessageToJsonString(request);
 
 	if (request->server_type() == kMainSceneNode)
 	{
@@ -142,7 +143,7 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 			std::make_shared<RpcSessionPtr::element_type>(c.conn_));
 		break;
 	}
-	LOG_INFO << "gate register " << request->DebugString();
+	LOG_INFO << "gate register " << MessageToJsonString(request);
 	for (auto e : tls.game_node_registry.view<RpcSessionPtr>())
 	{
 		g_centre_node->BroadCastRegisterGameToGate(e, gate);
