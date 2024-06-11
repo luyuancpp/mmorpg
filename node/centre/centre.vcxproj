@@ -211,9 +211,7 @@
     <ClInclude Include="src\handler\centre_scene_handler.h" />
     <ClInclude Include="src\handler\centre_scene_server_player_handler.h" />
     <ClInclude Include="src\handler\team_client_player_handler.h" />
-    <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\game_node.h" />
-    <ClInclude Include="src\network\login_node.h" />
     <ClInclude Include="src\handler\player_service.h" />
     <ClInclude Include="src\handler\register_handler.h" />
     <ClInclude Include="src\replied_handler\common_client_player_replied_handler.h" />

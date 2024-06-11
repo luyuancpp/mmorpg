@@ -134,9 +134,6 @@
     <ClInclude Include="src\system\player_common_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\gate_session.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\system\player_tip_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -162,9 +159,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\centre_thread_local_storage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\network\login_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\event_handler\mission_event_handler.h">
