@@ -4,7 +4,7 @@
 #include <memory>
 #include <ranges>
 
-#include "src/gate_server.h"
+#include "src/gate_node.h"
 #include "src/util/game_registry.h"
 #include "service/centre_service_service.h"
 #include "service/game_service_service.h"

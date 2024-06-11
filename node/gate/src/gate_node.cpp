@@ -1,4 +1,4 @@
-#include "gate_server.h"
+#include "gate_node.h"
 
 #include <grpcpp/grpcpp.h>
 
@@ -69,7 +69,7 @@ void GateNode::InitNodeByReqInfo()
 
 void GateNode::StartServer()
 {
-    auto& gate_info = conf_info_.gate_info();
+    auto& gate_info = node_net_info_.gate_info();
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
@@ -81,7 +81,7 @@ void GateNode::StartServer()
     EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
         [this]() ->void
         {
-            auto& centre_node_info = conf_info_.centre_info();
+            auto& centre_node_info = node_net_info_.centre_info();
             InetAddress controller_addr(centre_node_info.ip(), centre_node_info.port());
             centre_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
             centre_node_->registerService(&gate_service_handler_);
@@ -94,7 +94,7 @@ void GateNode::StartServer()
 void GateNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
-    if (IsSameAddr(conn->peerAddress(), conf_info_.centre_info()))
+    if (IsSameAddr(conn->peerAddress(), node_net_info_.centre_info()))
     {
         if (!conn->connected())
         {

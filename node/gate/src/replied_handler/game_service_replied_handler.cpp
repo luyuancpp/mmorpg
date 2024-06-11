@@ -2,7 +2,7 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/gate_server.h"
+#include "src/gate_node.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;

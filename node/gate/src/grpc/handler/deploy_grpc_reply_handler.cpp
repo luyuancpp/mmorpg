@@ -6,7 +6,7 @@
 
 #include "src/grpc/async_client_call.h"
 #include "src/grpc/deploy/deployclient.h"
-#include "src/gate_server.h"
+#include "src/gate_node.h"
 
 void AsyncCompleteGrpc()
 {

@@ -33,7 +33,7 @@ public:
     void Receive1(const OnConnected2ServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
 
-    const game_server_db& game_node_info() const { return serverinfos_.game_info(); }
+    const game_server_db& game_node_info() const { return   node_net_info_.game_info(); }
 private:    
     void InitNodeByReqInfo();
 
@@ -42,8 +42,7 @@ private:
     PbSyncRedisClientPtr redis_;
 
     RpcServerPtr server_;
-
-    servers_info_data serverinfos_;
+    servers_info_data node_net_info_;
 
     NodeInfo node_info_;
 

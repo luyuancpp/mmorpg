@@ -23,7 +23,7 @@
     <ClCompile Include="src\grpc\handler\deploy_grpc_reply_handler.cpp" />
     <ClCompile Include="src\grpc\async_client_call.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\gate_server.cpp" />
+    <ClCompile Include="src\gate_node.cpp" />
     <ClCompile Include="src\handler\c2gate.cpp" />
     <ClCompile Include="src\handler\gate_service_handler.cpp" />
     <ClCompile Include="src\replied_handler\centre_service_replied_handler.cpp" />
@@ -36,7 +36,7 @@
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h" />
     <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h" />
     <ClInclude Include="src\grpc\async_client_call.h" />
-    <ClInclude Include="src\gate_server.h" />
+    <ClInclude Include="src\gate_node.h" />
     <ClInclude Include="src\handler\c2gate.h" />
     <ClInclude Include="src\handler\gate_service_handler.h" />
     <ClInclude Include="src\network\gate_session.h" />
