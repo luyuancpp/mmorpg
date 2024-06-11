@@ -129,37 +129,30 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-    auto from_scene_game_node = tls.game_node_registry.try_get<GameNodeClient>(from_scene->scene_entity_);
-    auto game_node = tls.game_node_registry.try_get<GameNodeClient>(to_scene);
-    if (nullptr == from_scene_game_node || nullptr == game_node)
+    auto from_scene_info = tls.game_node_registry.try_get<SceneInfo>(from_scene->scene_entity_);
+    if (nullptr == from_scene_info)
     {
-        LOG_ERROR << " gs component null : " << (nullptr == from_scene_game_node) << " " << (nullptr == game_node);
+        return;
+    }
+    auto from_scene_game_node = ScenesSystem::get_game_node_eid(from_scene_info->guid()) ;
+    auto to_scene_game_node = ScenesSystem::get_game_node_eid(to_scene_guid);
+    if (!tls.game_node_registry.valid(from_scene_game_node) || 
+        !tls.game_node_registry.valid(to_scene_game_node))
+    {
+        LOG_ERROR << "scene not found " << from_scene_info->guid() << " " << to_scene_guid;
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
 
-    auto from_scene_id = tls.scene_registry.get<SceneInfo>(from_scene->scene_entity_).guid();
-    if (to_scene_guid == from_scene_id)
+    if (to_scene_guid == from_scene_info->guid())
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
 
-    entt::entity from_game_node{ (*from_scene_game_node)->node_id() };
-    entt::entity to_game_node{ (*game_node)->node_id()};
-    if (!tls.game_node_registry.valid(from_game_node) ||
-        !tls.game_node_registry.valid(to_game_node))
-    {
-        //服务器已经崩溃了
-        LOG_ERROR << " gs not found  : " <<
-            (*from_scene_game_node)->node_id() <<
-            " " << (*game_node)->node_id();
-        PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-        return;
-    }
-    bool is_from_gs_is_cross_server = tls.game_node_registry.any_of<CrossMainSceneServer>(from_game_node);
-    bool is_to_gs_is_cross_server = tls.game_node_registry.any_of<CrossMainSceneServer>(to_game_node);
+    bool is_from_gs_is_cross_server = tls.game_node_registry.any_of<CrossMainSceneServer>(from_scene_game_node);
+    bool is_to_gs_is_cross_server = tls.game_node_registry.any_of<CrossMainSceneServer>(to_scene_game_node);
 
     //不是跨服才在本地判断,跨服有自己的判断
     if (!change_scene_info.ignore_full() && !is_to_gs_is_cross_server)
@@ -173,13 +166,13 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         }
     }
 
-    if (entt::null != from_game_node)
+    if (entt::null != from_scene_game_node)
     {
-        if (from_game_node == to_game_node)
+        if (from_scene_game_node == to_scene_game_node)
         {
             change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eSameGs);
         }
-        else if (from_game_node != to_game_node)
+        else if (from_scene_game_node != to_scene_game_node)
         {
             change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
         }

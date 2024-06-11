@@ -251,7 +251,7 @@ void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest
 	{
 		for (const auto scene : scene_list)
 		{
-			const auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene);
+			const auto* p_scene_info = tls.scene_registry.try_get<SceneInfo>(scene);
 			if (nullptr == p_scene_info)
 			{
 				continue;
