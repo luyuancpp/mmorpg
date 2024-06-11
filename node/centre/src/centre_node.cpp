@@ -7,19 +7,17 @@
 #include "all_config.h"
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/lobby_config.h"
-
 #include "src/event_handler/event_handler.h"
 #include "src/network/node_info.h"
-
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/register_handler.h"
 #include "service/service.h"
 #include "service/gate_service_service.h"
 #include "src/thread_local/centre_thread_local_storage.h"
+#include "src/grpc/deploy/deployclient.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
-#include "src/grpc/deploy/deployclient.h"
 
 using namespace muduo;
 using namespace net;

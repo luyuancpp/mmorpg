@@ -21,18 +21,13 @@ public:
     GameNode(muduo::net::EventLoop* loop);
     ~GameNode();
 
-    inline RpcClientPtr& lobby_node() { return lobby_node_; }
-    const ::game_server_db& gs_info() const { return game_info_; }
     inline const NodeInfo& node_info()const { return node_info_; }
 
     void Init();
 
     void InitConfig();
 
-
-    void InitNetwork();
-
-    void ServerInfo(const ::servers_info_data& info);
+    void StartServer(const ::servers_info_data& info);
 
     void RegisterGameToCentre(RpcClientPtr& controller_session);
     void CallLobbyStartGs();
@@ -41,7 +36,7 @@ public:
     void Receive2(const OnBeConnectedEvent& es);
 
 private:    
-    void Connect2Lobby();
+    void InitNodeByReqInfo();
 
     muduo::net::EventLoop* loop_{ nullptr };
 
@@ -49,9 +44,6 @@ private:
 
     RpcServerPtr server_;
 
-    RpcClientPtr deploy_node_;
-
-    RpcClientPtr lobby_node_;
 
     ::game_server_db game_info_;
     NodeInfo node_info_;

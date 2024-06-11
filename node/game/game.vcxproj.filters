@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\game_server.cpp">
+    <ClCompile Include="src\game_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -111,9 +111,18 @@
     <ClCompile Include="src\replied_handler\centre_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\handler\deploy_grpc_reply_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\request\deploy_grpc_requst.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\grpc\async_client_call.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\game_server.h">
+    <ClInclude Include="src\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\message_system.h">
@@ -204,6 +213,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\centre_service_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\request\deploy_grpc_requst.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\async_client_call.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

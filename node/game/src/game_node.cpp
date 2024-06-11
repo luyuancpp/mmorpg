@@ -1,4 +1,4 @@
-#include "game_server.h"
+#include "game_node.h"
 
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
@@ -16,23 +16,20 @@
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/register_handler.h"
-
+#include "src/grpc/deploy/deployclient.h"
 #include "src/thread_local/game_thread_local_storage.h"
-
 #include "service/service.h"
 #include "src/system/logic/config_system.h"
-
 #include "src/network/node_info.h"
 #include "src/util/game_registry.h"
+
+#include "common_proto/deploy_service.grpc.pb.h"
 
 GameNode* g_game_node = nullptr;
 
 using namespace muduo::net;
 
-NodeId get_gate_node_id()
-{
-    return g_game_node->gs_info().id();
-}
+void AsyncCompleteGrpc();
 
 NodeId  game_node_id()
 {
@@ -67,7 +64,7 @@ void GameNode::Init()
     InitPlayerService();
     InitPlayerServiceReplied();
     InitRepliedHandler();
-    InitNetwork();
+    InitNodeByReqInfo();
 
 	void InitServiceHandler();
 	InitServiceHandler();
@@ -82,16 +79,8 @@ void GameNode::InitConfig()
     ConfigSystem::OnConfigLoadSuccessful();
 }
 
-void GameNode::InitNetwork()
-{
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_node_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-	tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);
-    deploy_node_->connect();
-}
 
-void GameNode::ServerInfo(const ::servers_info_data& info)
+void GameNode::StartServer(const ::servers_info_data& info)
 {
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
     game_tls.redis_system().Init(serverAddr);
@@ -119,14 +108,6 @@ void GameNode::CallLobbyStartGs()
 void GameNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
-    if (deploy_node_->peer_addr().toIpPort() == conn->peerAddress().toIpPort())
-    {
-        // started 
-        if (nullptr != server_)
-        {
-            return;
-        }
-    }
 
     for (auto& it : tls.centre_node_registry.view<RpcClientPtr>())
     {
@@ -140,21 +121,6 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
         }
         // centre 走断线重连，不删除
     }
-
-    if (nullptr != lobby_node_)
-    {
-		if (conn->connected() && 
-            IsSameAddr(lobby_node_->peer_addr(), conn->peerAddress()))
-		{
-			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameNode::CallLobbyStartGs, this));
-		}
-		else if (!conn->connected() &&
-			IsSameAddr(lobby_node_->peer_addr(), conn->peerAddress()))
-		{
-
-		}
-    }
-  
 }
 
 void GameNode::Receive2(const OnBeConnectedEvent& es)
@@ -193,8 +159,22 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
     }
 }
 
-void GameNode::Connect2Lobby()
+void GameNode::InitNodeByReqInfo()
 {
-    lobby_node_->registerService(&gs_service_impl_);
-    lobby_node_->connect();
+    auto& zone = ZoneConfig::GetSingleton().config_info();
+
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+    extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
+    g_deploy_stub = DeployService::NewStub(deploy_channel);
+    g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+
+    {
+        NodeInfoRequest req;
+        req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
+        void SendGetNodeInfo(NodeInfoRequest & request);
+        SendGetNodeInfo(req);
+    }
 }

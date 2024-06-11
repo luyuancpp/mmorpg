@@ -5,7 +5,7 @@
 
 #include "muduo/net/InetAddress.h"
 
-#include "src/game_server.h"
+#include "src/game_node.h"
 #include "src/system/scene/scene_system.h"
 #include "src/thread_local/thread_local_storage_common_logic.h"
 #include "service/service.h"
