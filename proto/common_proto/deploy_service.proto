@@ -108,14 +108,13 @@ message NodeInfoResponse
   servers_info_data info = 1;
 }
 
-message StartGsRequest
+message NewGameNodeRequest
 {
   uint32 zone_id = 1;
   game_server_db my_info = 2;
-  IpPort rpc_client = 3; 
 }
 
-message StartGsResponse
+message NewGameNodeResponse
 {
   game_server_db my_info = 1;
   uint32 error_no = 2;
@@ -132,17 +131,19 @@ message LobbyNodeInfoResponse
   lobby_server_db info = 1;
 }
 
-message GsNodeIdRequest
-{
-}
-
-message GsNodeIdResponse
+message GetGameNodeInfoRequest
 {
   uint32 node_id = 1;
 }
 
+message GetGameNodeInfoResponse
+{
+  uint32 node_id = 1;
+  IpPort service_addr = 2;
+}
+
 service DeployService {
   rpc GetNodeInfo (NodeInfoRequest) returns (NodeInfoResponse);
-  rpc StartGs (StartGsRequest) returns (StartGsResponse);
-  rpc GetGsNodeId (GsNodeIdRequest) returns (GsNodeIdResponse);
+  rpc NewGameNode (NewGameNodeRequest) returns (NewGameNodeResponse);
+  rpc GetGameNodeInfo (GetGameNodeInfoRequest) returns (GetGameNodeInfoResponse);
 }

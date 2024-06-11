@@ -27,12 +27,12 @@ func (s *DeployServiceServer) GetNodeInfo(ctx context.Context, in *game.NodeInfo
 	return l.GetNodeInfo(in)
 }
 
-func (s *DeployServiceServer) StartGs(ctx context.Context, in *game.StartGsRequest) (*game.StartGsResponse, error) {
-	l := deployservicelogic.NewStartGsLogic(ctx, s.svcCtx)
-	return l.StartGs(in)
+func (s *DeployServiceServer) NewGameNode(ctx context.Context, in *game.NewGameNodeRequest) (*game.NewGameNodeResponse, error) {
+	l := deployservicelogic.NewNewGameNodeLogic(ctx, s.svcCtx)
+	return l.NewGameNode(in)
 }
 
-func (s *DeployServiceServer) GetGsNodeId(ctx context.Context, in *game.GsNodeIdRequest) (*game.GsNodeIdResponse, error) {
-	l := deployservicelogic.NewGetGsNodeIdLogic(ctx, s.svcCtx)
-	return l.GetGsNodeId(in)
+func (s *DeployServiceServer) GetGameNodeInfo(ctx context.Context, in *game.GetGameNodeInfoRequest) (*game.GetGameNodeInfoResponse, error) {
+	l := deployservicelogic.NewGetGameNodeInfoLogic(ctx, s.svcCtx)
+	return l.GetGameNodeInfo(in)
 }

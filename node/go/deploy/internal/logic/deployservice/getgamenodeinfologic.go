@@ -9,22 +9,22 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type GetGsNodeIdLogic struct {
+type GetGameNodeInfoLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
 }
 
-func NewGetGsNodeIdLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetGsNodeIdLogic {
-	return &GetGsNodeIdLogic{
+func NewGetGameNodeInfoLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetGameNodeInfoLogic {
+	return &GetGameNodeInfoLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
 		Logger: logx.WithContext(ctx),
 	}
 }
 
-func (l *GetGsNodeIdLogic) GetGsNodeId(in *game.GsNodeIdRequest) (*game.GsNodeIdResponse, error) {
+func (l *GetGameNodeInfoLogic) GetGameNodeInfo(in *game.GetGameNodeInfoRequest) (*game.GetGameNodeInfoResponse, error) {
 	// todo: add your logic here and delete this line
 
-	return &game.GsNodeIdResponse{}, nil
+	return &game.GetGameNodeInfoResponse{}, nil
 }

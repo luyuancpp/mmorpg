@@ -34,7 +34,7 @@ public:
 
     void ServerInfo(const ::servers_info_data& info);
 
-    void CallCentreStartGs(CentreSessionPtr controller_session);
+    void RegisterGameToCentre(CentreSessionPtr controller_session);
     void CallLobbyStartGs();
 
     void Receive1(const OnConnected2ServerEvent& es);

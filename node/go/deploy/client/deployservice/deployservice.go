@@ -13,27 +13,27 @@ import (
 )
 
 type (
-	CentreServerDb        = game.CentreServerDb
-	DatabaseServerDb      = game.DatabaseServerDb
-	GameServerDb          = game.GameServerDb
-	GateServerDb          = game.GateServerDb
-	GsNodeIdRequest       = game.GsNodeIdRequest
-	GsNodeIdResponse      = game.GsNodeIdResponse
-	LobbyNodeInfoRequest  = game.LobbyNodeInfoRequest
-	LobbyNodeInfoResponse = game.LobbyNodeInfoResponse
-	LobbyServerDb         = game.LobbyServerDb
-	LoginServerDb         = game.LoginServerDb
-	NodeInfoRequest       = game.NodeInfoRequest
-	NodeInfoResponse      = game.NodeInfoResponse
-	RedisServerDb         = game.RedisServerDb
-	ServersInfoData       = game.ServersInfoData
-	StartGsRequest        = game.StartGsRequest
-	StartGsResponse       = game.StartGsResponse
+	CentreServerDb          = game.CentreServerDb
+	DatabaseServerDb        = game.DatabaseServerDb
+	GameServerDb            = game.GameServerDb
+	GateServerDb            = game.GateServerDb
+	GetGameNodeInfoRequest  = game.GetGameNodeInfoRequest
+	GetGameNodeInfoResponse = game.GetGameNodeInfoResponse
+	LobbyNodeInfoRequest    = game.LobbyNodeInfoRequest
+	LobbyNodeInfoResponse   = game.LobbyNodeInfoResponse
+	LobbyServerDb           = game.LobbyServerDb
+	LoginServerDb           = game.LoginServerDb
+	NewGameNodeRequest      = game.NewGameNodeRequest
+	NewGameNodeResponse     = game.NewGameNodeResponse
+	NodeInfoRequest         = game.NodeInfoRequest
+	NodeInfoResponse        = game.NodeInfoResponse
+	RedisServerDb           = game.RedisServerDb
+	ServersInfoData         = game.ServersInfoData
 
 	DeployService interface {
 		GetNodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error)
-		StartGs(ctx context.Context, in *StartGsRequest, opts ...grpc.CallOption) (*StartGsResponse, error)
-		GetGsNodeId(ctx context.Context, in *GsNodeIdRequest, opts ...grpc.CallOption) (*GsNodeIdResponse, error)
+		NewGameNode(ctx context.Context, in *NewGameNodeRequest, opts ...grpc.CallOption) (*NewGameNodeResponse, error)
+		GetGameNodeInfo(ctx context.Context, in *GetGameNodeInfoRequest, opts ...grpc.CallOption) (*GetGameNodeInfoResponse, error)
 	}
 
 	defaultDeployService struct {
@@ -52,12 +52,12 @@ func (m *defaultDeployService) GetNodeInfo(ctx context.Context, in *NodeInfoRequ
 	return client.GetNodeInfo(ctx, in, opts...)
 }
 
-func (m *defaultDeployService) StartGs(ctx context.Context, in *StartGsRequest, opts ...grpc.CallOption) (*StartGsResponse, error) {
+func (m *defaultDeployService) NewGameNode(ctx context.Context, in *NewGameNodeRequest, opts ...grpc.CallOption) (*NewGameNodeResponse, error) {
 	client := game.NewDeployServiceClient(m.cli.Conn())
-	return client.StartGs(ctx, in, opts...)
+	return client.NewGameNode(ctx, in, opts...)
 }
 
-func (m *defaultDeployService) GetGsNodeId(ctx context.Context, in *GsNodeIdRequest, opts ...grpc.CallOption) (*GsNodeIdResponse, error) {
+func (m *defaultDeployService) GetGameNodeInfo(ctx context.Context, in *GetGameNodeInfoRequest, opts ...grpc.CallOption) (*GetGameNodeInfoResponse, error) {
 	client := game.NewDeployServiceClient(m.cli.Conn())
-	return client.GetGsNodeId(ctx, in, opts...)
+	return client.GetGameNodeInfo(ctx, in, opts...)
 }
