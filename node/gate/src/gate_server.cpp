@@ -3,7 +3,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include "src/game_config/deploy_json.h"
-#include "src/network/server_component.h"
+#include "src/network/rpc_session.h"
 #include "src/network/node_info.h"
 #include "service/service.h"
 #include "service/centre_service_service.h"

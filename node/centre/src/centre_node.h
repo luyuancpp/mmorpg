@@ -7,7 +7,7 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/network/rpc_server.h"
-#include "src/network/server_component.h"
+#include "src/network/rpc_session.h"
 
 #include "common_proto/deploy_service.pb.h"
 

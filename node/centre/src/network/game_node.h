@@ -3,7 +3,7 @@
 
 #include "src/util/game_registry.h"
 #include "src/network/node_info.h"
-#include "src/network/server_component.h"
+#include "src/network/rpc_session.h"
 
 #include "common_proto/common.pb.h"
 #include "component_proto/gs_node_comp.pb.h"
@@ -17,7 +17,7 @@ public:
 
 	decltype(auto) node_id() const { return node_info_.node_id(); }
 	NodeInfo node_info_;
-	RpcServerConnection session_;
+	RpcSession session_;
 	muduo::net::InetAddress node_inet_addr_;
 };
 

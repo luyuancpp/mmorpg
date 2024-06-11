@@ -9,7 +9,7 @@
 #include "src/system/centre_player_system.h"
 #include "src/network/game_node.h"
 #include "src/network/gate_node.h"
-#include "src/network/server_component.h"
+#include "src/network/rpc_session.h"
 #include "service/service.h"
 #include "service/gate_service_service.h"
 #include "service/game_service_service.h"
@@ -138,7 +138,7 @@ void Send2Player(uint32_t message_id,
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_ex()->set_session_id(session_id);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
-	gate->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
+	gate->Send(GateServicePlayerMessageMsgId, message_wrapper);
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
@@ -162,7 +162,7 @@ void Send2Gate(const uint32_t message_id,
         LOG_ERROR << "gate not found " << gate_node_id;
         return;
 	}
-	(*gate_node)->session_.Send(message_id, message);
+	(*gate_node)->Send(message_id, message);
 }
 
 void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -193,7 +193,7 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	(*gate_node)->session_.CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
+	(*gate_node)->CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
 }
 
 void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
@@ -209,5 +209,5 @@ void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& me
         LOG_ERROR << "gate not found " << node_id;
         return;
     }
-	(*gate_node)->session_.CallMethod(message_id, message);
+	(*gate_node)->CallMethod(message_id, message);
 }

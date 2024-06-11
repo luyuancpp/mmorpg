@@ -197,9 +197,9 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
 {
 ///<<< BEGIN WRITING YOUR CODE
     InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-    for (auto e : tls.registry.view<RpcServerConnection>())
+    for (auto e : tls.registry.view<RpcSession>())
     {
-        auto& conn = tls.registry.get<RpcServerConnection>(e).conn_;
+        auto& conn = tls.registry.get<RpcSession>(e).conn_;
         if (conn->peerAddress().toIpPort() != session_addr.toIpPort())
         {
             continue;

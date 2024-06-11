@@ -130,7 +130,7 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::en
     request.mutable_rpc_server()->set_ip(game_node->node_inet_addr_.toIp());
     request.mutable_rpc_server()->set_port(game_node->node_inet_addr_.port());
     request.set_game_node_id(entt::to_integral(game_node_id));
-    (*gate_node_ptr)->session_.Send(GateServiceRegisterGameMsgId, request);
+    (*gate_node_ptr)->Send(GateServiceRegisterGameMsgId, request);
 }
 
 void CentreNode::Receive1(const OnConnected2ServerEvent& es)
@@ -151,15 +151,15 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
     if (conn->connected())
     {
 		auto e = tls.network_registry.create();
-		tls.network_registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+		tls.network_registry.emplace<RpcSession>(e, RpcSession{ conn });
     }
     else
     {
 		auto& current_addr = conn->peerAddress();
-		for (auto e : tls.network_registry.view<RpcServerConnection>())
+		for (auto e : tls.network_registry.view<RpcSession>())
 		{
 			auto& sesion_addr = 
-                tls.network_registry.get<RpcServerConnection>(e).conn_->peerAddress();
+                tls.network_registry.get<RpcSession>(e).conn_->peerAddress();
 			if (sesion_addr.toIpPort() != current_addr.toIpPort())
 			{
 				continue;
@@ -179,7 +179,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
             {
                 auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_e);//如果是游戏逻辑服则删除
                 if (nullptr != gate_node &&
-                    (*gate_node)->session_.conn_->peerAddress().toIpPort() == current_addr.toIpPort())
+                    (*gate_node)->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
                 {
                     //remove AfterChangeGsEnterScene
                     //todo 

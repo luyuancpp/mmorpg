@@ -67,9 +67,9 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	const InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	const InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity game_node_id{request->game_node_id()};
-	for (auto e : tls.network_registry.view<RpcServerConnection>())
+	for (auto e : tls.network_registry.view<RpcSession>())
 	{
-		if (tls.network_registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != 
+		if (tls.network_registry.get<RpcSession>(e).conn_->peerAddress().toIpPort() != 
 			session_addr.toIpPort())
 		{
 			continue;
@@ -81,7 +81,7 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
             LOG_INFO << "game connection not found " << request->game_node_id();
             return;
         }
-        auto c = tls.network_registry.get<RpcServerConnection>(e);
+        auto c = tls.network_registry.get<RpcSession>(e);
 
         auto game_node_ptr = std::make_shared<GameNodeClient::element_type>(c.conn_);
         game_node_ptr->node_info_.set_node_id(request->game_node_id());
@@ -127,9 +127,9 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 ///<<< BEGIN WRITING YOUR CODE
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	entt::entity gate{ request->gate_node_id() };
-	for (auto e : tls.network_registry.view<RpcServerConnection>())
+	for (auto e : tls.network_registry.view<RpcSession>())
 	{
-		auto c = tls.network_registry.get<RpcServerConnection>(e);
+		auto c = tls.network_registry.get<RpcSession>(e);
 		if (c.conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
@@ -493,7 +493,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	GateNodePlayerUpdateGameNodeRequest rq;
 	rq.set_session_id(player_node_info->gate_session_id());
 	rq.set_game_node_id(player_node_info->game_node_id());
-	(*gate_node)->session_.CallMethod(GateServicePlayerEnterGsMsgId, rq);
+	(*gate_node)->CallMethod(GateServicePlayerEnterGsMsgId, rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, 
 		ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
@@ -601,7 +601,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
             LOG_ERROR << "gate crash " << cl_tls.next_route_node_id();
             return;
         }
-		(*gate_node)->session_.Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
+		(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
     case kGameNode:
