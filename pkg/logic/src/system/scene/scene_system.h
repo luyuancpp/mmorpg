@@ -48,7 +48,7 @@ struct CreateGameNodeSceneParam
 	SceneInfo scene_info;
 };
 
-void AddMainSceneNodeComponent(entt::entity server);
+void AddMainSceneNodeComponent(entt::registry& reg, entt::entity server);
 
 
 //todo 1线镜像和一线应该是同一个gs,这样就不会有切换服务器的开销

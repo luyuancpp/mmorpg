@@ -15,7 +15,7 @@ std::size_t kPerSceneConfigSize = 2;
 entt::entity CreateMainSceneNode()
 {
     const auto node = tls.registry.create();
-    AddMainSceneNodeComponent(node);
+    AddMainSceneNodeComponent(tls.registry, node);
     return node;
 }
 
