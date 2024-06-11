@@ -46,5 +46,7 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 	pkg.PbDb.LoadOneByKV(response.Info.GetCentreInfo(), "zone_id", zoneId)
 	pkg.PbDb.LoadOneByKV(response.Info.GetGameInfo(), "zone_id", zoneId)
 	pkg.PbDb.LoadOneByKV(response.Info.GetGateInfo(), "zone_id", zoneId)
+	pkg.PbDb.LoadOneByKV(response.Info.GetRedisInfo(), "zone_id", zoneId)
+
 	return response, nil
 }
