@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"gengo/config"
-	"gengo/util"
 	"io"
 	"log"
 	"os"
+	"pbgen/config"
+	"pbgen/util"
 	"strings"
 )
 

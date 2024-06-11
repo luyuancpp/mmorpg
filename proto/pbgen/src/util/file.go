@@ -3,11 +3,11 @@ package util
 import (
 	"bufio"
 	"fmt"
-	"gengo/config"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"pbgen/config"
 	"strings"
 )
 

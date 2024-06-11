@@ -31,8 +31,8 @@ bin/zlib*
 pkg/config/src/
 bin/config/
 proto/md5/
-proto/generator/.idea/
-proto/generator/bin/
+proto/pbgen/.idea/
+proto/pbgen/bin/
 common/src/pb/pb2sol2/
 build/
 Cmake/

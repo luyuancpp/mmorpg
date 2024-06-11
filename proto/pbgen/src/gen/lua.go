@@ -2,10 +2,10 @@ package gen
 
 import (
 	"bufio"
-	"gengo/config"
-	"gengo/util"
 	"os"
 	"path/filepath"
+	"pbgen/config"
+	"pbgen/util"
 	"reflect"
 	"strconv"
 	"strings"
