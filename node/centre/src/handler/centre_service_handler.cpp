@@ -284,7 +284,7 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 
 		//todo 会话没有了玩家还在
 
-		PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGameNodeIdByScene(scene), cl_tls.session_id());
+		PlayerSceneSystem::CallPlayerEnterGs(player, ScenesSystem::get_game_node_id(scene), cl_tls.session_id());
 		ControllerChangeSceneInfo change_scene_info;
 		change_scene_info.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
 		change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
@@ -426,24 +426,6 @@ void CentreServiceHandler::AddCrossServerScene(::google::protobuf::RpcController
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CreateGameNodeSceneParam create_scene_param;
-	for (auto& it : request->cross_scenes_info())
-	{
-		entt::entity game_node_id{it.gs_node_id()};
-		if (!tls.game_node_registry.valid(game_node_id))
-		{
-			continue;
-		}
-		auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
-		if (nullptr == game_node)
-		{
-            LOG_ERROR << "gs not found ";
-            continue;
-		}
-		create_scene_param.scene_info = it.scene_info();
-		auto scene = ScenesSystem::CreateScene2GameNode(create_scene_param);
-		tls.scene_registry.emplace<GameNodeClient>(scene, *game_node);
-	}
 ///<<< END WRITING YOUR CODE
 }
 
@@ -483,13 +465,6 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
 	}
-	if (const auto* const game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
-		nullptr == game_node)
-	{
-		LOG_ERROR << "game crash" << request->game_node_id();
-		return;
-	}
-	player_node_info->set_game_node_id(request->game_node_id());
 	GateNodePlayerUpdateGameNodeRequest rq;
 	rq.set_session_id(player_node_info->gate_session_id());
 	rq.set_game_node_id(player_node_info->game_node_id());
