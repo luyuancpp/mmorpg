@@ -15,10 +15,8 @@ public:
 	{
 	}
 
-	decltype(auto) node_id() const { return node_info_.node_id(); }
-	NodeInfo node_info_;
 	RpcSession session_;
-	muduo::net::InetAddress node_inet_addr_;
+	muduo::net::InetAddress service_addr_;
 };
 
 using GameNodeClient = std::shared_ptr<GameNode>;
