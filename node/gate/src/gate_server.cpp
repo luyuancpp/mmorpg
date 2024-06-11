@@ -7,7 +7,7 @@
 #include "src/network/node_info.h"
 #include "service/service.h"
 #include "service/centre_service_service.h"
-#include "service/grpc/deploy_service.grpc.pb.h"
+#include "common_proto/deploy_service.grpc.pb.h"
 #include "service/game_service_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/grpc/deploy/deployclient.h"

@@ -36,9 +36,6 @@
     <ClCompile Include="src\game_config\scene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\grpc\deploy_service.grpc.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\client_player_proto\common_client_player.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -363,6 +360,15 @@
     <ClCompile Include="src\service\centre_service_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\common_proto\db_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common_proto\deploy_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common_proto\login_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\condition_config.pb.h">
@@ -384,9 +390,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_config\scene_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\grpc\deploy_service.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\client_player_proto\common_client_player.pb.h">
@@ -558,6 +561,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\centre_service_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\db_service.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\deploy_service.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\login_service.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

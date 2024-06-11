@@ -56,7 +56,7 @@ var ProjectSourceMd5Dirs []string
 const PbcDirName = "pkg/pbc/src/"
 
 const PbcOutDir = ProjectDir + PbcDirName
-const GrpcOutDir = ProjectDir + PbcDirName + "grpc/"
+const GrpcOutDir = ProjectDir + PbcDirName
 const ServiceDirName = PbcOutDir + "service/"
 const ServiceCppFileName = ServiceDirName + "service.cpp"
 const ServiceHeadFileName = ServiceDirName + "service.h"
