@@ -40,7 +40,7 @@ NodeId ScenesSystem::get_game_node_id(entt::entity scene)
     auto scene_info = tls.game_node_registry.try_get<SceneInfo>(scene);
     if (nullptr == scene_info)
     {
-        return kInvalidGuid;
+        return kInvalidNodeId;
     }
 	return get_game_node_id(scene_info->guid());
 }

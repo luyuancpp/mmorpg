@@ -27,7 +27,7 @@ NodeId get_gate_node_id()
     return g_game_node->gs_info().id();
 }
 
-NodeId  node_id()
+NodeId  game_node_id()
 {
     return g_game_node->node_info().node_id();
 }

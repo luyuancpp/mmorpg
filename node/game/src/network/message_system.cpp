@@ -47,7 +47,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	(*gate_node)->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
+	(*gate_node)->Send(GateServicePlayerMessageMsgId, message_wrapper);
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
@@ -117,7 +117,7 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, Nod
         LOG_INFO << "gate not found " << get_gate_node_id(node_id);
         return;
     }
-	(*gate_node)->session_.Send(GateServicePlayerMessageMsgId, messag);
+	(*gate_node)->Send(GateServicePlayerMessageMsgId, messag);
 }
 
 void CallCentreNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)

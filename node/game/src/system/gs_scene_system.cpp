@@ -16,7 +16,7 @@
 
 #include "component_proto/player_comp.pb.h"
 
-NodeId node_id();
+NodeId game_node_id();
 
 void GsSceneSystem::LoadAllMainSceneNavBin()
 {
@@ -39,7 +39,7 @@ void GsSceneSystem::CreateNodeScene()
     const auto& config_all = mainscene_config::GetSingleton().all();
     for (int32_t i = 0; i < config_all.data_size(); ++i)
     {
-        CreateGameNodeSceneParam p{ .node_ = entt::entity{node_id()} };
+        CreateGameNodeSceneParam p{ .node_ = entt::entity{game_node_id()} };
         p.scene_info.set_scene_confid(config_all.data(i).id());
         auto scene_entity = 
             ScenesSystem::CreateScene2GameNode(p);
