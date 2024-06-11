@@ -18,8 +18,8 @@ public:
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void GateDisconnect(::google::protobuf::RpcController* controller,
-		const ::GateDisconnectRequest* request,
+	void GateSessionDisconnect(::google::protobuf::RpcController* controller,
+		const ::GateSessionDisconnectRequest* request,
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 

@@ -27,11 +27,10 @@ message CtrlConnectedGameRequest
   IpPort rpc_client = 1;
 }
 
-message GateDisconnectRequest
+message GateSessionDisconnectRequest
 {
   uint64 session_id = 1;
 }
-
 
 message CtrlLsLeaveGameRequest
 {
@@ -62,7 +61,7 @@ service CentreService {
   rpc RegisterGame (RegisterGameRequest) returns (Empty);
   rpc RegisterGate (RegisterGateRequest) returns (Empty);
   rpc GatePlayerService (GateClientMessageRequest) returns (Empty);
-  rpc GateDisconnect (GateDisconnectRequest) returns (Empty); 
+  rpc GateSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
   rpc LsLoginAccount (LoginRequest) returns (LoginResponse);
   rpc LsEnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (Empty);
