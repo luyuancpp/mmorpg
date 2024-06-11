@@ -46,7 +46,6 @@ struct CreateGameNodeSceneParam
 
 	entt::entity node_{entt::null};
 	SceneInfo scene_info;
-	uint32_t scene_config_id_{0};
 };
 
 void AddMainSceneNodeComponent(entt::entity server);

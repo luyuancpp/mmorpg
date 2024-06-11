@@ -73,12 +73,11 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 {
 	if (param.IsNull())
 	{
-		LOG_ERROR << "server id error" << param.scene_config_id_;
+		LOG_ERROR << "server id error" << param.scene_info.scene_confid();
 		return entt::null;
 	}
 
 	SceneInfo scene_info(param.scene_info);
-	scene_info.set_scene_confid(param.scene_config_id_);
 	if (scene_info.guid() <= 0)
 	{
 		auto scene_id = node_sequence_.Generate();
@@ -92,7 +91,7 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 	const auto scene = tls.scene_registry.create(id);
 	if (scene != id)
 	{
-        LOG_ERROR << "scene_registry create erroe" << param.scene_config_id_;
+        LOG_ERROR << "scene_registry create erroe" << scene_info.scene_confid();
         return entt::null;
 	}
 	tls.scene_registry.emplace<SceneInfo>(scene, scene_info);
@@ -232,11 +231,9 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 	entt::entity scene_entity = dest_node_scene.GetMinPlayerSizeSceneByConfigId(param.scene_conf_id_);
 	if (entt::null == scene_entity)
 	{
-		scene_entity = CreateScene2GameNode(
-			{
-				.node_ = param.dest_node_,
-					 .scene_config_id_ = param.scene_conf_id_
-			});
+		CreateGameNodeSceneParam p{ .node_ = param.dest_node_ };
+		p.scene_info.set_scene_confid(param.scene_conf_id_);
+		scene_entity = CreateScene2GameNode(p);
 	}
 	LeaveScene({param.player_});
 	if (entt::null == scene_entity)
@@ -259,7 +256,9 @@ void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest
 			{
 				continue;
 			}
-			CreateScene2GameNode({.node_ = dest_node, .scene_config_id_ = p_scene_info->scene_confid()});
+			CreateGameNodeSceneParam p{ .node_ = dest_node };
+			p.scene_info.set_scene_confid(p_scene_info->scene_confid());
+			CreateScene2GameNode(p);
 		}
 	}
 	Destroy(tls.registry, crash_node);
