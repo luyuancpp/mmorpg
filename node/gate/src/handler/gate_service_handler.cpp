@@ -8,6 +8,7 @@
 #include "src/gate_node.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/thread_local/gate_thread_local_storage.h"
+#include "src/util/pb_util.h"
 
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -33,8 +34,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	game_node->registerService(&g_gate_node->gate_service_hanlder());
 	game_node->connect();
 
-	LOG_INFO << "on  game register" << game_servcie_addr.toIpPort() 
-		<< " server id " << request->game_node_id();
+	LOG_INFO << "on  game register" << MessageToJsonString(request);
 	///<<< END WRITING YOUR CODE
 }
 
