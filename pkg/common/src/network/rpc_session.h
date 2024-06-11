@@ -62,3 +62,5 @@ bool IsSameAddr(const muduo::net::InetAddress& conn_addr, const ServerInfo& serv
 }
 
 bool IsSameAddr(const muduo::net::InetAddress& conn_addr, const muduo::net::InetAddress& server_info);
+
+using RpcSessionPtr = std::shared_ptr<RpcSession>;

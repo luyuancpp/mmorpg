@@ -25,14 +25,14 @@ void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, Node
         LOG_ERROR << "gs not found ->" << node_id;
 		return;
 	}
-	auto node =  tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
+	auto node =  tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
 	if (nullptr == node)
 	{
 		LOG_ERROR << "gs not found ->" << node_id;
 		return;
 	}
 
-	(*node)->session_.Send(message_id, message);
+	(*node)->Send(message_id, message);
 }
 
 void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -52,7 +52,7 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 		LOG_ERROR << "game node not found" << player_node_info->game_node_id();
 		return;
 	}
-	auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
+	auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
 	if (nullptr == game_node)
 	{
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
@@ -63,7 +63,7 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), static_cast<int32_t>(message.ByteSizeLong()));
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	(*game_node)->session_.Send(GameServiceSend2PlayerMsgId, message_wrapper);
+	(*game_node)->Send(GameServiceSend2PlayerMsgId, message_wrapper);
 }
 
 
@@ -94,7 +94,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
         return;
     }
-    auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
+    auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == game_node)
     {
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
@@ -105,7 +105,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	(*game_node)->session_.Send(message_id, message_wrapper);
+	(*game_node)->Send(message_id, message_wrapper);
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)

@@ -83,9 +83,10 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
         }
         auto c = tls.network_registry.get<RpcSession>(e);
 
-        auto game_node_ptr = std::make_shared<GameNodeClient::element_type>(c.conn_);
+        auto game_node_ptr = std::make_shared<RpcSessionPtr::element_type>(c.conn_);
         AddMainSceneNodeComponent(game_node);
-        tls.game_node_registry.emplace<GameNodeClient>(game_node, game_node_ptr);
+        tls.game_node_registry.emplace<RpcSessionPtr>(game_node, game_node_ptr);
+        tls.game_node_registry.emplace<InetAddress>(game_node, service_addr);
 
 		break;
 	}
@@ -145,7 +146,7 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 	{
 		return;
 	}
-	for (auto e : tls.game_node_registry.view<GameNodeClient>())
+	for (auto e : tls.game_node_registry.view<RpcSessionPtr>())
 	{
 		g_centre_node->BroadCastRegisterGameToGate(e, gate);
 	}
@@ -198,7 +199,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
         LOG_ERROR << "gs not found ";
         return;
     }
-    auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
+    auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == game_node)
     {
         LOG_ERROR << "gs not found ";
@@ -207,7 +208,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 	const auto player_id = tls.registry.get<Guid>(player);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	(*game_node)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
+	(*game_node)->CallMethod(GameServiceDisconnectMsgId, rq);
 	CenterPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -584,13 +585,13 @@ mutable_request->set_body(cl_tls.route_msg_body());
             LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
             return;
 		}
-		auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
+		auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
 		if (nullptr == game_node)
 		{
 			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		(*game_node)->session_.Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
+		(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	    break;
     default:
