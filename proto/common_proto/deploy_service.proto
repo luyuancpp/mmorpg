@@ -28,7 +28,8 @@ message servers_info_data
   login_server_db login_info = 2;
   centre_server_db centre_info = 3;
   gate_server_db gate_info = 4;
-  redis_server_db redis_info = 5;
+  game_server_db game_info = 5; 
+  redis_server_db redis_info = 6;
 }
 
 message login_server_db

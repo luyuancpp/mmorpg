@@ -11,7 +11,6 @@
 #include "src/network/rpc_msg_route.h"
 
 #include "common_proto/deploy_service.pb.h"
-#include "common_proto/centre_service.pb.h"
 
 class GameNode : muduo::noncopyable
 {
@@ -30,11 +29,11 @@ public:
     void StartServer(const ::servers_info_data& info);
 
     void RegisterGameToCentre(RpcClientPtr& controller_session);
-    void CallLobbyStartGs();
 
     void Receive1(const OnConnected2ServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
 
+    const game_server_db& game_node_info() const { return serverinfos_.game_info(); }
 private:    
     void InitNodeByReqInfo();
 
@@ -44,11 +43,11 @@ private:
 
     RpcServerPtr server_;
 
+    servers_info_data serverinfos_;
 
-    ::game_server_db game_info_;
     NodeInfo node_info_;
 
-    GameServiceHandler gs_service_impl_;
+    GameServiceHandler game_service_;
 };
 
 NodeId game_node_id();

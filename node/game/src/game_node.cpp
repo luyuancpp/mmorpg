@@ -79,11 +79,23 @@ void GameNode::InitConfig()
     ConfigSystem::OnConfigLoadSuccessful();
 }
 
-
 void GameNode::StartServer(const ::servers_info_data& info)
 {
+    serverinfos_ = info;
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
     game_tls.redis_system().Init(serverAddr);
+
+    node_info_.set_node_id(game_node_info().id());
+    InetAddress servcie_addr(game_node_info().ip(), game_node_info().port());
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, servcie_addr);
+    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&GameNode::Receive2>(*this);
+    server_->registerService(&game_service_);
+    for (auto& it : g_server_service)
+    {
+        server_->registerService(it.second.get());
+    }
+    server_->start();
+    LOG_INFO << "game node  start " << game_node_info().DebugString();
 }
 
 void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)
@@ -92,17 +104,13 @@ void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)
     RegisterGameRequest rq;
     rq.mutable_rpc_client()->set_ip(centre_local_addr.toIp());
     rq.mutable_rpc_client()->set_port(centre_local_addr.port());
-    rq.mutable_rpc_server()->set_ip(game_info_.ip());
-    rq.mutable_rpc_server()->set_port(game_info_.port());
+    rq.mutable_rpc_server()->set_ip(game_node_info().ip());
+    rq.mutable_rpc_server()->set_port(game_node_info().port());
 
     rq.set_server_type(tls.registry.get<GsNodeType>(global_entity()).server_type_);
     rq.set_game_node_id(game_node_id());
     centre_node->CallMethod(CentreServiceRegisterGameMsgId,rq);
     LOG_DEBUG << "connect to centre" ;
-}
-
-void GameNode::CallLobbyStartGs()
-{
 }
 
 void GameNode::Receive1(const OnConnected2ServerEvent& es)
@@ -170,7 +178,6 @@ void GameNode::InitNodeByReqInfo()
     g_deploy_stub = DeployService::NewStub(deploy_channel);
     g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
-
     {
         NodeInfoRequest req;
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
