@@ -8,8 +8,8 @@ public:
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void StopGS(::google::protobuf::RpcController* controller,
-		const ::GateNodeStopGSRequest* request,
+	void UnRegisterGame(::google::protobuf::RpcController* controller,
+		const ::UnregisterGameRequest* request,
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
