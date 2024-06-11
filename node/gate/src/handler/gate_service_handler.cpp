@@ -19,8 +19,12 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 {
 	///<<< BEGIN WRITING YOUR CODE
 	//centre服务器通知过来
-	InetAddress game_servcie_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity request_game_node_id{ request->game_node_id() };
+	if (tls.game_node_registry.valid(request_game_node_id))
+	{
+        LOG_ERROR << " game node reconnect";
+		return;
+	}
 	Destroy(tls.game_node_registry, request_game_node_id);
 	auto game_node_id = tls.game_node_registry.create(request_game_node_id);
 	if (game_node_id != request_game_node_id)
@@ -28,6 +32,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 		LOG_ERROR << "create game node ";
 		return;
 	}
+    InetAddress game_servcie_addr(request->rpc_server().ip(), request->rpc_server().port());
     auto& game_node = tls.game_node_registry.emplace<RpcClientPtr>(game_node_id,
         std::make_unique<RpcClientPtr::element_type>(
             EventLoop::getEventLoopOfCurrentThread(),
@@ -40,7 +45,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 }
 
 void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,
-	const ::UnregisterGameRequest* request,
+	const ::UnRegisterGameRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {

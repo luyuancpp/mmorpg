@@ -27,3 +27,5 @@ void OnCentreServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& con
 
 void OnCentreServiceRoutePlayerStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RoutePlayerMsgStringResponse>& replied, Timestamp timestamp);
 
+void OnCentreServiceUnRegisterGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp);
+

@@ -1,4 +1,5 @@
 0=ClientPlayerCommonServicePushTipS2C
+2=CentreServiceUnRegisterGame
 3=CentreScenePlayerServiceLeaveScene
 4=CentreScenePlayerServiceEnterScene
 5=CentreScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
