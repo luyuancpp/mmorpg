@@ -147,7 +147,7 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
 	if (conn->connected())
 	{
 		auto e = tls.registry.create();
-		tls.registry.emplace<RpcSession>(e, RpcSession{ conn });
+		tls.network_registry.emplace<RpcSession>(e, RpcSession{ conn });
 	}
     else
     {

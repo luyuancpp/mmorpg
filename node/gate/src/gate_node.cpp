@@ -96,7 +96,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
                     rq.mutable_rpc_client()->set_ip(centre_node_->local_addr().toIp());
                     rq.mutable_rpc_client()->set_port(centre_node_->local_addr().port());
                     rq.set_gate_node_id(gate_node_id());
-                    controller_node_session()->CallMethod(CentreServiceRegisterGateMsgId, rq);
+                    centre_node()->CallMethod(CentreServiceRegisterGateMsgId, rq);
                 }
             );
             return;
@@ -130,8 +130,8 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
 void GateNode::Connect2Centre()
 {
     auto& centre_node_info = node_net_info_.centre_info();
-    InetAddress controller_addr(centre_node_info.ip(), centre_node_info.port());
-    centre_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
+    InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
+    centre_node_ = std::make_unique<RpcClient>(loop_, centre_addr);
     centre_node_->registerService(&gate_service_handler_);
     centre_node_->connect();
 }
