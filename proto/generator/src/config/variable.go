@@ -7,6 +7,9 @@ const Md5Dir = ProtoDir + "generator/bin/md5/"
 const ProtoEx = ".proto"
 const ProtoPbcEx = ".pb.cc"
 const ProtoPbhEx = ".pb.h"
+const GrpcPbcEx = ".grpc.pb.cc"
+const GrpcPbhEx = ".grpc.pb.h"
+const GrpcEx = "grpc"
 const HeadEx = ".h"
 const CppEx = ".cpp"
 const LuaCppEx = "_lua.cpp"
@@ -53,6 +56,7 @@ var ProjectSourceMd5Dirs []string
 const PbcDirName = "pkg/pbc/src/"
 
 const PbcOutDir = ProjectDir + PbcDirName
+const GrpcOutDir = ProjectDir + PbcDirName + "grpc/"
 const ServiceDirName = PbcOutDir + "service/"
 const ServiceCppFileName = ServiceDirName + "service.cpp"
 const ServiceHeadFileName = ServiceDirName + "service.h"

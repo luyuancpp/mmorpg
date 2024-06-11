@@ -92,7 +92,11 @@ void GameNode::ServerInfo(const ::servers_info_data& info)
 
 void GameNode::RegisterGameToCentre(CentreSessionPtr centre_node)
 {
+    auto& controller_local_addr = centre_node->local_addr();
     RegisterGameRequest rq;
+    auto session_info = rq.mutable_rpc_client();
+    session_info->set_ip(controller_local_addr.toIp());
+    session_info->set_port(controller_local_addr.port());
     rq.set_server_type(tls.registry.get<GsNodeType>(global_entity()).server_type_);
     rq.set_game_node_id(game_node_id());
     centre_node->CallMethod(CentreServiceRegisterGameMsgId,rq);

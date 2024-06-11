@@ -96,7 +96,6 @@ message gate_server_db
   uint32 zone_id = 4;
 }
 
-
 message NodeInfoRequest
 {
   uint32 zone_id = 1;

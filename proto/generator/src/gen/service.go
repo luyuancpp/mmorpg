@@ -16,6 +16,9 @@ import (
 
 func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	defer util.Wg.Done()
+	if !util.IsProtoFile(fd) {
+		return fmt.Errorf("not a proto file: %s", filePath)
+	}
 	f, err := os.Open(filePath + fd.Name())
 	if err != nil {
 		log.Fatal(err)
@@ -47,7 +50,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			service = strings.Split(service, " ")[1]
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
-			RpcServiceSyncMap.Store(service, &rpcServiceInfo)
+			RpcServiceMap.Store(service, &rpcServiceInfo)
 			continue
 		} else if strings.Contains(line, "rpc ") {
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
@@ -68,7 +71,45 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 		} else if len(service) > 0 && strings.Contains(line, "}") {
 			break
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return err
+}
 
+func ReadProtoFileGrpcService(fd os.DirEntry, filePath string) (err error) {
+	defer util.Wg.Done()
+	if !util.IsProtoFile(fd) {
+		return fmt.Errorf("not a proto file: %s", filePath)
+	}
+	f, err := os.Open(filePath + fd.Name())
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(f)
+
+	scanner := bufio.NewScanner(f)
+	var line string
+	ccGenericServices := false
+	for scanner.Scan() {
+		line = scanner.Text()
+		if strings.Contains(line, config.CcGenericServices) {
+			ccGenericServices = true
+		}
+		if ccGenericServices {
+			continue
+		}
+		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
+			GrpcServiceFileMap.Store(fd.Name(), "")
+			break
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -79,17 +120,18 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 
 func ReadAllProtoFileServices() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		fds, err := os.ReadDir(config.ProtoDirs[i])
-		if err != nil {
-			log.Fatal(err)
-			continue
-		}
-		for _, fd := range fds {
-			if !util.IsProtoFile(fd) {
-				continue
-			}
+		fds, _ := os.ReadDir(config.ProtoDirs[i])
+		for _, v := range fds {
 			util.Wg.Add(1)
-			ReadProtoFileService(fd, config.ProtoDirs[i])
+			fd := v
+			go func(i int, fd os.DirEntry) {
+				ReadProtoFileService(fd, config.ProtoDirs[i])
+			}(i, fd)
+
+			util.Wg.Add(1)
+			go func(i int, fd os.DirEntry) {
+				ReadProtoFileGrpcService(fd, config.ProtoDirs[i])
+			}(i, fd)
 		}
 	}
 }
@@ -150,7 +192,7 @@ func InitServiceId() {
 	var unUseServiceId = map[uint64]EmptyStruct{}
 	var useServiceId = map[uint64]EmptyStruct{}
 
-	RpcServiceSyncMap.Range(func(k, v interface{}) bool {
+	RpcServiceMap.Range(func(k, v interface{}) bool {
 		key := k.(string)
 		methodInfo := v.(*RpcServiceInfo).MethodInfo
 		ServiceMethodMap[key] = methodInfo

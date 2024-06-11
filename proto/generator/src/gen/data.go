@@ -29,7 +29,8 @@ type RpcServiceInfo struct {
 
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
-var RpcServiceSyncMap sync.Map
+var RpcServiceMap sync.Map
+var GrpcServiceFileMap sync.Map
 var RpcIdMethodMap = map[uint64]*RpcMethodInfo{}
 var ServiceIdMap = map[string]uint64{}
 var ServiceMethodMap = map[string]RpcMethodInfos{}

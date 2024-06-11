@@ -73,7 +73,7 @@ func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
 	return err
 }
 
-func CompareByMd5Ex(dstFilePath string, md5SrcFilePath string) (same bool, err error) {
+func SameMD5(dstFilePath string, md5SrcFilePath string) (same bool, err error) {
 	srcByteMd5, err := os.ReadFile(md5SrcFilePath)
 	srcMd5 := bytes.NewBuffer(srcByteMd5).String()
 	if err != nil {
@@ -98,7 +98,7 @@ func GetMd5ExFileName(dstFilePath string) (filename string) {
 }
 
 func Md5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err error) {
-	same, err := CompareByMd5Ex(dstFilePath, srcFilePath)
+	same, err := SameMD5(dstFilePath, srcFilePath)
 	if err != nil {
 		return false, err
 	}

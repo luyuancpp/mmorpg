@@ -84,7 +84,6 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
         auto c = tls.network_registry.get<RpcSession>(e);
 
         auto game_node_ptr = std::make_shared<GameNodeClient::element_type>(c.conn_);
-        game_node_ptr->service_addr_ = service_addr; //为了停掉gs，或者gs断线用
         AddMainSceneNodeComponent(game_node);
         tls.game_node_registry.emplace<GameNodeClient>(game_node, game_node_ptr);
 
