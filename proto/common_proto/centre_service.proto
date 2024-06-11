@@ -46,10 +46,6 @@ message CrossSceneInfo
   uint32 gs_node_id = 2;
 }
 
-message AddCrossServerSceneRequest
-{
-  repeated CrossSceneInfo cross_scenes_info = 1;
-}
 
 message EnterGameNodeSucceedRequest
 {
@@ -67,7 +63,6 @@ service CentreService {
   rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (Empty);
   rpc LsDisconnect (CtrlLsDisconnectRequest) returns (Empty); 
   rpc GsPlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
-  rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (Empty);
   rpc EnterGsSucceed (EnterGameNodeSucceedRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
