@@ -19,9 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	DeployService_GetNodeInfo_FullMethodName = "/DeployService/GetNodeInfo"
-	DeployService_StartGs_FullMethodName     = "/DeployService/StartGs"
-	DeployService_GetGsNodeId_FullMethodName = "/DeployService/GetGsNodeId"
+	DeployService_GetNodeInfo_FullMethodName     = "/DeployService/GetNodeInfo"
+	DeployService_NewGameNode_FullMethodName     = "/DeployService/NewGameNode"
+	DeployService_GetGameNodeInfo_FullMethodName = "/DeployService/GetGameNodeInfo"
 )
 
 // DeployServiceClient is the client API for DeployService service.
@@ -29,8 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DeployServiceClient interface {
 	GetNodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error)
-	StartGs(ctx context.Context, in *StartGsRequest, opts ...grpc.CallOption) (*StartGsResponse, error)
-	GetGsNodeId(ctx context.Context, in *GsNodeIdRequest, opts ...grpc.CallOption) (*GsNodeIdResponse, error)
+	NewGameNode(ctx context.Context, in *NewGameNodeRequest, opts ...grpc.CallOption) (*NewGameNodeResponse, error)
+	GetGameNodeInfo(ctx context.Context, in *GetGameNodeInfoRequest, opts ...grpc.CallOption) (*GetGameNodeInfoResponse, error)
 }
 
 type deployServiceClient struct {
@@ -50,18 +50,18 @@ func (c *deployServiceClient) GetNodeInfo(ctx context.Context, in *NodeInfoReque
 	return out, nil
 }
 
-func (c *deployServiceClient) StartGs(ctx context.Context, in *StartGsRequest, opts ...grpc.CallOption) (*StartGsResponse, error) {
-	out := new(StartGsResponse)
-	err := c.cc.Invoke(ctx, DeployService_StartGs_FullMethodName, in, out, opts...)
+func (c *deployServiceClient) NewGameNode(ctx context.Context, in *NewGameNodeRequest, opts ...grpc.CallOption) (*NewGameNodeResponse, error) {
+	out := new(NewGameNodeResponse)
+	err := c.cc.Invoke(ctx, DeployService_NewGameNode_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *deployServiceClient) GetGsNodeId(ctx context.Context, in *GsNodeIdRequest, opts ...grpc.CallOption) (*GsNodeIdResponse, error) {
-	out := new(GsNodeIdResponse)
-	err := c.cc.Invoke(ctx, DeployService_GetGsNodeId_FullMethodName, in, out, opts...)
+func (c *deployServiceClient) GetGameNodeInfo(ctx context.Context, in *GetGameNodeInfoRequest, opts ...grpc.CallOption) (*GetGameNodeInfoResponse, error) {
+	out := new(GetGameNodeInfoResponse)
+	err := c.cc.Invoke(ctx, DeployService_GetGameNodeInfo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +73,8 @@ func (c *deployServiceClient) GetGsNodeId(ctx context.Context, in *GsNodeIdReque
 // for forward compatibility
 type DeployServiceServer interface {
 	GetNodeInfo(context.Context, *NodeInfoRequest) (*NodeInfoResponse, error)
-	StartGs(context.Context, *StartGsRequest) (*StartGsResponse, error)
-	GetGsNodeId(context.Context, *GsNodeIdRequest) (*GsNodeIdResponse, error)
+	NewGameNode(context.Context, *NewGameNodeRequest) (*NewGameNodeResponse, error)
+	GetGameNodeInfo(context.Context, *GetGameNodeInfoRequest) (*GetGameNodeInfoResponse, error)
 	mustEmbedUnimplementedDeployServiceServer()
 }
 
@@ -85,11 +85,11 @@ type UnimplementedDeployServiceServer struct {
 func (UnimplementedDeployServiceServer) GetNodeInfo(context.Context, *NodeInfoRequest) (*NodeInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNodeInfo not implemented")
 }
-func (UnimplementedDeployServiceServer) StartGs(context.Context, *StartGsRequest) (*StartGsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StartGs not implemented")
+func (UnimplementedDeployServiceServer) NewGameNode(context.Context, *NewGameNodeRequest) (*NewGameNodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewGameNode not implemented")
 }
-func (UnimplementedDeployServiceServer) GetGsNodeId(context.Context, *GsNodeIdRequest) (*GsNodeIdResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetGsNodeId not implemented")
+func (UnimplementedDeployServiceServer) GetGameNodeInfo(context.Context, *GetGameNodeInfoRequest) (*GetGameNodeInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGameNodeInfo not implemented")
 }
 func (UnimplementedDeployServiceServer) mustEmbedUnimplementedDeployServiceServer() {}
 
@@ -122,38 +122,38 @@ func _DeployService_GetNodeInfo_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeployService_StartGs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StartGsRequest)
+func _DeployService_NewGameNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewGameNodeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DeployServiceServer).StartGs(ctx, in)
+		return srv.(DeployServiceServer).NewGameNode(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: DeployService_StartGs_FullMethodName,
+		FullMethod: DeployService_NewGameNode_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DeployServiceServer).StartGs(ctx, req.(*StartGsRequest))
+		return srv.(DeployServiceServer).NewGameNode(ctx, req.(*NewGameNodeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeployService_GetGsNodeId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GsNodeIdRequest)
+func _DeployService_GetGameNodeInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGameNodeInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DeployServiceServer).GetGsNodeId(ctx, in)
+		return srv.(DeployServiceServer).GetGameNodeInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: DeployService_GetGsNodeId_FullMethodName,
+		FullMethod: DeployService_GetGameNodeInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DeployServiceServer).GetGsNodeId(ctx, req.(*GsNodeIdRequest))
+		return srv.(DeployServiceServer).GetGameNodeInfo(ctx, req.(*GetGameNodeInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -170,12 +170,12 @@ var DeployService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _DeployService_GetNodeInfo_Handler,
 		},
 		{
-			MethodName: "StartGs",
-			Handler:    _DeployService_StartGs_Handler,
+			MethodName: "NewGameNode",
+			Handler:    _DeployService_NewGameNode_Handler,
 		},
 		{
-			MethodName: "GetGsNodeId",
-			Handler:    _DeployService_GetGsNodeId_Handler,
+			MethodName: "GetGameNodeInfo",
+			Handler:    _DeployService_GetGameNodeInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

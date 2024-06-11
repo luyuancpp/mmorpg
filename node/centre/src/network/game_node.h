@@ -16,7 +16,6 @@ public:
 	}
 
 	RpcSession session_;
-	muduo::net::InetAddress service_addr_;
 };
 
 using GameNodeClient = std::shared_ptr<GameNode>;

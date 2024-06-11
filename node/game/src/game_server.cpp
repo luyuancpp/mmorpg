@@ -90,19 +90,12 @@ void GameNode::ServerInfo(const ::servers_info_data& info)
     game_tls.redis_system().Init(serverAddr);
 }
 
-void GameNode::CallCentreStartGs(CentreSessionPtr controller_node)
+void GameNode::RegisterGameToCentre(CentreSessionPtr centre_node)
 {
-    auto& controller_local_addr = controller_node->local_addr();
     RegisterGameRequest rq;
-    auto session_info = rq.mutable_rpc_client();
-    auto node_info = rq.mutable_rpc_server();
-    session_info->set_ip(controller_local_addr.toIp());
-    session_info->set_port(controller_local_addr.port());
-    node_info->set_ip(gs_info_.ip());
-    node_info->set_port(gs_info_.port());
     rq.set_server_type(tls.registry.get<GsNodeType>(global_entity()).server_type_);
-    rq.set_game_node_id(gs_info_.id());
-    controller_node->CallMethod(CentreServiceRegisterGameMsgId,rq);
+    rq.set_game_node_id(game_node_id());
+    centre_node->CallMethod(CentreServiceRegisterGameMsgId,rq);
     LOG_DEBUG << "connect to controller" ;
 }
 
@@ -129,7 +122,7 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
         if (conn->connected() &&
             IsSameAddr(controller_session->peer_addr(), conn->peerAddress()))
         {
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameNode::CallCentreStartGs, this, controller_session));
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameNode::RegisterGameToCentre, this, controller_session));
             break;
         }
         // ms 走断线重连，不删除
