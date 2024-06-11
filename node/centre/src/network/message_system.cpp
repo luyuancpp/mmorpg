@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/type_define/type_define.h"
-#include "src/network/session.h"
+#include "src/network/gate_session.h"
 #include "src/comp/scene_comp.h"
 #include "src/thread_local/thread_local_storage.h"
 #include "src/system/centre_player_system.h"

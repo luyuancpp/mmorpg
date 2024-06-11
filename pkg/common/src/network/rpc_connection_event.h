@@ -4,7 +4,6 @@
 
 #include "src/network/rpc_channel.h"
 
-
 struct OnConnected2ServerEvent
 {
     OnConnected2ServerEvent(const muduo::net::TcpConnectionPtr& conn)
