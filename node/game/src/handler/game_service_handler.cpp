@@ -202,9 +202,9 @@ void GameServiceHandler::RegisterGate(::google::protobuf::RpcController* control
 {
 ///<<< BEGIN WRITING YOUR CODE
     InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-    for (auto e : tls.registry.view<RpcSession>())
+    for (auto e : tls.network_registry.view<RpcSession>())
     {
-        auto& conn = tls.registry.get<RpcSession>(e).conn_;
+        auto& conn = tls.network_registry.get<RpcSession>(e).conn_;
         if (conn->peerAddress().toIpPort() != session_addr.toIpPort())
         {
             continue;

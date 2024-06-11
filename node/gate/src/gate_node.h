@@ -33,7 +33,7 @@ public:
     inline ProtobufCodec& codec() { return codec_; };
     inline GateServiceHandler& gate_service_hanlder() { return gate_service_handler_; }
     inline uint32_t gate_node_id()const { return node_net_info_.gate_info().id(); }
-    inline RpcClientPtr& controller_node_session() { return centre_node_; }
+    inline RpcClientPtr& centre_node() { return centre_node_; }
     inline const NodeInfo& node_info()const { return node_info_; }
 
 	inline void set_servers_info_data(const servers_info_data& serverinfo_data) {node_net_info_ = serverinfo_data; node_info_.set_node_id(node_net_info_.gate_info().id());	}

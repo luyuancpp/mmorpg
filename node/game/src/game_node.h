@@ -28,7 +28,7 @@ public:
 
     void StartServer(const ::servers_info_data& info);
 
-    void RegisterGameToCentre(RpcClientPtr& controller_session);
+    void RegisterGameToCentre(RpcClientPtr& centre_session);
 
     void Receive1(const OnConnected2ServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
