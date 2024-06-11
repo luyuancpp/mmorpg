@@ -72,7 +72,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 	}
 	const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
 	const auto dest_scene = entt::to_entity(change_scene_info.scene_info().guid());
-	const auto* const dest_game_node = tls.registry.try_get<GameNodeClient>(dest_scene);
+	const auto* const dest_game_node = tls.game_node_registry.try_get<GameNodeClient>(dest_scene);
 	const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == dest_game_node || nullptr == player_node_info)
 	{

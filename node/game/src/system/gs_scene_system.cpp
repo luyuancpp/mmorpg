@@ -39,11 +39,10 @@ void GsSceneSystem::CreateNodeScene()
     const auto& config_all = mainscene_config::GetSingleton().all();
     for (int32_t i = 0; i < config_all.data_size(); ++i)
     {
+        CreateGameNodeSceneParam p{ .node_ = entt::entity{node_id()} };
+        p.scene_info.set_scene_confid(config_all.data(i).id());
         auto scene_entity = 
-            ScenesSystem::CreateScene2GameNode(
-                { .node_ = entt::entity{node_id()}, 
-                .scene_config_id_ = config_all.data(i).id() }
-            );
+            ScenesSystem::CreateScene2GameNode(p);
     }
 }
 

@@ -59,6 +59,11 @@ public:
 	ScenesSystem();
 	~ScenesSystem();
 
+	static NodeId uintget_game_node_id(uint64_t scene_id)
+	{
+		return node_sequence_.node_id(scene_id);
+	}
+
 	static std::size_t scenes_size(uint32_t scene_config_id);
 	static std::size_t scenes_size();
 	static void set_server_sequence_node_id(const uint32_t node_id) { node_sequence_.set_node_id(node_id); }
@@ -84,5 +89,5 @@ public:
 	static void ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node);
 
 private:
-	inline static NodeBit16Sequence node_sequence_;
+	inline static NodeBit16Sequence64 node_sequence_;
 };

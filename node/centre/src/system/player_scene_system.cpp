@@ -63,7 +63,7 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 
 NodeId PlayerSceneSystem::GetGameNodeIdByScene(const entt::entity scene)
 {
-    const auto* game_node_info = tls.scene_registry.try_get<GameNodeClient>(scene);
+    const auto* game_node_info = tls.game_node_registry.try_get<GameNodeClient>(scene);
     //找不到gs了，放到好的gs里面
     if (nullptr == game_node_info)
     {
@@ -129,8 +129,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-    auto from_scene_game_node = tls.registry.try_get<GameNodeClient>(from_scene->scene_entity_);
-    auto game_node = tls.registry.try_get<GameNodeClient>(to_scene);
+    auto from_scene_game_node = tls.game_node_registry.try_get<GameNodeClient>(from_scene->scene_entity_);
+    auto game_node = tls.game_node_registry.try_get<GameNodeClient>(to_scene);
     if (nullptr == from_scene_game_node || nullptr == game_node)
     {
         LOG_ERROR << " gs component null : " << (nullptr == from_scene_game_node) << " " << (nullptr == game_node);
@@ -138,7 +138,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    auto from_scene_id = tls.registry.get<SceneInfo>(from_scene->scene_entity_).guid();
+    auto from_scene_id = tls.scene_registry.get<SceneInfo>(from_scene->scene_entity_).guid();
     if (to_scene_guid == from_scene_id)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
