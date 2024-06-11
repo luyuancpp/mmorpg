@@ -18,6 +18,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+	//centre服务器通知过来
 	InetAddress game_servcie_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity request_game_node_id{ request->game_node_id() };
 	Destroy(tls.game_node_registry, request_game_node_id);

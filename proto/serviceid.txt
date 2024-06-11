@@ -5,6 +5,7 @@
 6=CentrePlayerServiceTest
 7=GameServiceRegisterGate
 8=CentreSceneServiceUpdateCrossMainSceneInfo
+9=CentreServiceGateSessionDisconnect
 10=GateServiceStopGS
 11=GateServicePlayerEnterGs
 12=GateServicePlayerMessage
@@ -17,7 +18,6 @@
 19=CentreServiceLsLeaveGame
 20=GamePlayerServiceCentre2GsLogin
 21=GateServiceKickConnByCentre
-22=CentreServiceGateDisconnect
 24=CentreServiceRegisterGate
 25=GameServiceCentreSend2PlayerViaGs
 26=CentreServiceGsPlayerService

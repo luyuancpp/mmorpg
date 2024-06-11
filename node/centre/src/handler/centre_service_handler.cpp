@@ -160,8 +160,8 @@ void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* 
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* controller,
-	const ::GateDisconnectRequest* request,
+void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller,
+	const ::GateSessionDisconnectRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
