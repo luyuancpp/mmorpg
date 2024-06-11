@@ -107,15 +107,23 @@ void CentreNode::StartServer(const ::servers_info_data& info)
 
 void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::entity gate)
 {
-	auto gate_node_ptr = tls.gate_node_registry.try_get<RpcSessionPtr>(gate);
-	if (nullptr == gate_node_ptr)
+	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate);
+	if (nullptr == gate_node)
 	{
 		LOG_ERROR << "gate not found ";
 		return;
 	}
+    auto game_node_service_addr = tls.game_node_registry.try_get<InetAddress>(game_node_id);
+    if (nullptr == game_node_service_addr)
+    {
+        LOG_ERROR << "game not found ";
+        return;
+    }
     RegisterGameRequest request;
+    request.mutable_rpc_server()->set_ip(game_node_service_addr->toIp());
+    request.mutable_rpc_server()->set_port(game_node_service_addr->port());
     request.set_game_node_id(entt::to_integral(game_node_id));
-    (*gate_node_ptr)->Send(GateServiceRegisterGameMsgId, request);
+    (*gate_node)->Send(GateServiceRegisterGameMsgId, request);
 }
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)
