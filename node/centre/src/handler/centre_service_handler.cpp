@@ -416,15 +416,6 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::AddCrossServerScene(::google::protobuf::RpcController* controller,
-	const ::AddCrossServerSceneRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
 void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
 	const ::EnterGameNodeSucceedRequest* request,
 	::Empty* response,

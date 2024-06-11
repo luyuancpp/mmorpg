@@ -48,11 +48,6 @@ public:
 		::NodeRouteMessageResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void AddCrossServerScene(::google::protobuf::RpcController* controller,
-		const ::AddCrossServerSceneRequest* request,
-		::Empty* response,
-		 ::google::protobuf::Closure* done)override;
-
 	void EnterGsSucceed(::google::protobuf::RpcController* controller,
 		const ::EnterGameNodeSucceedRequest* request,
 		::Empty* response,
