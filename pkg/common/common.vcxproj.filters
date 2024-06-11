@@ -14,7 +14,7 @@
     <ClInclude Include="src\network\rpc_connection_event.h" />
     <ClInclude Include="src\network\rpc_msg_route.h" />
     <ClInclude Include="src\network\rpc_server.h" />
-    <ClInclude Include="src\network\server_component.h" />
+    <ClInclude Include="src\network\rpc_session.h" />
     <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
@@ -57,7 +57,7 @@
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
-    <ClCompile Include="src\network\server_component.cpp" />
+    <ClCompile Include="src\network\rpc_session.cpp" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\grpc\deploy\deployclient.cpp" />
     <ClCompile Include="src\util\consistent_hash_node.cpp" />
