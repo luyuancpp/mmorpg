@@ -36,6 +36,7 @@ public:
     const game_server_db& game_node_info() const { return   node_net_info_.game_info(); }
 private:    
     void InitNodeByReqInfo();
+    void Connect2Centre();
 
     muduo::net::EventLoop* loop_{ nullptr };
 

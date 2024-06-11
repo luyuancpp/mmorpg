@@ -29,7 +29,6 @@ public:
 
     void StartServer(const ::servers_info_data& info);
 
-	void Receive1(const OnConnected2ServerEvent& es);
 	void Receive2(const OnBeConnectedEvent& es);
 
 private:

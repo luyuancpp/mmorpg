@@ -78,16 +78,7 @@ void GateNode::StartServer()
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
 
-    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-        [this]() ->void
-        {
-            auto& centre_node_info = node_net_info_.centre_info();
-            InetAddress controller_addr(centre_node_info.ip(), centre_node_info.port());
-            centre_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
-            centre_node_->registerService(&gate_service_handler_);
-            centre_node_->connect();
-        }
-    );
+    Connect2Centre();
 }
 
 
@@ -141,4 +132,13 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
             }
         }
     }
+}
+
+void GateNode::Connect2Centre()
+{
+    auto& centre_node_info = node_net_info_.centre_info();
+    InetAddress controller_addr(centre_node_info.ip(), centre_node_info.port());
+    centre_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
+    centre_node_->registerService(&gate_service_handler_);
+    centre_node_->connect();
 }

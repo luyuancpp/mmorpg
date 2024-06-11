@@ -56,6 +56,8 @@ private:
         client_receiver_.OnConnection(conn);
     }
 
+    void Connect2Centre();
+
     void OnUnknownMessage(const TcpConnectionPtr& conn,
                                  const MessagePtr& message,
                                  Timestamp)
