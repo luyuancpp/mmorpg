@@ -94,20 +94,20 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	
     LOG_INFO << " game register: " << MessageToJsonString(request);
 
-	if (request->server_type() == kMainSceneNode)
+	if (request->server_type() == kMainSceneCrossNode)
 	{
-        tls.game_node_registry.emplace<MainSceneServer>(game_node_id);
-	}
-	else if (request->server_type() == kMainSceneCrossNode)
-	{
+		tls.game_node_registry.remove<MainSceneServer>(game_node_id);
 		tls.game_node_registry.emplace<CrossMainSceneServer>(game_node_id);
 	}
 	else if (request->server_type() == kRoomSceneCrossNode)
 	{
+        tls.game_node_registry.remove<MainSceneServer>(game_node_id);
+
 		tls.game_node_registry.emplace<CrossRoomSceneServer>(game_node_id);
 	}
 	else
 	{
+        tls.game_node_registry.remove<MainSceneServer>(game_node_id);
 		tls.game_node_registry.emplace<RoomSceneServer>(game_node_id);
 	}
 
