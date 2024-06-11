@@ -8,11 +8,11 @@ class PlayerChangeSceneSystem
 public:
 	static void InitChangeSceneQueue(entt::entity player);
 	//队长拉人也得等待，不然太复杂了,队长拉进副本得等玩家继续切换次数切完了
-	static uint32_t PushChangeSceneInfo(entt::entity player, const ControllerChangeSceneInfo& change_info);
+	static uint32_t PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& change_info);
 	static void TryProcessChangeSceneQueue(entt::entity player);
 	static void PopFrontChangeSceneQueue(entt::entity player);
-	static void SetChangeGsStatus(entt::entity player, ControllerChangeSceneInfo::eChangeGsStatus s);
-	static void SetChangeCrossServerSatus(entt::entity player, ControllerChangeSceneInfo::eChangeCrossServerStatus s);
+	static void SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s);
+	static void SetChangeCrossServerSatus(entt::entity player, CentreChangeSceneInfo::eChangeCrossServerStatus s);
 private:
 	static void TryProcessZoneServerChangeScene(entt::entity player);//处理本服务器的切换,不跨服
 	static void TryProcessViaCrossServerChangeScene(entt::entity player);//处理通过跨服消息的换场景

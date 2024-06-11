@@ -119,9 +119,6 @@
     <ClInclude Include="src\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\centre_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\system\gs_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>

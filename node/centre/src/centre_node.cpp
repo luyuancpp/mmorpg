@@ -98,8 +98,8 @@ void CentreNode::StartServer(const ::servers_info_data& info)
 	
     auto& my_node_info = serverinfos_.centre_info();
     node_info_.set_node_id(my_node_info.id());
-    InetAddress controller_addr(my_node_info.ip(), my_node_info.port());
-    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
+    InetAddress servcie_addr(my_node_info.ip(), my_node_info.port());
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, servcie_addr);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
     server_->registerService(&contoller_service_);
     for (auto& it : g_server_service)
@@ -107,13 +107,13 @@ void CentreNode::StartServer(const ::servers_info_data& info)
         server_->registerService(it.second.get());
     }
     server_->start();
-    LOG_INFO << "controller start " << my_node_info.DebugString();
+    LOG_INFO << "centre start " << my_node_info.DebugString();
 }
 
 
 void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::entity gate)
 {
-	auto gate_node_ptr = tls.gate_node_registry.try_get<GateNodeClient>(gate);
+	auto gate_node_ptr = tls.gate_node_registry.try_get<RpcSessionPtr>(gate);
 	if (nullptr == gate_node_ptr)
 	{
 		LOG_ERROR << "gate not found ";
@@ -166,9 +166,9 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
                 }
             }
             
-            for (auto gate_e : tls.gate_node_registry.view<GateNodeClient>())
+            for (auto gate_e : tls.gate_node_registry.view<RpcSessionPtr>())
             {
-                auto gate_node = tls.gate_node_registry.try_get<GateNodeClient>(gate_e);//如果是游戏逻辑服则删除
+                auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_e);//如果是游戏逻辑服则删除
                 if (nullptr != gate_node &&
                     (*gate_node)->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
                 {

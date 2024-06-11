@@ -19,7 +19,7 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
 //正在切换场景中，不能马上切换，gs崩溃了怎么办
-	ControllerChangeSceneInfo change_scene_info;
+	CentreChangeSceneInfo change_scene_info;
 	change_scene_info.mutable_scene_info()->CopyFrom(request->scene_info());
 	auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
 	if (ret != kRetOK)

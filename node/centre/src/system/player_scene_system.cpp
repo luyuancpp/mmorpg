@@ -93,7 +93,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     change_scene_info.set_processing(true);
     auto to_scene_guid = change_scene_info.scene_info().guid();
     entt::entity to_scene = entt::null;
-    //用scene_config id 去换本服的controller
+    //用scene_config id 去换本服的centre
     if (to_scene_guid <= 0)
     {
         GetSceneParam getp;
@@ -158,11 +158,11 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     {
         if (from_scene_game_node == to_scene_game_node)
         {
-            change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eSameGs);
+            change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eSameGs);
         }
         else if (from_scene_game_node != to_scene_game_node)
         {
-            change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
+            change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
         }
     }
 
@@ -175,8 +175,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 
     if (is_from_gs_is_cross_server || is_to_gs_is_cross_server)
     {
-        change_scene_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
-        change_scene_info.set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerScene);
+        change_scene_info.set_change_cross_server_type(CentreChangeSceneInfo::eCrossServer);
+        change_scene_info.set_change_cross_server_status(CentreChangeSceneInfo::eEnterCrossServerScene);
         if (is_from_gs_is_cross_server)
         {
             //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
@@ -196,10 +196,10 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     }
     else
     {
-        change_scene_info.set_change_cross_server_type(ControllerChangeSceneInfo::eDotnotCrossServer);
+        change_scene_info.set_change_cross_server_type(CentreChangeSceneInfo::eDotnotCrossServer);
     }
 
-    if (ControllerChangeSceneInfo::eDotnotCrossServer == change_scene_info.change_cross_server_status())
+    if (CentreChangeSceneInfo::eDotnotCrossServer == change_scene_info.change_cross_server_status())
     {
         PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);//不跨服就开始处理同一个gs 或者不同gs
         return;
