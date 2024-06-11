@@ -427,6 +427,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     ScenesSystem sm;
     NodeSceneSystem nssys;
     EntitySet node_list;
+    EntitySet scene_list;
     uint32_t node_size = 2;
     uint32_t per_node_scene = 2;
     entt::entity first_scene = entt::null;
@@ -444,6 +445,7 @@ TEST(GS, CrashMovePlayer2NewServer)
         {
             create_node_scene_param.node_ = it;
             auto e = sm.CreateScene2GameNode(create_node_scene_param);
+            scene_list.emplace(e);
             if (first_scene == entt::null)
             {
                 first_scene = e;
@@ -478,7 +480,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     for (auto& it : node_list)
     {
         auto& server_scene =  tls.registry.get<ServerComp>(it);
-        EXPECT_EQ(server_scene.GetSceneSize(), per_node_scene);
+        EXPECT_EQ(server_scene.GetSceneSize(), scene_list.size());
     }
     
 }
