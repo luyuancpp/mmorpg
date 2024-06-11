@@ -127,8 +127,8 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::en
 	}
     auto& game_node = *game_node_ptr;
     RegisterGameRequest request;
-    request.mutable_rpc_server()->set_ip(game_node->node_inet_addr_.toIp());
-    request.mutable_rpc_server()->set_port(game_node->node_inet_addr_.port());
+    request.mutable_rpc_server()->set_ip(game_node->service_addr_.toIp());
+    request.mutable_rpc_server()->set_port(game_node->service_addr_.port());
     request.set_game_node_id(entt::to_integral(game_node_id));
     (*gate_node_ptr)->Send(GateServiceRegisterGameMsgId, request);
 }
