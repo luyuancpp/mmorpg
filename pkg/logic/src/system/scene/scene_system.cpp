@@ -81,7 +81,12 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 	scene_info.set_scene_confid(param.scene_config_id_);
 	if (scene_info.guid() <= 0)
 	{
-		scene_info.set_guid(node_sequence_.Generate());
+		auto scene_id = node_sequence_.Generate();
+		while (tls.scene_registry.valid(entt::entity{ scene_id }))
+		{
+            scene_id = node_sequence_.Generate();
+		}
+		scene_info.set_guid(scene_id);
 	}
 	auto id = entt::entity{ scene_info.guid() };
 	const auto scene = tls.scene_registry.create(id);
