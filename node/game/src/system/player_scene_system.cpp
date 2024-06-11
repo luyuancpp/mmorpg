@@ -4,7 +4,6 @@
 
 #include "src/thread_local/thread_local_storage_common_logic.h"
 #include "src/system/scene/scene_system.h"
-#include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/system/gs_scene_system.h"
 

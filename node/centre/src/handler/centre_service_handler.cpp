@@ -28,7 +28,6 @@
 #include "src/network/gate_session.h"
 #include "src/network/node_info.h"
 
-
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
