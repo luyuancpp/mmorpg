@@ -8,6 +8,6 @@
 
 struct PlayerCentreChangeSceneQueue
 {
-	static const uint8_t  kMaxChangeSceneQueue = 5;
+	static const uint8_t  kMaxChangeSceneQueue = 2;
 	boost::circular_buffer<ControllerChangeSceneInfo> change_scene_queue_{ kMaxChangeSceneQueue };
 };

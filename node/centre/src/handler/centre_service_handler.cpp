@@ -148,7 +148,7 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 	{
 		return;
 	}
-	for (auto e : tls.registry.view<GameNodeClient>())
+	for (auto e : tls.game_node_registry.view<GameNodeClient>())
 	{
 		g_centre_node->BroadCastRegisterGameToGate(e, gate);
 	}
@@ -201,7 +201,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
         LOG_ERROR << "gs not found ";
         return;
     }
-    auto game_node = tls.registry.try_get<GameNodeClient>(game_node_id);
+    auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
     if (nullptr == game_node)
     {
         LOG_ERROR << "gs not found ";
@@ -434,7 +434,7 @@ void CentreServiceHandler::AddCrossServerScene(::google::protobuf::RpcController
 		{
 			continue;
 		}
-		auto game_node = tls.registry.try_get<GameNodeClient>(game_node_id);
+		auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
 		if (nullptr == game_node)
 		{
             LOG_ERROR << "gs not found ";
@@ -442,7 +442,7 @@ void CentreServiceHandler::AddCrossServerScene(::google::protobuf::RpcController
 		}
 		create_scene_param.scene_info = it.scene_info();
 		auto scene = ScenesSystem::CreateScene2GameNode(create_scene_param);
-		tls.registry.emplace<GameNodeClient>(scene, *game_node);
+		tls.scene_registry.emplace<GameNodeClient>(scene, *game_node);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -612,7 +612,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
             LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
             return;
 		}
-		auto game_node = tls.registry.try_get<GameNodeClient>(game_node_id);
+		auto game_node = tls.game_node_registry.try_get<GameNodeClient>(game_node_id);
 		if (nullptr == game_node)
 		{
 			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
