@@ -64,6 +64,8 @@ public:
 		return node_sequence_.node_id(scene_id);
 	}
 
+    static NodeId get_game_node_id(entt::entity scene);
+
     static entt::entity get_game_node_eid(uint64_t scene_id)
     {
 		return entt::entity{ node_sequence_.node_id(scene_id) };

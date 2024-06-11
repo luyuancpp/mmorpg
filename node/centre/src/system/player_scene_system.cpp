@@ -61,18 +61,6 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
     CallGamePlayerMethod(GamePlayerSceneServiceEnterSceneS2CMsgId, msg, player);
 }
 
-NodeId PlayerSceneSystem::GetGameNodeIdByScene(const entt::entity scene)
-{
-    const auto* game_node_info = tls.game_node_registry.try_get<GameNodeClient>(scene);
-    //找不到gs了，放到好的gs里面
-    if (nullptr == game_node_info)
-    {
-        return kInvalidU32Id;
-    }
-    return (*game_node_info)->node_id();
-}
-
-
 void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, SessionId session_id)
 {
     //todo gs崩溃
