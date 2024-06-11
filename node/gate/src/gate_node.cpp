@@ -85,52 +85,45 @@ void GateNode::StartServer()
 void GateNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
-    if (IsSameAddr(conn->peerAddress(), node_net_info_.centre_info()))
+    if (conn->connected())
     {
-        if (!conn->connected())
+        if (IsSameAddr(conn->peerAddress(), node_net_info_.centre_info()))
         {
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+                [this]() ->void
+                {
+                    RegisterGateRequest rq;
+                    rq.mutable_rpc_client()->set_ip(centre_node_->local_addr().toIp());
+                    rq.mutable_rpc_client()->set_port(centre_node_->local_addr().port());
+                    rq.set_gate_node_id(gate_node_id());
+                    controller_node_session()->CallMethod(CentreServiceRegisterGateMsgId, rq);
+                }
+            );
             return;
         }
-        EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-            [this]() ->void
-            {
-                RegisterGateRequest rq;
-                rq.mutable_rpc_client()->set_ip(centre_node_->local_addr().toIp());
-                rq.mutable_rpc_client()->set_port(centre_node_->local_addr().port());
-                rq.set_gate_node_id(gate_node_id());
-                controller_node_session()->CallMethod(CentreServiceRegisterGateMsgId, rq);
-            }
-        );
-    }
-    else
-    {
         //todo 断线重连
         for (auto& it : tls.game_node_registry.view<RpcClientPtr>())
         {
             auto& game_node = tls.game_node_registry.get<RpcClientPtr>(it);
-
             if (!IsSameAddr(game_node->peer_addr(), conn->peerAddress()))
             {
                 continue;
             }
-            if (conn->connected())
-            {
-                EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                    [this, game_node, conn]() ->void
-                    {
-                        GameNodeConnectRequest rq;
-                        rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
-                        rq.mutable_rpc_client()->set_port(conn->localAddress().port());
-                        rq.set_gate_node_id(gate_node_id());
-                        game_node->CallMethod(GameServiceGateConnectGsMsgId, rq);
-                    }
-                );
-            }
-            else
-            {
-                //g_game_nodes.erase()
-            }
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+                [this, game_node, conn]() ->void
+                {
+                    GameNodeConnectRequest rq;
+                    rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
+                    rq.mutable_rpc_client()->set_port(conn->localAddress().port());
+                    rq.set_gate_node_id(gate_node_id());
+                    game_node->CallMethod(GameServiceGateConnectGsMsgId, rq);
+                }
+            );
         }
+
+    }
+    else
+    {
     }
 }
 

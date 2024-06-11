@@ -114,8 +114,6 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	{
 		g_centre_node->BroadCastRegisterGameToGate(game_node_id, gate);
 	}
-	LOG_DEBUG << "gs connect node id: " << request->game_node_id() 
-		<< response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE
 }
 
