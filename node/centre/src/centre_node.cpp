@@ -19,8 +19,7 @@
 #include "service/gate_service_service.h"
 #include "src/thread_local/centre_thread_local_storage.h"
 
-#include "service/grpc/deploy_service.grpc.pb.h"
-
+#include "common_proto/deploy_service.grpc.pb.h"
 #include "src/grpc/deploy/deployclient.h"
 
 using namespace muduo;

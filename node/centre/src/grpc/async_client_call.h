@@ -3,7 +3,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include "common_proto/deploy_service.pb.h"
-#include "service/grpc/deploy_service.grpc.pb.h"
+#include "common_proto/deploy_service.grpc.pb.h"
 
 using grpc::ClientContext;
 using grpc::Status;

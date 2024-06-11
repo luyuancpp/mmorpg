@@ -29,12 +29,15 @@
     <ClCompile Include="src\common_proto\common_message.pb.cc" />
     <ClCompile Include="src\common_proto\comp.pb.cc" />
     <ClCompile Include="src\common_proto\db_base.pb.cc" />
+    <ClCompile Include="src\common_proto\db_service.grpc.pb.cc" />
     <ClCompile Include="src\common_proto\db_service.pb.cc" />
     <ClCompile Include="src\common_proto\deploy_config.pb.cc" />
+    <ClCompile Include="src\common_proto\deploy_service.grpc.pb.cc" />
     <ClCompile Include="src\common_proto\deploy_service.pb.cc" />
     <ClCompile Include="src\common_proto\empty.pb.cc" />
     <ClCompile Include="src\common_proto\game_service.pb.cc" />
     <ClCompile Include="src\common_proto\gate_service.pb.cc" />
+    <ClCompile Include="src\common_proto\login_service.grpc.pb.cc" />
     <ClCompile Include="src\common_proto\login_service.pb.cc" />
     <ClCompile Include="src\common_proto\mysql_database_table.pb.cc" />
     <ClCompile Include="src\common_proto\mysql_database_test.pb.cc" />
@@ -129,7 +132,6 @@
     <ClCompile Include="src\service\game_server_player_service.cpp" />
     <ClCompile Include="src\service\game_service_service.cpp" />
     <ClCompile Include="src\service\gate_service_service.cpp" />
-    <ClCompile Include="src\service\grpc\deploy_service.grpc.pb.cc" />
     <ClCompile Include="src\service\scene_client_player_service.cpp" />
     <ClCompile Include="src\service\service.cpp" />
     <ClCompile Include="src\service\team_client_player_service.cpp" />
@@ -147,12 +149,15 @@
     <ClInclude Include="src\common_proto\common_message.pb.h" />
     <ClInclude Include="src\common_proto\comp.pb.h" />
     <ClInclude Include="src\common_proto\db_base.pb.h" />
+    <ClInclude Include="src\common_proto\db_service.grpc.pb.h" />
     <ClInclude Include="src\common_proto\db_service.pb.h" />
     <ClInclude Include="src\common_proto\deploy_config.pb.h" />
+    <ClInclude Include="src\common_proto\deploy_service.grpc.pb.h" />
     <ClInclude Include="src\common_proto\deploy_service.pb.h" />
     <ClInclude Include="src\common_proto\empty.pb.h" />
     <ClInclude Include="src\common_proto\game_service.pb.h" />
     <ClInclude Include="src\common_proto\gate_service.pb.h" />
+    <ClInclude Include="src\common_proto\login_service.grpc.pb.h" />
     <ClInclude Include="src\common_proto\login_service.pb.h" />
     <ClInclude Include="src\common_proto\mysql_database_table.pb.h" />
     <ClInclude Include="src\common_proto\mysql_database_test.pb.h" />
@@ -196,7 +201,6 @@
     <ClInclude Include="src\service\game_server_player_service.h" />
     <ClInclude Include="src\service\game_service_service.h" />
     <ClInclude Include="src\service\gate_service_service.h" />
-    <ClInclude Include="src\service\grpc\deploy_service.grpc.pb.h" />
     <ClInclude Include="src\service\scene_client_player_service.h" />
     <ClInclude Include="src\service\service.h" />
     <ClInclude Include="src\service\team_client_player_service.h" />
