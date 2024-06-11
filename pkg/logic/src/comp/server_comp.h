@@ -62,7 +62,7 @@ public:
 	void AddScene(entt::entity scene_id)
 	{
 		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_id);
-		auto ret = conf_scene_list_[scene_info.scene_confid()].emplace(scene_id);
+		conf_scene_list_[scene_info.scene_confid()].emplace(scene_id);
 	}
 
 	inline void RemoveScene(const entt::entity scene_eid)

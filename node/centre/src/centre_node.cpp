@@ -137,40 +137,41 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
     else
     {
 		auto& current_addr = conn->peerAddress();
-		for (auto e : tls.network_registry.view<RpcSession>())
-		{
-			auto& sesion_addr = 
-                tls.network_registry.get<RpcSession>(e).conn_->peerAddress();
-			if (sesion_addr.toIpPort() != current_addr.toIpPort())
-			{
-				continue;
-			}
-            for (auto game_e : tls.game_node_registry.view<RpcSessionPtr>())
+        for (auto game_e : tls.game_node_registry.view<RpcSessionPtr>())
+        {
+            auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_e);//如果是游戏逻辑服则删除
+            if (nullptr != game_node && 
+                (*game_node)->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
             {
-                auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_e);//如果是游戏逻辑服则删除
-                if (nullptr != game_node && 
-                    (*game_node)->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
-                {
-                    Destroy(tls.game_node_registry, game_e);
-                    break;
-                }
+                Destroy(tls.game_node_registry, game_e);
+                break;
             }
+        }
             
-            for (auto gate_e : tls.gate_node_registry.view<RpcSessionPtr>())
+        for (auto gate_e : tls.gate_node_registry.view<RpcSessionPtr>())
+        {
+            auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_e);//如果是游戏逻辑服则删除
+            if (nullptr != gate_node &&
+                (*gate_node)->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
             {
-                auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_e);//如果是游戏逻辑服则删除
-                if (nullptr != gate_node &&
-                    (*gate_node)->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
-                {
-                    //remove AfterChangeGsEnterScene
-                    //todo 
-                    Destroy(tls.gate_node_registry, gate_e);
-                    break;
-                }
+                //remove AfterChangeGsEnterScene
+                //todo 
+                Destroy(tls.gate_node_registry, gate_e);
+                break;
+            }
+        }
+
+        for (auto e : tls.network_registry.view<RpcSession>())
+        {
+            auto& sesion_addr =
+                tls.network_registry.get<RpcSession>(e).conn_->peerAddress();
+            if (sesion_addr.toIpPort() != current_addr.toIpPort())
+            {
+                continue;
             }
             Destroy(tls.network_registry, e);
-			break;
-		}
+            break;
+        }
     }
 }
 
