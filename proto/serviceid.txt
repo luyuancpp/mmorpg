@@ -22,7 +22,6 @@
 25=GameServiceCentreSend2PlayerViaGs
 26=CentreServiceGsPlayerService
 28=CentreServiceLsLoginAccount
-29=CentreServiceAddCrossServerScene
 30=CentreServiceLsEnterGame
 31=CentreServiceRegisterGame
 32=GamePlayerServiceOnCentreEnterGateSucceed

@@ -15,10 +15,9 @@ message GsMessageExtern
 }
 
 
-message GateNodeStopGSRequest
+message UnregisterGameRequest
 {
-  string ip = 1;
-  uint32 port = 2;
+ uint32 game_node_id = 1；
 }
 
 message GateNodePlayerUpdateGameNodeRequest
@@ -40,7 +39,7 @@ message GateNodeKickConnRequest
 
 service GateService {
   rpc RegisterGame (RegisterGameRequest) returns (Empty);
-  rpc StopGS (GateNodeStopGSRequest) returns (Empty);
+  rpc UnRegisterGame (UnregisterGameRequest) returns (Empty);
   rpc PlayerEnterGs (GateNodePlayerUpdateGameNodeRequest) returns (GateNodePlayerUpdateGameNodeResponese);
   rpc PlayerMessage (NodeRouteMessageRequest) returns (Empty);
   rpc KickConnByCentre (GateNodeKickConnRequest) returns (Empty);
