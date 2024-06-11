@@ -6,7 +6,6 @@
 7=GameServiceRegisterGate
 8=CentreSceneServiceUpdateCrossMainSceneInfo
 9=CentreServiceGateSessionDisconnect
-10=GateServiceStopGS
 11=GateServicePlayerEnterGs
 12=GateServicePlayerMessage
 13=GateServiceRegisterGame
@@ -29,6 +28,7 @@
 37=ClientPlayerCommonServiceBeKick
 38=CentreServiceEnterGsSucceed
 39=CentreServiceLsDisconnect
+40=GateServiceUnRegisterGame
 42=CentreServiceRouteNodeStringMsg
 43=GamePlayerSceneServiceEnterSceneS2C
 44=GameServiceCreateScene

@@ -45,17 +45,9 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	for (auto e : tls.registry.view<InetAddress>())
-	{
-		auto& c = tls.registry.get<InetAddress>(e);
-		if (c.toIp() != request->ip() ||
-			c.port() != request->port())
-		{
-			continue;
-		}
-		Destroy(tls.registry, e);
-		break;
-	}
+    entt::entity request_game_node_id{ request->game_node_id() };
+    Destroy(tls.game_node_registry, request_game_node_id);
+    LOG_INFO << "on  game unregister" << MessageToJsonString(request);
 	///<<< END WRITING YOUR CODE
 }
 
