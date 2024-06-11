@@ -9,7 +9,8 @@
 
 #include "src/event_handler/event_handler.h"
 #include "src/thread_local/thread_local_storage.h"
-#include "src/network/gate_node.h"
+#include "src/network/gate_session.h"
+#include "src/network/rpc_session.h"
 #include "src/network/process_info.h"
 #include "service/centre_service_service.h"
 #include "src/handler/player_service.h"

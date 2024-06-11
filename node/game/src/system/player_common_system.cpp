@@ -2,7 +2,6 @@
 
 #include "src/thread_local/thread_local_storage_common_logic.h"
 #include "src/thread_local/thread_local_storage.h"
-#include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/network/gate_session.h"
 #include "service/centre_service_service.h"

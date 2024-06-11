@@ -13,7 +13,6 @@
 #include "src/system/scene/scene_system.h"
 #include "src/thread_local/thread_local_storage_common_logic.h"
 #include "src/network/game_node.h"
-#include "src/network/login_node.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/gate_session.h"
 #include "service/gate_service_service.h"
@@ -26,6 +25,9 @@
 #include "src/system/player_change_scene.h"
 #include "src/thread_local/centre_thread_local_storage.h"
 #include "src/util/defer.h"
+#include "src/network/gate_session.h"
+#include "src/network/node_info.h"
+
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"

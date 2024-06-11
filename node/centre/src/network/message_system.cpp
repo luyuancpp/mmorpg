@@ -8,7 +8,6 @@
 #include "src/thread_local/thread_local_storage.h"
 #include "src/system/centre_player_system.h"
 #include "src/network/game_node.h"
-#include "src/network/gate_node.h"
 #include "src/network/rpc_session.h"
 #include "service/service.h"
 #include "service/gate_service_service.h"
