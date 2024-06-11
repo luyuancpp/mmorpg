@@ -59,6 +59,6 @@ private:
     GameServiceHandler gs_service_impl_;
 };
 
-NodeId node_id();
+NodeId game_node_id();
 
 extern GameNode* g_game_node;
