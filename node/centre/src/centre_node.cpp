@@ -91,7 +91,6 @@ void CentreNode::InitNodeByReqInfo()
 void CentreNode::StartServer(const ::servers_info_data& info)
 {
     serverinfos_ = info;
-	
     auto& my_node_info = serverinfos_.centre_info();
     node_info_.set_node_id(my_node_info.id());
     InetAddress servcie_addr(my_node_info.ip(), my_node_info.port());
