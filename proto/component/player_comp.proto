@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+message PlayerSceneInfoComp
+{
+	uint64 scene_id = 1;
+}
+
+//普通登录
+message NormalLogin
+{
+}
+
+//顶号登录
+message CoverPlayerLogin
+{
+}
+
+message Player
+{
+}
+
+message Account
+{
+	string account = 1;
+}
