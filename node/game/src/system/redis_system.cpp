@@ -15,6 +15,6 @@ void RedisSystem::Init(muduo::net::InetAddress& server_addr)
     muduo_hiredis_->connect();
 
     game_tls.player_data_redis_system() = std::make_unique<PlayerDataRedisSystemPtr::element_type>(*muduo_hiredis_);
-    game_tls.player_data_redis_system()->SetLoadCallback(PlayerCommonSystem::OnAsyncLoadPlayerDb);
-    game_tls.player_data_redis_system()->SetSaveCallback(PlayerCommonSystem::OnAsyncSavePlayerDb);
+    game_tls.player_data_redis_system()->SetLoadCallback(PlayerCommonSystem::OnPlayerAsyncLoaded);
+    game_tls.player_data_redis_system()->SetSaveCallback(PlayerCommonSystem::OnPlayerAsyncSaved);
 }

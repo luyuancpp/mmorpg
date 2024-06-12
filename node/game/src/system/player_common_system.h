@@ -14,9 +14,9 @@ class PlayerCommonSystem
 {
 public:
 	//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖
-	static void OnAsyncLoadPlayerDb(Guid player_id, player_database& message);
+	static void OnPlayerAsyncLoaded(Guid player_id, const player_database& message);
 
-	static void OnAsyncSavePlayerDb(Guid player_id, player_database& message);
+	static void OnPlayerAsyncSaved(Guid player_id, player_database& message);
 
 	static void SavePlayer(entt::entity player);
 
@@ -27,8 +27,9 @@ public:
 	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);
 	static void OnGateUpdateGameNodeSucceed(entt::entity player);
 
-
 	static void RemovePlayerSession(Guid player_id);
 	static void RemovePlayerSession(entt::entity player);
+
+	static  void DestoryPlayer(Guid player_id);
 };
 
