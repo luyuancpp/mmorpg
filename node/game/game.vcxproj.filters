@@ -24,7 +24,7 @@
     <ClCompile Include="src\network\message_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\gs_scene_system.cpp">
+    <ClCompile Include="src\system\game_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\redis_system.cpp">
@@ -128,7 +128,7 @@
     <ClInclude Include="src\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\gs_scene_system.h">
+    <ClInclude Include="src\system\game_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\redis_system.h">
