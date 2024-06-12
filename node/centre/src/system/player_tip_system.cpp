@@ -1,12 +1,12 @@
 #include "player_tip_system.h"
 
-#include "src/system/centre_player_system.h"
-#include "src/constants/tips_id.h"
-#include "src/network/message_system.h"
+#include "system/centre_player_system.h"
+#include "constants/tips_id.h"
+#include "network/message_system.h"
 #include "service/common_client_player_service.h"
-#include "src/thread_local/centre_thread_local_storage.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/centre_thread_local_storage.h"
+#include "thread_local/thread_local_storage.h"
+#include "thread_local/thread_local_storage_common_logic.h"
 
 
 void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVector& str_param)

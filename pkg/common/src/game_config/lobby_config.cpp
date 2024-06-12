@@ -4,7 +4,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/util/file2string.h"
+#include "util/file2string.h"
 
 void LobbyConfig::Load(const std::string& filename)
 {

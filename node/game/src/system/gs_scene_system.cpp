@@ -7,18 +7,18 @@
 #include "mainscene_config.h"
 #include "scene_config.h"
 
-#include "src/system/scene/servernode_system.h"
-#include "src/system/scene/scene_system.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/system/player_scene_system.h"
-#include "src/system/recast_system.h"
-#include "src/network/node_info.h"
+#include "system/scene/servernode_system.h"
+#include "system/scene/scene_system.h"
+#include "thread_local/thread_local_storage.h"
+#include "system/player_scene_system.h"
+#include "system/recast_system.h"
+#include "network/node_info.h"
 
 #include "component_proto/player_comp.pb.h"
 
 NodeId game_node_id();
 
-void GsSceneSystem::LoadAllMainSceneNavBin()
+void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 {
     auto& config_all = mainscene_config::GetSingleton().all();
 	for (int32_t i = 0; i < config_all.data_size(); ++i)
@@ -30,7 +30,7 @@ void GsSceneSystem::LoadAllMainSceneNavBin()
     }    
 }
 
-void GsSceneSystem::CreateNodeScene()
+void GameNodeSceneSystem::CreateNodeScene()
 {
     if (tls.registry.get<GsNodeType>(global_entity()).server_type_ != kMainSceneNode)
     {
@@ -46,7 +46,7 @@ void GsSceneSystem::CreateNodeScene()
     }
 }
 
-void GsSceneSystem::CreateScene(CreateGameNodeSceneParam& param)
+void GameNodeSceneSystem::CreateScene(CreateGameNodeSceneParam& param)
 {
     ScenesSystem::CreateScene2GameNode(param);
     //init scene 
@@ -58,7 +58,7 @@ void GsSceneSystem::CreateScene(CreateGameNodeSceneParam& param)
     }
 }
 
-void GsSceneSystem::EnterScene(const EnterSceneParam& param)
+void GameNodeSceneSystem::EnterScene(const EnterSceneParam& param)
 {
     ScenesSystem::EnterScene(param);
     if (tls.registry.any_of<Player>(param.player_))
@@ -70,7 +70,7 @@ void GsSceneSystem::EnterScene(const EnterSceneParam& param)
     }
 }
 
-void GsSceneSystem::LeaveScene(entt::entity leaver)
+void GameNodeSceneSystem::LeaveScene(entt::entity leaver)
 {
     LeaveSceneParam leave;
     leave.leaver_ = leaver;

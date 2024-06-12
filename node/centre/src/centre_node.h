@@ -2,12 +2,12 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "src/handler/centre_service_handler.h"
-#include "src/redis_client/redis_client.h"
-#include "src/network/rpc_client.h"
-#include "src/network/rpc_connection_event.h"
-#include "src/network/rpc_server.h"
-#include "src/network/rpc_session.h"
+#include "handler/centre_service_handler.h"
+#include "redis_client/redis_client.h"
+#include "network/rpc_client.h"
+#include "network/rpc_connection_event.h"
+#include "network/rpc_server.h"
+#include "network/rpc_session.h"
 
 #include "common_proto/deploy_service.pb.h"
 

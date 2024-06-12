@@ -1,7 +1,7 @@
 #include "deploy_grpc_requst.h"
 
-#include "src/grpc/async_client_call.h"
-#include "src/grpc/deploy/deployclient.h"
+#include "grpc/async_client_call.h"
+#include "grpc/deploy/deployclient.h"
 
 std::unique_ptr<DeployService::Stub> g_deploy_stub;
 

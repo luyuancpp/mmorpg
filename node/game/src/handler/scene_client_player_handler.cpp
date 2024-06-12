@@ -1,10 +1,10 @@
 #include "scene_client_player_handler.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/network/message_system.h"
+#include "thread_local/thread_local_storage.h"
+#include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/network/node_info.h"
-#include "src/constants/tips_id.h"
-#include "src/comp/scene_comp.h"
+#include "network/node_info.h"
+#include "constants/tips_id.h"
+#include "comp/scene_comp.h"
 #include "service/centre_scene_server_player_service.h"
 
 #include "server_player_proto/centre_scene_server_player.pb.h"

@@ -1,6 +1,6 @@
 #include "game_registry.h"
 
-#include "src/thread_local/thread_local_storage.h"
+#include "thread_local/thread_local_storage.h"
 
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 

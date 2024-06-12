@@ -1,9 +1,10 @@
 #include "game_service_replied_handler.h"
-#include "src/network/codec/dispatcher.h"
+#include "network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/gate_node.h"
-#include "src/thread_local/gate_thread_local_storage.h"
+#include "gate_node.h"
+#include "network/gate_session.h"
+#include "thread_local/gate_thread_local_storage.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 

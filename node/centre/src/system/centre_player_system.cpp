@@ -1,9 +1,9 @@
 #include "centre_player_system.h"
 
-#include "src/system/scene/scene_system.h"
-#include "src/comp/scene_comp.h"
-#include "src/thread_local/centre_thread_local_storage.h"
-#include "src/util/defer.h"
+#include "system/scene/scene_system.h"
+#include "comp/scene_comp.h"
+#include "thread_local/centre_thread_local_storage.h"
+#include "util/defer.h"
 
 void CenterPlayerSystem::LeaveGame(Guid player_uid)
 {

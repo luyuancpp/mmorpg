@@ -2,7 +2,7 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "src/type_define/type_define.h"
+#include "type_define/type_define.h"
 
 class PlayerSceneSystem
 {

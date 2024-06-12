@@ -1,9 +1,9 @@
 #pragma once
 
-#include "src/comp/server_comp.h"
+#include "comp/server_comp.h"
 
-#include "src/system/scene/servernode_system.h"
-#include "src/util/snow_flake.h"
+#include "system/scene/servernode_system.h"
+#include "util/snow_flake.h"
 #include <component_proto/scene_comp.pb.h>
 
 struct EnterSceneParam

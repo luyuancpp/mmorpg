@@ -150,8 +150,8 @@ func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
 	data = firstMethodInfo.CppHandlerIncludeName() +
-		"#include \"src/thread_local/thread_local_storage.h\"\n" +
-		"#include \"src/network/message_system.h\"\n"
+		"#include \"thread_local/thread_local_storage.h\"\n" +
+		"#include \"network/message_system.h\"\n"
 
 	className := firstMethodInfo.Service + config.HandlerName
 	for i := 0; i < len(yourCodes); i++ {
@@ -177,7 +177,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
 	data = firstMethodInfo.CppRepliedHandlerIncludeName() +
-		"#include \"src/network/codec/dispatcher.h\"\n\n"
+		"#include \"network/codec/dispatcher.h\"\n\n"
 
 	implData := ""
 	declarationData := ""
@@ -228,8 +228,8 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos, classN
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	data = includeName +
-		"#include \"src/thread_local/thread_local_storage.h\"\n" +
-		"#include \"src/network/message_system.h\"\n"
+		"#include \"thread_local/thread_local_storage.h\"\n" +
+		"#include \"network/message_system.h\"\n"
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isMessage := j >= 0 && j < methodLen

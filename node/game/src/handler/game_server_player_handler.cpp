@@ -1,14 +1,14 @@
 #include "game_server_player_handler.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/network/message_system.h"
+#include "thread_local/thread_local_storage.h"
+#include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "muduo/base/Logging.h"
 
-#include "src/thread_local/thread_local_storage_common_logic.h"
-#include "src/network/gate_session.h"
-#include "src/system/player_common_system.h"
-#include "src/thread_local/game_thread_local_storage.h"
+#include "thread_local/thread_local_storage_common_logic.h"
+#include "network/gate_session.h"
+#include "system/player_common_system.h"
+#include "thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
