@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+import "common_proto/empty.proto";
+import "common_proto/common.proto";
+import "common_proto/c2gate.proto";
+import "common_proto/node_common.proto";
+import "component_proto/scene_comp.proto";
+import "common_proto/common_message.proto";
+
+option cc_generic_services = true;
+
+message CtrlStartGsResponse
+{
+  uint32 centre_node_id = 1;
+  uint32 gate_node_id = 3;
+}
+
+message GateClientMessageRequest
+{
+  IpPort rpc_client = 1;
+}
+
+message CtrlConnectedGameRequest
+{
+  IpPort rpc_client = 1;
+}
+
+message GateSessionDisconnectRequest
+{
+  uint64 session_id = 1;
+}
+
+message CtrlLsLeaveGameRequest
+{
+}
+
+message CtrlLsDisconnectRequest
+{
+}
+
+message CrossSceneInfo
+{
+  SceneInfo scene_info = 1;
+  uint32 gs_node_id = 2;
+}
+
+
+message EnterGameNodeSucceedRequest
+{
+  uint64 player_id = 1;
+  uint32 game_node_id = 2;
+}
+
+service CentreService {
+  rpc RegisterGame (RegisterGameRequest) returns (Empty);
+  rpc RegisterGate (RegisterGateRequest) returns (Empty);
+  rpc GatePlayerService (GateClientMessageRequest) returns (Empty);
+  rpc GateSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
+  rpc LsLoginAccount (LoginRequest) returns (LoginResponse);
+  rpc LsEnterGame (EnterGameRequest) returns (EnterGameResponse);
+  rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (Empty);
+  rpc LsDisconnect (CtrlLsDisconnectRequest) returns (Empty); 
+  rpc GsPlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
+  rpc EnterGsSucceed (EnterGameNodeSucceedRequest) returns (Empty);
+  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc UnRegisterGame (UnRegisterGameRequest) returns (Empty);
+}

@@ -4,7 +4,7 @@
 
 #include "game_config/deploy_json.h"
 #include "network/rpc_session.h"
-#include "network/node_info.h"
+
 #include "service/service.h"
 #include "service/centre_service_service.h"
 #include "common_proto/deploy_service.grpc.pb.h"

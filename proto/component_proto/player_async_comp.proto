@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+
+message EnterGsInfo
+{
+  uint32 centre_node_id = 1;
+}

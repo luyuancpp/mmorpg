@@ -7,7 +7,6 @@
     <ClInclude Include="src\game_config\lobby_config.h" />
     <ClInclude Include="src\jsoncpp\json.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
-    <ClInclude Include="src\network\node_info.h" />
     <ClInclude Include="src\network\rpc_channel.h" />
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\network\rpc_connection_event.h" />

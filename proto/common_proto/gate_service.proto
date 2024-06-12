@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+
+import "common_proto/empty.proto";
+
+import "common_proto/common.proto";
+import "common_proto/node_common.proto";
+option cc_generic_services = true;
+
+message GsMessageExtern
+{
+  uint64 session_id = 1;
+}
+
+message GateNodePlayerUpdateGameNodeRequest
+{
+  uint64 session_id = 1;
+  uint32 game_node_id = 2;
+}
+
+message GateNodePlayerUpdateGameNodeResponese
+{
+ uint64 session_id = 1;
+}
+
+
+message GateNodeKickConnRequest
+{
+  uint64 session_id = 1;
+}
+
+service GateService {
+  rpc RegisterGame (RegisterGameRequest) returns (Empty);
+  rpc UnRegisterGame (UnRegisterGameRequest) returns (Empty);
+  rpc PlayerEnterGs (GateNodePlayerUpdateGameNodeRequest) returns (GateNodePlayerUpdateGameNodeResponese);
+  rpc PlayerMessage (NodeRouteMessageRequest) returns (Empty);
+  rpc KickConnByCentre (GateNodeKickConnRequest) returns (Empty);
+  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+}

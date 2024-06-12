@@ -1,8 +1,8 @@
 #include "game_node_scene_system.h"
 
-#include "muduo/base/Logging.h"
-
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
+
+#include "muduo/base/Logging.h"
 
 #include "mainscene_config.h"
 #include "scene_config.h"
@@ -12,7 +12,7 @@
 #include "thread_local/thread_local_storage.h"
 #include "system/player_scene_system.h"
 #include "system/recast_system.h"
-#include "network/node_info.h"
+#include "game_node.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "constants_proto/node.pb.h"
@@ -32,14 +32,14 @@ void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 
 void GameNodeSceneSystem::CreateNodeScene()
 {
-    if (1 != eGameNodeType::kMainSceneNode)
+    if (g_game_node->game_node_type() != eGameNodeType::kMainSceneNode)
     {
         return;
     }
     const auto& config_all = mainscene_config::GetSingleton().all();
     for (int32_t i = 0; i < config_all.data_size(); ++i)
     {
-        CreateGameNodeSceneParam p{ .node_ = entt::entity{1} };
+        CreateGameNodeSceneParam p{ .node_ = entt::entity{g_game_node->game_node_id()} };
         p.scene_info.set_scene_confid(config_all.data(i).id());
         auto scene_entity = 
             ScenesSystem::CreateScene2GameNode(p);

@@ -8,7 +8,7 @@
 #include "game_config/deploy_json.h"
 #include "game_config/lobby_config.h"
 #include "event_handler/event_handler.h"
-#include "network/node_info.h"
+
 #include "handler/player_service.h"
 #include "replied_handler/player_service_replied.h"
 #include "handler/register_handler.h"

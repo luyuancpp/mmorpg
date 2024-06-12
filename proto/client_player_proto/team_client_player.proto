@@ -1,0 +1,19 @@
+syntax = "proto3";
+import "common_proto/tip.proto";
+import "common_proto/common.proto";
+option cc_generic_services = true;
+
+message TeamInfoS2CRequest
+{
+}
+
+message TeamInfoS2CResponse
+{
+	Tip error = 1;
+}
+
+
+service ClientPlayerTeamService
+{
+  rpc TeamInfoNotify (TeamInfoS2CRequest) returns (TeamInfoS2CResponse);
+}

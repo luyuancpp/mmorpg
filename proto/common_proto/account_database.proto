@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message AccountSimplePlayer
+{
+  uint64 player_id = 1;
+}
+
+message account_simple_players
+{
+  repeated AccountSimplePlayer players = 1;
+}

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+import "common_proto/empty.proto";
+import "common_proto/tip.proto";
+import "common_proto/c2gate.proto";
+import "common_proto/mysql_database_table.proto";
+import "common_proto/session.proto";
+
+
+message LoginC2LRequest
+{
+  string account = 1;
+  string password = 2;
+  SessionInfo session_info = 3;
+}
+
+message CreatePlayerC2lRequest
+{
+  SessionInfo session_info = 3;
+}
+
+message EnterGameC2LRequest
+{
+  uint64 player_id = 1;
+  SessionInfo session_info = 2;
+}
+
+message LoginNodeCreatePlayerResponse
+{
+  Tip error = 1;
+  account_database players = 2;
+  uint64 player_id = 3;
+}
+
+message LoginNodeDisconnectRequest
+{
+  uint64 session_id = 1;
+}
+
+message LeaveGameC2LRequest
+{
+  uint64 session_id = 1;
+}
+
+service LoginService {
+  rpc Login (LoginC2LRequest) returns (LoginResponse);
+  rpc CreatePlayer (CreatePlayerC2lRequest) returns (LoginNodeCreatePlayerResponse);
+  rpc EnterGame (EnterGameC2LRequest) returns (EnterGameResponse);
+  rpc LeaveGame (LeaveGameC2LRequest) returns (Empty);
+  rpc Disconnect (LoginNodeDisconnectRequest) returns (Empty);
+}

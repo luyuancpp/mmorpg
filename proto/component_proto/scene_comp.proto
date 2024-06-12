@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+message SceneInfo
+{
+  uint32 scene_confid = 1;
+  uint64 guid = 2;
+}
+
+message CentreChangeSceneInfo
+{
+  enum eChangeGsStatus
+  {
+      eLeaveGsScene = 0;//等待老gs保存完毕
+      eEnterGsSceneSucceed = 1;//不同服务器要走完这步
+      eGateEnterGsSceneSucceed = 2;//todo换的时候gate断线了
+  };
+  enum eChangeGsType
+  {
+      eSameGs = 0;//同服务器间切换
+      eDifferentGs = 1;//不同服务器间切换
+  };
+  enum eChangeCrossServerType
+  {
+      eDotnotCrossServer = 0;//不跨服
+      eCrossServer = 1;//跨服
+  };
+   enum eChangeCrossServerStatus
+  {
+      eEnterCrossServerScene = 0;//
+      eEnterCrossServerSceneSucceed = 1;//
+  };
+  SceneInfo scene_info = 1;
+  uint32 change_sequence = 2;
+  uint32 change_gs_type = 3;
+  uint32 change_gs_status = 4;//eChangeGsStatus
+  uint32 change_cross_server_type = 5;//eChangeCrossServerType
+  uint32 change_cross_server_status = 6;//eChangeCrossServerStatus
+  uint64 change_time = 8;//设置超时，超时代表服务器崩溃了,或者网络延时
+  bool ignore_full = 9;//忽略人数满了
+  bool processing = 10;
+}

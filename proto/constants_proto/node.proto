@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+enum eNodeType
+{
+	kCentreNode = 0;//场景切换中心服务器
+	kGameNode = 1;//逻辑服务器
+	kLoginNode = 2;//登录服务器
+	kGateNode = 3;//网关服务器
+	kDatabaseNode = 4;//数据库服务器
+};
+
+enum eGameNodeType
+{
+	kMainSceneNode = 0;//主世界场景
+	kRoomNode = 1;//副本场景
+	kMainSceneCrossNode = 2;//跨服主世界场景
+	kRoomSceneCrossNode = 3;//跨服副本场景
+};
+
