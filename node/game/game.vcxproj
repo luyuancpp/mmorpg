@@ -68,8 +68,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>../../bin/</OutDir>
-    <IntDir>../../bin/$(ProjectName)/</IntDir>
+    <OutDir>../../out/</OutDir>
+    <IntDir>../../out/$(ProjectName)/</IntDir>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -101,6 +101,12 @@
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy  $(TargetPath)  "../../bin/$(ProjectName)$(TargetExt)" /Y ;</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy  $(TargetPath)  "../../bin/$(ProjectName)$(TargetExt)" /Y ;</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -157,7 +163,7 @@
     <ClCompile Include="src\system\redis_system.cpp" />
     <ClCompile Include="src\game_node.cpp" />
     <ClCompile Include="src\network\message_system.cpp" />
-    <ClCompile Include="src\system\gs_scene_system.cpp" />
+    <ClCompile Include="src\system\game_scene_system.cpp" />
     <ClCompile Include="src\thread_local\game_thread_local_storage.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -193,7 +199,7 @@
     <ClInclude Include="src\system\redis_system.h" />
     <ClInclude Include="src\game_node.h" />
     <ClInclude Include="src\network\message_system.h" />
-    <ClInclude Include="src\system\gs_scene_system.h" />
+    <ClInclude Include="src\system\game_scene_system.h" />
     <ClInclude Include="src\thread_local\game_thread_local_storage.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,4 +1,4 @@
-#include "gs_scene_system.h"
+#include "game_scene_system.h"
 
 #include "muduo/base/Logging.h"
 
