@@ -1,7 +1,7 @@
 #include <sol/sol.hpp>
 #include "muduo/base/Logging.h"
-#include "src/util/file2string.h"
-#include "src/thread_local/thread_local_storage_lua.h"
+#include "util/file2string.h"
+#include "thread_local/thread_local_storage_lua.h"
 void LoadLuaScript()
 {
 	std::string contents;
