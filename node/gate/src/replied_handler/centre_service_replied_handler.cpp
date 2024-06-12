@@ -1,5 +1,5 @@
 #include "centre_service_replied_handler.h"
-#include "src/network/codec/dispatcher.h"
+#include "network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

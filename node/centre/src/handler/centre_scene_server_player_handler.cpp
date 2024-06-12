@@ -1,16 +1,16 @@
 #include "centre_scene_server_player_handler.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/network/message_system.h"
+#include "thread_local/thread_local_storage.h"
+#include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
-#include "src/system/scene/scene_system.h"
-#include "src/constants/tips_id.h"
-#include "src/network/game_node.h"
-#include "src/centre_node.h"
-#include "src/system/player_scene_system.h"
-#include "src/system/player_tip_system.h"
-#include "src/system/player_change_scene.h"
+#include "system/scene/scene_system.h"
+#include "constants/tips_id.h"
+#include "network/game_node.h"
+#include "centre_node.h"
+#include "system/player_scene_system.h"
+#include "system/player_tip_system.h"
+#include "system/player_change_scene.h"
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,

@@ -5,7 +5,7 @@
 #include "google/protobuf/message.h"
 #include "google/protobuf/service.h"
 
-#include "src/util/game_registry.h"
+#include "util/game_registry.h"
 
 class PlayerService
 {

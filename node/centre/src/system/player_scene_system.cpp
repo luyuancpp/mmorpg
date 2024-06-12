@@ -2,19 +2,19 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/system/centre_player_system.h"
-#include "src/centre_node.h"
-#include "src/comp/scene_comp.h"
-#include "src/system/scene/scene_system.h"
+#include "system/centre_player_system.h"
+#include "centre_node.h"
+#include "comp/scene_comp.h"
+#include "system/scene/scene_system.h"
 
-#include "src/constants/tips_id.h"
-#include "src/network/message_system.h"
-#include "src/system/player_tip_system.h"
-#include "src/system/player_change_scene.h"
+#include "constants/tips_id.h"
+#include "network/message_system.h"
+#include "system/player_tip_system.h"
+#include "system/player_change_scene.h"
 #include "service/game_service_service.h"
 #include "service/game_scene_server_player_service.h"
-#include "src/thread_local/centre_thread_local_storage.h"
-#include "src/network//game_node.h"
+#include "thread_local/centre_thread_local_storage.h"
+#include "network//game_node.h"
 
 #include "component_proto/player_network_comp.pb.h"
 

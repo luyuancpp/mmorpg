@@ -1,6 +1,6 @@
 #pragma once
 #include <sol/sol.hpp>
-#include "src/thread_local/thread_local_storage_lua.h"
+#include "thread_local/thread_local_storage_lua.h"
 #include "client_player_proto/scene_client_player.pb.h"
 
 class ClientPlayerSceneServiceHandler : public ::ClientPlayerSceneService

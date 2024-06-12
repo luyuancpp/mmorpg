@@ -1,6 +1,6 @@
 #include "scene_server_player_handler.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/network/message_system.h"
+#include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/system/player_common_system.h"
 #include "src/system/player_scene_system.h"

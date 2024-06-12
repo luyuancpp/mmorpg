@@ -2,8 +2,8 @@
 
 #include <ranges>
 
-#include "src/comp/server_comp.h"
-#include "src/thread_local/thread_local_storage.h"
+#include "comp/server_comp.h"
+#include "thread_local/thread_local_storage.h"
 
 #include "component_proto/gs_node_comp.pb.h"
 

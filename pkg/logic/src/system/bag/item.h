@@ -1,9 +1,9 @@
 #pragma once
 
-#include "src/type_define/type_define.h"
-#include "src/util/game_registry.h"
-#include "src/util/snow_flake.h"
-#include "src/thread_local/thread_local_storage.h"
+#include "type_define/type_define.h"
+#include "util/game_registry.h"
+#include "util/snow_flake.h"
+#include "thread_local/thread_local_storage.h"
 
 #include "component_proto/item_base_comp.pb.h"
 

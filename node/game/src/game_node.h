@@ -3,12 +3,12 @@
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
 
-#include "src/handler/game_service_handler.h"
-#include "src/network/rpc_server.h"
-#include "src/network/rpc_client.h"
+#include "handler/game_service_handler.h"
+#include "network/rpc_server.h"
+#include "network/rpc_client.h"
 
-#include "src/redis_client/redis_client.h"
-#include "src/network/rpc_msg_route.h"
+#include "redis_client/redis_client.h"
+#include "network/rpc_msg_route.h"
 
 #include "common_proto/deploy_service.pb.h"
 

@@ -2,10 +2,10 @@
 
 #include <ranges>
 
-#include "src/type_define/type_define.h"
-#include "src/constants/server_constants.h"
-#include "src/thread_local/thread_local_storage_common_logic.h"
-#include "src/thread_local/thread_local_storage.h"
+#include "type_define/type_define.h"
+#include "constants/server_constants.h"
+#include "thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/thread_local_storage.h"
 #include "component_proto/scene_comp.pb.h"
 
 using SceneList = EntitySet;

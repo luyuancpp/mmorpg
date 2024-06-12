@@ -1,13 +1,13 @@
-#include "src/system/scene/scene_system.h"
+#include "system/scene/scene_system.h"
 
 #include <ranges>
 
 #include "muduo/base/Logging.h"
 
-#include "src/comp/scene_comp.h"
-#include "src/constants/server_constants.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/constants/tips_id.h"
+#include "comp/scene_comp.h"
+#include "constants/server_constants.h"
+#include "thread_local/thread_local_storage.h"
+#include "constants/tips_id.h"
 
 #include "component_proto/gs_node_comp.pb.h"
 #include "event_proto/scene_event.pb.h"

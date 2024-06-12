@@ -1,17 +1,17 @@
 #include "game_service_replied_handler.h"
-#include "src/network/codec/dispatcher.h"
+#include "network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 
 #include <boost/get_pointer.hpp>
 #include <muduo/base/Logging.h>
 
-#include "src/system/centre_player_system.h"
-#include "src/thread_local/thread_local_storage.h"
+#include "system/centre_player_system.h"
+#include "thread_local/thread_local_storage.h"
 #include "service/service.h"
-#include "src/replied_handler/player_service_replied.h"
-#include "src/thread_local/centre_thread_local_storage.h"
-#include "src/thread_local/thread_local_storage_common_logic.h"
+#include "replied_handler/player_service_replied.h"
+#include "thread_local/centre_thread_local_storage.h"
+#include "thread_local/thread_local_storage_common_logic.h"
 
 #include "component_proto/player_network_comp.pb.h"
 

@@ -98,7 +98,7 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 	}
 	data := util.IncludeName(filePath, fd.Name()) +
 		"#include <sol/sol.hpp>\n" +
-		"#include \"src/thread_local/thread_local_storage_lua.h\"\n" +
+		"#include \"thread_local/thread_local_storage_lua.h\"\n" +
 		"void Pb2sol2" + fileBaseName + "()" + "\n{\n"
 	defer func(f *os.File) {
 		err := f.Close()

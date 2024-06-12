@@ -1,6 +1,6 @@
 #include "login_state_machine.h"
 
-#include "src/constants/tips_id.h"
+#include "constants/tips_id.h"
 #include "login_state_concrete.h"
 
 LoginStateMachine::LoginStateMachine()

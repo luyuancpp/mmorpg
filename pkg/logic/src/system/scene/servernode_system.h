@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/constants/server_constants.h"
+#include "constants/server_constants.h"
 
-#include "src/type_define/type_define.h"
+#include "type_define/type_define.h"
 
 constexpr uint32_t kDefaultSceneId = 1;
 

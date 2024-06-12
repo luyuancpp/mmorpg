@@ -2,11 +2,11 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/util/defer.h"
+#include "util/defer.h"
 
-#include "src/grpc/async_client_call.h"
-#include "src/grpc/deploy/deployclient.h"
-#include "src/game_node.h"
+#include "grpc/async_client_call.h"
+#include "grpc/deploy/deployclient.h"
+#include "game_node.h"
 
 void AsyncCompleteGrpc()
 {

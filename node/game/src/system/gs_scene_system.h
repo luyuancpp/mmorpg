@@ -2,12 +2,12 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "src/comp/gs_scene_comp.h"
+#include "comp/gs_scene_comp.h"
 
 struct EnterSceneParam;
 struct CreateGameNodeSceneParam;
 
-class GsSceneSystem
+class GameNodeSceneSystem
 {
 public:
     static void LoadAllMainSceneNavBin();
