@@ -1,6 +1,8 @@
 #pragma once
 #include "thread_local/thread_local_storage.h"
 
+class OnSceneCreate;
+class OnDestroyScene;
 class BeforeEnterScene;
 class OnEnterScene;
 class BeforeLeaveScene;
@@ -13,6 +15,8 @@ public:
 	static void Register();
 	static void UnRegister();
 
+	static void OnSceneCreateHandler(const OnSceneCreate& message);
+	static void OnDestroySceneHandler(const OnDestroyScene& message);
 	static void BeforeEnterSceneHandler(const BeforeEnterScene& message);
 	static void OnEnterSceneHandler(const OnEnterScene& message);
 	static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);

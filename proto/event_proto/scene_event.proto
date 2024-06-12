@@ -1,5 +1,15 @@
 syntax = "proto3";
 
+message OnSceneCreate
+{
+  uint64 entity = 1;
+}
+
+message OnDestroyScene
+{
+  uint64 entity = 1;
+}
+
 message BeforeEnterScene
 {
   uint64 entity = 1;

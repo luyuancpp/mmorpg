@@ -97,17 +97,18 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 		}
 		scene_info.set_guid(scene_id);
 	}
-	auto id = entt::entity{ scene_info.guid() };
+	const auto id = entt::entity{ scene_info.guid() };
 	const auto scene = tls.scene_registry.create(id);
 	if (scene != id)
 	{
         LOG_ERROR << "scene_registry create erroe" << scene_info.scene_confid();
         return entt::null;
 	}
-	tls.scene_registry.emplace<SceneInfo>(scene, scene_info);
+	tls.scene_registry.emplace<SceneInfo>(scene, std::move(scene_info));
 	tls.scene_registry.emplace<ScenePlayers>(scene);
 
-	if (auto* server_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.node_))
+	if (auto* server_player_info
+		= tls.registry.try_get<GameNodePlayerInfoPtr>(param.node_))
 	{
 		tls.scene_registry.emplace<GameNodePlayerInfoPtr>(scene, *server_player_info);
 	}
@@ -117,7 +118,10 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 	{
 		p_server_comp->AddScene(scene);
 	}
-
+	
+	OnSceneCreate create_scene_event;
+	create_scene_event.set_entity(entt::to_integral(scene));
+	tls.dispatcher.trigger(create_scene_event);
 	return scene;
 }
 
@@ -129,6 +133,11 @@ void ScenesSystem::DestroyScene(entt::entity node, entt::entity scene)
 	{
 		return;
 	}
+	
+	OnDestroyScene destroy_scene_event;
+	destroy_scene_event.set_entity(entt::to_integral(scene));
+	tls.dispatcher.trigger(destroy_scene_event);
+	
 	p_server_comp->RemoveScene(scene);
 }
 

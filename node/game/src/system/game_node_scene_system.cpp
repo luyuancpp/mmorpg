@@ -20,7 +20,7 @@
 void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 {
     auto& config_all = mainscene_config::GetSingleton().all();
-    for (auto& it : config_all)
+    for (auto& it : config_all.data())
     {
         const auto scene_nav_ptr = std::make_shared<SceneNavPtr::element_type>();
         scene_nav_ptr->p_nav_  = std::make_unique<SceneNav::DtNavMeshPtr::element_type>();
@@ -41,19 +41,18 @@ void GameNodeSceneSystem::InitNodeScene()
     {
         CreateGameNodeSceneParam p{ .node_ = entt::entity{g_game_node->game_node_id()} };
         p.scene_info.set_scene_confid(it.id());
-        auto scene_entity =
-            ScenesSystem::CreateScene2GameNode(p);
+        ScenesSystem::CreateScene2GameNode(p);
     }
 }
 
-void GameNodeSceneSystem::CreateScene(CreateGameNodeSceneParam& param)
+void GameNodeSceneSystem::CreateScene(CreateGameNodeSceneParam& p)
 {
-    ScenesSystem::CreateScene2GameNode(param);
+    ScenesSystem::CreateScene2GameNode(p);
     //init scene 
-    if (const auto p_scene_row = get_scene_conf(param.scene_info.scene_confid());
+    if (const auto p_scene_row = get_scene_conf(p.scene_info.scene_confid());
         nullptr == p_scene_row)
     {
-        LOG_ERROR << "scene config null" << param.scene_info.scene_confid();
+        LOG_ERROR << "scene config null" << p.scene_info.scene_confid();
         return;
     }
 }
