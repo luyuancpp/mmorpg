@@ -20,7 +20,7 @@
 #include "thread_local/game_thread_local_storage.h"
 #include "service/service.h"
 #include "system/logic/config_system.h"
-#include "network/node_info.h"
+
 #include "util/game_registry.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"

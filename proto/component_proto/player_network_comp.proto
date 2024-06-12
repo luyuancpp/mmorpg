@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+message PlayerNodeInfo
+{
+	uint64 gate_session_id = 1;//通过session id 就能算出 gate_node_id
+	uint32 centre_node_id = 2;
+	uint32 game_node_id = 3;
+}
+
+message PlayerSessionInfo
+{
+	uint64 player_id = 1;
+}
+
+

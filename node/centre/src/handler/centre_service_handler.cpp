@@ -26,7 +26,7 @@
 #include "thread_local/centre_thread_local_storage.h"
 #include "util/defer.h"
 #include "network/gate_session.h"
-#include "network/node_info.h"
+
 #include "util/pb_util.h"
 
 #include "component_proto/player_login_comp.pb.h"

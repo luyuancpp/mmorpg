@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+import "common_proto/empty.proto";
+import "common_proto/common.proto";
+import "common_proto/node_common.proto";
+import "component_proto/scene_comp.proto";
+
+option cc_generic_services = true;
+
+
+message GameNodeEnterGsRequest
+{
+  uint64 player_id = 1;
+  uint64 session_id = 2;
+  uint32 centre_node_id = 3;
+}
+
+message GameNodeRpcClientRequest
+{
+  bytes request = 1;
+  uint64 session_id = 2;
+  uint32 message_id = 3;
+  uint64 id = 4;
+}
+
+message GameNodeRpcClientResponse
+{
+  bytes response = 1;
+  uint64 session_id = 2;
+  uint32 message_id = 3;
+  uint64 id = 4;
+}
+
+message GameNodeDisconnectRequest
+{
+  uint64 player_id = 1;
+}
+
+message GameNodeConnectRequest
+{
+  IpPort rpc_client = 1;
+  uint32 gate_node_id = 2;
+}
+
+message UpdatePlayerSessionRequest
+{
+  uint64 session_id = 1;
+  uint64 player_id = 2;
+}
+
+message Ctlr2GsEnterSceneRequest
+{
+  uint64 player_id = 1;
+  uint64 scene_id = 2;
+}
+
+message CreateSceneRequest
+{
+  uint32 config_id = 1;
+}
+
+message CreateSceneResponse
+{
+  SceneInfo scene_info = 1;
+}
+
+service GameService {
+  rpc EnterGs (GameNodeEnterGsRequest) returns (Empty);
+  rpc Send2Player (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
+  rpc ClientSend2Player (GameNodeRpcClientRequest) returns (GameNodeRpcClientResponse);
+  rpc Disconnect (GameNodeDisconnectRequest) returns (Empty); 
+  rpc RegisterGate (RegisterGateRequest) returns (Empty);
+  rpc CentreSend2PlayerViaGs (NodeRouteMessageRequest) returns (Empty);
+  rpc CallPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
+  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc UpdateSession (UpdatePlayerSessionRequest) returns (Empty);
+  rpc EnterScene (Ctlr2GsEnterSceneRequest) returns (Empty);
+  rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
+}

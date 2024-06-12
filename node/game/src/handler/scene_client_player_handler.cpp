@@ -2,7 +2,7 @@
 #include "thread_local/thread_local_storage.h"
 #include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "network/node_info.h"
+
 #include "constants/tips_id.h"
 #include "comp/scene_comp.h"
 #include "service/centre_scene_server_player_service.h"

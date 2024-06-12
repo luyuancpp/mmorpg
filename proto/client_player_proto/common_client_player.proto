@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "common_proto/tip.proto";
+import "common_proto/common.proto";
+option cc_generic_services = true;
+
+service ClientPlayerCommonService 
+{
+  rpc PushTipS2C (TipS2C) returns (TipS2C);
+  rpc BeKick (TipS2C) returns (TipS2C);
+}
