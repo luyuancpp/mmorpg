@@ -6,8 +6,10 @@
 #include "constants/tips_id.h"
 #include "comp/scene_comp.h"
 #include "service/centre_scene_server_player_service.h"
-
 #include "server_player_proto/centre_scene_server_player.pb.h"
+#include "game_node.h"
+
+#include "constants_proto/node.pb.h"
 ///<<< END WRITING YOUR CODE
 void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 	const ::EnterSceneC2SRequest* request,
@@ -15,9 +17,9 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
         //如果是跨服副本服不能换场景
-    if (const auto [server_type_] = tls.registry.get<GsNodeType>(global_entity());
-    kRoomNode == server_type_ ||
-        kRoomSceneCrossNode == server_type_)
+    auto game_node_type = g_game_node->game_node_type();
+    if (eGameNodeType::kRoomNode == game_node_type ||
+        eGameNodeType::kRoomSceneCrossNode == game_node_type)
     {
         response->mutable_error()->set_id(kRetEnterSceneServerType);
         return;

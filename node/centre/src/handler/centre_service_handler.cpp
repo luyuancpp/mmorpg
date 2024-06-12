@@ -32,6 +32,7 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
+#include "constants_proto/node.pb.h"
 
 constexpr std::size_t kMaxPlayerSize{50000};
 
@@ -94,12 +95,12 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	
     LOG_INFO << " game register: " << MessageToJsonString(request);
 
-	if (request->server_type() == kMainSceneCrossNode)
+	if (request->server_type() == eGameNodeType::kMainSceneCrossNode)
 	{
 		tls.game_node_registry.remove<MainSceneServer>(game_node_id);
 		tls.game_node_registry.emplace<CrossMainSceneServer>(game_node_id);
 	}
-	else if (request->server_type() == kRoomSceneCrossNode)
+	else if (request->server_type() == eGameNodeType::kRoomSceneCrossNode)
 	{
         tls.game_node_registry.remove<MainSceneServer>(game_node_id);
 

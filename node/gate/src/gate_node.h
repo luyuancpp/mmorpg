@@ -82,6 +82,8 @@ private:
     GateServiceHandler gate_service_handler_;
 };
 
+const NodeInfo& node_info();
+
 extern GateNode* g_gate_node;
 
 

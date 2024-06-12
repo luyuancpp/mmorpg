@@ -369,6 +369,9 @@
     <ClCompile Include="src\common_proto\login_service.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\constants_proto\node.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\condition_config.pb.h">
@@ -570,6 +573,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\common_proto\login_service.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\constants_proto\node.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

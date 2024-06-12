@@ -12,7 +12,13 @@
 #include "thread_local/gate_thread_local_storage.h"
 #include "grpc/deploy/deployclient.h"
 
+#include "constants_proto/node.pb.h"
 #include "common_proto/game_service.pb.h"
+
+const NodeInfo& node_info()
+{
+    return g_gate_node->node_info();
+}
 
 GateNode* g_gate_node = nullptr; 
 

@@ -15,8 +15,8 @@
 #include "network/node_info.h"
 
 #include "component_proto/player_comp.pb.h"
+#include "constants_proto/node.pb.h"
 
-NodeId game_node_id();
 
 void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 {
@@ -32,14 +32,14 @@ void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 
 void GameNodeSceneSystem::CreateNodeScene()
 {
-    if (tls.registry.get<GsNodeType>(global_entity()).server_type_ != kMainSceneNode)
+    if (1 != eGameNodeType::kMainSceneNode)
     {
         return;
     }
     const auto& config_all = mainscene_config::GetSingleton().all();
     for (int32_t i = 0; i < config_all.data_size(); ++i)
     {
-        CreateGameNodeSceneParam p{ .node_ = entt::entity{game_node_id()} };
+        CreateGameNodeSceneParam p{ .node_ = entt::entity{1} };
         p.scene_info.set_scene_confid(config_all.data(i).id());
         auto scene_entity = 
             ScenesSystem::CreateScene2GameNode(p);
