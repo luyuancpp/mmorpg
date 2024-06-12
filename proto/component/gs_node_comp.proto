@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message GameNodeInfo
+{
+  uint32 player_size = 1;
+}
