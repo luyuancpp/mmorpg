@@ -42,7 +42,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 		}
 	}
 
-	dataHead := "#pragma once\n" + "#include \"src/thread_local/thread_local_storage.h\"\n\n"
+	dataHead := "#pragma once\n" + "#include \"thread_local/thread_local_storage.h\"\n\n"
 
 	className := getClassName(fd)
 

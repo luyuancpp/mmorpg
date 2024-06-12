@@ -29,8 +29,8 @@ func WriteLoadClientLuaFile() {
 		}
 		data := "#include <sol/sol.hpp>\n" +
 			"#include \"muduo/base/Logging.h\"\n" +
-			"#include \"src/util/file2string.h\"\n" +
-			"#include \"src/thread_local/thread_local_storage_lua.h\"\n" +
+			"#include \"util/file2string.h\"\n" +
+			"#include \"thread_local/thread_local_storage_lua.h\"\n" +
 			"void LoadLuaScript()\n{\n"
 		data += config.Tab + "std::string contents;\n"
 		for _, fd := range fds {
@@ -244,7 +244,7 @@ func WriteSol2LuaFile() {
 		defer util.Wg.Done()
 		data := "#include <google/protobuf/message.h>\n" +
 			"#include <sol/sol.hpp>\n" +
-			"#include \"src/thread_local/thread_local_storage_lua.h\"\n\n"
+			"#include \"thread_local/thread_local_storage_lua.h\"\n\n"
 		declarationData := ""
 		callData := ""
 
@@ -292,7 +292,7 @@ func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
 		return
 	}
 	var data = "#include <cstdint>\n\n"
-	data += "#include \"src/thread_local/thread_local_storage_lua.h\"\n"
+	data += "#include \"thread_local/thread_local_storage_lua.h\"\n"
 	data += methodList[0].IncludeName() + "\n\n"
 
 	data += "void Init" + methodList[0].Service + "Lua()\n{\n"

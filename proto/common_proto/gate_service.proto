@@ -33,7 +33,7 @@ message GateNodeKickConnRequest
 
 service GateService {
   rpc RegisterGame (RegisterGameRequest) returns (Empty);
-  rpc UnRegisterGame (UnregisterGameRequest) returns (Empty);
+  rpc UnRegisterGame (UnRegisterGameRequest) returns (Empty);
   rpc PlayerEnterGs (GateNodePlayerUpdateGameNodeRequest) returns (GateNodePlayerUpdateGameNodeResponese);
   rpc PlayerMessage (NodeRouteMessageRequest) returns (Empty);
   rpc KickConnByCentre (GateNodeKickConnRequest) returns (Empty);
