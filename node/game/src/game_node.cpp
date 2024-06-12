@@ -24,17 +24,13 @@
 #include "util/game_registry.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
+#include "constants_proto/node.pb.h"
 
 GameNode* g_game_node = nullptr;
 
 using namespace muduo::net;
 
 void AsyncCompleteGrpc();
-
-NodeId  game_node_id()
-{
-    return g_game_node->node_info().node_id();
-}
 
 void InitRepliedHandler();
 
@@ -53,13 +49,9 @@ void GameNode::Init()
     g_game_node = this; 
     EventHandler::Register();
     InitConfig();
-	node_info_.set_node_type(kGameNode);
-	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
+	
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)ZoneConfig::GetSingleton().config_info().loglevel());
     global_entity();
-    tls.registry.emplace<GsNodeType>(global_entity(), 
-        GsNodeType{ ZoneConfig::GetSingleton().config_info().server_type() });
-    LOG_INFO << "server type" << ZoneConfig::GetSingleton().config_info().server_type();
     InitMessageInfo();
     InitPlayerService();
     InitPlayerServiceReplied();
@@ -68,6 +60,7 @@ void GameNode::Init()
 
 	void InitServiceHandler();
 	InitServiceHandler();
+
 }
 
 void GameNode::InitConfig()
@@ -86,6 +79,9 @@ void GameNode::StartServer(const ::servers_info_data& info)
     game_tls.redis_system().Init(serverAddr);
 
     node_info_.set_node_id(game_node_info().id());
+    node_info_.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
+    node_info_.set_node_type(eNodeType::kGameNode);
+    node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     InetAddress servcie_addr(game_node_info().ip(), game_node_info().port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, servcie_addr);
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);
@@ -110,8 +106,8 @@ void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)
     rq.mutable_rpc_server()->set_ip(game_node_info().ip());
     rq.mutable_rpc_server()->set_port(game_node_info().port());
 
-    rq.set_server_type(tls.registry.get<GsNodeType>(global_entity()).server_type_);
-    rq.set_game_node_id(game_node_id());
+    rq.set_server_type(g_game_node->game_node_type());
+    rq.set_game_node_id(g_game_node->game_node_id());
     centre_node->CallMethod(CentreServiceRegisterGameMsgId,rq);
     LOG_DEBUG << "connect to centre" ;
 }

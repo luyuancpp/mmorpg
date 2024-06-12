@@ -34,6 +34,8 @@ public:
     void Receive2(const OnBeConnectedEvent& es);
 
     const game_server_db& game_node_info() const { return   node_net_info_.game_info(); }
+    inline NodeId game_node_id()const { return node_info().node_id();  }
+    uint32_t game_node_type() const{ return node_info().game_node_type(); }
 private:    
     void InitNodeByReqInfo();
     void Connect2Centre();
@@ -49,7 +51,5 @@ private:
 
     GameServiceHandler game_service_;
 };
-
-NodeId game_node_id();
 
 extern GameNode* g_game_node;

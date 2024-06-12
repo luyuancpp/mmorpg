@@ -18,6 +18,7 @@
 #include "grpc/deploy/deployclient.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
+#include "constants_proto/node.pb.h"
 
 using namespace muduo;
 using namespace net;
