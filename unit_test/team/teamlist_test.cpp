@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "src/game_logic/tips_id.h"
-#include "src/game_logic/teams/TeamSystem.h"
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
+#include "constants/tips_id.h"
+#include "system/teams/TeamSystem.h"
+#include "system/thread_local/common_logic_thread_local_storage.h"
 
 TEST(TeamManger, CreateFullDismiss)
 {

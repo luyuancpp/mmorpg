@@ -19,33 +19,32 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\common\src\game_logic\teams\team.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\teams\TeamSystem.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\thread_local\thread_local_storage.cpp" />
-    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\common.pb.cc" />
-    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\node_common.pb.cc" />
-    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\node_comp.pb.cc" />
-    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\team_comp.pb.cc" />
-    <ClCompile Include="..\..\common\src\util\game_registry.cpp" />
+    <ClCompile Include="..\..\pkg\common\src\game_logic\thread_local\common_logic_thread_local_storage.cpp" />
+    <ClCompile Include="..\..\pkg\common\src\game_logic\thread_local\thread_local_storage.cpp" />
+    <ClCompile Include="..\..\pkg\common\src\thread_local\thread_local_storage_common_logic.cpp" />
+    <ClCompile Include="..\..\pkg\common\src\thread_local\thread_local_storage_lua.cpp" />
+    <ClCompile Include="..\..\pkg\common\src\util\game_registry.cpp" />
+    <ClCompile Include="..\..\pkg\logic\src\system\teams\team.cpp" />
+    <ClCompile Include="..\..\pkg\logic\src\system\teams\TeamSystem.cpp" />
+    <ClCompile Include="..\..\pkg\pbc\src\common_proto\common.pb.cc" />
+    <ClCompile Include="..\..\pkg\pbc\src\common_proto\node_common.pb.cc" />
     <ClCompile Include="teamlist_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_ecs\entity_cast.h" />
-    <ClInclude Include="..\..\common\src\game_logic\teams\team.h" />
-    <ClInclude Include="..\..\common\src\game_logic\teams\TeamSystem.h" />
-    <ClInclude Include="..\..\common\src\game_logic\teams\team_event.h" />
-    <ClInclude Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.h" />
-    <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h" />
-    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\common.pb.h" />
-    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\node_common.pb.h" />
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\node_comp.pb.h" />
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\team_comp.pb.h" />
-    <ClInclude Include="..\..\common\src\return_code\return_notice_code.h" />
-    <ClInclude Include="..\..\common\src\util\game_registry.h" />
+    <ClInclude Include="..\..\pkg\common\src\game_logic\teams\team.h" />
+    <ClInclude Include="..\..\pkg\common\src\game_logic\teams\TeamSystem.h" />
+    <ClInclude Include="..\..\pkg\common\src\game_logic\thread_local\thread_local_storage.h" />
+    <ClInclude Include="..\..\pkg\common\src\pb\pbc\component_proto\team_comp.pb.h" />
+    <ClInclude Include="..\..\pkg\common\src\thread_local\thread_local_storage_common_logic.h" />
+    <ClInclude Include="..\..\pkg\common\src\thread_local\thread_local_storage_lua.h" />
+    <ClInclude Include="..\..\pkg\common\src\util\game_registry.h" />
+    <ClInclude Include="..\..\pkg\logic\src\system\teams\team.h" />
+    <ClInclude Include="..\..\pkg\logic\src\system\teams\TeamSystem.h" />
+    <ClInclude Include="..\..\pkg\pbc\src\common_proto\common.pb.h" />
+    <ClInclude Include="..\..\pkg\pbc\src\common_proto\node_common.pb.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\common\common.vcxproj" />
+    <None Include="..\..\pkg\common\common.vcxproj" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
