@@ -14,11 +14,10 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 #include "common_proto/centre_service.pb.h"
-#include "comp/player_comp.h"
 
 #include "game_node.h"
 
-void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& message)
+void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database& message)
 {
 	auto async_it = game_tls.async_player_data().find(player_id);
 	if (async_it == game_tls.async_player_data().end())
@@ -30,8 +29,8 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 	defer(game_tls.async_player_data().erase(player_id));
 
 	auto player = tls.registry.create();
-	auto ret = cl_tls.player_list().emplace(player_id, player);
-	if (!ret.second)
+	if (const auto [fst, snd] = cl_tls.player_list().emplace(player_id, player);
+		!snd)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
 		return;
@@ -46,16 +45,16 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 	EnterGs(player, async_it->second);
 }
 
-void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& message)
+void PlayerCommonSystem::OnPlayerAsyncSaved(Guid player_id, player_database& message)
 {
 	//告诉Centre 保存完毕，可以切换场景了
-	CentreLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
-	Send2CentrePlayer(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
-    
-	defer(cl_tls.player_list().erase(player_id));
-    Destroy(tls.registry, cl_tls.get_player(player_id));
+	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
+	Send2CentrePlayer(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId,
+		request,
+		player_id);
 
 	//存储完毕从gs删除玩家
+	DestoryPlayer(player_id);
 }
 
 void PlayerCommonSystem::SavePlayer(entt::entity player)
@@ -129,3 +128,10 @@ void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 	player_node_info->set_gate_session_id(kInvalidSessionId);
 	Destroy(tls.gate_node_registry, entt::entity{player_node_info->gate_session_id()});
 }
+
+void PlayerCommonSystem::DestoryPlayer(Guid player_id)
+{
+	defer(cl_tls.player_list().erase(player_id));
+	Destroy(tls.registry, cl_tls.get_player(player_id));
+}
+
