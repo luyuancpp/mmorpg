@@ -1,3 +1,0 @@
-syntax = "proto3";
-
-import "common_proto/common.proto";

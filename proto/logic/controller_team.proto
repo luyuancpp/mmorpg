@@ -1,3 +1,0 @@
-syntax = "proto3";
-import "component_proto/team_comp.proto";
-option cc_generic_services = true;
