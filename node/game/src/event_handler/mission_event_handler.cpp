@@ -1,9 +1,9 @@
 #include "mission_event_handler.h"
 #include "event_proto/mission_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/thread_local/thread_local_storage.h"
-#include "src/comp/mission_comp.h"
-#include "src/system/mission/mission_system.h"
+#include "thread_local/thread_local_storage.h"
+#include "comp/mission_comp.h"
+#include "system/mission/mission_system.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventHandler::Register()
 {

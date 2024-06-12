@@ -3,9 +3,9 @@
 #include <array>
 
 #include "component_proto/mission_comp.pb.h"
-#include "src/type_define/type_define.h"
-#include "src/system/mission/missions_config_template.h"
-#include "src/util/game_registry.h"
+#include "type_define/type_define.h"
+#include "system/mission/missions_config_template.h"
+#include "util/game_registry.h"
 
 
 class AcceptMissionEvent;

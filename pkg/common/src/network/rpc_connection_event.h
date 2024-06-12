@@ -2,7 +2,7 @@
 
 #include "muduo/net/TcpConnection.h"
 
-#include "src/network/rpc_channel.h"
+#include "network/rpc_channel.h"
 
 struct OnConnected2ServerEvent
 {

@@ -2,8 +2,6 @@
 
 #include <memory>
 
-#include "src/network/gate_session.h"
-
 class GateThreadLocalStorage
 {
 public:

@@ -2,7 +2,7 @@
 
 #include "muduo/net/TcpConnection.h"
 
-#include "src/type_define/type_define.h"
+#include "type_define/type_define.h"
 
 struct Session
 {

@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "src/type_define/type_define.h"
+#include "type_define/type_define.h"
 #include "entt/src/entt/entity/entity.hpp"
 #include "entt/src/entt/entity/registry.hpp"
 

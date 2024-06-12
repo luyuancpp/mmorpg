@@ -1,14 +1,13 @@
 #include <gtest/gtest.h>
 
-#include "src/game_config/condition_config.h"
-#include "src/game_config/mission_config.h"
-#include "src/game_logic/constants/mission_constants.h"
-#include "src/game_logic/comp/mission_comp.h"
-#include "src/game_logic/mission/mission_system.h"
-#include "src/game_logic/tips_id.h"
-#include "src/event_handler/mission_event_handler.h"
+#include "condition_config.h"
+#include "mission_config.h"
+#include "constants/mission_constants.h"
+#include "comp/mission_comp.h"
+#include "system/mission/mission_system.h"
+#include "constants/tips_id.h"
+#include "event_handler/mission_event_handler.h"
 #include "src/util/random.h"
-#include "src/game_logic/tips_id.h"
 
 #include "component_proto/mission_comp.pb.h"
 #include "event_proto/mission_event.pb.h"

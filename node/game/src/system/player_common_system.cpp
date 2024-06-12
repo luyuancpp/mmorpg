@@ -1,20 +1,20 @@
 #include "player_common_system.h"
 
-#include "src/thread_local/thread_local_storage_common_logic.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/network/message_system.h"
-#include "src/network/gate_session.h"
+#include "thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/thread_local_storage.h"
+#include "network/message_system.h"
+#include "network/gate_session.h"
 #include "service/centre_service_service.h"
 #include "service/centre_scene_server_player_service.h"
-#include "src/thread_local/game_thread_local_storage.h"
-#include "src/util/defer.h"
+#include "thread_local/game_thread_local_storage.h"
+#include "util/defer.h"
 
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 #include "common_proto/centre_service.pb.h"
-#include "src/comp/player_comp.h"
+#include "comp/player_comp.h"
 
 NodeId game_node_id();
 

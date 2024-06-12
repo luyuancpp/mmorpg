@@ -15,6 +15,8 @@ public:
     entt::registry item_registry;
     entt::registry network_registry;
     entt::registry team_registry;
+    entt::registry mission_registry;
+
 
 	entt::dispatcher dispatcher;
 

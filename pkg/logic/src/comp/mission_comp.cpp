@@ -3,9 +3,9 @@
 #include <ranges>
 
 #include "condition_config.h"
-#include "src/constants/mission_constants.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/constants/tips_id.h"
+#include "constants/mission_constants.h"
+#include "thread_local/thread_local_storage.h"
+#include "constants/tips_id.h"
 
 #include "component_proto/mission_comp.pb.h"
 #include "event_proto/mission_event.pb.h"

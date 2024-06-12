@@ -10,7 +10,7 @@
 
 #include "deps/hiredis/hiredis.h"
 
-#include "src/type_define/type_define.h"
+#include "type_define/type_define.h"
 
 namespace google
 {

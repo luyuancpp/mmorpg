@@ -2,15 +2,15 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "src/game_config/deploy_json.h"
-#include "src/network/rpc_session.h"
-#include "src/network/node_info.h"
+#include "game_config/deploy_json.h"
+#include "network/rpc_session.h"
+#include "network/node_info.h"
 #include "service/service.h"
 #include "service/centre_service_service.h"
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "service/game_service_service.h"
-#include "src/thread_local/gate_thread_local_storage.h"
-#include "src/grpc/deploy/deployclient.h"
+#include "thread_local/gate_thread_local_storage.h"
+#include "grpc/deploy/deployclient.h"
 
 #include "common_proto/game_service.pb.h"
 

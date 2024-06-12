@@ -7,11 +7,11 @@
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TcpServer.h"
 
-#include "src/handler/c2gate.h"
-#include "src/network/codec/codec.h"
-#include "src/network/codec/dispatcher.h"
-#include "src/handler/gate_service_handler.h"
-#include "src/network/rpc_connection_event.h"
+#include "handler/c2gate.h"
+#include "network/codec/codec.h"
+#include "network/codec/dispatcher.h"
+#include "handler/gate_service_handler.h"
+#include "network/rpc_connection_event.h"
 
 #include "common_proto/deploy_service.pb.h"
 
