@@ -19,6 +19,8 @@
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register()
 {
+		tls.dispatcher.sink<OnSceneCreate>().connect<&SceneEventHandler::OnSceneCreateHandler>();
+		tls.dispatcher.sink<OnDestroyScene>().connect<&SceneEventHandler::OnDestroySceneHandler>();
 		tls.dispatcher.sink<BeforeEnterScene>().connect<&SceneEventHandler::BeforeEnterSceneHandler>();
 		tls.dispatcher.sink<OnEnterScene>().connect<&SceneEventHandler::OnEnterSceneHandler>();
 		tls.dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventHandler::BeforeLeaveSceneHandler>();
@@ -28,6 +30,8 @@ void SceneEventHandler::Register()
 
 void SceneEventHandler::UnRegister()
 {
+		tls.dispatcher.sink<OnSceneCreate>().disconnect<&SceneEventHandler::OnSceneCreateHandler>();
+		tls.dispatcher.sink<OnDestroyScene>().disconnect<&SceneEventHandler::OnDestroySceneHandler>();
 		tls.dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventHandler::BeforeEnterSceneHandler>();
 		tls.dispatcher.sink<OnEnterScene>().disconnect<&SceneEventHandler::OnEnterSceneHandler>();
 		tls.dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventHandler::BeforeLeaveSceneHandler>();
@@ -35,13 +39,13 @@ void SceneEventHandler::UnRegister()
 		tls.dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventHandler::S2CEnterSceneHandler>();
 }
 
-void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& message)
+void SceneEventHandler::OnSceneCreateHandler(const OnSceneCreate& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
+void SceneEventHandler::OnDestroySceneHandler(const OnDestroyScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
     entt::entity player = entt::to_entity(message.entity());
@@ -56,7 +60,7 @@ void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
+void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const auto player = entt::to_entity(message.entity());
@@ -87,13 +91,13 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::OnLeaveSceneHandler(const OnLeaveScene& message)
+void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
+void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
     entt::entity player = entt::to_entity(message.entity());
@@ -103,6 +107,18 @@ void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
         return;
     }
     PlayerSceneSystem::EnterSceneS2C(player);
+///<<< END WRITING YOUR CODE
+}
+
+void SceneEventHandler::OnLeaveSceneHandler(const OnLeaveScene& message)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
+{
+///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
