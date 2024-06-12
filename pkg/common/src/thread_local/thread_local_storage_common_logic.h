@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common_proto/node_common.pb.h"
-#include "src/type_define/type_define.h"
+#include "type_define/type_define.h"
 
 using PlayerList = std::unordered_map<Guid, entt::entity>;
 

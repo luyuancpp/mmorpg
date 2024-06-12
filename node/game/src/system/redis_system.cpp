@@ -2,7 +2,7 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "src/thread_local/game_thread_local_storage.h"
+#include "thread_local/game_thread_local_storage.h"
 #include "player_common_system.h"
 
 

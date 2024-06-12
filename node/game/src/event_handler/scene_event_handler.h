@@ -1,5 +1,5 @@
 #pragma once
-#include "src/thread_local/thread_local_storage.h"
+#include "thread_local/thread_local_storage.h"
 
 class BeforeEnterScene;
 class OnEnterScene;

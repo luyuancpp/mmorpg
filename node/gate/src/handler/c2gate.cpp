@@ -4,14 +4,15 @@
 #include <memory>
 #include <ranges>
 
-#include "src/gate_node.h"
-#include "src/util/game_registry.h"
+#include "gate_node.h"
+#include "util/game_registry.h"
+#include "network/gate_session.h"
 #include "service/centre_service_service.h"
 #include "service/game_service_service.h"
 #include "service/common_client_player_service.h"
-#include "src/thread_local/gate_thread_local_storage.h"
-#include "src/util/random.h"
-#include "src/util/snow_flake.h"
+#include "thread_local/gate_thread_local_storage.h"
+#include "util/random.h"
+#include "util/snow_flake.h"
 
 #include "tip_code_proto/common_tip_code.pb.h"
 

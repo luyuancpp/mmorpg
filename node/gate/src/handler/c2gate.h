@@ -1,12 +1,12 @@
 #pragma once
 
-#include "src/network/codec/codec.h"
+#include "network/codec/codec.h"
 
 #include "muduo/net/EventLoop.h"
 
-#include "src/network/codec/dispatcher.h"
-#include "src/network/rpc_msg_route.h"
-#include "src/network/rpc_client.h"
+#include "network/codec/dispatcher.h"
+#include "network/rpc_msg_route.h"
+#include "network/rpc_client.h"
 
 #include "common_proto/c2gate.pb.h"
 

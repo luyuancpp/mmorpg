@@ -1,9 +1,9 @@
 #include "player_tip_system.h"
 
-#include "src/thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/thread_local_storage_common_logic.h"
 #include "service/common_client_player_service.h"
-#include "src/thread_local/game_thread_local_storage.h"
-#include "src/network/message_system.h"
+#include "thread_local/game_thread_local_storage.h"
+#include "network/message_system.h"
 
 void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVector& str_param)
 {

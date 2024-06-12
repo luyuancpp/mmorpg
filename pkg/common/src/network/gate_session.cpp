@@ -1,6 +1,6 @@
 #include "gate_session.h"
 
-#include "src/util/snow_flake.h"
+#include "util/snow_flake.h"
 
 NodeId get_gate_node_id(Guid session_id)
 {

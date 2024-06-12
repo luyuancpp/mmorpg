@@ -8,8 +8,8 @@
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
 
-#include "src/network/rpc_channel.h"
-#include "src/thread_local/thread_local_storage.h"
+#include "network/rpc_channel.h"
+#include "thread_local/thread_local_storage.h"
 #include "rpc_connection_event.h"
 
 using namespace muduo;

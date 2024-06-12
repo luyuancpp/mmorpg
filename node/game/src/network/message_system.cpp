@@ -2,17 +2,17 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/thread_local/thread_local_storage_common_logic.h"
-#include "src/thread_local/thread_local_storage.h"
-#include "src/network/rpc_session.h"
-#include "src/network/rpc_client.h"
-#include "src/network/gate_session.h"
+#include "thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/thread_local_storage.h"
+#include "network/rpc_session.h"
+#include "network/rpc_client.h"
+#include "network/gate_session.h"
 #include "service/centre_service_service.h"
 #include "service/gate_service_service.h"
-#include "src/thread_local/game_thread_local_storage.h"
+#include "thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_network_comp.pb.h"
-#include "src/comp/player_comp.h"
+#include "comp/player_comp.h"
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
