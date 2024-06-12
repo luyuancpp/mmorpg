@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-option go_package = "pb/game";
-
-message Tip
-{
-  uint32 id = 1;
-  repeated string param = 2;
-}
