@@ -87,12 +87,6 @@
     <ClCompile Include="src\common_proto\login_service.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\common_proto\mysql_database_table.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\common_proto\mysql_database_test.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\common_proto\node_common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -372,6 +366,15 @@
     <ClCompile Include="src\constants_proto\node.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\component_proto\player_scene_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common_proto\mysql_database_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common_proto\mysql_database_test.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\condition_config.pb.h">
@@ -444,12 +447,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\common_proto\login_service.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\common_proto\mysql_database_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\common_proto\mysql_database_test.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\common_proto\node_common.pb.h">
@@ -576,6 +573,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\constants_proto\node.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\component_proto\player_scene_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\mysql_database_test.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\mysql_database_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

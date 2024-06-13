@@ -1,10 +1,5 @@
 syntax = "proto3";
 
-message PlayerSceneInfoComp
-{
-	uint64 scene_id = 1;
-}
-
 //普通登录
 message NormalLogin
 {

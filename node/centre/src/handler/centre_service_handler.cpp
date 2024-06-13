@@ -5,9 +5,8 @@
 #include "mainscene_config.h"
 
 #include "centre_node.h"
-#include "system/scene/servernode_system.h"
+#include "system/scene/node_scene_system.h"
 #include "system/centre_player_system.h"
-#include "comp/account_comp.h"
 #include "comp/player_comp.h"
 #include "constants/tips_id.h"
 #include "system/scene/scene_system.h"
@@ -262,31 +261,13 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 			return;
 		}
 
-		tls.registry.emplace<PlayerAccount>(player, std::make_shared<PlayerAccount::element_type>());
 		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(cl_tls.session_id());
 
 		PlayerCommonSystem::InitPlayerComponent(player, request->player_id());
 
-		GetSceneParam get_scene_param;
-		get_scene_param.scene_conf_id_ = 1;
-		const auto scene = NodeSceneSystem::GetNotFullScene(get_scene_param);
-		//找不到上次的场景，放到默认场景里面
-		if (scene == entt::null)
-		{
-			// todo default
-			LOG_INFO << "player " << request->player_id() << " enter default secne";
-		}
-		//第一次进入
+		//第一次登录
 		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
-
-		//todo 会话没有了玩家还在
-
-		PlayerSceneSystem::CallPlayerEnterGs(player, ScenesSystem::get_game_node_id(scene), cl_tls.session_id());
-		CentreChangeSceneInfo change_scene_info;
-		change_scene_info.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
-		change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
-		change_scene_info.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
-		PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
+		PlayerSceneSystem::OnLoginEnterScene(player);
 	}
 	else
 	{
@@ -477,75 +458,75 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
     cl_tls.set_current_session_id(request->session_id());
 
-if (request->route_data_list_size() >= kMaxRouteSize)
-{
-	LOG_ERROR << "route msg size too max:" << request->DebugString();
-	return;
-}
-if (request->route_data_list().empty())
-{
-	LOG_ERROR << "msg list empty:" << request->DebugString();
-	return;
-}
-auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
-if (route_data.message_id() >= g_message_info.size())
-{
-	LOG_INFO << "message_id not found " << route_data.message_id();
-	return;
-}
-const auto& message_info = g_message_info[route_data.message_id()];
-if (nullptr == message_info.service_impl_instance_)
-{
-	LOG_INFO << "message_id not found " << route_data.message_id();
-	return;
-}
-
-const auto it = g_server_service.find(message_info.service);
-if (it == g_server_service.end())
-{
-	LOG_INFO << "message_id not found " << route_data.message_id();
-	return;
-}
-const auto& servcie = it->second;
-const google::protobuf::MethodDescriptor* method = servcie->GetDescriptor()->FindMethodByName(message_info.method);
-if (nullptr == method)
-{
-	LOG_ERROR << "method not found" << request->DebugString();
-	return;
-}
-//当前节点的请求信息
-std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
-if (!current_node_request->ParsePartialFromArray(request->body().data(), int32_t(request->body().size())))
-{
-	LOG_ERROR << "invalid  body request" << request->DebugString();
-	return;
-}
-
-//当前节点的真正回复的消息
-std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
-servcie->CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
-
-auto* mutable_request = const_cast<::RouteMsgStringRequest*>(request);
-//没有发送到下个节点就是要回复了
-if (cl_tls.next_route_node_type() == UINT32_MAX)
-{
-	auto byte_size = int32_t(current_node_response->ByteSizeLong());
-	response->mutable_body()->resize(byte_size);
-	current_node_response->SerializePartialToArray(response->mutable_body()->data(), byte_size);
-	for (auto& request_data_it : request->route_data_list())
+	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
-		*response->add_route_data_list() = request_data_it;
+		LOG_ERROR << "route msg size too max:" << request->DebugString();
+		return;
 	}
-	response->set_session_id(cl_tls.session_id());
-	response->set_id(request->id());
-	return;
-}
-//处理,如果需要继续路由则拿到当前节点信息
-//需要发送到下个节点
-const auto next_route_data = mutable_request->add_route_data_list();
-next_route_data->CopyFrom(cl_tls.route_data());
-next_route_data->mutable_node_info()->CopyFrom(g_centre_node->node_info());
-mutable_request->set_body(cl_tls.route_msg_body());
+	if (request->route_data_list().empty())
+	{
+		LOG_ERROR << "msg list empty:" << request->DebugString();
+		return;
+	}
+	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
+	if (route_data.message_id() >= g_message_info.size())
+	{
+		LOG_INFO << "message_id not found " << route_data.message_id();
+		return;
+	}
+	const auto& message_info = g_message_info[route_data.message_id()];
+	if (nullptr == message_info.service_impl_instance_)
+	{
+		LOG_INFO << "message_id not found " << route_data.message_id();
+		return;
+	}
+
+	const auto it = g_server_service.find(message_info.service);
+	if (it == g_server_service.end())
+	{
+		LOG_INFO << "message_id not found " << route_data.message_id();
+		return;
+	}
+	const auto& servcie = it->second;
+	const google::protobuf::MethodDescriptor* method = servcie->GetDescriptor()->FindMethodByName(message_info.method);
+	if (nullptr == method)
+	{
+		LOG_ERROR << "method not found" << request->DebugString();
+		return;
+	}
+	//当前节点的请求信息
+	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
+	if (!current_node_request->ParsePartialFromArray(request->body().data(), int32_t(request->body().size())))
+	{
+		LOG_ERROR << "invalid  body request" << request->DebugString();
+		return;
+	}
+
+	//当前节点的真正回复的消息
+	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
+	servcie->CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
+
+	auto* mutable_request = const_cast<::RouteMsgStringRequest*>(request);
+	//没有发送到下个节点就是要回复了
+	if (cl_tls.next_route_node_type() == UINT32_MAX)
+	{
+		auto byte_size = int32_t(current_node_response->ByteSizeLong());
+		response->mutable_body()->resize(byte_size);
+		current_node_response->SerializePartialToArray(response->mutable_body()->data(), byte_size);
+		for (auto& request_data_it : request->route_data_list())
+		{
+			*response->add_route_data_list() = request_data_it;
+		}
+		response->set_session_id(cl_tls.session_id());
+		response->set_id(request->id());
+		return;
+	}
+	//处理,如果需要继续路由则拿到当前节点信息
+	//需要发送到下个节点
+	const auto next_route_data = mutable_request->add_route_data_list();
+	next_route_data->CopyFrom(cl_tls.route_data());
+	next_route_data->mutable_node_info()->CopyFrom(g_centre_node->node_info());
+	mutable_request->set_body(cl_tls.route_msg_body());
     mutable_request->set_id(request->id());
 
     switch (cl_tls.next_route_node_type())

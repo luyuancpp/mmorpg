@@ -23,7 +23,7 @@
     <ClCompile Include="..\..\pkg\common\src\thread_local\thread_local_storage_common_logic.cpp" />
     <ClCompile Include="..\..\pkg\common\src\util\game_registry.cpp" />
     <ClCompile Include="..\..\pkg\logic\src\system\scene\scene_system.cpp" />
-    <ClCompile Include="..\..\pkg\logic\src\system\scene\servernode_system.cpp" />
+    <ClCompile Include="..\..\pkg\logic\src\system\scene\node_scene_system.cpp" />
     <ClCompile Include="..\..\pkg\pbc\src\common_proto\node_common.pb.cc" />
     <ClCompile Include="..\..\pkg\pbc\src\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="..\..\pkg\pbc\src\component_proto\scene_comp.pb.cc" />
@@ -35,7 +35,7 @@
     <ClInclude Include="..\..\pkg\common\src\thread_local\thread_local_storage_common_logic.h" />
     <ClInclude Include="..\..\pkg\common\src\util\game_registry.h" />
     <ClInclude Include="..\..\pkg\logic\src\system\scene\scene_system.h" />
-    <ClInclude Include="..\..\pkg\logic\src\system\scene\servernode_system.h" />
+    <ClInclude Include="..\..\pkg\logic\src\system\scene\node_scene_system.h" />
     <ClInclude Include="..\..\pkg\pbc\src\common_proto\node_common.pb.h" />
     <ClInclude Include="..\..\pkg\pbc\src\component_proto\gs_node_comp.pb.h" />
     <ClInclude Include="..\..\pkg\pbc\src\component_proto\scene_comp.pb.h" />

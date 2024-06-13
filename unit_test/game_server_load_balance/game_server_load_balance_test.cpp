@@ -3,6 +3,7 @@
 #include "system/scene/scene_system.h"
 #include "comp/scene_comp.h"
 #include "thread_local/thread_local_storage.h"
+#include "constants/tips_id.h"
 
 #include "component_proto/gs_node_comp.pb.h"
 #include "component_proto/scene_comp.pb.h"
@@ -698,7 +699,7 @@ struct TestNodeId
     uint32_t node_id_{ 0 };
 };
 
-TEST(GS, GetNotFullMainSceneSceneFull)
+TEST(GS, GetNotFullMainSceneWhenSceneFull)
 {
 	tls.registry.clear();
 	ScenesSystem sm;
@@ -846,6 +847,24 @@ TEST(GS, CreateDungeon)
 TEST(GS, Route)
 {
     tls.registry.clear();
+}
+
+TEST(GS, CheckEnterRoomScene)
+{
+    SceneInfo scene_info;
+    for (uint64_t i = 1; i < 10; ++i)
+    {
+        scene_info.mutable_creators()->emplace(i,false);
+    }
+    auto scene = ScenesSystem::CreateScene2GameNode({.node_= CreateMainSceneNode(), .scene_info = scene_info});
+
+    const auto player = tls.registry.create();
+    tls.registry.emplace<Guid>(player, 1);
+    const auto player1 = tls.registry.create();
+    tls.registry.emplace<Guid>(player1, 100);
+
+    EXPECT_EQ(kRetOK, ScenesSystem::CheckEnterScene({.scene_ = scene, .player_ = player}));
+    EXPECT_EQ(kRetCheckEnterSceneCreator, ScenesSystem::CheckEnterScene({.scene_ = scene, .player_ = player1}));
 }
 
 int32_t main(int argc, char** argv)

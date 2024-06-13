@@ -26,8 +26,6 @@ func NewGetNodeInfoLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetNo
 }
 
 func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfoResponse, error) {
-	// todo: add your logic here and delete this line
-
 	response := &game.NodeInfoResponse{
 		Info: &game.ServersInfoData{
 			DatabaseInfo: &game.DatabaseServerDb{},
@@ -38,7 +36,6 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 			RedisInfo:    &game.RedisServerDb{},
 		},
 	}
-	//log.Println(strconv.FormatUint(uint64(in.GetZoneId()), 10))
 
 	zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
 	pkg.PbDb.LoadOneByKV(response.Info.GetDatabaseInfo(), "zone_id", zoneId)
