@@ -48,6 +48,16 @@ struct CreateGameNodeSceneParam
 	SceneInfo scene_info;
 };
 
+struct DestroySceneParam
+{
+	inline bool IsNull() const
+	{
+		return node_ == entt::null || scene_ == entt::null;
+	}
+    entt::entity node_{ entt::null };
+    entt::entity scene_{ entt::null };
+};
+
 void AddMainSceneNodeComponent(entt::registry& reg, entt::entity server);
 
 
@@ -83,7 +93,7 @@ public:
 
 	static entt::entity CreateScene2GameNode(const CreateGameNodeSceneParam& param);
 
-	static void DestroyScene(entt::entity node, entt::entity scene);
+	static void DestroyScene(const DestroySceneParam& param);
 	static void OnDestroyServer(entt::entity node);
 
 	static void EnterScene(const EnterSceneParam& param);

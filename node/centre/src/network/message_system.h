@@ -26,3 +26,5 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& message, No
 
 void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
 void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id);
+
+void BroadCastToGame(uint32_t message_id, const google::protobuf::Message& message);

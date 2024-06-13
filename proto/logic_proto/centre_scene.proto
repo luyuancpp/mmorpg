@@ -14,7 +14,9 @@ message RegisterSceneResponse
 
 message UnRegisterSceneRequest
 {
-	uint64 scene = 1;
+	uint32 game_node = 1;
+	uint32 scene = 2;
+	uint32 reason = 3;
 }
 
 //正常或者顶号进入场景

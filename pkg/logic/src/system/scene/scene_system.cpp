@@ -125,20 +125,24 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 	return scene;
 }
 
-void ScenesSystem::DestroyScene(entt::entity node, entt::entity scene)
+void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
+	if (param.IsNull())
+	{
+		return;
+	}
 	// todo 人得换场景
-	auto* p_server_comp = tls.registry.try_get<ServerComp>(node);
+	auto* p_server_comp = tls.registry.try_get<ServerComp>(param.node_);
 	if (nullptr == p_server_comp)
 	{
 		return;
 	}
 	
 	OnDestroyScene destroy_scene_event;
-	destroy_scene_event.set_entity(entt::to_integral(scene));
+	destroy_scene_event.set_entity(entt::to_integral(param.scene_));
 	tls.dispatcher.trigger(destroy_scene_event);
 	
-	p_server_comp->RemoveScene(scene);
+	p_server_comp->RemoveScene(param.scene_);
 }
 
 void ScenesSystem::OnDestroyServer(entt::entity node)
@@ -150,7 +154,7 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 	{
 		for (const auto scene : val)
 		{
-			DestroyScene(node, scene);
+			DestroyScene({ node, scene });
 		}
 	}
 	Destroy(tls.registry, node);

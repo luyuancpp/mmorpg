@@ -120,7 +120,7 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, Nod
 	(*gate_node)->Send(GateServicePlayerMessageMsgId, messag);
 }
 
-void CallCentreNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
+void CallCentreNodeMethod(uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
 {
 	entt::entity centre_node_id{ node_id };
     if (tls.centre_node_registry.valid(centre_node_id))
@@ -135,4 +135,12 @@ void CallCentreNodeMethod(const uint32_t message_id, const google::protobuf::Mes
         return;
     }
 	(*centre_node)->CallMethod(message_id, message);
+}
+
+void BroadCastToCentre(uint32_t message_id, const google::protobuf::Message& message)
+{
+	for (auto&& [_, node] : tls.centre_node_registry.view<RpcClientPtr>().each())
+	{
+		node->CallMethod(message_id, message);
+	}
 }
