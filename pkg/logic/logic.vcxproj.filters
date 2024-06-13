@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="src\comp\server_comp.h" />
-    <ClInclude Include="src\comp\account_comp.h" />
     <ClInclude Include="src\comp\mission_comp.h" />
     <ClInclude Include="src\comp\player_comp.h" />
     <ClInclude Include="src\comp\player_scene_comp.h" />
@@ -22,7 +21,7 @@
     <ClInclude Include="src\system\mission\missions_config_template.h" />
     <ClInclude Include="src\system\reuse_id\reuse_id.h" />
     <ClInclude Include="src\system\scene\scene_system.h" />
-    <ClInclude Include="src\system\scene\servernode_system.h" />
+    <ClInclude Include="src\system\scene\node_scene_system.h" />
     <ClInclude Include="src\system\teams\team.h" />
     <ClInclude Include="src\event\team_event.h" />
     <ClInclude Include="src\system\teams\TeamSystem.h" />
@@ -35,7 +34,7 @@
     <ClCompile Include="src\system\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\system\mission\mission_system.cpp" />
     <ClCompile Include="src\system\scene\scene_system.cpp" />
-    <ClCompile Include="src\system\scene\servernode_system.cpp" />
+    <ClCompile Include="src\system\scene\node_scene_system.cpp" />
     <ClCompile Include="src\system\teams\team.cpp" />
     <ClCompile Include="src\system\teams\TeamSystem.cpp" />
   </ItemGroup>

@@ -4,6 +4,8 @@ message SceneInfo
 {
   uint32 scene_confid = 1;
   uint32 guid = 2;
+  map<uint64, bool> creators = 3;
+  uint32 dungen_config = 4;
 }
 
 message CentreChangeSceneInfo

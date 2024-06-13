@@ -45,6 +45,16 @@ NodeId ScenesSystem::get_game_node_id(entt::entity scene)
 	return get_game_node_id(scene_info->guid());
 }
 
+uint32_t ScenesSystem::GenSceneGuid()
+{
+    auto scene_id = node_sequence_.Generate();
+    while (tls.scene_registry.valid(entt::entity{ scene_id }))
+    {
+        scene_id = node_sequence_.Generate();
+    }
+	return scene_id;
+}
+
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 {
 	std::size_t scene_size = 0;
@@ -81,7 +91,7 @@ bool ScenesSystem::ConfigSceneListNotEmpty(const uint32_t scene_config_id)
 
 entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& param)
 {
-	if (param.IsNull())
+	if (param.CheckValid())
 	{
 		LOG_ERROR << "server id error" << param.scene_info.scene_confid();
 		return entt::null;
@@ -90,12 +100,7 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 	SceneInfo scene_info(param.scene_info);
 	if (scene_info.guid() <= 0)
 	{
-		auto scene_id = node_sequence_.Generate();
-		while (tls.scene_registry.valid(entt::entity{ scene_id }))
-		{
-            scene_id = node_sequence_.Generate();
-		}
-		scene_info.set_guid(scene_id);
+		scene_info.set_guid(GenSceneGuid());
 	}
 	const auto id = entt::entity{ scene_info.guid() };
 	const auto scene = tls.scene_registry.create(id);
@@ -127,7 +132,7 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 
 void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
-	if (param.IsNull())
+	if (param.CheckValid())
 	{
 		return;
 	}
@@ -160,6 +165,25 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 	Destroy(tls.registry, node);
 }
 
+uint32_t ScenesSystem::CheckEnterScene(const EnterSceneParam& param)
+{
+	if (!tls.scene_registry.valid(param.scene_))
+	{
+		return kRetCheckEnterSceneSceneParam;
+	}
+	auto scene_info = tls.scene_registry.try_get<SceneInfo>(param.scene_);
+	if (nullptr == scene_info)
+	{
+        return kRetCheckEnterSceneSceneParam;
+	}
+	if (scene_info->creators().find(tls.registry.get<Guid>(param.player_)) == 
+		scene_info->creators().end())
+	{
+		return kRetCheckEnterSceneCreator;
+	}
+	return kRetOK;
+}
+
 uint32_t ScenesSystem::CheckScenePlayerSize(const entt::entity scene)
 {
 	//todo weak ptr ?
@@ -182,7 +206,7 @@ uint32_t ScenesSystem::CheckScenePlayerSize(const entt::entity scene)
 
 void ScenesSystem::EnterScene(const EnterSceneParam& param)
 {
-	if (param.IsNull())
+	if (param.CheckValid())
 	{
 		LOG_INFO << "param null error";
 		return;
@@ -207,7 +231,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 
 void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param)
 {
-	if (param.IsNull())
+	if (param.CheckValid())
 	{
 		LOG_INFO << "param null error";
 		return;
@@ -218,7 +242,7 @@ void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param)
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 {
-	if (param.IsNull())
+	if (param.CheckValid())
 	{
 		LOG_ERROR << "entity null";
 		return;

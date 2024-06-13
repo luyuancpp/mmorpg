@@ -1,4 +1,4 @@
-#include "servernode_system.h"
+#include "node_scene_system.h"
 
 #include <ranges>
 
@@ -104,7 +104,8 @@ entt::entity NodeSceneSystem::GetSceneOnMinPlayerSizeNode(const GetSceneParam& p
 entt::entity NodeSceneSystem::GetNotFullScene(const GetSceneParam& param)
 {
 	GetSceneFilterParam get_scene_filter_param;
-	if (const auto scene_entity = GetNotFullSceneT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
+	if (const auto scene_entity = GetNotFullSceneT<MainSceneServer>(param, get_scene_filter_param); 
+		entt::null != scene_entity)
 	{
 		return scene_entity;
 	}

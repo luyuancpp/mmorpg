@@ -29,10 +29,10 @@ void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcControlle
 		LOG_ERROR << "scene not found" << request->scene();
 		return;
 	}
-	entt::entity game_node{request->scene()};
-	if (tls.scene_registry.valid(scene))
+	entt::entity game_node{request->game_node_id()};
+	if (tls.game_node_registry.valid(game_node))
 	{
-		LOG_ERROR << "scene not found" << request->scene();
+		LOG_ERROR << "node not found" << request->game_node_id();
 		return;
 	}
 	ScenesSystem::DestroyScene({game_node, scene});

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message PlayerSceneInfo
+{
+  uint32 scene_confid = 1;
+  uint32 guid = 2;
+}
+
+message PlayerSceneInfoComp
+{
+	PlayerSceneInfo scene_info = 1;
+	PlayerSceneInfo scene_info_last_time = 2;
+}
+

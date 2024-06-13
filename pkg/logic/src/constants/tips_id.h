@@ -70,7 +70,11 @@ enum  EnumCode : uint32_t
     kRetChangeScenePlayerQueueComponentGsNull = 4019,//找不到玩家的gs
     kRetChangeScenePlayerQueueComponentEmpty = 4020,//玩家切换场景队列为空
     kRetChangeSceneEnQueueNotSameGs = 4021,//不是同一个场景切换
-
+    //检测进入副本场景未找到
+    kRetCheckEnterSceneSceneParam = 4022,
+    //该副本您没有归属权,不能进入
+    kRetCheckEnterSceneCreator = 4023,
+    
     //Team
     kRetTeamNotInApplicants = 5000,
     kRetTeamPlayerId = 5001,

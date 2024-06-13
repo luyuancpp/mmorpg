@@ -14,7 +14,7 @@ message RegisterSceneResponse
 
 message UnRegisterSceneRequest
 {
-	uint32 game_node = 1;
+	uint32 game_node_id = 1;
 	uint32 scene = 2;
 	uint32 reason = 3;
 }

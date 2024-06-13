@@ -2,13 +2,13 @@
 
 #include "comp/server_comp.h"
 
-#include "system/scene/servernode_system.h"
+#include "system/scene/node_scene_system.h"
 #include "util/snow_flake.h"
 #include <component_proto/scene_comp.pb.h>
 
 struct EnterSceneParam
 {
-	inline bool IsNull() const
+	inline bool CheckValid() const
 	{
 		return scene_ == entt::null || player_ == entt::null;
 	}
@@ -19,7 +19,7 @@ struct EnterSceneParam
 
 struct EnterDefaultSceneParam
 {
-	inline bool IsNull() const
+	inline bool CheckValid() const
 	{
 		return player_ == entt::null;
 	}
@@ -29,7 +29,7 @@ struct EnterDefaultSceneParam
 
 struct LeaveSceneParam
 {
-	inline bool IsNull() const
+	inline bool CheckValid() const
 	{
 		return leaver_ == entt::null;
 	}
@@ -39,7 +39,7 @@ struct LeaveSceneParam
 
 struct CreateGameNodeSceneParam
 {
-	inline bool IsNull() const
+	inline bool CheckValid() const
 	{
 		return node_ == entt::null;
 	}
@@ -50,7 +50,7 @@ struct CreateGameNodeSceneParam
 
 struct DestroySceneParam
 {
-	inline bool IsNull() const
+	inline bool CheckValid() const
 	{
 		return node_ == entt::null || scene_ == entt::null;
 	}
@@ -81,13 +81,11 @@ public:
 		return entt::entity{ node_sequence_.node_id(scene_id) };
     }
 
+	static uint32_t GenSceneGuid();
+
 	static std::size_t scenes_size(uint32_t scene_config_id);
 	static std::size_t scenes_size();
 	static void set_server_sequence_node_id(const uint32_t node_id) { node_sequence_.set_node_id(node_id); }
-
-
-	static bool ConfigSceneListNotEmpty(uint32_t scene_config_id);
-	static bool IsSceneEmpty();
 
 	static uint32_t CheckScenePlayerSize(entt::entity scene);
 
@@ -96,6 +94,7 @@ public:
 	static void DestroyScene(const DestroySceneParam& param);
 	static void OnDestroyServer(entt::entity node);
 
+	static uint32_t CheckEnterScene(const EnterSceneParam& param);
 	static void EnterScene(const EnterSceneParam& param);
 	static void EnterDefaultScene(const EnterDefaultSceneParam& param);
 
@@ -105,6 +104,9 @@ public:
 
 	static void ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node);
 
+	//for Test
+    static bool ConfigSceneListNotEmpty(uint32_t scene_config_id);
+    static bool IsSceneEmpty();
 private:
 	inline static NodeBit16Sequence node_sequence_;
 };
