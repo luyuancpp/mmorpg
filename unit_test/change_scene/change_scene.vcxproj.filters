@@ -18,54 +18,54 @@
     <ClCompile Include="change_scene_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\scene\servernode_system.cpp">
+    <ClCompile Include="..\..\pkg\common\src\game_logic\scene\servernode_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc">
+    <ClCompile Include="..\..\pkg\common\src\pb\pbc\component_proto\scene_comp.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.cc">
+    <ClCompile Include="..\..\pkg\common\src\pb\pbc\event_proto\scene_event.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\player_network_comp.pb.cc">
+    <ClCompile Include="..\..\pkg\common\src\pb\pbc\component_proto\player_network_comp.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.cc">
+    <ClCompile Include="..\..\pkg\common\src\pb\pbc\component_proto\gs_node_comp.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\controller_server\src\system\player_change_scene.cpp">
+    <ClCompile Include="..\..\pkg\controller_server\src\system\player_change_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\thread_local\thread_local_storage.cpp">
+    <ClCompile Include="..\..\pkg\common\src\game_logic\thread_local\thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\scene\scene_system.cpp">
+    <ClCompile Include="..\..\pkg\common\src\game_logic\scene\scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_logic\scene\servernode_system.h">
+    <ClInclude Include="..\..\pkg\common\src\game_logic\scene\servernode_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h">
+    <ClInclude Include="..\..\pkg\common\src\pb\pbc\component_proto\scene_comp.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.h">
+    <ClInclude Include="..\..\pkg\common\src\pb\pbc\event_proto\scene_event.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\player_network_comp.pb.h">
+    <ClInclude Include="..\..\pkg\common\src\pb\pbc\component_proto\player_network_comp.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.h">
+    <ClInclude Include="..\..\pkg\common\src\pb\pbc\component_proto\gs_node_comp.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\controller_server\src\system\player_change_scene.h">
+    <ClInclude Include="..\..\pkg\controller_server\src\system\player_change_scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h">
+    <ClInclude Include="..\..\pkg\common\src\game_logic\thread_local\thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\scene\scene_system.h">
+    <ClInclude Include="..\..\pkg\common\src\game_logic\scene\scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

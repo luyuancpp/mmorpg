@@ -3,7 +3,6 @@
 #include "thread_local/thread_local_storage.h"
 #include "system/scene/scene_system.h"
 #include "constants/tips_id.h"
-#include "system/player_scene_system.h"
 
 #include "event_proto/scene_event.pb.h"
 
