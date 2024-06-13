@@ -34,24 +34,63 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
         LOG_ERROR << "player not found";
         return;
     }
+    entt::entity scene_id = entt::entity{ scene_info_comp->scene_info().guid() };
+    entt::entity scene_id_last_time =
+        entt::entity{ scene_info_comp->scene_info_last_time().guid() };
+
+    bool canEnterScene = false;
+    bool canEnterSceneLastTime = false;
+
     //之前的场景有效
-    if (tls.scene_registry.valid(entt::entity{ scene_info_comp->scene_info().guid() }))
+    if (tls.scene_registry.valid(scene_id))
     {
+        //但是进不去
+        if (kRetOK == ScenesSystem::CheckEnterScene(
+            { .scene_ = scene_id, 
+            .player_ = player }))
+        {
+            canEnterScene = true;
+        }
+    }
+    else if (tls.scene_registry.valid(scene_id_last_time))
+    {
+        if (kRetOK == ScenesSystem::CheckEnterScene(
+            { .scene_ = scene_id_last_time, 
+            .player_ = player }))
+        {
+            canEnterSceneLastTime = true;
+        }
+    }
+
+    entt::entity scene = entt::null;
+    if (canEnterScene)
+    {
+        scene = scene_id;
+    }
+    else if (canEnterSceneLastTime)
+    {
+        scene = scene_id_last_time;
     }
     else
     {
-
+        scene = NodeSceneSystem::GetNotFullScene({ scene_info_comp->scene_info().scene_confid() });
+        if (entt::null == scene)
+        {
+            scene = NodeSceneSystem::GetNotFullScene({ scene_info_comp->scene_info().scene_confid() });
+        }
     }
-    GetSceneParam p;
-    p.scene_conf_id_ = 1;
-    const auto scene = NodeSceneSystem::GetNotFullScene(p);
+    
     //找不到上次的场景,或者上次场景满了，放到默认场景里面
     if (scene == entt::null)
     {
-        p.scene_conf_id_ = GetDefualtSceneConfigId();
-        // todo default
+        scene = NodeSceneSystem::GetNotFullScene({ GetDefualtSceneConfigId() });
     }
 
+    if (scene == entt::null)
+    {
+        LOG_ERROR << "player login enter scene ";
+        return;
+    }
     //todo 会话没有了玩家还在
 
     CallPlayerEnterGs(player,
