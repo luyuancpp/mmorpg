@@ -40,12 +40,6 @@ message CtrlLsDisconnectRequest
 {
 }
 
-message CrossSceneInfo
-{
-  SceneInfo scene_info = 1;
-  uint32 gs_node_id = 2;
-}
-
 
 message EnterGameNodeSucceedRequest
 {

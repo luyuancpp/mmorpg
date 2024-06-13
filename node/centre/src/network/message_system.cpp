@@ -210,3 +210,7 @@ void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& me
     }
 	(*gate_node)->CallMethod(message_id, message);
 }
+
+void BroadCastToGame(uint32_t message_id, const google::protobuf::Message& message)
+{
+}

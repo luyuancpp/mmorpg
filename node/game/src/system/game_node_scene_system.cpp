@@ -7,12 +7,13 @@
 #include "mainscene_config.h"
 #include "scene_config.h"
 
-#include "system/scene/scene_system.h"
-#include "thread_local/thread_local_storage.h"
+#include "game_node.h"
+#include "network/message_system.h"
+#include "service/centre_scene_service.h"
 #include "system/player_scene_system.h"
 #include "system/recast_system.h"
-#include "game_node.h"
-#include "service/centre_scene_service.h"
+#include "system/scene/scene_system.h"
+#include "thread_local/thread_local_storage.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "constants_proto/node.pb.h"
@@ -83,14 +84,15 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
     }
     RegisterSceneRequest rq;
     rq.mutable_scenes_info()->Add()->CopyFrom(*scene_info);
-    for (auto& it : tls.centre_node_registry.view<RpcClientPtr>())
-    {
-        auto& centre_node = tls.centre_node_registry.get<RpcClientPtr>(it);
-        centre_node->CallMethod(CentreSceneServiceRegisterSceneMsgId, rq);
-    }
+    BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, rq);
 }
 
 void GameNodeSceneSystem::RegisterSceneToCentre()
 {
-
+    RegisterSceneRequest rq;
+    for (auto&& [e, scene_info] : tls.scene_registry.view<SceneInfo>().each())
+    {
+        rq.mutable_scenes_info()->Add()->CopyFrom(scene_info);
+    }
+    BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, rq);
 }

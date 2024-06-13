@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "src/system/scene/scene_system.h"
-#include "src/comp/scene_comp.h"
-#include "src/thread_local/thread_local_storage.h"
+#include "system/scene/scene_system.h"
+#include "comp/scene_comp.h"
+#include "thread_local/thread_local_storage.h"
 
-#include "src/component_proto/gs_node_comp.pb.h"
-#include "src/component_proto/scene_comp.pb.h"
+#include "component_proto/gs_node_comp.pb.h"
+#include "component_proto/scene_comp.pb.h"
 
 using GameNodeInfoPtr = std::shared_ptr<GameNodeInfo>;
 
@@ -81,28 +81,28 @@ TEST(GS, DestroyScene)
 {
     const ScenesSystem sm;
 
-    const auto server_entity1 = CreateMainSceneNode();
+    const auto node1 = CreateMainSceneNode();
 
     CreateGameNodeSceneParam create_gs_scene_param1;
-    create_gs_scene_param1.node_ = server_entity1;
-    const auto scene_entity = sm.CreateScene2GameNode(create_gs_scene_param1);
+    create_gs_scene_param1.node_ = node1;
+    const auto scene = sm.CreateScene2GameNode(create_gs_scene_param1);
 
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_info.scene_confid()));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 
-	auto servercomp1 = tls.registry.try_get<ServerComp>(server_entity1);
+	auto servercomp1 = tls.registry.try_get<ServerComp>(node1);
 	if (nullptr != servercomp1)
 	{
 		EXPECT_EQ(1, servercomp1->GetSceneSize());
 	}
 
-    sm.DestroyScene(server_entity1, scene_entity);
+    sm.DestroyScene({ node1, scene });
     EXPECT_TRUE(sm.IsSceneEmpty());
     EXPECT_FALSE(sm.ConfigSceneListNotEmpty(create_gs_scene_param1.scene_info.scene_confid()));
     EXPECT_TRUE(sm.IsSceneEmpty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
-    EXPECT_FALSE(tls.registry.valid(scene_entity));
+    EXPECT_FALSE(tls.registry.valid(scene));
 }
 
 TEST(GS, DestroySever)

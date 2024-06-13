@@ -109,7 +109,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     }
     else
     {
-        to_scene = entt::to_entity(to_scene_guid);
+        to_scene = entt::entity{to_scene_guid};
         if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
