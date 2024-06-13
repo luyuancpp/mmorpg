@@ -97,7 +97,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
         ScenesSystem::get_game_node_id(scene),
         cl_tls.session_id());
     CentreChangeSceneInfo change_scene_info;
-    change_scene_info.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
+    PlayerChangeSceneSystem::CopyTo(change_scene_info, tls.registry.get<SceneInfo>(scene));
     change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
     change_scene_info.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
     PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
@@ -174,13 +174,13 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
     change_scene_info.set_processing(true);
-    auto to_scene_guid = change_scene_info.scene_info().guid();
+    auto to_scene_guid = change_scene_info.guid();
     entt::entity to_scene = entt::null;
     //用scene_config id 去换本服的centre
     if (to_scene_guid <= 0)
     {
         GetSceneParam getp;
-        getp.scene_conf_id_ = change_scene_info.scene_info().scene_confid();
+        getp.scene_conf_id_ = change_scene_info.scene_confid();
         to_scene = NodeSceneSystem::GetNotFullScene(getp);
         if (entt::null == to_scene)
         {

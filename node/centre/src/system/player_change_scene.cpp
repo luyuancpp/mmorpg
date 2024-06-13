@@ -75,6 +75,14 @@ void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, Cen
     change_scene_queue->change_scene_queue_.front().set_change_cross_server_status(s);
 }
 
+void PlayerChangeSceneSystem::CopyTo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info)
+{
+    change_info.set_scene_confid(scene_info.scene_confid());
+    change_info.set_dungen_confid(scene_info.dungen_confid());
+    change_info.set_guid(scene_info.guid());
+    change_info.set_mirror_confid(scene_info.mirror_confid());
+}
+
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player)
 {
     auto* const try_change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
@@ -152,7 +160,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
         return kRetChangeScenePlayerQueueComponentEmpty;
     }
     const auto& change_info = change_scene_queue->change_scene_queue_.front();
-    entt::entity dest_scene = entt::entity{ change_info.scene_info().guid() };
+    entt::entity dest_scene = entt::entity{ change_info.guid() };
     //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
     if (entt::null == dest_scene)
     {
@@ -190,7 +198,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
         CentreChangeSceneInfo::eEnterGsSceneSucceed)
     {
         //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
-        if (const auto dest_scene = entt::entity{ change_info.scene_info().guid() };
+        if (const auto dest_scene = entt::entity{ change_info.guid() };
             entt::null == dest_scene)
         {
             //todo 考虑直接删除了会不会有异常
