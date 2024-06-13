@@ -63,7 +63,7 @@ void GateNode::InitNodeByReqInfo()
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(deploy_channel);
     g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpc);
 
     {
         NodeInfoRequest req;
@@ -149,4 +149,11 @@ void GateNode::Connect2Centre()
     centre_node_ = std::make_unique<RpcClient>(loop_, centre_addr);
     centre_node_->registerService(&gate_service_handler_);
     centre_node_->connect();
+}
+
+void GateNode::Connect2Login()
+{
+    for (auto& it : node_net_info_.login_info())
+    {
+    }
 }

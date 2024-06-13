@@ -2,8 +2,8 @@ package pkg
 
 import (
 	"database/sql"
-	"deploy_server/internal/config"
-	"deploy_server/pb/game"
+	"deploy/internal/config"
+	"deploy/pb/game"
 	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"

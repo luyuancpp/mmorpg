@@ -19,8 +19,6 @@ type (
 	GateServerDb            = game.GateServerDb
 	GetGameNodeInfoRequest  = game.GetGameNodeInfoRequest
 	GetGameNodeInfoResponse = game.GetGameNodeInfoResponse
-	LobbyNodeInfoRequest    = game.LobbyNodeInfoRequest
-	LobbyNodeInfoResponse   = game.LobbyNodeInfoResponse
 	LobbyServerDb           = game.LobbyServerDb
 	LoginServerDb           = game.LoginServerDb
 	NewGameNodeRequest      = game.NewGameNodeRequest

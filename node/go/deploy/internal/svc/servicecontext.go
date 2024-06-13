@@ -1,6 +1,6 @@
 package svc
 
-import "deploy_server/internal/config"
+import "deploy/internal/config"
 
 type ServiceContext struct {
 	Config config.Config

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"deploy_server/internal/config"
-	deployserviceServer "deploy_server/internal/server/deployservice"
-	"deploy_server/internal/svc"
-	"deploy_server/pb/game"
-	"deploy_server/pkg"
+	"deploy/internal/config"
+	deployserviceServer "deploy/internal/server/deployservice"
+	"deploy/internal/svc"
+	"deploy/pb/game"
+	"deploy/pkg"
 	"flag"
 	"fmt"
 

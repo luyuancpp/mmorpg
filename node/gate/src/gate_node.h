@@ -58,6 +58,8 @@ private:
 
     void Connect2Centre();
 
+    void Connect2Login();
+
     void OnUnknownMessage(const TcpConnectionPtr& conn,
                                  const MessagePtr& message,
                                  Timestamp)
