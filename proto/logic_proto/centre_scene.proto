@@ -1,19 +1,27 @@
 syntax = "proto3";
 import "component_proto/scene_comp.proto";
+import "common_proto/empty.proto";
 option cc_generic_services = true;
 
-message UpdateCrossMainSceneInfoRequest
+message RegisterSceneRequest
 {
 	repeated SceneInfo scenes_info = 1;
 }
 
-message UpdateCrossMainSceneInfoResponse
+message RegisterSceneResponse
 {
+}
+
+message UnRegisterSceneRequest
+{
+	uint64 scene = 1;
 }
 
 //正常或者顶号进入场景
 //断线重连进入场景,断线重连分时间
 service CentreSceneService
 {
-  rpc UpdateCrossMainSceneInfo (UpdateCrossMainSceneInfoRequest) returns (UpdateCrossMainSceneInfoResponse);
+  rpc RegisterScene (RegisterSceneRequest) returns (RegisterSceneResponse);
+  rpc UnRegisterScene (UnRegisterSceneRequest) returns (Empty);
+  
 }
