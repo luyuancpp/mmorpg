@@ -2,11 +2,11 @@ package deployservicelogic
 
 import (
 	"context"
-	"deploy_server/pkg"
+	"deploy/pkg"
 	"strconv"
 
-	"deploy_server/internal/svc"
-	"deploy_server/pb/game"
+	"deploy/internal/svc"
+	"deploy/pb/game"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -29,21 +29,21 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 	response := &game.NodeInfoResponse{
 		Info: &game.ServersInfoData{
 			DatabaseInfo: &game.DatabaseServerDb{},
-			LoginInfo:    &game.LoginServerDb{},
-			CentreInfo:   &game.CentreServerDb{},
-			GateInfo:     &game.GateServerDb{},
-			GameInfo:     &game.GameServerDb{},
-			RedisInfo:    &game.RedisServerDb{},
+			LoginInfo:    []*game.LoginServerDb{},
+			CentreInfo:   []*game.CentreServerDb{},
+			GateInfo:     []*game.GateServerDb{},
+			GameInfo:     []*game.GameServerDb{},
+			RedisInfo:    []*game.RedisServerDb{},
 		},
 	}
 
 	zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
-	pkg.PbDb.LoadOneByKV(response.Info.GetDatabaseInfo(), "zone_id", zoneId)
-	pkg.PbDb.LoadOneByKV(response.Info.GetLoginInfo(), "zone_id", zoneId)
-	pkg.PbDb.LoadOneByKV(response.Info.GetCentreInfo(), "zone_id", zoneId)
-	pkg.PbDb.LoadOneByKV(response.Info.GetGameInfo(), "zone_id", zoneId)
-	pkg.PbDb.LoadOneByKV(response.Info.GetGateInfo(), "zone_id", zoneId)
-	pkg.PbDb.LoadOneByKV(response.Info.GetRedisInfo(), "zone_id", zoneId)
+	pkg.PbDb.LoadListByWhereCase(response.Info.GetDatabaseInfo(), "where zone_id="+zoneId)
+	pkg.PbDb.LoadListByWhereCase(response.Info.GetLoginInfo(), "where zone_id="+zoneId)
+	pkg.PbDb.LoadListByWhereCase(response.Info.GetCentreInfo(), "where zone_id="+zoneId)
+	pkg.PbDb.LoadListByWhereCase(response.Info.GetGameInfo(), "where zone_id="+zoneId)
+	pkg.PbDb.LoadListByWhereCase(response.Info.GetGateInfo(), "where zone_id="+zoneId)
+	pkg.PbDb.LoadListByWhereCase(response.Info.GetRedisInfo(), "where zone_id="+zoneId)
 
 	return response, nil
 }

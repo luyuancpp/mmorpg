@@ -14,22 +14,17 @@ message database_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  string db_host = 4;
-  string db_user = 5;
-  string db_password = 6;
-  uint32 db_port = 7;
-  string db_dbname = 8;
   uint32 zone_id = 9;
 }
 
 message servers_info_data
 {
   database_server_db database_info = 1;
-  login_server_db login_info = 2;
-  centre_server_db centre_info = 3;
-  gate_server_db gate_info = 4;
-  game_server_db game_info = 5; 
-  redis_server_db redis_info = 6;
+  repeated login_server_db login_info = 2;
+  repeated centre_server_db centre_info = 3;
+  repeated gate_server_db gate_info = 4;
+  repeated game_server_db game_info = 5; 
+  repeated redis_server_db redis_info = 6;
 }
 
 message login_server_db
@@ -119,16 +114,6 @@ message NewGameNodeResponse
   game_server_db my_info = 1;
   uint32 error_no = 2;
   redis_server_db redis_info = 5;
-}
-
-message LobbyNodeInfoRequest
-{
-  uint32 lobby_id = 1;
-}
-
-message LobbyNodeInfoResponse
-{
-  lobby_server_db info = 1;
 }
 
 message GetGameNodeInfoRequest

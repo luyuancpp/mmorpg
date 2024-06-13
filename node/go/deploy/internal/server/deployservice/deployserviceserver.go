@@ -6,9 +6,9 @@ package server
 import (
 	"context"
 
-	"deploy_server/internal/logic/deployservice"
-	"deploy_server/internal/svc"
-	"deploy_server/pb/game"
+	"deploy/internal/logic/deployservice"
+	"deploy/internal/svc"
+	"deploy/pb/game"
 )
 
 type DeployServiceServer struct {

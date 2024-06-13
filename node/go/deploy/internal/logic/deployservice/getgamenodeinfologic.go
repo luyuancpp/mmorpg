@@ -3,8 +3,8 @@ package deployservicelogic
 import (
 	"context"
 
-	"deploy_server/internal/svc"
-	"deploy_server/pb/game"
+	"deploy/internal/svc"
+	"deploy/pb/game"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
