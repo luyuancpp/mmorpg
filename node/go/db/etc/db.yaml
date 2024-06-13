@@ -2,3 +2,9 @@ RoutineNum:
   10
 ChannelBufferNum:
   100
+Addr: "127.0.0.1:3306"
+User: "root"
+Passwd: "root"
+DBName: "game"
+MaxOpenConn: 10
+MaxIdleConn: 3

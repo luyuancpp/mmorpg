@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "pb/game";
+
 message PlayerSceneInfo
 {
   uint32 scene_confid = 1;

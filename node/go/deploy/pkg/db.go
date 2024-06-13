@@ -62,6 +62,12 @@ func OpenDB(path string) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func InitDBTable() {
+
 	PbDb.AddMysqlTable(&game.DatabaseServerDb{})
 	PbDb.AddMysqlTable(&game.LoginServerDb{})
 	PbDb.AddMysqlTable(&game.CentreServerDb{})
@@ -69,10 +75,6 @@ func OpenDB(path string) error {
 	PbDb.AddMysqlTable(&game.GateServerDb{})
 	PbDb.AddMysqlTable(&game.GameServerDb{})
 
-	return nil
-}
-
-func InitDBTables() {
 	_, err := Db.Exec(PbDb.GetCreateTableSql(&game.DatabaseServerDb{}))
 	if err != nil {
 		log.Fatal(err)
@@ -103,4 +105,22 @@ func InitDBTables() {
 		log.Fatal(err)
 		return
 	}
+}
+
+func AlterCreateDBTable() {
+	PbDb.AlterTableAddField(&game.DatabaseServerDb{})
+	PbDb.AlterTableAddField(&game.LoginServerDb{})
+	PbDb.AlterTableAddField(&game.CentreServerDb{})
+	PbDb.AlterTableAddField(&game.RedisServerDb{})
+	PbDb.AlterTableAddField(&game.GateServerDb{})
+	PbDb.AlterTableAddField(&game.GameServerDb{})
+}
+
+func InitDB(path string) {
+	err := OpenDB(path)
+	if err != nil {
+		return
+	}
+	InitDBTable()
+	AlterCreateDBTable()
 }

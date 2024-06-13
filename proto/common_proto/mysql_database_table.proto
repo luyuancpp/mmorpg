@@ -2,7 +2,6 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-
 import "common_proto/db_base.proto";
 import "common_proto/account_database.proto";
 import "common_proto/comp.proto";
@@ -17,6 +16,13 @@ message account_database
   string account = 1;
   string password = 2;
   account_simple_players simple_players = 3;
+}
+
+message account_share_database
+{
+  option(OptionTableName)  = "account_share";
+  option(OptionPrimaryKey) = "account";
+  string account = 1;
 }
 
 //中心服专用数据
@@ -41,7 +47,7 @@ message player_database
 }
 
 //玩家数据库表2,不重要数据放这里，不会马上加载
-message player_database1
+message player_unimportance_database
 {
   option(OptionTableName)  = "player1";
   option(OptionPrimaryKey) = "player_id";
