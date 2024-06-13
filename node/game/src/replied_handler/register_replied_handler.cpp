@@ -1,7 +1,7 @@
 void InitRepliedHandler()
 {
-	void InitCentreSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
-	InitCentreSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
+	void InitCentreSceneServiceRegisterSceneRepliedHandler();
+	InitCentreSceneServiceRegisterSceneRepliedHandler();
 
 	void InitCentreServiceRegisterGameRepliedHandler();
 	InitCentreServiceRegisterGameRepliedHandler();

@@ -12,10 +12,10 @@
 #include "system/player_scene_system.h"
 #include "system/recast_system.h"
 #include "game_node.h"
+#include "service/centre_scene_service.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "constants_proto/node.pb.h"
-
 
 void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 {
@@ -72,4 +72,25 @@ void GameNodeSceneSystem::EnterScene(const EnterSceneParam& param)
 void GameNodeSceneSystem::LeaveScene(entt::entity leaver)
 {
     ScenesSystem::LeaveScene({.leaver_= leaver });
+}
+
+void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
+{
+    auto scene_info = tls.scene_registry.try_get<SceneInfo>(scene);
+    if (nullptr == scene_info)
+    {
+        return;
+    }
+    RegisterSceneRequest rq;
+    rq.mutable_scenes_info()->Add()->CopyFrom(*scene_info);
+    for (auto& it : tls.centre_node_registry.view<RpcClientPtr>())
+    {
+        auto& centre_node = tls.centre_node_registry.get<RpcClientPtr>(it);
+        centre_node->CallMethod(CentreSceneServiceRegisterSceneMsgId, rq);
+    }
+}
+
+void GameNodeSceneSystem::RegisterSceneToCentre()
+{
+
 }
