@@ -13,6 +13,7 @@ public:
 	static void PopFrontChangeSceneQueue(entt::entity player);
 	static void SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s);
 	static void SetChangeCrossServerSatus(entt::entity player, CentreChangeSceneInfo::eChangeCrossServerStatus s);
+	static void CopyTo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info);
 private:
 	static void TryProcessZoneServerChangeScene(entt::entity player);//处理本服务器的切换,不跨服
 	static void TryProcessViaCrossServerChangeScene(entt::entity player);//处理通过跨服消息的换场景

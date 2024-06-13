@@ -2,11 +2,13 @@ syntax = "proto3";
 
 message SceneInfo
 {
-  uint32 scene_confid = 1;
-  uint32 guid = 2;
-  map<uint64, bool> creators = 3;
-  uint32 dungen_config = 4;
+  uint32 scene_confid = 1;//场景id
+  uint32 guid = 2;//场景唯一id
+  uint32 mirror_confid = 3;//镜像id
+  uint32 dungen_confid = 4;//副本id
+  map<uint64, bool> creators = 5;//创建者
 }
+
 
 message CentreChangeSceneInfo
 {
@@ -31,13 +33,17 @@ message CentreChangeSceneInfo
       eEnterCrossServerScene = 0;//
       eEnterCrossServerSceneSucceed = 1;//
   };
-  SceneInfo scene_info = 1;
-  uint32 change_sequence = 2;
-  uint32 change_gs_type = 3;
-  uint32 change_gs_status = 4;//eChangeGsStatus
-  uint32 change_cross_server_type = 5;//eChangeCrossServerType
-  uint32 change_cross_server_status = 6;//eChangeCrossServerStatus
-  uint64 change_time = 8;//设置超时，超时代表服务器崩溃了,或者网络延时
-  bool ignore_full = 9;//忽略人数满了
-  bool processing = 10;
+  
+  uint32 scene_confid = 1;
+  uint32 guid = 2;//场景id
+  uint32 dungen_confid = 3;
+  uint32 mirror_confid = 4;
+  uint32 change_sequence = 5;
+  uint32 change_gs_type = 6;
+  uint32 change_gs_status = 7;//eChangeGsStatus
+  uint32 change_cross_server_type = 8;//eChangeCrossServerType
+  uint32 change_cross_server_status = 9;//eChangeCrossServerStatus
+  uint64 change_time = 10;//设置超时，超时代表服务器崩溃了,或者网络延时
+  bool ignore_full = 11;//忽略人数满了
+  bool processing = 12;
 }

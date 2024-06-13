@@ -20,7 +20,7 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
 	//正在切换场景中，不能马上切换，gs崩溃了怎么办
 	CentreChangeSceneInfo change_scene_info;
-	change_scene_info.mutable_scene_info()->CopyFrom(request->scene_info());
+	PlayerChangeSceneSystem::CopyTo(change_scene_info, request->scene_info());
 	auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
 	if (ret != kRetOK)
 	{
@@ -56,7 +56,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	}
 	const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
 	LOG_DEBUG << "Gs2CentreLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
-	const auto to_scene = entt::to_entity(change_scene_info.scene_info().guid());
+	const auto to_scene = entt::to_entity(change_scene_info.guid());
 	//todo异步加载完场景已经不在了scene了
 	//todo 场景崩溃了要去新的场景
 	if (entt::null == to_scene)
