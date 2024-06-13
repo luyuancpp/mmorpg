@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"db_server/config"
+	"db_server/internal/config"
 	"fmt"
 	"testing"
 	"time"
@@ -9,7 +9,7 @@ import (
 
 func TestPut(t *testing.T) {
 	config.Load()
-	q := NewMsgQueue(config.DBConfig.RoutineNum, config.DBConfig.ChannelBufferNum)
+	q := NewMsgQueue(config.DB.RoutineNum, config.DB.ChannelBufferNum)
 
 	go func() {
 		for i := uint64(0); i < 10; i++ {

@@ -1,15 +1,13 @@
 package main
 
 import (
-	"deploy_server/pkg"
-	"flag"
-	"fmt"
-	"log"
-
 	"deploy_server/internal/config"
 	deployserviceServer "deploy_server/internal/server/deployservice"
 	"deploy_server/internal/svc"
 	"deploy_server/pb/game"
+	"deploy_server/pkg"
+	"flag"
+	"fmt"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
@@ -28,13 +26,8 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)
 
-	err := pkg.OpenDB(*dbConfigFile)
-	if err != nil {
-		log.Fatal(err)
-	}
+	pkg.InitDB(*dbConfigFile)
 	defer pkg.PbDb.Close()
-
-	pkg.InitDBTables()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterDeployServiceServer(grpcServer, deployserviceServer.NewDeployServiceServer(ctx))
