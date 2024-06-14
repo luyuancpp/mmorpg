@@ -30,8 +30,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LoginServiceClient interface {
-	Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*LoginNodeCreatePlayerResponse, error)
+	Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginC2LResponse, error)
+	CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*CreatePlayerC2LResponse, error)
 	EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameResponse, error)
 	LeaveGame(ctx context.Context, in *LeaveGameC2LRequest, opts ...grpc.CallOption) (*Empty, error)
 	Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*Empty, error)
@@ -45,8 +45,8 @@ func NewLoginServiceClient(cc grpc.ClientConnInterface) LoginServiceClient {
 	return &loginServiceClient{cc}
 }
 
-func (c *loginServiceClient) Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
-	out := new(LoginResponse)
+func (c *loginServiceClient) Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginC2LResponse, error) {
+	out := new(LoginC2LResponse)
 	err := c.cc.Invoke(ctx, LoginService_Login_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -54,8 +54,8 @@ func (c *loginServiceClient) Login(ctx context.Context, in *LoginC2LRequest, opt
 	return out, nil
 }
 
-func (c *loginServiceClient) CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*LoginNodeCreatePlayerResponse, error) {
-	out := new(LoginNodeCreatePlayerResponse)
+func (c *loginServiceClient) CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*CreatePlayerC2LResponse, error) {
+	out := new(CreatePlayerC2LResponse)
 	err := c.cc.Invoke(ctx, LoginService_CreatePlayer_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -94,8 +94,8 @@ func (c *loginServiceClient) Disconnect(ctx context.Context, in *LoginNodeDiscon
 // All implementations must embed UnimplementedLoginServiceServer
 // for forward compatibility
 type LoginServiceServer interface {
-	Login(context.Context, *LoginC2LRequest) (*LoginResponse, error)
-	CreatePlayer(context.Context, *CreatePlayerC2LRequest) (*LoginNodeCreatePlayerResponse, error)
+	Login(context.Context, *LoginC2LRequest) (*LoginC2LResponse, error)
+	CreatePlayer(context.Context, *CreatePlayerC2LRequest) (*CreatePlayerC2LResponse, error)
 	EnterGame(context.Context, *EnterGameC2LRequest) (*EnterGameResponse, error)
 	LeaveGame(context.Context, *LeaveGameC2LRequest) (*Empty, error)
 	Disconnect(context.Context, *LoginNodeDisconnectRequest) (*Empty, error)
@@ -106,10 +106,10 @@ type LoginServiceServer interface {
 type UnimplementedLoginServiceServer struct {
 }
 
-func (UnimplementedLoginServiceServer) Login(context.Context, *LoginC2LRequest) (*LoginResponse, error) {
+func (UnimplementedLoginServiceServer) Login(context.Context, *LoginC2LRequest) (*LoginC2LResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedLoginServiceServer) CreatePlayer(context.Context, *CreatePlayerC2LRequest) (*LoginNodeCreatePlayerResponse, error) {
+func (UnimplementedLoginServiceServer) CreatePlayer(context.Context, *CreatePlayerC2LRequest) (*CreatePlayerC2LResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePlayer not implemented")
 }
 func (UnimplementedLoginServiceServer) EnterGame(context.Context, *EnterGameC2LRequest) (*EnterGameResponse, error) {

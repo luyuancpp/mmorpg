@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\grpc\handler\login_grpc_reply_handler.cpp" />
     <ClCompile Include="src\grpc\request\deploy_grpc_requst.cpp" />
     <ClCompile Include="src\grpc\handler\deploy_grpc_reply_handler.cpp" />
     <ClCompile Include="main.cpp" />
@@ -35,7 +36,6 @@
   <ItemGroup>
     <ClInclude Include="src\grpc\client\login_async_client_call.h" />
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h" />
-    <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h" />
     <ClInclude Include="src\grpc\client\deploy_async_client_call.h" />
     <ClInclude Include="src\gate_node.h" />
     <ClInclude Include="src\grpc\request\login_grpc_request.h" />

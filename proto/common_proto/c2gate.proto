@@ -51,6 +51,10 @@ message EnterGameResponse
 	Tip error = 1;
 }
 
+message LeaveGameRequest
+{
+}
+
 enum ClientMessageType
 {
   CLIENT_REQUEST = 0;

@@ -51,6 +51,9 @@
     <ClCompile Include="src\grpc\request\login_grpc_request.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\handler\login_grpc_reply_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\c2gate.h">
@@ -78,9 +81,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\client\deploy_async_client_call.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h">

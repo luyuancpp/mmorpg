@@ -103,9 +103,10 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             session_id = g_server_sequence_.Generate();
         }
         conn->setContext(session_id);
-        Session session;
+        auto& session = 
+            tls.scene_registry.emplace<Session>(entt::entity{session_id});
         session.conn_ = conn;
-        tls.scene_registry.emplace<Session>(entt::entity{session_id}, session);
+
     }
 }
 

@@ -1,5 +1,3 @@
-#include "deploy_grpc_reply_handler.h"
-
 #include "muduo/base/Logging.h"
 
 #include "util/defer.h"
@@ -37,7 +35,3 @@ void AsyncCompleteGrpc()
     }
 }
 
-void DeployGrpcReplyHandler()
-{
-
-}

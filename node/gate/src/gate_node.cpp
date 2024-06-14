@@ -182,7 +182,7 @@ void GateNode::Connect2Login()
             LOG_ERROR << "login id ";
             continue;
         }
-        auto channel = grpc::CreateChannel(login_node_info.ip(), grpc::InsecureChannelCredentials());
+        auto channel = grpc::CreateChannel(login_node_info.addr(), grpc::InsecureChannelCredentials());
         gate_tls.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
             LoginService::NewStub(channel));
         g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
