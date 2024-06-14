@@ -35,8 +35,6 @@ type (
 
 	DeployService interface {
 		GetNodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error)
-		NewGameNode(ctx context.Context, in *NewGameNodeRequest, opts ...grpc.CallOption) (*NewGameNodeResponse, error)
-		GetGameNodeInfo(ctx context.Context, in *GetGameNodeInfoRequest, opts ...grpc.CallOption) (*GetGameNodeInfoResponse, error)
 	}
 
 	defaultDeployService struct {
@@ -53,14 +51,4 @@ func NewDeployService(cli zrpc.Client) DeployService {
 func (m *defaultDeployService) GetNodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error) {
 	client := game.NewDeployServiceClient(m.cli.Conn())
 	return client.GetNodeInfo(ctx, in, opts...)
-}
-
-func (m *defaultDeployService) NewGameNode(ctx context.Context, in *NewGameNodeRequest, opts ...grpc.CallOption) (*NewGameNodeResponse, error) {
-	client := game.NewDeployServiceClient(m.cli.Conn())
-	return client.NewGameNode(ctx, in, opts...)
-}
-
-func (m *defaultDeployService) GetGameNodeInfo(ctx context.Context, in *GetGameNodeInfoRequest, opts ...grpc.CallOption) (*GetGameNodeInfoResponse, error) {
-	client := game.NewDeployServiceClient(m.cli.Conn())
-	return client.GetGameNodeInfo(ctx, in, opts...)
 }

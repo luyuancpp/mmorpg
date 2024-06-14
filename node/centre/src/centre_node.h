@@ -27,7 +27,7 @@ public:
 	void Init();
 	void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
 
-    void StartServer(const ::servers_info_data& info);
+    void StartServer(const ::nodes_info_data& info);
 
 	void Receive2(const OnBeConnectedEvent& es);
 
@@ -46,7 +46,7 @@ private:
 	CentreServiceHandler contoller_service_;
 
 	NodeInfo node_info_;
-	servers_info_data serverinfos_;
+	nodes_info_data serverinfos_;
 };
 
 extern CentreNode* g_centre_node;

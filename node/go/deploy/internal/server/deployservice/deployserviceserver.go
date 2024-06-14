@@ -26,13 +26,3 @@ func (s *DeployServiceServer) GetNodeInfo(ctx context.Context, in *game.NodeInfo
 	l := deployservicelogic.NewGetNodeInfoLogic(ctx, s.svcCtx)
 	return l.GetNodeInfo(in)
 }
-
-func (s *DeployServiceServer) NewGameNode(ctx context.Context, in *game.NewGameNodeRequest) (*game.NewGameNodeResponse, error) {
-	l := deployservicelogic.NewNewGameNodeLogic(ctx, s.svcCtx)
-	return l.NewGameNode(in)
-}
-
-func (s *DeployServiceServer) GetGameNodeInfo(ctx context.Context, in *game.GetGameNodeInfoRequest) (*game.GetGameNodeInfoResponse, error) {
-	l := deployservicelogic.NewGetGameNodeInfoLogic(ctx, s.svcCtx)
-	return l.GetGameNodeInfo(in)
-}

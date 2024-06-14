@@ -42,7 +42,6 @@ void GateNode::Init()
     LoadNodeConfig();
     InitNodeByReqInfo();
 
-    node_info_.set_node_type(kGateNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
 
     InitMessageInfo();
@@ -67,15 +66,17 @@ void GateNode::InitNodeByReqInfo()
 
     {
         NodeInfoRequest req;
+        req.set_node_type(kGateNode);
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
         void SendGetNodeInfo(NodeInfoRequest & request);
         SendGetNodeInfo(req);
     }
 }
 
-void GateNode::StartServer()
+void GateNode::StartServer(const nodes_info_data& serverinfo_data)
 {
-    auto& gate_info = node_net_info_.gate_info();
+    node_net_info_ = serverinfo_data;
+    auto& gate_info = node_net_info_.gate_info().gate_info()[gate_node_id()];
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
@@ -87,30 +88,37 @@ void GateNode::StartServer()
     Connect2Centre();
 }
 
+void GateNode::SetNodeId(NodeId node_id)
+{
+    node_info_.set_node_id(node_id);
+}
 
 void GateNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
     if (conn->connected())
     {
-        if (IsSameAddr(conn->peerAddress(), node_net_info_.centre_info()))
+        for (auto&& [_, centre_node] : tls.centre_node_registry.view<RpcClientPtr>().each())
         {
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                [this]() ->void
-                {
-                    RegisterGateRequest rq;
-                    rq.mutable_rpc_client()->set_ip(centre_node_->local_addr().toIp());
-                    rq.mutable_rpc_client()->set_port(centre_node_->local_addr().port());
-                    rq.set_gate_node_id(gate_node_id());
-                    centre_node()->CallMethod(CentreServiceRegisterGateMsgId, rq);
-                }
-            );
-            return;
+            if (IsSameAddr(conn->peerAddress(), centre_node->peer_addr()))
+            {
+                EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+                    [this, centre_node]() ->void
+                    {
+                        RegisterGateRequest rq;
+                        rq.mutable_rpc_client()->set_ip(centre_node->local_addr().toIp());
+                        rq.mutable_rpc_client()->set_port(centre_node->local_addr().port());
+                        rq.set_gate_node_id(gate_node_id());
+                        centre_node->CallMethod(CentreServiceRegisterGateMsgId, rq);
+                    }
+                );
+                return;
+            }
         }
+
         //todo 断线重连
-        for (auto& e : tls.game_node_registry.view<RpcClientPtr>())
+        for (auto&& [e, game_node] : tls.game_node_registry.view<RpcClientPtr>().each())
         {
-            auto& game_node = tls.game_node_registry.get<RpcClientPtr>(e);
             if (!IsSameAddr(game_node->peer_addr(), conn->peerAddress()))
             {
                 continue;
@@ -144,16 +152,27 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
 
 void GateNode::Connect2Centre()
 {
-    auto& centre_node_info = node_net_info_.centre_info();
-    InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-    centre_node_ = std::make_unique<RpcClient>(loop_, centre_addr);
-    centre_node_->registerService(&gate_service_handler_);
-    centre_node_->connect();
+    for (auto& centre_node_info : node_net_info_.centre_info().centre_info())
+    {
+        entt::entity id{ centre_node_info.id() };
+        auto centre_node_id = tls.centre_node_registry.create(id);
+        if (centre_node_id != id)
+        {
+            LOG_ERROR << "centre id ";
+            continue;
+        }
+        InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
+        auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(centre_node_id,
+            std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
+        centre_node->registerService(&gate_service_handler_);
+        centre_node->connect();
+        zone_centre_node_ = centre_node;
+    }
 }
 
 void GateNode::Connect2Login()
 {
-    for (auto& it : node_net_info_.login_info())
+    for (auto& it : node_net_info_.login_info().login_info())
     {
     }
 }

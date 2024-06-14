@@ -26,7 +26,7 @@ public:
 
     void InitConfig();
 
-    void StartServer(const ::servers_info_data& info);
+    void StartServer(const ::nodes_info_data& info);
 
     void RegisterGameToCentre(RpcClientPtr& centre_session);
 
@@ -45,7 +45,7 @@ private:
     PbSyncRedisClientPtr redis_;
 
     RpcServerPtr server_;
-    servers_info_data node_net_info_;
+    nodes_info_data node_net_info_;
 
     NodeInfo node_info_;
 
