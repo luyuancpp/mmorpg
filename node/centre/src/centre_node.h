@@ -40,6 +40,8 @@ private:
 
 	void InitNodeServer();
 
+	NodeId centre_node_index() { return center_node_id() - 1; }
+
 	muduo::net::EventLoop* loop_{ nullptr };
 	PbSyncRedisClientPtr redis_;
 	RpcServerPtr server_;

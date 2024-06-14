@@ -26,6 +26,7 @@ public:
 
     void InitConfig();
 
+    void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);
 
     void RegisterGameToCentre(RpcClientPtr& centre_session);
