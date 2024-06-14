@@ -8,8 +8,6 @@
 
 using grpc::CompletionQueue;
 
-CompletionQueue LoginC2LCQ;
-
 void SendLoginC2LRequest(LoginC2LRequest& request, NodeId login_node_id)
 {
     entt::entity login_node = entt::entity{login_node_id};
@@ -18,14 +16,14 @@ void SendLoginC2LRequest(LoginC2LRequest& request, NodeId login_node_id)
         return;
     }
     auto& stub = gate_tls.login_node_registry.get<std::unique_ptr<LoginService::Stub>>(login_node);
+    auto& cq = gate_tls.login_node_registry.get<CompletionQueue>(login_node);
     LoginC2LAsyncClientCall* call = new LoginC2LAsyncClientCall;
     call->response_reader = 
-        stub->PrepareAsyncLogin(&call->context, request, &LoginC2LCQ);
+        stub->PrepareAsyncLogin(&call->context, request, &cq);
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-CompletionQueue CreatePlayerC2LRequestCQ;
 void SendCreatePlayerC2LRequest(CreatePlayerC2LRequest& request, NodeId login_node_id)
 {
     entt::entity login_node = entt::entity{ login_node_id };
@@ -34,9 +32,11 @@ void SendCreatePlayerC2LRequest(CreatePlayerC2LRequest& request, NodeId login_no
         return;
     }
     auto& stub = gate_tls.login_node_registry.get<std::unique_ptr<LoginService::Stub>>(login_node);
+    auto& cq = gate_tls.login_node_registry.get<CompletionQueue>(login_node);
     CreatePlayerC2LAsyncClientCall* call = new CreatePlayerC2LAsyncClientCall;
     call->response_reader =
-        stub->PrepareAsyncCreatePlayer(&call->context, request, &LoginC2LCQ);
+        stub->PrepareAsyncCreatePlayer(&call->context, request, &cq);
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
+

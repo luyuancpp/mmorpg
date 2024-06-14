@@ -4,15 +4,14 @@
 
 #include "util/defer.h"
 
+#include "thread_local/gate_thread_local_storage.h"
 #include "grpc/client/login_async_client_call.h"
 #include "gate_node.h"
 #include "network/gate_session.h"
 
 using grpc::CompletionQueue;
 
-extern CompletionQueue LoginC2LCQ;
-
-void AsyncCompleteGrpcLoginC2L()
+void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -21,7 +20,7 @@ void AsyncCompleteGrpcLoginC2L()
     tm.tv_sec = 0;
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (CompletionQueue::GOT_EVENT != LoginC2LCQ.AsyncNext(&got_tag, &ok, tm))
+    if (CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm))
     {
         return;
     }
@@ -50,9 +49,7 @@ void AsyncCompleteGrpcLoginC2L()
     }
 }
 
-extern CompletionQueue CreatePlayerC2LCQ;
-
-void AsyncCompleteCreatePlayerC2L()
+void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -61,7 +58,7 @@ void AsyncCompleteCreatePlayerC2L()
     tm.tv_sec = 0;
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (CompletionQueue::GOT_EVENT != LoginC2LCQ.AsyncNext(&got_tag, &ok, tm))
+    if (CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm))
     {
         return;
     }
@@ -87,5 +84,14 @@ void AsyncCompleteCreatePlayerC2L()
     else
     {
         LOG_INFO << "RPC failed";
+    }
+}
+
+void AsyncCompleteRpcLoginService()
+{
+    for (auto&& [e, cq] : gate_tls.login_node_registry.view<CompletionQueue>().each())
+    {
+        AsyncCompleteGrpcLoginC2L(cq);
+        AsyncCompleteCreatePlayerC2L(cq);
     }
 }
