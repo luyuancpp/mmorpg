@@ -17,12 +17,12 @@ void AsyncCompleteGrpc()
     tm.tv_sec = 0;
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (CompletionQueue::GOT_EVENT != g_deploy_client->cq().AsyncNext(&got_tag, &ok, tm))
+    if (CompletionQueue::GOT_EVENT != g_deploy_cq->AsyncNext(&got_tag, &ok, tm))
     {
         return;
     }
 
-    std::unique_ptr<AsyncClientCall> call (static_cast<AsyncClientCall*>(got_tag));
+    std::unique_ptr<DeployAsyncClientCall> call (static_cast<DeployAsyncClientCall*>(got_tag));
 
     CHECK(ok);
     if (call->status.ok())

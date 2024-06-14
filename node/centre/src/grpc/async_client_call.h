@@ -9,7 +9,7 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-class AsyncClientCall
+class DeployAsyncClientCall
 {
 public:
     ClientContext context;
