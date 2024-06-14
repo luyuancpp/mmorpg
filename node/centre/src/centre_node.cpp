@@ -91,8 +91,7 @@ void CentreNode::InitNodeByReqInfo()
 void CentreNode::StartServer(const ::nodes_info_data& info)
 {
     serverinfos_ = info;
-    auto& my_node_info = serverinfos_.centre_info();
-    node_info_.set_node_id(my_node_info.id());
+    auto& my_node_info = serverinfos_.centre_info().centre_info()[centre_node_id()];
     InetAddress servcie_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, servcie_addr);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
@@ -125,6 +124,11 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::en
     request.mutable_rpc_server()->set_port(game_node_service_addr->port());
     request.set_game_node_id(entt::to_integral(game_node_id));
     (*gate_node)->Send(GateServiceRegisterGameMsgId, request);
+}
+
+void CentreNode::SetNodeId(NodeId node_id)
+{
+    node_info_.set_node_id(node_id);
 }
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)

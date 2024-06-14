@@ -75,7 +75,7 @@ void GameNode::InitConfig()
 void GameNode::StartServer(const ::nodes_info_data& info)
 {
     node_net_info_ = info;
-    InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
+    InetAddress serverAddr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
     game_tls.redis_system().Init(serverAddr);
 
     node_info_.set_node_id(game_node_info().id());
@@ -173,6 +173,11 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
     }
 }
 
+const game_node_db& GameNode::game_node_info() const
+{
+    return node_net_info_.game_info().game_info(game_node_id());
+}
+
 void GameNode::InitNodeByReqInfo()
 {
     auto& zone = ZoneConfig::GetSingleton().config_info();
@@ -194,17 +199,25 @@ void GameNode::InitNodeByReqInfo()
 
 void GameNode::Connect2Centre()
 {
-    auto& centre_node_info = node_net_info_.centre_info();
-    auto eid = entt::entity{ centre_node_info.id() };
-    auto centre_node_id = tls.centre_node_registry.create(eid);
-    if (centre_node_id != eid)
+    for (auto& centre_node_info : node_net_info_.centre_info().centre_info())
     {
-        LOG_ERROR << "create centre error ";
+        entt::entity id{ centre_node_info.id() };
+        auto centre_node_id = tls.centre_node_registry.create(id);
+        if (centre_node_id != id)
+        {
+            LOG_ERROR << "centre id ";
+            continue;
+        }
+        InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
+        auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(centre_node_id,
+            std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
+        centre_node->registerService(&game_service_);
+        centre_node->connect();
+        if (centre_node_info.zone_id() ==
+            ZoneConfig::GetSingleton().config_info().zone_id())
+        {
+            zone_centre_node_ = centre_node;
+        }
     }
-    InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-    auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(
-        centre_node_id,
-        std::make_unique<RpcClientPtr::element_type>(loop_, centre_addr));
-    centre_node->registerService(&game_service_);
-    centre_node->connect();
+
 }
