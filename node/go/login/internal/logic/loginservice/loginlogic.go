@@ -3,12 +3,12 @@ package loginservicelogic
 import (
 	"context"
 	"github.com/golang/protobuf/proto"
-	"login_server/client/dbservice/accountdbservice"
-	"login_server/data"
+	"login/client/dbservice/accountdbservice"
+	"login/data"
 	"strconv"
 
-	"login_server/internal/svc"
-	"login_server/pb/game"
+	"login/internal/svc"
+	"login/pb/game"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -37,7 +37,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginResponse, error
 	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
 	_, ok := data.SessionList.Get(sessionId)
 	if ok {
-		return &game.LoginResponse{Error: &game.Tips{Id: 1005}}, nil
+		return &game.LoginResponse{Error: &game.Tip{Id: 1005}}, nil
 	}
 	data.SessionList.Set(sessionId, &data.Player{})
 

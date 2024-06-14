@@ -15,6 +15,8 @@
 #include "constants_proto/node.pb.h"
 #include "common_proto/game_service.pb.h"
 
+#include "common_proto/login_service.grpc.pb.h"
+
 GateNode* g_gate_node = nullptr; 
 
 void AsyncCompleteGrpc();
@@ -50,12 +52,11 @@ void GateNode::Init()
 void GateNode::InitNodeByReqInfo()
 {
     auto& zone = ZoneConfig::GetSingleton().config_info();
-
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+    auto channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
-    g_deploy_stub = DeployService::NewStub(deploy_channel);
+    g_deploy_stub = DeployService::NewStub(channel);
     g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpc);
 
@@ -171,7 +172,20 @@ void GateNode::Connect2Centre()
 
 void GateNode::Connect2Login()
 {
-    for (auto& it : node_net_info_.login_info().login_info())
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+    for (auto& login_node_info : node_net_info_.login_info().login_info())
     {
+        entt::entity id{ login_node_info.id() };
+        auto login_node_id = gate_tls.login_node_registry.create(id);
+        if (login_node_id != id)
+        {
+            LOG_ERROR << "login id ";
+            continue;
+        }
+        auto channel = grpc::CreateChannel(login_node_info.ip(), grpc::InsecureChannelCredentials());
+        gate_tls.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
+            LoginService::NewStub(channel));
+        g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+        EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpc);
     }
 }

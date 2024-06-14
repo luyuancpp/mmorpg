@@ -4,7 +4,7 @@
 
 #include "util/defer.h"
 
-#include "grpc/async_client_call.h"
+#include "grpc/client/deploy_async_client_call.h"
 #include "grpc/deploy/deployclient.h"
 #include "gate_node.h"
 

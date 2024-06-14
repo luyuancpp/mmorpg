@@ -58,9 +58,8 @@ message login_node_db
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
-  string ip = 2;
-  uint32 port = 3;
-  uint32 zone_id = 4;
+  string addr = 2;
+  uint32 zone_id = 3;
 }
 
 message centre_node_db

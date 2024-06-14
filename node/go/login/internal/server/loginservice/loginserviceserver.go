@@ -6,9 +6,9 @@ package server
 import (
 	"context"
 
-	"login_server/internal/logic/loginservice"
-	"login_server/internal/svc"
-	"login_server/pb/game"
+	"login/internal/logic/loginservice"
+	"login/internal/svc"
+	"login/pb/game"
 )
 
 type LoginServiceServer struct {
