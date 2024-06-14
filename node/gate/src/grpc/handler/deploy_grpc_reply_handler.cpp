@@ -28,8 +28,8 @@ void AsyncCompleteGrpc()
 
     if (call->status.ok())
     {
-        g_gate_node->set_servers_info_data(call->reply.info());
-        g_gate_node->StartServer();
+        g_gate_node->SetNodeId(call->reply.node_id());
+        g_gate_node->StartServer(call->reply.info());
     }
     else
     {

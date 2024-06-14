@@ -88,7 +88,7 @@ void CentreNode::InitNodeByReqInfo()
     }
 }
 
-void CentreNode::StartServer(const ::servers_info_data& info)
+void CentreNode::StartServer(const ::nodes_info_data& info)
 {
     serverinfos_ = info;
     auto& my_node_info = serverinfos_.centre_info();

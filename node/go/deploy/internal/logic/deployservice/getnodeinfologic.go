@@ -45,5 +45,16 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 	pkg.PbDb.LoadListByWhereCase(response.Info.GetGateInfo(), "where zone_id="+zoneId)
 	pkg.PbDb.LoadListByWhereCase(response.Info.GetRedisInfo(), "where zone_id="+zoneId)
 
+	//to do 分布式异步
+	if game.ENodeType(in.GetNodeType()) == game.ENodeType_kCentreNode {
+		response.NodeId = 1
+	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kGameNode {
+		response.NodeId = 1
+	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kLoginNode {
+		response.NodeId = 1
+	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kGateNode {
+		response.NodeId = 1
+	}
+
 	return response, nil
 }

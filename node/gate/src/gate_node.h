@@ -12,6 +12,7 @@
 #include "network/codec/dispatcher.h"
 #include "handler/gate_service_handler.h"
 #include "network/rpc_connection_event.h"
+#include "type_define/type_define.h"
 
 #include "common_proto/deploy_service.pb.h"
 
@@ -32,11 +33,9 @@ public:
     inline EventLoop* loop() { return loop_; }
     inline ProtobufCodec& codec() { return codec_; };
     inline GateServiceHandler& gate_service_hanlder() { return gate_service_handler_; }
-    inline uint32_t gate_node_id()const { return node_net_info_.gate_info().id(); }
-    inline RpcClientPtr& centre_node() { return centre_node_; }
+    inline uint32_t gate_node_id()const { return node_info_.node_id(); }
+    inline RpcClientPtr& zone_centre_node() { return zone_centre_node_; }
     inline const NodeInfo& node_info()const { return node_info_; }
-
-	inline void set_servers_info_data(const servers_info_data& serverinfo_data) {node_net_info_ = serverinfo_data; node_info_.set_node_id(node_net_info_.gate_info().id());	}
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
 
@@ -46,7 +45,9 @@ public:
 
     void InitNodeByReqInfo();
     
-    void StartServer();
+    void StartServer(const nodes_info_data& serverinfo_data);
+
+    void SetNodeId(NodeId node_id);
     
     void Receive1(const OnConnected2ServerEvent& es);
 
@@ -76,10 +77,10 @@ private:
 
     TcpServerPtr server_;
 
-    servers_info_data node_net_info_;
+    nodes_info_data node_net_info_;
     NodeInfo node_info_;
 
-    RpcClientPtr centre_node_;
+    RpcClientPtr zone_centre_node_;
 
     GateServiceHandler gate_service_handler_;
 };

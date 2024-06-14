@@ -72,7 +72,7 @@ void GameNode::InitConfig()
     ConfigSystem::OnConfigLoadSuccessful();
 }
 
-void GameNode::StartServer(const ::servers_info_data& info)
+void GameNode::StartServer(const ::nodes_info_data& info)
 {
     node_net_info_ = info;
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
