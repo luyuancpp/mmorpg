@@ -3,8 +3,8 @@ package accountdbservicelogic
 import (
 	"context"
 
-	"db_server/internal/svc"
-	"db_server/pb/game"
+	"db/internal/svc"
+	"db/pb/game"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

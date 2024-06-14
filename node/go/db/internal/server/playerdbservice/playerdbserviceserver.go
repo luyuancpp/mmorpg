@@ -6,9 +6,9 @@ package server
 import (
 	"context"
 
-	"db_server/internal/logic/playerdbservice"
-	"db_server/internal/svc"
-	"db_server/pb/game"
+	"db/internal/logic/playerdbservice"
+	"db/internal/svc"
+	"db/pb/game"
 )
 
 type PlayerDBServiceServer struct {

@@ -1,15 +1,15 @@
 package main
 
 import (
-	"db_server/pkg"
+	"db/pkg"
 	"flag"
 	"fmt"
 
-	"db_server/internal/config"
-	accountdbserviceServer "db_server/internal/server/accountdbservice"
-	playerdbserviceServer "db_server/internal/server/playerdbservice"
-	"db_server/internal/svc"
-	"db_server/pb/game"
+	"db/internal/config"
+	accountdbserviceServer "db/internal/server/accountdbservice"
+	playerdbserviceServer "db/internal/server/playerdbservice"
+	"db/internal/svc"
+	"db/pb/game"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
