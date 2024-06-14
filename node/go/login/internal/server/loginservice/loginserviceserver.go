@@ -22,12 +22,12 @@ func NewLoginServiceServer(svcCtx *svc.ServiceContext) *LoginServiceServer {
 	}
 }
 
-func (s *LoginServiceServer) Login(ctx context.Context, in *game.LoginC2LRequest) (*game.LoginResponse, error) {
+func (s *LoginServiceServer) Login(ctx context.Context, in *game.LoginC2LRequest) (*game.LoginC2LResponse, error) {
 	l := loginservicelogic.NewLoginLogic(ctx, s.svcCtx)
 	return l.Login(in)
 }
 
-func (s *LoginServiceServer) CreatePlayer(ctx context.Context, in *game.CreatePlayerC2LRequest) (*game.LoginNodeCreatePlayerResponse, error) {
+func (s *LoginServiceServer) CreatePlayer(ctx context.Context, in *game.CreatePlayerC2LRequest) (*game.CreatePlayerC2LResponse, error) {
 	l := loginservicelogic.NewCreatePlayerLogic(ctx, s.svcCtx)
 	return l.CreatePlayer(in)
 }

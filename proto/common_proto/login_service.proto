@@ -10,27 +10,32 @@ import "common_proto/session.proto";
 
 message LoginC2LRequest
 {
-  string account = 1;
-  string password = 2;
-  SessionInfo session_info = 3;
+  LoginRequest client_msg_body = 1;
+  SessionInfo session_info = 2;
 }
 
-message CreatePlayerC2lRequest
+message LoginC2LResponse
 {
-  SessionInfo session_info = 3;
+  LoginResponse client_msg_body = 1;
+  SessionInfo session_info = 2;
+}
+
+message CreatePlayerC2LRequest
+{
+  CreatePlayerRequest client_msg_body = 1;
+  SessionInfo session_info = 2;
 }
 
 message EnterGameC2LRequest
 {
-  uint64 player_id = 1;
+  EnterGameRequest client_msg_body = 1;
   SessionInfo session_info = 2;
 }
 
-message LoginNodeCreatePlayerResponse
+message CreatePlayerC2LResponse
 {
-  Tip error = 1;
-  account_database players = 2;
-  uint64 player_id = 3;
+  CreatePlayerResponse client_msg_body = 1; 
+  SessionInfo session_info = 4;
 }
 
 message LoginNodeDisconnectRequest
@@ -44,8 +49,8 @@ message LeaveGameC2LRequest
 }
 
 service LoginService {
-  rpc Login (LoginC2LRequest) returns (LoginResponse);
-  rpc CreatePlayer (CreatePlayerC2lRequest) returns (LoginNodeCreatePlayerResponse);
+  rpc Login (LoginC2LRequest) returns (LoginC2LResponse);
+  rpc CreatePlayer (CreatePlayerC2LRequest) returns (CreatePlayerC2LResponse);
   rpc EnterGame (EnterGameC2LRequest) returns (EnterGameResponse);
   rpc LeaveGame (LeaveGameC2LRequest) returns (Empty);
   rpc Disconnect (LoginNodeDisconnectRequest) returns (Empty);
