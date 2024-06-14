@@ -72,13 +72,17 @@ void GameNode::InitConfig()
     ConfigSystem::OnConfigLoadSuccessful();
 }
 
+void GameNode::SetNodeId(NodeId node_id)
+{
+    node_info_.set_node_id(node_id);
+}
+
 void GameNode::StartServer(const ::nodes_info_data& info)
 {
     node_net_info_ = info;
     InetAddress serverAddr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
     game_tls.redis_system().Init(serverAddr);
 
-    node_info_.set_node_id(game_node_info().id());
     node_info_.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
     node_info_.set_node_type(eNodeType::kGameNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
@@ -175,7 +179,7 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
 
 const game_node_db& GameNode::game_node_info() const
 {
-    return node_net_info_.game_info().game_info(game_node_id());
+    return node_net_info_.game_info().game_info(game_node_index());
 }
 
 void GameNode::InitNodeByReqInfo()

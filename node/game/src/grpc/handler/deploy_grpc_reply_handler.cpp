@@ -27,6 +27,7 @@ void AsyncCompleteGrpc()
     CHECK(ok);
     if (call->status.ok())
     {
+        g_game_node->SetNodeId(call->reply.node_id());
         g_game_node->StartServer(call->reply.info());
     }
     else

@@ -29,11 +29,6 @@ void set_server_sequence_node_id(uint32_t node_id);
 void InitRepliedHandler();
 void AsyncCompleteGrpc();
 
-NodeId centre_node_id()
-{
-	return g_centre_node->center_node_id();
-}
-
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
@@ -91,7 +86,7 @@ void CentreNode::InitNodeByReqInfo()
 void CentreNode::StartServer(const ::nodes_info_data& info)
 {
     serverinfos_ = info;
-    auto& my_node_info = serverinfos_.centre_info().centre_info()[centre_node_id()];
+    auto& my_node_info = serverinfos_.centre_info().centre_info()[centre_node_index()];
     InetAddress servcie_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, servcie_addr);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
