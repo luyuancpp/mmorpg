@@ -27,6 +27,7 @@ void AsyncCompleteGrpc()
     CHECK(ok);
     if (call->status.ok())
     {
+        g_centre_node->SetNodeId(call->reply.node_id());
         g_centre_node->StartServer(call->reply.info());
     }
     else

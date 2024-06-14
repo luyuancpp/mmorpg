@@ -19,27 +19,27 @@ message database_node_db
 
 message login_node_list_db
 {
-  repeated login_node_db login_info = 2;
+  repeated login_node_db login_info = 1;
 }
 
 message centre_node_list_db
 {
-  repeated centre_node_db centre_info = 3;
+  repeated centre_node_db centre_info = 1;
 }
 
 message gate_node_list_db
 {
-  repeated gate_node_db gate_info = 4;
+  repeated gate_node_db gate_info = 1;
 }
 
 message game_node_list_db
 {
-  repeated game_node_db game_info = 5; 
+  repeated game_node_db game_info = 1; 
 }
 
 message redis_node_list_db
 {
-  repeated game_node_db game_info = 5; 
+  repeated redis_node_db redis_info = 1; 
 }
 
 message nodes_info_data

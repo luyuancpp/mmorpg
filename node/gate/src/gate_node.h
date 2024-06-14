@@ -32,7 +32,7 @@ public:
 
     inline EventLoop* loop() { return loop_; }
     inline ProtobufCodec& codec() { return codec_; };
-    inline GateServiceHandler& gate_service_hanlder() { return gate_service_handler_; }
+    inline GateServiceHandler& gate_service_hanlder() { return gate_service_; }
     inline uint32_t gate_node_id()const { return node_info_.node_id(); }
     inline RpcClientPtr& zone_centre_node() { return zone_centre_node_; }
     inline const NodeInfo& node_info()const { return node_info_; }
@@ -69,6 +69,8 @@ private:
         conn->shutdown();
     }
 
+    inline NodeId game_node_index() { return gate_node_id() - 1; }
+
     muduo::net::EventLoop* loop_{ nullptr };
 
     ProtobufDispatcher dispatcher_;
@@ -82,10 +84,9 @@ private:
 
     RpcClientPtr zone_centre_node_;
 
-    GateServiceHandler gate_service_handler_;
+    GateServiceHandler gate_service_;
 };
 
-const NodeInfo& node_info();
 
 extern GateNode* g_gate_node;
 

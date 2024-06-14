@@ -21,12 +21,13 @@ public:
 	~CentreNode();
 
 	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
-	inline uint32_t center_node_id()const { return serverinfos_.centre_info().id(); }
+	inline uint32_t center_node_id()const { return node_info_.node_id(); }
 	inline const NodeInfo& node_info()const { return node_info_; }
 
 	void Init();
 	void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
 
+    void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);
 
 	void Receive2(const OnBeConnectedEvent& es);

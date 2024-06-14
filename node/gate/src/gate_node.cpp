@@ -15,11 +15,6 @@
 #include "constants_proto/node.pb.h"
 #include "common_proto/game_service.pb.h"
 
-const NodeInfo& node_info()
-{
-    return g_gate_node->node_info();
-}
-
 GateNode* g_gate_node = nullptr; 
 
 void AsyncCompleteGrpc();
@@ -76,7 +71,7 @@ void GateNode::InitNodeByReqInfo()
 void GateNode::StartServer(const nodes_info_data& serverinfo_data)
 {
     node_net_info_ = serverinfo_data;
-    auto& gate_info = node_net_info_.gate_info().gate_info()[gate_node_id()];
+    auto& gate_info = node_net_info_.gate_info().gate_info()[game_node_index()];
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
@@ -164,9 +159,13 @@ void GateNode::Connect2Centre()
         InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
         auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(centre_node_id,
             std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
-        centre_node->registerService(&gate_service_handler_);
+        centre_node->registerService(&gate_service_);
         centre_node->connect();
-        zone_centre_node_ = centre_node;
+        if (centre_node_info.zone_id() == 
+            ZoneConfig::GetSingleton().config_info().zone_id())
+        {
+            zone_centre_node_ = centre_node;
+        }
     }
 }
 

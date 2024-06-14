@@ -33,22 +33,21 @@ public:
     void Receive1(const OnConnected2ServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
 
-    const game_server_db& game_node_info() const { return   node_net_info_.game_info(); }
+    const game_node_db& game_node_info() const;
     inline NodeId game_node_id()const { return node_info().node_id();  }
     uint32_t game_node_type() const{ return node_info().game_node_type(); }
 private:    
     void InitNodeByReqInfo();
     void Connect2Centre();
 
+    inline NodeId game_node_index()const { return game_node_id() - 1; }
+
     muduo::net::EventLoop* loop_{ nullptr };
-
     PbSyncRedisClientPtr redis_;
-
     RpcServerPtr server_;
     nodes_info_data node_net_info_;
-
     NodeInfo node_info_;
-
+    RpcClientPtr zone_centre_node_;
     GameServiceHandler game_service_;
 };
 
