@@ -6,27 +6,32 @@ package deployservice
 import (
 	"context"
 
-	"deploy_server/pb/game"
+	"deploy/pb/game"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 )
 
 type (
-	CentreServerDb          = game.CentreServerDb
-	DatabaseServerDb        = game.DatabaseServerDb
-	GameServerDb            = game.GameServerDb
-	GateServerDb            = game.GateServerDb
+	CentreNodeDb            = game.CentreNodeDb
+	CentreNodeListDb        = game.CentreNodeListDb
+	DatabaseNodeDb          = game.DatabaseNodeDb
+	GameNodeDb              = game.GameNodeDb
+	GameNodeListDb          = game.GameNodeListDb
+	GateNodeDb              = game.GateNodeDb
+	GateNodeListDb          = game.GateNodeListDb
 	GetGameNodeInfoRequest  = game.GetGameNodeInfoRequest
 	GetGameNodeInfoResponse = game.GetGameNodeInfoResponse
-	LobbyServerDb           = game.LobbyServerDb
-	LoginServerDb           = game.LoginServerDb
+	LobbyNodeDb             = game.LobbyNodeDb
+	LoginNodeDb             = game.LoginNodeDb
+	LoginNodeListDb         = game.LoginNodeListDb
 	NewGameNodeRequest      = game.NewGameNodeRequest
 	NewGameNodeResponse     = game.NewGameNodeResponse
 	NodeInfoRequest         = game.NodeInfoRequest
 	NodeInfoResponse        = game.NodeInfoResponse
-	RedisServerDb           = game.RedisServerDb
-	ServersInfoData         = game.ServersInfoData
+	NodesInfoData           = game.NodesInfoData
+	RedisNodeDb             = game.RedisNodeDb
+	RedisNodeListDb         = game.RedisNodeListDb
 
 	DeployService interface {
 		GetNodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error)

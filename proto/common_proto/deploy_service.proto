@@ -6,9 +6,9 @@ option go_package = "pb/game";
 import "common_proto/db_base.proto";
 import "common_proto/common.proto";
 
-message database_server_db
+message database_node_db
 {
-  option(OptionTableName)  = "database_server_db";
+  option(OptionTableName)  = "database_node_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -17,19 +17,44 @@ message database_server_db
   uint32 zone_id = 9;
 }
 
-message servers_info_data
+message login_node_list_db
 {
-  database_server_db database_info = 1;
-  repeated login_server_db login_info = 2;
-  repeated centre_server_db centre_info = 3;
-  repeated gate_server_db gate_info = 4;
-  repeated game_server_db game_info = 5; 
-  repeated redis_server_db redis_info = 6;
+  repeated login_node_db login_info = 2;
 }
 
-message login_server_db
+message centre_node_list_db
 {
-  option(OptionTableName)  = "login_server_db";
+  repeated centre_node_db centre_info = 3;
+}
+
+message gate_node_list_db
+{
+  repeated gate_node_db gate_info = 4;
+}
+
+message game_node_list_db
+{
+  repeated game_node_db game_info = 5; 
+}
+
+message redis_node_list_db
+{
+  repeated game_node_db game_info = 5; 
+}
+
+message nodes_info_data
+{
+  database_node_db database_info = 1;
+  login_node_list_db login_info = 2;
+  centre_node_list_db centre_info = 3;
+  gate_node_list_db gate_info = 4;
+  game_node_list_db game_info = 5; 
+  redis_node_list_db redis_info = 6;
+}
+
+message login_node_db
+{
+  option(OptionTableName)  = "login_node_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -38,9 +63,9 @@ message login_server_db
   uint32 zone_id = 4;
 }
 
-message centre_server_db
+message centre_node_db
 {
-  option(OptionTableName)  = "centre_server_db";
+  option(OptionTableName)  = "centre_node_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -49,9 +74,9 @@ message centre_server_db
   uint32 zone_id = 4;
 }
 
-message lobby_server_db
+message lobby_node_db
 {
-  option(OptionTableName)  = "lobby_server_db";
+  option(OptionTableName)  = "lobby_node_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -59,20 +84,9 @@ message lobby_server_db
   uint32 port = 3;
 }
 
-message redis_server_db
+message redis_node_db
 {
-  option(OptionTableName)  = "redis_server_db";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-  uint32 id = 1;
-  string ip = 2;
-  uint32 port = 3;
-  uint32 zone_id = 4;
-}
-
-message game_server_db
-{
-  option(OptionTableName)  = "game_server_db";
+  option(OptionTableName)  = "redis_node_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -81,9 +95,20 @@ message game_server_db
   uint32 zone_id = 4;
 }
 
-message gate_server_db
+message game_node_db
 {
-  option(OptionTableName)  = "gate_server_db";
+  option(OptionTableName)  = "game_node_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 zone_id = 4;
+}
+
+message gate_node_db
+{
+  option(OptionTableName)  = "gate_node_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -100,20 +125,20 @@ message NodeInfoRequest
 
 message NodeInfoResponse
 {
-  servers_info_data info = 1;
+  nodes_info_data info = 1;
 }
 
 message NewGameNodeRequest
 {
   uint32 zone_id = 1;
-  game_server_db my_info = 2;
+  game_node_db my_info = 2;
 }
 
 message NewGameNodeResponse
 {
-  game_server_db my_info = 1;
+  game_node_db my_info = 1;
   uint32 error_no = 2;
-  redis_server_db redis_info = 5;
+  redis_node_db redis_info = 5;
 }
 
 message GetGameNodeInfoRequest

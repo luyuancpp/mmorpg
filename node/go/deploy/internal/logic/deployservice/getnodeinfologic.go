@@ -27,13 +27,13 @@ func NewGetNodeInfoLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetNo
 
 func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfoResponse, error) {
 	response := &game.NodeInfoResponse{
-		Info: &game.ServersInfoData{
-			DatabaseInfo: &game.DatabaseServerDb{},
-			LoginInfo:    []*game.LoginServerDb{},
-			CentreInfo:   []*game.CentreServerDb{},
-			GateInfo:     []*game.GateServerDb{},
-			GameInfo:     []*game.GameServerDb{},
-			RedisInfo:    []*game.RedisServerDb{},
+		Info: &game.NodesInfoData{
+			DatabaseInfo: &game.DatabaseNodeDb{},
+			LoginInfo:    &game.LoginNodeListDb{},
+			CentreInfo:   &game.CentreNodeListDb{},
+			GateInfo:     &game.GateNodeListDb{},
+			GameInfo:     &game.GameNodeListDb{},
+			RedisInfo:    &game.RedisNodeListDb{},
 		},
 	}
 
