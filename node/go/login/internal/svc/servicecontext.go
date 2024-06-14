@@ -5,7 +5,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/zrpc"
-	"login_server/internal/config"
+	"login/internal/config"
 )
 
 var configFile = flag.String("dbClient", "etc/dbconfig.json", "the config file")

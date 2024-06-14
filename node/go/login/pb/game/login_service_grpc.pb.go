@@ -32,7 +32,7 @@ const (
 type LoginServiceClient interface {
 	Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginC2LResponse, error)
 	CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*CreatePlayerC2LResponse, error)
-	EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameResponse, error)
+	EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameC2LResponse, error)
 	LeaveGame(ctx context.Context, in *LeaveGameC2LRequest, opts ...grpc.CallOption) (*Empty, error)
 	Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*Empty, error)
 }
@@ -63,8 +63,8 @@ func (c *loginServiceClient) CreatePlayer(ctx context.Context, in *CreatePlayerC
 	return out, nil
 }
 
-func (c *loginServiceClient) EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameResponse, error) {
-	out := new(EnterGameResponse)
+func (c *loginServiceClient) EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameC2LResponse, error) {
+	out := new(EnterGameC2LResponse)
 	err := c.cc.Invoke(ctx, LoginService_EnterGame_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (c *loginServiceClient) Disconnect(ctx context.Context, in *LoginNodeDiscon
 type LoginServiceServer interface {
 	Login(context.Context, *LoginC2LRequest) (*LoginC2LResponse, error)
 	CreatePlayer(context.Context, *CreatePlayerC2LRequest) (*CreatePlayerC2LResponse, error)
-	EnterGame(context.Context, *EnterGameC2LRequest) (*EnterGameResponse, error)
+	EnterGame(context.Context, *EnterGameC2LRequest) (*EnterGameC2LResponse, error)
 	LeaveGame(context.Context, *LeaveGameC2LRequest) (*Empty, error)
 	Disconnect(context.Context, *LoginNodeDisconnectRequest) (*Empty, error)
 	mustEmbedUnimplementedLoginServiceServer()
@@ -112,7 +112,7 @@ func (UnimplementedLoginServiceServer) Login(context.Context, *LoginC2LRequest) 
 func (UnimplementedLoginServiceServer) CreatePlayer(context.Context, *CreatePlayerC2LRequest) (*CreatePlayerC2LResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePlayer not implemented")
 }
-func (UnimplementedLoginServiceServer) EnterGame(context.Context, *EnterGameC2LRequest) (*EnterGameResponse, error) {
+func (UnimplementedLoginServiceServer) EnterGame(context.Context, *EnterGameC2LRequest) (*EnterGameC2LResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnterGame not implemented")
 }
 func (UnimplementedLoginServiceServer) LeaveGame(context.Context, *LeaveGameC2LRequest) (*Empty, error) {

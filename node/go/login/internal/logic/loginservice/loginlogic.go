@@ -27,7 +27,7 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 	}
 }
 
-func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginResponse, error) {
+func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, error) {
 	//todo 测试用例连接不登录马上断线，
 	//todo 账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
 	//todo 登录的时候马上断开连接换了个gate应该可以登录成功
@@ -36,24 +36,27 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginResponse, error
 
 	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
 	_, ok := data.SessionList.Get(sessionId)
-	if ok {
-		return &game.LoginResponse{Error: &game.Tip{Id: 1005}}, nil
+	resp := &game.LoginC2LResponse{}
+
+	if !ok {
+		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
+		return resp, nil
 	}
 	data.SessionList.Set(sessionId, &data.Player{})
 
-	resp := &game.LoginResponse{}
-
-	rdKey := "account" + in.Account
+	rdKey := "account" + in.ClientMsgBody.Account
 	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
 	if cmd == nil {
 		as := accountdbservice.NewAccountDBService(*l.svcCtx.DBCli)
-		_, err := as.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.Account})
+		_, err := as.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.ClientMsgBody.Account})
 		if err != nil {
+			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 			return resp, err
 		}
 		cmd = l.svcCtx.Rdb.Get(l.ctx, rdKey)
 		if cmd == nil {
-			logx.Error("cannot find account:" + in.Account)
+			logx.Error("cannot find account:" + in.ClientMsgBody.Account)
+			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 			return resp, nil
 		}
 	}
