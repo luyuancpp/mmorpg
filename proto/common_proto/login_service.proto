@@ -8,7 +8,6 @@ import "common_proto/c2gate.proto";
 import "common_proto/mysql_database_table.proto";
 import "common_proto/session.proto";
 
-
 message LoginC2LRequest
 {
   string account = 1;

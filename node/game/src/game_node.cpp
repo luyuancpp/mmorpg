@@ -187,7 +187,7 @@ void GameNode::InitNodeByReqInfo()
     auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(deploy_channel);
-    g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+    g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
     {
         NodeInfoRequest req;

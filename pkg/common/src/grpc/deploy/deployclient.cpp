@@ -1,3 +1,3 @@
 #include "deployclient.h"
 
-std::unique_ptr<DeployClient> g_deploy_client;
+std::unique_ptr<CompletionQueue> g_deploy_cq;

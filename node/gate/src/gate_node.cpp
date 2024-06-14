@@ -57,7 +57,7 @@ void GateNode::InitNodeByReqInfo()
     auto channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(channel);
-    g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+    g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpc);
 
     {
@@ -185,7 +185,7 @@ void GateNode::Connect2Login()
         auto channel = grpc::CreateChannel(login_node_info.ip(), grpc::InsecureChannelCredentials());
         gate_tls.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
             LoginService::NewStub(channel));
-        g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+        g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
         EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpc);
     }
 }
