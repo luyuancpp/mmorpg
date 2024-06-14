@@ -6,9 +6,9 @@ package server
 import (
 	"context"
 
-	"db_server/internal/logic/accountdbservice"
-	"db_server/internal/svc"
-	"db_server/pb/game"
+	"db/internal/logic/accountdbservice"
+	"db/internal/svc"
+	"db/pb/game"
 )
 
 type AccountDBServiceServer struct {

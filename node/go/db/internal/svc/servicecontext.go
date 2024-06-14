@@ -1,6 +1,6 @@
 package svc
 
-import "db_server/internal/config"
+import "db/internal/config"
 
 type ServiceContext struct {
 	Config config.Config

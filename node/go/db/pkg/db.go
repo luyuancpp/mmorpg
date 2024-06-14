@@ -2,8 +2,8 @@ package pkg
 
 import (
 	"database/sql"
-	"db_server/internal/config"
-	"db_server/pb/game"
+	"db/internal/config"
+	"db/pb/game"
 
 	"github.com/go-sql-driver/mysql"
 	pbmysql "github.com/luyuancpp/pbmysql-go"
