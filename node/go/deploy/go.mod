@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/luyuancpp/dbprotooption v0.0.4
-	github.com/luyuancpp/pbmysql-go v0.0.7
+	github.com/luyuancpp/pbmysql-go v0.0.8
 	github.com/zeromicro/go-zero v1.6.5
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2
