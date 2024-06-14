@@ -38,6 +38,12 @@ message CreatePlayerC2LResponse
   SessionInfo session_info = 4;
 }
 
+message EnterGameC2LResponse
+{
+  EnterGameResponse client_msg_body = 1; 
+  SessionInfo session_info = 4;
+}
+
 message LoginNodeDisconnectRequest
 {
   uint64 session_id = 1;
@@ -51,7 +57,7 @@ message LeaveGameC2LRequest
 service LoginService {
   rpc Login (LoginC2LRequest) returns (LoginC2LResponse);
   rpc CreatePlayer (CreatePlayerC2LRequest) returns (CreatePlayerC2LResponse);
-  rpc EnterGame (EnterGameC2LRequest) returns (EnterGameResponse);
+  rpc EnterGame (EnterGameC2LRequest) returns (EnterGameC2LResponse);
   rpc LeaveGame (LeaveGameC2LRequest) returns (Empty);
   rpc Disconnect (LoginNodeDisconnectRequest) returns (Empty);
 }

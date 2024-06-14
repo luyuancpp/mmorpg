@@ -6,7 +6,7 @@ package playerdbservice
 import (
 	"context"
 
-	"login_server/pb/game"
+	"login/pb/game"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"

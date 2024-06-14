@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"login_server/data"
+	"login/data"
 
-	"login_server/internal/config"
-	loginserviceServer "login_server/internal/server/loginservice"
-	"login_server/internal/svc"
-	"login_server/pb/game"
+	"login/internal/config"
+	loginserviceServer "login/internal/server/loginservice"
+	"login/internal/svc"
+	"login/pb/game"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
