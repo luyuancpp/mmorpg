@@ -82,6 +82,7 @@ void GateNode::StartServer(const nodes_info_data& serverinfo_data)
     server_->start();
 
     Connect2Centre();
+    Connect2Login();
 }
 
 void GateNode::SetNodeId(NodeId node_id)

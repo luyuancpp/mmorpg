@@ -38,7 +38,7 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 	}
 
 	zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
-	pkg.PbDb.LoadListByWhereCase(response.Info.GetDatabaseInfo(), "where zone_id="+zoneId)
+	pkg.PbDb.LoadOneByWhereCase(response.Info.GetDatabaseInfo(), "where zone_id="+zoneId)
 	pkg.PbDb.LoadListByWhereCase(response.Info.GetLoginInfo(), "where zone_id="+zoneId)
 	pkg.PbDb.LoadListByWhereCase(response.Info.GetCentreInfo(), "where zone_id="+zoneId)
 	pkg.PbDb.LoadListByWhereCase(response.Info.GetGameInfo(), "where zone_id="+zoneId)
