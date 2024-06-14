@@ -68,39 +68,39 @@ func OpenDB(path string) error {
 
 func InitDBTable() {
 
-	PbDb.AddMysqlTable(&game.DatabaseServerDb{})
-	PbDb.AddMysqlTable(&game.LoginServerDb{})
-	PbDb.AddMysqlTable(&game.CentreServerDb{})
-	PbDb.AddMysqlTable(&game.RedisServerDb{})
-	PbDb.AddMysqlTable(&game.GateServerDb{})
-	PbDb.AddMysqlTable(&game.GameServerDb{})
+	PbDb.AddMysqlTable(&game.DatabaseNodeDb{})
+	PbDb.AddMysqlTable(&game.LoginNodeDb{})
+	PbDb.AddMysqlTable(&game.CentreNodeDb{})
+	PbDb.AddMysqlTable(&game.RedisNodeDb{})
+	PbDb.AddMysqlTable(&game.GateNodeDb{})
+	PbDb.AddMysqlTable(&game.GameNodeDb{})
 
-	_, err := Db.Exec(PbDb.GetCreateTableSql(&game.DatabaseServerDb{}))
+	_, err := Db.Exec(PbDb.GetCreateTableSql(&game.DatabaseNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.LoginServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.LoginNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.CentreServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.CentreNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.RedisServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.RedisNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.GateServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.GateNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.GameServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.GameNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -108,12 +108,12 @@ func InitDBTable() {
 }
 
 func AlterCreateDBTable() {
-	PbDb.AlterTableAddField(&game.DatabaseServerDb{})
-	PbDb.AlterTableAddField(&game.LoginServerDb{})
-	PbDb.AlterTableAddField(&game.CentreServerDb{})
-	PbDb.AlterTableAddField(&game.RedisServerDb{})
-	PbDb.AlterTableAddField(&game.GateServerDb{})
-	PbDb.AlterTableAddField(&game.GameServerDb{})
+	PbDb.AlterTableAddField(&game.DatabaseNodeDb{})
+	PbDb.AlterTableAddField(&game.LoginNodeDb{})
+	PbDb.AlterTableAddField(&game.CentreNodeDb{})
+	PbDb.AlterTableAddField(&game.RedisNodeDb{})
+	PbDb.AlterTableAddField(&game.GateNodeDb{})
+	PbDb.AlterTableAddField(&game.GameNodeDb{})
 }
 
 func InitDB(path string) {
