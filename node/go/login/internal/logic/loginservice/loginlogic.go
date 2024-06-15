@@ -38,7 +38,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 	_, ok := data.SessionList.Get(sessionId)
 	resp := &game.LoginC2LResponse{}
 
-	if !ok {
+	if ok {
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 		return resp, nil
 	}
@@ -46,7 +46,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 
 	rdKey := "account" + in.ClientMsgBody.Account
 	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
-	if cmd == nil {
+	if len(cmd.Val()) <= 0 {
 		as := accountdbservice.NewAccountDBService(*l.svcCtx.DBCli)
 		_, err := as.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.ClientMsgBody.Account})
 		if err != nil {
@@ -61,6 +61,6 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 		}
 	}
 
-	err := proto.Unmarshal([]byte(cmd.Val()), resp)
+	err := proto.Unmarshal([]byte(cmd.Val()), resp.ClientMsgBody)
 	return resp, err
 }
