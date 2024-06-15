@@ -166,7 +166,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         return;
     }
     const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
-    player_request->ParseFromArray(request->request().data(), int32_t(request->request().size()));
+    player_request->ParseFromArray(request->body().data(), int32_t(request->body().size()));
     const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     service_it->second->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
     response->set_response(player_response->SerializeAsString());

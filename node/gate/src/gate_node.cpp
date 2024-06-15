@@ -83,6 +83,9 @@ void GateNode::StartServer(const nodes_info_data& serverinfo_data)
 
     Connect2Centre();
     Connect2Login();
+
+    LOG_INFO << "gate node  start " << gate_info.DebugString();
+
 }
 
 void GateNode::SetNodeId(NodeId node_id)
