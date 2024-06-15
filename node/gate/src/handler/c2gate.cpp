@@ -149,6 +149,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     }
     else
     {
+        return;
         //发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
         RouteMsgStringRequest rq;
         rq.set_body(request->body());
