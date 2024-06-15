@@ -22,6 +22,6 @@ func main() {
 		rq := &game.LoginRequest{Account: "luhailong", Password: "luhailong"}
 
 		gameClient.Send(rq)
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
 }

@@ -189,8 +189,7 @@ void GateNode::Connect2Login()
         auto channel = grpc::CreateChannel(login_node_info.addr(), grpc::InsecureChannelCredentials());
         gate_tls.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
             LoginService::NewStub(channel));
-        gate_tls.login_node_registry.emplace<std::unique_ptr<CompletionQueue>>(login_node_id,
-            std::make_unique_for_overwrite<CompletionQueue>());
+        gate_tls.login_node_registry.emplace<CompletionQueue>(login_node_id);
         EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpc);
         gate_tls.login_consisten_node().add(login_node_info.id(), 
             login_node_id);
