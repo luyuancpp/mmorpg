@@ -3,6 +3,7 @@
 #include  <functional>
 #include <memory>
 #include <ranges>
+#include <algorithm>
 
 #include "gate_node.h"
 #include "util/game_registry.h"
@@ -13,6 +14,8 @@
 #include "thread_local/gate_thread_local_storage.h"
 #include "util/random.h"
 #include "util/snow_flake.h"
+#include "service/login_service_service.h"
+#include "grpc/request/login_grpc_request.h"
 
 #include "tip_code_proto/common_tip_code.pb.h"
 
@@ -28,43 +31,29 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
 }
 
-RpcClientPtr& ClientReceiver::GetLoginNode(uint64_t session_uid)
+entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
 {
-    static RpcClientPtr null_session;
-    return null_session;
-    //entt::entity session_id{ session_uid };
-    //if (!tls.session_registry.valid(session_id))
-    //{
-    //    LOG_ERROR << "session id not found   " << session_uid;
-    //    return null_session;
-    //}
-    //auto session = tls.session_registry.try_get<Session>(session_id);
-    //if (nullptr == session)
-    //{
-    //    LOG_ERROR << "session id not found   " << session_uid;
-    //    return null_session;
-    //}
-    //
-    //if (!session->HasLoginNodeId())
-    //{
-    //    auto login_node_it = gate_tls.login_nodes().get_by_hash(session_uid);
-    //    if (gate_tls.login_nodes().end() == login_node_it)
-    //    {
-    //        LOG_ERROR << "player login server not found session id : " << session_uid;
-    //        return null_session;
-    //    }
-    //    //考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
-    //    session->login_node_id_ = login_node_it->first;
-    //}
-    //auto login_node_id = session->login_node_id_;
-    //const auto login_node_it = gate_tls.login_nodes().get_by_id(login_node_id);
-    //if (gate_tls.login_nodes().end() == login_node_it)
-    //{
-    //    session->login_node_id_ = kInvalidNodeId;
-    //    LOG_ERROR << "player found login server crash : " << session->login_node_id_;
-    //    return null_session;
-    //}
-    //return login_node_it->second.login_session_;
+    entt::entity session_id{ session_uid };
+    auto session = tls.session_registry.get<Session>(session_id);
+    if (!session.HasLoginNodeId())
+    {
+        auto login_node_it = gate_tls.login_consisten_node().get_by_hash(session_uid);
+        if (gate_tls.login_consisten_node().end() == login_node_it)
+        {
+            LOG_ERROR << "player login server not found session id : " << session_uid;
+            return entt::null;
+        }
+        //考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
+        session.login_node_id_ = entt::to_integral(login_node_it->second);
+    }
+    const auto login_node_it = gate_tls.login_consisten_node().get_node_value(session.login_node_id_);
+    if (gate_tls.login_consisten_node().end() == login_node_it)
+    {
+        LOG_ERROR << "player found login server crash : " << session.login_node_id_;
+        session.login_node_id_ = kInvalidNodeId;
+        return entt::null;
+    }
+    return login_node_it->second;
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
@@ -78,8 +67,8 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             //此消息一定要发，不能值通过controller 的gw disconnect去发
             //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
-            if (const auto& session_login_node = GetLoginNode(session_uid);
-                nullptr != session_login_node)
+            if (const auto& login_node = GetLoginNode(session_uid);
+                entt::null != login_node)
             {
                 //todo 
                 //LoginNodeDisconnectRequest rq;
@@ -149,20 +138,32 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     }
     else
     {
-        return;
         //发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
-        RouteMsgStringRequest rq;
+        
+        auto login_node = GetLoginNode(session_uid);
+        if (entt::null == login_node)
+        {
+            //todo 关掉连接
+            return;
+        }
+
+        if (request->message_id() == LoginServiceLoginMsgId)
+        {
+            LoginC2LRequest rq;
+            rq.mutable_session_info()->set_session_id(session_uid);
+            rq.mutable_client_msg_body()->ParseFromArray(
+                request->body().data(), request->body().size());
+            SendLoginC2LRequest(login_node, rq);
+        }else if (request->message_id() == LoginServiceCreatePlayerMsgId)
+        {
+        }
+        /*RouteMsgStringRequest rq;
         rq.set_body(request->body());
         rq.set_session_id(session_uid);
         rq.set_id(request->id());
         const auto message = rq.add_route_data_list();
         message->set_message_id(request->message_id());
-        message->mutable_node_info()->CopyFrom(g_gate_node->node_info());
-        const auto& login_node = GetLoginNode(session_uid);
-        if (nullptr == login_node)
-        {
-            return;
-        }
+        message->mutable_node_info()->CopyFrom(g_gate_node->node_info());*/
         //todo 
     }
 }

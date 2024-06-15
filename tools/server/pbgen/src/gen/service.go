@@ -42,9 +42,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 		if strings.Contains(line, config.CcGenericServices) {
 			ccGenericServices = true
 		}
-		if !ccGenericServices {
-			continue
-		}
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			service = strings.ReplaceAll(line, "{", "")
 			service = strings.Split(service, " ")[1]
@@ -64,6 +61,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.Index = methodIndex
 			rpcMethodInfo.FileName = fd.Name()
 			rpcMethodInfo.Path = filePath
+			rpcMethodInfo.CcGenericServices = ccGenericServices
 			rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
 			MaxMessageId = atomic.AddUint64(&MaxMessageId, 1)
 			methodIndex += 1
@@ -244,7 +242,10 @@ func InitServiceId() {
 }
 
 func GetSortServiceList() (ServiceList []string) {
-	for k, _ := range ServiceMethodMap {
+	for k, v := range ServiceMethodMap {
+		if len(v) > 0 && !v[0].CcGenericServices {
+			continue
+		}
 		ServiceList = append(ServiceList, k)
 	}
 	sort.Strings(ServiceList)
