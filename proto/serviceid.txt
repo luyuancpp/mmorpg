@@ -5,7 +5,9 @@
 5=CentreScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
 6=CentrePlayerServiceTest
 7=GameServiceRegisterGate
+8=AccountDBServiceSave2Redis
 9=CentreServiceGateSessionDisconnect
+10=DeployServiceGetNodeInfo
 11=GateServicePlayerEnterGs
 12=GateServicePlayerMessage
 13=GateServiceRegisterGame
@@ -17,6 +19,7 @@
 19=CentreServiceLsLeaveGame
 20=GamePlayerServiceCentre2GsLogin
 21=GateServiceKickConnByCentre
+22=AccountDBServiceLoad2Redis
 24=CentreServiceRegisterGate
 25=GameServiceCentreSend2PlayerViaGs
 26=CentreServiceGsPlayerService
@@ -26,6 +29,8 @@
 30=CentreServiceLsEnterGame
 31=CentreServiceRegisterGame
 32=GamePlayerServiceOnCentreEnterGateSucceed
+33=LoginServiceCreatePlayer
+34=LoginServiceLogin
 36=CentreServiceGatePlayerService
 37=ClientPlayerCommonServiceBeKick
 38=CentreServiceEnterGsSucceed
@@ -38,6 +43,9 @@
 46=GamePlayerSceneServiceEnterScene
 48=GameSceneServiceTest
 49=ClientPlayerTeamServiceTeamInfoNotify
+51=LoginServiceLeaveGame
+52=LoginServiceEnterGame
+55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene
 57=GameServiceEnterGs
 58=GameServiceSend2Player

@@ -9,14 +9,15 @@ import (
 type EmptyStruct struct{}
 
 type RpcMethodInfo struct {
-	Service  string
-	Method   string
-	Request  string
-	Response string
-	Id       uint64
-	Index    uint64
-	FileName string
-	Path     string
+	Service           string
+	Method            string
+	Request           string
+	Response          string
+	Id                uint64
+	Index             uint64
+	FileName          string
+	Path              string
+	CcGenericServices bool
 }
 
 type RpcMethodInfos []*RpcMethodInfo

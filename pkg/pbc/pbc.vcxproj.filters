@@ -375,6 +375,15 @@
     <ClCompile Include="src\common_proto\mysql_database_test.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\db_service_service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\deploy_service_service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\login_service_service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\condition_config.pb.h">
@@ -582,6 +591,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\common_proto\mysql_database_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\db_service_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\deploy_service_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\login_service_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

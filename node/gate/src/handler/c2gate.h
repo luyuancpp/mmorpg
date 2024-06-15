@@ -18,7 +18,7 @@ public:
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
-    static RpcClientPtr& GetLoginNode(uint64_t session_id);
+    static entt::entity GetLoginNode(uint64_t session_id);
     ProtobufCodec& codec() const { return codec_; }
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);

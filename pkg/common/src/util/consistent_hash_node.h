@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <functional> 
 #include <algorithm>
 
@@ -32,19 +33,20 @@ public:
         nodes_.erase(hash_id);
     }
 
-    decltype(auto) get_by_id(Key id)
+    decltype(auto) get_node_value(Key id)
     {
         auto hash_id = std::hash<Key>{}(id);
         return nodes_.find(hash_id);
     }
 
-    decltype(auto) get_by_hash(Key hash) 
+    decltype(auto) get_by_hash(Key id)
     {
+        auto hash_id = std::hash<Key>{}(id);
         if (nodes_.empty()) {
             return nodes_.end();
         }
 
-        auto it = nodes_.lower_bound(hash);
+        auto it = nodes_.lower_bound(hash_id);
         if (it == nodes_.end()) {
             it = nodes_.begin();
         }
@@ -58,5 +60,4 @@ public:
 private:
     NodeListType nodes_;
 };
-
 

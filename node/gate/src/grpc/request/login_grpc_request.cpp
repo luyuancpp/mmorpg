@@ -8,9 +8,8 @@
 
 using grpc::CompletionQueue;
 
-void SendLoginC2LRequest(LoginC2LRequest& request, NodeId login_node_id)
+void SendLoginC2LRequest(entt::entity login_node, LoginC2LRequest& request)
 {
-    entt::entity login_node = entt::entity{login_node_id};
     if (!gate_tls.login_node_registry.valid(login_node))
     {
         return;
