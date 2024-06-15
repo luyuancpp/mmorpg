@@ -19,7 +19,7 @@ message GameNodeEnterGsRequest
 
 message GameNodeRpcClientRequest
 {
-  bytes request = 1;
+  bytes body = 1;
   uint64 session_id = 2;
   uint32 message_id = 3;
   uint64 id = 4;

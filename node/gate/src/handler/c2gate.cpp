@@ -73,12 +73,12 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     //todo 玩家没登录直接发其他消息，乱发消息
     if (!conn->connected())
     {
-        const auto session_id = tcp_session_id(conn);
+        const auto session_uid = entt::to_integral(tcp_session_id(conn));
         //如果我没登录就发送其他协议到controller game server 怎么办
         {
             //此消息一定要发，不能值通过controller 的gw disconnect去发
             //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
-            if (const auto& session_login_node = GetLoginNode(session_id);
+            if (const auto& session_login_node = GetLoginNode(session_uid);
                 nullptr != session_login_node)
             {
                 //todo 
@@ -90,21 +90,28 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         // centre
         {
             GateSessionDisconnectRequest rq;
-            rq.set_session_id(session_id);
+            rq.set_session_id(session_uid);
             g_gate_node->zone_centre_node()->CallMethod(CentreServiceGateSessionDisconnectMsgId, rq);
         }
-        Destroy(tls.session_registry, entt::entity{ session_id });
+        Destroy(tls.session_registry, entt::entity{ session_uid });
     }
     else
     {
-        auto session_id = g_server_sequence_.Generate();
-        while (tls.session_registry.valid(entt::entity{session_id}))
+        auto session_uid = g_server_sequence_.Generate();
+        while (tls.session_registry.valid(entt::entity{session_uid}))
         {
-            session_id = g_server_sequence_.Generate();
+            session_uid = g_server_sequence_.Generate();
+        }
+        entt::entity to_session_id{ session_uid };
+        auto session_id = tls.session_registry.create(to_session_id);
+        if (session_id != session_id)
+        {
+            LOG_ERROR << " create session ";
+            return;
         }
         conn->setContext(session_id);
         auto& session = 
-            tls.scene_registry.emplace<Session>(entt::entity{session_id});
+            tls.session_registry.emplace<Session>(session_id);
         session.conn_ = conn;
 
     }
@@ -114,24 +121,19 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
-    const auto session_uid = tcp_session_id(conn);
-    entt::entity session_id{ session_uid };
+    entt::entity session_id = tcp_session_id(conn);
     if (!tls.session_registry.valid(session_id))
     {
-        LOG_ERROR << "session id not found   " << session_uid;
+        LOG_ERROR << "could not find session  " << conn.get() ;
         return ;
     }
-    auto session = tls.session_registry.try_get<Session>(session_id);
-    if (nullptr == session)
-    {
-        LOG_ERROR << "session id not found   " << session_uid;
-        return ;
-    }
+    auto session_uid = entt::to_integral(session_id);
+    auto session = tls.session_registry.get<Session>(session_id);
     //todo msg id error
     if (g_c2s_service_id.contains(request->message_id()))
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
-        entt::entity game_node_id{ session->game_node_id_ };
+        entt::entity game_node_id{ session.game_node_id_ };
 		if (!tls.game_node_registry.valid(game_node_id))
 		{
             Tip(conn, kRetServerCrush);
@@ -139,7 +141,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		}
         auto game_node = tls.game_node_registry.get<RpcClientPtr>(game_node_id);
         GameNodeRpcClientRequest rq;
-        rq.set_request(request->request());
+        rq.set_body(request->body());
         rq.set_session_id(session_uid);
         rq.set_id(request->id());
         rq.set_message_id(request->message_id());
@@ -149,7 +151,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     {
         //发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
         RouteMsgStringRequest rq;
-        rq.set_body(request->request());
+        rq.set_body(request->body());
         rq.set_session_id(session_uid);
         rq.set_id(request->id());
         const auto message = rq.add_route_data_list();

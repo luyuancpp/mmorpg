@@ -30,7 +30,7 @@ public:
 		const RpcClientMessagePtr& message,
 		muduo::Timestamp);
 
-    inline uint64_t tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
+    inline entt::entity tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<entt::entity>(conn->getContext()); }
 
     static void Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 private:
