@@ -8,7 +8,7 @@
 #include "grpc/deploy/deployclient.h"
 #include "game_node.h"
 
-void AsyncCompleteGrpc()
+void AsyncCompleteGrpcDeployService()
 {
     void* got_tag;
     bool ok = false;

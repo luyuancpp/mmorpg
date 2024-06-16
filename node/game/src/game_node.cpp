@@ -30,7 +30,7 @@ GameNode* g_game_node = nullptr;
 
 using namespace muduo::net;
 
-void AsyncCompleteGrpc();
+void AsyncCompleteGrpcDeployService();
 
 void InitRepliedHandler();
 
@@ -192,7 +192,7 @@ void GameNode::InitNodeByReqInfo()
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(deploy_channel);
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpcDeployService);
     {
         NodeInfoRequest req;
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());

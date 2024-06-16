@@ -8,12 +8,12 @@ import (
 	"login/internal/config"
 )
 
-var configFile = flag.String("dbClient", "etc/dbconfig.json", "the config file")
+var configFile = flag.String("dbClient", "etc/database.json", "the config file")
 
 type ServiceContext struct {
-	Config config.Config
-	Rdb    *redis.Client
-	DBCli  *zrpc.Client
+	Config   config.Config
+	Rdb      *redis.Client
+	DBClient *zrpc.Client
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -22,8 +22,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	client := zrpc.MustNewClient(cRpc)
 
 	return &ServiceContext{
-		Config: c,
-		Rdb:    redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379", DB: 0}),
-		DBCli:  &client,
+		Config:   c,
+		Rdb:      redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
+		DBClient: &client,
 	}
 }

@@ -6,7 +6,7 @@ package accountdbservice
 import (
 	"context"
 
-	"db_server/pb/game"
+	"db/pb/game"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"

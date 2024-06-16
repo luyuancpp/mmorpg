@@ -22,6 +22,8 @@ var configFile = flag.String("loginService", "etc/loginservice.yaml", "the confi
 func main() {
 	flag.Parse()
 
+	config.Init()
+
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)

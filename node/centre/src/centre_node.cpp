@@ -27,7 +27,7 @@ CentreNode* g_centre_node = nullptr;
 
 void set_server_sequence_node_id(uint32_t node_id);
 void InitRepliedHandler();
-void AsyncCompleteGrpc();
+void AsyncCompleteGrpcDeployService();
 
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
     : loop_(loop),
@@ -73,7 +73,7 @@ void CentreNode::InitNodeByReqInfo()
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(deploy_channel);
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpcDeployService);
 
     {
         NodeInfoRequest req;
@@ -194,8 +194,8 @@ void CentreNode::InitNodeServer()
     g_deploy_stub = DeployService::NewStub(deploy_channel);
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
 
-    void AsyncCompleteGrpc();
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+    void AsyncCompleteGrpcDeployService();
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpcDeployService);
 
     NodeInfoRequest req;
     req.set_zone_id(zone.zone_id());
