@@ -59,8 +59,7 @@ void GateNode::InitNodeByReqInfo()
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(channel);
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpcDeployService);
-
+    deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
     {
         NodeInfoRequest req;
         req.set_node_type(kGateNode);
@@ -86,7 +85,7 @@ void GateNode::StartServer(const nodes_info_data& serverinfo_data)
     Connect2Login();
 
     LOG_INFO << "gate node  start " << gate_info.DebugString();
-
+    deploy_rpc_timer_.Cancel();
 }
 
 void GateNode::SetNodeId(NodeId node_id)
@@ -191,8 +190,8 @@ void GateNode::Connect2Login()
         gate_tls.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
             LoginService::NewStub(channel));
         gate_tls.login_node_registry.emplace<CompletionQueue>(login_node_id);
-        EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteRpcLoginService);
         gate_tls.login_consisten_node().add(login_node_info.id(), 
             login_node_id);
     }
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteRpcLoginService);
 }

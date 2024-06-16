@@ -6,9 +6,10 @@
 #include "handler/game_service_handler.h"
 #include "network/rpc_server.h"
 #include "network/rpc_client.h"
-
 #include "redis_client/redis_client.h"
 #include "network/rpc_msg_route.h"
+#include "timer_task/timer_task.h"
+
 
 #include "common_proto/deploy_service.pb.h"
 
@@ -50,6 +51,7 @@ private:
     NodeInfo node_info_;
     RpcClientPtr zone_centre_node_;
     GameServiceHandler game_service_;
+    TimerTask deploy_rpc_timer_;
 };
 
 extern GameNode* g_game_node;

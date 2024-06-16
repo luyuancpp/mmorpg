@@ -8,6 +8,7 @@
 #include "network/rpc_connection_event.h"
 #include "network/rpc_server.h"
 #include "network/rpc_session.h"
+#include "timer_task/timer_task.h"
 
 #include "common_proto/deploy_service.pb.h"
 
@@ -50,6 +51,8 @@ private:
 
 	NodeInfo node_info_;
 	nodes_info_data serverinfos_;
+
+    TimerTask deploy_rpc_timer_;
 };
 
 extern CentreNode* g_centre_node;

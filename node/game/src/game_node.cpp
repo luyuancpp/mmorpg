@@ -96,9 +96,12 @@ void GameNode::StartServer(const ::nodes_info_data& info)
         server_->registerService(it.second.get());
     }
     server_->start();
-    LOG_INFO << "game node  start " << game_node_info().DebugString();
 
     Connect2Centre();
+
+    deploy_rpc_timer_.Cancel();
+
+    LOG_INFO << "game node  start " << game_node_info().DebugString();
 }
 
 void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)
@@ -192,7 +195,7 @@ void GameNode::InitNodeByReqInfo()
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(deploy_channel);
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpcDeployService);
+    deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
     {
         NodeInfoRequest req;
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
