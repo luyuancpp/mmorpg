@@ -7,7 +7,7 @@ import "common_proto/account_database.proto";
 
 message c_account_simple_player
 {
-  AccountSimplePlayer playe = 1;
+  AccountSimplePlayer player = 1;
 }
 
 message LoginRequest

@@ -1,4 +1,3 @@
-#include <grpcpp/grpcpp.h>
 
 #include "muduo/base/Logging.h"
 
@@ -8,8 +7,9 @@
 #include "grpc/client/login_async_client_call.h"
 #include "gate_node.h"
 #include "network/gate_session.h"
+#include "grpc/request/login_grpc_request.h"
 
-using grpc::CompletionQueue;
+using GrpcLoginStupPtr = std::unique_ptr<LoginService::Stub>;
 
 void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
 {
@@ -49,6 +49,7 @@ void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
     }
 }
 
+
 void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
 {
     void* got_tag;
@@ -87,11 +88,22 @@ void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
     }
 }
 
+void InitLoginNodeComponent()
+{
+    for (auto&& e : gate_tls.login_node_registry.view<GrpcLoginStupPtr>())
+    {
+        gate_tls.login_node_registry.emplace<LoginC2LCompletionQueue>(e);
+        gate_tls.login_node_registry.emplace<CreatePlayerC2LCompletionQueue>(e);
+    }
+}
+
 void AsyncCompleteRpcLoginService()
 {
-    for (auto&& [e, cq] : gate_tls.login_node_registry.view<CompletionQueue>().each())
+    for (auto&& e : gate_tls.login_node_registry.view<GrpcLoginStupPtr>())
     {
-        AsyncCompleteGrpcLoginC2L(cq);
-        AsyncCompleteCreatePlayerC2L(cq);
+        AsyncCompleteGrpcLoginC2L(
+            gate_tls.login_node_registry.get<LoginC2LCompletionQueue>(e).cq);
+        AsyncCompleteCreatePlayerC2L(
+            gate_tls.login_node_registry.get<CreatePlayerC2LCompletionQueue>(e).cq);
     }
 }
