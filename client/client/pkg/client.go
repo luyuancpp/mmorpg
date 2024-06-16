@@ -15,8 +15,8 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	return &GameClient{client}
 }
 
-func (c *GameClient) Send(message proto.Message) {
-	rq := &game.ClientRequest{Id: 1, MessageId: 34}
+func (c *GameClient) Send(message proto.Message, messageID uint32) {
+	rq := &game.ClientRequest{Id: 1, MessageId: messageID}
 	var err error
 	rq.Body, err = proto.Marshal(message)
 	if err != nil {

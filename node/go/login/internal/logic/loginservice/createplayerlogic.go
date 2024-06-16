@@ -27,18 +27,20 @@ func NewCreatePlayerLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Crea
 }
 
 func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game.CreatePlayerC2LResponse, error) {
-	// todo: add your logic here and delete this line
-
 	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
-	player, ok := data.SessionList.Get(sessionId)
-	resp := &game.CreatePlayerC2LResponse{}
-
+	session, ok := data.SessionList.Get(sessionId)
+	resp := &game.CreatePlayerC2LResponse{
+		ClientMsgBody: &game.CreatePlayerResponse{
+			Error:   &game.Tip{},
+			Players: make([]*game.CAccountSimplePlayer, 0)},
+	}
+	resp.SessionInfo = in.SessionInfo
 	if !ok {
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1}
 		return resp, nil
 	}
 
-	rdKey := "account" + player.Account
+	rdKey := "account" + session.Account
 	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
 	if cmd == nil {
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1}
@@ -46,12 +48,31 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 	}
 
 	accountData := &game.AccountDatabase{}
+	err := proto.Unmarshal([]byte(cmd.Val()), accountData)
+	if err != nil {
+		return resp, nil
+	}
 	if len(resp.ClientMsgBody.Players) >= 3 {
-
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1001}
 		return resp, nil
 	}
+	if nil == accountData.SimplePlayers {
+		accountData.SimplePlayers =
+			&game.AccountSimplePlayers{Players: make([]*game.AccountSimplePlayer, 0)}
+	}
 
-	err := proto.Unmarshal([]byte(cmd.Val()), accountData)
+	playerDb := &game.AccountSimplePlayer{}
+	playerDb.PlayerId = 1
+	accountData.SimplePlayers.Players = append(accountData.SimplePlayers.Players, playerDb)
+	for _, player := range accountData.SimplePlayers.Players {
+		resp.ClientMsgBody.Players = append(resp.ClientMsgBody.Players, &game.CAccountSimplePlayer{Player: player})
+	}
+
+	dataMessage, err := proto.Marshal(accountData)
+	if err != nil {
+		logx.Error(err)
+		return resp, nil
+	}
+	l.svcCtx.Rdb.Set(l.ctx, rdKey, dataMessage, 30)
 	return resp, err
 }
