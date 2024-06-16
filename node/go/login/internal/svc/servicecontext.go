@@ -8,7 +8,7 @@ import (
 	"login/internal/config"
 )
 
-var configFile = flag.String("dbClient", "etc/database.json", "the config file")
+var configFile = flag.String("dbClient", "etc/dbclient.json", "the config file")
 
 type ServiceContext struct {
 	Config   config.Config

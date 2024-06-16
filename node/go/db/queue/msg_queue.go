@@ -31,7 +31,7 @@ func NewMsgQueue(RoutineNum int, ChanelBufferNum uint64) *MsgQueue {
 }
 
 func (q *MsgQueue) Put(msg MsgChannel) {
-	index := msg.Key % q.ChanelBufferNum
+	index := msg.Key % uint64(q.RoutineNum)
 	q.QueueList[index].Data <- msg
 }
 

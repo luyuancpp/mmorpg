@@ -13,6 +13,7 @@
 #include "handler/gate_service_handler.h"
 #include "network/rpc_connection_event.h"
 #include "type_define/type_define.h"
+#include "timer_task/timer_task.h"
 
 #include "common_proto/deploy_service.pb.h"
 
@@ -85,6 +86,8 @@ private:
     RpcClientPtr zone_centre_node_;
 
     GateServiceHandler gate_service_;
+
+    TimerTask deploy_rpc_timer_;
 };
 
 

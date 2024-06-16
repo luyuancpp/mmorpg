@@ -36,8 +36,8 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 
 	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
 	_, ok := data.SessionList.Get(sessionId)
-	resp := &game.LoginC2LResponse{}
-
+	resp := &game.LoginC2LResponse{ClientMsgBody: &game.LoginResponse{}}
+	resp.SessionInfo = in.SessionInfo
 	if ok {
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 		return resp, nil

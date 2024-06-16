@@ -37,15 +37,16 @@ func openDB() error {
 		return err
 	}
 
-	GDB := &GameDB{
-		DB:   sql.OpenDB(conn),
-		PbDB: pbmysql.NewPb2DbTables(),
+	NodeDB = &GameDB{
+		DB:       sql.OpenDB(conn),
+		PbDB:     pbmysql.NewPb2DbTables(),
+		MsgQueue: queue.NewMsgQueue(config.DBConfig.RoutineNum, config.DBConfig.ChannelBufferNum),
 	}
 
-	GDB.DB.SetMaxOpenConns(config.DBConfig.MaxOpenConn)
-	GDB.DB.SetMaxIdleConns(config.DBConfig.MaxIdleConn)
+	NodeDB.DB.SetMaxOpenConns(config.DBConfig.MaxOpenConn)
+	NodeDB.DB.SetMaxIdleConns(config.DBConfig.MaxIdleConn)
 
-	err = GDB.PbDB.OpenDB(GDB.DB, mysqlConfig.DBName)
+	err = NodeDB.PbDB.OpenDB(NodeDB.DB, mysqlConfig.DBName)
 	if err != nil {
 		return err
 	}
@@ -111,7 +112,7 @@ func initDBConsume() {
 			go func(i int) {
 				for {
 					msg := NodeDB.MsgQueue.Pop(i)
-					NodeDB.PbDB.LoadListByWhereCase(msg.Body, msg.WhereCase)
+					NodeDB.PbDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)
 					msg.Chan <- true
 				}
 			}(i)
