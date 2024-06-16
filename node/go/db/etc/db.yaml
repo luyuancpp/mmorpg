@@ -1,7 +1,7 @@
 RoutineNum:
   10
 ChannelBufferNum:
-  10000
+  1000
 Addr: "127.0.0.1:3306"
 User: "root"
 Passwd: "root"

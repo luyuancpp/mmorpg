@@ -5,23 +5,39 @@ import (
 	"client/pkg"
 	"github.com/luyuancpp/muduoclient/muduo"
 	"log"
-	"time"
+	"strconv"
 )
 
 func main() {
 
-	for i := 0; i < 10000; i++ {
-		client, err := muduo.NewClient("127.0.0.1", 8000)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		gameClient := pkg.NewGameClient(client)
+	for i := 0; i < 1000; i++ {
+		go func(i int) {
+			client, err := muduo.NewClient("127.0.0.1", 8000)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			gameClient := pkg.NewGameClient(client)
 
-		defer gameClient.Close()
+			defer gameClient.Close()
 
-		rq := &game.LoginRequest{Account: "luhailong", Password: "luhailong"}
+			{
+				rq := &game.LoginRequest{Account: "luhailong" + strconv.Itoa(i), Password: "luhailong"}
+				gameClient.Send(rq)
+			}
+			msg := <-gameClient.Client.Conn.InMsgList
 
-		gameClient.Send(rq)
-		time.Sleep(500 * time.Millisecond)
+			loginResp := msg.(*game.LoginResponse)
+			if len(loginResp.Players) <= 0 {
+				rq := &game.CreatePlayerRequest{}
+				gameClient.Send(rq)
+				msg = <-gameClient.Client.Conn.InMsgList
+				createPlayer := msg.(*game.CreatePlayerResponse)
+				if nil != createPlayer.Error {
+					return
+				}
+			}
+		}(i)
+
 	}
+
 }
