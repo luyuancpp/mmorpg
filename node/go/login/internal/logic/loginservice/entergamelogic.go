@@ -37,7 +37,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	rdKey := "player" + strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
 	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
 	if cmd == nil {
-		ps := playerdbservice.NewPlayerDBService(*l.svcCtx.DBCli)
+		ps := playerdbservice.NewPlayerDBService(*l.svcCtx.DBClient)
 		_, err := ps.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
 		if err != nil {
 			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}

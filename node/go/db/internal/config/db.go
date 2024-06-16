@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-type DBConfig struct {
+type DBConf struct {
 	RoutineNum       int    `yaml:"RoutineNum"`
 	ChannelBufferNum uint64 `yaml:"ChannelBufferNum"`
 	Net              string `yaml:"Net"`
@@ -19,9 +19,9 @@ type DBConfig struct {
 	MaxIdleConn      int    `yaml:"MaxIdleConn"`
 }
 
-var DB DBConfig
+var DBConfig DBConf
 
-func Load() {
+func LoadDB() {
 	var yamlFile, err = os.Open("etc/db.yaml")
 	if err != nil {
 		log.Fatalf("error: %v", err)
@@ -32,7 +32,7 @@ func Load() {
 		log.Fatalf("error: %v", err)
 	}
 
-	err = yaml.Unmarshal(data, &DB)
+	err = yaml.Unmarshal(data, &DBConfig)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}

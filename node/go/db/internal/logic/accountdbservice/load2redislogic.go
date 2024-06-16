@@ -2,9 +2,12 @@ package accountdbservicelogic
 
 import (
 	"context"
-
 	"db/internal/svc"
 	"db/pb/game"
+	"db/pkg"
+	"db/queue"
+	"google.golang.org/protobuf/proto"
+	"hash/fnv"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -24,7 +27,43 @@ func NewLoad2RedisLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Load2R
 }
 
 func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAccountResponse, error) {
-	// todo: add your logic here and delete this line
 
-	return &game.LoadAccountResponse{}, nil
+	//todo 如果这时候存回数据库呢,读存读存
+	resp := &game.LoadAccountResponse{}
+	key := "account" + in.Account
+	cmd := l.svcCtx.Rdb.Get(l.ctx, key)
+	resp.Account = in.Account
+	if len(cmd.Val()) > 0 {
+		resp.Account = in.Account
+		return resp, nil
+	}
+
+	hash64 := fnv.New64a()
+	_, err := hash64.Write([]byte(key))
+	if err != nil {
+		logx.Error(err)
+		return nil, err
+	}
+
+	msgChannel := queue.MsgChannel{}
+	msgChannel.Key = hash64.Sum64()
+	msg := &game.AccountDatabase{}
+	msgChannel.Body = msg
+	msgChannel.Chan = make(chan bool)
+	msgChannel.WhereCase = "where account='" + in.Account + "'"
+	pkg.NodeDB.MsgQueue.Put(msgChannel)
+	_, ok := <-msgChannel.Chan
+	if !ok {
+		logx.Error("channel closed")
+		return nil, err
+	}
+
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		logx.Error(err)
+		return nil, err
+	}
+
+	l.svcCtx.Rdb.Set(l.ctx, key, data, 0)
+	return resp, nil
 }

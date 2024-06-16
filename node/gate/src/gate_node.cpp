@@ -19,7 +19,8 @@
 
 GateNode* g_gate_node = nullptr; 
 
-void AsyncCompleteGrpc();
+void AsyncCompleteGrpcDeployService();
+void AsyncCompleteRpcLoginService();
 
 void GateNode::LoadNodeConfig()
 {
@@ -58,7 +59,7 @@ void GateNode::InitNodeByReqInfo()
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(channel);
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpc);
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpcDeployService);
 
     {
         NodeInfoRequest req;
@@ -190,7 +191,7 @@ void GateNode::Connect2Login()
         gate_tls.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
             LoginService::NewStub(channel));
         gate_tls.login_node_registry.emplace<CompletionQueue>(login_node_id);
-        EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteGrpc);
+        EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteRpcLoginService);
         gate_tls.login_consisten_node().add(login_node_info.id(), 
             login_node_id);
     }

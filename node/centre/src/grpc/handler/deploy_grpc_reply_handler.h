@@ -1,6 +1,6 @@
 #pragma once
 
-void AsyncCompleteGrpc();
+void AsyncCompleteGrpcDeployService();
 
 void DeployGrpcReplyHandler();
 

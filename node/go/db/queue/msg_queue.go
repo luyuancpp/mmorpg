@@ -1,9 +1,12 @@
 package queue
 
+import "github.com/golang/protobuf/proto"
+
 type MsgChannel struct {
-	Key   uint64
-	Value []byte
-	Chan  chan bool
+	Key       uint64
+	Body      proto.Message
+	WhereCase string
+	Chan      chan bool
 }
 
 type MsgChannelList struct {
