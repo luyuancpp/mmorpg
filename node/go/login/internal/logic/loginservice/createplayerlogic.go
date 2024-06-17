@@ -4,6 +4,7 @@ import (
 	"context"
 	"login/data"
 	"strconv"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"login/internal/svc"
@@ -73,6 +74,6 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 		logx.Error(err)
 		return resp, nil
 	}
-	l.svcCtx.Rdb.Set(l.ctx, rdKey, dataMessage, 30)
+	l.svcCtx.Rdb.Set(l.ctx, rdKey, dataMessage, time.Duration(12*time.Millisecond))
 	return resp, err
 }

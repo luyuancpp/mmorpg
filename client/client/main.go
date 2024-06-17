@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	for i := 0; i < 4; i++ {
+	for i := 5; i < 6; i++ {
 		go func(i int) {
 			client, err := muduo.NewClient("127.0.0.1", 8000)
 			if err != nil {
@@ -33,7 +33,7 @@ func main() {
 				gameClient.Send(rq, 33)
 				msg = <-gameClient.Client.Conn.InMsgList
 				createPlayer := msg.(*game.CreatePlayerResponse)
-				if nil != createPlayer.Error {
+				if createPlayer.Error.Id > 0 {
 					return
 				}
 				log.Println(createPlayer)
