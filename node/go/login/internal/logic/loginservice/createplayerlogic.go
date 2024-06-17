@@ -41,8 +41,8 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 		return resp, nil
 	}
 
-	rdKey := "account" + session.Account
-	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
+	key := "account" + session.Account
+	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	if cmd == nil {
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1}
 		return resp, nil
@@ -74,6 +74,6 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 		logx.Error(err)
 		return resp, nil
 	}
-	l.svcCtx.Rdb.Set(l.ctx, rdKey, dataMessage, time.Duration(12*time.Millisecond))
+	l.svcCtx.Redis.Set(l.ctx, key, dataMessage, time.Duration(12*time.Millisecond))
 	return resp, err
 }
