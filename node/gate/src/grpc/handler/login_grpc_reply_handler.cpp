@@ -85,7 +85,7 @@ void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
     else
     {
         LOG_INFO << "RPC failed";
-    }
+    }   
 }
 
 void InitLoginNodeComponent()

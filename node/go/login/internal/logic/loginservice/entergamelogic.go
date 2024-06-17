@@ -32,7 +32,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	resp := &game.EnterGameC2LResponse{
 		ClientMsgBody: &game.EnterGameResponse{Error: &game.Tip{}},
 		SessionInfo:   in.SessionInfo}
-	if ok {
+	if !ok {
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 		return resp, nil
 	}
@@ -52,5 +52,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 			return resp, err
 		}
 	}
+	l.svcCtx.CentreClient.Send(in.ClientMsgBody)
+	data.SessionList.Remove(sessionId)
 	return resp, nil
 }

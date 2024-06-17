@@ -168,7 +168,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
             rq.mutable_session_info()->set_session_id(session_uid);
             rq.mutable_client_msg_body()->ParseFromArray(
                 request->body().data(), request->body().size());
-            SendCreatePlayerC2LRequest(login_node, rq);
+            SendEnterGameC2LRequest(login_node, rq);
         }
         /*RouteMsgStringRequest rq;
         rq.set_body(request->body());
