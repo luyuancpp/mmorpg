@@ -21,3 +21,11 @@ struct CreatePlayerC2LCompletionQueue
 };
 
 void SendCreatePlayerC2LRequest(entt::entity login_node, CreatePlayerC2LRequest& request);
+
+class EnterGameC2LRequest;
+struct EnterGameC2LCompletionQueue
+{
+    CompletionQueue cq;
+};
+
+void SendEnterGameC2LRequest(entt::entity login_node, EnterGameC2LRequest& request);

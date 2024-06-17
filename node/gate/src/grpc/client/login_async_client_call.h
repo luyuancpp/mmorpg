@@ -28,3 +28,13 @@ public:
     CreatePlayerC2LResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<CreatePlayerC2LResponse>> response_reader;
 };
+
+class EnterGameC2LAsyncClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+
+    EnterGameC2LResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<EnterGameC2LResponse>> response_reader;
+};
