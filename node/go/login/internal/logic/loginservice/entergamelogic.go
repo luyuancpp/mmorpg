@@ -29,14 +29,16 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGameC2LResponse, error) {
 	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
 	_, ok := data.SessionList.Get(sessionId)
-	resp := &game.EnterGameC2LResponse{}
+	resp := &game.EnterGameC2LResponse{
+		ClientMsgBody: &game.EnterGameResponse{Error: &game.Tip{}},
+		SessionInfo:   in.SessionInfo}
 	if ok {
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 		return resp, nil
 	}
 	rdKey := "player" + strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
 	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
-	if cmd == nil {
+	if len(cmd.Val()) == 0 {
 		ps := playerdbservice.NewPlayerDBService(*l.svcCtx.DBClient)
 		_, err := ps.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
 		if err != nil {

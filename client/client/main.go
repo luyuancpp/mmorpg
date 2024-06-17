@@ -1,6 +1,7 @@
 package main
 
 import (
+	"client/logic/handler"
 	"client/pb/game"
 	"client/pkg"
 	"github.com/luyuancpp/muduoclient/muduo"
@@ -18,7 +19,6 @@ func main() {
 				log.Fatalln(err)
 			}
 			gameClient := pkg.NewGameClient(client)
-
 			defer gameClient.Close()
 
 			{
@@ -28,16 +28,7 @@ func main() {
 			msg := <-gameClient.Client.Conn.InMsgList
 
 			loginResp := msg.(*game.LoginResponse)
-			if loginResp.Players == nil || len(loginResp.Players) <= 0 {
-				rq := &game.CreatePlayerRequest{}
-				gameClient.Send(rq, 33)
-				msg = <-gameClient.Client.Conn.InMsgList
-				createPlayer := msg.(*game.CreatePlayerResponse)
-				if createPlayer.Error.Id > 0 {
-					return
-				}
-				log.Println(createPlayer)
-			}
+			handler.LoginResponseHandler(gameClient, loginResp)
 		}(i)
 
 	}

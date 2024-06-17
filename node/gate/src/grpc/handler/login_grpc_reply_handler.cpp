@@ -94,6 +94,7 @@ void InitLoginNodeComponent()
     {
         gate_tls.login_node_registry.emplace<LoginC2LCompletionQueue>(e);
         gate_tls.login_node_registry.emplace<CreatePlayerC2LCompletionQueue>(e);
+        gate_tls.login_node_registry.emplace<EnterGameC2LCompletionQueue>(e);
     }
 }
 
@@ -105,5 +106,7 @@ void AsyncCompleteRpcLoginService()
             gate_tls.login_node_registry.get<LoginC2LCompletionQueue>(e).cq);
         AsyncCompleteCreatePlayerC2L(
             gate_tls.login_node_registry.get<CreatePlayerC2LCompletionQueue>(e).cq);
+        AsyncCompleteCreatePlayerC2L(
+            gate_tls.login_node_registry.get<EnterGameC2LCompletionQueue>(e).cq);
     }
 }
