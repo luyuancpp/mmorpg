@@ -17,7 +17,6 @@ func LoadRedis() {
 	if err != nil {
 		logx.Error(err)
 	}
-
 	err = yaml.Unmarshal(content, &RedisConfig)
 	if err != nil {
 		logx.Error(err)
