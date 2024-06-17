@@ -88,6 +88,44 @@ void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
     }   
 }
 
+void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
+{
+    void* got_tag;
+    bool ok = false;
+
+    gpr_timespec tm;
+    tm.tv_sec = 0;
+    tm.tv_nsec = 0;
+    tm.clock_type = GPR_CLOCK_MONOTONIC;
+    if (CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm))
+    {
+        return;
+    }
+
+    std::unique_ptr<EnterGameC2LAsyncClientCall> call(static_cast<EnterGameC2LAsyncClientCall*>(got_tag));
+
+    CHECK(ok);
+
+    if (call->status.ok())
+    {
+        entt::entity session_id{ call->reply.session_info().session_id() };
+        if (!tls.session_registry.valid(session_id))
+        {
+            return;
+        }
+        auto session = tls.session_registry.try_get<Session>(session_id);
+        if (nullptr == session)
+        {
+            return;
+        }
+        g_gate_node->Send2Client(session->conn_, call->reply.client_msg_body());
+    }
+    else
+    {
+        LOG_INFO << "RPC failed";
+    }
+}
+
 void InitLoginNodeComponent()
 {
     for (auto&& e : gate_tls.login_node_registry.view<GrpcLoginStupPtr>())
@@ -106,7 +144,7 @@ void AsyncCompleteRpcLoginService()
             gate_tls.login_node_registry.get<LoginC2LCompletionQueue>(e).cq);
         AsyncCompleteCreatePlayerC2L(
             gate_tls.login_node_registry.get<CreatePlayerC2LCompletionQueue>(e).cq);
-        AsyncCompleteCreatePlayerC2L(
+        AsyncCompleteEnterGameC2L(
             gate_tls.login_node_registry.get<EnterGameC2LCompletionQueue>(e).cq);
     }
 }

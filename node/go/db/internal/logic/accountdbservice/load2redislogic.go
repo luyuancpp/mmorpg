@@ -31,7 +31,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAcc
 	//todo 如果这时候存回数据库呢,读存读存
 	resp := &game.LoadAccountResponse{}
 	key := "account" + in.Account
-	cmd := l.svcCtx.Rdb.Get(l.ctx, key)
+	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	resp.Account = in.Account
 	if len(cmd.Val()) > 0 {
 		resp.Account = in.Account
@@ -64,6 +64,6 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAcc
 		return nil, err
 	}
 
-	l.svcCtx.Rdb.Set(l.ctx, key, data, 0)
+	l.svcCtx.Redis.Set(l.ctx, key, data, 0)
 	return resp, nil
 }

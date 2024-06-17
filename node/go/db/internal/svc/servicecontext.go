@@ -7,12 +7,12 @@ import (
 
 type ServiceContext struct {
 	Config config.Config
-	Rdb    *redis.Client
+	Redis  *redis.Client
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config: c,
-		Rdb:    redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
+		Redis:  redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
 	}
 }

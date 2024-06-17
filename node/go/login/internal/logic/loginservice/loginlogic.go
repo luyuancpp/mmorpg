@@ -45,7 +45,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 	data.SessionList.Set(sessionId, &data.Player{})
 
 	rdKey := "account" + in.ClientMsgBody.Account
-	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
+	cmd := l.svcCtx.Redis.Get(l.ctx, rdKey)
 	if len(cmd.Val()) <= 0 {
 		as := accountdbservice.NewAccountDBService(*l.svcCtx.DBClient)
 		_, err := as.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.ClientMsgBody.Account})
@@ -53,7 +53,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 			return resp, err
 		}
-		cmd = l.svcCtx.Rdb.Get(l.ctx, rdKey)
+		cmd = l.svcCtx.Redis.Get(l.ctx, rdKey)
 		if cmd == nil {
 			logx.Error("cannot find account:" + in.ClientMsgBody.Account)
 			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}

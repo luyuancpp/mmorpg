@@ -2,11 +2,16 @@ package playerdbservicelogic
 
 import (
 	"context"
+	"db/pkg"
+	"db/queue"
+	"hash/fnv"
+	"strconv"
 
 	"db/internal/svc"
 	"db/pb/game"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/protobuf/proto"
 )
 
 type Load2RedisLogic struct {
@@ -24,7 +29,41 @@ func NewLoad2RedisLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Load2R
 }
 
 func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlayerResponse, error) {
-	// todo: add your logic here and delete this line
+	resp := &game.LoadPlayerResponse{}
+	playerIdStr := strconv.FormatUint(in.PlayerId, 10)
+	key := "player" + playerIdStr
+	cmd := l.svcCtx.Redis.Get(l.ctx, key)
+	if len(cmd.Val()) > 0 {
+		resp.PlayerId = in.PlayerId
+		return resp, nil
+	}
+	hash64 := fnv.New64a()
+	_, err := hash64.Write([]byte(key))
+	if err != nil {
+		logx.Error(err)
+		return nil, err
+	}
 
-	return &game.LoadPlayerResponse{}, nil
+	msgChannel := queue.MsgChannel{}
+	msgChannel.Key = hash64.Sum64()
+	msg := &game.PlayerDatabase{}
+	msgChannel.Body = msg
+	msgChannel.Chan = make(chan bool)
+	msgChannel.WhereCase = "where player_id='" + playerIdStr + "'"
+	pkg.NodeDB.MsgQueue.Put(msgChannel)
+	_, ok := <-msgChannel.Chan
+	if !ok {
+		logx.Error("channel closed")
+		return nil, err
+	}
+
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		logx.Error(err)
+		return nil, err
+	}
+
+	l.svcCtx.Redis.Set(l.ctx, key, data, 0)
+	resp.PlayerId = in.PlayerId
+	return resp, nil
 }

@@ -2,7 +2,6 @@ package loginservicelogic
 
 import (
 	"context"
-	"login/client/dbservice/playerdbservice"
 	"login/data"
 	"strconv"
 
@@ -36,18 +35,17 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 		return resp, nil
 	}
-	rdKey := "player" + strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
-	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
+	key := "player" + strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
+	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	if len(cmd.Val()) == 0 {
-		ps := playerdbservice.NewPlayerDBService(*l.svcCtx.DBClient)
-		_, err := ps.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
+		_, err := l.svcCtx.DBPlayerService.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
 		if err != nil {
 			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 			return resp, err
 		}
-		cmd = l.svcCtx.Rdb.Get(l.ctx, rdKey)
+		cmd = l.svcCtx.Redis.Get(l.ctx, key)
 		if cmd == nil {
-			logx.Error("cannot oad playerID:" + rdKey)
+			logx.Error("cannot oad playerID:" + key)
 			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 			return resp, err
 		}
