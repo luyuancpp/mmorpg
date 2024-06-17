@@ -4,7 +4,6 @@ import (
 	"client/pb/game"
 	"client/pkg"
 	"log"
-	"time"
 )
 
 type Player struct {
@@ -21,5 +20,5 @@ func (player *Player) EnterGame() {
 	player.Client.Send(rq, 52)
 	msg := <-player.Client.Client.Conn.InMsgList
 	log.Println(msg)
-	time.Sleep(1000 * time.Second)
+	msg = <-player.Client.Client.Conn.InMsgList
 }
