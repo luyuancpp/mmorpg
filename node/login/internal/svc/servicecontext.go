@@ -16,7 +16,7 @@ type ServiceContext struct {
 	Config          config.Config
 	Redis           *redis.Client
 	DBClient        *zrpc.Client
-	CentreClient    *centre.CentreClient
+	CentreClient    *centre.Client
 	DBPlayerService playerdbservice.PlayerDBService
 }
 

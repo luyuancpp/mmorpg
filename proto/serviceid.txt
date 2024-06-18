@@ -26,7 +26,6 @@
 27=CentreSceneServiceUnRegisterScene
 28=CentreServiceLsLoginAccount
 29=CentreSceneServiceRegisterScene
-30=CentreServiceLsEnterGame
 31=CentreServiceRegisterGame
 32=GamePlayerServiceOnCentreEnterGateSucceed
 33=LoginServiceCreatePlayer
@@ -45,6 +44,7 @@
 49=ClientPlayerTeamServiceTeamInfoNotify
 51=LoginServiceLeaveGame
 52=LoginServiceEnterGame
+54=CentreServiceOnLoginEnterGame
 55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene
 57=GameServiceEnterGs

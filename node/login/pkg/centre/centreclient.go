@@ -7,22 +7,22 @@ import (
 	"login/pb/game"
 )
 
-type CentreClient struct {
+type Client struct {
 	CentreClient *muduo.Client
 }
 
-func NewCentreClient(ip string, port int) *CentreClient {
-	muduoClient, _ := muduo.NewClient(ip, port)
-	return &CentreClient{
-		CentreClient: muduoClient,
+func NewCentreClient(ip string, port int) *Client {
+	client, _ := muduo.NewClient(ip, port, &muduo.RpcCodec{RpcMsgType: &game.RpcMessage{}})
+	return &Client{
+		CentreClient: client,
 	}
 }
 
-func (c *CentreClient) Close() error {
+func (c *Client) Close() error {
 	return c.CentreClient.Close()
 }
 
-func (c *CentreClient) Send(m proto.Message, messageId uint32) {
+func (c *Client) Send(m proto.Message, messageId uint32) {
 	var err error
 	rpcMsg := &game.RpcMessage{}
 	rpcMsg.MessageId = messageId
