@@ -2,9 +2,9 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
+import "common_proto/common.proto";
 import "common_proto/empty.proto";
 import "common_proto/session.proto";
-import "common_proto/common.proto";
 import "common_proto/c2gate.proto";
 import "common_proto/node_common.proto";
 
