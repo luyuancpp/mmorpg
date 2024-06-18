@@ -243,10 +243,12 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
 	auto& rq = request->client_msg_body();
-	auto session = tls.session_registry.create(entt::entity(cl_tls.session_id()));
-	if (session != entt::entity(cl_tls.session_id()))
+	auto session_uid = request->session_info().session_id();
+	entt::entity session_id{ session_uid };
+	auto session = tls.session_registry.create(session_id );
+	if (session != session_id)
 	{
-		LOG_ERROR << "session not equal " << cl_tls.session_id() << " " << entt::to_integral(session);
+		LOG_ERROR << "session not equal " << session_uid << " " << entt::to_integral(session);
 	}
 	tls.session_registry.emplace<PlayerSessionInfo>(session).set_player_id(rq.player_id());
 
@@ -262,7 +264,8 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 			return;
 		}
 
-		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(cl_tls.session_id());
+		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(
+			session_uid);
 
 		PlayerCommonSystem::InitPlayerComponent(player, rq.player_id());
 
@@ -289,15 +292,15 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 			//删除老会话,需要玩家收到消息后再删除gate连接
 			Destroy(tls.session_registry, entt::entity{ player_node_info->gate_session_id() });
 			GateNodeKickConnRequest message;
-			message.set_session_id(cl_tls.session_id());
+			message.set_session_id(session_uid);
 			Send2Gate(GateServiceKickConnByCentreMsgId, message, 
 				get_gate_node_id(player_node_info->gate_session_id()));
-
-			player_node_info->set_gate_session_id(cl_tls.session_id());
+			player_node_info->set_gate_session_id(session_uid);
 		}
 		else
 		{
-			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(cl_tls.session_id());
+			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(
+				session_uid);
 		}
 		//连续顶几次,所以用emplace_or_replace
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);

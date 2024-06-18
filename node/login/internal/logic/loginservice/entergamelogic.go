@@ -52,7 +52,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	}
 
 	centreEnterGame := &game.EnterGameL2Ctr{ClientMsgBody: in.ClientMsgBody, SessionInfo: in.SessionInfo}
-	l.svcCtx.CentreClient.Send(centreEnterGame, 30)
+	l.svcCtx.CentreClient.Send(centreEnterGame, 54)
 	data.SessionList.Remove(sessionId)
 	return resp, nil
 }
