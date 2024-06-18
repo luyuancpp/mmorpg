@@ -231,9 +231,9 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* controller,
-	const ::EnterGameRequest* request,
-	::EnterGameResponse* response,
+void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* controller,
+	const ::EnterGameL2Ctr* request,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -242,28 +242,29 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
+	auto& rq = request->client_msg_body();
 	auto session = tls.session_registry.create(entt::entity(cl_tls.session_id()));
 	if (session != entt::entity(cl_tls.session_id()))
 	{
 		LOG_ERROR << "session not equal " << cl_tls.session_id() << " " << entt::to_integral(session);
 	}
-	tls.session_registry.emplace<PlayerSessionInfo>(session).set_player_id(request->player_id());
+	tls.session_registry.emplace<PlayerSessionInfo>(session).set_player_id(rq.player_id());
 
-     auto player_it = cl_tls.player_list().find(request->player_id());
+     auto player_it = cl_tls.player_list().find(rq.player_id());
     if (player_it == cl_tls.player_list().end())
 	{
 		//把旧的connection 断掉
 		const auto player = tls.registry.create();
-		auto ret = cl_tls.player_list().emplace(request->player_id(), player);
+		auto ret = cl_tls.player_list().emplace(rq.player_id(), player);
 		if (!ret.second)
 		{
-			LOG_ERROR << "login create player error" << request->player_id();
+			LOG_ERROR << "login create player error" << rq.player_id();
 			return;
 		}
 
 		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(cl_tls.session_id());
 
-		PlayerCommonSystem::InitPlayerComponent(player, request->player_id());
+		PlayerCommonSystem::InitPlayerComponent(player, rq.player_id());
 
 		//第一次登录
 		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
@@ -284,7 +285,7 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipS2C beKickTip;
 			beKickTip.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
-			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTip, request->player_id());
+			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTip, rq.player_id());
 			//删除老会话,需要玩家收到消息后再删除gate连接
 			Destroy(tls.session_registry, entt::entity{ player_node_info->gate_session_id() });
 			GateNodeKickConnRequest message;
