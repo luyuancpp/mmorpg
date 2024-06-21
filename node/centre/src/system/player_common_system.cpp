@@ -13,20 +13,18 @@
 #include "thread_local/thread_local_storage_common_logic.h"
 #include "util/defer.h"
 #include "system/player_scene_system.h"
+#include "type_alias/player_loading.h"
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
-#include "common_proto/mysql_database_table.pb.h"
-#include "common_proto/centre_service.pb.h"
 
 void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
 {
-    using PlayerLoadingInfoList = std::unordered_map<Guid, EnterGameL2Ctr>;
-    auto& player_loading_list = tls.global_registry.get<PlayerLoadingInfoList>(global_entity());
-    defer(player_loading_list.erase(player_id));
-    auto it = player_loading_list.find(player_id);
-    if ( it == player_loading_list.end() )
+    auto& loading_list = tls.global_registry.get<PlayerLoadingInfoList>(global_entity());
+    defer(loading_list.erase(player_id));
+    auto it = loading_list.find(player_id);
+    if ( it == loading_list.end() )
     {
         LOG_ERROR << "loading player  error" << player_id;
         return;
