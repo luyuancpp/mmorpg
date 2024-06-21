@@ -10,15 +10,56 @@
 #include "service/game_service_service.h"
 #include "system/player_change_scene.h"
 #include "thread_local/centre_thread_local_storage.h"
+#include "thread_local/thread_local_storage_common_logic.h"
+#include "util/defer.h"
+#include "system/player_scene_system.h"
+
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
+#include "common_proto/mysql_database_table.pb.h"
+#include "common_proto/centre_service.pb.h"
 
-void PlayerCommonSystem::InitPlayerComponent(entt::entity player_id, Guid player_id)
+void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
 {
-    tls.registry.emplace<Guid>(player_id, player_id);
-    tls.registry.emplace<Player>(player_id);
+    using PlayerLoadingInfoList = std::unordered_map<Guid, EnterGameL2Ctr>;
+    auto& player_loading_list = tls.global_registry.get<PlayerLoadingInfoList>(global_entity());
+    defer(player_loading_list.erase(player_id));
+    auto it = player_loading_list.find(player_id);
+    if ( it == player_loading_list.end() )
+    {
+        LOG_ERROR << "loading player  error" << player_id;
+        return;
+    }
+    auto player = tls.registry.create();
+    if (const auto [fst, snd] = cl_tls.player_list().emplace(player_id, player); !snd)
+    {
+        LOG_ERROR << "server emplace error" << player_id;
+        return;
+    }
+    auto ret = cl_tls.player_list().emplace(player_id, player);
+    if (!ret.second)
+    {
+        LOG_ERROR << "login create player error" << player_id;
+        return;
+    }
+    tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(
+        it->second.session_info().session_id());
+
+    tls.registry.emplace<Player>(player);
+    tls.registry.emplace<Guid>(player, player_id);
+    tls.registry.emplace<player_centre_database>(player, std::move(message));
+    tls.registry.emplace<Player>(player);
     PlayerChangeSceneSystem::InitChangeSceneQueue(player);
+    //第一次登录
+    tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
+    PlayerSceneSystem::OnLoginEnterScene(player);
+    // on loaded db
+}
+
+void PlayerCommonSystem::OnPlayerAsyncSaved(Guid player_id, player_centre_database& message)
+{
+
 }
 
 void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)

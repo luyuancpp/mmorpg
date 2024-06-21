@@ -19,6 +19,7 @@
 
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "constants_proto/node.pb.h"
+#include "common_proto/mysql_database_table.pb.h"
 
 using namespace muduo;
 using namespace net;
@@ -61,6 +62,9 @@ void CentreNode::Init()
    
     void InitServiceHandler();
     InitServiceHandler();
+
+    InitThreadLocalStorage();
+    centre_tls.Init();
 }
 
 void CentreNode::InitNodeByReqInfo()
@@ -205,4 +209,10 @@ void CentreNode::InitNodeServer()
     req.set_zone_id(zone.zone_id());
     void SendGetNodeInfo(NodeInfoRequest & req);
     SendGetNodeInfo(req);
+}
+
+void CentreNode::InitThreadLocalStorage()
+{
+    using PlayerRedisPtr = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
+    tls.global_registry.emplace<PlayerRedisPtr>(global_entity());
 }

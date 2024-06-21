@@ -11,7 +11,6 @@ import "component_proto/player_scene_comp.proto";
 /////////////         game
 message account_database
 {
-  option(OptionTableName)  = "account";
   option(OptionPrimaryKey) = "account";
   string account = 1;
   string password = 2;
@@ -20,25 +19,22 @@ message account_database
 
 message account_share_database
 {
-  option(OptionTableName)  = "account_share";
   option(OptionPrimaryKey) = "account";
   string account = 1;
 }
 
-//中心服专用数据
+//中心服玩家专用数据
 message player_centre_database
 {
-  option(OptionTableName)  = "player_centre";
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
-  PlayerSceneInfoComp scene_info = 4;
+  PlayerSceneInfoComp scene_info = 2;
 }
 
 //玩家数据库表1,重要数据放这里，不重要数据放另外一个表，(重要:比如金钱，跟收入有关)，登录马上加载
 message player_database
 {
-  option(OptionTableName)  = "player";
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
@@ -49,7 +45,6 @@ message player_database
 //玩家数据库表2,不重要数据放这里，不会马上加载
 message player_unimportance_database
 {
-  option(OptionTableName)  = "player1";
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
