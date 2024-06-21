@@ -6,7 +6,7 @@
 
 #include "common_proto/mysql_database_table.pb.h"
 
-using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
+using PlayerRedisPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 
 class EnterGsInfo;
 

@@ -19,7 +19,6 @@
 #include "service/service.h"
 #include "handler/player_service.h"
 #include "handler/register_handler.h"
-#include "system/player_scene_system.h"
 #include "system/player_common_system.h"
 #include "system/player_change_scene.h"
 #include "thread_local/centre_thread_local_storage.h"
@@ -32,6 +31,7 @@
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 #include "constants_proto/node.pb.h"
+#include "common_proto/mysql_database_table.pb.h"
 
 constexpr std::size_t kMaxPlayerSize{50000};
 
@@ -251,27 +251,20 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		LOG_ERROR << "session not equal " << session_uid << " " << entt::to_integral(session);
 	}
 	tls.session_registry.emplace<PlayerSessionInfo>(session).set_player_id(rq.player_id());
+    //todo把旧的connection 断掉
+  
 
-     auto player_it = cl_tls.player_list().find(rq.player_id());
+    auto player_it = cl_tls.player_list().find(rq.player_id());
     if (player_it == cl_tls.player_list().end())
 	{
-		//把旧的connection 断掉
-		const auto player = tls.registry.create();
-		auto ret = cl_tls.player_list().emplace(rq.player_id(), player);
-		if (!ret.second)
-		{
-			LOG_ERROR << "login create player error" << rq.player_id();
-			return;
-		}
-
-		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(
-			session_uid);
-
-		PlayerCommonSystem::InitPlayerComponent(player, rq.player_id());
-
-		//第一次登录
-		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
-		PlayerSceneSystem::OnLoginEnterScene(player);
+        using PlayerLoadingInfoList = std::unordered_map<Guid, EnterGameL2Ctr>;
+        tls.global_registry.get<PlayerLoadingInfoList>(global_entity()).emplace(
+            rq.player_id(),
+            std::move(*request));
+       using PlayerRedisPtr =
+            std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
+        auto& player_redis = tls.global_registry.emplace<PlayerRedisPtr>(global_entity());
+		player_redis->AsyncLoad(rq.player_id());
 	}
 	else
 	{

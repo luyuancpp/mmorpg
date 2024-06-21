@@ -1,11 +1,11 @@
 #pragma once
 
-#include "entt/src/entt/entity/registry.hpp"
-#include "entt/src/entt/signal/dispatcher.hpp"
+#include "util/game_registry.h"
 
 class ThreadLocalStorage
 {
 public:
+    entt::registry global_registry;
 	entt::registry registry;
 	entt::registry session_registry;
     entt::registry scene_registry;
