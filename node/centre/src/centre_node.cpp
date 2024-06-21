@@ -16,6 +16,7 @@
 #include "service/gate_service_service.h"
 #include "thread_local/centre_thread_local_storage.h"
 #include "grpc/deploy/deployclient.h"
+#include "type_alias/player_redis.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "constants_proto/node.pb.h"
@@ -213,6 +214,5 @@ void CentreNode::InitNodeServer()
 
 void CentreNode::InitThreadLocalStorage()
 {
-    using PlayerRedisPtr = std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
     tls.global_registry.emplace<PlayerRedisPtr>(global_entity());
 }

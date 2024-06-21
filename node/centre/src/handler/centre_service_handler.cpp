@@ -24,7 +24,8 @@
 #include "thread_local/centre_thread_local_storage.h"
 #include "util/defer.h"
 #include "network/gate_session.h"
-
+#include "type_alias/player_redis.h"
+#include "type_alias/player_loading.h"
 #include "util/pb_util.h"
 
 #include "component_proto/player_login_comp.pb.h"
@@ -253,7 +254,6 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	tls.session_registry.emplace<PlayerSessionInfo>(session).set_player_id(rq.player_id());
     //todo把旧的connection 断掉
   
-
     auto player_it = cl_tls.player_list().find(rq.player_id());
     if (player_it == cl_tls.player_list().end())
 	{
