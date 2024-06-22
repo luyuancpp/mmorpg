@@ -8,6 +8,7 @@
 #include "system/player_change_scene.h"
 #include "util/game_registry.h"
 #include "system/player_common_system.h"
+#include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -47,6 +48,13 @@ void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, cons
 		LOG_ERROR << "player not found " << tls.registry.get<Guid>(player);
 		return;
 	}
+	auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == player_node_info)
+	{
+        LOG_ERROR << "player not found " << tls.registry.get<Guid>(player);
+		return;
+	}
+	player_node_info->set_gate_session_id(replied->session_id());
 	PlayerCommonSystem::OnGateUpdateGameNodeSucceed(player);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);

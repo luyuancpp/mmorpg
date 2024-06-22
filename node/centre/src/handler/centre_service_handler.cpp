@@ -55,7 +55,12 @@ Guid GetPlayerIdBySessionId(const uint64_t session_id)
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
 {
-	return entt::entity{ GetPlayerIdBySessionId(session_id) };
+	auto it = cl_tls.player_list().find(GetPlayerIdBySessionId(session_id));
+	if (it == cl_tls.player_list().end())
+	{
+		return entt::null;
+	}
+	return it->second;
 }
 
 ///<<< END WRITING YOUR CODE
