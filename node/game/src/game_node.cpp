@@ -105,21 +105,6 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     LOG_INFO << "game node  start " << game_node_info().DebugString();
 }
 
-void GameNode::RegisterGameToCentre(RpcClientPtr& centre_node)
-{
-    auto& centre_local_addr = centre_node->local_addr();
-    RegisterGameRequest rq;
-    rq.mutable_rpc_client()->set_ip(centre_local_addr.toIp());
-    rq.mutable_rpc_client()->set_port(centre_local_addr.port());
-    rq.mutable_rpc_server()->set_ip(game_node_info().ip());
-    rq.mutable_rpc_server()->set_port(game_node_info().port());
-
-    rq.set_server_type(g_game_node->game_node_type());
-    rq.set_game_node_id(g_game_node->game_node_id());
-    centre_node->CallMethod(CentreServiceRegisterGameMsgId,rq);
-    LOG_DEBUG << "connect to centre" ;
-}
-
 void GameNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
@@ -131,8 +116,7 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
             if (conn->connected() &&
                 IsSameAddr(centre_node->peer_addr(), conn->peerAddress()))
             {
-                EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                    std::bind(&GameNode::RegisterGameToCentre, this, centre_node));
+               
 
                 OnConnect2Centre connect2centre_event;
                 connect2centre_event.set_entity(entt::to_integral(it));
