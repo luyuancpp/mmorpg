@@ -16,18 +16,18 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 	auto scene_config_id = param.scene_conf_id_;
 	entt::entity node{entt::null};
 	std::size_t min_server_player_size = UINT64_MAX;
-	for (auto entity : tls.registry.view<ServerType>())
+	for (auto entity : tls.game_node_registry.view<ServerType>())
 	{
 		//如果最少人数的服务器没有这个场景咋办
 		//所以优先判断有没有场景
-		if (const auto& server_comp = tls.registry.get<ServerComp>(entity);
+		if (const auto& server_comp = tls.game_node_registry.get<ServerComp>(entity);
 			!server_comp.IsStateNormal() ||
 			server_comp.GetSceneListByConfig(scene_config_id).empty() ||
 				server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_)
 		{
 			continue;
 		}
-		auto server_player_size = (*tls.registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		auto server_player_size = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
 		if (server_player_size >= min_server_player_size || server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;
@@ -42,7 +42,7 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 	}
 
 	entt::entity scene{entt::null};
-	const auto& server_comps = tls.registry.get<ServerComp>(node);
+	const auto& server_comps = tls.game_node_registry.get<ServerComp>(node);
 	return server_comps.GetMinPlayerSizeSceneByConfigId(scene_config_id);
 }
 
@@ -52,16 +52,16 @@ entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterPa
 {
 	auto scene_config_id = param.scene_conf_id_;
 	entt::entity server{entt::null};
-	for (auto entity : tls.registry.view<ServerType>())
+	for (auto entity : tls.game_node_registry.view<ServerType>())
 	{
-		if (const auto& server_comp = tls.registry.get<ServerComp>(entity);
+		if (const auto& server_comp = tls.game_node_registry.get<ServerComp>(entity);
 			!server_comp.IsStateNormal() ||
 			server_comp.GetSceneListByConfig(scene_config_id).empty() ||
 				server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_)
 		{
 			continue;
 		}
-		auto server_player_size = (*tls.registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		auto server_player_size = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
 		if (server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;
@@ -76,7 +76,7 @@ entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterPa
 	}
 
 	entt::entity scene{entt::null};
-	const auto& server_comps = tls.registry.get<ServerComp>(server);
+	const auto& server_comps = tls.game_node_registry.get<ServerComp>(server);
 	for (const auto& server_scenes = server_comps.GetSceneListByConfig(scene_config_id);
 	     const auto& scene_it : server_scenes)
 	{
@@ -115,7 +115,7 @@ entt::entity NodeSceneSystem::GetNotFullScene(const GetSceneParam& param)
 
 void NodeSceneSystem::NodeEnterPressure(entt::entity node)
 {
-	auto* const server_comp = tls.registry.try_get<ServerComp>(node);
+	auto* const server_comp = tls.game_node_registry.try_get<ServerComp>(node);
 	if (nullptr == server_comp)
 	{
 		return;
@@ -125,7 +125,7 @@ void NodeSceneSystem::NodeEnterPressure(entt::entity node)
 
 void NodeSceneSystem::NodeEnterNoPressure(entt::entity node)
 {
-	auto* const server_comp = tls.registry.try_get<ServerComp>(node);
+	auto* const server_comp = tls.game_node_registry.try_get<ServerComp>(node);
 	if (nullptr == server_comp)
 	{
 		return;
@@ -135,7 +135,7 @@ void NodeSceneSystem::NodeEnterNoPressure(entt::entity node)
 
 void NodeSceneSystem::SetNodeState(entt::entity node, NodeState node_state)
 {
-	auto* const try_server_comp = tls.registry.try_get<ServerComp>(node);
+	auto* const try_server_comp = tls.game_node_registry.try_get<ServerComp>(node);
 	if (nullptr == try_server_comp)
 	{
 		return;
