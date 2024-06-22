@@ -16,7 +16,7 @@ type GameDB struct {
 	DB       *sql.DB
 }
 
-var NodeDB *GameDB
+var DB *GameDB
 
 func newMysqlConfig(config config.DBConf) *mysql.Config {
 	myCnf := mysql.NewConfig()
@@ -36,16 +36,16 @@ func openDB() error {
 		return err
 	}
 
-	NodeDB = &GameDB{
+	DB = &GameDB{
 		DB:       sql.OpenDB(conn),
 		PbDB:     pbmysql.NewPb2DbTables(),
 		MsgQueue: queue.NewMsgQueue(config.DBConfig.RoutineNum, config.DBConfig.ChannelBufferNum),
 	}
 
-	NodeDB.DB.SetMaxOpenConns(config.DBConfig.MaxOpenConn)
-	NodeDB.DB.SetMaxIdleConns(config.DBConfig.MaxIdleConn)
+	DB.DB.SetMaxOpenConns(config.DBConfig.MaxOpenConn)
+	DB.DB.SetMaxIdleConns(config.DBConfig.MaxIdleConn)
 
-	err = NodeDB.PbDB.OpenDB(NodeDB.DB, mysqlConfig.DBName)
+	err = DB.PbDB.OpenDB(DB.DB, mysqlConfig.DBName)
 	if err != nil {
 		return err
 	}
@@ -63,33 +63,33 @@ func InitDB() {
 }
 
 func createDBTable() {
-	NodeDB.PbDB.AddMysqlTable(&game.AccountDatabase{})
-	NodeDB.PbDB.AddMysqlTable(&game.AccountShareDatabase{})
-	NodeDB.PbDB.AddMysqlTable(&game.PlayerCentreDatabase{})
-	NodeDB.PbDB.AddMysqlTable(&game.PlayerDatabase{})
-	NodeDB.PbDB.AddMysqlTable(&game.PlayerUnimportanceDatabase{})
+	DB.PbDB.AddMysqlTable(&game.AccountDatabase{})
+	DB.PbDB.AddMysqlTable(&game.AccountShareDatabase{})
+	DB.PbDB.AddMysqlTable(&game.PlayerCentreDatabase{})
+	DB.PbDB.AddMysqlTable(&game.PlayerDatabase{})
+	DB.PbDB.AddMysqlTable(&game.PlayerUnimportanceDatabase{})
 
-	_, err := NodeDB.DB.Exec(NodeDB.PbDB.GetCreateTableSql(&game.AccountDatabase{}))
+	_, err := DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.AccountDatabase{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = NodeDB.DB.Exec(NodeDB.PbDB.GetCreateTableSql(&game.AccountShareDatabase{}))
+	_, err = DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.AccountShareDatabase{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = NodeDB.DB.Exec(NodeDB.PbDB.GetCreateTableSql(&game.PlayerCentreDatabase{}))
+	_, err = DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.PlayerCentreDatabase{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = NodeDB.DB.Exec(NodeDB.PbDB.GetCreateTableSql(&game.PlayerDatabase{}))
+	_, err = DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.PlayerDatabase{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = NodeDB.DB.Exec(NodeDB.PbDB.GetCreateTableSql(&game.PlayerUnimportanceDatabase{}))
+	_, err = DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.PlayerUnimportanceDatabase{}))
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -97,11 +97,11 @@ func createDBTable() {
 }
 
 func alterDBTable() {
-	NodeDB.PbDB.AlterTableAddField(&game.AccountDatabase{})
-	NodeDB.PbDB.AlterTableAddField(&game.AccountShareDatabase{})
-	NodeDB.PbDB.AlterTableAddField(&game.PlayerCentreDatabase{})
-	NodeDB.PbDB.AlterTableAddField(&game.PlayerDatabase{})
-	NodeDB.PbDB.AlterTableAddField(&game.PlayerUnimportanceDatabase{})
+	DB.PbDB.AlterTableAddField(&game.AccountDatabase{})
+	DB.PbDB.AlterTableAddField(&game.AccountShareDatabase{})
+	DB.PbDB.AlterTableAddField(&game.PlayerCentreDatabase{})
+	DB.PbDB.AlterTableAddField(&game.PlayerDatabase{})
+	DB.PbDB.AlterTableAddField(&game.PlayerUnimportanceDatabase{})
 }
 
 func initDBConsume() {
@@ -109,8 +109,8 @@ func initDBConsume() {
 		for i := 0; i < config.DBConfig.RoutineNum; i++ {
 			go func(i int) {
 				for {
-					msg := NodeDB.MsgQueue.Pop(i)
-					NodeDB.PbDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)
+					msg := DB.MsgQueue.Pop(i)
+					DB.PbDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)
 					msg.Chan <- true
 				}
 			}(i)

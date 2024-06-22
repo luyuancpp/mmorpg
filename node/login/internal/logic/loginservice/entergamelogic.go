@@ -2,6 +2,7 @@ package loginservicelogic
 
 import (
 	"context"
+	"github.com/golang/protobuf/proto"
 	"login/data"
 	"strconv"
 
@@ -27,6 +28,8 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 
 func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGameC2LResponse, error) {
 	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
+	defer data.SessionList.Remove(sessionId)
+	playerIdStr := strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
 	_, ok := data.SessionList.Get(sessionId)
 	resp := &game.EnterGameC2LResponse{
 		ClientMsgBody: &game.EnterGameResponse{Error: &game.Tip{}},
@@ -36,36 +39,12 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 		return resp, nil
 	}
 	{
-		key := "player" + strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
+		reflection := proto.MessageReflect(&game.PlayerDatabase{})
+		key := string(reflection.Descriptor().FullName()) + playerIdStr
 		cmd := l.svcCtx.Redis.Get(l.ctx, key)
 		if len(cmd.Val()) == 0 {
 			_, err := l.svcCtx.DBPlayerService.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
 			if err != nil {
-				resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
-				return resp, err
-			}
-			cmd = l.svcCtx.Redis.Get(l.ctx, key)
-			if cmd == nil {
-				logx.Error("cannot oad playerID:" + key)
-				resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
-				return resp, err
-			}
-		}
-	}
-
-	{
-		key := "player_centre" + strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
-		cmd := l.svcCtx.Redis.Get(l.ctx, key)
-		if len(cmd.Val()) == 0 {
-			_, err := l.svcCtx.DBPlayerCentreService.Load2Redis(l.ctx,
-				&game.LoadPlayerCentreRequest{PlayerId: in.ClientMsgBody.PlayerId})
-			if err != nil {
-				resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
-				return resp, err
-			}
-			cmd = l.svcCtx.Redis.Get(l.ctx, key)
-			if cmd == nil {
-				logx.Error("cannot oad playerID:" + key)
 				resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 				return resp, err
 			}
@@ -74,6 +53,5 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 
 	centreEnterGame := &game.EnterGameL2Ctr{ClientMsgBody: in.ClientMsgBody, SessionInfo: in.SessionInfo}
 	l.svcCtx.CentreClient.Send(centreEnterGame, 54)
-	data.SessionList.Remove(sessionId)
 	return resp, nil
 }

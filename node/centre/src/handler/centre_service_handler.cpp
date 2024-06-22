@@ -257,14 +257,10 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
     auto player_it = cl_tls.player_list().find(rq.player_id());
     if (player_it == cl_tls.player_list().end())
 	{
-        using PlayerLoadingInfoList = std::unordered_map<Guid, EnterGameL2Ctr>;
         tls.global_registry.get<PlayerLoadingInfoList>(global_entity()).emplace(
             rq.player_id(),
             std::move(*request));
-       using PlayerRedisPtr =
-            std::unique_ptr<MessageAsyncClient<Guid, player_centre_database>>;
-        auto& player_redis = tls.global_registry.emplace<PlayerRedisPtr>(global_entity());
-		player_redis->AsyncLoad(rq.player_id());
+        tls.global_registry.get<PlayerRedisPtr>(global_entity())->AsyncLoad(rq.player_id());
 	}
 	else
 	{

@@ -35,12 +35,7 @@ void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre
         LOG_ERROR << "server emplace error" << player_id;
         return;
     }
-    auto ret = cl_tls.player_list().emplace(player_id, player);
-    if (!ret.second)
-    {
-        LOG_ERROR << "login create player error" << player_id;
-        return;
-    }
+ 
     tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(
         it->second.session_info().session_id());
 

@@ -2,7 +2,3 @@
 
 thread_local CentreThreadLocalStorage centre_tls;
 
-void CentreThreadLocalStorage::Init()
-{
-
-}
