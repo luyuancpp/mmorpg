@@ -1,7 +1,12 @@
 #include "server_event_handler.h"
 #include "event_proto/server_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "network/rpc_client.h"
 #include "system/game_node_scene_system.h"
+#include "game_node.h"
+#include "service/centre_service_service.h"
+
+#include "common_proto/centre_service.pb.h"
 ///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()
 {
@@ -22,7 +27,26 @@ void ServerEventHandler::UnRegister()
 void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	GameNodeSceneSystem::RegisterSceneToCentre();
+    entt::entity centre_id{ message.entity() };
+    
+    auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_id);
+    if (centre_node == nullptr)
+    {
+        return;
+    }
+    auto& centre_local_addr = (*centre_node)->local_addr();
+    RegisterGameRequest rq;
+    rq.mutable_rpc_client()->set_ip(centre_local_addr.toIp());
+    rq.mutable_rpc_client()->set_port(centre_local_addr.port());
+    rq.mutable_rpc_server()->set_ip(g_game_node->game_node_info().ip());
+    rq.mutable_rpc_server()->set_port(g_game_node->game_node_info().port());
+
+    rq.set_server_type(g_game_node->game_node_type());
+    rq.set_game_node_id(g_game_node->game_node_id());
+    (*centre_node)->CallMethod(CentreServiceRegisterGameMsgId, rq);
+
+    GameNodeSceneSystem::RegisterSceneToCentre();
+	
 ///<<< END WRITING YOUR CODE
 }
 

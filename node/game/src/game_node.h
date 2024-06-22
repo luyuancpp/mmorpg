@@ -30,8 +30,6 @@ public:
     void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);
 
-    void RegisterGameToCentre(RpcClientPtr& centre_session);
-
     void Receive1(const OnConnected2ServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
 
