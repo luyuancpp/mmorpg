@@ -19,3 +19,7 @@ message OnConnect2Login
 {
   uint64 entity = 1;
 }
+
+message OnServerStart
+{
+}

@@ -26,7 +26,6 @@ using namespace net;
 
 CentreNode* g_centre_node = nullptr;
 
-void set_server_sequence_node_id(uint32_t node_id);
 void InitRepliedHandler();
 void AsyncCompleteGrpcDeployService();
 

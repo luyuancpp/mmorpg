@@ -36,8 +36,6 @@
 
 constexpr std::size_t kMaxPlayerSize{50000};
 
-NodeId centre_node_id();
-
 Guid GetPlayerIdBySessionId(const uint64_t session_id)
 {
     auto eid = entt::to_entity(session_id);

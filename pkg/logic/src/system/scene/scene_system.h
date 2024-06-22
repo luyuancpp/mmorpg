@@ -85,7 +85,7 @@ public:
 
 	static std::size_t scenes_size(uint32_t scene_config_id);
 	static std::size_t scenes_size();
-	static void set_server_sequence_node_id(const uint32_t node_id) { node_sequence_.set_node_id(node_id); }
+	static void set_sequence_node_id(const uint32_t node_id) { node_sequence_.set_node_id(node_id); }
 
 	static uint32_t CheckScenePlayerSize(entt::entity scene);
 

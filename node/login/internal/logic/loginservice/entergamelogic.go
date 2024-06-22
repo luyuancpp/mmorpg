@@ -38,16 +38,15 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 		return resp, nil
 	}
-	{
-		reflection := proto.MessageReflect(&game.PlayerDatabase{})
-		key := string(reflection.Descriptor().FullName()) + playerIdStr
-		cmd := l.svcCtx.Redis.Get(l.ctx, key)
-		if len(cmd.Val()) == 0 {
-			_, err := l.svcCtx.DBPlayerService.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
-			if err != nil {
-				resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
-				return resp, err
-			}
+
+	reflection := proto.MessageReflect(&game.PlayerDatabase{})
+	key := string(reflection.Descriptor().FullName()) + playerIdStr
+	cmd := l.svcCtx.Redis.Get(l.ctx, key)
+	if len(cmd.Val()) == 0 {
+		_, err := l.svcCtx.DBPlayerService.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
+		if err != nil {
+			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
+			return resp, err
 		}
 	}
 

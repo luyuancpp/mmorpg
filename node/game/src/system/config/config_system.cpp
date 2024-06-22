@@ -5,6 +5,6 @@
 void ConfigSystem::OnConfigLoadSuccessful()
 {
 	GameNodeSceneSystem::LoadAllMainSceneNavBin();
-	GameNodeSceneSystem::InitNodeScene();
+	
 }
 

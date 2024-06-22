@@ -19,8 +19,6 @@
 #include "component_proto/player_network_comp.pb.h"
 #include "component_proto/player_scene_comp.pb.h"
 
-NodeId centre_node_id();
-
 void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
 {
     if (!tls.registry.valid(player))
@@ -73,10 +71,13 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     }
     else
     {
-        scene = NodeSceneSystem::GetNotFullScene({ scene_info_comp->scene_info().scene_confid() });
-        if (entt::null == scene)
+        if (scene_info_comp->scene_info().scene_confid() > 0)
         {
             scene = NodeSceneSystem::GetNotFullScene({ scene_info_comp->scene_info().scene_confid() });
+            if (entt::null == scene)
+            {
+                scene = NodeSceneSystem::GetNotFullScene({ scene_info_comp->scene_info().scene_confid() });
+            }
         }
     }
     
@@ -94,10 +95,9 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     //todo 会话没有了玩家还在
 
     CallPlayerEnterGs(player,
-        ScenesSystem::get_game_node_id(scene),
-        cl_tls.session_id());
+        ScenesSystem::get_game_node_id(scene));
     CentreChangeSceneInfo change_scene_info;
-    PlayerChangeSceneSystem::CopyTo(change_scene_info, tls.registry.get<SceneInfo>(scene));
+    PlayerChangeSceneSystem::CopyTo(change_scene_info, tls.scene_registry.get<SceneInfo>(scene));
     change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
     change_scene_info.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
     PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
@@ -144,14 +144,19 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
     CallGamePlayerMethod(GamePlayerSceneServiceEnterSceneS2CMsgId, msg, player);
 }
 
-void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, SessionId session_id)
+void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id)
 {
+    auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+    if (nullptr == player_node_info)
+    {
+        return;
+    }
     //todo gs崩溃
-    GameNodeEnterGsRequest req;
-    req.set_player_id(tls.registry.get<Guid>(player));
-    req.set_session_id(session_id);
-    req.set_centre_node_id(g_centre_node->center_node_id());
-    CallGameNodeMethod(GameServiceEnterGsMsgId, req, node_id);
+    GameNodeEnterGsRequest rq;
+    rq.set_player_id(tls.registry.get<Guid>(player));
+    rq.set_session_id((*player_node_info).gate_session_id());
+    rq.set_centre_node_id(g_centre_node->center_node_id());
+    CallGameNodeMethod(GameServiceEnterGsMsgId, rq, node_id);
 }
 
 //前一个队列完成的时候才应该调用到这里去判断当前队列
