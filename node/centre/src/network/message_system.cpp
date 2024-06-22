@@ -198,17 +198,17 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
 	entt::entity game_node_id{ node_id };
-    if (tls.game_node_registry.valid(game_node_id))
+    if (!tls.game_node_registry.valid(game_node_id))
     {
         return;
     }
-    auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(game_node_id);
-    if (nullptr == gate_node)
+    auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
+    if (nullptr == game_node)
     {
         LOG_ERROR << "gate not found " << node_id;
         return;
     }
-	(*gate_node)->CallMethod(message_id, message);
+	(*game_node)->CallMethod(message_id, message);
 }
 
 void BroadCastToGame(uint32_t message_id, const google::protobuf::Message& message)

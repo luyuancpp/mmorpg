@@ -16,7 +16,7 @@ static constexpr std::size_t kMaxMainScenePlayer = 1000;
 
 using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
-void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_sequence_node_id(node_id); }
+void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_sequence_node_id(node_id); }
 
 void AddMainSceneNodeComponent(entt::registry& reg, const entt::entity node)
 {
@@ -37,7 +37,7 @@ ScenesSystem::~ScenesSystem()
 
 NodeId ScenesSystem::get_game_node_id(entt::entity scene)
 {
-    auto scene_info = tls.game_node_registry.try_get<SceneInfo>(scene);
+    auto scene_info = tls.scene_registry.try_get<SceneInfo>(scene);
     if (nullptr == scene_info)
     {
         return kInvalidNodeId;

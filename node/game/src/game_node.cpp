@@ -102,6 +102,8 @@ void GameNode::StartServer(const ::nodes_info_data& info)
 
     deploy_rpc_timer_.Cancel();
 
+    tls.dispatcher.trigger<OnServerStart>();
+
     LOG_INFO << "game node  start " << game_node_info().DebugString();
 }
 
