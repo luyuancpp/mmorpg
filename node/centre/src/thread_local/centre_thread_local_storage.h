@@ -5,7 +5,8 @@
 class CentreThreadLocalStorage
 {
 public:
-    void Init();
+    inline RedisSystem& redis_system() { return redis_system_; }
+
 private:
     RedisSystem redis_system_;
 };

@@ -53,14 +53,26 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 			return resp, err
 		}
-		cmd = l.svcCtx.Redis.Get(l.ctx, rdKey)
-		if cmd == nil {
-			logx.Error("cannot find account:" + in.ClientMsgBody.Account)
-			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
-			return resp, nil
+	}
+
+	valueBytes, err := cmd.Bytes()
+	if err != nil {
+		logx.Error(err)
+		return nil, err
+	}
+
+	accountDatabase := &game.AccountDatabase{}
+	err = proto.Unmarshal(valueBytes, accountDatabase)
+	if err != nil {
+		logx.Error(err)
+		return nil, err
+	}
+	if nil != accountDatabase.SimplePlayers {
+		for _, v := range accountDatabase.SimplePlayers.Players {
+			cPlayer := &game.CAccountSimplePlayer{Player: v}
+			resp.ClientMsgBody.Players = append(resp.ClientMsgBody.Players, cPlayer)
 		}
 	}
 
-	err := proto.Unmarshal([]byte(cmd.Val()), resp.ClientMsgBody)
 	return resp, err
 }

@@ -72,7 +72,3 @@ service PlayerDBService {
   rpc Save2Redis (SavePlayerRequest) returns (SavePlayerResponse);
 }
 
-service PlayerCentreDBService {
-  rpc Load2Redis (LoadPlayerCentreRequest) returns (LoadPlayerCentreResponse);
-  rpc Save2Redis (SavePlayerCentreRequest) returns (SavePlayerCentreResponse);
-}

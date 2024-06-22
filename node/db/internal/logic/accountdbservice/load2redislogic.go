@@ -50,7 +50,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAcc
 	msgChannel.Body = msg
 	msgChannel.Chan = make(chan bool)
 	msgChannel.WhereCase = "where account='" + in.Account + "'"
-	db.NodeDB.MsgQueue.Put(msgChannel)
+	db.DB.MsgQueue.Put(msgChannel)
 	_, ok := <-msgChannel.Chan
 	if !ok {
 		logx.Error("channel closed")

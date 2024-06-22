@@ -80,8 +80,8 @@ void GameNode::SetNodeId(NodeId node_id)
 void GameNode::StartServer(const ::nodes_info_data& info)
 {
     node_net_info_ = info;
-    InetAddress serverAddr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
-    game_tls.redis_system().Init(serverAddr);
+    InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
+    game_tls.redis_system().Init(redis_addr);
 
     node_info_.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
     node_info_.set_node_type(eNodeType::kGameNode);

@@ -41,7 +41,9 @@ private:
 
 	void InitNodeServer();
 
-	void InitThreadLocalStorage();
+	void InitSystemBeforeConnect();
+	void InitSystemAfterConnect();
+
 
 	NodeId centre_node_index() { return center_node_id() - 1; }
 

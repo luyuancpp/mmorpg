@@ -16,7 +16,6 @@
 #include "service/gate_service_service.h"
 #include "thread_local/centre_thread_local_storage.h"
 #include "grpc/deploy/deployclient.h"
-#include "type_alias/player_redis.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "constants_proto/node.pb.h"
@@ -51,8 +50,8 @@ void CentreNode::Init()
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)ZoneConfig::GetSingleton().config_info().loglevel());
 
-
 	InitNodeByReqInfo();
+    InitSystemBeforeConnect();
 
     InitNodeServer();
 
@@ -64,8 +63,7 @@ void CentreNode::Init()
     void InitServiceHandler();
     InitServiceHandler();
 
-    InitThreadLocalStorage();
-    centre_tls.Init();
+    
 }
 
 void CentreNode::InitNodeByReqInfo()
@@ -93,6 +91,7 @@ void CentreNode::StartServer(const ::nodes_info_data& info)
 {
     serverinfos_ = info;
     auto& my_node_info = serverinfos_.centre_info().centre_info()[centre_node_index()];
+   
     InetAddress servcie_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, servcie_addr);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
@@ -103,7 +102,7 @@ void CentreNode::StartServer(const ::nodes_info_data& info)
     }
     server_->start();
     deploy_rpc_timer_.Cancel();
-
+    InitSystemAfterConnect();
     LOG_INFO << "centre start " << my_node_info.DebugString();
 
 }
@@ -212,7 +211,15 @@ void CentreNode::InitNodeServer()
     SendGetNodeInfo(req);
 }
 
-void CentreNode::InitThreadLocalStorage()
+void CentreNode::InitSystemBeforeConnect()
 {
-    tls.global_registry.emplace<PlayerRedisPtr>(global_entity());
+
 }
+
+void CentreNode::InitSystemAfterConnect()
+{
+    InetAddress redis_addr(serverinfos_.redis_info().redis_info(0).ip(), 
+        serverinfos_.redis_info().redis_info(0).port());
+    centre_tls.redis_system().Init(redis_addr);
+}
+
