@@ -1,7 +1,7 @@
 package main
 
 import (
-	"db/pkg"
+	"db/internal/logic/pkg"
 	"flag"
 	"fmt"
 
@@ -27,7 +27,7 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)
 
-	config.Init()
+	config.LoadConfig()
 	pkg.Init()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {

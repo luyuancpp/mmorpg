@@ -2,10 +2,10 @@ package main
 
 import (
 	"deploy/internal/config"
+	"deploy/internal/logic/pkg/db"
 	deployserviceServer "deploy/internal/server/deployservice"
 	"deploy/internal/svc"
 	"deploy/pb/game"
-	"deploy/pkg"
 	"flag"
 	"fmt"
 
@@ -26,8 +26,8 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)
 
-	pkg.InitDB(*dbConfigFile)
-	defer pkg.PbDb.Close()
+	db.InitDB(*dbConfigFile)
+	defer db.PbDb.Close()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterDeployServiceServer(grpcServer, deployserviceServer.NewDeployServiceServer(ctx))

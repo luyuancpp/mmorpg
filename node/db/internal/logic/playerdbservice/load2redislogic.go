@@ -2,8 +2,8 @@ package playerdbservicelogic
 
 import (
 	"context"
-	"db/pkg"
-	"db/queue"
+	"db/internal/logic/pkg/db"
+	"db/internal/logic/pkg/queue"
 	"hash/fnv"
 	"strconv"
 
@@ -50,7 +50,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 	msgChannel.Body = msg
 	msgChannel.Chan = make(chan bool)
 	msgChannel.WhereCase = "where player_id='" + playerIdStr + "'"
-	pkg.NodeDB.MsgQueue.Put(msgChannel)
+	db.NodeDB.MsgQueue.Put(msgChannel)
 	_, ok := <-msgChannel.Chan
 	if !ok {
 		logx.Error("channel closed")

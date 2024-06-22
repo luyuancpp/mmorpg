@@ -2,10 +2,10 @@ package accountdbservicelogic
 
 import (
 	"context"
+	"db/internal/logic/pkg/db"
+	"db/internal/logic/pkg/queue"
 	"db/internal/svc"
 	"db/pb/game"
-	"db/pkg"
-	"db/queue"
 	"google.golang.org/protobuf/proto"
 	"hash/fnv"
 
@@ -27,7 +27,6 @@ func NewLoad2RedisLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Load2R
 }
 
 func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAccountResponse, error) {
-
 	//todo 如果这时候存回数据库呢,读存读存
 	resp := &game.LoadAccountResponse{}
 	key := "account" + in.Account
@@ -51,7 +50,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAcc
 	msgChannel.Body = msg
 	msgChannel.Chan = make(chan bool)
 	msgChannel.WhereCase = "where account='" + in.Account + "'"
-	pkg.NodeDB.MsgQueue.Put(msgChannel)
+	db.NodeDB.MsgQueue.Put(msgChannel)
 	_, ok := <-msgChannel.Chan
 	if !ok {
 		logx.Error("channel closed")

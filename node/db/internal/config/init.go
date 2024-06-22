@@ -1,6 +1,6 @@
 package config
 
-func Init() {
+func LoadConfig() {
 	LoadDB()
 	LoadRedis()
 }
