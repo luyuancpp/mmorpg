@@ -41,8 +41,7 @@ void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre
 
     tls.registry.emplace<Player>(player);
     tls.registry.emplace<Guid>(player, player_id);
-    tls.registry.emplace<player_centre_database>(player, std::move(message));
-    tls.registry.emplace<Player>(player);
+    tls.registry.emplace<PlayerSceneInfoComp>(player, std::move(message.scene_info()));
     PlayerChangeSceneSystem::InitChangeSceneQueue(player);
     //第一次登录
     tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
