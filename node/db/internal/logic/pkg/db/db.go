@@ -1,11 +1,10 @@
-package pkg
+package db
 
 import (
 	"database/sql"
 	"db/internal/config"
+	"db/internal/logic/pkg/queue"
 	"db/pb/game"
-	"db/queue"
-
 	"github.com/go-sql-driver/mysql"
 	pbmysql "github.com/luyuancpp/pbmysql-go"
 	"log"
@@ -64,7 +63,6 @@ func InitDB() {
 }
 
 func createDBTable() {
-
 	NodeDB.PbDB.AddMysqlTable(&game.AccountDatabase{})
 	NodeDB.PbDB.AddMysqlTable(&game.AccountShareDatabase{})
 	NodeDB.PbDB.AddMysqlTable(&game.PlayerCentreDatabase{})

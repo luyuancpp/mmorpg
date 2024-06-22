@@ -1,4 +1,4 @@
-package playerdbservicelogic
+package playercentredbservicelogic
 
 import (
 	"context"
@@ -28,10 +28,10 @@ func NewLoad2RedisLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Load2R
 	}
 }
 
-func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlayerResponse, error) {
-	resp := &game.LoadPlayerResponse{}
+func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerCentreRequest) (*game.LoadPlayerCentreResponse, error) {
+	resp := &game.LoadPlayerCentreResponse{}
 	playerIdStr := strconv.FormatUint(in.PlayerId, 10)
-	key := "player" + playerIdStr
+	key := "player_center" + playerIdStr
 	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	if len(cmd.Val()) > 0 {
 		resp.PlayerId = in.PlayerId
@@ -46,7 +46,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 
 	msgChannel := queue.MsgChannel{}
 	msgChannel.Key = hash64.Sum64()
-	msg := &game.PlayerDatabase{}
+	msg := &game.PlayerCentreDatabase{}
 	msgChannel.Body = msg
 	msgChannel.Chan = make(chan bool)
 	msgChannel.WhereCase = "where player_id='" + playerIdStr + "'"

@@ -42,6 +42,26 @@ message SavePlayerResponse
   uint64 player_id = 2;
 }
 
+message LoadPlayerCentreRequest
+{
+  uint64 player_id = 1;
+}
+
+message LoadPlayerCentreResponse
+{
+  uint64 player_id = 1;
+}
+
+message SavePlayerCentreRequest
+{
+  uint64 player_id = 1;
+}
+
+message SavePlayerCentreResponse
+{
+  uint64 player_id = 1;
+}
+
 service AccountDBService {
   rpc Load2Redis (LoadAccountRequest) returns (LoadAccountResponse);
   rpc Save2Redis (SaveAccountRequest) returns (SaveAccountResponse);
@@ -50,4 +70,9 @@ service AccountDBService {
 service PlayerDBService {
   rpc Load2Redis (LoadPlayerRequest) returns (LoadPlayerResponse);
   rpc Save2Redis (SavePlayerRequest) returns (SavePlayerResponse);
+}
+
+service PlayerCentreDBService {
+  rpc Load2Redis (LoadPlayerCentreRequest) returns (LoadPlayerCentreResponse);
+  rpc Save2Redis (SavePlayerCentreRequest) returns (SavePlayerCentreResponse);
 }

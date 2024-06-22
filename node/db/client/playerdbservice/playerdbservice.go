@@ -13,14 +13,18 @@ import (
 )
 
 type (
-	LoadAccountRequest  = game.LoadAccountRequest
-	LoadAccountResponse = game.LoadAccountResponse
-	LoadPlayerRequest   = game.LoadPlayerRequest
-	LoadPlayerResponse  = game.LoadPlayerResponse
-	SaveAccountRequest  = game.SaveAccountRequest
-	SaveAccountResponse = game.SaveAccountResponse
-	SavePlayerRequest   = game.SavePlayerRequest
-	SavePlayerResponse  = game.SavePlayerResponse
+	LoadAccountRequest       = game.LoadAccountRequest
+	LoadAccountResponse      = game.LoadAccountResponse
+	LoadPlayerCentreRequest  = game.LoadPlayerCentreRequest
+	LoadPlayerCentreResponse = game.LoadPlayerCentreResponse
+	LoadPlayerRequest        = game.LoadPlayerRequest
+	LoadPlayerResponse       = game.LoadPlayerResponse
+	SaveAccountRequest       = game.SaveAccountRequest
+	SaveAccountResponse      = game.SaveAccountResponse
+	SavePlayerCentreRequest  = game.SavePlayerCentreRequest
+	SavePlayerCentreResponse = game.SavePlayerCentreResponse
+	SavePlayerRequest        = game.SavePlayerRequest
+	SavePlayerResponse       = game.SavePlayerResponse
 
 	PlayerDBService interface {
 		Load2Redis(ctx context.Context, in *LoadPlayerRequest, opts ...grpc.CallOption) (*LoadPlayerResponse, error)
