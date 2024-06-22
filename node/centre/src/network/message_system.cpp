@@ -119,7 +119,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		return;
 	}
 	entt::entity gate_id{ get_gate_node_id(player_node_info->gate_session_id()) };
-	if (tls.gate_node_registry.valid(gate_id))
+	if (!tls.gate_node_registry.valid(gate_id))
 	{
 		LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
 		return;
@@ -150,7 +150,7 @@ void Send2Gate(const uint32_t message_id,
 	NodeId gate_node_id)
 {
 	entt::entity gate_id{ gate_node_id };
-    if (tls.gate_node_registry.valid(gate_id))
+    if (!tls.gate_node_registry.valid(gate_id))
     {
         LOG_ERROR << "gate not found " << gate_node_id;
         return;
