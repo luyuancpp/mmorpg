@@ -58,6 +58,7 @@
     <ClCompile Include="src\constants_proto\node.pb.cc" />
     <ClCompile Include="src\event_proto\mission_event.pb.cc" />
     <ClCompile Include="src\event_proto\scene_event.pb.cc" />
+    <ClCompile Include="src\event_proto\server_event.pb.cc" />
     <ClCompile Include="src\game_config\condition_config.pb.cc" />
     <ClCompile Include="src\game_config\global_variable_config.pb.cc" />
     <ClCompile Include="src\game_config\item_config.pb.cc" />
@@ -183,6 +184,7 @@
     <ClInclude Include="src\constants_proto\node.pb.h" />
     <ClInclude Include="src\event_proto\mission_event.pb.h" />
     <ClInclude Include="src\event_proto\scene_event.pb.h" />
+    <ClInclude Include="src\event_proto\server_event.pb.h" />
     <ClInclude Include="src\game_config\condition_config.pb.h" />
     <ClInclude Include="src\game_config\global_variable_config.pb.h" />
     <ClInclude Include="src\game_config\item_config.pb.h" />

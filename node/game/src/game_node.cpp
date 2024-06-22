@@ -19,12 +19,13 @@
 #include "grpc/deploy/deployclient.h"
 #include "thread_local/game_thread_local_storage.h"
 #include "service/service.h"
-#include "system/logic/config_system.h"
+#include "system/config/config_system.h"
 
 #include "util/game_registry.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "constants_proto/node.pb.h"
+#include "event_proto/server_event.pb.h"
 
 GameNode* g_game_node = nullptr;
 
@@ -132,6 +133,10 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
             {
                 EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
                     std::bind(&GameNode::RegisterGameToCentre, this, centre_node));
+
+                OnConnect2Centre connect2centre_event;
+                connect2centre_event.set_entity(entt::to_integral(it));
+                tls.dispatcher.trigger(connect2centre_event);
                 break;
             }
             // centre 走断线重连，不删除

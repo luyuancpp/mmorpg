@@ -42,7 +42,7 @@
     <ClCompile Include="src\system\recast_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\logic\config_system.cpp">
+    <ClCompile Include="src\system\config\config_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\event_handler\event_handler.cpp">
@@ -120,6 +120,9 @@
     <ClCompile Include="src\grpc\async_client_call.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\event_handler\server_event_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_node.h">
@@ -146,7 +149,7 @@
     <ClInclude Include="src\system\recast_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\logic\config_system.h">
+    <ClInclude Include="src\system\config\config_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\gs_scene_comp.h">
@@ -222,6 +225,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\async_client_call.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\event_handler\server_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

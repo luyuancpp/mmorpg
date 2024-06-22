@@ -384,6 +384,9 @@
     <ClCompile Include="src\service\login_service_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\event_proto\server_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\condition_config.pb.h">
@@ -600,6 +603,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\login_service_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\event_proto\server_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

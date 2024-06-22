@@ -83,6 +83,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
         return;
     }
     RegisterSceneRequest rq;
+    rq.set_game_node_id(g_game_node->game_node_id());
     rq.mutable_scenes_info()->Add()->CopyFrom(*scene_info);
     BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, rq);
 }
@@ -90,6 +91,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
 void GameNodeSceneSystem::RegisterSceneToCentre()
 {
     RegisterSceneRequest rq;
+    rq.set_game_node_id(g_game_node->game_node_id());
     for (auto&& [e, scene_info] : tls.scene_registry.view<SceneInfo>().each())
     {
         rq.mutable_scenes_info()->Add()->CopyFrom(scene_info);

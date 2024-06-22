@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+message OnConnect2Centre
+{
+  uint64 entity = 1;
+}
+
+message OnConnect2Game
+{
+  uint64 entity = 1;
+}
+
+message OnConnect2Gate
+{
+  uint64 entity = 1;
+}
+
+message OnConnect2Login
+{
+  uint64 entity = 1;
+}
