@@ -5,7 +5,8 @@ option cc_generic_services = true;
 
 message RegisterSceneRequest
 {
-	repeated SceneInfo scenes_info = 1;
+	uint32 game_node_id = 1;
+	repeated SceneInfo scenes_info = 2;
 }
 
 message RegisterSceneResponse
@@ -25,5 +26,4 @@ service CentreSceneService
 {
   rpc RegisterScene (RegisterSceneRequest) returns (RegisterSceneResponse);
   rpc UnRegisterScene (UnRegisterSceneRequest) returns (Empty);
-  
 }
