@@ -116,7 +116,12 @@ void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)
 //todo 检测
 void PlayerCommonSystem::RemovePlayerSession(const Guid player_id)
 {
-	RemovePlayerSession(entt::entity{player_id});
+	auto player_it = cl_tls.player_list().find(player_id);
+	if (player_it == cl_tls.player_list().end())
+	{
+		return;
+	}
+	RemovePlayerSession(player_it->second);
 }
 
 void PlayerCommonSystem::RemovePlayerSession(entt::entity player)

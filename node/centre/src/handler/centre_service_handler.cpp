@@ -407,7 +407,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		return;
 	}
 	entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
-	if (tls.gate_node_registry.valid(gate_node_id))
+	if (!tls.gate_node_registry.valid(gate_node_id))
 	{
 		LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
 		return;

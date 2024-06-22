@@ -16,10 +16,10 @@
 #include "util/snow_flake.h"
 #include "service/login_service_service.h"
 #include "grpc/request/login_grpc_request.h"
+#include "global_value/gate_node_sequence.h"
 
 #include "tip_code_proto/common_tip_code.pb.h"
 
-NodeBit15Sequence g_server_sequence_;
 extern std::unordered_set<uint32_t> g_c2s_service_id;
 
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
@@ -86,10 +86,10 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     }
     else
     {
-        auto session_uid = g_server_sequence_.Generate();
+        auto session_uid = g_node_sequence_.Generate();
         while (tls.session_registry.valid(entt::entity{session_uid}))
         {
-            session_uid = g_server_sequence_.Generate();
+            session_uid = g_node_sequence_.Generate();
         }
         entt::entity to_session_id{ session_uid };
         auto session_id = tls.session_registry.create(to_session_id);
