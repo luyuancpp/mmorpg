@@ -49,7 +49,7 @@ public:
 		 ::google::protobuf::Closure* done)override;
 
 	void UpdateSession(::google::protobuf::RpcController* controller,
-		const ::UpdatePlayerSessionRequest* request,
+		const ::RegisterPlayerSessionRequest* request,
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 

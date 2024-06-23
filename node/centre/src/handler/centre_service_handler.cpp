@@ -295,6 +295,8 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		}
 		//连续顶几次,所以用emplace_or_replace
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
+
+		PlayerCommonSystem::Register2GatePlayerGameNode(player);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -411,29 +413,9 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		LOG_ERROR << "player session not found" << request->player_id();
 		return;
 	}
-	entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
-	if (!tls.gate_node_registry.valid(gate_node_id))
-	{
-		LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
-		return;
-	}
-	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
-	if (nullptr == gate_node)
-	{
-        LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
-        return;
-	}
-	entt::entity game_node_id{ request->game_node_id() };
-	if (!tls.game_node_registry.valid(game_node_id))
-	{
-        LOG_ERROR << "game crash" << request->game_node_id();
-        return;
-	}
 	player_node_info->set_game_node_id(request->game_node_id());
-	RegisterSessionGameNodeRequest rq;
-	rq.mutable_session_info()->set_session_id(player_node_info->gate_session_id());
-	rq.set_game_node_id(player_node_info->game_node_id());
-	(*gate_node)->CallMethod(GateServicePlayerEnterGsMsgId, rq);
+
+	PlayerCommonSystem::Register2GatePlayerGameNode(player);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, 
 		CentreChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);

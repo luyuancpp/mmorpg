@@ -7,6 +7,7 @@
 #include "service/scene_client_player_service.h"
 #include "service/game_server_player_service.h"
 #include "network/message_system.h"
+#include "network/gate_session.h"
 #include "service/game_service_service.h"
 #include "system/player_change_scene.h"
 #include "thread_local/centre_thread_local_storage.h"
@@ -14,6 +15,7 @@
 #include "util/defer.h"
 #include "system/player_scene_system.h"
 #include "type_alias/player_loading.h"
+#include "service/gate_service_service.h"
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
@@ -54,36 +56,6 @@ void PlayerCommonSystem::OnPlayerAsyncSaved(Guid player_id, player_centre_databa
 
 }
 
-void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)
-{
-    const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-    if (nullptr == player_node_info)
-    {
-        LOG_ERROR << "player session not valid";
-        return;
-    }
-    const auto* const player_id = tls.registry.try_get<Guid>(player);
-    if (nullptr == player_id)
-    {
-        LOG_ERROR << "player  not found ";
-        return;
-    }
-    UpdatePlayerSessionRequest request;
-    request.set_session_id(player_node_info->gate_session_id());
-    request.set_player_id(*player_id);
-    Send2Gs(GameServiceUpdateSessionMsgId, request, player_node_info->game_node_id());
-
-    if (const auto* const enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
-        nullptr != enter_game_node_flag)
-    {
-        if (const auto enter_gs_type = enter_game_node_flag->enter_gs_type();
-            enter_gs_type != LOGIN_NONE)
-        {
-            PlayerCommonSystem::OnLogin(player);
-        }
-    }
-}
-
 void PlayerCommonSystem::OnLogin(entt::entity player)
 {
     const auto enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
@@ -119,7 +91,60 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
     }
 }
 
-void PlayerCommonSystem::RegisterGatePlayerGameNode(entt::entity player)
+void PlayerCommonSystem::Register2GatePlayerGameNode(entt::entity player)
 {
+    auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+    if (nullptr == player_node_info)
+    {
+        LOG_ERROR << "player session not found" << tls.registry.try_get<Guid>(player);
+        return;
+    }
+    entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+    if (!tls.gate_node_registry.valid(gate_node_id))
+    {
+        LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
+        return;
+    }
+    auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
+    if (nullptr == gate_node)
+    {
+        LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
+        return;
+    }
 
+    RegisterSessionGameNodeRequest rq;
+    rq.mutable_session_info()->set_session_id(player_node_info->gate_session_id());
+    rq.set_game_node_id(player_node_info->game_node_id());
+    (*gate_node)->CallMethod(GateServicePlayerEnterGsMsgId, rq);
+}
+
+
+void PlayerCommonSystem::OnRegister2GatePlayerGameNode(entt::entity player)
+{
+    const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+    if (nullptr == player_node_info)
+    {
+        LOG_ERROR << "player session not valid";
+        return;
+    }
+    const auto* const player_id = tls.registry.try_get<Guid>(player);
+    if (nullptr == player_id)
+    {
+        LOG_ERROR << "player  not found ";
+        return;
+    }
+    RegisterPlayerSessionRequest rq;
+    rq.set_session_id(player_node_info->gate_session_id());
+    rq.set_player_id(*player_id);
+    Send2Gs(GameServiceUpdateSessionMsgId, rq, player_node_info->game_node_id());
+
+    if (const auto* const enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
+        nullptr != enter_game_node_flag)
+    {
+        if (const auto enter_gs_type = enter_game_node_flag->enter_gs_type();
+            enter_gs_type != LOGIN_NONE)
+        {
+            PlayerCommonSystem::OnLogin(player);
+        }
+    }
 }

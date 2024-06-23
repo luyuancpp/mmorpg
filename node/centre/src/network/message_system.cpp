@@ -46,7 +46,7 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 		return;
 	}
 	entt::entity game_node_id{ player_node_info->game_node_id() };
-	if (tls.game_node_registry.valid(game_node_id))
+	if (!tls.game_node_registry.valid(game_node_id))
 	{
 		LOG_ERROR << "game node not found" << player_node_info->game_node_id();
 		return;
