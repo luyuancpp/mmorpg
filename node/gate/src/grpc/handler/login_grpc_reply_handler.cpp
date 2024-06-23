@@ -3,7 +3,7 @@
 
 #include "util/defer.h"
 
-#include "thread_local/gate_thread_local_storage.h"
+#include "thread_local/thread_local_storage_gate.h"
 #include "grpc/client/login_async_client_call.h"
 #include "gate_node.h"
 #include "network/gate_session.h"
@@ -128,23 +128,23 @@ void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
 
 void InitLoginNodeComponent()
 {
-    for (auto&& e : gate_tls.login_node_registry.view<GrpcLoginStupPtr>())
+    for (auto&& e : tls_gate.login_node_registry.view<GrpcLoginStupPtr>())
     {
-        gate_tls.login_node_registry.emplace<LoginC2LCompletionQueue>(e);
-        gate_tls.login_node_registry.emplace<CreatePlayerC2LCompletionQueue>(e);
-        gate_tls.login_node_registry.emplace<EnterGameC2LCompletionQueue>(e);
+        tls_gate.login_node_registry.emplace<LoginC2LCompletionQueue>(e);
+        tls_gate.login_node_registry.emplace<CreatePlayerC2LCompletionQueue>(e);
+        tls_gate.login_node_registry.emplace<EnterGameC2LCompletionQueue>(e);
     }
 }
 
 void AsyncCompleteRpcLoginService()
 {
-    for (auto&& e : gate_tls.login_node_registry.view<GrpcLoginStupPtr>())
+    for (auto&& e : tls_gate.login_node_registry.view<GrpcLoginStupPtr>())
     {
         AsyncCompleteGrpcLoginC2L(
-            gate_tls.login_node_registry.get<LoginC2LCompletionQueue>(e).cq);
+            tls_gate.login_node_registry.get<LoginC2LCompletionQueue>(e).cq);
         AsyncCompleteCreatePlayerC2L(
-            gate_tls.login_node_registry.get<CreatePlayerC2LCompletionQueue>(e).cq);
+            tls_gate.login_node_registry.get<CreatePlayerC2LCompletionQueue>(e).cq);
         AsyncCompleteEnterGameC2L(
-            gate_tls.login_node_registry.get<EnterGameC2LCompletionQueue>(e).cq);
+            tls_gate.login_node_registry.get<EnterGameC2LCompletionQueue>(e).cq);
     }
 }

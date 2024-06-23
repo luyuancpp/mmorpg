@@ -1,6 +1,6 @@
 #include "thread_local_storage_common_logic.h"
 
-thread_local ThreadLocalStorageCommonLogic cl_tls;
+thread_local ThreadLocalStorageCommonLogic tls_cl;
 
 entt::entity ThreadLocalStorageCommonLogic::get_player(Guid player_uid)
 {

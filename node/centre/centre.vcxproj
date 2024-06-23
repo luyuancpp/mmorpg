@@ -206,7 +206,7 @@
     <ClCompile Include="src\system\player_scene_system.cpp" />
     <ClCompile Include="src\system\player_tip_system.cpp" />
     <ClCompile Include="src\system\redis_system.cpp" />
-    <ClCompile Include="src\thread_local\centre_thread_local_storage.cpp" />
+    <ClCompile Include="src\thread_local\thread_local_storage_centre.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\event_handler\event_handler.h" />
@@ -242,7 +242,7 @@
     <ClInclude Include="src\system\player_scene_system.h" />
     <ClInclude Include="src\system\player_tip_system.h" />
     <ClInclude Include="src\system\redis_system.h" />
-    <ClInclude Include="src\thread_local\centre_thread_local_storage.h" />
+    <ClInclude Include="src\thread_local\thread_local_storage_centre.h" />
     <ClInclude Include="src\type_alias\player_loading.h" />
     <ClInclude Include="src\type_alias\player_redis.h" />
   </ItemGroup>

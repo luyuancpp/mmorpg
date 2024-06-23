@@ -9,7 +9,7 @@
 #include "network/gate_session.h"
 #include "service/centre_service_service.h"
 #include "service/gate_service_service.h"
-#include "thread_local/game_thread_local_storage.h"
+#include "thread_local/thread_local_storage_game.h"
 #include "thread_local/thread_local_storage_common_logic.h"
 
 #include "component_proto/player_network_comp.pb.h"
@@ -17,7 +17,7 @@
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2Player(message_id, message, cl_tls.get_player(player_id));
+	Send2Player(message_id, message, tls_cl.get_player(player_id));
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -53,7 +53,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2CentrePlayer(message_id, message, cl_tls.get_player(player_id));
+	Send2CentrePlayer(message_id, message, tls_cl.get_player(player_id));
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)

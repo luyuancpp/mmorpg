@@ -9,7 +9,7 @@
 
 TeamSystem::~TeamSystem()
 {
-	for (const auto& [fst, snd] : cl_tls.player_list())
+	for (const auto& [fst, snd] : tls_cl.player_list())
 	{
 		LeaveTeam(fst);
 	}
@@ -73,8 +73,8 @@ std::size_t TeamSystem::players_size()
 
 Guid TeamSystem::GetTeamId(const Guid guid)
 {
-	const auto pit = cl_tls.player_list().find(guid);
-	if (pit == cl_tls.player_list().end())
+	const auto pit = tls_cl.player_list().find(guid);
+	if (pit == tls_cl.player_list().end())
 	{
 		return entt::null_t();
 	}
@@ -157,8 +157,8 @@ bool TeamSystem::HasMember(const Guid team_id, const Guid guid)
 
 bool TeamSystem::HasTeam(const Guid guid)
 {
-	const auto pit = cl_tls.player_list().find(guid);
-	if (pit == cl_tls.player_list().end())
+	const auto pit = tls_cl.player_list().find(guid);
+	if (pit == tls_cl.player_list().end())
 	{
 		return false;
 	}

@@ -8,7 +8,7 @@
 #include "thread_local/thread_local_storage_common_logic.h"
 #include "network/gate_session.h"
 #include "system/player_common_system.h"
-#include "thread_local/game_thread_local_storage.h"
+#include "thread_local/thread_local_storage_game.h"
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"

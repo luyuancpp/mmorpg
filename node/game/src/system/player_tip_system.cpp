@@ -2,7 +2,7 @@
 
 #include "thread_local/thread_local_storage_common_logic.h"
 #include "service/common_client_player_service.h"
-#include "thread_local/game_thread_local_storage.h"
+#include "thread_local/thread_local_storage_game.h"
 #include "network/message_system.h"
 
 void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVector& str_param)
@@ -18,5 +18,5 @@ void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVect
 
 void PlayerTipSystem::Tip(Guid player_id, uint32_t tip_id, const StringVector& str_param)
 {
-	Tip(cl_tls.get_player(player_id), tip_id, str_param);
+	Tip(tls_cl.get_player(player_id), tip_id, str_param);
 }

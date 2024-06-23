@@ -10,7 +10,7 @@
 #include "network/gate_session.h"
 #include "service/game_service_service.h"
 #include "system/player_change_scene.h"
-#include "thread_local/centre_thread_local_storage.h"
+#include "thread_local/thread_local_storage_centre.h"
 #include "thread_local/thread_local_storage_common_logic.h"
 #include "util/defer.h"
 #include "system/player_scene_system.h"
@@ -32,7 +32,7 @@ void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre
         return;
     }
     auto player = tls.registry.create();
-    if (const auto [fst, snd] = cl_tls.player_list().emplace(player_id, player); !snd)
+    if (const auto [fst, snd] = tls_cl.player_list().emplace(player_id, player); !snd)
     {
         LOG_ERROR << "server emplace error" << player_id;
         return;

@@ -51,7 +51,7 @@
     <ClCompile Include="src\handler\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\centre_thread_local_storage.cpp">
+    <ClCompile Include="src\thread_local\thread_local_storage_centre.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\event_handler\mission_event_handler.cpp">
@@ -164,7 +164,7 @@
     <ClInclude Include="src\replied_handler\player_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\centre_thread_local_storage.h">
+    <ClInclude Include="src\thread_local\thread_local_storage_centre.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\event_handler\mission_event_handler.h">

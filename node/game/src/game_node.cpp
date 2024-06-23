@@ -17,7 +17,7 @@
 #include "replied_handler/player_service_replied.h"
 #include "handler/register_handler.h"
 #include "grpc/deploy/deployclient.h"
-#include "thread_local/game_thread_local_storage.h"
+#include "thread_local/thread_local_storage_game.h"
 #include "service/service.h"
 #include "system/config/config_system.h"
 
@@ -82,7 +82,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
 {
     node_net_info_ = info;
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
-    game_tls.redis_system().Init(redis_addr);
+    tls_game.redis_system().Init(redis_addr);
 
     node_info_.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
     node_info_.set_node_type(eNodeType::kGameNode);

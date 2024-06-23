@@ -57,7 +57,7 @@
     <ClCompile Include="src\handler\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\game_thread_local_storage.cpp">
+    <ClCompile Include="src\thread_local\thread_local_storage_game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\game_service_handler.cpp">
@@ -173,7 +173,7 @@
     <ClInclude Include="src\handler\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\game_thread_local_storage.h">
+    <ClInclude Include="src\thread_local\thread_local_storage_game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\game_service_handler.h">

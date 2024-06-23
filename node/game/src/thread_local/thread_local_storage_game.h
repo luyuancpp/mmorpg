@@ -10,7 +10,7 @@ using PlayerRedisPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>
 using PlayerEnterGSInfoList = std::unordered_map<Guid, EnterGsInfo>;
 using GateSessionList = std::unordered_map<uint64_t, entt::entity>;
 
-class GameThreadLocalStorage
+class ThreadLocalStorageGame
 {
 public:
 	inline RedisSystem& redis_system() { return redis_system_; }
@@ -24,5 +24,5 @@ private:
 	SceneNavs scene_nav_;
 };
 
-extern thread_local GameThreadLocalStorage game_tls;
+extern thread_local ThreadLocalStorageGame tls_game;
 
