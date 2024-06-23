@@ -7,7 +7,7 @@ void OnGateServiceRegisterGameRepliedHandler(const TcpConnectionPtr& conn, const
 
 void OnGateServiceUnRegisterGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp);
 
-void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GateNodePlayerUpdateGameNodeResponese>& replied, Timestamp timestamp);
+void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RegisterSessionGameNodeResponse>& replied, Timestamp timestamp);
 
 void OnGateServicePlayerMessageRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp);
 

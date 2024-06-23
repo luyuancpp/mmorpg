@@ -60,3 +60,4 @@ message UnRegisterGameRequest
 {
   uint32 game_node_id = 1;
 }
+

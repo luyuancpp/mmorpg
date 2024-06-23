@@ -58,26 +58,26 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 }
 
 void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,
-	const ::GateNodePlayerUpdateGameNodeRequest* request,
-	::GateNodePlayerUpdateGameNodeResponese* response,
+	const ::RegisterSessionGameNodeRequest* request,
+	::RegisterSessionGameNodeResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	entt::entity session_id{ request->session_id() };
+	entt::entity session_id{ request->session_info().session_id() };
 	if (!tls.session_registry.valid(session_id))
 	{
-		LOG_ERROR << "session id not found   " << request->session_id();
+		LOG_ERROR << "session id not found   " << request->session_info().session_id();
 		return;
 	}
 	auto session = tls.session_registry.try_get<Session>(session_id);
 	if (nullptr == session)
 	{
-        LOG_ERROR << "session id not found   " << request->session_id();
+        LOG_ERROR << "session id not found   " << request->session_info().session_id();
 		return;
 	}
 	//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉controller 让ms去通知gs去发送信息
 	session->game_node_id_ = request->game_node_id();
-	response->set_session_id(request->session_id());
+	response->mutable_session_info()->set_session_id(request->session_info().session_id());
 	///<<< END WRITING YOUR CODE
 }
 

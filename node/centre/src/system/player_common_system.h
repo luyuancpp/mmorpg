@@ -14,4 +14,6 @@ public:
 
     static void OnGateUpdateGameNodeSucceed(entt::entity player);
     static void OnLogin(entt::entity player);
+
+    static void RegisterGatePlayerGameNode(entt::entity player);
 };
