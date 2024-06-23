@@ -17,7 +17,7 @@ void InitGateServiceRegisterGameRepliedHandler()
 {
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGateServiceRegisterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGateServiceUnRegisterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<GateNodePlayerUpdateGameNodeResponese>(std::bind(&OnGateServicePlayerEnterGsRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<RegisterSessionGameNodeResponse>(std::bind(&OnGateServicePlayerEnterGsRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGateServicePlayerMessageRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGateServiceKickConnByCentreRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<RouteMsgStringResponse>(std::bind(&OnGateServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -36,25 +36,18 @@ void OnGateServiceUnRegisterGameRepliedHandler(const TcpConnectionPtr& conn, con
 ///<<< END WRITING YOUR CODE
 }
 
-void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GateNodePlayerUpdateGameNodeResponese>& replied, Timestamp timestamp)
+void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RegisterSessionGameNodeResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	///gate 更新gs,相应的gs可以往那个gate上发消息了
 	///todo 中间返回是断开了
 	entt::entity GetPlayerByConnId(uint64_t session_id);
-	const auto player = GetPlayerByConnId(replied->session_id());
+	const auto player = GetPlayerByConnId(replied->session_info().session_id());
 	if (entt::null == player)
 	{
 		LOG_ERROR << "player not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-	auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	if (nullptr == player_node_info)
-	{
-        LOG_ERROR << "player not found " << tls.registry.get<Guid>(player);
-		return;
-	}
-	player_node_info->set_gate_session_id(replied->session_id());
 	PlayerCommonSystem::OnGateUpdateGameNodeSucceed(player);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);

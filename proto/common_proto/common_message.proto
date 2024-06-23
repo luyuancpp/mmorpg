@@ -1,3 +1,38 @@
 syntax = "proto3";
 
-import "common_proto/common.proto";
+option go_package = "pb/game";
+
+import "common_proto/session.proto";
+
+message RegisterSessionGameNodeRequest
+{
+  SessionInfo session_info = 1;
+  uint32 game_node_id = 2;
+}
+
+message RegisterSessionGameNodeResponse
+{
+  SessionInfo session_info = 1;
+}
+
+message RegisterSessionGateNodeRequest
+{
+  SessionInfo session_info = 1;
+  uint32 gate_node_id = 2;
+}
+
+message RegisterSessionGateNodeResponse
+{
+  SessionInfo session_info = 1;
+}
+
+message RegisterSessionCentreNodeRequest
+{
+  SessionInfo session_info = 1;
+  uint32 centre_node_id = 2;
+}
+
+message RegisterSessionCentreNodeResponse
+{
+  SessionInfo session_info = 1;
+}

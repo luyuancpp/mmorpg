@@ -68,10 +68,10 @@ void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)
         LOG_ERROR << "player  not found ";
         return;
     }
-    UpdatePlayerSessionRequest message;
-    message.set_session_id(player_node_info->gate_session_id());
-    message.set_player_id(*player_id);
-    Send2Gs(GameServiceUpdateSessionMsgId, message, player_node_info->game_node_id());
+    UpdatePlayerSessionRequest request;
+    request.set_session_id(player_node_info->gate_session_id());
+    request.set_player_id(*player_id);
+    Send2Gs(GameServiceUpdateSessionMsgId, request, player_node_info->game_node_id());
 
     if (const auto* const enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
         nullptr != enter_game_node_flag)
@@ -117,4 +117,9 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         }
         Send2Player(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
     }
+}
+
+void PlayerCommonSystem::RegisterGatePlayerGameNode(entt::entity player)
+{
+
 }
