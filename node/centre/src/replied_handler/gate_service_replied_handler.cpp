@@ -48,7 +48,7 @@ void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, cons
 		LOG_ERROR << "player not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-	PlayerCommonSystem::OnGateUpdateGameNodeSucceed(player);
+	PlayerCommonSystem::OnRegister2GatePlayerGameNode(player);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE

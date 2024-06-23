@@ -44,7 +44,7 @@ message GameNodeConnectRequest
   uint32 gate_node_id = 2;
 }
 
-message UpdatePlayerSessionRequest
+message RegisterPlayerSessionRequest
 {
   uint64 session_id = 1;
   uint64 player_id = 2;
@@ -76,7 +76,7 @@ service GameService {
   rpc CallPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
-  rpc UpdateSession (UpdatePlayerSessionRequest) returns (Empty);
+  rpc UpdateSession (RegisterPlayerSessionRequest) returns (Empty);
   rpc EnterScene (Ctlr2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
 }

@@ -12,8 +12,9 @@ public:
 
     static void OnPlayerAsyncSaved(Guid player_id, player_centre_database& message);
 
-    static void OnGateUpdateGameNodeSucceed(entt::entity player);
+    
     static void OnLogin(entt::entity player);
 
-    static void RegisterGatePlayerGameNode(entt::entity player);
+    static void Register2GatePlayerGameNode(entt::entity player);
+    static void OnRegister2GatePlayerGameNode(entt::entity player);
 };
