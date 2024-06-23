@@ -347,7 +347,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
     }
 
     auto player = cl_tls.get_player(request->player_id());
-    if (tls.registry.valid(player))
+    if (!tls.registry.valid(player))
     {
         LOG_ERROR << "player not found " << request->player_id();
         return;
