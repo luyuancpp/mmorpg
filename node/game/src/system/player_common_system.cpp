@@ -40,7 +40,7 @@ void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_databa
 	tls.registry.emplace<Player>(player);
 	tls.registry.emplace<Guid>(player, player_id);
 	tls.registry.emplace<Vector3>(player, message.pos());
-	tls.registry.emplace<PlayerNodeInfo>(player);
+	tls.registry.emplace<PlayerNodeInfo>(player).set_centre_node_id(async_it->second.centre_node_id());
 	// on load db complete
 
 	EnterGs(player, async_it->second);

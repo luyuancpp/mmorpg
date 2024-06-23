@@ -429,6 +429,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
 	}
+	player_node_info->set_game_node_id(request->game_node_id());
 	GateNodePlayerUpdateGameNodeRequest rq;
 	rq.set_session_id(player_node_info->gate_session_id());
 	rq.set_game_node_id(player_node_info->game_node_id());
