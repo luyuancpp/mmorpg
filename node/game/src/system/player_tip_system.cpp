@@ -18,5 +18,5 @@ void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVect
 
 void PlayerTipSystem::Tip(Guid player_id, uint32_t tip_id, const StringVector& str_param)
 {
-	Tip(entt::entity{player_id}, tip_id, str_param);
+	Tip(cl_tls.get_player(player_id), tip_id, str_param);
 }
