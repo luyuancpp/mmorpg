@@ -21,7 +21,7 @@
 #include "handler/register_handler.h"
 #include "system/player_common_system.h"
 #include "system/player_change_scene.h"
-#include "thread_local/centre_thread_local_storage.h"
+#include "thread_local/thread_local_storage_centre.h"
 #include "util/defer.h"
 #include "network/gate_session.h"
 #include "type_alias/player_redis.h"
@@ -55,8 +55,8 @@ Guid GetPlayerIdBySessionId(const uint64_t session_id)
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
 {
-	auto it = cl_tls.player_list().find(GetPlayerIdBySessionId(session_id));
-	if (it == cl_tls.player_list().end())
+	auto it = tls_cl.player_list().find(GetPlayerIdBySessionId(session_id));
+	if (it == tls_cl.player_list().end())
 	{
 		return entt::null;
 	}
@@ -169,10 +169,10 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto sid = entt::to_entity(cl_tls.session_id());
+	auto sid = entt::to_entity(tls_cl.session_id());
 	if (!tls.session_registry.valid(sid))
 	{
-		LOG_DEBUG << "can not find " << cl_tls.session_id();
+		LOG_DEBUG << "can not find " << tls_cl.session_id();
 		return;
 	}
     defer(Destroy(tls.session_registry, sid));
@@ -221,7 +221,7 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE
     
-	if (cl_tls.player_list().size() >= kMaxPlayerSize)
+	if (tls_cl.player_list().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -256,8 +256,8 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	tls.session_registry.emplace<PlayerSessionInfo>(session).set_player_id(rq.player_id());
     //todo把旧的connection 断掉
   
-    auto player_it = cl_tls.player_list().find(rq.player_id());
-    if (player_it == cl_tls.player_list().end())
+    auto player_it = tls_cl.player_list().find(rq.player_id());
+    if (player_it == tls_cl.player_list().end())
 	{
         tls.global_registry.get<PlayerLoadingInfoList>(global_entity()).emplace(
             rq.player_id(),
@@ -307,7 +307,7 @@ void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CenterPlayerSystem::LeaveGame(GetPlayerIdBySessionId(cl_tls.session_id()));
+	CenterPlayerSystem::LeaveGame(GetPlayerIdBySessionId(tls_cl.session_id()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -318,8 +318,8 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	defer(Destroy(tls.registry, entt::entity{ cl_tls.session_id() }));
-	const auto player_id = GetPlayerIdBySessionId(cl_tls.session_id());
+	defer(Destroy(tls.registry, entt::entity{ tls_cl.session_id() }));
+	const auto player_id = GetPlayerIdBySessionId(tls_cl.session_id());
 	CenterPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -342,7 +342,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
         LOG_ERROR << "session not found " << request->ex().session_id();
         return;
     }
-    auto player = cl_tls.get_player(player_info->player_id());
+    auto player = tls_cl.get_player(player_info->player_id());
     if (tls.registry.valid(player))
     {
         LOG_ERROR << "player not found " << player_info->player_id();
@@ -401,7 +401,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto player = cl_tls.get_player(request->player_id());
+    auto player = tls_cl.get_player(request->player_id());
     if (!tls.registry.valid(player))
     {
         LOG_ERROR << "player not found " << request->player_id();
@@ -430,11 +430,11 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 ///<<< BEGIN WRITING YOUR CODE
 
     //函数返回前一定会执行的函数
-    defer(cl_tls.set_next_route_node_type(UINT32_MAX));
-    defer(cl_tls.set_next_route_node_id(UINT32_MAX));
-	defer(cl_tls.set_current_session_id(kInvalidSessionId));
+    defer(tls_cl.set_next_route_node_type(UINT32_MAX));
+    defer(tls_cl.set_next_route_node_id(UINT32_MAX));
+	defer(tls_cl.set_current_session_id(kInvalidSessionId));
 
-    cl_tls.set_current_session_id(request->session_id());
+    tls_cl.set_current_session_id(request->session_id());
 
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
@@ -486,7 +486,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	auto* mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
-	if (cl_tls.next_route_node_type() == UINT32_MAX)
+	if (tls_cl.next_route_node_type() == UINT32_MAX)
 	{
 		auto byte_size = int32_t(current_node_response->ByteSizeLong());
 		response->mutable_body()->resize(byte_size);
@@ -495,32 +495,32 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 		{
 			*response->add_route_data_list() = request_data_it;
 		}
-		response->set_session_id(cl_tls.session_id());
+		response->set_session_id(tls_cl.session_id());
 		response->set_id(request->id());
 		return;
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
 	const auto next_route_data = mutable_request->add_route_data_list();
-	next_route_data->CopyFrom(cl_tls.route_data());
+	next_route_data->CopyFrom(tls_cl.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(g_centre_node->node_info());
-	mutable_request->set_body(cl_tls.route_msg_body());
+	mutable_request->set_body(tls_cl.route_msg_body());
     mutable_request->set_id(request->id());
 
-    switch (cl_tls.next_route_node_type())
+    switch (tls_cl.next_route_node_type())
     {
     case kGateNode:
 	{
-		entt::entity gate_node_id{ cl_tls.next_route_node_id() };
+		entt::entity gate_node_id{ tls_cl.next_route_node_id() };
         if (tls.gate_node_registry.valid(gate_node_id))
         {
-            LOG_ERROR << "gate crash " << cl_tls.next_route_node_id();
+            LOG_ERROR << "gate crash " << tls_cl.next_route_node_id();
             return;
         }
         auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
         if (nullptr == gate_node)
         {
-            LOG_ERROR << "gate crash " << cl_tls.next_route_node_id();
+            LOG_ERROR << "gate crash " << tls_cl.next_route_node_id();
             return;
         }
 		(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
@@ -528,16 +528,16 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	break;
     case kGameNode:
 	{
-		entt::entity game_node_id{ cl_tls.next_route_node_id() };
+		entt::entity game_node_id{ tls_cl.next_route_node_id() };
 		if (!tls.game_node_registry.valid(game_node_id))
 		{
-            LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
+            LOG_ERROR << "game not found game " << tls_cl.next_route_node_id() << request->DebugString();
             return;
 		}
 		auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
 		if (nullptr == game_node)
 		{
-			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "game not found game " << tls_cl.next_route_node_id() << request->DebugString();
 			return;
 		}
 		(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
@@ -545,7 +545,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	    break;
     default:
 	    {
-		    LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
+		    LOG_ERROR << "route to next node type error " << request->DebugString() << "," << tls_cl.next_route_node_type();
 	    }
 	break;
 }

@@ -13,7 +13,7 @@
 #include "system/player_change_scene.h"
 #include "service/game_service_service.h"
 #include "service/game_scene_server_player_service.h"
-#include "thread_local/centre_thread_local_storage.h"
+#include "thread_local/thread_local_storage_centre.h"
 #include "network//game_node.h"
 
 #include "component_proto/player_network_comp.pb.h"

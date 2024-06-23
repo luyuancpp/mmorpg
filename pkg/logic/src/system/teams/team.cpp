@@ -13,8 +13,8 @@ void Team::OnAppointLeader(const Guid new_leader_guid)
 
 void Team::AddMember(Guid guid)
 {
-    const auto pit = cl_tls.player_list().find(guid);
-    if (pit == cl_tls.player_list().end())
+    const auto pit = tls_cl.player_list().find(guid);
+    if (pit == tls_cl.player_list().end())
     {
         return;
     }
@@ -25,8 +25,8 @@ void Team::AddMember(Guid guid)
 void Team::DelMember(Guid guid)
 {
     members_.erase(std::find(members_.begin(), members_.end(), guid));
-    const auto pit = cl_tls.player_list().find(guid);
-    if (pit == cl_tls.player_list().end())
+    const auto pit = tls_cl.player_list().find(guid);
+    if (pit == tls_cl.player_list().end())
     {
         return;
     }

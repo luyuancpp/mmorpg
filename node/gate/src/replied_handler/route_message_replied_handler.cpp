@@ -3,7 +3,7 @@
 #include "thread_local/thread_local_storage_common_logic.h"
 #include "gate_node.h"
 #include "network/codec/dispatcher.h"
-#include "thread_local/gate_thread_local_storage.h"
+#include "thread_local/thread_local_storage_gate.h"
 #include "util/defer.h"
 #include "service/service.h"
 #include "network/gate_session.h"
@@ -17,11 +17,11 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	///<<< BEGIN WRITING YOUR CODE
 
 	//函数返回前一定会执行的函数
-	defer(cl_tls.set_next_route_node_type(UINT32_MAX));
-	defer(cl_tls.set_next_route_node_id(UINT32_MAX));
-	defer(cl_tls.set_current_session_id(kInvalidSessionId));
+	defer(tls_cl.set_next_route_node_type(UINT32_MAX));
+	defer(tls_cl.set_next_route_node_id(UINT32_MAX));
+	defer(tls_cl.set_current_session_id(kInvalidSessionId));
 
-    cl_tls.set_current_session_id(replied->session_id());
+    tls_cl.set_current_session_id(replied->session_id());
 
 	if (replied->route_data_list_size() <= 0)
 	{

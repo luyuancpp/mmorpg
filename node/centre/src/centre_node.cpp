@@ -14,7 +14,7 @@
 #include "handler/register_handler.h"
 #include "service/service.h"
 #include "service/gate_service_service.h"
-#include "thread_local/centre_thread_local_storage.h"
+#include "thread_local/thread_local_storage_centre.h"
 #include "grpc/deploy/deployclient.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
@@ -219,6 +219,6 @@ void CentreNode::InitSystemAfterConnect()
 {
     InetAddress redis_addr(serverinfos_.redis_info().redis_info(0).ip(), 
         serverinfos_.redis_info().redis_info(0).port());
-    centre_tls.redis_system().Init(redis_addr);
+    tls_centre.redis_system().Init(redis_addr);
 }
 

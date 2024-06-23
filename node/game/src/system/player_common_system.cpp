@@ -6,7 +6,7 @@
 #include "network/gate_session.h"
 #include "service/centre_service_service.h"
 #include "service/centre_scene_server_player_service.h"
-#include "thread_local/game_thread_local_storage.h"
+#include "thread_local/thread_local_storage_game.h"
 #include "util/defer.h"
 
 #include "component_proto/player_async_comp.pb.h"
@@ -19,17 +19,17 @@
 
 void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database& message)
 {
-	auto async_it = game_tls.aysnc_player_list().find(player_id);
-	if (async_it == game_tls.aysnc_player_list().end())
+	auto async_it = tls_game.aysnc_player_list().find(player_id);
+	if (async_it == tls_game.aysnc_player_list().end())
 	{
 		LOG_INFO << "player disconnect" << player_id;
 		return;
 	}
 
-	defer(game_tls.aysnc_player_list().erase(player_id));
+	defer(tls_game.aysnc_player_list().erase(player_id));
 
 	auto player = tls.registry.create();
-	if (const auto [fst, snd] = cl_tls.player_list().emplace(player_id, player);
+	if (const auto [fst, snd] = tls_cl.player_list().emplace(player_id, player);
 		!snd)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
@@ -66,7 +66,7 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 	pb->set_player_id(tls.registry.get<Guid>(player));
 	pb->mutable_pos()->CopyFrom(tls.registry.get<Vector3>(player));
 
-	game_tls.player_redis()->Save(pb, tls.registry.get<Guid>(player));
+	tls_game.player_redis()->Save(pb, tls.registry.get<Guid>(player));
 }
 
 //考虑: 没load 完再次进入别的gs
@@ -116,8 +116,8 @@ void PlayerCommonSystem::OnRegister2GatePlayerGameNode(entt::entity player)
 //todo 检测
 void PlayerCommonSystem::RemovePlayerSession(const Guid player_id)
 {
-	auto player_it = cl_tls.player_list().find(player_id);
-	if (player_it == cl_tls.player_list().end())
+	auto player_it = tls_cl.player_list().find(player_id);
+	if (player_it == tls_cl.player_list().end())
 	{
 		return;
 	}
@@ -137,7 +137,7 @@ void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 
 void PlayerCommonSystem::DestoryPlayer(Guid player_id)
 {
-	defer(cl_tls.player_list().erase(player_id));
-	Destroy(tls.registry, cl_tls.get_player(player_id));
+	defer(tls_cl.player_list().erase(player_id));
+	Destroy(tls.registry, tls_cl.get_player(player_id));
 }
 

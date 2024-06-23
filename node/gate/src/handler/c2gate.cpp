@@ -11,7 +11,7 @@
 #include "service/centre_service_service.h"
 #include "service/game_service_service.h"
 #include "service/common_client_player_service.h"
-#include "thread_local/gate_thread_local_storage.h"
+#include "thread_local/thread_local_storage_gate.h"
 #include "util/random.h"
 #include "util/snow_flake.h"
 #include "service/login_service_service.h"
@@ -37,8 +37,8 @@ entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
     auto session = tls.session_registry.get<Session>(session_id);
     if (!session.HasLoginNodeId())
     {
-        auto login_node_it = gate_tls.login_consisten_node().get_by_hash(session_uid);
-        if (gate_tls.login_consisten_node().end() == login_node_it)
+        auto login_node_it = tls_gate.login_consisten_node().get_by_hash(session_uid);
+        if (tls_gate.login_consisten_node().end() == login_node_it)
         {
             LOG_ERROR << "player login server not found session id : " << session_uid;
             return entt::null;
@@ -46,8 +46,8 @@ entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
         //考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
         session.login_node_id_ = entt::to_integral(login_node_it->second);
     }
-    const auto login_node_it = gate_tls.login_consisten_node().get_node_value(session.login_node_id_);
-    if (gate_tls.login_consisten_node().end() == login_node_it)
+    const auto login_node_it = tls_gate.login_consisten_node().get_node_value(session.login_node_id_);
+    if (tls_gate.login_consisten_node().end() == login_node_it)
     {
         LOG_ERROR << "player found login server crash : " << session.login_node_id_;
         session.login_node_id_ = kInvalidNodeId;

@@ -13,7 +13,7 @@
 #include "network/rpc_session.h"
 #include "handler/player_service.h"
 #include "system/player_common_system.h"
-#include "thread_local/game_thread_local_storage.h"
+#include "thread_local/thread_local_storage_game.h"
 #include "thread_local/thread_local_storage_common_logic.h"
 #include "system/player_scene_system.h"
 #include "util/defer.h"
@@ -36,8 +36,8 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
     //连续顶号进入，还在加载中的话继续加载
     PlayerCommonSystem::RemovePlayerSession(request->player_id());
     //已经在线，直接进入,判断是需要发送哪些信息
-    auto player_it = cl_tls.player_list().find(request->player_id());
-    if (player_it != cl_tls.player_list().end())
+    auto player_it = tls_cl.player_list().find(request->player_id());
+    if (player_it != tls_cl.player_list().end())
     {
         EnterGsInfo enter_info;
         enter_info.set_centre_node_id(request->centre_node_id());
@@ -48,14 +48,14 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
     //todo 异步加载不了
     EnterGsInfo enter_info;
     enter_info.set_centre_node_id(request->centre_node_id());
-    const auto async_player_it = game_tls.aysnc_player_list().emplace(request->player_id(), enter_info);
+    const auto async_player_it = tls_game.aysnc_player_list().emplace(request->player_id(), enter_info);
     if (!async_player_it.second)
     {
         LOG_ERROR << "EnterGs emplace player  " << request->player_id();
         return;
     }
     //异步加载过程中断开了，怎么处理？
-    game_tls.player_redis()->AsyncLoad(request->player_id());
+    tls_game.player_redis()->AsyncLoad(request->player_id());
 ///<<< END WRITING YOUR CODE
 }
 
@@ -80,8 +80,8 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
         return;
     }
     
-    auto player_it = cl_tls.player_list().find(*player_guid);
-    if (player_it == cl_tls.player_list().end())
+    auto player_it = tls_cl.player_list().find(*player_guid);
+    if (player_it == tls_cl.player_list().end())
     {
         return;
     }
@@ -158,7 +158,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
-    auto player = cl_tls.get_player(*player_guid );
+    auto player = tls_cl.get_player(*player_guid );
     if (entt::null == player)
     {
         LOG_ERROR << "GatePlayerService player not loading";
@@ -182,8 +182,8 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE
         //异步加载过程中断开了？
-    auto player = cl_tls.get_player(request->player_id());
-    defer(cl_tls.player_list().erase(request->player_id()));
+    auto player = tls_cl.get_player(request->player_id());
+    defer(tls_cl.player_list().erase(request->player_id()));
     PlayerCommonSystem::RemovePlayerSession(request->player_id());
     LeaveSceneParam lp;
     lp.leaver_ = player;
@@ -238,7 +238,7 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
         LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
-    auto player = cl_tls.get_player(*player_guid);
+    auto player = tls_cl.get_player(*player_guid);
     if (entt::null == player)
     {
         LOG_ERROR << "GatePlayerService player not loading";
@@ -266,7 +266,7 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
     {
         return;
     }
-    auto player = cl_tls.get_player(*player_guid);
+    auto player = tls_cl.get_player(*player_guid);
     if (!tls.registry.valid(player))
     {
         LOG_ERROR << "player not found" << *player_guid;
@@ -346,7 +346,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
         return;
     }
 
-    auto player = cl_tls.get_player(request->player_id());
+    auto player = tls_cl.get_player(request->player_id());
     if (!tls.registry.valid(player))
     {
         LOG_ERROR << "player not found " << request->player_id();
@@ -385,7 +385,7 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 ///<<< BEGIN WRITING YOUR CODE
     //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
     PlayerSceneSystem::EnterScene(
-        cl_tls.get_player(request->player_id()),
+        tls_cl.get_player(request->player_id()),
         request->scene_id());
 ///<<< END WRITING YOUR CODE
 }

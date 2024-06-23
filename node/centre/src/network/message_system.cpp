@@ -13,7 +13,7 @@
 #include "service/gate_service_service.h"
 #include "service/game_service_service.h"
 #include "component_proto/player_network_comp.pb.h"
-#include "thread_local/centre_thread_local_storage.h"
+#include "thread_local/thread_local_storage_centre.h"
 #include "thread_local/thread_local_storage_common_logic.h"
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
@@ -30,7 +30,6 @@ void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, Node
 		LOG_ERROR << "gs not found ->" << node_id;
 		return;
 	}
-
 	(*node)->Send(message_id, message);
 }
 
@@ -68,12 +67,12 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2GsPlayer(message_id, message, cl_tls.get_player(player_id));
+	Send2GsPlayer(message_id, message, tls_cl.get_player(player_id));
 }
 
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2PlayerViaGs(message_id, message, cl_tls.get_player(player_id));
+	Send2PlayerViaGs(message_id, message, tls_cl.get_player(player_id));
 }
 
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -142,7 +141,7 @@ void Send2Player(uint32_t message_id,
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2Player(message_id, message, cl_tls.get_player(player_id));
+	Send2Player(message_id, message, tls_cl.get_player(player_id));
 }
 
 void Send2Gate(const uint32_t message_id, 

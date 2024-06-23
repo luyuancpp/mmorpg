@@ -9,7 +9,7 @@
 #include "service/centre_service_service.h"
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "service/game_service_service.h"
-#include "thread_local/gate_thread_local_storage.h"
+#include "thread_local/thread_local_storage_gate.h"
 #include "grpc/deploy/deployclient.h"
 #include "global_value/gate_node_sequence.h"
 
@@ -181,16 +181,16 @@ void GateNode::Connect2Login()
     for (auto& login_node_info : node_net_info_.login_info().login_info())
     {
         entt::entity id{ login_node_info.id() };
-        auto login_node_id = gate_tls.login_node_registry.create(id);
+        auto login_node_id = tls_gate.login_node_registry.create(id);
         if (login_node_id != id)
         {
             LOG_ERROR << "login id ";
             continue;
         }
         auto channel = grpc::CreateChannel(login_node_info.addr(), grpc::InsecureChannelCredentials());
-        gate_tls.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
+        tls_gate.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
             LoginService::NewStub(channel));
-        gate_tls.login_consisten_node().add(login_node_info.id(), 
+        tls_gate.login_consisten_node().add(login_node_info.id(), 
             login_node_id);
     }
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteRpcLoginService);

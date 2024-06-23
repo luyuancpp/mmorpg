@@ -167,7 +167,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_node.cpp" />
     <ClCompile Include="src\network\message_system.cpp" />
     <ClCompile Include="src\system\game_node_scene_system.cpp" />
-    <ClCompile Include="src\thread_local\game_thread_local_storage.cpp" />
+    <ClCompile Include="src\thread_local\thread_local_storage_game.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\gs_scene_comp.h" />
@@ -204,7 +204,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_node.h" />
     <ClInclude Include="src\network\message_system.h" />
     <ClInclude Include="src\system\game_node_scene_system.h" />
-    <ClInclude Include="src\thread_local\game_thread_local_storage.h" />
+    <ClInclude Include="src\thread_local\thread_local_storage_game.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
