@@ -102,7 +102,6 @@ TEST(PlayerChangeScene, DiffGs)
 
     CentreChangeSceneInfo change_info;
     change_info.set_guid(scene_id);
-    change_info.set_change_cross_server_type(CentreChangeSceneInfo::eCrossServer);
     change_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
