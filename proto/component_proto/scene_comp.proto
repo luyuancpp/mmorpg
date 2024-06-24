@@ -23,16 +23,6 @@ message CentreChangeSceneInfo
       eSameGs = 0;//同服务器间切换
       eDifferentGs = 1;//不同服务器间切换
   };
-  enum eChangeCrossServerType
-  {
-      eDotnotCrossServer = 0;//不跨服
-      eCrossServer = 1;//跨服
-  };
-   enum eChangeCrossServerStatus
-  {
-      eEnterCrossServerScene = 0;//
-      eEnterCrossServerSceneSucceed = 1;//
-  };
   
   uint32 scene_confid = 1;
   uint32 guid = 2;//场景id
@@ -41,9 +31,7 @@ message CentreChangeSceneInfo
   uint32 change_sequence = 5;
   uint32 change_gs_type = 6;
   uint32 change_gs_status = 7;//eChangeGsStatus
-  uint32 change_cross_server_type = 8;//eChangeCrossServerType
-  uint32 change_cross_server_status = 9;//eChangeCrossServerStatus
-  uint64 change_time = 10;//设置超时，超时代表服务器崩溃了,或者网络延时
-  bool ignore_full = 11;//忽略人数满了
-  bool processing = 12;
+  uint64 change_time = 8;//设置超时，超时代表服务器崩溃了,或者网络延时
+  bool ignore_full = 9;//忽略人数满了
+  bool processing = 10;
 }

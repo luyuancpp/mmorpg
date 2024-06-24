@@ -12,7 +12,6 @@ public:
 	static void TryProcessChangeSceneQueue(entt::entity player);
 	static void PopFrontChangeSceneQueue(entt::entity player);
 	static void SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s);
-	static void SetChangeCrossServerSatus(entt::entity player, CentreChangeSceneInfo::eChangeCrossServerStatus s);
 	static void CopyTo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info);
 private:
 	static uint32_t TryChangeSameGsScene(entt::entity player);

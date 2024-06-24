@@ -259,40 +259,9 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     //原来服务器之间换场景，不用通知跨服离开场景
     //todo 如果是进出镜像，一定保持在原来的gs切换,主世界分线和镜像没关系，这样就节省了玩家切换流程，效率也提高了
     //todo 跨服的时候重新上线
-    //目标场景是跨服场景，通知跨服去换,跨服只做人数检测，不做其他的事情
+     //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
 
-    if (is_from_gs_is_cross_server || is_to_gs_is_cross_server)
-    {
-        change_scene_info.set_change_cross_server_type(CentreChangeSceneInfo::eCrossServer);
-        change_scene_info.set_change_cross_server_status(CentreChangeSceneInfo::eEnterCrossServerScene);
-        if (is_from_gs_is_cross_server)
-        {
-            //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
-            //LeaveCrossMainSceneRequest rq;
-            //rq.set_player_id(tls.registry.get<Guid>(player));
-            //g_centre_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMsgId, rq);
-        }
-        if (is_to_gs_is_cross_server)
-        {
-            //注意虽然一个逻辑，但是不一定是在leave后面处理
-           // EnterCrossMainSceneRequest rq;
-            //rq.set_scene_id(to_scene_guid);
-            //rq.set_player_id(tls.registry.get<Guid>(player));
-            //g_centre_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMsgId, rq);
-            return;
-        }
-    }
-    else
-    {
-        change_scene_info.set_change_cross_server_type(CentreChangeSceneInfo::eDotnotCrossServer);
-    }
-
-    if (CentreChangeSceneInfo::eDotnotCrossServer == change_scene_info.change_cross_server_status())
-    {
-        PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);//不跨服就开始处理同一个gs 或者不同gs
-        return;
-    }
-
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);//不跨服就开始处理同一个gs 或者不同gs
 }
 
 uint32_t PlayerSceneSystem::GetDefualtSceneConfigId()

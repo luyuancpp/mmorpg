@@ -54,20 +54,6 @@ void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, CentreChang
     change_scene_queue->change_scene_queue_.front().set_change_gs_status(s);
 }
 
-void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, CentreChangeSceneInfo::eChangeCrossServerStatus s)
-{
-    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
-    if (nullptr == change_scene_queue)
-    {
-        return;
-    }
-    if (change_scene_queue->change_scene_queue_.empty())
-    {
-        return;
-    }
-    change_scene_queue->change_scene_queue_.front().set_change_cross_server_status(s);
-}
-
 void PlayerChangeSceneSystem::CopyTo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info)
 {
     change_info.set_scene_confid(scene_info.scene_confid());
