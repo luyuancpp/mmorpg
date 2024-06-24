@@ -18,6 +18,7 @@
 #include "system/player_scene_system.h"
 #include "util/defer.h"
 #include "util/pb_util.h"
+#include "type_alias/player_session.h"
 
 #include "component_proto/player_network_comp.pb.h"
 #include "component_proto/player_async_comp.pb.h"
@@ -65,22 +66,14 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity sesion_id{ request->ex().session_id()};
-    if (!tls.session_registry.valid(sesion_id))
+    auto it = tls_sessions.find(request->ex().session_id());
+    if (it != tls_sessions.end())
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
         << " message id " << request->msg().message_id();
         return;
     }
-    auto player_guid = tls.session_registry.try_get<Guid>(sesion_id);
-    if (nullptr == player_guid)
-    {
-        LOG_INFO << "session player id not found " << request->ex().session_id() << ","
-            << " message id " << request->msg().message_id();
-        return;
-    }
-    
-    auto player_it = tls_cl.player_list().find(*player_guid);
+    auto player_it = tls_cl.player_list().find(it->second.player_id());
     if (player_it == tls_cl.player_list().end())
     {
         return;
@@ -147,18 +140,14 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         return;
     }
     entt::entity session{ request->session_id() };
-    if (tls.session_registry.valid(session))
+    auto it = tls_sessions.find(request->session_id());
+    if (it != tls_sessions.end())
     {
-        LOG_INFO << "GatePlayerService session not found  " << request->message_id() << "," << request->session_id();
+        LOG_INFO << "session id not found " << request->session_id() << ","
+            << " message id " << request->message_id();
         return;
     }
-    auto player_guid = tls.session_registry.try_get<Guid>(session);
-    if (nullptr == player_guid )
-    {
-        LOG_ERROR << "GatePlayerService player not loading";
-        return;
-    }
-    auto player = tls_cl.get_player(*player_guid );
+    auto player = tls_cl.get_player(it->second.player_id());
     if (entt::null == player)
     {
         LOG_ERROR << "GatePlayerService player not loading";
@@ -225,20 +214,14 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity session_id{ request->ex().session_id() };
-    if (!tls.session_registry.valid(session_id))
+    auto it = tls_sessions.find(request->ex().session_id());
+    if (it != tls_sessions.end())
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
             << " message id " << request->msg().message_id();
         return;
     }
-    auto player_guid = tls.session_registry.try_get<Guid>(session_id);
-    if (nullptr == player_guid)
-    {
-        LOG_ERROR << "GatePlayerService player not loading";
-        return;
-    }
-    auto player = tls_cl.get_player(*player_guid);
+    auto player = tls_cl.get_player(it->second.player_id());
     if (entt::null == player)
     {
         LOG_ERROR << "GatePlayerService player not loading";
@@ -255,21 +238,17 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE
     entt::entity session_id{ request->ex().session_id() };
-    if (tls.session_registry.valid(session_id))
+    auto it = tls_sessions.find(request->ex().session_id());
+    if (it != tls_sessions.end())
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
-        << " message id " << request->msg().message_id();
+            << " message id " << request->msg().message_id();
         return;
     }
-    auto player_guid = tls.session_registry.try_get<Guid>(session_id);
-    if (nullptr == player_guid)
+    auto player = tls_cl.get_player(it->second.player_id());
+    if (entt::null == player)
     {
-        return;
-    }
-    auto player = tls_cl.get_player(*player_guid);
-    if (!tls.registry.valid(player))
-    {
-        LOG_ERROR << "player not found" << *player_guid;
+        LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
 	if (request->msg().message_id() >= g_message_info.size())
@@ -353,17 +332,9 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
         return;
     }
 
-    entt::entity session_id{ request->session_id() };
-    auto create_session_id = tls.session_registry.create(session_id);
-    if (create_session_id != session_id)
-    {
-        Destroy(tls.session_registry, create_session_id);
-        LOG_ERROR << "session create " << request->player_id();
-
-        return;
-    }
-    tls.session_registry.emplace<Guid>(session_id, entt::to_integral(player));
-
+    PlayerSessionInfo session_info;
+    session_info.set_player_id(request->player_id());
+    tls_sessions.emplace(request->session_id(), session_info);
     auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
     if (nullptr == player_node_info)
     {

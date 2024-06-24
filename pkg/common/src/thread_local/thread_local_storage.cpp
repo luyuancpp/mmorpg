@@ -5,7 +5,6 @@ thread_local ThreadLocalStorage tls;
 void ThreadLocalStorage::ClearForTest()
 {
 	registry.clear();
-	session_registry.clear();
 	scene_registry.clear();
     game_node_registry.clear();
     gate_node_registry.clear();

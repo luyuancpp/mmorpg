@@ -181,6 +181,7 @@
     <ClInclude Include="src\system\teams\team.h" />
     <ClInclude Include="src\system\teams\TeamSystem.h" />
     <ClInclude Include="src\event\team_event.h" />
+    <ClInclude Include="src\type_alias\player_session.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\comp\mission_comp.cpp" />

@@ -7,7 +7,6 @@ class ThreadLocalStorage
 public:
     entt::registry global_registry;
 	entt::registry registry;
-	entt::registry session_registry;
     entt::registry scene_registry;
     entt::registry game_node_registry;
     entt::registry gate_node_registry;
