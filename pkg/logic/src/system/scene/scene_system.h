@@ -108,5 +108,5 @@ public:
     static bool ConfigSceneListNotEmpty(uint32_t scene_config_id);
     static bool IsSceneEmpty();
 private:
-	inline static NodeBit16Sequence node_sequence_;
+	inline static NodeBit12Sequence node_sequence_;
 };

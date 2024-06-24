@@ -355,7 +355,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 		{
 			if (item_base_db.item_id() == kInvalidGuid)
 			{
-				item_base_db.set_item_id(g_bag_server_sequence.Generate());
+				item_base_db.set_item_id(g_bag_node_sequence.Generate());
 			}
 			auto it = items_.emplace(item_base_db.item_id(), std::move(add_item));
 			if (!it.second)
@@ -373,7 +373,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 				CreateItemParam p;
 				auto& item_base_db = p.item_base_db;
 				item_base_db.set_config_id(add_item.config_id());
-				item_base_db.set_item_id(g_bag_server_sequence.Generate());
+				item_base_db.set_item_id(g_bag_node_sequence.Generate());
 				auto new_item = CreateItem(p);
 				auto it = items_.emplace(item_base_db.item_id(), std::move(new_item));
 				if (!it.second)
@@ -455,7 +455,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 			CreateItemParam p;
 			auto& item_base_db = p.item_base_db;
 			item_base_db.set_config_id(add_item.config_id());
-			item_base_db.set_item_id(g_bag_server_sequence.Generate());
+			item_base_db.set_item_id(g_bag_node_sequence.Generate());
 			if (p_c_item->max_statck_size() >= need_stack_size)
 			{
 				item_base_db.set_size(need_stack_size);
