@@ -15,6 +15,7 @@
 #include "component_proto/player_network_comp.pb.h"
 #include "thread_local/thread_local_storage_centre.h"
 #include "thread_local/thread_local_storage_common_logic.h"
+#include "util/session.h"
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
