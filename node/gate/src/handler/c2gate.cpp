@@ -33,8 +33,12 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 
 entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
 {
-    entt::entity session_id{ session_uid };
-    auto session = tls.session_registry.get<Session>(session_id);
+    auto it = tls_gate.sessions().find(session_uid);
+    if (it == tls_gate.sessions().end())
+    {
+        return entt::null;
+    }
+    auto& session = it->second;
     if (!session.HasLoginNodeId())
     {
         auto login_node_it = tls_gate.login_consisten_node().get_by_hash(session_uid);
@@ -82,27 +86,19 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             rq.set_session_id(session_uid);
             g_gate_node->zone_centre_node()->CallMethod(CentreServiceGateSessionDisconnectMsgId, rq);
         }
-        Destroy(tls.session_registry, entt::entity{ session_uid });
+        tls_gate.sessions().erase(session_uid);
     }
     else
     {
-        auto session_uid = g_node_sequence_.Generate();
-        while (tls.session_registry.valid(entt::entity{session_uid}))
+        auto session_id = g_node_sequence_.Generate();
+        while (tls_gate.sessions().contains(session_id))
         {
-            session_uid = g_node_sequence_.Generate();
-        }
-        entt::entity to_session_id{ session_uid };
-        auto session_id = tls.session_registry.create(to_session_id);
-        if (session_id != session_id)
-        {
-            LOG_ERROR << " create session ";
-            return;
+            session_id = g_node_sequence_.Generate();
         }
         conn->setContext(session_id);
-        auto& session = 
-            tls.session_registry.emplace<Session>(session_id);
+        Session session;
         session.conn_ = conn;
-
+        tls_gate.sessions().emplace(session_id, std::move(session));
     }
 }
 
@@ -110,19 +106,18 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
-    entt::entity session_id = tcp_session_id(conn);
-    if (!tls.session_registry.valid(session_id))
+    auto session_id = tcp_session_id(conn);
+    auto it = tls_gate.sessions().find(session_id);
+    if (it == tls_gate.sessions().end())
     {
         LOG_ERROR << "could not find session  " << conn.get() ;
         return ;
     }
-    auto session_uid = entt::to_integral(session_id);
-    auto session = tls.session_registry.get<Session>(session_id);
     //todo msg id error
     if (g_c2s_service_id.contains(request->message_id()))
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
-        entt::entity game_node_id{ session.game_node_id_ };
+        entt::entity game_node_id{ it->second.game_node_id_ };
 		if (!tls.game_node_registry.valid(game_node_id))
 		{
             Tip(conn, kRetServerCrush);
@@ -131,7 +126,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         auto game_node = tls.game_node_registry.get<RpcClientPtr>(game_node_id);
         GameNodeRpcClientRequest rq;
         rq.set_body(request->body());
-        rq.set_session_id(session_uid);
+        rq.set_session_id(session_id);
         rq.set_id(request->id());
         rq.set_message_id(request->message_id());
         game_node->CallMethod(GameServiceClientSend2PlayerMsgId, rq);
@@ -140,7 +135,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     {
         //发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
         
-        auto login_node = GetLoginNode(session_uid);
+        auto login_node = GetLoginNode(session_id);
         if (entt::null == login_node)
         {
             //todo 关掉连接
@@ -150,14 +145,14 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         if (request->message_id() == LoginServiceLoginMsgId)
         {
             LoginC2LRequest rq;
-            rq.mutable_session_info()->set_session_id(session_uid);
+            rq.mutable_session_info()->set_session_id(session_id);
             rq.mutable_client_msg_body()->ParseFromArray(
                 request->body().data(), request->body().size());
             SendLoginC2LRequest(login_node, rq);
         }else if (request->message_id() == LoginServiceCreatePlayerMsgId)
         {
             CreatePlayerC2LRequest rq;
-            rq.mutable_session_info()->set_session_id(session_uid);
+            rq.mutable_session_info()->set_session_id(session_id);
             rq.mutable_client_msg_body()->ParseFromArray(
                 request->body().data(), request->body().size());
             SendCreatePlayerC2LRequest(login_node, rq);
@@ -165,7 +160,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         else if (request->message_id() == LoginServiceEnterGameMsgId)
         {
             EnterGameC2LRequest rq;
-            rq.mutable_session_info()->set_session_id(session_uid);
+            rq.mutable_session_info()->set_session_id(session_id);
             rq.mutable_client_msg_body()->ParseFromArray(
                 request->body().data(), request->body().size());
             SendEnterGameC2LRequest(login_node, rq);

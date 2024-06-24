@@ -7,6 +7,7 @@
 #include "network/codec/dispatcher.h"
 #include "network/rpc_msg_route.h"
 #include "network/rpc_client.h"
+#include "type_define/type_define.h"
 
 #include "common_proto/c2gate.pb.h"
 
@@ -30,7 +31,7 @@ public:
 		const RpcClientMessagePtr& message,
 		muduo::Timestamp);
 
-    inline entt::entity tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<entt::entity>(conn->getContext()); }
+    inline Guid tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<Guid>(conn->getContext()); }
 
     static void Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 private:
