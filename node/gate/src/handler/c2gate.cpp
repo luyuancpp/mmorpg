@@ -16,7 +16,6 @@
 #include "util/snow_flake.h"
 #include "service/login_service_service.h"
 #include "grpc/request/login_grpc_request.h"
-#include "global_value/gate_node_sequence.h"
 
 #include "tip_code_proto/common_tip_code.pb.h"
 
@@ -90,10 +89,10 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     }
     else
     {
-        auto session_id = g_node_sequence_.Generate();
+        auto session_id = tls_gate.session_id_gen().Generate();
         while (tls_gate.sessions().contains(session_id))
         {
-            session_id = g_node_sequence_.Generate();
+            session_id = tls_gate.session_id_gen().Generate();
         }
         conn->setContext(session_id);
         Session session;

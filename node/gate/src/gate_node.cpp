@@ -11,7 +11,6 @@
 #include "service/game_service_service.h"
 #include "thread_local/thread_local_storage_gate.h"
 #include "grpc/deploy/deployclient.h"
-#include "global_value/gate_node_sequence.h"
 
 #include "constants_proto/node.pb.h"
 #include "common_proto/game_service.pb.h"
@@ -81,7 +80,7 @@ void GateNode::StartServer(const nodes_info_data& serverinfo_data)
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
-    g_node_sequence_.set_node_id(gate_node_id());
+    tls_gate.session_id_gen().set_node_id(gate_node_id());
     Connect2Centre();
     Connect2Login();
 
