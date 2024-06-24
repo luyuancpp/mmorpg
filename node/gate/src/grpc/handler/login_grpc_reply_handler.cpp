@@ -31,17 +31,13 @@ void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
 
     if (call->status.ok())
     {
-        entt::entity session_id{ call->reply.session_info().session_id() };
-        if (!tls.session_registry.valid(session_id))
+        auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
+        if (it == tls_gate.sessions().end())
         {
+            LOG_ERROR << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
-        auto session = tls.session_registry.try_get<Session>(session_id);
-        if (nullptr == session)
-        {
-            return;
-        }
-        g_gate_node->Send2Client(session->conn_, call->reply.client_msg_body());
+        g_gate_node->Send2Client(it->second.conn_, call->reply.client_msg_body());
     }
     else
     {
@@ -70,17 +66,13 @@ void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
 
     if (call->status.ok())
     {
-        entt::entity session_id{ call->reply.session_info().session_id() };
-        if (!tls.session_registry.valid(session_id))
+        auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
+        if (it == tls_gate.sessions().end())
         {
+            LOG_ERROR << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
-        auto session = tls.session_registry.try_get<Session>(session_id);
-        if (nullptr == session)
-        {
-            return;
-        }
-        g_gate_node->Send2Client(session->conn_, call->reply.client_msg_body());
+        g_gate_node->Send2Client(it->second.conn_, call->reply.client_msg_body());
     }
     else
     {
@@ -108,17 +100,13 @@ void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
 
     if (call->status.ok())
     {
-        entt::entity session_id{ call->reply.session_info().session_id() };
-        if (!tls.session_registry.valid(session_id))
+        auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
+        if (it == tls_gate.sessions().end())
         {
+            LOG_ERROR << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
-        auto session = tls.session_registry.try_get<Session>(session_id);
-        if (nullptr == session)
-        {
-            return;
-        }
-        g_gate_node->Send2Client(session->conn_, call->reply.client_msg_body());
+        g_gate_node->Send2Client(it->second.conn_, call->reply.client_msg_body());
     }
     else
     {
