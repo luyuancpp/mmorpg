@@ -36,6 +36,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE
     //连续顶号进入，还在加载中的话继续加载
     PlayerCommonSystem::RemovePlayerSession(request->player_id());
+
     //已经在线，直接进入,判断是需要发送哪些信息
     auto player_it = tls_cl.player_list().find(request->player_id());
     if (player_it != tls_cl.player_list().end())
