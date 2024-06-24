@@ -12,6 +12,7 @@
 #include "replied_handler/player_service_replied.h"
 #include "thread_local/thread_local_storage_centre.h"
 #include "thread_local/thread_local_storage_common_logic.h"
+#include "type_alias/player_session.h"
 
 #include "component_proto/player_network_comp.pb.h"
 
@@ -81,22 +82,15 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "message_id not found " << replied->msg().message_id() ;
 		return;
 	}
-	auto sid = entt::to_entity(replied->ex().session_id());
-	if (!tls.session_registry.valid(sid))
+	auto session_id = replied->ex().session_id();
+	auto it = tls_sessions.find(session_id);
+	if (it == tls_sessions.end())
 	{
 		LOG_ERROR << "can not find session id " << replied->ex().session_id();
 		return;
 	}
-	const auto player_info = 
-		tls.session_registry.try_get<PlayerSessionInfo>(sid);
-	if (nullptr == player_info)
-	{
-		LOG_ERROR << "session not found " << replied->ex().session_id();
-		return;
-	}
-	auto player_id = player_info->player_id();
+	auto player_id = it->second.player_id();
 	const auto& message_info = g_message_info.at(replied->msg().message_id() );
-
     auto player = tls_cl.get_player(player_id);
 	if (tls.registry.valid(player))
 	{

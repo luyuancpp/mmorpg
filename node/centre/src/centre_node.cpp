@@ -16,6 +16,7 @@
 #include "service/gate_service_service.h"
 #include "thread_local/thread_local_storage_centre.h"
 #include "grpc/deploy/deployclient.h"
+#include "system/player_session_system.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "constants_proto/node.pb.h"
@@ -212,7 +213,7 @@ void CentreNode::InitNodeServer()
 
 void CentreNode::InitSystemBeforeConnect()
 {
-
+    PlayerSessionSystem::Init();
 }
 
 void CentreNode::InitSystemAfterConnect()

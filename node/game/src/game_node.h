@@ -40,6 +40,9 @@ private:
     void InitNodeByReqInfo();
     void Connect2Centre();
 
+    void InitSystemBeforeConnect();
+    void InitSystemAfterConnect();
+
     inline NodeId game_node_index()const { return game_node_id() - 1; }
 
     muduo::net::EventLoop* loop_{ nullptr };

@@ -20,7 +20,7 @@
 #include "thread_local/thread_local_storage_game.h"
 #include "service/service.h"
 #include "system/config/config_system.h"
-
+#include "system/player_session_system.h"
 #include "util/game_registry.h"
 
 #include "common_proto/deploy_service.grpc.pb.h"
@@ -56,9 +56,10 @@ void GameNode::Init()
     InitMessageInfo();
     InitPlayerService();
     InitPlayerServiceReplied();
+    InitSystemBeforeConnect();
+
     InitRepliedHandler();
     InitNodeByReqInfo();
-
 	void InitServiceHandler();
 	InitServiceHandler();
 
@@ -99,6 +100,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     server_->start();
 
     Connect2Centre();
+    InitSystemAfterConnect();
 
     deploy_rpc_timer_.Cancel();
 
@@ -217,5 +219,15 @@ void GameNode::Connect2Centre()
             zone_centre_node_ = centre_node;
         }
     }
+
+}
+
+void GameNode::InitSystemBeforeConnect()
+{
+    PlayerSessionSystem::Init();
+}
+
+void GameNode::InitSystemAfterConnect()
+{
 
 }

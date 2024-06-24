@@ -44,7 +44,6 @@ private:
 	void InitSystemBeforeConnect();
 	void InitSystemAfterConnect();
 
-
 	NodeId centre_node_index() { return center_node_id() - 1; }
 
 	muduo::net::EventLoop* loop_{ nullptr };
