@@ -82,8 +82,7 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "message_id not found " << replied->msg().message_id() ;
 		return;
 	}
-	auto session_id = replied->ex().session_id();
-	auto it = tls_sessions.find(session_id);
+	auto it = tls_sessions.find(replied->ex().session_id());
 	if (it == tls_sessions.end())
 	{
 		LOG_ERROR << "can not find session id " << replied->ex().session_id();

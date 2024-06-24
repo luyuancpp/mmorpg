@@ -67,7 +67,7 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto it = tls_sessions.find(request->ex().session_id());
-    if (it != tls_sessions.end())
+    if (it == tls_sessions.end())
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
         << " message id " << request->msg().message_id();
@@ -141,7 +141,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
     }
     entt::entity session{ request->session_id() };
     auto it = tls_sessions.find(request->session_id());
-    if (it != tls_sessions.end())
+    if (it == tls_sessions.end())
     {
         LOG_INFO << "session id not found " << request->session_id() << ","
             << " message id " << request->message_id();
@@ -215,7 +215,7 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto it = tls_sessions.find(request->ex().session_id());
-    if (it != tls_sessions.end())
+    if (it == tls_sessions.end())
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
             << " message id " << request->msg().message_id();
@@ -237,9 +237,8 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity session_id{ request->ex().session_id() };
     auto it = tls_sessions.find(request->ex().session_id());
-    if (it != tls_sessions.end())
+    if (it == tls_sessions.end())
     {
         LOG_INFO << "session id not found " << request->ex().session_id() << ","
             << " message id " << request->msg().message_id();

@@ -5,10 +5,10 @@
 #include "util/game_registry.h"
 #include "util/consistent_hash_node.h"
 #include "network/gate_session.h"
-#include "util/snow_flake.h"
+
+#include "type_alias/session_id_gen.h"
 
 using SessionList = std::unordered_map<Guid, Session>;
-using SessionIdGen = NodeSequence<uint64_t, 32>;
 
 class ThreadLocalStorageGate
 {

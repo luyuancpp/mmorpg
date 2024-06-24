@@ -125,7 +125,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../third_party/;../../third_party/boost/;./src/;../../third_party/protobuf/src/;../../third_party/zlib/;../../pkg/common/src/;../../third_party/muduo/;../../third_party/muduo/contrib/windows/include;../../third_party/redis/deps/;../../pkg/pbc/src/common_proto/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/;../../pkg/config/src/;../../third_party/grpc/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third_party/;../../third_party/boost/;./src/;../../third_party/protobuf/src/;../../third_party/zlib/;../../pkg/common/src/;../../third_party/muduo/;../../third_party/muduo/contrib/windows/include;../../third_party/redis/deps/;../../pkg/pbc/src/common_proto/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/;../../pkg/config/src/;../../third_party/grpc/include/;../../pkg/logic/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>

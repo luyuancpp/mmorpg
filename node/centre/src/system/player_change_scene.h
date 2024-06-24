@@ -15,8 +15,6 @@ public:
 	static void SetChangeCrossServerSatus(entt::entity player, CentreChangeSceneInfo::eChangeCrossServerStatus s);
 	static void CopyTo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info);
 private:
-	static void TryProcessZoneServerChangeScene(entt::entity player);//处理本服务器的切换,不跨服
-	static void TryProcessViaCrossServerChangeScene(entt::entity player);//处理通过跨服消息的换场景
 	static uint32_t TryChangeSameGsScene(entt::entity player);
 	static uint32_t ChangeDiffGsScene(entt::entity player);//自己的服务器改变gs gs1的场景到gs2的场景
 	static void OnEnterSceneOk(entt::entity player);

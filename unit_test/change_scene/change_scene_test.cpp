@@ -93,7 +93,7 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
     EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
-TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
+TEST(PlayerChangeScene, DiffGs)
 {
     const auto player = CreatePlayer();
     const auto from_scene = *(scene_list.begin()++);
@@ -103,11 +103,8 @@ TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
     CentreChangeSceneInfo change_info;
     change_info.set_guid(scene_id);
     change_info.set_change_cross_server_type(CentreChangeSceneInfo::eCrossServer);
+    change_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(CentreChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
@@ -116,7 +113,7 @@ TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
 }
 
 
-TEST(PlayerChangeScene, CrossServerSameGs)
+TEST(PlayerChangeScene, SameGs)
 {
     const auto player = CreatePlayer();
     const auto from_scene = *(scene_list.begin()++);
@@ -125,12 +122,8 @@ TEST(PlayerChangeScene, CrossServerSameGs)
 
     CentreChangeSceneInfo change_info;
     change_info.set_guid(scene_id);
-    change_info.set_change_cross_server_type(CentreChangeSceneInfo::eCrossServer);
     change_info.set_change_gs_type(CentreChangeSceneInfo::eSameGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));    
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(CentreChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
 }
@@ -144,41 +137,14 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 
     CentreChangeSceneInfo change_info;
     change_info.set_guid(scene_id);
-    change_info.set_change_cross_server_type(CentreChangeSceneInfo::eCrossServer);
     change_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(CentreChangeSceneInfo::eEnterCrossServerSceneSucceed);
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
 }
-
-TEST(PlayerChangeScene, CrossServerGs2NormalServerGs)
-{
-    const auto player = CreatePlayer();
-    const auto from_scene = *(scene_list.begin()++);
-    const auto scene_id = tls.scene_registry.get<SceneInfo>(from_scene).guid();
-    ScenesSystem::EnterScene({from_scene, player});
-
-    CentreChangeSceneInfo change_info;
-    change_info.set_guid(scene_id);
-    change_info.set_change_cross_server_type(CentreChangeSceneInfo::eCrossServer);
-    EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(CentreChangeSceneInfo::eEnterCrossServerSceneSucceed);
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
-}
-
 
 //测试各种状态
 TEST(PlayerChangeScene, ServerCrush)
@@ -190,12 +156,8 @@ TEST(PlayerChangeScene, ServerCrush)
 
     CentreChangeSceneInfo change_info;
     change_info.set_guid(scene_id);
-    change_info.set_change_cross_server_type(CentreChangeSceneInfo::eCrossServer);
     change_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(CentreChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(CentreChangeSceneInfo::eLeaveGsScene);
@@ -205,10 +167,6 @@ TEST(PlayerChangeScene, ServerCrush)
     ScenesSystem::EnterScene({from_scene, player});
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(CentreChangeSceneInfo::eLeaveGsScene);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(CentreChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(player).change_scene_queue_.empty());
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);

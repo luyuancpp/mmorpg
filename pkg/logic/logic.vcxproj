@@ -182,6 +182,8 @@
     <ClInclude Include="src\system\teams\TeamSystem.h" />
     <ClInclude Include="src\event\team_event.h" />
     <ClInclude Include="src\type_alias\player_session.h" />
+    <ClInclude Include="src\type_alias\session_id_gen.h" />
+    <ClInclude Include="src\util\session.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\comp\mission_comp.cpp" />
@@ -194,6 +196,7 @@
     <ClCompile Include="src\system\scene\node_scene_system.cpp" />
     <ClCompile Include="src\system\teams\team.cpp" />
     <ClCompile Include="src\system\teams\TeamSystem.cpp" />
+    <ClCompile Include="src\util\session.cpp" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
