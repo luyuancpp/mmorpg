@@ -75,18 +75,9 @@ void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& message)
 		return;
 	}
 	const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
-	auto dest_game_node_id = ScenesSystem::get_game_node_id(change_scene_info.guid());
-	const auto dest_game_node = entt::entity{ dest_game_node_id };
-	const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	if (!tls.game_node_registry.valid(dest_game_node) || nullptr == player_node_info)
-	{
-		//todo
-		LOG_ERROR << " game not found : " << change_scene_info.guid() << " " << (nullptr == player_node_info);
-		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-		return;
-	}
 	GsLeaveSceneRequest leave_scene_message;
-	leave_scene_message.set_change_gs(player_node_info->game_node_id() != dest_game_node_id);
+	leave_scene_message.set_change_gs(
+		change_scene_info.change_gs_type() == CentreChangeSceneInfo::eDifferentGs);
 	Send2GsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, leave_scene_message, player);
 ///<<< END WRITING YOUR CODE
 }

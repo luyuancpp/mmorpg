@@ -227,11 +227,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    bool is_from_gs_is_cross_server = tls.game_node_registry.any_of<CrossMainSceneServer>(from_scene_game_node);
-    bool is_to_gs_is_cross_server = tls.game_node_registry.any_of<CrossMainSceneServer>(to_scene_game_node);
-
     //不是跨服才在本地判断,跨服有自己的判断
-    if (!change_scene_info.ignore_full() && !is_to_gs_is_cross_server)
+    if (!change_scene_info.ignore_full())
     {
         auto ret = ScenesSystem::CheckScenePlayerSize(to_scene);
         if (kRetOK != ret)
