@@ -133,8 +133,7 @@ T node_id_{ 0 };
 T seq_{ 0 };
 };
 
-using NodeBit16Sequence = NodeSequence<uint32_t, 16>;
-using NodeBit15Sequence = NodeSequence<uint32_t, 15>;
+using NodeBit12Sequence = NodeSequence<uint32_t, 12>;
 
 
 
