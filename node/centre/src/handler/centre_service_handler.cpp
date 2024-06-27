@@ -320,7 +320,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	}
 	const auto& player_info = it->second;
     auto player = tls_cl.get_player(player_info.player_id());
-    if (tls.registry.valid(player))
+    if (!tls.registry.valid(player))
     {
         LOG_ERROR << "player not found " << player_info.player_id();
         return;
