@@ -124,7 +124,13 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
 		return;
 	}
-	Send2Player(message_id, message,  player_node_info->gate_session_id());
+	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_id);
+	if (nullptr == gate_node)
+	{
+        LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
+        return;
+	}
+	Send2Player(message_id, message, *gate_node, player_node_info->gate_session_id());
 }
 
 void Send2Player(uint32_t message_id, 

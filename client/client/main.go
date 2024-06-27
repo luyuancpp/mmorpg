@@ -35,6 +35,7 @@ func main() {
 					resp := msg.(*game.CreatePlayerResponse)
 					handler.CreatePlayerHandler(gameClient, resp)
 				}
+				log.Println(d.Name())
 			}
 
 		}(i)
