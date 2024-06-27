@@ -80,11 +80,11 @@ void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg
 		LOG_ERROR << "Send2CentrePlayer centre disconnect" << tls.registry.get<Guid>(player);
 		return;
 	}
-	NodeRouteMessageRequest msg_wrapper;
-	msg_wrapper.mutable_body()->set_message_id(message_id);
-	msg_wrapper.mutable_body()->set_body(msg.SerializeAsString());
-	msg_wrapper.mutable_head()->set_session_id(player_node_info->gate_session_id());
-	(*centre_node)->Send(CentreServiceGsPlayerServiceMsgId, msg_wrapper);
+	NodeRouteMessageRequest request;
+	request.mutable_body()->set_message_id(message_id);
+	request.mutable_body()->set_body(msg.SerializeAsString());
+	request.mutable_head()->set_session_id(player_node_info->gate_session_id());
+	(*centre_node)->Send(CentreServiceGsPlayerServiceMsgId, request);
 }
 
 void Send2Centre(const uint32_t message_id, const google::protobuf::Message& messag, NodeId node_id)
