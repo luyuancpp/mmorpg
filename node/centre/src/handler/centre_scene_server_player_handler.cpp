@@ -11,6 +11,8 @@
 #include "system/player_scene_system.h"
 #include "system/player_tip_system.h"
 #include "system/player_change_scene.h"
+#include "service/scene_client_player_service.h"
+
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
@@ -74,6 +76,23 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	player_node_info->set_game_node_id(kInvalidNodeId);
 
 	PlayerSceneSystem::CallPlayerEnterGs(player, ScenesSystem::get_game_node_id(to_scene));
+///<<< END WRITING YOUR CODE
+}
+
+void CentreScenePlayerServiceHandler::SceneInfoC2S(entt::entity player,
+	const ::SceneInfoRequest* request,
+	::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+	//给客户端发所有场景消息
+
+    SceneInfoS2C message;
+    for (const auto& [e, info] : tls.scene_registry.view<SceneInfo>().each())
+    {
+        message.mutable_scene_info()->Add()->CopyFrom(info);
+    }
+    Send2Player(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
+
 ///<<< END WRITING YOUR CODE
 }
 

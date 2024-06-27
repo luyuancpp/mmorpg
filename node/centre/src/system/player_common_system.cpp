@@ -4,7 +4,7 @@
 
 #include "comp/scene_comp.h"
 #include "thread_local/thread_local_storage.h"
-#include "service/scene_client_player_service.h"
+
 #include "service/game_server_player_service.h"
 #include "network/message_system.h"
 #include "network/gate_session.h"
@@ -80,15 +80,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         Send2GsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, player);
     }
 
-    //给客户端发所有场景消息
-    {
-        SceneInfoS2C message;
-        for (const auto& [e, info] : tls.scene_registry.view<SceneInfo>().each())
-        {
-            message.mutable_scene_info()->Add()->CopyFrom(info);
-        }
-        Send2Player(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
-    }
+  
 }
 
 void PlayerCommonSystem::Register2GatePlayerGameNode(entt::entity player)

@@ -17,6 +17,10 @@ public:
 		const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
 		::google::protobuf::Empty* response);
 
+	static void SceneInfoC2S(entt::entity player,
+		const ::SceneInfoRequest* request,
+		::google::protobuf::Empty* response);
+
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
    entt::entity player,
     const ::google::protobuf::Message* request,
@@ -36,6 +40,11 @@ public:
 		break;
 		case 2:
 			LeaveSceneAsyncSavePlayerComplete(player,
+			nullptr,
+			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+		break;
+		case 3:
+			SceneInfoC2S(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
