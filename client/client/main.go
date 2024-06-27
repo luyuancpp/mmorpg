@@ -34,8 +34,10 @@ func main() {
 				} else if d.Name() == "CreatePlayerResponse" {
 					resp := msg.(*game.CreatePlayerResponse)
 					handler.CreatePlayerHandler(gameClient, resp)
+				} else if d.Name() == "MessageBody" {
+					resp := msg.(*game.MessageBody)
+					handler.MessageBodyHandler(gameClient, resp)
 				}
-				log.Println(d.Name())
 			}
 
 		}(i)
