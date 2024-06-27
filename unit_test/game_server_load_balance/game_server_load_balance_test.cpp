@@ -206,12 +206,12 @@ TEST(GS, PlayerLeaveEnterScene)
     for (const auto& player_entity : player_entity_set1)
     {
         EXPECT_TRUE(scenes_players1.find(player_entity) != scenes_players1.end());
-        EXPECT_TRUE(tls.game_node_registry.get<SceneEntity>(player_entity).scene_entity_ == scene1);
+        EXPECT_TRUE(tls.registry.get<SceneEntity>(player_entity).scene_entity_ == scene1);
     }
     for (const auto& player_entity : player_entities_set2)
     {
         EXPECT_TRUE(scenes_players2.find(player_entity) != scenes_players2.end());
-        EXPECT_TRUE(tls.game_node_registry.get<SceneEntity>(player_entity).scene_entity_ == scene2);
+        EXPECT_TRUE(tls.registry.get<SceneEntity>(player_entity).scene_entity_ == scene2);
     }
     EXPECT_EQ(tls.game_node_registry.get<GameNodeInfoPtr>(node1)->player_size(), player_size / 2);
     EXPECT_EQ(tls.game_node_registry.get<GameNodeInfoPtr>(node2)->player_size(), player_size / 2);
@@ -221,7 +221,7 @@ TEST(GS, PlayerLeaveEnterScene)
         leave_param1.leaver_ = player_entity;
         sm.LeaveScene(leave_param1);
         EXPECT_FALSE(scenes_players1.find(player_entity) != scenes_players1.end());
-        EXPECT_EQ(tls.game_node_registry.try_get<SceneEntity>(player_entity), nullptr);
+        EXPECT_EQ(tls.registry.try_get<SceneEntity>(player_entity), nullptr);
     }
     EXPECT_EQ(tls.game_node_registry.get<GameNodeInfoPtr>(node1)->player_size(), 0);
 
@@ -231,7 +231,7 @@ TEST(GS, PlayerLeaveEnterScene)
         leave_param2.leaver_ = player_entity;
         sm.LeaveScene(leave_param2);
         EXPECT_FALSE(scenes_players2.find(player_entity) != scenes_players2.end());
-        EXPECT_EQ(tls.game_node_registry.try_get<SceneEntity>(player_entity), nullptr);
+        EXPECT_EQ(tls.registry.try_get<SceneEntity>(player_entity), nullptr);
     }
 
     EXPECT_EQ(tls.game_node_registry.get<GameNodeInfoPtr>(node2)->player_size(), 0);
@@ -348,7 +348,7 @@ TEST(GS, CompelToChangeScene)
     {
         compel_change_param1.player_ = it;
         sm.CompelPlayerChangeScene(compel_change_param1);
-        EXPECT_TRUE(tls.game_node_registry.try_get<SceneEntity>(it)->scene_entity_ == scene2);
+        EXPECT_TRUE(tls.registry.try_get<SceneEntity>(it)->scene_entity_ == scene2);
     }
     EXPECT_EQ(tls.game_node_registry.get<GameNodeInfoPtr>(node1)->player_size(), 0);
     EXPECT_EQ(tls.game_node_registry.get<GameNodeInfoPtr>(node2)->player_size(), player_list1.size());
@@ -540,7 +540,7 @@ TEST(GS, WeightRoundRobinMainScene)
         uint32_t player_scene_guid = 0;
         for (auto& it : player_scene1)
         {
-            auto& pse = tls.game_node_registry.get<SceneEntity>(it.first);
+            auto& pse = tls.registry.get<SceneEntity>(it.first);
             EXPECT_TRUE(pse.scene_entity_ == it.second);
             EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.scene_entity_).scene_confid(), scene_config_id0);
         }
@@ -560,7 +560,7 @@ TEST(GS, WeightRoundRobinMainScene)
         player_scene_guid = 0;
         for (auto& it : player_scene2)
         {
-            auto& pse = tls.game_node_registry.get<SceneEntity>(it.first);
+            auto& pse = tls.registry.get<SceneEntity>(it.first);
             EXPECT_TRUE(pse.scene_entity_ == it.second);
             EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.scene_entity_).scene_confid(), scene_config_id1);
         }
@@ -578,13 +578,13 @@ TEST(GS, WeightRoundRobinMainScene)
         LeaveSceneParam leave_scene;
         for (auto& it : player_scene1)
         {
-            auto& pse = tls.game_node_registry.get<SceneEntity>(it.first);
+            auto& pse = tls.registry.get<SceneEntity>(it.first);
             leave_scene.leaver_ = it.first;
             sm.LeaveScene(leave_scene);
         }
         for (auto& it : player_scene2)
         {
-            auto& pse = tls.game_node_registry.get<SceneEntity>(it.first);
+            auto& pse = tls.registry.get<SceneEntity>(it.first);
             leave_scene.leaver_ = it.first;
             sm.LeaveScene(leave_scene);
         }
@@ -689,7 +689,7 @@ TEST(GS, EnterDefaultScene)
     const auto player = tls.game_node_registry.create();
     const EnterDefaultSceneParam enter_param{player};
     ScenesSystem::EnterDefaultScene(enter_param);
-    const auto [scene_entity_] = tls.game_node_registry.get<SceneEntity>(player);
+    const auto [scene_entity_] = tls.registry.get<SceneEntity>(player);
     const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_entity_);
     EXPECT_EQ(scene_info.scene_confid(), kDefaultSceneId);
 }
@@ -762,7 +762,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		uint32_t player_scene_guid = 0;
 		for (auto& it : player_scene1)
 		{
-			auto& pse = tls.game_node_registry.get<SceneEntity>(it.first);
+			auto& pse = tls.registry.get<SceneEntity>(it.first);
 			EXPECT_TRUE(pse.scene_entity_ == it.second);
 			EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.scene_entity_).scene_confid(), scene_config_id0);
 		}
@@ -782,7 +782,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		player_scene_guid = 0;
 		for (auto& it : player_scene2)
 		{
-			auto& pse = tls.game_node_registry.get<SceneEntity>(it.first);
+			auto& pse = tls.registry.get<SceneEntity>(it.first);
 			EXPECT_TRUE(pse.scene_entity_ == it.second);
 			EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.scene_entity_).scene_confid(), scene_config_id1);
 		}
@@ -810,13 +810,13 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		LeaveSceneParam leave_scene;
 		for (auto& it : player_scene1)
 		{
-			auto& pse = tls.game_node_registry.get<SceneEntity>(it.first);
+			auto& pse = tls.registry.get<SceneEntity>(it.first);
 			leave_scene.leaver_ = it.first;
 			sm.LeaveScene(leave_scene);
 		}
 		for (auto& it : player_scene2)
 		{
-			auto& pse = tls.game_node_registry.get<SceneEntity>(it.first);
+			auto& pse = tls.registry.get<SceneEntity>(it.first);
 			leave_scene.leaver_ = it.first;
 			sm.LeaveScene(leave_scene);
 		}

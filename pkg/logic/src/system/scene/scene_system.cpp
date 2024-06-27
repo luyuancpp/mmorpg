@@ -28,6 +28,8 @@ void AddMainSceneNodeComponent(entt::registry& reg, const entt::entity node)
 ScenesSystem::ScenesSystem()
 {
 	tls.scene_registry.clear();
+	tls.registry.clear();
+	tls.game_node_registry.clear();
 }
 
 ScenesSystem::~ScenesSystem()
@@ -217,7 +219,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	tls.dispatcher.trigger(before_enter_scene_event);
 
 	tls.scene_registry.get<ScenePlayers>(param.scene_).emplace(param.player_);
-	tls.game_node_registry.emplace<SceneEntity>(param.player_, param.scene_);
+	tls.registry.emplace<SceneEntity>(param.player_, param.scene_);
 	// todo weak_ptr ?
 	if (const auto* const game_player_info = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
 	{
@@ -247,20 +249,20 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 		LOG_ERROR << "entity null";
 		return;
 	}
-	if (nullptr == tls.game_node_registry.try_get<SceneEntity>(param.leaver_))
+	if (nullptr == tls.registry.try_get<SceneEntity>(param.leaver_))
 	{
 		LOG_ERROR << "leave scene empty";
 		return;
 	}
 
-	const auto scene = tls.game_node_registry.get<SceneEntity>(param.leaver_).scene_entity_;
+	const auto scene = tls.registry.get<SceneEntity>(param.leaver_).scene_entity_;
 
 	BeforeLeaveScene before_leave_scene_event;
 	before_leave_scene_event.set_entity(entt::to_integral(param.leaver_));
 	tls.dispatcher.trigger(before_leave_scene_event);
 
 	tls.scene_registry.get<ScenePlayers>(scene).erase(param.leaver_);
-	tls.game_node_registry.remove<SceneEntity>(param.leaver_);
+	tls.registry.remove<SceneEntity>(param.leaver_);
 
 	if (const auto* const game_player_info = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(scene))
 	{

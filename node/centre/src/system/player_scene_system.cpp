@@ -118,7 +118,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
 
-    const auto scene_info = tls.registry.try_get<SceneInfo>((*p_scene).scene_entity_);
+    const auto scene_info = tls.scene_registry.try_get<SceneInfo>((*p_scene).scene_entity_);
     if (nullptr == scene_info)
     {
         LOG_ERROR << "scene info " << player_id;
@@ -131,18 +131,14 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         LOG_ERROR << "player session not valid" << player_id;
         return;
     }
-    Ctlr2GsEnterSceneRequest enter_scene_message;
-    enter_scene_message.set_scene_id(scene_info->guid());
-    enter_scene_message.set_player_id(player_id);
-    CallGameNodeMethod(GameServiceEnterSceneMsgId, enter_scene_message, player_node_info->game_node_id());
+    Ctlr2GsEnterSceneRequest request;
+    request.set_scene_id(scene_info->guid());
+    request.set_player_id(player_id);
+    CallGameNodeMethod(GameServiceEnterSceneMsgId, request, player_node_info->game_node_id());
+
+    LOG_INFO << "player enter scene " << player_id << " " << scene_info->guid();
 }
 
-
-void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
-{
-    EnterSceneS2CRequest msg;
-    CallGamePlayerMethod(GamePlayerSceneServiceEnterSceneS2CMsgId, msg, player);
-}
 
 void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id)
 {
