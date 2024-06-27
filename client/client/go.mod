@@ -7,3 +7,5 @@ require (
 	github.com/luyuancpp/muduoclient v0.0.5
 	google.golang.org/protobuf v1.34.2
 )
+
+require github.com/luyuancpp/dbprotooption v0.0.4 // indirect

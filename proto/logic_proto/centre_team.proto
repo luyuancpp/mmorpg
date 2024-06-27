@@ -1,3 +1,6 @@
 syntax = "proto3";
+
+option go_package = "pb/game";
+
 import "component_proto/team_comp.proto";
 option cc_generic_services = true;

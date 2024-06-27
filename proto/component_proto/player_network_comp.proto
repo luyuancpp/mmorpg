@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "pb/game";
+
 message PlayerNodeInfo
 {
 	uint64 gate_session_id = 1;//通过session id 就能算出 gate_node_id
