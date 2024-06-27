@@ -167,7 +167,8 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 			continue
 		}
 
-		if !strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !(strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+			strings.Contains(protoPath, config.ProtoDirNames[config.ComponentProtoDirIndex])) {
 			return
 		}
 
@@ -241,7 +242,8 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 			continue
 		}
 
-		if !strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !(strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+			strings.Contains(protoPath, config.ProtoDirNames[config.ComponentProtoDirIndex])) {
 			return
 		}
 
@@ -399,5 +401,18 @@ func BuildAllProtoc() {
 			}
 		}(i)
 
+		go func(i int) {
+			err := BuildProtoGoLogin(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(i)
+
+		go func(i int) {
+			err := BuildProtoGoDb(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(i)
 	}
 }
