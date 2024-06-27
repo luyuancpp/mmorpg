@@ -81,13 +81,13 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto it = tls_gate.sessions().find(request->ex().session_id());
+	auto it = tls_gate.sessions().find(request->head().session_id());
     if (it == tls_gate.sessions().end())
     {
-        LOG_ERROR << "conn id not found  session id " << "," << request->ex().session_id();
+        LOG_ERROR << "conn id not found  session id " << "," << request->head().session_id();
         return;
     }
-	g_gate_node->Send2Client(it->second.conn_, request->msg());
+	g_gate_node->Send2Client(it->second.conn_, request->body());
 	///<<< END WRITING YOUR CODE
 }
 

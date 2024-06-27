@@ -61,3 +61,49 @@ message UnRegisterGameRequest
   uint32 game_node_id = 1;
 }
 
+message MessageBody
+{
+  uint64 id = 1;
+  bytes body = 2;
+  uint32 message_id = 3;
+}
+
+message NodeMessageHead
+{
+  uint32 node_id = 1;
+  uint64 session_id = 2;
+}
+
+message NodeRouteMessageRequest
+{
+  MessageBody body = 1;
+  NodeMessageHead head = 2;
+}
+
+message NodeRouteMessageResponse
+{
+  MessageBody body = 1;
+  NodeMessageHead head = 2;
+}
+
+message PlayerMessageExtern
+{
+  uint64 player_id = 1;
+}
+
+message PlayerNodeServiceRequest
+{
+  MessageBody body = 1;
+  PlayerMessageExtern head = 2;
+}
+
+message PlayerMessageRespone
+{
+  MessageBody body = 1;
+  PlayerMessageExtern head = 2;
+}
+
+message NodeRouteMessageBody
+{
+   NodeInfo node_info = 2;
+}

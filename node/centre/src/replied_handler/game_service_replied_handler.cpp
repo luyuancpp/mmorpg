@@ -77,31 +77,31 @@ void OnGameServiceCentreSend2PlayerViaGsRepliedHandler(const TcpConnectionPtr& c
 void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<NodeRouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (replied->msg().message_id() >= g_message_info.size())
+	if (replied->body().message_id() >= g_message_info.size())
 	{
-		LOG_ERROR << "message_id not found " << replied->msg().message_id() ;
+		LOG_ERROR << "message_id not found " << replied->body().message_id() ;
 		return;
 	}
-	auto it = tls_sessions.find(replied->ex().session_id());
+	auto it = tls_sessions.find(replied->head().session_id());
 	if (it == tls_sessions.end())
 	{
-		LOG_ERROR << "can not find session id " << replied->ex().session_id();
+		LOG_ERROR << "can not find session id " << replied->head().session_id();
 		return;
 	}
 	auto player_id = it->second.player_id();
-	const auto& message_info = g_message_info.at(replied->msg().message_id() );
+	const auto& message_info = g_message_info.at(replied->body().message_id() );
     auto player = tls_cl.get_player(player_id);
 	if (tls.registry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
-			<< replied->msg().message_id();
+			<< replied->body().message_id();
 		return;
 	}
 	const auto service_it = g_player_service_replied.find(message_info.service);
 	if (service_it == g_player_service_replied.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << player_id << ","
-		<< replied->msg().message_id();
+		<< replied->body().message_id();
 		return;
 	}
 	const auto& service_impl = service_it->second;
@@ -115,7 +115,8 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		return;
 	}
 	const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
-	if (!player_response->ParsePartialFromArray(replied->msg().body().data(), int32_t(replied->msg().body().size())))
+	if (!player_response->ParsePartialFromArray(replied->body().body().data(), 
+		int32_t(replied->body().body().size())))
 	{
         LOG_ERROR << "ParsePartialFromArray " << message_info.method;
         return;

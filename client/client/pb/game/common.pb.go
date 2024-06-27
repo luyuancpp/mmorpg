@@ -146,438 +146,6 @@ func (x *IpPort) GetPort() uint32 {
 	return 0
 }
 
-type MessageBody struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id        uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Body      []byte `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
-	MessageId uint32 `protobuf:"varint,3,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-}
-
-func (x *MessageBody) Reset() {
-	*x = MessageBody{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MessageBody) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MessageBody) ProtoMessage() {}
-
-func (x *MessageBody) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MessageBody.ProtoReflect.Descriptor instead.
-func (*MessageBody) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *MessageBody) GetId() uint64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *MessageBody) GetBody() []byte {
-	if x != nil {
-		return x.Body
-	}
-	return nil
-}
-
-func (x *MessageBody) GetMessageId() uint32 {
-	if x != nil {
-		return x.MessageId
-	}
-	return 0
-}
-
-type NodeMessageBody struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	NodeId    uint32 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	SessionId uint64 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-}
-
-func (x *NodeMessageBody) Reset() {
-	*x = NodeMessageBody{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *NodeMessageBody) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NodeMessageBody) ProtoMessage() {}
-
-func (x *NodeMessageBody) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NodeMessageBody.ProtoReflect.Descriptor instead.
-func (*NodeMessageBody) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *NodeMessageBody) GetNodeId() uint32 {
-	if x != nil {
-		return x.NodeId
-	}
-	return 0
-}
-
-func (x *NodeMessageBody) GetSessionId() uint64 {
-	if x != nil {
-		return x.SessionId
-	}
-	return 0
-}
-
-type NodeRouteMessageRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Msg *MessageBody     `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	Ex  *NodeMessageBody `protobuf:"bytes,2,opt,name=ex,proto3" json:"ex,omitempty"`
-}
-
-func (x *NodeRouteMessageRequest) Reset() {
-	*x = NodeRouteMessageRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *NodeRouteMessageRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NodeRouteMessageRequest) ProtoMessage() {}
-
-func (x *NodeRouteMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NodeRouteMessageRequest.ProtoReflect.Descriptor instead.
-func (*NodeRouteMessageRequest) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *NodeRouteMessageRequest) GetMsg() *MessageBody {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
-func (x *NodeRouteMessageRequest) GetEx() *NodeMessageBody {
-	if x != nil {
-		return x.Ex
-	}
-	return nil
-}
-
-type NodeRouteMessageResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Msg *MessageBody     `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	Ex  *NodeMessageBody `protobuf:"bytes,2,opt,name=ex,proto3" json:"ex,omitempty"`
-}
-
-func (x *NodeRouteMessageResponse) Reset() {
-	*x = NodeRouteMessageResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *NodeRouteMessageResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NodeRouteMessageResponse) ProtoMessage() {}
-
-func (x *NodeRouteMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NodeRouteMessageResponse.ProtoReflect.Descriptor instead.
-func (*NodeRouteMessageResponse) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *NodeRouteMessageResponse) GetMsg() *MessageBody {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
-func (x *NodeRouteMessageResponse) GetEx() *NodeMessageBody {
-	if x != nil {
-		return x.Ex
-	}
-	return nil
-}
-
-type PlayerMessageExtern struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	PlayerId uint64 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-}
-
-func (x *PlayerMessageExtern) Reset() {
-	*x = PlayerMessageExtern{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *PlayerMessageExtern) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PlayerMessageExtern) ProtoMessage() {}
-
-func (x *PlayerMessageExtern) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PlayerMessageExtern.ProtoReflect.Descriptor instead.
-func (*PlayerMessageExtern) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *PlayerMessageExtern) GetPlayerId() uint64 {
-	if x != nil {
-		return x.PlayerId
-	}
-	return 0
-}
-
-type PlayerNodeServiceRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Msg *MessageBody         `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	Ex  *PlayerMessageExtern `protobuf:"bytes,2,opt,name=ex,proto3" json:"ex,omitempty"`
-}
-
-func (x *PlayerNodeServiceRequest) Reset() {
-	*x = PlayerNodeServiceRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *PlayerNodeServiceRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PlayerNodeServiceRequest) ProtoMessage() {}
-
-func (x *PlayerNodeServiceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PlayerNodeServiceRequest.ProtoReflect.Descriptor instead.
-func (*PlayerNodeServiceRequest) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *PlayerNodeServiceRequest) GetMsg() *MessageBody {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
-func (x *PlayerNodeServiceRequest) GetEx() *PlayerMessageExtern {
-	if x != nil {
-		return x.Ex
-	}
-	return nil
-}
-
-type PlayerMessageRespone struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Msg *MessageBody         `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	Ex  *PlayerMessageExtern `protobuf:"bytes,2,opt,name=ex,proto3" json:"ex,omitempty"`
-}
-
-func (x *PlayerMessageRespone) Reset() {
-	*x = PlayerMessageRespone{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *PlayerMessageRespone) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PlayerMessageRespone) ProtoMessage() {}
-
-func (x *PlayerMessageRespone) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PlayerMessageRespone.ProtoReflect.Descriptor instead.
-func (*PlayerMessageRespone) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *PlayerMessageRespone) GetMsg() *MessageBody {
-	if x != nil {
-		return x.Msg
-	}
-	return nil
-}
-
-func (x *PlayerMessageRespone) GetEx() *PlayerMessageExtern {
-	if x != nil {
-		return x.Ex
-	}
-	return nil
-}
-
-type NodeRouteMessageBody struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	NodeInfo *NodeInfo `protobuf:"bytes,2,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"`
-}
-
-func (x *NodeRouteMessageBody) Reset() {
-	*x = NodeRouteMessageBody{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *NodeRouteMessageBody) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NodeRouteMessageBody) ProtoMessage() {}
-
-func (x *NodeRouteMessageBody) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NodeRouteMessageBody.ProtoReflect.Descriptor instead.
-func (*NodeRouteMessageBody) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *NodeRouteMessageBody) GetNodeInfo() *NodeInfo {
-	if x != nil {
-		return x.NodeInfo
-	}
-	return nil
-}
-
 type TipS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -589,7 +157,7 @@ type TipS2C struct {
 func (x *TipS2C) Reset() {
 	*x = TipS2C{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_common_proto_msgTypes[10]
+		mi := &file_common_proto_common_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -602,7 +170,7 @@ func (x *TipS2C) String() string {
 func (*TipS2C) ProtoMessage() {}
 
 func (x *TipS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_common_proto_msgTypes[10]
+	mi := &file_common_proto_common_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -615,7 +183,7 @@ func (x *TipS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TipS2C.ProtoReflect.Descriptor instead.
 func (*TipS2C) Descriptor() ([]byte, []int) {
-	return file_common_proto_common_proto_rawDescGZIP(), []int{10}
+	return file_common_proto_common_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *TipS2C) GetTips() *Tip {
@@ -642,51 +210,11 @@ var file_common_proto_common_proto_rawDesc = []byte{
 	0x0c, 0x67, 0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x22, 0x2c, 0x0a,
 	0x06, 0x49, 0x70, 0x50, 0x6f, 0x72, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x70, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x22, 0x50, 0x0a, 0x0b, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x62, 0x6f,
-	0x64, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x12, 0x1d,
-	0x0a, 0x0a, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x0d, 0x52, 0x09, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x49, 0x64, 0x22, 0x49, 0x0a,
-	0x0f, 0x4e, 0x6f, 0x64, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79,
-	0x12, 0x17, 0x0a, 0x07, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0d, 0x52, 0x06, 0x6e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x73,
-	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x73,
-	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x22, 0x5b, 0x0a, 0x17, 0x4e, 0x6f, 0x64, 0x65,
-	0x52, 0x6f, 0x75, 0x74, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x0c, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x52, 0x03,
-	0x6d, 0x73, 0x67, 0x12, 0x20, 0x0a, 0x02, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x10, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64,
-	0x79, 0x52, 0x02, 0x65, 0x78, 0x22, 0x5c, 0x0a, 0x18, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x6f, 0x75,
-	0x74, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x1e, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c,
-	0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x52, 0x03, 0x6d, 0x73,
-	0x67, 0x12, 0x20, 0x0a, 0x02, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e,
-	0x4e, 0x6f, 0x64, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x52,
-	0x02, 0x65, 0x78, 0x22, 0x32, 0x0a, 0x13, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x4d, 0x65, 0x73,
-	0x73, 0x61, 0x67, 0x65, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x12, 0x1b, 0x0a, 0x09, 0x70, 0x6c,
-	0x61, 0x79, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x70,
-	0x6c, 0x61, 0x79, 0x65, 0x72, 0x49, 0x64, 0x22, 0x60, 0x0a, 0x18, 0x50, 0x6c, 0x61, 0x79, 0x65,
-	0x72, 0x4e, 0x6f, 0x64, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x0c, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x52, 0x03,
-	0x6d, 0x73, 0x67, 0x12, 0x24, 0x0a, 0x02, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x14, 0x2e, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x45,
-	0x78, 0x74, 0x65, 0x72, 0x6e, 0x52, 0x02, 0x65, 0x78, 0x22, 0x5c, 0x0a, 0x14, 0x50, 0x6c, 0x61,
-	0x79, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x65, 0x12, 0x1e, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c,
-	0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x52, 0x03, 0x6d, 0x73,
-	0x67, 0x12, 0x24, 0x0a, 0x02, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e,
-	0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x45, 0x78, 0x74,
-	0x65, 0x72, 0x6e, 0x52, 0x02, 0x65, 0x78, 0x22, 0x3e, 0x0a, 0x14, 0x4e, 0x6f, 0x64, 0x65, 0x52,
-	0x6f, 0x75, 0x74, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x12,
-	0x26, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x09, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x08, 0x6e,
-	0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x22, 0x22, 0x0a, 0x06, 0x54, 0x69, 0x70, 0x53, 0x32,
-	0x43, 0x12, 0x18, 0x0a, 0x04, 0x74, 0x69, 0x70, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x04, 0x2e, 0x54, 0x69, 0x70, 0x52, 0x04, 0x74, 0x69, 0x70, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70,
-	0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x22, 0x22, 0x0a, 0x06, 0x54,
+	0x69, 0x70, 0x53, 0x32, 0x43, 0x12, 0x18, 0x0a, 0x04, 0x74, 0x69, 0x70, 0x73, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x04, 0x2e, 0x54, 0x69, 0x70, 0x52, 0x04, 0x74, 0x69, 0x70, 0x73, 0x42,
+	0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -701,37 +229,20 @@ func file_common_proto_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_common_proto_rawDescData
 }
 
-var file_common_proto_common_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_common_proto_common_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_common_proto_common_proto_goTypes = []interface{}{
-	(*NodeInfo)(nil),                 // 0: NodeInfo
-	(*IpPort)(nil),                   // 1: IpPort
-	(*MessageBody)(nil),              // 2: MessageBody
-	(*NodeMessageBody)(nil),          // 3: NodeMessageBody
-	(*NodeRouteMessageRequest)(nil),  // 4: NodeRouteMessageRequest
-	(*NodeRouteMessageResponse)(nil), // 5: NodeRouteMessageResponse
-	(*PlayerMessageExtern)(nil),      // 6: PlayerMessageExtern
-	(*PlayerNodeServiceRequest)(nil), // 7: PlayerNodeServiceRequest
-	(*PlayerMessageRespone)(nil),     // 8: PlayerMessageRespone
-	(*NodeRouteMessageBody)(nil),     // 9: NodeRouteMessageBody
-	(*TipS2C)(nil),                   // 10: TipS2C
-	(*Tip)(nil),                      // 11: Tip
+	(*NodeInfo)(nil), // 0: NodeInfo
+	(*IpPort)(nil),   // 1: IpPort
+	(*TipS2C)(nil),   // 2: TipS2C
+	(*Tip)(nil),      // 3: Tip
 }
 var file_common_proto_common_proto_depIdxs = []int32{
-	2,  // 0: NodeRouteMessageRequest.msg:type_name -> MessageBody
-	3,  // 1: NodeRouteMessageRequest.ex:type_name -> NodeMessageBody
-	2,  // 2: NodeRouteMessageResponse.msg:type_name -> MessageBody
-	3,  // 3: NodeRouteMessageResponse.ex:type_name -> NodeMessageBody
-	2,  // 4: PlayerNodeServiceRequest.msg:type_name -> MessageBody
-	6,  // 5: PlayerNodeServiceRequest.ex:type_name -> PlayerMessageExtern
-	2,  // 6: PlayerMessageRespone.msg:type_name -> MessageBody
-	6,  // 7: PlayerMessageRespone.ex:type_name -> PlayerMessageExtern
-	0,  // 8: NodeRouteMessageBody.node_info:type_name -> NodeInfo
-	11, // 9: TipS2C.tips:type_name -> Tip
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	3, // 0: TipS2C.tips:type_name -> Tip
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_common_proto_init() }
@@ -766,102 +277,6 @@ func file_common_proto_common_proto_init() {
 			}
 		}
 		file_common_proto_common_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MessageBody); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_common_proto_common_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeMessageBody); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_common_proto_common_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeRouteMessageRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_common_proto_common_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeRouteMessageResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_common_proto_common_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PlayerMessageExtern); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_common_proto_common_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PlayerNodeServiceRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_common_proto_common_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PlayerMessageRespone); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_common_proto_common_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeRouteMessageBody); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_common_proto_common_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TipS2C); i {
 			case 0:
 				return &v.state
@@ -880,7 +295,7 @@ func file_common_proto_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_common_proto_common_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

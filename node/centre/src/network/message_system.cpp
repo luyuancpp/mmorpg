@@ -57,12 +57,12 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
 		return;
 	}
-	NodeRouteMessageRequest message_wrapper;
-	message_wrapper.mutable_msg()->mutable_body()->resize(message.ByteSizeLong());
-	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), static_cast<int32_t>(message.ByteSizeLong()));
-	message_wrapper.mutable_msg()->set_message_id(message_id);
-	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	(*game_node)->Send(GameServiceSend2PlayerMsgId, message_wrapper);
+	NodeRouteMessageRequest request;
+	request.mutable_body()->mutable_body()->resize(message.ByteSizeLong());
+	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), static_cast<int32_t>(message.ByteSizeLong()));
+	request.mutable_body()->set_message_id(message_id);
+	request.mutable_head()->set_session_id(player_node_info->gate_session_id());
+	(*game_node)->Send(GameServiceSend2PlayerMsgId, request);
 }
 
 
@@ -101,9 +101,9 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
     }
 	NodeRouteMessageRequest message_wrapper;
 	auto byte_size = int32_t(message.ByteSizeLong());
-	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
-	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
-	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
+	message_wrapper.mutable_body()->mutable_body()->resize(byte_size);
+	message.SerializePartialToArray(message_wrapper.mutable_body()->mutable_body()->data(), byte_size);
+	message_wrapper.mutable_head()->set_session_id(player_node_info->gate_session_id());
 	(*game_node)->Send(message_id, message_wrapper);
 }
 
@@ -137,13 +137,13 @@ void Send2Player(uint32_t message_id,
 	const google::protobuf::Message& message, 
 	RpcSessionPtr& gate, uint64_t session_id)
 {
-	NodeRouteMessageRequest message_wrapper;
+	NodeRouteMessageRequest request;
 	const auto byte_size = static_cast<int32_t>(message.ByteSizeLong());
-	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
-	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
-	message_wrapper.mutable_ex()->set_session_id(session_id);
-	message_wrapper.mutable_msg()->set_message_id(message_id);
-	gate->Send(GateServicePlayerMessageMsgId, message_wrapper);
+	request.mutable_body()->mutable_body()->resize(byte_size);
+	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byte_size);
+	request.mutable_head()->set_session_id(session_id);
+	request.mutable_body()->set_message_id(message_id);
+	gate->Send(GateServicePlayerMessageMsgId, request);
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
@@ -194,10 +194,10 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
     }
 	NodeRouteMessageRequest message_wrapper;
 	const auto byte_size = static_cast<int32_t>(message.ByteSizeLong());
-	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
-	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
-	message_wrapper.mutable_msg()->set_message_id(message_id);
-	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
+	message_wrapper.mutable_body()->mutable_body()->resize(byte_size);
+	message.SerializePartialToArray(message_wrapper.mutable_body()->mutable_body()->data(), byte_size);
+	message_wrapper.mutable_body()->set_message_id(message_id);
+	message_wrapper.mutable_head()->set_session_id(player_node_info->gate_session_id());
 	(*gate_node)->CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
 }
 

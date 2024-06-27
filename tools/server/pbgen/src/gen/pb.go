@@ -157,7 +157,7 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 	return err
 }
 
-func BuildProtoClientGo(protoPath string, protoMd5Path string) (err error) {
+func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
 		return err
@@ -167,11 +167,163 @@ func BuildProtoClientGo(protoPath string, protoMd5Path string) (err error) {
 			continue
 		}
 
+		if !strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+			return
+		}
+
 		util.Wg.Add(1)
 		go func(fd os.DirEntry) {
 			defer util.Wg.Done()
 			fileName := protoPath + fd.Name()
-			md5FileName := protoMd5Path + fd.Name() + config.ClientGoEx + config.Md5Ex
+			md5FileName := protoMd5Path + fd.Name() + config.LoginGoMd5Ex + config.Md5Ex
+			fileSame, err := IsSameMD5(fileName, md5FileName)
+			dstFileName := config.LoginGoDir + fd.Name()
+			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
+			if fileSame &&
+				util.FileExists(fileName) &&
+				util.FileExists(md5FileName) &&
+				util.FileExists(dstFileName) {
+				return
+			}
+
+			sysType := runtime.GOOS
+			var cmd *exec.Cmd
+			if sysType == `linux` {
+				cmd = exec.Command("protoc",
+					"--go_out="+config.LoginGoDir,
+					fileName,
+					"--proto_path="+config.ProtoDir,
+					"-I="+config.ProtoDir+"common_proto/",
+					"-I="+config.ProtoDir+"component_proto/",
+					"-I="+config.ProtoDir+"event_proto/",
+					"-I="+config.ProtoDir+"logic_proto/",
+					"-I="+config.ProtoDir+"constants_proto/",
+					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+			} else {
+				cmd = exec.Command("./protoc.exe",
+					"--go_out="+config.LoginGoDir,
+					fileName,
+					"--proto_path="+config.ProtoDir,
+					"-I="+config.ProtoDir+"common_proto/",
+					"-I="+config.ProtoDir+"component_proto/",
+					"-I="+config.ProtoDir+"event_proto/",
+					"-I="+config.ProtoDir+"logic_proto/",
+					"-I="+config.ProtoDir+"constants_proto/",
+					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+			}
+
+			var out bytes.Buffer
+			var stderr bytes.Buffer
+			cmd.Stdout = &out
+			cmd.Stderr = &stderr
+			err = cmd.Run()
+			fmt.Println(cmd.String())
+			if err != nil {
+				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+				log.Fatal(err)
+			}
+			err = WriteToMd5ExFile(fileName, md5FileName)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(fd)
+	}
+	return err
+}
+
+func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
+	var fds []os.DirEntry
+	if fds, err = os.ReadDir(protoPath); err != nil {
+		return err
+	}
+	for _, fd := range fds {
+		if !util.IsProtoFile(fd) {
+			continue
+		}
+
+		if !strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+			return
+		}
+
+		util.Wg.Add(1)
+		go func(fd os.DirEntry) {
+			defer util.Wg.Done()
+			fileName := protoPath + fd.Name()
+			md5FileName := protoMd5Path + fd.Name() + config.DBGoMd5Ex + config.Md5Ex
+			fileSame, err := IsSameMD5(fileName, md5FileName)
+			dstFileName := config.DbGoDir + fd.Name()
+			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
+			if fileSame &&
+				util.FileExists(fileName) &&
+				util.FileExists(md5FileName) &&
+				util.FileExists(dstFileName) {
+				return
+			}
+
+			sysType := runtime.GOOS
+			var cmd *exec.Cmd
+			if sysType == `linux` {
+				cmd = exec.Command("protoc",
+					"--go_out="+config.DbGoDir,
+					fileName,
+					"--proto_path="+config.ProtoDir,
+					"-I="+config.ProtoDir+"common_proto/",
+					"-I="+config.ProtoDir+"component_proto/",
+					"-I="+config.ProtoDir+"event_proto/",
+					"-I="+config.ProtoDir+"logic_proto/",
+					"-I="+config.ProtoDir+"constants_proto/",
+					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+			} else {
+				cmd = exec.Command("./protoc.exe",
+					"--go_out="+config.DbGoDir,
+					fileName,
+					"--proto_path="+config.ProtoDir,
+					"-I="+config.ProtoDir+"common_proto/",
+					"-I="+config.ProtoDir+"component_proto/",
+					"-I="+config.ProtoDir+"event_proto/",
+					"-I="+config.ProtoDir+"logic_proto/",
+					"-I="+config.ProtoDir+"constants_proto/",
+					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+			}
+
+			var out bytes.Buffer
+			var stderr bytes.Buffer
+			cmd.Stdout = &out
+			cmd.Stderr = &stderr
+			err = cmd.Run()
+			fmt.Println(cmd.String())
+			if err != nil {
+				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+				log.Fatal(err)
+			}
+			err = WriteToMd5ExFile(fileName, md5FileName)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(fd)
+	}
+	return err
+}
+
+func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
+	var fds []os.DirEntry
+	if fds, err = os.ReadDir(protoPath); err != nil {
+		return err
+	}
+	for _, fd := range fds {
+		if !util.IsProtoFile(fd) {
+			continue
+		}
+
+		if fd.Name() == "db_base.proto" {
+			return
+		}
+
+		util.Wg.Add(1)
+		go func(fd os.DirEntry) {
+			defer util.Wg.Done()
+			fileName := protoPath + fd.Name()
+			md5FileName := protoMd5Path + fd.Name() + config.ClientGoMd5Ex + config.Md5Ex
 			fileSame, err := IsSameMD5(fileName, md5FileName)
 			dstFileName := config.ClientGoPbDir + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
@@ -226,7 +378,6 @@ func BuildProtoClientGo(protoPath string, protoMd5Path string) (err error) {
 	}
 	return err
 }
-
 func BuildAllProtoc() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		go func(i int) {
@@ -242,10 +393,11 @@ func BuildAllProtoc() {
 			}
 		}(i)
 		go func(i int) {
-			err := BuildProtoClientGo(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			err := BuildProtoGoClient(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}
 		}(i)
+
 	}
 }
