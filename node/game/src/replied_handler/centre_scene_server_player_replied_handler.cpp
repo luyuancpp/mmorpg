@@ -27,3 +27,11 @@ void CentreScenePlayerServiceRepliedHandler::LeaveSceneAsyncSavePlayerComplete(e
 ///<<< END WRITING YOUR CODE
 }
 
+void CentreScenePlayerServiceRepliedHandler::SceneInfoC2S(entt::entity player,
+	const ::SceneInfoRequest* request,
+	::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+

@@ -4,6 +4,7 @@ option go_package = "pb/game";
 
 import "google/protobuf/empty.proto";
 import "component_proto/scene_comp.proto";
+import "client_player_proto/scene_client_player.proto";
 option cc_generic_services = true;
 
 message CentreEnterSceneRequest
@@ -24,4 +25,5 @@ service CentreScenePlayerService
   rpc EnterScene (CentreEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveScene (CentreLeaveSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveSceneAsyncSavePlayerComplete (CentreLeaveSceneAsyncSavePlayerCompleteRequest) returns (google.protobuf.Empty);
+  rpc SceneInfoC2S (SceneInfoRequest) returns (google.protobuf.Empty);
 }

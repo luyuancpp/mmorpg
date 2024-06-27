@@ -42,23 +42,33 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
             return;
         }
     }
-    CentreEnterSceneRequest message;
-    message.mutable_scene_info()->CopyFrom(request->scene_info());
-    Send2CentrePlayer(CentreScenePlayerServiceEnterSceneMsgId, message, player);
+    CentreEnterSceneRequest req;
+    req.mutable_scene_info()->CopyFrom(request->scene_info());
+    Send2CentrePlayer(CentreScenePlayerServiceEnterSceneMsgId, req, player);
 ///<<< END WRITING YOUR CODE
 }
 
 void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,
 	const ::EnterSceneS2C* request,
-	::EnterSceneS2C* response)
+	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
+void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,
+	const ::SceneInfoRequest* request,
+	::SceneInfoResponse* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+    SceneInfoRequest req;
+    Send2CentrePlayer(CentreScenePlayerServiceSceneInfoC2SMsgId, req, player);
+///<<< END WRITING YOUR CODE
+}
+
 void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,
 	const ::SceneInfoS2C* request,
-	::SceneInfoS2C* response)
+	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

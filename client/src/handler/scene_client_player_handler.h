@@ -25,14 +25,21 @@ public:
 			{
 				tls_lua_state["ClientPlayerSceneServicePushEnterSceneS2CHandler"](
 				::google::protobuf::internal::DownCast<const ::EnterSceneS2C*>( request),
-				::google::protobuf::internal::DownCast<::EnterSceneS2C*>(response));
+				::google::protobuf::internal::DownCast<::Empty*>(response));
 			}
 			break;
 			case 2:
 			{
+				tls_lua_state["ClientPlayerSceneServiceSceneInfoC2SHandler"](
+				::google::protobuf::internal::DownCast<const ::SceneInfoRequest*>( request),
+				::google::protobuf::internal::DownCast<::SceneInfoResponse*>(response));
+			}
+			break;
+			case 3:
+			{
 				tls_lua_state["ClientPlayerSceneServicePushSceneInfoS2CHandler"](
 				::google::protobuf::internal::DownCast<const ::SceneInfoS2C*>( request),
-				::google::protobuf::internal::DownCast<::SceneInfoS2C*>(response));
+				::google::protobuf::internal::DownCast<::Empty*>(response));
 			}
 			break;
 			default:

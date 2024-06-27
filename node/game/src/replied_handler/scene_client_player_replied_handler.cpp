@@ -13,7 +13,15 @@ void ClientPlayerSceneServiceRepliedHandler::EnterSceneC2S(entt::entity player,
 
 void ClientPlayerSceneServiceRepliedHandler::PushEnterSceneS2C(entt::entity player,
 	const ::EnterSceneS2C* request,
-	::EnterSceneS2C* response)
+	::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ClientPlayerSceneServiceRepliedHandler::SceneInfoC2S(entt::entity player,
+	const ::SceneInfoRequest* request,
+	::SceneInfoResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -21,7 +29,7 @@ void ClientPlayerSceneServiceRepliedHandler::PushEnterSceneS2C(entt::entity play
 
 void ClientPlayerSceneServiceRepliedHandler::PushSceneInfoS2C(entt::entity player,
 	const ::SceneInfoS2C* request,
-	::SceneInfoS2C* response)
+	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

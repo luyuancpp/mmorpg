@@ -1,4 +1,5 @@
 0=ClientPlayerCommonServicePushTipS2C
+1=CentreScenePlayerServiceSceneInfoC2S
 2=CentreServiceUnRegisterGame
 3=CentreScenePlayerServiceLeaveScene
 4=CentreScenePlayerServiceEnterScene
@@ -20,6 +21,7 @@
 20=GamePlayerServiceCentre2GsLogin
 21=GateServiceKickConnByCentre
 22=AccountDBServiceLoad2Redis
+23=ClientPlayerSceneServiceSceneInfoC2S
 24=CentreServiceRegisterGate
 25=GameServiceCentreSend2PlayerViaGs
 26=CentreServiceGsPlayerService

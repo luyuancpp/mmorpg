@@ -11,11 +11,15 @@ public:
 
 	static void PushEnterSceneS2C(entt::entity player,
 		const ::EnterSceneS2C* request,
-		::EnterSceneS2C* response);
+		::Empty* response);
+
+	static void SceneInfoC2S(entt::entity player,
+		const ::SceneInfoRequest* request,
+		::SceneInfoResponse* response);
 
 	static void PushSceneInfoS2C(entt::entity player,
 		const ::SceneInfoS2C* request,
-		::SceneInfoS2C* response);
+		::Empty* response);
 
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
    entt::entity player,
@@ -32,12 +36,17 @@ public:
 		case 1:
 			PushEnterSceneS2C(player,
 			::google::protobuf::internal::DownCast<const EnterSceneS2C*>( request),
-			::google::protobuf::internal::DownCast<EnterSceneS2C*>(response));
+			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 2:
+			SceneInfoC2S(player,
+			::google::protobuf::internal::DownCast<const SceneInfoRequest*>( request),
+			::google::protobuf::internal::DownCast<SceneInfoResponse*>(response));
+		break;
+		case 3:
 			PushSceneInfoS2C(player,
 			::google::protobuf::internal::DownCast<const SceneInfoS2C*>( request),
-			::google::protobuf::internal::DownCast<SceneInfoS2C*>(response));
+			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		default:
 		break;
