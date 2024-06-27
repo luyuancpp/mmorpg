@@ -11,7 +11,8 @@ func LoginHandler(client *pkg.GameClient, response *game.LoginResponse) {
 		rq := &game.CreatePlayerRequest{}
 		client.Send(rq, 33)
 	} else {
-		player := logic.NewPlayer(response.Players[0].Player.PlayerId, client)
-		player.EnterGame()
+		logic.MainPlayer = logic.NewPlayer(response.Players[0].Player.PlayerId, client)
+		rq := &game.EnterGameRequest{PlayerId: logic.MainPlayer.PlayerId}
+		client.Send(rq, 52)
 	}
 }

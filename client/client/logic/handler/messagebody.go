@@ -8,11 +8,11 @@ import (
 
 func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 	if response.MessageId == 18 {
-		message := &game.EnterSceneS2C{}
+		message := &game.SceneInfoS2C{}
 		err := proto.Unmarshal(response.Body, message)
 		if err != nil {
 			return
 		}
-		EnterSceneS2CHandler(client, message)
+		SceneInfoS2CHandler(client, message)
 	}
 }
