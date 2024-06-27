@@ -16,7 +16,14 @@ void PlayerSceneSystem::EnterScene(entt::entity player, Guid scene)
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
 {
+	auto scene_info = tls.scene_registry.try_get<SceneInfo>(scene);
+	if (nullptr == scene_info)
+	{
+		LOG_ERROR << "enter scene error" << tls.registry.get<Guid>(player);
+		return;
+	}
 	EnterSceneS2C requset;
+	requset.mutable_scene_info()->CopyFrom(*scene_info);
 	Send2Player(ClientPlayerSceneServicePushEnterSceneS2CMsgId, requset, player);
 }
 
