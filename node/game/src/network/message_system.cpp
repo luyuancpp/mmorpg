@@ -69,7 +69,7 @@ void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg
 		return;
 	}
 	entt::entity centre_node_id{ player_node_info->centre_node_id() };
-	if (tls.centre_node_registry.valid(centre_node_id))
+	if (!tls.centre_node_registry.valid(centre_node_id))
 	{
 		LOG_ERROR << "centre not found" << player_node_info->centre_node_id();
 		return;
