@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "pb/game";
+
 enum EnterGsType
 {
 	  LOGIN_NONE = 0;//正常进入，换场景进入

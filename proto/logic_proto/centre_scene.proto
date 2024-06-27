@@ -1,4 +1,7 @@
 syntax = "proto3";
+
+option go_package = "pb/game";
+
 import "component_proto/scene_comp.proto";
 import "common_proto/empty.proto";
 option cc_generic_services = true;
