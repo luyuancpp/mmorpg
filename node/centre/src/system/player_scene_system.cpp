@@ -201,7 +201,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-    auto from_scene_info = tls.game_node_registry.try_get<SceneInfo>(from_scene->scene_entity_);
+    auto from_scene_info = tls.scene_registry.try_get<SceneInfo>(from_scene->scene_entity_);
     if (nullptr == from_scene_info)
     {
         return;
