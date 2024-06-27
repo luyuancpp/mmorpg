@@ -345,6 +345,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
     {
         player_node_info->set_gate_session_id(request->session_id());
     }
+    PlayerCommonSystem::OnRegister2GatePlayerGameNode(player);
 ///<<< END WRITING YOUR CODE
 }
 

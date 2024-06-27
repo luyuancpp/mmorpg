@@ -15,7 +15,7 @@ message BeforeEnterScene
   uint64 entity = 1;
 }
 
-message OnEnterScene
+message AfterEnterScene
 {
   uint64 entity = 1;
 }
@@ -25,7 +25,7 @@ message BeforeLeaveScene
   uint64 entity = 1;
 }
 
-message OnLeaveScene
+message AfterLeaveScene
 {
   uint64 entity = 1;
 }

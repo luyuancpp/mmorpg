@@ -11,11 +11,5 @@ void GamePlayerServiceRepliedHandler::Centre2GsLogin(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void GamePlayerServiceRepliedHandler::OnCentreEnterGateSucceed(entt::entity player,
-	const ::Centre2GsEnterGateSucceedRequest* request,
-	::google::protobuf::Empty* response)
-{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
-

@@ -27,7 +27,6 @@
 28=CentreServiceLsLoginAccount
 29=CentreSceneServiceRegisterScene
 31=CentreServiceRegisterGame
-32=GamePlayerServiceOnCentreEnterGateSucceed
 33=LoginServiceCreatePlayer
 34=LoginServiceLogin
 36=CentreServiceGatePlayerService

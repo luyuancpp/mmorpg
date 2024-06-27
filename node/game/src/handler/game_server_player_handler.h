@@ -9,10 +9,6 @@ public:
 		const ::Centre2GsLoginRequest* request,
 		::google::protobuf::Empty* response);
 
-	static void OnCentreEnterGateSucceed(entt::entity player,
-		const ::Centre2GsEnterGateSucceedRequest* request,
-		::google::protobuf::Empty* response);
-
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
    entt::entity player,
     const ::google::protobuf::Message* request,
@@ -23,11 +19,6 @@ public:
 		case 0:
 			Centre2GsLogin(player,
 			::google::protobuf::internal::DownCast<const Centre2GsLoginRequest*>( request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
-		break;
-		case 1:
-			OnCentreEnterGateSucceed(player,
-			::google::protobuf::internal::DownCast<const Centre2GsEnterGateSucceedRequest*>( request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		default:
