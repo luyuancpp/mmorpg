@@ -14,5 +14,12 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 			return
 		}
 		SceneInfoS2CHandler(client, message)
+	} else if response.MessageId == 17 {
+		message := &game.EnterSceneS2C{}
+		err := proto.Unmarshal(response.Body, message)
+		if err != nil {
+			return
+		}
+		EnterSceneS2CHandler(client, message)
 	}
 }

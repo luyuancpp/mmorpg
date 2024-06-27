@@ -28,9 +28,19 @@ message SceneInfoS2C
   repeated SceneInfo scene_info = 1;
 }
 
+message SceneInfoRequest
+{
+}
+
+message SceneInfoResponse
+{
+  repeated SceneInfo scene_info = 1;
+}
+
 service ClientPlayerSceneService 
 {
   rpc EnterSceneC2S (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
   rpc PushEnterSceneS2C (EnterSceneS2C) returns (Empty);
   rpc PushSceneInfoS2C (SceneInfoS2C) returns (Empty);
+  rpc SceneInfoC2S (SceneInfoRequest) returns (SceneInfoResponse);
 }
