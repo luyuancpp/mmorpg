@@ -191,17 +191,16 @@ void GameServiceHandler::RegisterGate(::google::protobuf::RpcController* control
 {
 ///<<< BEGIN WRITING YOUR CODE
     InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-    for (auto e : tls.network_registry.view<RpcSession>())
+    for (const auto& [e, session] : tls.network_registry.view<RpcSession>().each())
     {
-        auto& conn = tls.network_registry.get<RpcSession>(e).conn_;
-        if (conn->peerAddress().toIpPort() != session_addr.toIpPort())
+        if (session.conn_->peerAddress().toIpPort() != session_addr.toIpPort())
         {
             continue;
         }
         auto gate_node_id = tls.gate_node_registry.create(entt::entity{ request->gate_node_id() });
         auto& gate_node =
             tls.gate_node_registry.emplace<RpcSessionPtr>(gate_node_id, 
-                std::make_shared<RpcSessionPtr::element_type>(conn));
+                std::make_shared<RpcSessionPtr::element_type>(session.conn_));
         assert(gate_node_id == entt::entity{ request->gate_node_id() });
         LOG_INFO << " gate register: " << MessageToJsonString(request);
         break;

@@ -138,9 +138,8 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
     }
     else
     {
-        for (auto e : tls.game_node_registry.view<RpcClientPtr>())
+        for (const auto& [e, game_node] : tls.game_node_registry.view<RpcClientPtr>().each())
         {
-            auto& game_node = tls.game_node_registry.get<RpcClientPtr>(e);
             if (!IsSameAddr(game_node->peer_addr(), conn->peerAddress()))
             {
                 continue;

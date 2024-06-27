@@ -58,9 +58,9 @@ uint32_t ScenesSystem::GenSceneGuid()
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 {
 	std::size_t scene_size = 0;
-	for (const auto server_entity : tls.game_node_registry.view<ServerComp>())
+	for (const auto node : tls.game_node_registry.view<ServerComp>())
 	{
-		auto& server_comp = tls.game_node_registry.get<ServerComp>(server_entity);
+		auto& server_comp = tls.game_node_registry.get<ServerComp>(node);
 		scene_size += server_comp.GetSceneListByConfig(scene_config_id).size();
 	}
 	return scene_size;
