@@ -48,15 +48,7 @@ void SceneEventHandler::OnSceneCreateHandler(const OnSceneCreate& message)
 void SceneEventHandler::OnDestroySceneHandler(const OnDestroyScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity player = entt::to_entity(message.entity());
-    auto player_id = tls.registry.try_get<Guid>(player);
-    if (nullptr == player_id)
-    {
-        return;
-    }
-    PlayerSceneSystem::Send2GsEnterScene(player);
-    LOG_INFO << "player enter scene " << *player_id << " "
-        << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).guid();
+
 ///<<< END WRITING YOUR CODE
 }
 
@@ -112,7 +104,7 @@ void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
     {
         return;
     }
-    PlayerSceneSystem::EnterSceneS2C(player);
+    PlayerSceneSystem::Send2GsEnterScene(player);
 ///<<< END WRITING YOUR CODE
 }
 

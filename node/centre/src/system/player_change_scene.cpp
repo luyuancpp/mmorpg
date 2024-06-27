@@ -165,7 +165,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
 
 void PlayerChangeSceneSystem::OnEnterSceneOk(entt::entity player)
 {
-    S2CEnterScene s2c_enter_scene_event{};
-    s2c_enter_scene_event.set_entity(entt::to_integral(player));
-    tls.dispatcher.trigger(s2c_enter_scene_event);
+    S2CEnterScene s2centerscene_event{};
+    s2centerscene_event.set_entity(entt::to_integral(player));
+    tls.dispatcher.trigger(s2centerscene_event);
 }

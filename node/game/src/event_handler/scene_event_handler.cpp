@@ -63,6 +63,7 @@ void SceneEventHandler::AfterLeaveSceneHandler(const AfterLeaveScene& message)
 void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
+
 ///<<< END WRITING YOUR CODE
 }
 

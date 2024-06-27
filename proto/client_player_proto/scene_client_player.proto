@@ -4,6 +4,7 @@ option go_package = "pb/game";
 
 import "common_proto/tip.proto";
 import "common_proto/common.proto";
+import "common_proto/empty.proto";
 import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
@@ -30,6 +31,6 @@ message SceneInfoS2C
 service ClientPlayerSceneService 
 {
   rpc EnterSceneC2S (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
-  rpc PushEnterSceneS2C (EnterSceneS2C) returns (EnterSceneS2C);
-  rpc PushSceneInfoS2C (SceneInfoS2C) returns (SceneInfoS2C);
+  rpc PushEnterSceneS2C (EnterSceneS2C) returns (Empty);
+  rpc PushSceneInfoS2C (SceneInfoS2C) returns (Empty);
 }
