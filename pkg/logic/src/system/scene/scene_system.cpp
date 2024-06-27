@@ -224,7 +224,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 		(*game_player_info)->set_player_size((*game_player_info)->player_size() + 1);
 	}
 
-	OnEnterScene on_enter_scene_event;
+	AfterEnterScene on_enter_scene_event;
 	on_enter_scene_event.set_entity(entt::to_integral(param.player_));
 	tls.dispatcher.trigger(on_enter_scene_event);
 }
@@ -267,7 +267,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 		(*game_player_info)->set_player_size((*game_player_info)->player_size() - 1);
 	}
 
-	OnLeaveScene on_leave_scene_event;
+	AfterLeaveScene on_leave_scene_event;
 	on_leave_scene_event.set_entity(entt::to_integral(param.leaver_));
 	tls.dispatcher.trigger(on_leave_scene_event);
 }

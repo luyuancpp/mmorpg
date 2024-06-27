@@ -4,9 +4,9 @@
 class OnSceneCreate;
 class OnDestroyScene;
 class BeforeEnterScene;
-class OnEnterScene;
+class AfterEnterScene;
 class BeforeLeaveScene;
-class OnLeaveScene;
+class AfterLeaveScene;
 class S2CEnterScene;
 
 class SceneEventHandler
@@ -18,8 +18,8 @@ public:
 	static void OnSceneCreateHandler(const OnSceneCreate& message);
 	static void OnDestroySceneHandler(const OnDestroyScene& message);
 	static void BeforeEnterSceneHandler(const BeforeEnterScene& message);
-	static void OnEnterSceneHandler(const OnEnterScene& message);
+	static void AfterEnterSceneHandler(const AfterEnterScene& message);
 	static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
-	static void OnLeaveSceneHandler(const OnLeaveScene& message);
+	static void AfterLeaveSceneHandler(const AfterLeaveScene& message);
 	static void S2CEnterSceneHandler(const S2CEnterScene& message);
 };

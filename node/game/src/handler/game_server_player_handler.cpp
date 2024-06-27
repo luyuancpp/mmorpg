@@ -26,12 +26,3 @@ void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,
 	///<<< END WRITING YOUR CODE
 }
 
-void GamePlayerServiceHandler::OnCentreEnterGateSucceed(entt::entity player,
-	const ::Centre2GsEnterGateSucceedRequest* request,
-	::google::protobuf::Empty* response)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	PlayerCommonSystem::OnRegister2GatePlayerGameNode(player);
-	///<<< END WRITING YOUR CODE
-}
-

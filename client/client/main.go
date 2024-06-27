@@ -25,10 +25,18 @@ func main() {
 				rq := &game.LoginRequest{Account: "luhailong" + strconv.Itoa(i), Password: "luhailong"}
 				gameClient.Send(rq, 34)
 			}
-			msg := <-gameClient.Client.Conn.InMsgList
+			for {
+				msg := <-gameClient.Client.Conn.InMsgList
+				d := muduo.GetDescriptor(&msg)
+				if d.Name() == "LoginResponse" {
+					resp := msg.(*game.LoginResponse)
+					handler.LoginHandler(gameClient, resp)
+				} else if d.Name() == "CreatePlayerResponse" {
+					resp := msg.(*game.CreatePlayerResponse)
+					handler.CreatePlayerHandler(gameClient, resp)
+				}
+			}
 
-			loginResp := msg.(*game.LoginResponse)
-			handler.LoginResponseHandler(gameClient, loginResp)
 		}(i)
 
 	}

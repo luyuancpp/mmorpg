@@ -7,12 +7,7 @@ message Centre2GsLoginRequest
   uint32 enter_gs_type = 1;
 }
 
-message Centre2GsEnterGateSucceedRequest
-{
-}
-
 service GamePlayerService 
 {
   rpc Centre2GsLogin (Centre2GsLoginRequest) returns (google.protobuf.Empty);
-  rpc OnCentreEnterGateSucceed (Centre2GsEnterGateSucceedRequest) returns (google.protobuf.Empty);
 }
