@@ -44,11 +44,11 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
         LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
-	NodeRouteMessageRequest message_wrapper;
-	message_wrapper.mutable_msg()->set_message_id(message_id);
-	message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	(*gate_node)->Send(GateServicePlayerMessageMsgId, message_wrapper);
+	NodeRouteMessageRequest request;
+	request.mutable_body()->set_message_id(message_id);
+	request.mutable_body()->set_body(message.SerializeAsString());
+	request.mutable_head()->set_session_id(player_node_info->gate_session_id());
+	(*gate_node)->Send(GateServicePlayerMessageMsgId, request);
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
@@ -81,9 +81,9 @@ void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg
 		return;
 	}
 	NodeRouteMessageRequest msg_wrapper;
-	msg_wrapper.mutable_msg()->set_message_id(message_id);
-	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
-	msg_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
+	msg_wrapper.mutable_body()->set_message_id(message_id);
+	msg_wrapper.mutable_body()->set_body(msg.SerializeAsString());
+	msg_wrapper.mutable_head()->set_session_id(player_node_info->gate_session_id());
 	(*centre_node)->Send(CentreServiceGsPlayerServiceMsgId, msg_wrapper);
 }
 

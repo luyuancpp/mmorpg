@@ -316,7 +316,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto it = tls_sessions.find(request->ex().session_id());
+	auto it = tls_sessions.find(request->head().session_id());
 	if (it == tls_sessions.end())
 	{
 		return;
@@ -328,16 +328,16 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
         LOG_ERROR << "player not found " << player_info.player_id();
         return;
     }
-	if (request->msg().message_id() >= g_message_info.size())
+	if (request->body().message_id() >= g_message_info.size())
 	{
-		LOG_ERROR << "message_id not found " << request->msg().message_id();
+		LOG_ERROR << "message_id not found " << request->body().message_id();
 		return;
 	}
-	const auto& message_info = g_message_info.at(request->msg().message_id());
+	const auto& message_info = g_message_info.at(request->body().message_id());
 	const auto service_it = g_player_service.find(message_info.service);
 	if (service_it == g_player_service.end())
 	{
-		LOG_ERROR << "player service  not found " << request->msg().message_id();
+		LOG_ERROR << "player service  not found " << request->body().message_id();
 		return;
 	}
 	const auto& service_handler = service_it->second;
@@ -345,14 +345,14 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found " << request->msg().message_id();
+		LOG_ERROR << "method not found " << request->body().message_id();
 		//todo client error;
 		return;
 	}
 	const MessagePtr player_request(service->GetRequestPrototype(method).New());
-	if (!player_request->ParsePartialFromArray(request->msg().body().data(), int32_t(request->msg().body().size())))
+	if (!player_request->ParsePartialFromArray(request->body().body().data(), int32_t(request->body().body().size())))
 	{
-        LOG_ERROR << "ParsePartialFromArray " << request->msg().message_id();
+        LOG_ERROR << "ParsePartialFromArray " << request->body().message_id();
         //todo client error;
         return;
 	}
@@ -362,16 +362,16 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	{
 		return;
 	}
-	response->mutable_ex()->set_session_id(request->ex().session_id());
+	response->mutable_head()->set_session_id(request->head().session_id());
     auto byte_size = int32_t(response->ByteSizeLong());
-	response->mutable_msg()->mutable_body()->resize(byte_size);
+	response->mutable_body()->mutable_body()->resize(byte_size);
     // FIXME: error check
-    if (response->SerializePartialToArray(response->mutable_msg()->mutable_body()->data(), byte_size))
+    if (response->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
     {
         LOG_ERROR << "message error " << this;
         return;
     }
-	response->mutable_msg()->set_message_id(request->msg().message_id());
+	response->mutable_body()->set_message_id(request->body().message_id());
 ///<<< END WRITING YOUR CODE
 }
 

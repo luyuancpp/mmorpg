@@ -532,6 +532,438 @@ func (x *UnRegisterGameRequest) GetGameNodeId() uint32 {
 	return 0
 }
 
+type MessageBody struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id        uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Body      []byte `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
+	MessageId uint32 `protobuf:"varint,3,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+}
+
+func (x *MessageBody) Reset() {
+	*x = MessageBody{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_node_common_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MessageBody) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessageBody) ProtoMessage() {}
+
+func (x *MessageBody) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_node_common_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessageBody.ProtoReflect.Descriptor instead.
+func (*MessageBody) Descriptor() ([]byte, []int) {
+	return file_common_proto_node_common_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MessageBody) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *MessageBody) GetBody() []byte {
+	if x != nil {
+		return x.Body
+	}
+	return nil
+}
+
+func (x *MessageBody) GetMessageId() uint32 {
+	if x != nil {
+		return x.MessageId
+	}
+	return 0
+}
+
+type NodeMessageBody struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	NodeId    uint32 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	SessionId uint64 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+}
+
+func (x *NodeMessageBody) Reset() {
+	*x = NodeMessageBody{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_node_common_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NodeMessageBody) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeMessageBody) ProtoMessage() {}
+
+func (x *NodeMessageBody) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_node_common_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeMessageBody.ProtoReflect.Descriptor instead.
+func (*NodeMessageBody) Descriptor() ([]byte, []int) {
+	return file_common_proto_node_common_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *NodeMessageBody) GetNodeId() uint32 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeMessageBody) GetSessionId() uint64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+type NodeRouteMessageRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg *MessageBody     `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
+	Ex  *NodeMessageBody `protobuf:"bytes,2,opt,name=ex,proto3" json:"ex,omitempty"`
+}
+
+func (x *NodeRouteMessageRequest) Reset() {
+	*x = NodeRouteMessageRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_node_common_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NodeRouteMessageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeRouteMessageRequest) ProtoMessage() {}
+
+func (x *NodeRouteMessageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_node_common_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeRouteMessageRequest.ProtoReflect.Descriptor instead.
+func (*NodeRouteMessageRequest) Descriptor() ([]byte, []int) {
+	return file_common_proto_node_common_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *NodeRouteMessageRequest) GetMsg() *MessageBody {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
+func (x *NodeRouteMessageRequest) GetEx() *NodeMessageBody {
+	if x != nil {
+		return x.Ex
+	}
+	return nil
+}
+
+type NodeRouteMessageResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg *MessageBody     `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
+	Ex  *NodeMessageBody `protobuf:"bytes,2,opt,name=ex,proto3" json:"ex,omitempty"`
+}
+
+func (x *NodeRouteMessageResponse) Reset() {
+	*x = NodeRouteMessageResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_node_common_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NodeRouteMessageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeRouteMessageResponse) ProtoMessage() {}
+
+func (x *NodeRouteMessageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_node_common_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeRouteMessageResponse.ProtoReflect.Descriptor instead.
+func (*NodeRouteMessageResponse) Descriptor() ([]byte, []int) {
+	return file_common_proto_node_common_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *NodeRouteMessageResponse) GetMsg() *MessageBody {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
+func (x *NodeRouteMessageResponse) GetEx() *NodeMessageBody {
+	if x != nil {
+		return x.Ex
+	}
+	return nil
+}
+
+type PlayerMessageExtern struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	PlayerId uint64 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+}
+
+func (x *PlayerMessageExtern) Reset() {
+	*x = PlayerMessageExtern{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_node_common_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PlayerMessageExtern) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerMessageExtern) ProtoMessage() {}
+
+func (x *PlayerMessageExtern) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_node_common_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerMessageExtern.ProtoReflect.Descriptor instead.
+func (*PlayerMessageExtern) Descriptor() ([]byte, []int) {
+	return file_common_proto_node_common_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *PlayerMessageExtern) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+type PlayerNodeServiceRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg *MessageBody         `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
+	Ex  *PlayerMessageExtern `protobuf:"bytes,2,opt,name=ex,proto3" json:"ex,omitempty"`
+}
+
+func (x *PlayerNodeServiceRequest) Reset() {
+	*x = PlayerNodeServiceRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_node_common_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PlayerNodeServiceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerNodeServiceRequest) ProtoMessage() {}
+
+func (x *PlayerNodeServiceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_node_common_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerNodeServiceRequest.ProtoReflect.Descriptor instead.
+func (*PlayerNodeServiceRequest) Descriptor() ([]byte, []int) {
+	return file_common_proto_node_common_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *PlayerNodeServiceRequest) GetMsg() *MessageBody {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
+func (x *PlayerNodeServiceRequest) GetEx() *PlayerMessageExtern {
+	if x != nil {
+		return x.Ex
+	}
+	return nil
+}
+
+type PlayerMessageRespone struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Msg *MessageBody         `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
+	Ex  *PlayerMessageExtern `protobuf:"bytes,2,opt,name=ex,proto3" json:"ex,omitempty"`
+}
+
+func (x *PlayerMessageRespone) Reset() {
+	*x = PlayerMessageRespone{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_node_common_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PlayerMessageRespone) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerMessageRespone) ProtoMessage() {}
+
+func (x *PlayerMessageRespone) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_node_common_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerMessageRespone.ProtoReflect.Descriptor instead.
+func (*PlayerMessageRespone) Descriptor() ([]byte, []int) {
+	return file_common_proto_node_common_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *PlayerMessageRespone) GetMsg() *MessageBody {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
+func (x *PlayerMessageRespone) GetEx() *PlayerMessageExtern {
+	if x != nil {
+		return x.Ex
+	}
+	return nil
+}
+
+type NodeRouteMessageBody struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	NodeInfo *NodeInfo `protobuf:"bytes,2,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"`
+}
+
+func (x *NodeRouteMessageBody) Reset() {
+	*x = NodeRouteMessageBody{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_node_common_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NodeRouteMessageBody) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeRouteMessageBody) ProtoMessage() {}
+
+func (x *NodeRouteMessageBody) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_node_common_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeRouteMessageBody.ProtoReflect.Descriptor instead.
+func (*NodeRouteMessageBody) Descriptor() ([]byte, []int) {
+	return file_common_proto_node_common_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *NodeRouteMessageBody) GetNodeInfo() *NodeInfo {
+	if x != nil {
+		return x.NodeInfo
+	}
+	return nil
+}
+
 var File_common_proto_node_common_proto protoreflect.FileDescriptor
 
 var file_common_proto_node_common_proto_rawDesc = []byte{
@@ -604,9 +1036,49 @@ var file_common_proto_node_common_proto_rawDesc = []byte{
 	0x65, 0x49, 0x64, 0x22, 0x39, 0x0a, 0x15, 0x55, 0x6e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
 	0x72, 0x47, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x0c,
 	0x67, 0x61, 0x6d, 0x65, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0d, 0x52, 0x0a, 0x67, 0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x42, 0x09,
-	0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x28, 0x0d, 0x52, 0x0a, 0x67, 0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x22, 0x50,
+	0x0a, 0x0b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x12, 0x0e, 0x0a,
+	0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a,
+	0x04, 0x62, 0x6f, 0x64, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x62, 0x6f, 0x64,
+	0x79, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x5f, 0x69, 0x64, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x49, 0x64,
+	0x22, 0x49, 0x0a, 0x0f, 0x4e, 0x6f, 0x64, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42,
+	0x6f, 0x64, 0x79, 0x12, 0x17, 0x0a, 0x07, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x6e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x09, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x22, 0x5b, 0x0a, 0x17, 0x4e,
+	0x6f, 0x64, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64,
+	0x79, 0x52, 0x03, 0x6d, 0x73, 0x67, 0x12, 0x20, 0x0a, 0x02, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x10, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x42, 0x6f, 0x64, 0x79, 0x52, 0x02, 0x65, 0x78, 0x22, 0x5c, 0x0a, 0x18, 0x4e, 0x6f, 0x64, 0x65,
+	0x52, 0x6f, 0x75, 0x74, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1e, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x0c, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x52,
+	0x03, 0x6d, 0x73, 0x67, 0x12, 0x20, 0x0a, 0x02, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x10, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f,
+	0x64, 0x79, 0x52, 0x02, 0x65, 0x78, 0x22, 0x32, 0x0a, 0x13, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x12, 0x1b, 0x0a,
+	0x09, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x08, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x49, 0x64, 0x22, 0x60, 0x0a, 0x18, 0x50, 0x6c,
+	0x61, 0x79, 0x65, 0x72, 0x4e, 0x6f, 0x64, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64,
+	0x79, 0x52, 0x03, 0x6d, 0x73, 0x67, 0x12, 0x24, 0x0a, 0x02, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x14, 0x2e, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x52, 0x02, 0x65, 0x78, 0x22, 0x5c, 0x0a, 0x14,
+	0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x65, 0x12, 0x1e, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x0c, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x52,
+	0x03, 0x6d, 0x73, 0x67, 0x12, 0x24, 0x0a, 0x02, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x14, 0x2e, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x52, 0x02, 0x65, 0x78, 0x22, 0x3e, 0x0a, 0x14, 0x4e, 0x6f,
+	0x64, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f,
+	0x64, 0x79, 0x12, 0x26, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f,
+	0x52, 0x08, 0x6e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62,
+	0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -621,7 +1093,7 @@ func file_common_proto_node_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_node_common_proto_rawDescData
 }
 
-var file_common_proto_node_common_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_common_proto_node_common_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_common_proto_node_common_proto_goTypes = []interface{}{
 	(*RouteNodeInfo)(nil),                // 0: RouteNodeInfo
 	(*RouteMsgStringRequest)(nil),        // 1: RouteMsgStringRequest
@@ -631,26 +1103,42 @@ var file_common_proto_node_common_proto_goTypes = []interface{}{
 	(*RegisterGameRequest)(nil),          // 5: RegisterGameRequest
 	(*RegisterGateRequest)(nil),          // 6: RegisterGateRequest
 	(*UnRegisterGameRequest)(nil),        // 7: UnRegisterGameRequest
-	(*NodeInfo)(nil),                     // 8: NodeInfo
-	(*PlayerMessageExtern)(nil),          // 9: PlayerMessageExtern
-	(*IpPort)(nil),                       // 10: IpPort
+	(*MessageBody)(nil),                  // 8: MessageBody
+	(*NodeMessageBody)(nil),              // 9: NodeMessageBody
+	(*NodeRouteMessageRequest)(nil),      // 10: NodeRouteMessageRequest
+	(*NodeRouteMessageResponse)(nil),     // 11: NodeRouteMessageResponse
+	(*PlayerMessageExtern)(nil),          // 12: PlayerMessageExtern
+	(*PlayerNodeServiceRequest)(nil),     // 13: PlayerNodeServiceRequest
+	(*PlayerMessageRespone)(nil),         // 14: PlayerMessageRespone
+	(*NodeRouteMessageBody)(nil),         // 15: NodeRouteMessageBody
+	(*NodeInfo)(nil),                     // 16: NodeInfo
+	(*IpPort)(nil),                       // 17: IpPort
 }
 var file_common_proto_node_common_proto_depIdxs = []int32{
-	8,  // 0: RouteNodeInfo.node_info:type_name -> NodeInfo
+	16, // 0: RouteNodeInfo.node_info:type_name -> NodeInfo
 	0,  // 1: RouteMsgStringRequest.route_data_list:type_name -> RouteNodeInfo
 	0,  // 2: RouteMsgStringResponse.route_data_list:type_name -> RouteNodeInfo
-	8,  // 3: RoutePlayerMsgStringRequest.node_list:type_name -> NodeInfo
-	9,  // 4: RoutePlayerMsgStringRequest.player_ex:type_name -> PlayerMessageExtern
-	8,  // 5: RoutePlayerMsgStringResponse.node_list:type_name -> NodeInfo
-	9,  // 6: RoutePlayerMsgStringResponse.player_ex:type_name -> PlayerMessageExtern
-	10, // 7: RegisterGameRequest.rpc_client:type_name -> IpPort
-	10, // 8: RegisterGameRequest.rpc_server:type_name -> IpPort
-	10, // 9: RegisterGateRequest.rpc_client:type_name -> IpPort
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	16, // 3: RoutePlayerMsgStringRequest.node_list:type_name -> NodeInfo
+	12, // 4: RoutePlayerMsgStringRequest.player_ex:type_name -> PlayerMessageExtern
+	16, // 5: RoutePlayerMsgStringResponse.node_list:type_name -> NodeInfo
+	12, // 6: RoutePlayerMsgStringResponse.player_ex:type_name -> PlayerMessageExtern
+	17, // 7: RegisterGameRequest.rpc_client:type_name -> IpPort
+	17, // 8: RegisterGameRequest.rpc_server:type_name -> IpPort
+	17, // 9: RegisterGateRequest.rpc_client:type_name -> IpPort
+	8,  // 10: NodeRouteMessageRequest.msg:type_name -> MessageBody
+	9,  // 11: NodeRouteMessageRequest.ex:type_name -> NodeMessageBody
+	8,  // 12: NodeRouteMessageResponse.msg:type_name -> MessageBody
+	9,  // 13: NodeRouteMessageResponse.ex:type_name -> NodeMessageBody
+	8,  // 14: PlayerNodeServiceRequest.msg:type_name -> MessageBody
+	12, // 15: PlayerNodeServiceRequest.ex:type_name -> PlayerMessageExtern
+	8,  // 16: PlayerMessageRespone.msg:type_name -> MessageBody
+	12, // 17: PlayerMessageRespone.ex:type_name -> PlayerMessageExtern
+	16, // 18: NodeRouteMessageBody.node_info:type_name -> NodeInfo
+	19, // [19:19] is the sub-list for method output_type
+	19, // [19:19] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_node_common_proto_init() }
@@ -756,6 +1244,102 @@ func file_common_proto_node_common_proto_init() {
 				return nil
 			}
 		}
+		file_common_proto_node_common_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MessageBody); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_common_proto_node_common_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NodeMessageBody); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_common_proto_node_common_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NodeRouteMessageRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_common_proto_node_common_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NodeRouteMessageResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_common_proto_node_common_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PlayerMessageExtern); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_common_proto_node_common_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PlayerNodeServiceRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_common_proto_node_common_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PlayerMessageRespone); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_common_proto_node_common_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NodeRouteMessageBody); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -763,7 +1347,7 @@ func file_common_proto_node_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_common_proto_node_common_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
