@@ -202,7 +202,7 @@ void CentreNode::InitNodeServer()
 
     NodeInfoRequest req;
     req.set_zone_id(zone.zone_id());
-    void SendGetNodeInfo(NodeInfoRequest & req);
+    void SendGetNodeInfo(NodeInfoRequest& req);
     SendGetNodeInfo(req);
 }
 

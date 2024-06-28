@@ -186,7 +186,7 @@ void GameNode::InitNodeByReqInfo()
     {
         NodeInfoRequest req;
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
-        void SendGetNodeInfo(NodeInfoRequest & request);
+        void SendGetNodeInfo(NodeInfoRequest& request);
         SendGetNodeInfo(req);
     }
 }
