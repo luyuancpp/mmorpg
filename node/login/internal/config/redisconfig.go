@@ -12,7 +12,7 @@ type RedisConf struct {
 
 var RedisConfig RedisConf
 
-func LoadRedis() {
+func init() {
 	content, err := os.ReadFile("etc/redis.yaml")
 	if err != nil {
 		logx.Error(err)

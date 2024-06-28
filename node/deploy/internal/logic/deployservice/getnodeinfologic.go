@@ -2,12 +2,14 @@ package deployservicelogic
 
 import (
 	"context"
+	"deploy/internal/logic/pkg/constants"
 	"deploy/internal/logic/pkg/db"
 	"strconv"
 
 	"deploy/internal/svc"
 	"deploy/pb/game"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -46,14 +48,26 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 	db.PbDb.LoadListByWhereCase(response.Info.GetRedisInfo(), "where zone_id="+zoneId)
 
 	//to do 分布式异步
+	setKeyName := ""
 	if game.ENodeType(in.GetNodeType()) == game.ENodeType_kCentreNode {
 		response.NodeId = in.GetZoneId()
 	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kGameNode {
-		response.NodeId = 1
+		setKeyName = constants.GameNodeSetKeyName
 	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kLoginNode {
-		response.NodeId = 1
+		setKeyName = constants.LoginNodeSetKeyName
 	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kGateNode {
-		response.NodeId = 1
+		setKeyName = constants.GateNodeSetKeyName
+	}
+	if setKeyName != "" {
+		count, _ := l.svcCtx.Redis.ZCard(l.ctx, setKeyName).Result()
+		nodeId := uint32(count) + 1
+		err := l.svcCtx.Redis.ZAdd(l.ctx, setKeyName,
+			redis.Z{Score: float64(in.GetZoneId()), Member: nodeId}).Err()
+		if err != nil {
+			logx.Error(err.Error())
+			return response, err
+		}
+		response.NodeId = nodeId
 	}
 
 	return response, nil

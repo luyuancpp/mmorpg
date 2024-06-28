@@ -8,7 +8,7 @@ import (
 	"login/client/dbservice/playercentredbservice"
 	"login/client/dbservice/playerdbservice"
 	"login/internal/config"
-	"login/pkg/centre"
+	"login/internal/logic/pkg/centre"
 )
 
 var configFileDB = flag.String("dbClient", "etc/dbclient.json", "the config file")

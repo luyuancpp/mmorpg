@@ -7,7 +7,7 @@ import (
 import "gopkg.in/yaml.v3"
 
 type RedisConf struct {
-	Addr string `yaml:"addr"`
+	Addr string `yaml:"Addr"`
 }
 
 var RedisConfig RedisConf
@@ -17,7 +17,6 @@ func init() {
 	if err != nil {
 		logx.Error(err)
 	}
-
 	err = yaml.Unmarshal(content, &RedisConfig)
 	if err != nil {
 		logx.Error(err)

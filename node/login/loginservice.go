@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"login/data"
-
 	"login/internal/config"
 	loginserviceServer "login/internal/server/loginservice"
 	"login/internal/svc"
@@ -22,13 +20,9 @@ var configFile = flag.String("loginService", "etc/loginservice.yaml", "the confi
 func main() {
 	flag.Parse()
 
-	config.Init()
-
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)
-
-	data.Init()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))
