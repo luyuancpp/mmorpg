@@ -14,7 +14,7 @@ type CentreClientConfig struct {
 
 var CentreClientConf *CentreClientConfig
 
-func LoadCentre() {
+func init() {
 	var yamlFile, err = os.Open("etc/centreclient.yaml")
 	if err != nil {
 		log.Fatalf("error: %v", err)

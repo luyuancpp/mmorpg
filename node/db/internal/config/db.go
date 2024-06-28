@@ -21,7 +21,7 @@ type DBConf struct {
 
 var DBConfig DBConf
 
-func LoadDB() {
+func init() {
 	var yamlFile, err = os.Open("etc/db.yaml")
 	if err != nil {
 		log.Fatalf("error: %v", err)

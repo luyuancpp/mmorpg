@@ -185,6 +185,7 @@ void GameNode::InitNodeByReqInfo()
     deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
     {
         NodeInfoRequest req;
+        req.set_node_type(kGameNode);
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
         void SendGetNodeInfo(NodeInfoRequest& request);
         SendGetNodeInfo(req);
