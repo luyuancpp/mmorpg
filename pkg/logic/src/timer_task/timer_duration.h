@@ -12,7 +12,7 @@
  class TimerDuration
  {
  public:
-     typedef std::unique_ptr<TimerDuration> time_duration_ptr;
+     using time_duration_ptr = std::unique_ptr<TimerDuration> ;
 
      enum eDurationEnum
      {

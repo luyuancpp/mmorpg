@@ -7,8 +7,8 @@
  class DurationManager
  {
  public:
-     typedef std::unique_ptr<TimerDuration> time_duration_ptr;
-     typedef std::vector<time_duration_ptr> timer_duration_vec;
+     using time_duration_ptr = std::unique_ptr<TimerDuration>;
+     using timer_duration_vec = std::vector<time_duration_ptr>;
 
      bool InDuration(time_t t)
      {
