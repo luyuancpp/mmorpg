@@ -10,7 +10,7 @@ func CreatePlayerHandler(client *pkg.GameClient, response *game.CreatePlayerResp
 	if response.Error.Id > 0 {
 		return
 	}
-	logic.MainPlayer = logic.NewPlayer(response.Players[0].Player.PlayerId, client)
-	rq := &game.EnterGameRequest{PlayerId: logic.MainPlayer.PlayerId}
+	logic.GMainPlayer = logic.NewMainPlayer(response.Players[0].Player.PlayerId, client)
+	rq := &game.EnterGameRequest{PlayerId: logic.GMainPlayer.PlayerId}
 	client.Send(rq, 52)
 }

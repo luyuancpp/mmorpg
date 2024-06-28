@@ -21,5 +21,12 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 			return
 		}
 		EnterSceneS2CHandler(client, message)
+	} else if response.MessageId == 0 {
+		message := &game.TipS2C{}
+		err := proto.Unmarshal(response.Body, message)
+		if err != nil {
+			return
+		}
+		TipS2CHandler(client, message)
 	}
 }

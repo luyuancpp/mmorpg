@@ -8,7 +8,6 @@ using namespace muduo::net;
 
 int main(int argc, char* argv[])
 {
- 
     EventLoop loop;
     CentreNode server(&loop);
     server.Init();

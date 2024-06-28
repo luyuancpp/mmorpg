@@ -62,8 +62,6 @@ void CentreNode::Init()
    
     void InitServiceHandler();
     InitServiceHandler();
-
-    
 }
 
 void CentreNode::InitNodeByReqInfo()

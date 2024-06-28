@@ -10,10 +10,15 @@ type Player struct {
 	Client   *pkg.GameClient
 }
 
-var MainPlayer *Player
+type MainPlayer struct {
+	SceneId uint32
+	Player
+}
 
-func NewPlayer(playerId uint64, client *pkg.GameClient) *Player {
-	return &Player{PlayerId: playerId, Client: client}
+var GMainPlayer *MainPlayer
+
+func NewMainPlayer(playerId uint64, client *pkg.GameClient) *MainPlayer {
+	return &MainPlayer{Player: Player{PlayerId: playerId, Client: client}}
 }
 
 func (p *Player) Send(message proto.Message, messageId uint32) {
