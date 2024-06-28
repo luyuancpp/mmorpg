@@ -119,8 +119,6 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
             if (conn->connected() &&
                 IsSameAddr(centre_node->peer_addr(), conn->peerAddress()))
             {
-               
-
                 OnConnect2Centre connect2centre_event;
                 connect2centre_event.set_entity(entt::to_integral(it));
                 tls.dispatcher.trigger(connect2centre_event);

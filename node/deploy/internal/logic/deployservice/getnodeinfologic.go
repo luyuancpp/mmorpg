@@ -47,7 +47,7 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 
 	//to do 分布式异步
 	if game.ENodeType(in.GetNodeType()) == game.ENodeType_kCentreNode {
-		response.NodeId = 1
+		response.NodeId = in.GetZoneId()
 	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kGameNode {
 		response.NodeId = 1
 	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kLoginNode {

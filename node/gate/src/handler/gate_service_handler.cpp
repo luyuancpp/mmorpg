@@ -68,7 +68,7 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 	{
 		return;
 	}
-	//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉controller 让ms去通知gs去发送信息
+	//注意这里如果gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉centre 让centre去通知gs去发送信息
 	it->second.game_node_id_ = request->game_node_id();
 	response->mutable_session_info()->set_session_id(request->session_info().session_id());
 	///<<< END WRITING YOUR CODE
