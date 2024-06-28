@@ -10,9 +10,9 @@ namespace muduo
     {
     public:
 
-        typedef std::shared_ptr<TimerTask> ptimer_type;
+        using ptimer_type = std::shared_ptr<TimerTask> ;
 
-        typedef std::unordered_map<TimerTask *, ptimer_type> timelist_type;
+        using timelist_type =  std::unordered_map<TimerTask *, ptimer_type>;
 
         void Clear()
         {
