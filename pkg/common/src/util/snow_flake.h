@@ -38,7 +38,7 @@ public:
         node_ = node_id;
         node_ = (node_ << kTimeByte) << kStepBits;
     }
-    inline uint16_t node_id()const { return node_id_; }
+    inline uint64_t node_id()const { return node_id_; }
 
     inline void set_epoch(uint64_t epoch) { epoch_ = epoch; }
 
@@ -101,10 +101,10 @@ private:
         last_time_ = next_time;
     }
 
-    uint16_t node_id_{ 0 };
+    uint64_t node_id_{ 0 };
     uint64_t node_{ 0 };
     uint64_t last_time_{ 0 };
-    uint32_t step_{ 0 };
+    uint64_t step_{ 0 };
     uint64_t epoch_{ kEpoch };
 };
 
