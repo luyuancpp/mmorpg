@@ -2,20 +2,17 @@
 
 #include "muduo/base/Logging.h"
 
-#include "type_define/type_define.h"
-#include "network/gate_session.h"
 #include "comp/scene_comp.h"
-#include "thread_local/thread_local_storage.h"
-#include "system/centre_player_system.h"
-#include "network/game_node.h"
-#include "network/rpc_session.h"
-#include "service/service.h"
-#include "service/gate_service_service.h"
-#include "service/game_service_service.h"
 #include "component_proto/player_network_comp.pb.h"
+#include "network/gate_session.h"
+#include "network/rpc_session.h"
+#include "service/game_service_service.h"
+#include "service/gate_service_service.h"
+#include "service/service.h"
+#include "thread_local/thread_local_storage.h"
 #include "thread_local/thread_local_storage_centre.h"
 #include "thread_local/thread_local_storage_common_logic.h"
-#include "util/session.h"
+#include "type_define/type_define.h"
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
@@ -25,7 +22,7 @@ void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, Node
         LOG_ERROR << "gs not found ->" << node_id;
 		return;
 	}
-	auto node =  tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
+	const auto node =  tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
 	if (nullptr == node)
 	{
 		LOG_ERROR << "gs not found ->" << node_id;
@@ -100,7 +97,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
         return;
     }
 	NodeRouteMessageRequest request;
-	auto byte_size = int32_t(message.ByteSizeLong());
+	const auto  byte_size = static_cast < int32_t > ( message . ByteSizeLong ( ) );
 	request.mutable_body()->mutable_body()->resize(byte_size);
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byte_size);
 	request.mutable_head()->set_session_id(player_node_info->gate_session_id());
@@ -124,7 +121,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
 		return;
 	}
-	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_id);
+	const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_id);
 	if (nullptr == gate_node)
 	{
         LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
@@ -161,7 +158,7 @@ void Send2Gate(const uint32_t message_id,
         LOG_ERROR << "gate not found " << gate_node_id;
         return;
     }
-	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_id);
+	const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_id);
 	if (nullptr == gate_node)
 	{
         LOG_ERROR << "gate not found " << gate_node_id;
@@ -186,7 +183,7 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 	{
 		return;
 	}
-    auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(game_node_id);
+	const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == gate_node)
     {
         LOG_ERROR << "gate not found " << player_node_info->game_node_id();
@@ -203,12 +200,12 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 
 void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
-	entt::entity game_node_id{ node_id };
+	const entt::entity game_node_id{ node_id };
     if (!tls.game_node_registry.valid(game_node_id))
     {
         return;
     }
-    auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
+	const auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == game_node)
     {
         LOG_ERROR << "gate not found " << node_id;

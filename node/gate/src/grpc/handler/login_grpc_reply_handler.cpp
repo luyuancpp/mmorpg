@@ -1,15 +1,13 @@
 
 #include "muduo/base/Logging.h"
 
-#include "util/defer.h"
-
-#include "thread_local/thread_local_storage_gate.h"
-#include "grpc/client/login_async_client_call.h"
 #include "gate_node.h"
-#include "network/gate_session.h"
+#include "grpc/client/login_async_client_call.h"
 #include "grpc/request/login_grpc_request.h"
+#include "network/gate_session.h"
+#include "thread_local/thread_local_storage_gate.h"
 
-using GrpcLoginStupPtr = std::unique_ptr<LoginService::Stub>;
+using GrpcLoginStubPtr = std::unique_ptr<LoginService::Stub>;
 
 void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
 {
@@ -116,7 +114,7 @@ void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
 
 void InitLoginNodeComponent()
 {
-    for (auto&& e : tls_gate.login_node_registry.view<GrpcLoginStupPtr>())
+    for (auto&& e : tls_gate.login_node_registry.view<GrpcLoginStubPtr>())
     {
         tls_gate.login_node_registry.emplace<LoginC2LCompletionQueue>(e);
         tls_gate.login_node_registry.emplace<CreatePlayerC2LCompletionQueue>(e);
@@ -126,7 +124,7 @@ void InitLoginNodeComponent()
 
 void AsyncCompleteRpcLoginService()
 {
-    for (auto&& e : tls_gate.login_node_registry.view<GrpcLoginStupPtr>())
+    for (auto&& e : tls_gate.login_node_registry.view<GrpcLoginStubPtr>())
     {
         AsyncCompleteGrpcLoginC2L(
             tls_gate.login_node_registry.get<LoginC2LCompletionQueue>(e).cq);

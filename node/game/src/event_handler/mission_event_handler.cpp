@@ -1,7 +1,7 @@
 #include "mission_event_handler.h"
 #include "event_proto/mission_event.pb.h"
-///<<< BEGIN WRITING YOUR CODE
 #include "thread_local/thread_local_storage.h"
+///<<< BEGIN WRITING YOUR CODE
 #include "comp/mission_comp.h"
 #include "system/mission/mission_system.h"
 ///<<< END WRITING YOUR CODE

@@ -1,5 +1,4 @@
 #include "src/gate_node.h"
-#include "src/network/gate_session.h"
 
 int main(int argc, char* argv[])
 {

@@ -23,8 +23,7 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 	//正在切换场景中，不能马上切换，gs崩溃了怎么办
 	CentreChangeSceneInfo change_scene_info;
 	PlayerChangeSceneSystem::CopyTo(change_scene_info, request->scene_info());
-	auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
-	if (ret != kRetOK)
+	if ( const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info) ; ret != kRetOK)
 	{
 		PlayerTipSystem::Tip(player, ret, {});
 		return;
@@ -69,6 +68,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
+		//todo 
 		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
 		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
@@ -85,14 +85,12 @@ void CentreScenePlayerServiceHandler::SceneInfoC2S(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//给客户端发所有场景消息
-
     SceneInfoS2C message;
     for (const auto& [e, info] : tls.scene_registry.view<SceneInfo>().each())
     {
         message.mutable_scene_info()->Add()->CopyFrom(info);
     }
     Send2Player(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
-
 ///<<< END WRITING YOUR CODE
 }
 

@@ -2,8 +2,8 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "common_proto/login_service.pb.h"
 #include "common_proto/login_service.grpc.pb.h"
+#include "common_proto/login_service.pb.h"
 
 using grpc::ClientContext;
 using grpc::Status;

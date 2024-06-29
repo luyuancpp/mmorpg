@@ -5,9 +5,9 @@
 
 std::unique_ptr<DeployService::Stub> g_deploy_stub;
 
-void SendGetNodeInfo(NodeInfoRequest& request)
+void SendGetNodeInfo( const NodeInfoRequest& request)
 {
-    DeployAsyncClientCall* call = new DeployAsyncClientCall;
+    const auto call(new DeployAsyncClientCall);
     call->response_reader =
         g_deploy_stub->PrepareAsyncGetNodeInfo(&call->context, request, g_deploy_cq.get());
     call->response_reader->StartCall();

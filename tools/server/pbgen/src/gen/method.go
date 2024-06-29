@@ -131,7 +131,7 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 func getMethodRepliedHandlerHeadStr(methodList *RpcMethodInfos) (data string) {
 	methodLen := len(*methodList)
 	firstMethodInfo := (*methodList)[0]
-	data = firstMethodInfo.IncludeName() +
+	data = "#pragma once\n" + firstMethodInfo.IncludeName() +
 		"#include \"muduo/net/TcpConnection.h\"\n" +
 		"using namespace muduo;\n" +
 		"using namespace muduo::net;\n\n"

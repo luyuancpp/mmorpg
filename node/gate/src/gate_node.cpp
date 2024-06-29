@@ -5,17 +5,15 @@
 #include "game_config/deploy_json.h"
 #include "network/rpc_session.h"
 
-#include "service/service.h"
-#include "service/centre_service_service.h"
 #include "common_proto/deploy_service.grpc.pb.h"
-#include "service/game_service_service.h"
-#include "thread_local/thread_local_storage_gate.h"
 #include "grpc/deploy/deployclient.h"
-
-#include "constants_proto/node.pb.h"
-#include "common_proto/game_service.pb.h"
+#include "service/centre_service_service.h"
+#include "service/game_service_service.h"
+#include "service/service.h"
+#include "thread_local/thread_local_storage_gate.h"
 
 #include "common_proto/login_service.grpc.pb.h"
+#include "constants_proto/node.pb.h"
 
 GateNode* g_gate_node = nullptr; 
 
@@ -36,7 +34,6 @@ GateNode::~GateNode()
 void GateNode::Init()
 {
     g_gate_node = this;
-
     LoadNodeConfig();
     InitNodeByReqInfo();
 
@@ -52,10 +49,9 @@ void GateNode::Init()
 
 void GateNode::InitNodeByReqInfo()
 {
-    auto& zone = ZoneConfig::GetSingleton().config_info();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    auto channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+    const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    const auto channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(channel);
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
@@ -64,14 +60,14 @@ void GateNode::InitNodeByReqInfo()
         NodeInfoRequest req;
         req.set_node_type(kGateNode);
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
-        void SendGetNodeInfo(NodeInfoRequest & request);
+        void SendGetNodeInfo(const NodeInfoRequest&);
         SendGetNodeInfo(req);
     }
 }
 
-void GateNode::StartServer(const nodes_info_data& serverinfo_data)
+void GateNode::StartServer(const nodes_info_data& data)
 {
-    node_net_info_ = serverinfo_data;
+    node_net_info_ = std::move(data);
     auto& gate_info = node_net_info_.gate_info().gate_info()[game_node_index()];
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
@@ -93,10 +89,9 @@ void GateNode::SetNodeId(NodeId node_id)
     node_info_.set_node_id(node_id);
 }
 
-void GateNode::Receive1(const OnConnected2ServerEvent& es)
+void GateNode::Receive1(const OnConnected2ServerEvent& es) const
 {
-    auto& conn = es.conn_;
-    if (conn->connected())
+    if ( auto& conn = es.conn_ ; conn->connected())
     {
         for (auto&& [_, centre_node] : tls.centre_node_registry.view<RpcClientPtr>().each())
         {
@@ -124,7 +119,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
                 continue;
             }
             EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                [this, game_node, conn]() ->void
+                [this, game_node]() ->void
                 {
                     RegisterGateRequest rq;
                     rq.mutable_rpc_client()->set_ip(game_node->local_addr().toIp());
@@ -173,9 +168,8 @@ void GateNode::Connect2Centre()
     }
 }
 
-void GateNode::Connect2Login()
+void GateNode::Connect2Login() const
 {
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     for (auto& login_node_info : node_net_info_.login_info().login_info())
     {
         entt::entity id{ login_node_info.id() };
@@ -188,7 +182,7 @@ void GateNode::Connect2Login()
         auto channel = grpc::CreateChannel(login_node_info.addr(), grpc::InsecureChannelCredentials());
         tls_gate.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
             LoginService::NewStub(channel));
-        tls_gate.login_consisten_node().add(login_node_info.id(), 
+        tls_gate.login_consistent_node().add(login_node_info.id(), 
             login_node_id);
     }
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteRpcLoginService);

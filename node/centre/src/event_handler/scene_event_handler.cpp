@@ -1,19 +1,19 @@
 #include "scene_event_handler.h"
 #include "event_proto/scene_event.pb.h"
+#include "thread_local/thread_local_storage.h"
 ///<<< BEGIN WRITING YOUR CODE 
 
 #include "component_proto/player_network_comp.pb.h"
 #include "muduo/base/Logging.h"
 
-#include "type_define/type_define.h"
 #include "comp/scene_comp.h"
-#include "system/scene/scene_system.h"
-#include "thread_local/thread_local_storage.h"
-#include "service/game_scene_server_player_service.h"
-#include "system/player_scene_system.h"
-#include "system/player_change_scene.h"
-#include "network/message_system.h"
 #include "network/game_node.h"
+#include "network/message_system.h"
+#include "service/game_scene_server_player_service.h"
+#include "system/player_change_scene.h"
+#include "system/player_scene_system.h"
+#include "system/scene/scene_system.h"
+#include "type_define/type_define.h"
 
 #include "component_proto/scene_comp.pb.h"
 ///<<< END WRITING YOUR CODE

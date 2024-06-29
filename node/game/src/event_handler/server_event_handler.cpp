@@ -1,13 +1,12 @@
 #include "server_event_handler.h"
 #include "event_proto/server_event.pb.h"
+#include "thread_local/thread_local_storage.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "game_node.h"
 #include "network/rpc_client.h"
+#include "service/centre_service_service.h"
 #include "system/game_node_scene_system.h"
 #include "system/scene/scene_system.h"
-#include "game_node.h"
-#include "service/centre_service_service.h"
-
-#include "common_proto/centre_service.pb.h"
 ///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()
 {

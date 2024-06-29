@@ -2,18 +2,16 @@
 
 #include "muduo/base/Logging.h"
 
-#include "thread_local/thread_local_storage_common_logic.h"
-#include "thread_local/thread_local_storage.h"
-#include "network/rpc_session.h"
-#include "network/rpc_client.h"
 #include "network/gate_session.h"
+#include "network/rpc_client.h"
+#include "network/rpc_session.h"
 #include "service/centre_service_service.h"
 #include "service/gate_service_service.h"
-#include "thread_local/thread_local_storage_game.h"
+#include "thread_local/thread_local_storage.h"
 #include "thread_local/thread_local_storage_common_logic.h"
 
-#include "component_proto/player_network_comp.pb.h"
 #include "comp/player_comp.h"
+#include "component_proto/player_network_comp.pb.h"
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
@@ -38,7 +36,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
-	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
+	const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
 	if (nullptr == gate_node)
 	{
 		LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
@@ -74,7 +72,7 @@ void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg
 		LOG_ERROR << "centre not found" << player_node_info->centre_node_id();
 		return;
 	}
-	auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_node_id);
+	const auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_node_id);
 	if (nullptr == centre_node)
 	{
 		LOG_ERROR << "Send2CentrePlayer centre disconnect" << tls.registry.get<Guid>(player);
@@ -95,7 +93,7 @@ void Send2Centre(const uint32_t message_id, const google::protobuf::Message& mes
         LOG_ERROR << "centre not found" << node_id;
         return;
     }
-    auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_node_id);
+    const auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_node_id);
     if (nullptr == centre_node)
     {
         LOG_ERROR << "Send2CentrePlayer centre disconnect" << node_id;
@@ -112,7 +110,7 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, Nod
 		LOG_ERROR << "gate not found " << get_gate_node_id(node_id);
         return;
     }
-    auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
+    const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
     if (nullptr == gate_node)
     {
         LOG_ERROR << "gate not found " << get_gate_node_id(node_id);
@@ -129,7 +127,7 @@ void CallCentreNodeMethod(uint32_t message_id, const google::protobuf::Message& 
         LOG_ERROR << "centre not found" << node_id;
         return;
     }
-    auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_node_id);
+    const auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_node_id);
     if (nullptr == centre_node)
     {
         LOG_ERROR << "Send2CentrePlayer centre disconnect" << node_id;

@@ -5,27 +5,27 @@
 #include "comp/scene_comp.h"
 #include "thread_local/thread_local_storage.h"
 
-#include "service/game_server_player_service.h"
-#include "network/message_system.h"
 #include "network/gate_session.h"
+#include "network/message_system.h"
+#include "service/game_server_player_service.h"
 #include "service/game_service_service.h"
+#include "service/gate_service_service.h"
 #include "system/player_change_scene.h"
+#include "system/player_scene_system.h"
 #include "thread_local/thread_local_storage_centre.h"
 #include "thread_local/thread_local_storage_common_logic.h"
-#include "util/defer.h"
-#include "system/player_scene_system.h"
 #include "type_alias/player_loading.h"
-#include "service/gate_service_service.h"
+#include "util/defer.h"
 
-#include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
+#include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
 void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
 {
     auto& loading_list = tls.global_registry.get<PlayerLoadingInfoList>(global_entity());
     defer(loading_list.erase(player_id));
-    auto it = loading_list.find(player_id);
+    const auto it = loading_list.find(player_id);
     if ( it == loading_list.end() )
     {
         LOG_ERROR << "loading player  error" << player_id;
@@ -43,7 +43,7 @@ void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre
 
     tls.registry.emplace<Player>(player);
     tls.registry.emplace<Guid>(player, player_id);
-    tls.registry.emplace<PlayerSceneInfoComp>(player, std::move(message.scene_info()));
+    tls.registry.emplace<PlayerSceneInfoComp>(player, message.scene_info());
     PlayerChangeSceneSystem::InitChangeSceneQueue(player);
     //第一次登录
     tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
@@ -75,7 +75,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
 
     {
         Centre2GsLoginRequest message;
-        message.set_enter_gs_type((*enter_game_node_flag).enter_gs_type());
+        message.set_enter_gs_type(enter_game_node_flag->enter_gs_type());
         tls.registry.remove<EnterGsFlag>(player);
         Send2GsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, player);
     }

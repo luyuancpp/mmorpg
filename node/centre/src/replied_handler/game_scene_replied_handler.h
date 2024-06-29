@@ -1,3 +1,4 @@
+#pragma once
 #include "logic_proto/game_scene.pb.h"
 #include "muduo/net/TcpConnection.h"
 using namespace muduo;
