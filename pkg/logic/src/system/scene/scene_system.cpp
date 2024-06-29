@@ -210,7 +210,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 {
 	if (param.CheckValid())
 	{
-		LOG_INFO << "param null error";
+		LOG_ERROR << "param null error";
 		return;
 	}
 
@@ -235,7 +235,7 @@ void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param)
 {
 	if (param.CheckValid())
 	{
-		LOG_INFO << "param null error";
+		LOG_ERROR << "param null error";
 		return;
 	}
 	const auto default_scene = NodeSceneSystem::GetNotFullScene({});

@@ -70,7 +70,7 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
     auto it = tls_sessions.find(request->head().session_id());
     if (it == tls_sessions.end())
     {
-        LOG_INFO << "session id not found " << request->head().session_id() << ","
+        LOG_ERROR << "session id not found " << request->head().session_id() << ","
         << " message id " << request->body().message_id();
         return;
     }
@@ -144,7 +144,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
     auto it = tls_sessions.find(request->session_id());
     if (it == tls_sessions.end())
     {
-        LOG_INFO << "session id not found " << request->session_id() << ","
+        LOG_ERROR << "session id not found " << request->session_id() << ","
             << " message id " << request->message_id();
         return;
     }
@@ -202,7 +202,7 @@ void GameServiceHandler::RegisterGate(::google::protobuf::RpcController* control
             tls.gate_node_registry.emplace<RpcSessionPtr>(gate_node_id, 
                 std::make_shared<RpcSessionPtr::element_type>(session.conn_));
         assert(gate_node_id == entt::entity{ request->gate_node_id() });
-        LOG_INFO << " gate register: " << MessageToJsonString(request);
+        LOG_DEBUG << " gate register: " << MessageToJsonString(request);
         break;
     }
 ///<<< END WRITING YOUR CODE
@@ -217,7 +217,7 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
     auto it = tls_sessions.find(request->head().session_id());
     if (it == tls_sessions.end())
     {
-        LOG_INFO << "session id not found " << request->head().session_id() << ","
+        LOG_ERROR << "session id not found " << request->head().session_id() << ","
             << " message id " << request->body().message_id();
         return;
     }
@@ -240,7 +240,7 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
     auto it = tls_sessions.find(request->head().session_id());
     if (it == tls_sessions.end())
     {
-        LOG_INFO << "session id not found " << request->head().session_id() << ","
+        LOG_ERROR << "session id not found " << request->head().session_id() << ","
             << " message id " << request->body().message_id();
         return;
     }

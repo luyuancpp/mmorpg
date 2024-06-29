@@ -35,7 +35,7 @@ RpcChannel::RpcChannel()
 	services_(NULL),
 	dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
-	LOG_INFO << "RpcChannel::ctor - " << this;
+	LOG_DEBUG << "RpcChannel::ctor - " << this;
 }
 
 RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
@@ -44,12 +44,12 @@ RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
 	services_(NULL),
 	dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
-	LOG_INFO << "RpcChannel::ctor - " << this;
+	LOG_DEBUG << "RpcChannel::ctor - " << this;
 }
 
 RpcChannel::~RpcChannel()
 {
-  LOG_INFO << "RpcChannel::dtor - " << this;
+	LOG_DEBUG << "RpcChannel::dtor - " << this;
 
 }
 
@@ -105,7 +105,7 @@ void RpcChannel::onMessage(const TcpConnectionPtr& conn,
 
 void RpcChannel::onUnknownMessage(const TcpConnectionPtr&, const MessagePtr& message, Timestamp)
 {
-    LOG_INFO << "onUnknownMessage: " << message->GetTypeName();
+    LOG_ERROR << "onUnknownMessage: " << message->GetTypeName();
 }
 
 void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,

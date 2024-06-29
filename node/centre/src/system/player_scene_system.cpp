@@ -136,7 +136,9 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
     request.set_player_id(player_id);
     CallGameNodeMethod(GameServiceEnterSceneMsgId, request, player_node_info->game_node_id());
 
-    LOG_INFO << "player enter scene " << player_id << " " << scene_info->guid();
+    LOG_DEBUG << "player enter scene " << player_id << " "
+        << scene_info->guid()  << " " 
+        << player_node_info->game_node_id();
 }
 
 

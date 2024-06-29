@@ -32,7 +32,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	auto& route_data = replied->route_data_list(replied->route_data_list_size() - 1);
 	if ( route_data.message_id() >= g_message_info.size())
 	{
-		LOG_INFO << "message_id not found " << route_data.message_id();
+		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;
 	}
 	//gate 和其他服务器不一样，直接返回消息给客户端

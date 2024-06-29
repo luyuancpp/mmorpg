@@ -70,7 +70,6 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
     const auto player = entt::to_entity(message.entity());
-    //LOG_INFO << "player leave scene " << *try_player_id << " " << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
     auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
@@ -85,7 +84,8 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
     leave_scene_message.set_change_gs(
         change_scene_info.change_gs_type() == CentreChangeSceneInfo::eDifferentGs);
     Send2GsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, leave_scene_message, player);
-
+    LOG_DEBUG << "player leave scene " << tls.registry.get<Guid>(player) 
+        << " " << tls.scene_registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).guid();
 ///<<< END WRITING YOUR CODE
 }
 

@@ -8,6 +8,7 @@
 #include "service/centre_scene_server_player_service.h"
 #include "thread_local/thread_local_storage_game.h"
 #include "util/defer.h"
+#include "type_alias/player_session.h"
 
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
@@ -19,10 +20,11 @@
 
 void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database& message)
 {
+	LOG_DEBUG << "player load" << player_id;
 	auto async_it = tls_game.aysnc_player_list().find(player_id);
 	if (async_it == tls_game.aysnc_player_list().end())
 	{
-		LOG_INFO << "player disconnect" << player_id;
+		LOG_ERROR << "player disconnect" << player_id;
 		return;
 	}
 
@@ -48,12 +50,16 @@ void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_databa
 
 void PlayerCommonSystem::OnPlayerAsyncSaved(Guid player_id, player_database& message)
 {
+	//todo session 啥时候删除？
 	//告诉Centre 保存完毕，可以切换场景了
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
 	Send2CentrePlayer(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId,
 		request,
 		player_id);
 
+    //存储完毕之后才删除,有没有更好办法做到先删除session 再存储
+    RemovePlayerSession(player_id);
+	//todo 会不会有问题
 	//存储完毕从gs删除玩家
 	DestoryPlayer(player_id);
 }
@@ -131,8 +137,8 @@ void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 	{
 		return;
 	}
+	defer(tls_sessions.erase(player_node_info->gate_session_id()));
 	player_node_info->set_gate_session_id(kInvalidSessionId);
-	Destroy(tls.gate_node_registry, entt::entity{player_node_info->gate_session_id()});
 }
 
 void PlayerCommonSystem::DestoryPlayer(Guid player_id)

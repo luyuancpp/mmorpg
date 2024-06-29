@@ -79,7 +79,7 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
         if (game_node != game_node_id)
         {
             //todo
-            LOG_INFO << "game connection not found " << request->game_node_id();
+            LOG_ERROR << "game connection not found " << request->game_node_id();
             return;
         }
         auto game_node_ptr = std::make_shared<RpcSessionPtr::element_type>(session.conn_);
@@ -316,6 +316,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	auto it = tls_sessions.find(request->head().session_id());
 	if (it == tls_sessions.end())
 	{
+		LOG_ERROR << "session not found " << request->head().session_id();
 		return;
 	}
 	const auto& player_info = it->second;
@@ -426,20 +427,20 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
 	if (route_data.message_id() >= g_message_info.size())
 	{
-		LOG_INFO << "message_id not found " << route_data.message_id();
+		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;
 	}
 	const auto& message_info = g_message_info[route_data.message_id()];
 	if (nullptr == message_info.service_impl_instance_)
 	{
-		LOG_INFO << "message_id not found " << route_data.message_id();
+		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;
 	}
 
 	const auto it = g_server_service.find(message_info.service);
 	if (it == g_server_service.end())
 	{
-		LOG_INFO << "message_id not found " << route_data.message_id();
+		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;
 	}
 	const auto& servcie = it->second;
