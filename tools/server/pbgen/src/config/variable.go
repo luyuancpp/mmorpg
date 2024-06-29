@@ -45,12 +45,14 @@ const YourCodeEnd = "///<<< END WRITING YOUR CODE"
 const YourCodePair = YourCodeBegin + "\n" + YourCodeEnd + "\n"
 const CcGenericServices = "cc_generic_services"
 
-var SourceNames = [...]string{
+var SourceDirs = [...]string{
 	"common/",
-	"center/",
+	"centre/",
 	"game/",
 	"gate/",
-	"client"}
+	"client/",
+	"db/",
+	"login/"}
 
 var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
@@ -61,8 +63,10 @@ const PbcOutDir = ProjectDir + PbcDirName
 const GrpcOutDir = ProjectDir + PbcDirName
 const ClientGoOutDir = ProjectDir + ClientDirName + "client/"
 const ClientGoPbDir = ClientGoOutDir + "pb/game/"
-const LoginGoDir = ProjectDir + "node/login/"
-const DbGoDir = ProjectDir + "node/db/"
+const LoginDir = ProjectDir + "node/login/"
+const LoginGoDir = ProjectDir + "node/login/pb/game/"
+const DbDir = ProjectDir + "node/db/"
+const DbGoDir = ProjectDir + "node/db/pb/game/"
 const ServiceDirName = PbcOutDir + "service/"
 const ServiceCppFileName = ServiceDirName + "service.cpp"
 const ServiceHeadFileName = ServiceDirName + "service.h"
@@ -131,3 +135,4 @@ const PlayerServiceName = "player_service.cpp"
 const PlayerRepliedServiceName = "player_service_replied.cpp"
 const RegisterRepliedHandlerCppEx = "register" + CppRepliedHandlerEx
 const RegisterHandlerCppEx = "register" + CppHandlerEx
+const DbProtoName = "db_base.proto"

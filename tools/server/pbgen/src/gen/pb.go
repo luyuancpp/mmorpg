@@ -166,7 +166,9 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 		if !util.IsProtoFile(fd) {
 			continue
 		}
-
+		if fd.Name() == config.DbProtoName {
+			continue
+		}
 		if !(strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
 			strings.Contains(protoPath, config.ProtoDirNames[config.ComponentProtoDirIndex])) {
 			return
@@ -191,7 +193,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 			var cmd *exec.Cmd
 			if sysType == `linux` {
 				cmd = exec.Command("protoc",
-					"--go_out="+config.LoginGoDir,
+					"--go_out="+config.LoginDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common_proto/",
@@ -202,7 +204,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.LoginGoDir,
+					"--go_out="+config.LoginDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common_proto/",
@@ -241,7 +243,9 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 		if !util.IsProtoFile(fd) {
 			continue
 		}
-
+		if fd.Name() == config.DbProtoName {
+			continue
+		}
 		if !(strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
 			strings.Contains(protoPath, config.ProtoDirNames[config.ComponentProtoDirIndex])) {
 			return
@@ -266,7 +270,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 			var cmd *exec.Cmd
 			if sysType == `linux` {
 				cmd = exec.Command("protoc",
-					"--go_out="+config.DbGoDir,
+					"--go_out="+config.DbDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common_proto/",
@@ -277,7 +281,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.DbGoDir,
+					"--go_out="+config.DbDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common_proto/",
@@ -317,8 +321,8 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			continue
 		}
 
-		if fd.Name() == "db_base.proto" {
-			return
+		if fd.Name() == config.DbProtoName {
+			continue
 		}
 
 		util.Wg.Add(1)
