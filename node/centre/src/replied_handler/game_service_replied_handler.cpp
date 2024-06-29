@@ -82,15 +82,15 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "message_id not found " << replied->body().message_id() ;
 		return;
 	}
-	auto it = tls_sessions.find(replied->head().session_id());
+	const auto it = tls_sessions.find(replied->head().session_id());
 	if (it == tls_sessions.end())
 	{
 		LOG_ERROR << "can not find session id " << replied->head().session_id();
 		return;
 	}
-	auto player_id = it->second.player_id();
+	const auto  player_id    = it->second.player_id();
 	const auto& message_info = g_message_info.at(replied->body().message_id() );
-    auto player = tls_cl.get_player(player_id);
+	const auto  player = tls_cl.get_player(player_id);
 	if (tls.registry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
@@ -116,7 +116,7 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 	}
 	const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
 	if (!player_response->ParsePartialFromArray(replied->body().body().data(), 
-		int32_t(replied->body().body().size())))
+		static_cast < int32_t > ( replied -> body ( ) . body ( ) . size ( ) )))
 	{
         LOG_ERROR << "ParsePartialFromArray " << message_info.method;
         return;

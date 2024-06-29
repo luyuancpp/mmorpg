@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
-#include "thread_local/thread_local_storage.h"
 #include "gate_node.h"
 #include "network/gate_session.h"
 #include "network/rpc_msg_route.h"

@@ -1,21 +1,20 @@
 #include "c2gate.h"
 
+#include <algorithm>
 #include  <functional>
 #include <memory>
 #include <ranges>
-#include <algorithm>
 
 #include "gate_node.h"
-#include "util/game_registry.h"
+#include "grpc/request/login_grpc_request.h"
 #include "network/gate_session.h"
 #include "service/centre_service_service.h"
-#include "service/game_service_service.h"
 #include "service/common_client_player_service.h"
+#include "service/game_service_service.h"
+#include "service/login_service_service.h"
 #include "thread_local/thread_local_storage_gate.h"
 #include "util/random.h"
 #include "util/snow_flake.h"
-#include "service/login_service_service.h"
-#include "grpc/request/login_grpc_request.h"
 
 #include "tip_code_proto/common_tip_code.pb.h"
 
@@ -32,7 +31,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 
 entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
 {
-    auto it = tls_gate.sessions().find(session_uid);
+    const auto it = tls_gate.sessions().find(session_uid);
     if (it == tls_gate.sessions().end())
     {
         return entt::null;
@@ -40,8 +39,8 @@ entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
     auto& session = it->second;
     if (!session.HasLoginNodeId())
     {
-        auto login_node_it = tls_gate.login_consisten_node().get_by_hash(session_uid);
-        if (tls_gate.login_consisten_node().end() == login_node_it)
+        const auto login_node_it = tls_gate.login_consistent_node().get_by_hash(session_uid);
+        if (tls_gate.login_consistent_node().end() == login_node_it)
         {
             LOG_ERROR << "player login server not found session id : " << session_uid;
             return entt::null;
@@ -49,8 +48,8 @@ entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
         //考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
         session.login_node_id_ = entt::to_integral(login_node_it->second);
     }
-    const auto login_node_it = tls_gate.login_consisten_node().get_node_value(session.login_node_id_);
-    if (tls_gate.login_consisten_node().end() == login_node_it)
+    const auto login_node_it = tls_gate.login_consistent_node().get_node_value(session.login_node_id_);
+    if (tls_gate.login_consistent_node().end() == login_node_it)
     {
         LOG_ERROR << "player found login server crash : " << session.login_node_id_;
         session.login_node_id_ = kInvalidNodeId;
@@ -65,7 +64,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     //todo 玩家没登录直接发其他消息，乱发消息
     if (!conn->connected())
     {
-        const auto session_uid = entt::to_integral(tcp_session_id(conn));
+        const auto session_uid = entt::to_integral(SessionId(conn));
         //如果我没登录就发送其他协议到controller game server 怎么办
         {
             //此消息一定要发，不能值通过controller 的gw disconnect去发
@@ -105,8 +104,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
-    auto session_id = tcp_session_id(conn);
-    auto it = tls_gate.sessions().find(session_id);
+    auto session_id = SessionId(conn);
+    const auto it = tls_gate.sessions().find(session_id);
     if (it == tls_gate.sessions().end())
     {
         LOG_ERROR << "could not find session  " << conn.get() ;
@@ -133,7 +132,6 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     else
     {
         //发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
-        
         auto login_node = GetLoginNode(session_id);
         if (entt::null == login_node)
         {

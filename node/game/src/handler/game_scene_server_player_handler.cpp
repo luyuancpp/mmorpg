@@ -1,12 +1,12 @@
 #include "game_scene_server_player_handler.h"
-#include "thread_local/thread_local_storage.h"
 #include "network/message_system.h"
+#include "thread_local/thread_local_storage.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "comp/scene_comp.h"
+#include "component_proto/player_comp.pb.h"
+#include "service/scene_client_player_service.h"
 #include "system/player_common_system.h"
 #include "system/player_scene_system.h"
-#include "comp/scene_comp.h"
-#include "service/scene_client_player_service.h"
-#include "component_proto/player_comp.pb.h"
 
 #include "client_player_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -40,7 +40,7 @@ void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,
 	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto scene_entity = tls.registry.try_get<SceneEntity>(player);
+	const auto scene_entity = tls.registry.try_get<SceneEntity>(player);
 	if (nullptr == scene_entity)
 	{
 		LOG_ERROR << " player not enter scene ";

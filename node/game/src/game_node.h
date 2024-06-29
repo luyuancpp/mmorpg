@@ -25,7 +25,7 @@ public:
 
     void Init();
 
-    void InitConfig();
+    static void InitConfig();
 
     void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);
@@ -40,8 +40,8 @@ private:
     void InitNodeByReqInfo();
     void Connect2Centre();
 
-    void InitSystemBeforeConnect();
-    void InitSystemAfterConnect();
+    static void InitSystemBeforeConnect();
+    static void InitSystemAfterConnect();
 
     inline NodeId game_node_index()const { return game_node_id() - 1; }
 

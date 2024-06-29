@@ -15,8 +15,6 @@ extern ProtobufDispatcher g_response_dispatcher;
 void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMsgStringResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
-
-	//函数返回前一定会执行的函数
 	defer(tls_cl.set_next_route_node_type(UINT32_MAX));
 	defer(tls_cl.set_next_route_node_id(UINT32_MAX));
 	defer(tls_cl.set_current_session_id(kInvalidSessionId));
@@ -36,18 +34,16 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		return;
 	}
 	//gate 和其他服务器不一样，直接返回消息给客户端
-	auto it = tls_gate.sessions().find(replied->session_id());
+	const auto it = tls_gate.sessions().find(replied->session_id());
 	if (it == tls_gate.sessions().end())
 	{
 		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
 		return;
 	}
-	auto& session = it->second;
 	MessageBody message;
 	message.set_body(replied->body());
 	message.set_message_id(route_data.message_id());;
-	g_gate_node->Send2Client(session.conn_, message);
-
+	g_gate_node->Send2Client(it->second.conn_, message);
 	///<<< END WRITING YOUR CODE
 }
 

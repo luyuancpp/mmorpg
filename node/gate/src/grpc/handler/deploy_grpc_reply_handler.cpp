@@ -1,10 +1,8 @@
 #include "muduo/base/Logging.h"
 
-#include "util/defer.h"
-
+#include "gate_node.h"
 #include "grpc/client/deploy_async_client_call.h"
 #include "grpc/deploy/deployclient.h"
-#include "gate_node.h"
 
 void AsyncCompleteGrpcDeployService()
 {

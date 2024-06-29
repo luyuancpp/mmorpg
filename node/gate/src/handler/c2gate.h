@@ -4,9 +4,9 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "network/codec/dispatcher.h"
-#include "network/rpc_msg_route.h"
 #include "network/rpc_client.h"
+#include "network/rpc_msg_route.h"
+#include "network/codec/dispatcher.h"
 #include "type_define/type_define.h"
 
 #include "common_proto/c2gate.pb.h"
@@ -24,14 +24,15 @@ public:
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
-    void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) { codec_.send(conn, message); }
+    void Send2Client( const muduo::net::TcpConnectionPtr& conn,
+        const ::google::protobuf::Message& message) const { codec_.send(conn, message); }
 
     //client to gate 
 	void OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
 		const RpcClientMessagePtr& message,
 		muduo::Timestamp);
 
-    inline Guid tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<Guid>(conn->getContext()); }
+    static inline Guid SessionId(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<Guid>(conn->getContext()); }
 
     static void Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 private:

@@ -1,21 +1,20 @@
 #include "login_grpc_request.h"
 
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/completion_queue.h>
 
-#include "thread_local/thread_local_storage_gate.h"
 #include "grpc/client/login_async_client_call.h"
+#include "thread_local/thread_local_storage_gate.h"
 
-using GrpcLoginStupPtr = std::unique_ptr<LoginService::Stub>;
+using GrpcLoginStubPtr = std::unique_ptr<LoginService::Stub>;
 
-void SendLoginC2LRequest(entt::entity login_node, LoginC2LRequest& request)
+void SendLoginC2LRequest(entt::entity login_node, const LoginC2LRequest& request)
 {
     if (!tls_gate.login_node_registry.valid(login_node))
     {
         return;
     }
-    auto& stub = tls_gate.login_node_registry.get<GrpcLoginStupPtr>(login_node);
-    LoginC2LAsyncClientCall* call = new LoginC2LAsyncClientCall;
+    const auto& stub      = tls_gate.login_node_registry.get<GrpcLoginStubPtr>(login_node);
+    auto        call(new LoginC2LAsyncClientCall);
     call->response_reader = 
         stub->PrepareAsyncLogin(&call->context, request, 
             &tls_gate.login_node_registry.get<LoginC2LCompletionQueue>(login_node).cq);
@@ -29,8 +28,8 @@ void SendCreatePlayerC2LRequest(entt::entity login_node, CreatePlayerC2LRequest&
     {
         return;
     }
-    auto& stub = tls_gate.login_node_registry.get<GrpcLoginStupPtr>(login_node);
-    CreatePlayerC2LAsyncClientCall* call = new CreatePlayerC2LAsyncClientCall;
+    const auto& stub      = tls_gate.login_node_registry.get<GrpcLoginStubPtr>(login_node);
+    const auto  call(new CreatePlayerC2LAsyncClientCall);
     call->response_reader =
         stub->PrepareAsyncCreatePlayer(&call->context, request,
             &tls_gate.login_node_registry.get<CreatePlayerC2LCompletionQueue>(login_node).cq);
@@ -44,8 +43,8 @@ void SendEnterGameC2LRequest(entt::entity login_node, EnterGameC2LRequest& reque
     {
         return;
     }
-    auto& stub = tls_gate.login_node_registry.get<GrpcLoginStupPtr>(login_node);
-    EnterGameC2LAsyncClientCall* call = new EnterGameC2LAsyncClientCall;
+    const auto& stub      = tls_gate.login_node_registry.get<GrpcLoginStubPtr>(login_node);
+    const auto  call(new EnterGameC2LAsyncClientCall);
     call->response_reader =
         stub->PrepareAsyncEnterGame(&call->context, request,
             &tls_gate.login_node_registry.get<EnterGameC2LCompletionQueue>(login_node).cq);

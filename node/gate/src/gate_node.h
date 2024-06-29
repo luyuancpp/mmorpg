@@ -40,17 +40,17 @@ public:
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
 
-    void LoadNodeConfig();
+    static void LoadNodeConfig();
 
     void Init();
 
     void InitNodeByReqInfo();
     
-    void StartServer(const nodes_info_data& serverinfo_data);
+    void StartServer(const nodes_info_data& data);
 
     void SetNodeId(NodeId node_id);
     
-    void Receive1(const OnConnected2ServerEvent& es);
+    void Receive1(const OnConnected2ServerEvent& es) const;
 
 private:
     void OnConnection(const TcpConnectionPtr& conn)
@@ -60,7 +60,7 @@ private:
 
     void Connect2Centre();
 
-    void Connect2Login();
+    void Connect2Login() const;
 
     void OnUnknownMessage(const TcpConnectionPtr& conn,
                                  const MessagePtr& message,

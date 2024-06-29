@@ -1,7 +1,6 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/centre_node.h"
-#include "src/system/centre_player_system.h"
 
 using namespace muduo;
 using namespace muduo::net;

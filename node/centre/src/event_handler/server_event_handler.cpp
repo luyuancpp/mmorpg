@@ -1,5 +1,6 @@
 #include "server_event_handler.h"
 #include "event_proto/server_event.pb.h"
+#include "thread_local/thread_local_storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()

@@ -1,26 +1,24 @@
 #include "centre_node.h"
 
+#include <ranges>
 #include <grpcpp/grpcpp.h>
 
-#include "muduo//net/EventLoop.h"
-
 #include "all_config.h"
-#include "game_config/deploy_json.h"
-#include "game_config/lobby_config.h"
-#include "event_handler/event_handler.h"
-
-#include "handler/player_service.h"
-#include "replied_handler/player_service_replied.h"
-#include "handler/register_handler.h"
-#include "service/service.h"
-#include "service/gate_service_service.h"
-#include "thread_local/thread_local_storage_centre.h"
-#include "grpc/deploy/deployclient.h"
-#include "system/player_session_system.h"
-
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "constants_proto/node.pb.h"
-#include "common_proto/mysql_database_table.pb.h"
+#include "event_handler/event_handler.h"
+#include "game_config/deploy_json.h"
+#include "game_config/lobby_config.h"
+#include "grpc/deploy/deployclient.h"
+#include "handler/player_service.h"
+#include "handler/register_handler.h"
+#include "muduo//net/EventLoop.h"
+#include "network/rpc_session.h"
+#include "replied_handler/player_service_replied.h"
+#include "service/gate_service_service.h"
+#include "service/service.h"
+#include "system/player_session_system.h"
+#include "thread_local/thread_local_storage_centre.h"
 
 using namespace muduo;
 using namespace net;
@@ -48,7 +46,8 @@ void CentreNode::Init()
     InitConfig();
 	node_info_.set_node_type(kCentreNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    muduo::Logger::setLogLevel((muduo::Logger::LogLevel)ZoneConfig::GetSingleton().config_info().loglevel());
+    muduo::Logger::setLogLevel(static_cast < muduo::Logger::LogLevel > (
+        ZoneConfig::GetSingleton ( ) . config_info ( ) . loglevel ( ) ));
 
 	InitNodeByReqInfo();
     InitSystemBeforeConnect();
@@ -66,13 +65,10 @@ void CentreNode::Init()
 
 void CentreNode::InitNodeByReqInfo()
 {
-    auto& zone = ZoneConfig::GetSingleton().config_info();
-
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+    const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
-    g_deploy_stub = DeployService::NewStub(deploy_channel);
+    g_deploy_stub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
 
     deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
@@ -80,23 +76,23 @@ void CentreNode::InitNodeByReqInfo()
     {
         NodeInfoRequest req;
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
-        void SendGetNodeInfo(NodeInfoRequest & request);
+        void SendGetNodeInfo(const NodeInfoRequest & request);
         SendGetNodeInfo(req);
     }
 }
 
 void CentreNode::StartServer(const ::nodes_info_data& info)
 {
-    serverinfos_ = info;
-    auto& my_node_info = serverinfos_.centre_info().centre_info()[centre_node_index()];
+    server_infos_ = info;
+    auto& my_node_info = server_infos_.centre_info().centre_info()[centre_node_index()];
    
-    InetAddress servcie_addr(my_node_info.ip(), my_node_info.port());
-    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, servcie_addr);
+    InetAddress service_addr(my_node_info.ip(), my_node_info.port());
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
-    server_->registerService(&contoller_service_);
-    for (auto& it : g_server_service)
+    server_->registerService(&centre_service_);
+    for ( auto & val : g_server_service | std::views::values )
     {
-        server_->registerService(it.second.get());
+        server_->registerService(val.get());
     }
     server_->start();
     deploy_rpc_timer_.Cancel();
@@ -133,10 +129,9 @@ void CentreNode::SetNodeId(NodeId node_id)
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)
 {
-    auto& conn = es.conn_;
-    if (conn->connected())
+    if ( auto& conn = es.conn_ ; conn->connected())
     {
-		auto e = tls.network_registry.create();
+        const auto e = tls.network_registry.create();
 		tls.network_registry.emplace<RpcSession>(e, RpcSession{ conn });
     }
     else
@@ -190,10 +185,9 @@ void CentreNode::InitNodeServer()
     auto& zone = ZoneConfig::GetSingleton().config_info();
 
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+    const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
-    g_deploy_stub = DeployService::NewStub(deploy_channel);
+    g_deploy_stub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
 
     void AsyncCompleteGrpcDeployService();
@@ -201,7 +195,7 @@ void CentreNode::InitNodeServer()
 
     NodeInfoRequest req;
     req.set_zone_id(zone.zone_id());
-    void SendGetNodeInfo(NodeInfoRequest& req);
+    void SendGetNodeInfo(const NodeInfoRequest& req);
     SendGetNodeInfo(req);
 }
 
@@ -210,10 +204,10 @@ void CentreNode::InitSystemBeforeConnect()
     PlayerSessionSystem::Init();
 }
 
-void CentreNode::InitSystemAfterConnect()
+void CentreNode::InitSystemAfterConnect() const
 {
-    InetAddress redis_addr(serverinfos_.redis_info().redis_info(0).ip(), 
-        serverinfos_.redis_info().redis_info(0).port());
+    InetAddress redis_addr(server_infos_.redis_info().redis_info(0).ip(), 
+        server_infos_.redis_info().redis_info(0).port());
     tls_centre.redis_system().Init(redis_addr);
 }
 

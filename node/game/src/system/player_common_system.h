@@ -1,7 +1,5 @@
 #pragma once
 
-#include "util/game_registry.h"
-#include "thread_local/thread_local_storage.h"
 #include "redis_client/redis_client.h"
 
 #include "common_proto/mysql_database_table.pb.h"
@@ -30,6 +28,6 @@ public:
 	static void RemovePlayerSession(Guid player_id);
 	static void RemovePlayerSession(entt::entity player);
 
-	static  void DestoryPlayer(Guid player_id);
+	static  void DestroyPlayer(Guid player_id);
 };
 

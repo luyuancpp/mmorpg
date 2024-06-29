@@ -12,7 +12,7 @@ struct LoginC2LCompletionQueue
     CompletionQueue cq;
 };
 
-void SendLoginC2LRequest(entt::entity login_node, LoginC2LRequest& request);
+void SendLoginC2LRequest(entt::entity login_node, const LoginC2LRequest& request);
 
 class CreatePlayerC2LRequest;
 struct CreatePlayerC2LCompletionQueue

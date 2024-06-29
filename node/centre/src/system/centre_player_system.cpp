@@ -11,7 +11,7 @@ void CenterPlayerSystem::LeaveGame(Guid player_uid)
     //todo 断线不能马上下线，这里之后会改
     //没进入场景，只是登录，或者切换场景过程中
     defer(tls_cl.player_list().erase(player_uid));
-    auto player = tls_cl.get_player(player_uid);
+    const auto player = tls_cl.get_player(player_uid);
     if (!tls.registry.valid(player))
     {
         return;

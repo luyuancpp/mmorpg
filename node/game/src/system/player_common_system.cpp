@@ -1,27 +1,27 @@
 #include "player_common_system.h"
 
-#include "thread_local/thread_local_storage_common_logic.h"
-#include "thread_local/thread_local_storage.h"
-#include "network/message_system.h"
 #include "network/gate_session.h"
-#include "service/centre_service_service.h"
+#include "network/message_system.h"
 #include "service/centre_scene_server_player_service.h"
+#include "service/centre_service_service.h"
+#include "thread_local/thread_local_storage.h"
+#include "thread_local/thread_local_storage_common_logic.h"
 #include "thread_local/thread_local_storage_game.h"
-#include "util/defer.h"
 #include "type_alias/player_session.h"
+#include "util/defer.h"
 
+#include "common_proto/centre_service.pb.h"
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
-#include "common_proto/centre_service.pb.h"
 
 #include "game_node.h"
 
 void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database& message)
 {
 	LOG_DEBUG << "player load" << player_id;
-	auto async_it = tls_game.aysnc_player_list().find(player_id);
+	const auto async_it = tls_game.aysnc_player_list().find(player_id);
 	if (async_it == tls_game.aysnc_player_list().end())
 	{
 		LOG_ERROR << "player disconnect" << player_id;
@@ -63,7 +63,7 @@ void PlayerCommonSystem::OnPlayerAsyncSaved(Guid player_id, player_database& mes
         RemovePlayerSession(player_id);
         //todo 会不会有问题
         //存储完毕从gs删除玩家
-        DestoryPlayer(player_id);
+        DestroyPlayer(player_id);
 	}  
 }
 
@@ -94,7 +94,7 @@ void PlayerCommonSystem::EnterGs(const entt::entity player, const EnterGsInfo& e
 	request.set_game_node_id(g_game_node->game_node_id());
 	CallCentreNodeMethod(CentreServiceEnterGsSucceedMsgId, request, enter_info.centre_node_id());
 	//todo gs更新了对应的gate之后 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，
-	//进入gamenode a, 再进入gamenode b 两个gs的消息到达客户端消息的顺序不一样,所以说game 还要通知game 还要收到gate 的处理完准备离开game的消息
+	//进入game_node a, 再进入game_node b 两个gs的消息到达客户端消息的顺序不一样,所以说game 还要通知game 还要收到gate 的处理完准备离开game的消息
 	//否则两个不同的gs可能离开场景的消息后于进入场景的消息到达客户端
 }
 
@@ -144,7 +144,7 @@ void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 	player_node_info->set_gate_session_id(kInvalidSessionId);
 }
 
-void PlayerCommonSystem::DestoryPlayer(Guid player_id)
+void PlayerCommonSystem::DestroyPlayer(Guid player_id)
 {
 	defer(tls_cl.player_list().erase(player_id));
 	Destroy(tls.registry, tls_cl.get_player(player_id));

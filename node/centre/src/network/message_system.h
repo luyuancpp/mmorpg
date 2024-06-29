@@ -6,7 +6,6 @@
 
 #include "network/rpc_session.h"
 #include "type_define/type_define.h"
-#include "util/game_registry.h"
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message,  NodeId game_node_id);
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);

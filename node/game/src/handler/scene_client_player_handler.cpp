@@ -17,8 +17,8 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
         //如果是跨服副本服不能换场景
-    auto game_node_type = g_game_node->game_node_type();
-    if (eGameNodeType::kRoomNode == game_node_type ||
+    if ( auto game_node_type = g_game_node->game_node_type() ;
+        eGameNodeType::kRoomNode == game_node_type ||
         eGameNodeType::kRoomSceneCrossNode == game_node_type)
     {
         response->mutable_error()->set_id(kRetEnterSceneServerType);

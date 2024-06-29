@@ -42,7 +42,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 		}
 	}
 
-	dataHead := "#pragma once\n" + "#include \"thread_local/thread_local_storage.h\"\n\n"
+	dataHead := "#pragma once\n\n"
 
 	className := getClassName(fd)
 
@@ -74,7 +74,8 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 
 	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
 		config.IncludeBegin + config.ProtoDirNames[config.EventProtoDirIndex] +
-		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine
+		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
+		"#include \"thread_local/thread_local_storage.h\"\n"
 
 	yourCodes, _ := util.GetDstCodeData(cppFileName, len(eventList)+1)
 
@@ -122,7 +123,7 @@ func WriteEventHandlerFile() {
 		registerData += getClassName(fd) + "::Register();\n"
 		unRegisterData += getClassName(fd) + "::UnRegister();\n"
 	}
-	eventHeadData := "#pragma once\n" + "#include \"thread_local/thread_local_storage.h\"\n\n"
+	eventHeadData := "#pragma once\n\n"
 	eventHeadData += "class EventHandler\n{\npublic:\n"
 	eventHeadData += "static void Register();\n"
 	eventHeadData += "static void UnRegister();\n"

@@ -77,7 +77,7 @@ void GameNodeSceneSystem::LeaveScene(entt::entity leaver)
 
 void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
 {
-    auto scene_info = tls.scene_registry.try_get<SceneInfo>(scene);
+    const auto scene_info = tls.scene_registry.try_get<SceneInfo>(scene);
     if (nullptr == scene_info)
     {
         return;
