@@ -6,6 +6,7 @@
 #include "system/player_scene_system.h"
 #include "comp/scene_comp.h"
 #include "service/scene_client_player_service.h"
+#include "component_proto/player_comp.pb.h"
 
 #include "client_player_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -29,7 +30,7 @@ void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,
 	{
 		//离开gs 清除session
 		PlayerCommonSystem::SavePlayer(player);
-
+		tls.registry.emplace<UnregisterPlayer>(player);
 	}
 ///<<< END WRITING YOUR CODE
 }
