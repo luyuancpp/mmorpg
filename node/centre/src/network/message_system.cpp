@@ -99,12 +99,12 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
         return;
     }
-	NodeRouteMessageRequest message_wrapper;
+	NodeRouteMessageRequest request;
 	auto byte_size = int32_t(message.ByteSizeLong());
-	message_wrapper.mutable_body()->mutable_body()->resize(byte_size);
-	message.SerializePartialToArray(message_wrapper.mutable_body()->mutable_body()->data(), byte_size);
-	message_wrapper.mutable_head()->set_session_id(player_node_info->gate_session_id());
-	(*game_node)->Send(message_id, message_wrapper);
+	request.mutable_body()->mutable_body()->resize(byte_size);
+	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byte_size);
+	request.mutable_head()->set_session_id(player_node_info->gate_session_id());
+	(*game_node)->Send(message_id, request);
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -192,13 +192,13 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
         LOG_ERROR << "gate not found " << player_node_info->game_node_id();
         return;
     }
-	NodeRouteMessageRequest message_wrapper;
+	NodeRouteMessageRequest request;
 	const auto byte_size = static_cast<int32_t>(message.ByteSizeLong());
-	message_wrapper.mutable_body()->mutable_body()->resize(byte_size);
-	message.SerializePartialToArray(message_wrapper.mutable_body()->mutable_body()->data(), byte_size);
-	message_wrapper.mutable_body()->set_message_id(message_id);
-	message_wrapper.mutable_head()->set_session_id(player_node_info->gate_session_id());
-	(*gate_node)->CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
+	request.mutable_body()->mutable_body()->resize(byte_size);
+	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byte_size);
+	request.mutable_body()->set_message_id(message_id);
+	request.mutable_head()->set_session_id(player_node_info->gate_session_id());
+	(*gate_node)->CallMethod(GameServiceCallPlayerMsgId, request);
 }
 
 void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
