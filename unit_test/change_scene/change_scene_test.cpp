@@ -48,7 +48,7 @@ TEST(PlayerChangeScene, CreateMainScene)
 TEST(PlayerChangeScene, QueueFull)
 {
     const auto player = CreatePlayer();
-    for (uint8_t i = 0; i < PlayerCentreChangeSceneQueue::kMaxChangeSceneQueue; ++i)
+    for (uint8_t i = 0; i < kMaxChangeSceneQueue; ++i)
     {
         CentreChangeSceneInfo info;
         EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, info));

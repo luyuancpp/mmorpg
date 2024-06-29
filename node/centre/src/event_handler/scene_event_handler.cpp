@@ -98,13 +98,7 @@ void SceneEventHandler::AfterLeaveSceneHandler(const AfterLeaveScene& message)
 void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity player = entt::to_entity(message.entity());
-    auto player_id = tls.registry.try_get<Guid>(player);
-    if (nullptr == player_id)
-    {
-        return;
-    }
-    PlayerSceneSystem::Send2GsEnterScene(player);
+    PlayerSceneSystem::Send2GsEnterScene(entt::to_entity(message.entity()));
 ///<<< END WRITING YOUR CODE
 }
 

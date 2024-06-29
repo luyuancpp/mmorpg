@@ -131,7 +131,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         LOG_ERROR << "player session not valid" << player_id;
         return;
     }
-    Ctlr2GsEnterSceneRequest request;
+    Centre2GsEnterSceneRequest request;
     request.set_scene_id(scene_info->guid());
     request.set_player_id(player_id);
     CallGameNodeMethod(GameServiceEnterSceneMsgId, request, player_node_info->game_node_id());

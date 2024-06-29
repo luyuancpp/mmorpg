@@ -50,7 +50,7 @@ message RegisterPlayerSessionRequest
   uint64 player_id = 2;
 }
 
-message Ctlr2GsEnterSceneRequest
+message Centre2GsEnterSceneRequest
 {
   uint64 player_id = 1;
   uint64 scene_id = 2;
@@ -77,6 +77,6 @@ service GameService {
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
   rpc UpdateSession (RegisterPlayerSessionRequest) returns (Empty);
-  rpc EnterScene (Ctlr2GsEnterSceneRequest) returns (Empty);
+  rpc EnterScene (Centre2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
 }
