@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "src/util/snow_flake.h"
+#include "util/snow_flake.h"
 
 using guid_vetcor = std::vector<Guid>;
 using guid_set = std::unordered_set<Guid>;
@@ -49,6 +49,18 @@ void PutVectorInToSet(guid_set& s, guid_vetcor& v)
     }
 }
 
+TEST(TestSnowFlake, GenerateNormal)
+{
+    guid_set guid_set;
+    SnowFlake sf;
+    guid_vetcor v;
+
+    EmplaceToVector(v);
+    PutVectorInToSet(guid_set, v);
+
+    assert(guid_set.size() == v.size());
+}
+
 TEST(TestSnowFlakeThreadSafe, JustGenerateTime)
 {
     Guid id = sf.Generate();
@@ -62,6 +74,7 @@ TEST(TestSnowFlakeThreadSafe, GenerateTime)
     Guid id = sf.Generate();
     std::cout << id << std::endl;
 }
+
 
 TEST(TestSnowFlakeThreadSafe, Generate)
 {
