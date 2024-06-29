@@ -415,6 +415,9 @@ func isGsMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
 	}
+	if !firstMethodInfo.CcGenericServices {
+		return false
+	}
 	return strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), "lobby")
@@ -534,6 +537,9 @@ func isCentreMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
 	}
+	if !firstMethodInfo.CcGenericServices {
+		return false
+	}
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
@@ -605,6 +611,9 @@ func isGateMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		return false
 	}
+	if !firstMethodInfo.CcGenericServices {
+		return false
+	}
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.DeployPrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.LobbyPrefixName) ||
@@ -674,19 +683,6 @@ func writeGateMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	dstFileName := config.GateMethodRepliedHandleDir + fileName
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
 	WriteMd5Data2File(dstFileName, data)
-}
-
-///login
-
-func isLoginServiceHandler(methodList *RpcMethodInfos) (check bool) {
-	if len(*methodList) <= 0 {
-		return false
-	}
-	firstMethodInfo := (*methodList)[0]
-	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		return false
-	}
-	return strings.Contains(firstMethodInfo.FileBaseName(), "login")
 }
 
 func WriteMethodFile() {
