@@ -57,11 +57,14 @@ void PlayerCommonSystem::OnPlayerAsyncSaved(Guid player_id, player_database& mes
 		request,
 		player_id);
 
-    //存储完毕之后才删除,有没有更好办法做到先删除session 再存储
-    RemovePlayerSession(player_id);
-	//todo 会不会有问题
-	//存储完毕从gs删除玩家
-	DestoryPlayer(player_id);
+	if (tls.registry.any_of<UnregisterPlayer>(tls_cl.get_player(player_id)))
+	{
+        //存储完毕之后才删除,有没有更好办法做到先删除session 再存储
+        RemovePlayerSession(player_id);
+        //todo 会不会有问题
+        //存储完毕从gs删除玩家
+        DestoryPlayer(player_id);
+	}  
 }
 
 void PlayerCommonSystem::SavePlayer(entt::entity player)
