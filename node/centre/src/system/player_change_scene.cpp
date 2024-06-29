@@ -133,7 +133,7 @@ void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
 
 void PlayerChangeSceneSystem::OnEnterSceneOk(entt::entity player)
 {
-    S2CEnterScene s2centerscene_event{};
-    s2centerscene_event.set_entity(entt::to_integral(player));
-    tls.dispatcher.trigger(s2centerscene_event);
+    S2CEnterScene ev;
+    ev.set_entity(entt::to_integral(player));
+    tls.dispatcher.trigger(ev);
 }

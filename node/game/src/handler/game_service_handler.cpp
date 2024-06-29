@@ -349,7 +349,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
 }
 
 void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controller,
-	const ::Ctlr2GsEnterSceneRequest* request,
+	const ::Centre2GsEnterSceneRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {

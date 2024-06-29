@@ -156,7 +156,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\replied_handler\centre_scene_server_player_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\centre_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\common_client_player_replied_handler.cpp" />
-    <ClCompile Include="src\replied_handler\deploy_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\player_service_replied.cpp" />
     <ClCompile Include="src\replied_handler\register_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\scene_client_player_replied_handler.cpp" />
@@ -196,7 +195,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\replied_handler\centre_scene_server_player_replied_handler.h" />
     <ClInclude Include="src\replied_handler\centre_service_replied_handler.h" />
     <ClInclude Include="src\replied_handler\common_client_player_replied_handler.h" />
-    <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h" />
     <ClInclude Include="src\replied_handler\player_service_replied.h" />
     <ClInclude Include="src\replied_handler\scene_client_player_replied_handler.h" />
     <ClInclude Include="src\replied_handler\team_client_player_replied_handler.h" />

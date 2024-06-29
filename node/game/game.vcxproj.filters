@@ -84,9 +84,6 @@
     <ClCompile Include="src\replied_handler\common_client_player_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\replied_handler\deploy_service_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\replied_handler\player_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -198,9 +195,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\common_client_player_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\player_service_replied.h">
