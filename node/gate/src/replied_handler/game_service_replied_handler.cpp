@@ -48,7 +48,6 @@ void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, 
         return;
     }
     message.set_body(replied->response());
-    message.set_id(replied->id());
     message.set_message_id(replied->message_id());
     g_gate_node->codec().send(it->second.conn_, message);
 ///<<< END WRITING YOUR CODE

@@ -63,9 +63,8 @@ message UnRegisterGameRequest
 
 message MessageBody
 {
-  uint64 id = 1;
-  bytes body = 2;
-  uint32 message_id = 3;
+  bytes body = 1;
+  uint32 message_id = 2;
 }
 
 message NodeMessageHead
