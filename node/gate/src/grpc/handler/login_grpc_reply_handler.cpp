@@ -41,7 +41,7 @@ void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
     }
     else
     {
-        LOG_INFO << "RPC failed";
+        LOG_ERROR << "RPC failed";
     }
 }
 
@@ -76,7 +76,7 @@ void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
     }
     else
     {
-        LOG_INFO << "RPC failed";
+        LOG_ERROR << "RPC failed";
     }   
 }
 
@@ -110,7 +110,7 @@ void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
     }
     else
     {
-        LOG_INFO << "RPC failed";
+        LOG_ERROR << "RPC failed";
     }
 }
 

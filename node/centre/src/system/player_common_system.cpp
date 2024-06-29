@@ -79,8 +79,6 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         tls.registry.remove<EnterGsFlag>(player);
         Send2GsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, player);
     }
-
-  
 }
 
 void PlayerCommonSystem::Register2GatePlayerGameNode(entt::entity player)

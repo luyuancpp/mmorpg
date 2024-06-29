@@ -31,7 +31,7 @@ void AsyncCompleteGrpcDeployService()
     }
     else
     {
-        LOG_INFO << "RPC failed";
+        LOG_ERROR << "RPC failed";
     }
 }
 

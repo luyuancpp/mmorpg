@@ -35,13 +35,13 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
 	if (!tls.gate_node_registry.valid(gate_node_id))
 	{
-		LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
+		LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
 	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
 	if (nullptr == gate_node)
 	{
-        LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
+		LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
 	NodeRouteMessageRequest request;
@@ -109,13 +109,13 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, Nod
 	entt::entity gate_node_id{ get_gate_node_id(node_id) };
     if (!tls.gate_node_registry.valid(gate_node_id))
     {
-        LOG_INFO << "gate not found " << get_gate_node_id(node_id);
+		LOG_ERROR << "gate not found " << get_gate_node_id(node_id);
         return;
     }
     auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
     if (nullptr == gate_node)
     {
-        LOG_INFO << "gate not found " << get_gate_node_id(node_id);
+        LOG_ERROR << "gate not found " << get_gate_node_id(node_id);
         return;
     }
 	(*gate_node)->Send(GateServicePlayerMessageMsgId, messag);

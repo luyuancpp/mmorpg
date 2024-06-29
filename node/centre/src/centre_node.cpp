@@ -102,7 +102,6 @@ void CentreNode::StartServer(const ::nodes_info_data& info)
     deploy_rpc_timer_.Cancel();
     InitSystemAfterConnect();
     LOG_INFO << "centre start " << my_node_info.DebugString();
-
 }
 
 
