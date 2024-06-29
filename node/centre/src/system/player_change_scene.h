@@ -14,7 +14,5 @@ public:
 	static void SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s);
 	static void CopyTo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info);
 private:
-	static uint32_t TryChangeSameGsScene(entt::entity player);
-	static uint32_t ChangeDiffGsScene(entt::entity player);//自己的服务器改变gs gs1的场景到gs2的场景
 	static void OnEnterSceneOk(entt::entity player);
 };
