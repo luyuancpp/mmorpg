@@ -2,20 +2,19 @@
 
 #include <stdio.h>
 
+#include "muduo/base/AsyncLogging.h"
 #include "muduo/base/Logging.h"
-#include "muduo/base/Mutex.h"
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TcpServer.h"
-#include "muduo/base/AsyncLogging.h"
 
-#include "network/rpc_client.h"
 #include "handler/c2gate.h"
+#include "handler/gate_service_handler.h"
+#include "network/rpc_client.h"
+#include "network/rpc_connection_event.h"
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"
-#include "handler/gate_service_handler.h"
-#include "network/rpc_connection_event.h"
-#include "type_define/type_define.h"
 #include "timer_task/timer_task.h"
+#include "type_define/type_define.h"
 
 #include "common_proto/deploy_service.pb.h"
 
