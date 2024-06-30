@@ -1,13 +1,13 @@
 #include "centre_node.h"
 
 #include <ranges>
+#include <game_config/deploy_json.h>
 #include <grpcpp/grpcpp.h>
 
 #include "all_config.h"
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "constants_proto/node.pb.h"
 #include "event_handler/event_handler.h"
-#include "game_config/deploy_json.h"
 #include "game_config/lobby_config.h"
 #include "grpc/deploy/deployclient.h"
 #include "handler/player_service.h"

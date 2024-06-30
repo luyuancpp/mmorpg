@@ -2,21 +2,20 @@
 
 #include <ranges>
 
-#include "muduo/base/Logging.h"
-#include "muduo/net/InetAddress.h"
-
 #include "all_config.h"
+#include "common_proto/deploy_service.grpc.pb.h"
+#include "constants_proto/node.pb.h"
+#include "event_handler/event_handler.h"
+#include "event_proto/server_event.pb.h"
 #include "game_config/deploy_json.h"
 #include "game_config/lobby_config.h"
-
-#include "event_handler/event_handler.h"
 #include "grpc/deploy/deployclient.h"
 #include "handler/player_service.h"
 #include "handler/register_handler.h"
+#include "muduo/base/Logging.h"
+#include "muduo/net/InetAddress.h"
 #include "network/gate_session.h"
-#include "network/process_info.h"
 #include "network/rpc_session.h"
-
 #include "replied_handler/player_service_replied.h"
 #include "service/service.h"
 #include "system/player_session_system.h"
@@ -24,10 +23,6 @@
 #include "thread_local/thread_local_storage.h"
 #include "thread_local/thread_local_storage_game.h"
 #include "util/game_registry.h"
-
-#include "common_proto/deploy_service.grpc.pb.h"
-#include "constants_proto/node.pb.h"
-#include "event_proto/server_event.pb.h"
 
 GameNode* g_game_node = nullptr;
 

@@ -1,16 +1,13 @@
 #pragma once
 
+#include "common_proto/deploy_service.pb.h"
 #include "entt/src/entt/entity/registry.hpp"
-
-#include "muduo/base/AsyncLogging.h"
-
 #include "handler/centre_service_handler.h"
+#include "muduo/base/AsyncLogging.h"
 #include "network/rpc_connection_event.h"
 #include "network/rpc_server.h"
 #include "redis_client/redis_client.h"
 #include "timer_task/timer_task.h"
-
-#include "common_proto/deploy_service.pb.h"
 
 class CentreNode : muduo::noncopyable
 {
