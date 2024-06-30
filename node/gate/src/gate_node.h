@@ -6,7 +6,9 @@
 #include "muduo/base/Mutex.h"
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TcpServer.h"
+#include "muduo/base/AsyncLogging.h"
 
+#include "network/rpc_client.h"
 #include "handler/c2gate.h"
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"

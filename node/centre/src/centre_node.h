@@ -2,6 +2,8 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
+#include "muduo/base/AsyncLogging.h"
+
 #include "handler/centre_service_handler.h"
 #include "network/rpc_connection_event.h"
 #include "network/rpc_server.h"
