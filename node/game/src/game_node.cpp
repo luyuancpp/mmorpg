@@ -16,6 +16,7 @@
 #include "network/gate_session.h"
 #include "network/process_info.h"
 #include "network/rpc_session.h"
+
 #include "replied_handler/player_service_replied.h"
 #include "service/service.h"
 #include "system/player_session_system.h"
@@ -212,7 +213,6 @@ void GameNode::Connect2Centre()
             zone_centre_node_ = centre_node;
         }
     }
-
 }
 
 void GameNode::InitSystemBeforeConnect()
