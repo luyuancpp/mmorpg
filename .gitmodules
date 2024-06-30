@@ -45,3 +45,6 @@
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
 	branch = v1.64.0
+[submodule "third_party/spdlog"]
+	path = third_party/spdlog
+	url = https://github.com/gabime/spdlog.git
