@@ -1,6 +1,6 @@
 #include "game_scene_server_player_handler.h"
-#include "network/message_system.h"
 #include "thread_local/thread_local_storage.h"
+#include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "comp/scene_comp.h"
 #include "component_proto/player_comp.pb.h"
