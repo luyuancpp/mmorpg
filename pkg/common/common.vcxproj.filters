@@ -35,6 +35,7 @@
     <ClInclude Include="src\util\snow_flake.h" />
     <ClInclude Include="src\util\type_traits.h" />
     <ClInclude Include="src\util\utility.h" />
+    <ClInclude Include="src\global_data\async_log_file.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />
@@ -59,6 +60,7 @@
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\util\pb_util.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
+    <ClCompile Include="src\global_data\async_log_file.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\autogen.bat" />
