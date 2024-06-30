@@ -1,6 +1,6 @@
 #include "game_service_handler.h"
-#include "network/message_system.h"
 #include "thread_local/thread_local_storage.h"
+#include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "muduo/net/InetAddress.h"
