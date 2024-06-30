@@ -16,7 +16,6 @@ public:
     entt::registry team_registry;
     entt::registry mission_registry;
 
-
 	entt::dispatcher dispatcher;
 
 	entt::entity op_entity{entt::null};
