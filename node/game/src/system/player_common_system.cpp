@@ -69,8 +69,8 @@ void PlayerCommonSystem::OnPlayerAsyncSaved(Guid player_id, player_database& mes
 
 void PlayerCommonSystem::SavePlayer(entt::entity player)
 {
-	using SaveMessagePtr = PlayerRedisPtr::element_type::MessageValuePtr;
-	SaveMessagePtr pb = std::make_shared<SaveMessagePtr::element_type>();
+	using SaveMessage = PlayerRedis::element_type::MessageValuePtr;
+	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
 
 	pb->set_player_id(tls.registry.get<Guid>(player));
 	pb->mutable_pos()->CopyFrom(tls.registry.get<Vector3>(player));

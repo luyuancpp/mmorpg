@@ -1,4 +1,4 @@
 #pragma once
 
 class NodeInfoRequest;
-void SendGetNodeInfo( const NodeInfoRequest& req);
+void SendGetNodeInfo( const NodeInfoRequest& rq);

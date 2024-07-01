@@ -242,7 +242,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	{
         tls.global_registry.get<PlayerLoadingInfoList>(global_entity()).emplace(
             rq.player_id(), *request);
-        tls.global_registry.get<PlayerRedisPtr>(global_entity())->AsyncLoad(rq.player_id());
+        tls.global_registry.get<PlayerRedis>(global_entity())->AsyncLoad(rq.player_id());
 	}
 	else
 	{
