@@ -17,8 +17,8 @@ void RedisSystem::Init(muduo::net::InetAddress& server_addr)
 
     tls.global_registry.emplace<PlayerLoadingInfoList>(global_entity());
 
-    auto& player_redis = tls.global_registry.emplace<PlayerRedisPtr>(global_entity());
-    player_redis = std::make_unique<PlayerRedisPtr::element_type>(*hiredis_);
+    auto& player_redis = tls.global_registry.emplace<PlayerRedis>(global_entity());
+    player_redis = std::make_unique<PlayerRedis::element_type>(*hiredis_);
     player_redis->SetLoadCallback(PlayerCommonSystem::OnPlayerAsyncLoaded);
     player_redis->SetSaveCallback(PlayerCommonSystem::OnPlayerAsyncSaved);
 }

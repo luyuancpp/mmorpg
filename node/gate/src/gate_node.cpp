@@ -55,11 +55,11 @@ void GateNode::InitNodeByReqInfo()
     g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
     deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
     {
-        NodeInfoRequest req;
-        req.set_node_type(kGateNode);
-        req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
+        NodeInfoRequest rq;
+        rq.set_node_type(kGateNode);
+        rq.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
         void SendGetNodeInfo(const NodeInfoRequest&);
-        SendGetNodeInfo(req);
+        SendGetNodeInfo(rq);
     }
 }
 

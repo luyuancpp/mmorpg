@@ -16,14 +16,14 @@ void PlayerSceneSystem::EnterScene(entt::entity player, Guid scene)
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
 {
-	const auto scene_info = tls.scene_registry.try_get<SceneInfo>(scene);
-	if (nullptr == scene_info)
+	const auto info = tls.scene_registry.try_get<SceneInfo>(scene);
+	if (nullptr == info)
 	{
 		LOG_ERROR << "enter scene error" << tls.registry.get<Guid>(player);
 		return;
 	}
 	EnterSceneS2C rq;
-	rq.mutable_scene_info()->CopyFrom(*scene_info);
+	rq.mutable_scene_info()->CopyFrom(*info);
 	Send2Player(ClientPlayerSceneServicePushEnterSceneS2CMsgId, rq, player);
 }
 

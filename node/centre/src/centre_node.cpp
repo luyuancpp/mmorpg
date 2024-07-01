@@ -74,10 +74,10 @@ void CentreNode::InitNodeByReqInfo()
     deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
 
     {
-        NodeInfoRequest req;
-        req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
+        NodeInfoRequest rq;
+        rq.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
         void SendGetNodeInfo(const NodeInfoRequest & request);
-        SendGetNodeInfo(req);
+        SendGetNodeInfo(rq);
     }
 }
 
@@ -193,10 +193,10 @@ void CentreNode::InitNodeServer()
     void AsyncCompleteGrpcDeployService();
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpcDeployService);
 
-    NodeInfoRequest req;
-    req.set_zone_id(zone.zone_id());
-    void SendGetNodeInfo(const NodeInfoRequest& req);
-    SendGetNodeInfo(req);
+    NodeInfoRequest rq;
+    rq.set_zone_id(zone.zone_id());
+    void SendGetNodeInfo(const NodeInfoRequest& rq);
+    SendGetNodeInfo(rq);
 }
 
 void CentreNode::InitSystemBeforeConnect()

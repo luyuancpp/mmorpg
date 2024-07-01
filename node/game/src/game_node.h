@@ -2,6 +2,7 @@
 #undef  TEXT//为了导航网格能编译过
 
 #include "muduo/net/EventLoop.h"
+#include "muduo/base/AsyncLogging.h"
 
 #include "handler/game_service_handler.h"
 #include "network/rpc_client.h"
