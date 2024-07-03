@@ -6,6 +6,7 @@
 
 #include "all_config.h"
 #include "common_proto/deploy_service.grpc.pb.h"
+#include "constants/file.h"
 #include "constants_proto/node.pb.h"
 #include "event_handler/event_handler.h"
 #include "game_config/lobby_config.h"
@@ -28,20 +29,29 @@ CentreNode* g_centre_node = nullptr;
 void InitRepliedHandler();
 void AsyncCompleteGrpcDeployService();
 
+void AsyncOutput(const char* msg, int len)
+{
+    g_centre_node->Log().append(msg, len);
+}
+
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
     : loop_(loop),
+      log_ { "logs/centre", kMaxLogFileRollSize, 1},
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
 }
 
 CentreNode::~CentreNode()
 {
-	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
+	Exit();
 }
 
 void CentreNode::Init()
 {
     g_centre_node = this;
+    
+    InitEventCallback();
+    InitLog();
     EventHandler::Register();
     InitConfig();
 	node_info_.set_node_type(kCentreNode);
@@ -49,18 +59,35 @@ void CentreNode::Init()
     muduo::Logger::setLogLevel(static_cast < muduo::Logger::LogLevel > (
         ZoneConfig::GetSingleton ( ) . config_info ( ) . loglevel ( ) ));
 
-	InitNodeByReqInfo();
-    InitSystemBeforeConnect();
-
-    InitNodeServer();
-
     InitPlayerService();
     InitPlayerServiceReplied();
     InitRepliedHandler();
     InitMessageInfo();
-   
+    InitSystemBeforeConnect();
+    
+	InitNodeByReqInfo();
+    
     void InitServiceHandler();
     InitServiceHandler();
+}
+
+void CentreNode::InitEventCallback()
+{
+    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
+}
+
+
+void CentreNode::Exit()
+{
+    log_.stop();
+    tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
+}
+
+void CentreNode::InitGameConfig()
+{
+    LoadAllConfig();
+    LoadAllConfigAsyncWhenServerLaunch();
+    //ConfigSystem::OnConfigLoadSuccessful();
 }
 
 void CentreNode::InitNodeByReqInfo()
@@ -84,11 +111,11 @@ void CentreNode::InitNodeByReqInfo()
 void CentreNode::StartServer(const ::nodes_info_data& info)
 {
     server_infos_ = info;
-    auto& my_node_info = server_infos_.centre_info().centre_info()[centre_node_index()];
+    auto& my_node_info = server_infos_.centre_info().centre_info()[GetNodeConfIndex()];
    
     InetAddress service_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
-    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
+    
     server_->registerService(&centre_service_);
     for ( auto & val : g_server_service | std::views::values )
     {
@@ -172,31 +199,23 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
     }
 }
 
+void CentreNode::InitLog ( )
+{
+    muduo::Logger::setOutput(AsyncOutput);
+    log_.start();
+}
+
 void CentreNode::InitConfig()
+{
+    InitNodeConfig();
+    InitGameConfig();
+}
+
+void CentreNode::InitNodeConfig()
 {
     ZoneConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     LobbyConfig::GetSingleton().Load("lobby.json");
-    LoadAllConfigAsyncWhenServerLaunch();
-}
-
-void CentreNode::InitNodeServer()
-{
-    auto& zone = ZoneConfig::GetSingleton().config_info();
-
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
-    g_deploy_stub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-    g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
-
-    void AsyncCompleteGrpcDeployService();
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpcDeployService);
-
-    NodeInfoRequest rq;
-    rq.set_zone_id(zone.zone_id());
-    void SendGetNodeInfo(const NodeInfoRequest& rq);
-    SendGetNodeInfo(rq);
 }
 
 void CentreNode::InitSystemBeforeConnect()
