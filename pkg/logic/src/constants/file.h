@@ -1,4 +1,4 @@
 ﻿#pragma once
 #include <cstdint>
 
-constexpr  uint32_t kMaxLogFileRollSize = 4 * 1024 * 1024 * 1024;
+constexpr  uint64_t kMaxLogFileRollSize = 8 * 1024 * 1024;
