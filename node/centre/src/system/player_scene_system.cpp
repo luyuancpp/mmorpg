@@ -150,7 +150,7 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id)
     GameNodeEnterGsRequest rq;
     rq.set_player_id(tls.registry.get<Guid>(player));
     rq.set_session_id((*player_node_info).gate_session_id());
-    rq.set_centre_node_id(g_centre_node->center_node_id());
+    rq.set_centre_node_id(g_centre_node->GetNodeId());
     CallGameNodeMethod(GameServiceEnterGsMsgId, rq, node_id);
 }
 

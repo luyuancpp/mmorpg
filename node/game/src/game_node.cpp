@@ -77,7 +77,6 @@ void GameNode::InitLog ( )
 {
     muduo::Logger::setOutput(AsyncOutput);
     log_.start();
-    
 }
 
 void GameNode::Exit ( )

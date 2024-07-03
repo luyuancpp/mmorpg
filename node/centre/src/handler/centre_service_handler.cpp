@@ -476,7 +476,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	//需要发送到下个节点
 	const auto next_route_data = mutable_request->add_route_data_list();
 	next_route_data->CopyFrom(tls_cl.route_data());
-	next_route_data->mutable_node_info()->CopyFrom(g_centre_node->node_info());
+	next_route_data->mutable_node_info()->CopyFrom(g_centre_node->GetNodeInfo());
 	mutable_request->set_body(tls_cl.route_msg_body());
     mutable_request->set_id(request->id());
 

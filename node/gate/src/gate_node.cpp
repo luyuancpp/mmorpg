@@ -4,6 +4,7 @@
 
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "common_proto/login_service.grpc.pb.h"
+#include "constants/file.h"
 #include "constants_proto/node.pb.h"
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deployclient.h"
@@ -202,8 +203,9 @@ void GateNode::Connect2Login() const
     InitLoginNodeComponent();
 }
 
-void GateNode::InitLog()
+void GateNode::InitLog ( )
 {
+    muduo::Logger::setOutput(AsyncOutput);
     log_.start();
 }
 
