@@ -20,6 +20,7 @@
 #include "service/service.h"
 #include "system/player_session_system.h"
 #include "thread_local/thread_local_storage_centre.h"
+#include "util/color_console_log.h"
 
 using namespace muduo;
 using namespace net;
@@ -32,6 +33,9 @@ void AsyncCompleteGrpcDeployService();
 void AsyncOutput(const char* msg, int len)
 {
     g_centre_node->Log().append(msg, len);
+#ifdef WIN32
+    Log2Console(msg, len);
+#endif
 }
 
 CentreNode::CentreNode(muduo::net::EventLoop* loop)

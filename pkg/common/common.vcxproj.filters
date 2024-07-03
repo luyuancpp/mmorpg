@@ -36,6 +36,7 @@
     <ClInclude Include="src\util\type_traits.h" />
     <ClInclude Include="src\util\utility.h" />
     <ClInclude Include="src\global_data\async_log_file.h" />
+    <ClInclude Include="src\macros\game_log.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />

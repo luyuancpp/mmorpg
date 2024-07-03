@@ -24,6 +24,7 @@
 #include "thread_local/thread_local_storage.h"
 #include "thread_local/thread_local_storage_game.h"
 #include "util/game_registry.h"
+#include "util/color_console_log.h"
 
 GameNode* g_game_node = nullptr;
 
@@ -34,6 +35,9 @@ void AsyncCompleteGrpcDeployService();
 void AsyncOutput(const char* msg, int len)
 {
     g_game_node->Log().append(msg, len);
+#ifdef WIN32
+    Log2Console(msg, len);
+#endif
 }
 
 void InitRepliedHandler();

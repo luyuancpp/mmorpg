@@ -169,6 +169,7 @@
     <ClCompile Include="src\timer_task\duration_manager.cpp" />
     <ClCompile Include="src\timer_task\timer_duration.cpp" />
     <ClCompile Include="src\timer_task\timer_task.cpp" />
+    <ClCompile Include="src\util\color_console_log.cpp" />
     <ClCompile Include="src\util\session.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -178,6 +179,7 @@
     <ClInclude Include="src\comp\scene_comp.h" />
     <ClInclude Include="src\comp\server_comp.h" />
     <ClInclude Include="src\constants\file.h" />
+    <ClInclude Include="src\constants\game_log.h" />
     <ClInclude Include="src\constants\mission.h" />
     <ClInclude Include="src\constants\op_code.h" />
     <ClInclude Include="src\constants\scene.h" />
@@ -199,6 +201,7 @@
     <ClInclude Include="src\timer_task\timer_task.h" />
     <ClInclude Include="src\type_alias\player_session.h" />
     <ClInclude Include="src\type_alias\session_id_gen.h" />
+    <ClInclude Include="src\util\color_console_log.h" />
     <ClInclude Include="src\util\session.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
