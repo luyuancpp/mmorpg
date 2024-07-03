@@ -10,7 +10,7 @@
 #include "game_node.h"
 #include "network/message_system.h"
 #include "service/centre_scene_service.h"
-#include "system/player_scene.h"
+#include "system/player/player_scene.h"
 #include "system/recast.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage.h"
