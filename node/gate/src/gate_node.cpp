@@ -13,6 +13,7 @@
 #include "service/game_service_service.h"
 #include "service/service.h"
 #include "thread_local/thread_local_storage_gate.h"
+#include "util/color_console_log.h"
 
 GateNode* g_gate_node = nullptr; 
 
@@ -22,6 +23,9 @@ void AsyncCompleteRpcLoginService();
 void AsyncOutput(const char* msg, int len)
 {
     g_gate_node->Log().append(msg, len);
+#ifdef WIN32
+    Log2Console(msg, len);
+#endif
 }
 
 GateNode::GateNode(EventLoop* loop)

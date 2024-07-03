@@ -2,6 +2,8 @@
 
 //https://www.cnblogs.com/xutopia/p/15820428.html
 
+#ifdef WIN32
+
 #define LOG_NONE         "\033[m"
 #define LOG_RED          "\033[0;32;31m"
 #define LOG_LIGHT_RED    "\033[1;31m"
@@ -18,3 +20,5 @@
 #define LOG_YELLOW       "\033[1;33m"
 #define LOG_LIGHT_GRAY   "\033[0;37m"
 #define LOG_WHITE        "\033[1;37m"
+
+#endif
