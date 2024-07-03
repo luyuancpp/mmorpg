@@ -1,7 +1,7 @@
 #pragma once
 
 #include "type_define/type_define.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "util/snow_flake.h"
 
 #include "team.h"

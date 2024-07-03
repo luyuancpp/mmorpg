@@ -1,6 +1,6 @@
 #include "player_session_system.h"
 
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "type_alias/player_session.h"
 
 void PlayerSessionSystem::Init()

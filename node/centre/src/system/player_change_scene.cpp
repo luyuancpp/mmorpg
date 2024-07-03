@@ -2,7 +2,7 @@
 
 #include "constants/tips_id.h"
 #include "system/scene/scene_system.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 
 #include "event_proto/scene_event.pb.h"
 

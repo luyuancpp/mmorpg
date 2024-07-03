@@ -4,10 +4,10 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "type_define/type_define.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "system/player_change_scene.h"
 #include "util/game_registry.h"
-#include "system/player_common_system.h"
+#include "system/player_node_system.h"
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
@@ -48,7 +48,7 @@ void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, cons
 		LOG_ERROR << "player not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-	PlayerCommonSystem::OnRegister2GatePlayerGameNode(player);
+	PlayerNodeSystem::OnRegister2GatePlayerGameNode(player);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE

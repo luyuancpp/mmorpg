@@ -5,7 +5,7 @@
 #include "network/message_system.h"
 #include "system/game_node_scene_system.h"
 #include "system/scene/scene_system.h"
-#include "thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/storage_common_logic.h"
 
 #include "service/scene_client_player_service.h"
 

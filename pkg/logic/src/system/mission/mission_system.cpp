@@ -6,8 +6,8 @@
 
 #include "condition_config.h"
 #include "constants/mission.h"
-#include "comp/mission_comp.h"
-#include "thread_local/thread_local_storage.h"
+#include "comp/mission.h"
+#include "thread_local/storage.h"
 #include "constants/tips_id.h"
 
 #include "component_proto/mission_comp.pb.h"

@@ -14,18 +14,18 @@
 #include "handler/player_service.h"
 #include "handler/register_handler.h"
 #include "muduo/base/Logging.h"
-#include "muduo/net/InetAddress.h"
 #include "muduo/base/TimeZone.h"
+#include "muduo/net/InetAddress.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "replied_handler/player_service_replied.h"
 #include "service/service.h"
 #include "system/player_session_system.h"
 #include "system/config/config_system.h"
-#include "thread_local/thread_local_storage.h"
-#include "thread_local/thread_local_storage_game.h"
-#include "util/game_registry.h"
+#include "thread_local/storage.h"
+#include "thread_local/storage_game.h"
 #include "util/color_console_log.h"
+#include "util/game_registry.h"
 
 GameNode* g_game_node = nullptr;
 

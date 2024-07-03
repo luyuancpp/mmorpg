@@ -102,9 +102,6 @@
     <ClCompile Include="src\system\game_node_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\player_common_system.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\system\player_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -120,15 +117,18 @@
     <ClCompile Include="src\system\redis_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\thread_local_storage_game.cpp">
+    <ClCompile Include="src\thread_local\storage_game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\system\player_node_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\comp\gs_scene_comp.h">
+    <ClInclude Include="src\comp\game_node_scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\event_handler\event_handler.h">
@@ -212,9 +212,6 @@
     <ClInclude Include="src\system\game_node_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\player_common_system.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\system\player_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -230,7 +227,7 @@
     <ClInclude Include="src\system\redis_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\thread_local_storage_game.h">
+    <ClInclude Include="src\thread_local\storage_game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\type_alias\player_loading.h">
@@ -240,6 +237,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\system\player_node_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

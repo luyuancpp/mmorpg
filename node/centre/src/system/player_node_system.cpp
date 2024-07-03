@@ -1,9 +1,9 @@
-#include "player_common_system.h"
+#include "player_node_system.h"
 
 #include "muduo/base/Logging.h"
 
-#include "comp/scene_comp.h"
-#include "thread_local/thread_local_storage.h"
+#include "comp/scene.h"
+#include "thread_local/storage.h"
 
 #include "network/gate_session.h"
 #include "network/message_system.h"
@@ -12,8 +12,9 @@
 #include "service/gate_service_service.h"
 #include "system/player_change_scene.h"
 #include "system/player_scene_system.h"
-#include "thread_local/thread_local_storage_centre.h"
-#include "thread_local/thread_local_storage_common_logic.h"
+#include "system/scene/scene_system.h"
+#include "thread_local/storage_centre.h"
+#include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
 #include "util/defer.h"
 
@@ -21,7 +22,7 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
-void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
+void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
 {
     auto& loading_list = tls.global_registry.get<PlayerLoadingInfoList>(global_entity());
     defer(loading_list.erase(player_id));
@@ -51,12 +52,12 @@ void PlayerCommonSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre
     // on loaded db
 }
 
-void PlayerCommonSystem::OnPlayerAsyncSaved(Guid player_id, player_centre_database& message)
+void PlayerNodeSystem::OnPlayerAsyncSaved(Guid player_id, player_centre_database& message)
 {
 
 }
 
-void PlayerCommonSystem::OnLogin(entt::entity player)
+void PlayerNodeSystem::OnLogin(entt::entity player)
 {
     const auto enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
 	if (nullptr == enter_game_node_flag)
@@ -81,7 +82,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
     }
 }
 
-void PlayerCommonSystem::Register2GatePlayerGameNode(entt::entity player)
+void PlayerNodeSystem::Register2GatePlayerGameNode(entt::entity player)
 {
     auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
     if (nullptr == player_node_info)
@@ -109,7 +110,7 @@ void PlayerCommonSystem::Register2GatePlayerGameNode(entt::entity player)
 }
 
 
-void PlayerCommonSystem::OnRegister2GatePlayerGameNode(entt::entity player)
+void PlayerNodeSystem::OnRegister2GatePlayerGameNode(entt::entity player)
 {
     const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
     if (nullptr == player_node_info)
@@ -134,7 +135,28 @@ void PlayerCommonSystem::OnRegister2GatePlayerGameNode(entt::entity player)
         if (const auto enter_gs_type = enter_game_node_flag->enter_gs_type();
             enter_gs_type != LOGIN_NONE)
         {
-            PlayerCommonSystem::OnLogin(player);
+            PlayerNodeSystem::OnLogin(player);
         }
     }
 }
+
+void PlayerNodeSystem::LeaveGame(Guid player_uid)
+{
+    //todo 登录的时候leave
+    //todo 断线不能马上下线，这里之后会改
+    //没进入场景，只是登录，或者切换场景过程中
+    defer(tls_cl.player_list().erase(player_uid));
+    const auto player = tls_cl.get_player(player_uid);
+    if (!tls.registry.valid(player))
+    {
+        return;
+    }
+    if (nullptr == tls.registry.try_get<SceneEntity>(player))
+    {
+    }
+    else
+    {
+        ScenesSystem::LeaveScene({ player });
+    }
+}
+

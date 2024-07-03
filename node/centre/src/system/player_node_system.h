@@ -5,15 +5,13 @@
 
 class player_centre_database;
 
-class PlayerCommonSystem
+class PlayerNodeSystem
 {
 public:
     static void OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message);
-
     static void OnPlayerAsyncSaved(Guid player_id, player_centre_database& message);
-
     static void OnLogin(entt::entity player);
-
     static void Register2GatePlayerGameNode(entt::entity player);
     static void OnRegister2GatePlayerGameNode(entt::entity player);
+    static void LeaveGame(Guid player_uid);
 };

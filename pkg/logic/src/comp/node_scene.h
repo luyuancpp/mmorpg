@@ -4,8 +4,8 @@
 
 #include "type_define/type_define.h"
 #include "constants/node.h"
-#include "thread_local/thread_local_storage_common_logic.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage_common_logic.h"
+#include "thread_local/storage.h"
 #include "component_proto/scene_comp.pb.h"
 
 using SceneList = EntitySet;

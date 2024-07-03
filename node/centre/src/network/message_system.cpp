@@ -2,16 +2,16 @@
 
 #include "muduo/base/Logging.h"
 
-#include "comp/scene_comp.h"
+#include "comp/scene.h"
 #include "component_proto/player_network_comp.pb.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "service/game_service_service.h"
 #include "service/gate_service_service.h"
 #include "service/service.h"
-#include "thread_local/thread_local_storage.h"
-#include "thread_local/thread_local_storage_centre.h"
-#include "thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/storage.h"
+#include "thread_local/storage_centre.h"
+#include "thread_local/storage_common_logic.h"
 #include "type_define/type_define.h"
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)

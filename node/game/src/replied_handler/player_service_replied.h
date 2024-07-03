@@ -5,7 +5,7 @@
 #include "google/protobuf/message.h"
 #include "google/protobuf/service.h"
 
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 
 
 class PlayerServiceReplied

@@ -1,10 +1,10 @@
 #include "centre_service_handler.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
 #include "mainscene_config.h"
-#include "comp/player_comp.h"
+#include "comp/player.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
@@ -22,14 +22,14 @@
 #include "service/service.h"
 #include "system/centre_player_system.h"
 #include "system/player_change_scene.h"
-#include "system/player_common_system.h"
+#include "system/player_node_system.h"
 #include "system/scene/scene_system.h"
-#include "thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"
 #include "type_alias/player_session.h"
 #include "util/defer.h"
-#include "util/pb_util.h"
+#include "util/pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -275,7 +275,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		}
 		//连续顶几次,所以用emplace_or_replace
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
-		PlayerCommonSystem::Register2GatePlayerGameNode(player);
+		PlayerNodeSystem::Register2GatePlayerGameNode(player);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -388,7 +388,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	}
 	player_node_info->set_game_node_id(request->game_node_id());
 
-	PlayerCommonSystem::Register2GatePlayerGameNode(player);
+	PlayerNodeSystem::Register2GatePlayerGameNode(player);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE

@@ -1,11 +1,11 @@
 #include "game_scene_server_player_handler.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "comp/scene_comp.h"
+#include "comp/scene.h"
 #include "component_proto/player_comp.pb.h"
 #include "service/scene_client_player_service.h"
-#include "system/player_common_system.h"
+#include "system/player_node_system.h"
 #include "system/player_scene_system.h"
 
 #include "client_player_proto/scene_client_player.pb.h"
@@ -29,7 +29,7 @@ void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,
 	if (request->change_gs())//存储完毕以后才能换场景，防止回档
 	{
 		//离开gs 清除session
-		PlayerCommonSystem::SavePlayer(player);
+		PlayerNodeSystem::SavePlayer(player);
 		tls.registry.emplace<UnregisterPlayer>(player);
 	}
 ///<<< END WRITING YOUR CODE

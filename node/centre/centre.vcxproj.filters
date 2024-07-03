@@ -99,13 +99,7 @@
     <ClCompile Include="src\replied_handler\team_client_player_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\centre_player_system.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\system\player_change_scene.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\system\player_common_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\player_scene_system.cpp">
@@ -120,13 +114,16 @@
     <ClCompile Include="src\system\redis_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\thread_local_storage_centre.cpp">
+    <ClCompile Include="src\thread_local\storage_centre.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\centre_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\grpc\request\deploy_grpc_requst.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\player_node_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -212,13 +209,7 @@
     <ClInclude Include="src\replied_handler\team_client_player_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\centre_player_system.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\system\player_change_scene.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\system\player_common_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player_scene_system.h">
@@ -233,7 +224,7 @@
     <ClInclude Include="src\system\redis_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\thread_local_storage_centre.h">
+    <ClInclude Include="src\thread_local\storage_centre.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\type_alias\player_loading.h">
@@ -246,6 +237,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\system\player_node_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

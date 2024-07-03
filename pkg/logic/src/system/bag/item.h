@@ -3,7 +3,7 @@
 #include "type_define/type_define.h"
 #include "util/game_registry.h"
 #include "util/snow_flake.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 
 #include "component_proto/item_base_comp.pb.h"
 

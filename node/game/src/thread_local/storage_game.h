@@ -1,7 +1,7 @@
 #pragma once
 
 #include "system/redis_system.h"
-#include "comp/gs_scene_comp.h"
+#include "comp/game_node_scene.h"
 
 #include "common_proto/mysql_database_table.pb.h"
 #include "component_proto/player_async_comp.pb.h"

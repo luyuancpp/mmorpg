@@ -1,10 +1,10 @@
-#include "mission_comp.h"
+#include "mission.h"
 
 #include <ranges>
 
 #include "condition_config.h"
 #include "constants/mission.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "constants/tips_id.h"
 
 #include "component_proto/mission_comp.pb.h"

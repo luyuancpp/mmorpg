@@ -1,11 +1,11 @@
 #include "game_server_player_handler.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "muduo/base/Logging.h"
 
-#include "system/player_common_system.h"
+#include "system/player_node_system.h"
 
 #include "component_proto/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -18,7 +18,7 @@ void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,
 	{
 		return;
 	}
-	PlayerCommonSystem::OnPlayerLogin(player, request->enter_gs_type());
+	PlayerNodeSystem::OnPlayerLogin(player, request->enter_gs_type());
 	///<<< END WRITING YOUR CODE
 }
 
