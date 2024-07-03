@@ -8,6 +8,7 @@
 #include "constants_proto/node.pb.h"
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deployclient.h"
+#include "muduo/base/TimeZone.h"
 #include "network/rpc_session.h"
 #include "service/centre_service_service.h"
 #include "service/game_service_service.h"
@@ -44,8 +45,10 @@ GateNode::~GateNode()
 void GateNode::Init()
 {
     g_gate_node = this;
+    InitTimeZone();
     InitLog();
     InitConfig();
+
     InitNodeByReqInfo();
 
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
@@ -227,4 +230,10 @@ void GateNode::InitNodeConfig()
 void
     GateNode::InitGameConfig ( )
 {
+}
+
+void GateNode::InitTimeZone()
+{
+    const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
+    muduo::Logger::setTimeZone(tz);
 }
