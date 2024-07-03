@@ -28,10 +28,13 @@ public:
     inline NodeId GetNodeId()const { return GetNodeInfo().node_id();  }
     uint32_t GetNodeType() const{ return GetNodeInfo().game_node_type(); }
 
+    inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return log_; }
+    
     void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);
     
     void Init();
+    void Exit();
 
     void Receive1(const OnConnected2ServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
@@ -39,7 +42,8 @@ public:
 private:    
     void InitNodeByReqInfo();
     void Connect2Centre();
-    
+
+    void InitLog();
     static void InitConfig();
     static void InitNodeConfig();
     static void InitGameConfig();
@@ -50,6 +54,9 @@ private:
     inline NodeId GetNodeConfIndex()const { return GetNodeId() - 1; }
 
     muduo::net::EventLoop* loop_{ nullptr };
+    muduo::AsyncLogging log_;
+
+private:
     PbSyncRedisClientPtr redis_;
     RpcServerPtr server_;
     nodes_info_data node_net_info_;
