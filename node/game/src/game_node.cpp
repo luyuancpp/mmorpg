@@ -15,6 +15,7 @@
 #include "handler/register_handler.h"
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
+#include "muduo/base/TimeZone.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "replied_handler/player_service_replied.h"
@@ -58,8 +59,9 @@ void GameNode::Init()
 {
     g_game_node = this; 
     EventHandler::Register();
-
+    
     InitLog();
+    InitTimeZone();
     InitConfig();
 	
     muduo::Logger::setLogLevel(static_cast < muduo::Logger::LogLevel > (
@@ -107,6 +109,12 @@ void GameNode::InitGameConfig ( )
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();
     ConfigSystem::OnConfigLoadSuccessful();
+}
+
+void GameNode::InitTimeZone()
+{
+    const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
+    muduo::Logger::setTimeZone(tz);
 }
 
 void GameNode::SetNodeId( const NodeId node_id)

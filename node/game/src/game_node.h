@@ -47,6 +47,7 @@ private:
     static void InitConfig();
     static void InitNodeConfig();
     static void InitGameConfig();
+    static void InitTimeZone();
     
     static void InitSystemBeforeConnect();
     static void InitSystemAfterConnect();
