@@ -46,33 +46,43 @@ void GameNode::Init()
 {
     g_game_node = this; 
     EventHandler::Register();
+    
     InitConfig();
 	
     muduo::Logger::setLogLevel(static_cast < muduo::Logger::LogLevel > (
         ZoneConfig::GetSingleton ( ) . config_info ( ) . loglevel ( ) ));
-    global_entity();
+    
     InitMessageInfo();
     InitPlayerService();
+    InitRepliedHandler();
     InitPlayerServiceReplied();
+    void InitServiceHandler();
+    InitServiceHandler();
     InitSystemBeforeConnect();
 
-    InitRepliedHandler();
     InitNodeByReqInfo();
-	void InitServiceHandler();
-	InitServiceHandler();
-
 }
 
 void GameNode::InitConfig()
 {
+    InitGameConfig();
+    InitNodeConfig();
+}
+
+void  GameNode::InitNodeConfig ( )
+{
+    ZoneConfig::GetSingleton().Load("game.json");
+    DeployConfig::GetSingleton().Load("deploy.json");
+}
+
+void GameNode::InitGameConfig ( )
+{
     LoadAllConfig();
-	ZoneConfig::GetSingleton().Load("game.json");
-	DeployConfig::GetSingleton().Load("deploy.json");
     LoadAllConfigAsyncWhenServerLaunch();
     ConfigSystem::OnConfigLoadSuccessful();
 }
 
-void GameNode::SetNodeId(NodeId node_id)
+void GameNode::SetNodeId( const NodeId node_id)
 {
     node_info_.set_node_id(node_id);
 }
@@ -86,7 +96,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     node_info_.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
     node_info_.set_node_type(eNodeType::kGameNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    InetAddress service_addr(game_node_info().ip(), game_node_info().port());
+    InetAddress service_addr(GetNodeConf().ip(), GetNodeConf().port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&GameNode::Receive2>(*this);
@@ -104,7 +114,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
 
     tls.dispatcher.trigger<OnServerStart>();
 
-    LOG_INFO << "game node  start " << game_node_info().DebugString();
+    LOG_INFO << "game node  start " << GetNodeConf().DebugString();
 }
 
 void GameNode::Receive1(const OnConnected2ServerEvent& es)
@@ -163,9 +173,9 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
     }
 }
 
-const game_node_db& GameNode::game_node_info() const
+const game_node_db& GameNode::GetNodeConf() const
 {
-    return node_net_info_.game_info().game_info(game_node_index());
+    return node_net_info_.game_info().game_info(GetNodeConfIndex());
 }
 
 void GameNode::InitNodeByReqInfo()

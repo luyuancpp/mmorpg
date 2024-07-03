@@ -19,32 +19,35 @@ class GameNode : muduo::noncopyable
 public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
-    GameNode(muduo::net::EventLoop* loop);
+    explicit
+        GameNode(muduo::net::EventLoop* loop);
     ~GameNode();
 
-    inline const NodeInfo& node_info()const { return node_info_; }
-
-    void Init();
-
-    static void InitConfig();
+    inline const NodeInfo& GetNodeInfo()const { return node_info_; }
+    const game_node_db& GetNodeConf() const;
+    inline NodeId GetNodeId()const { return GetNodeInfo().node_id();  }
+    uint32_t GetNodeType() const{ return GetNodeInfo().game_node_type(); }
 
     void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);
+    
+    void Init();
 
     void Receive1(const OnConnected2ServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
 
-    const game_node_db& game_node_info() const;
-    inline NodeId game_node_id()const { return node_info().node_id();  }
-    uint32_t game_node_type() const{ return node_info().game_node_type(); }
 private:    
     void InitNodeByReqInfo();
     void Connect2Centre();
-
+    
+    static void InitConfig();
+    static void InitNodeConfig();
+    static void InitGameConfig();
+    
     static void InitSystemBeforeConnect();
     static void InitSystemAfterConnect();
 
-    inline NodeId game_node_index()const { return game_node_id() - 1; }
+    inline NodeId GetNodeConfIndex()const { return GetNodeId() - 1; }
 
     muduo::net::EventLoop* loop_{ nullptr };
     PbSyncRedisClientPtr redis_;

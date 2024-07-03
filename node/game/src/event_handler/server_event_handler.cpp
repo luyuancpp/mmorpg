@@ -40,11 +40,11 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& message
     RegisterGameRequest rq;
     rq.mutable_rpc_client()->set_ip(centre_local_addr.toIp());
     rq.mutable_rpc_client()->set_port(centre_local_addr.port());
-    rq.mutable_rpc_server()->set_ip(g_game_node->game_node_info().ip());
-    rq.mutable_rpc_server()->set_port(g_game_node->game_node_info().port());
+    rq.mutable_rpc_server()->set_ip(g_game_node->GetNodeConf().ip());
+    rq.mutable_rpc_server()->set_port(g_game_node->GetNodeConf().port());
 
-    rq.set_server_type(g_game_node->game_node_type());
-    rq.set_game_node_id(g_game_node->game_node_id());
+    rq.set_server_type(g_game_node->GetNodeType());
+    rq.set_game_node_id(g_game_node->GetNodeId());
     (*centre_node)->CallMethod(CentreServiceRegisterGameMsgId, rq);
 
     GameNodeSceneSystem::RegisterSceneToCentre();
@@ -73,7 +73,7 @@ void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& message)
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    ScenesSystem::set_sequence_node_id(g_game_node->game_node_id());
+    ScenesSystem::set_sequence_node_id(g_game_node->GetNodeId());
     GameNodeSceneSystem::InitNodeScene();
 ///<<< END WRITING YOUR CODE
 }
