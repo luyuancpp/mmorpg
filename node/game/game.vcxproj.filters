@@ -102,13 +102,13 @@
     <ClCompile Include="src\system\game_node_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\player_scene.cpp">
+    <ClCompile Include="src\system\player\player_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\player_session.cpp">
+    <ClCompile Include="src\system\player\player_session.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\player_tip.cpp">
+    <ClCompile Include="src\system\player\player_tip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\recast.cpp">
@@ -123,7 +123,10 @@
     <ClCompile Include="src\game_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\player_node.cpp">
+    <ClCompile Include="src\system\player\player_node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\scene\aoi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -212,13 +215,13 @@
     <ClInclude Include="src\system\game_node_scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\player_scene.h">
+    <ClInclude Include="src\system\player\player_scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\player_session.h">
+    <ClInclude Include="src\system\player\player_session.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\player_tip.h">
+    <ClInclude Include="src\system\player\player_tip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\recast.h">
@@ -239,7 +242,10 @@
     <ClInclude Include="src\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\player_node.h">
+    <ClInclude Include="src\system\player\player_node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\system\scene\aoi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

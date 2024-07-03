@@ -8,7 +8,7 @@ using muduo::Timestamp;
 using muduo::net::TimerCallback;
 using muduo::net::EventLoop;
 
-    //A类的定时器不能放到B类里面，否者B类定时(调用A类函数)器走的时候A已经销毁
+//A类的定时器不能放到B类里面，否者B类定时(调用A类函数)器走的时候A已经销毁
 class TimerTask
 {
 public:
@@ -25,7 +25,7 @@ public:
 
 	void Cancel();
 
-    bool ActiveTimer();
+    bool Actived();
 
     int32_t GetEndTime();
     void UpdateEndStamp();
@@ -33,10 +33,10 @@ public:
     void SetCallBack(const TimerCallback& cb);
 private:
     void OnTimer();
-private:
-    TimerId  timer_id_;
-    TimerCallback timer_function_callback_;
-    Timestamp end_timestamp_;
+
+    TimerId  id_;
+    TimerCallback callback_;
+    Timestamp end_time_;
 };
 
 
