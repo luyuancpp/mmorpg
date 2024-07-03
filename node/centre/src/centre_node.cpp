@@ -13,7 +13,8 @@
 #include "grpc/deploy/deployclient.h"
 #include "handler/player_service.h"
 #include "handler/register_handler.h"
-#include "muduo//net/EventLoop.h"
+#include "muduo/net/EventLoop.h"
+#include "muduo/base/TimeZone.h"
 #include "network/rpc_session.h"
 #include "replied_handler/player_service_replied.h"
 #include "service/gate_service_service.h"
@@ -55,6 +56,7 @@ void CentreNode::Init()
     g_centre_node = this;
     
     InitEventCallback();
+    InitTimeZone();
     InitLog();
     EventHandler::Register();
     InitConfig();
@@ -92,6 +94,12 @@ void CentreNode::InitGameConfig()
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();
     //ConfigSystem::OnConfigLoadSuccessful();
+}
+
+void CentreNode::InitTimeZone()
+{
+    const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
+    muduo::Logger::setTimeZone(tz);
 }
 
 void CentreNode::InitNodeByReqInfo()
