@@ -1,7 +1,7 @@
 #include "TeamSystem.h"
 
-#include "thread_local/thread_local_storage_common_logic.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage_common_logic.h"
+#include "thread_local/storage.h"
 #include "constants/tips_id.h"
 #include "util/game_registry.h"
 

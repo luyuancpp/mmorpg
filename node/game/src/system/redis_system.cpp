@@ -2,8 +2,8 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "player_common_system.h"
-#include "thread_local/thread_local_storage_game.h"
+#include "player_node_system.h"
+#include "thread_local/storage_game.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -14,6 +14,6 @@ void RedisSystem::Init(muduo::net::InetAddress& server_addr)
     hiredis_->connect();
 
     tls_game.player_redis() = std::make_unique<PlayerRedis::element_type>(*hiredis_);
-    tls_game.player_redis()->SetLoadCallback(PlayerCommonSystem::OnPlayerAsyncLoaded);
-    tls_game.player_redis()->SetSaveCallback(PlayerCommonSystem::OnPlayerAsyncSaved);
+    tls_game.player_redis()->SetLoadCallback(PlayerNodeSystem::OnPlayerAsyncLoaded);
+    tls_game.player_redis()->SetSaveCallback(PlayerNodeSystem::OnPlayerAsyncSaved);
 }

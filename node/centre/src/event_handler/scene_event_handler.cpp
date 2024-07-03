@@ -1,12 +1,12 @@
 #include "scene_event_handler.h"
 #include "event_proto/scene_event.pb.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE 
 
 #include "component_proto/player_network_comp.pb.h"
 #include "muduo/base/Logging.h"
 
-#include "comp/scene_comp.h"
+#include "comp/scene.h"
 #include "network/game_node.h"
 #include "network/message_system.h"
 #include "service/game_scene_server_player_service.h"

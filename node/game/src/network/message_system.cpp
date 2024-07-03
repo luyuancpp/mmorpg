@@ -7,10 +7,10 @@
 #include "network/rpc_session.h"
 #include "service/centre_service_service.h"
 #include "service/gate_service_service.h"
-#include "thread_local/thread_local_storage.h"
-#include "thread_local/thread_local_storage_common_logic.h"
+#include "thread_local/storage.h"
+#include "thread_local/storage_common_logic.h"
 
-#include "comp/player_comp.h"
+#include "comp/player.h"
 #include "component_proto/player_network_comp.pb.h"
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)

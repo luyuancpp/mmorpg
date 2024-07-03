@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "gate_node.h"
 #include "network/gate_session.h"
-#include "thread_local/thread_local_storage_gate.h"
+#include "thread_local/storage_gate.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 

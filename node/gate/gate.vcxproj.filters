@@ -48,7 +48,7 @@
     <ClCompile Include="src\replied_handler\route_message_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\thread_local_storage_gate.cpp">
+    <ClCompile Include="src\thread_local\storage_gate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gate_node.cpp">
@@ -86,7 +86,7 @@
     <ClInclude Include="src\replied_handler\game_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\thread_local_storage_gate.h">
+    <ClInclude Include="src\thread_local\storage_gate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gate_node.h">

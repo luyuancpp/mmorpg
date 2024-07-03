@@ -13,7 +13,7 @@
 #include "system/player_scene_system.h"
 #include "system/recast_system.h"
 #include "system/scene/scene_system.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "constants_proto/node.pb.h"

@@ -2,8 +2,8 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "player_common_system.h"
-#include "thread_local/thread_local_storage.h"
+#include "player_node_system.h"
+#include "thread_local/storage.h"
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"
 
@@ -19,6 +19,6 @@ void RedisSystem::Init(muduo::net::InetAddress& server_addr)
 
     auto& player_redis = tls.global_registry.emplace<PlayerRedis>(global_entity());
     player_redis = std::make_unique<PlayerRedis::element_type>(*hiredis_);
-    player_redis->SetLoadCallback(PlayerCommonSystem::OnPlayerAsyncLoaded);
-    player_redis->SetSaveCallback(PlayerCommonSystem::OnPlayerAsyncSaved);
+    player_redis->SetLoadCallback(PlayerNodeSystem::OnPlayerAsyncLoaded);
+    player_redis->SetSaveCallback(PlayerNodeSystem::OnPlayerAsyncSaved);
 }

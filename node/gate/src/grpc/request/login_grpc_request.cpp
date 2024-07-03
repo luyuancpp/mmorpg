@@ -3,7 +3,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include "grpc/client/login_async_client_call.h"
-#include "thread_local/thread_local_storage_gate.h"
+#include "thread_local/storage_gate.h"
 
 using GrpcLoginStubPtr = std::unique_ptr<LoginService::Stub>;
 

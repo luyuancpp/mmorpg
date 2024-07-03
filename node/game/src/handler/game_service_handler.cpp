@@ -1,5 +1,5 @@
 #include "game_service_handler.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -10,14 +10,14 @@
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "service/service.h"
-#include "system/player_common_system.h"
+#include "system/player_node_system.h"
 #include "system/player_scene_system.h"
 #include "system/scene/scene_system.h"
-#include "thread_local/thread_local_storage_common_logic.h"
-#include "thread_local/thread_local_storage_game.h"
+#include "thread_local/storage_common_logic.h"
+#include "thread_local/storage_game.h"
 #include "type_alias/player_session.h"
 #include "util/defer.h"
-#include "util/pb_util.h"
+#include "util/pb.h"
 
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
@@ -34,7 +34,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 {
 ///<<< BEGIN WRITING YOUR CODE
     //连续顶号进入，还在加载中的话继续加载
-    PlayerCommonSystem::RemovePlayerSession(request->player_id());
+    PlayerNodeSystem::RemovePlayerSession(request->player_id());
 
     //已经在线，直接进入,判断是需要发送哪些信息
     const auto player_it = tls_cl.player_list().find(request->player_id());
@@ -42,7 +42,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
     {
         EnterGsInfo enter_info;
         enter_info.set_centre_node_id(request->centre_node_id());
-        PlayerCommonSystem::EnterGs(player_it->second, enter_info);
+        PlayerNodeSystem::EnterGs(player_it->second, enter_info);
         return;
     }
 
@@ -173,7 +173,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
         //异步加载过程中断开了？
     auto player = tls_cl.get_player(request->player_id());
     defer(tls_cl.player_list().erase(request->player_id()));
-    PlayerCommonSystem::RemovePlayerSession(request->player_id());
+    PlayerNodeSystem::RemovePlayerSession(request->player_id());
     Destroy(tls.registry,player);
    //todo  应该是controller 通知过来
 
@@ -310,7 +310,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    PlayerCommonSystem::RemovePlayerSession(request->player_id());
+    PlayerNodeSystem::RemovePlayerSession(request->player_id());
     //todo test
 if ( const entt::entity gate_node_id{ get_gate_node_id(request->session_id()) } ;
     !tls.gate_node_registry.valid(gate_node_id))
@@ -338,7 +338,7 @@ if ( const entt::entity gate_node_id{ get_gate_node_id(request->session_id()) } 
     {
         player_node_info->set_gate_session_id(request->session_id());
     }
-    PlayerCommonSystem::OnRegister2GatePlayerGameNode(player);
+    PlayerNodeSystem::OnRegister2GatePlayerGameNode(player);
 ///<<< END WRITING YOUR CODE
 }
 

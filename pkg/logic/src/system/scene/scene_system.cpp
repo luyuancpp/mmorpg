@@ -4,9 +4,9 @@
 
 #include "muduo/base/Logging.h"
 
-#include "comp/scene_comp.h"
+#include "comp/scene.h"
 #include "constants/node.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "constants/tips_id.h"
 
 #include "component_proto/gs_node_comp.pb.h"

@@ -1,5 +1,5 @@
 #include "gate_service_handler.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
@@ -7,8 +7,8 @@
 #include "gate_node.h"
 #include "network/gate_session.h"
 #include "network/rpc_msg_route.h"
-#include "thread_local/thread_local_storage_gate.h"
-#include "util/pb_util.h"
+#include "thread_local/storage_gate.h"
+#include "util/pb.h"
 
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE

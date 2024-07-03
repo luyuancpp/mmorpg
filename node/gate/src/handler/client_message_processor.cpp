@@ -12,7 +12,7 @@
 #include "service/common_client_player_service.h"
 #include "service/game_service_service.h"
 #include "service/login_service_service.h"
-#include "thread_local/thread_local_storage_gate.h"
+#include "thread_local/storage_gate.h"
 #include "util/random.h"
 #include "util/snow_flake.h"
 
