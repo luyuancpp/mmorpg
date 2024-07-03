@@ -4,6 +4,7 @@
 
 #include "all_config.h"
 #include "common_proto/deploy_service.grpc.pb.h"
+#include "constants/file.h"
 #include "constants_proto/node.pb.h"
 #include "event_handler/event_handler.h"
 #include "event_proto/server_event.pb.h"
@@ -30,23 +31,31 @@ using namespace muduo::net;
 
 void AsyncCompleteGrpcDeployService();
 
+void AsyncOutput(const char* msg, int len)
+{
+    g_game_node->Log().append(msg, len);
+}
+
 void InitRepliedHandler();
 
 GameNode::GameNode(muduo::net::EventLoop* loop)
     :loop_(loop),
-     redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()){}
+     log_ { "logs/game", kMaxLogFileRollSize, 1},
+     redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
+{
+}
 
 GameNode::~GameNode()
 {
-	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GameNode::Receive1>(*this);
-	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameNode::Receive2>(*this);
+    Exit (  );
 }
 
 void GameNode::Init()
 {
     g_game_node = this; 
     EventHandler::Register();
-    
+
+    InitLog();
     InitConfig();
 	
     muduo::Logger::setLogLevel(static_cast < muduo::Logger::LogLevel > (
@@ -61,6 +70,21 @@ void GameNode::Init()
     InitSystemBeforeConnect();
 
     InitNodeByReqInfo();
+}
+
+
+void GameNode::InitLog ( )
+{
+    muduo::Logger::setOutput(AsyncOutput);
+    log_.start();
+    
+}
+
+void GameNode::Exit ( )
+{
+    log_.stop();
+    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GameNode::Receive1>(*this);
+    tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameNode::Receive2>(*this);
 }
 
 void GameNode::InitConfig()

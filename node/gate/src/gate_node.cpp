@@ -18,21 +18,29 @@ GateNode* g_gate_node = nullptr;
 void AsyncCompleteGrpcDeployService();
 void AsyncCompleteRpcLoginService();
 
-void GateNode::LoadNodeConfig()
+void AsyncOutput(const char* msg, int len)
 {
-	ZoneConfig::GetSingleton().Load("game.json");
-	DeployConfig::GetSingleton().Load("deploy.json");
+    g_gate_node->Log().append(msg, len);
 }
+
+GateNode::GateNode(EventLoop* loop)
+    : loop_(loop),
+    log_{"logs/gate", kMaxLogFileRollSize, 1},
+    dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),
+    codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
+    client_receiver_(codec_, dispatcher_)
+{ }
 
 GateNode::~GateNode()
 {
-    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateNode::Receive1>(*this);
+    Exit();
 }
 
 void GateNode::Init()
 {
     g_gate_node = this;
-    LoadNodeConfig();
+    InitLog();
+    InitConfig();
     InitNodeByReqInfo();
 
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
@@ -43,6 +51,12 @@ void GateNode::Init()
     InitRepliedHandler();
 
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateNode::Receive1>(*this);
+}
+
+void GateNode::Exit()
+{
+    log_.stop();
+    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateNode::Receive1>(*this);
 }
 
 void GateNode::InitNodeByReqInfo()
@@ -66,7 +80,7 @@ void GateNode::InitNodeByReqInfo()
 void GateNode::StartServer(const nodes_info_data& data)
 {
     node_net_info_ = std::move(data);
-    auto& gate_info = node_net_info_.gate_info().gate_info()[game_node_index()];
+    auto& gate_info = node_net_info_.gate_info().gate_info()[GetNodeConfIndex()];
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
@@ -74,7 +88,7 @@ void GateNode::StartServer(const nodes_info_data& data)
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
-    tls_gate.session_id_gen().set_node_id(gate_node_id());
+    tls_gate.session_id_gen().set_node_id(GetNodeId());
     Connect2Centre();
     Connect2Login();
 
@@ -101,7 +115,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
                         RegisterGateRequest rq;
                         rq.mutable_rpc_client()->set_ip(centre_node->local_addr().toIp());
                         rq.mutable_rpc_client()->set_port(centre_node->local_addr().port());
-                        rq.set_gate_node_id(gate_node_id());
+                        rq.set_gate_node_id(GetNodeId());
                         centre_node->CallMethod(CentreServiceRegisterGateMsgId, rq);
                     }
                 );
@@ -122,7 +136,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
                     RegisterGateRequest rq;
                     rq.mutable_rpc_client()->set_ip(game_node->local_addr().toIp());
                     rq.mutable_rpc_client()->set_port(game_node->local_addr().port());
-                    rq.set_gate_node_id(gate_node_id());
+                    rq.set_gate_node_id(GetNodeId());
                     game_node->CallMethod(GameServiceRegisterGateMsgId, rq);
                 }
             );
@@ -147,7 +161,7 @@ void GateNode::Connect2Centre()
     for (auto& centre_node_info : node_net_info_.centre_info().centre_info())
     {
         entt::entity id{ centre_node_info.id() };
-        auto centre_node_id = tls.centre_node_registry.create(id);
+        const auto centre_node_id = tls.centre_node_registry.create(id);
         if (centre_node_id != id)
         {
             LOG_ERROR << "centre id ";
@@ -156,7 +170,7 @@ void GateNode::Connect2Centre()
         InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
         auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(centre_node_id,
             std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
-        centre_node->registerService(&gate_service_);
+        centre_node->registerService(&service_handler_);
         centre_node->connect();
         if (centre_node_info.zone_id() == 
             ZoneConfig::GetSingleton().config_info().zone_id())
@@ -186,4 +200,25 @@ void GateNode::Connect2Login() const
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteRpcLoginService);
     void InitLoginNodeComponent();
     InitLoginNodeComponent();
+}
+
+void GateNode::InitLog()
+{
+    log_.start();
+}
+
+void GateNode::InitConfig ( )
+{
+    InitNodeConfig();
+}
+
+void GateNode::InitNodeConfig()
+{
+    ZoneConfig::GetSingleton().Load("game.json");
+    DeployConfig::GetSingleton().Load("deploy.json");
+}
+
+void
+    GateNode::InitGameConfig ( )
+{
 }

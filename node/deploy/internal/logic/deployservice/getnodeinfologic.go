@@ -69,6 +69,6 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 		}
 		response.NodeId = nodeId
 	}
-
+	response.NodeId = 1
 	return response, nil
 }

@@ -37,7 +37,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
         std::make_unique<RpcClientPtr::element_type>(
             EventLoop::getEventLoopOfCurrentThread(),
             game_servcie_addr));
-	game_node->registerService(&g_gate_node->gate_service_hanlder());
+	game_node->registerService(&g_gate_node->GetServiceHandler());
 	game_node->connect();
 
 	LOG_DEBUG << "on  game register" << MessageToJsonString(request);

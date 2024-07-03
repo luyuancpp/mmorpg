@@ -177,6 +177,7 @@
     <ClInclude Include="src\comp\player_scene_comp.h" />
     <ClInclude Include="src\comp\scene_comp.h" />
     <ClInclude Include="src\comp\server_comp.h" />
+    <ClInclude Include="src\constants\file.h" />
     <ClInclude Include="src\constants\mission_constants.h" />
     <ClInclude Include="src\constants\op_code.h" />
     <ClInclude Include="src\constants\scene_constants.h" />

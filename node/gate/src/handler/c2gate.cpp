@@ -82,7 +82,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             GateSessionDisconnectRequest rq;
             rq.set_session_id(session_uid);
-            g_gate_node->zone_centre_node()->CallMethod(CentreServiceGateSessionDisconnectMsgId, rq);
+            g_gate_node->GetZoneCentreNode()->CallMethod(CentreServiceGateSessionDisconnectMsgId, rq);
         }
         tls_gate.sessions().erase(session_uid);
     }
@@ -180,7 +180,7 @@ void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_
     MessageBody msg;
     msg.set_body(tips.SerializeAsString());
     msg.set_message_id(ClientPlayerCommonServicePushTipS2CMsgId);
-    g_gate_node->codec().send(conn, msg);
+    g_gate_node->Codec().send(conn, msg);
 }
 
 

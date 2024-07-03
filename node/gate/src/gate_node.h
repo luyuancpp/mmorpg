@@ -17,34 +17,29 @@
 #include "type_define/type_define.h"
 
 #include "common_proto/deploy_service.pb.h"
+#include "constants/file.h"
 
 class GateNode : noncopyable
 {
 public:
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
-    GateNode(EventLoop* loop)
-        : loop_(loop),
-        dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),
-        codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-        client_receiver_(codec_, dispatcher_)
-    { }
-
+    explicit GateNode(EventLoop* loop);
     ~GateNode();
 
-    inline EventLoop* loop() { return loop_; }
-    inline ProtobufCodec& codec() { return codec_; };
-    inline GateServiceHandler& gate_service_hanlder() { return gate_service_; }
-    inline uint32_t gate_node_id()const { return node_info_.node_id(); }
-    inline RpcClientPtr& zone_centre_node() { return zone_centre_node_; }
-    inline const NodeInfo& node_info()const { return node_info_; }
+    inline ProtobufCodec& Codec() { return codec_; }
+    inline GateServiceHandler& GetServiceHandler() { return service_handler_; }
+    inline uint32_t GetNodeId()const { return node_info_.node_id(); }
+    inline RpcClientPtr& GetZoneCentreNode() { return zone_centre_node_; }
+    inline const NodeInfo& GetNodeInfo()const { return node_info_; }
+    inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return log_; }
 
-    inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
-
-    static void LoadNodeConfig();
+    inline void Send2Client(const muduo::net::TcpConnectionPtr& conn,
+                            const ::google::protobuf::Message& message) const { client_receiver_.Send2Client(conn, message); }
 
     void Init();
-
+    void Exit();
+    
     void InitNodeByReqInfo();
     
     void StartServer(const nodes_info_data& data);
@@ -71,23 +66,25 @@ private:
         conn->shutdown();
     }
 
-    inline NodeId game_node_index() { return gate_node_id() - 1; }
+    void InitLog();
+    static void InitConfig();
+    static void InitNodeConfig();
+    static void InitGameConfig();
+    
+    inline NodeId GetNodeConfIndex() const { return GetNodeId() - 1; }
 
     muduo::net::EventLoop* loop_{ nullptr };
+    muduo::AsyncLogging log_;
 
+    private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     ClientReceiver client_receiver_;
-
     TcpServerPtr server_;
-
     nodes_info_data node_net_info_;
     NodeInfo node_info_;
-
     RpcClientPtr zone_centre_node_;
-
-    GateServiceHandler gate_service_;
-
+    GateServiceHandler service_handler_;
     TimerTask deploy_rpc_timer_;
 };
 
