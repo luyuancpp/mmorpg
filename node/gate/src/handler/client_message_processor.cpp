@@ -1,4 +1,4 @@
-#include "c2gate.h"
+#include "client_message_processor.h"
 
 #include <algorithm>
 #include  <functional>
@@ -20,16 +20,16 @@
 
 extern std::unordered_set<uint32_t> g_c2s_service_id;
 
-ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
+ClientMessageProcessor::ClientMessageProcessor(ProtobufCodec& codec, 
     ProtobufDispatcher& dispatcher)
     : codec_(codec),
       dispatcher_(dispatcher)
 {
 	dispatcher_.registerMessageCallback<ClientRequest>(
-		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
+		std::bind(&ClientMessageProcessor::OnRpcClientMessage, this, _1, _2, _3));
 }
 
-entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
+entt::entity ClientMessageProcessor::GetLoginNode(uint64_t session_uid)
 {
     const auto it = tls_gate.sessions().find(session_uid);
     if (it == tls_gate.sessions().end())
@@ -58,7 +58,7 @@ entt::entity ClientReceiver::GetLoginNode(uint64_t session_uid)
     return login_node_it->second;
 }
 
-void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
+void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     //改包把消息发给其他玩家怎么办
     //todo 玩家没登录直接发其他消息，乱发消息
@@ -100,7 +100,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     }
 }
 
-void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
+void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
@@ -173,7 +173,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     }
 }
 
-void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id)
+void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id)
 {
     TipS2C tips;
     tips.mutable_tips()->set_id(tip_id);
