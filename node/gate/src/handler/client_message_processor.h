@@ -13,11 +13,11 @@
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
-class ClientReceiver : muduo::noncopyable
+class ClientMessageProcessor : muduo::noncopyable
 {
 public:
 
-    ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
+    ClientMessageProcessor(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
     static entt::entity GetLoginNode(uint64_t session_id);
     ProtobufCodec& codec() const { return codec_; }

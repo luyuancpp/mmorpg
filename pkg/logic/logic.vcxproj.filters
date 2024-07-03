@@ -21,11 +21,11 @@
     <ClInclude Include="src\comp\player_scene_comp.h" />
     <ClInclude Include="src\comp\scene_comp.h" />
     <ClInclude Include="src\comp\server_comp.h" />
-    <ClInclude Include="src\constants\mission_constants.h" />
+    <ClInclude Include="src\constants\mission.h" />
     <ClInclude Include="src\constants\op_code.h" />
-    <ClInclude Include="src\constants\scene_constants.h" />
-    <ClInclude Include="src\constants\server_constants.h" />
-    <ClInclude Include="src\constants\time_variable.h" />
+    <ClInclude Include="src\constants\scene.h" />
+    <ClInclude Include="src\constants\node.h" />
+    <ClInclude Include="src\constants\time.h" />
     <ClInclude Include="src\constants\tips_id.h" />
     <ClInclude Include="src\system\bag\bag.h" />
     <ClInclude Include="src\system\bag\item.h" />
@@ -43,5 +43,6 @@
     <ClInclude Include="src\timer_task\timer_duration.h" />
     <ClInclude Include="src\timer_task\timer_list.h" />
     <ClInclude Include="src\timer_task\timer_task.h" />
+    <ClInclude Include="src\constants\file.h" />
   </ItemGroup>
 </Project>

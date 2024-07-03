@@ -1,6 +1,6 @@
 #pragma once
 
-#include "constants/server_constants.h"
+#include "constants/node.h"
 
 #include "type_define/type_define.h"
 

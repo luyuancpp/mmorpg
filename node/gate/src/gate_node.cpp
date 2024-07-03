@@ -29,7 +29,7 @@ GateNode::GateNode(EventLoop* loop)
     log_{"logs/gate", kMaxLogFileRollSize, 1},
     dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),
     codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-    client_receiver_(codec_, dispatcher_)
+    client_message_processor_(codec_, dispatcher_)
 { }
 
 GateNode::~GateNode()

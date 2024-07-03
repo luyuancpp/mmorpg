@@ -30,7 +30,7 @@
     <ClCompile Include="src\grpc\request\login_grpc_request.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\c2gate.cpp">
+    <ClCompile Include="src\handler\client_message_processor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\gate_service_handler.cpp">
@@ -68,7 +68,7 @@
     <ClInclude Include="src\grpc\request\login_grpc_request.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\c2gate.h">
+    <ClInclude Include="src\handler\client_message_processor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\gate_service_handler.h">
