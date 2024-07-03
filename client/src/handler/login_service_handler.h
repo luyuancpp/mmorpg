@@ -1,6 +1,6 @@
 #pragma once
 #include <sol/sol.hpp>
-#include "thread_local/thread_local_storage_lua.h"
+#include "thread_local/storage_lua.h"
 #include "common_proto/login_service.pb.h"
 
 class LoginServiceHandler : public ::LoginService

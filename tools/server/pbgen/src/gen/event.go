@@ -75,7 +75,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
 		config.IncludeBegin + config.ProtoDirNames[config.EventProtoDirIndex] +
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
-		"#include \"thread_local/thread_local_storage.h\"\n"
+		"#include \"thread_local/storage.h\"\n"
 
 	yourCodes, _ := util.GetDstCodeData(cppFileName, len(eventList)+1)
 

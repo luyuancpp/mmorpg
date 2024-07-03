@@ -9,7 +9,7 @@ import (
 
 func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 	var data = "#pragma once\n" + "#include <sol/sol.hpp>\n" +
-		"#include \"thread_local/thread_local_storage_lua.h\"\n"
+		"#include \"thread_local/storage_lua.h\"\n"
 	data += methodList[0].IncludeName() + "\n"
 	data += "class " + methodList[0].Service + config.HandlerName + " : public ::" + methodList[0].Service + "\n{\npublic:\n"
 	data += config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n" +
