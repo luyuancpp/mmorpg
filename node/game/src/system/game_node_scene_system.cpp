@@ -32,15 +32,15 @@ void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 
 void GameNodeSceneSystem::InitNodeScene()
 {
-    if (!(g_game_node->game_node_type() == eGameNodeType::kMainSceneNode || 
-        g_game_node->game_node_type() == eGameNodeType::kMainSceneCrossNode))
+    if (!(g_game_node->GetNodeType() == eGameNodeType::kMainSceneNode || 
+        g_game_node->GetNodeType() == eGameNodeType::kMainSceneCrossNode))
     {
         return;
     }
     const auto& main_scene_conf = mainscene_config::GetSingleton().all();
     for (auto& it : main_scene_conf.data())
     {
-        CreateGameNodeSceneParam p{ .node_ = entt::entity{g_game_node->game_node_id()} };
+        CreateGameNodeSceneParam p{ .node_ = entt::entity{g_game_node->GetNodeId()} };
         p.scene_info.set_scene_confid(it.id());
         ScenesSystem::CreateScene2GameNode(p);
     }
@@ -83,7 +83,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
         return;
     }
     RegisterSceneRequest rq;
-    rq.set_game_node_id(g_game_node->game_node_id());
+    rq.set_game_node_id(g_game_node->GetNodeId());
     rq.mutable_scenes_info()->Add()->CopyFrom(*scene_info);
     BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, rq);
 }
@@ -91,7 +91,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
 void GameNodeSceneSystem::RegisterSceneToCentre()
 {
     RegisterSceneRequest rq;
-    rq.set_game_node_id(g_game_node->game_node_id());
+    rq.set_game_node_id(g_game_node->GetNodeId());
     for (auto&& [e, scene_info] : tls.scene_registry.view<SceneInfo>().each())
     {
         rq.mutable_scenes_info()->Add()->CopyFrom(scene_info);
