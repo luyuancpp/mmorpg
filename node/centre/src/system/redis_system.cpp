@@ -2,7 +2,7 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "player_node_system.h"
+#include "player_node.h"
 #include "thread_local/storage.h"
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"

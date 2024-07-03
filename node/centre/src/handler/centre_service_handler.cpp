@@ -21,7 +21,7 @@
 #include "service/gate_service_service.h"
 #include "service/service.h"
 #include "system/player_change_scene.h"
-#include "system/player_node_system.h"
+#include "system/player_node.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"

@@ -5,8 +5,8 @@
 #include "comp/scene.h"
 #include "component_proto/player_comp.pb.h"
 #include "service/scene_client_player_service.h"
-#include "system/player_node_system.h"
-#include "system/player_scene_system.h"
+#include "system/player_node.h"
+#include "system/player_scene.h"
 
 #include "client_player_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE

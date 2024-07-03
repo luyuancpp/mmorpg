@@ -1,4 +1,4 @@
-#include "player_scene_system.h"
+#include "player_scene.h"
 
 #include "muduo/base/Logging.h"
 
@@ -12,7 +12,7 @@
 #include "service/game_scene_server_player_service.h"
 #include "service/game_service_service.h"
 #include "system/player_change_scene.h"
-#include "system/player_tip_system.h"
+#include "system/player_tip.h"
 
 #include "component_proto/player_network_comp.pb.h"
 #include "component_proto/player_scene_comp.pb.h"

@@ -20,7 +20,7 @@
 #include "network/rpc_session.h"
 #include "replied_handler/player_service_replied.h"
 #include "service/service.h"
-#include "system/player_session_system.h"
+#include "system/player_session.h"
 #include "system/config/config_system.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
