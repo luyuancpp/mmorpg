@@ -19,7 +19,7 @@
 #include "replied_handler/player_service_replied.h"
 #include "service/gate_service_service.h"
 #include "service/service.h"
-#include "system/player_session_system.h"
+#include "system/player_session.h"
 #include "thread_local/storage_centre.h"
 #include "util/color_console_log.h"
 

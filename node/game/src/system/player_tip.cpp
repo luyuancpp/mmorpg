@@ -1,4 +1,4 @@
-#include "player_tip_system.h"
+#include "player_tip.h"
 
 #include "network/message_system.h"
 #include "service/common_client_player_service.h"

@@ -1,4 +1,4 @@
-#include "player_node_system.h"
+#include "player_node.h"
 
 #include "muduo/base/Logging.h"
 
@@ -11,7 +11,7 @@
 #include "service/game_service_service.h"
 #include "service/gate_service_service.h"
 #include "system/player_change_scene.h"
-#include "system/player_scene_system.h"
+#include "system/player_scene.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"

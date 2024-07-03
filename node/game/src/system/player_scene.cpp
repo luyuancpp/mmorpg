@@ -1,9 +1,9 @@
-#include "player_scene_system.h"
+#include "player_scene.h"
 
 #include "muduo/base/Logging.h"
 
 #include "network/message_system.h"
-#include "system/game_node_scene_system.h"
+#include "system/game_node_scene.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage_common_logic.h"
 

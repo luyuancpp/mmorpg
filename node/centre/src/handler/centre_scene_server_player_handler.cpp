@@ -8,8 +8,8 @@
 #include "constants/tips_id.h"
 #include "network/game_node.h"
 #include "centre_node.h"
-#include "system/player_scene_system.h"
-#include "system/player_tip_system.h"
+#include "system/player_scene.h"
+#include "system/player_tip.h"
 #include "system/player_change_scene.h"
 #include "service/scene_client_player_service.h"
 

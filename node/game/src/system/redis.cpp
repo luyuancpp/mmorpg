@@ -1,8 +1,8 @@
-#include "redis_system.h"
+#include "redis.h"
 
 #include "muduo/net/EventLoop.h"
 
-#include "player_node_system.h"
+#include "player_node.h"
 #include "thread_local/storage_game.h"
 
 using namespace muduo;
