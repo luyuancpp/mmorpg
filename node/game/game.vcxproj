@@ -209,6 +209,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\system\recast.h" />
     <ClInclude Include="src\system\redis.h" />
     <ClInclude Include="src\system\scene\aoi.h" />
+    <ClInclude Include="src\system\scene\hexagons_grid.h" />
     <ClInclude Include="src\thread_local\storage_game.h" />
     <ClInclude Include="src\type_alias\player_loading.h" />
     <ClInclude Include="src\type_alias\player_redis.h" />

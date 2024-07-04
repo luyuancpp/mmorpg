@@ -248,5 +248,8 @@
     <ClInclude Include="src\system\scene\aoi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\system\scene\hexagons_grid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
