@@ -33,6 +33,7 @@
     <ClInclude Include="src\network\codec\dispatcher_lite.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
     <ClInclude Include="src\network\gate_session.h" />
+    <ClInclude Include="src\network\message_statistics.h" />
     <ClInclude Include="src\network\process_info.h" />
     <ClInclude Include="src\network\rpc_channel.h" />
     <ClInclude Include="src\network\rpc_client.h" />
@@ -41,6 +42,7 @@
     <ClInclude Include="src\network\rpc_server.h" />
     <ClInclude Include="src\network\rpc_session.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
+    <ClInclude Include="src\test\test.h" />
     <ClInclude Include="src\thread_local\storage.h" />
     <ClInclude Include="src\thread_local\storage_common_logic.h" />
     <ClInclude Include="src\thread_local\storage_lua.h" />
@@ -65,12 +67,14 @@
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\gate_session.cpp" />
+    <ClCompile Include="src\network\message_statistics.cpp" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\network\rpc_channel.cc" />
     <ClCompile Include="src\network\rpc_msg_route.cpp" />
     <ClCompile Include="src\network\rpc_server.cc" />
     <ClCompile Include="src\network\rpc_session.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
+    <ClCompile Include="src\test\test.cpp" />
     <ClCompile Include="src\thread_local\storage.cpp" />
     <ClCompile Include="src\thread_local\storage_common_logic.cpp" />
     <ClCompile Include="src\thread_local\storage_lua.cpp" />

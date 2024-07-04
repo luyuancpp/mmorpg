@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+enum eTestFlagType
+{
+	kMessageStatistics = 0;//开启消息统计
+};
+
+
