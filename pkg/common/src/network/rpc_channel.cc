@@ -321,7 +321,7 @@ void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
     codec_.send(conn_, response);
 }
 
-void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& message_bytes)
+void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& body)
 {
 	if (message_id >= g_message_info.size())
 	{
@@ -329,10 +329,10 @@ void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::
 		return;
 	}
     //todo check message id error
-    RpcMessage rpc_response;
-    rpc_response.set_type(RESPONSE);
-    rpc_response.set_response(message_bytes); // FIXME: error check
-    rpc_response.set_message_id(message_id);
-    codec_.send(conn_, rpc_response);
+    RpcMessage response;
+    response.set_type(RESPONSE);
+    response.set_response(body); // FIXME: error check
+    response.set_message_id(message_id);
+    codec_.send(conn_, response);
 }
 
