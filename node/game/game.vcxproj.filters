@@ -251,5 +251,11 @@
     <ClInclude Include="src\system\scene\hexagons_grid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\comp\scene\grid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\comp\scene\nav.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
