@@ -149,6 +149,8 @@ namespace muduo
                 const RpcMessage& message,
                 Timestamp receiveTime);
 
+            void MessageStatistics(const RpcMessage& message);
+
             RpcCodec codec_;
             TcpConnectionPtr conn_;
 

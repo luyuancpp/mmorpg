@@ -14,13 +14,14 @@
 
 #include <google/protobuf/descriptor.h>
 
+#include "network/message_statistics.h"
 #include "service/service.h"
+#include "test/test.h"
 
 #include "common_proto/empty.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
-
 
 void OnUnknownMessage(const TcpConnectionPtr&,
     const MessagePtr& message,
@@ -72,6 +73,7 @@ void RpcChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Messa
 	  return;
   }
   codec_.send(conn_, message);
+  MessageStatistics(message);
 }
 
 void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& request)
@@ -94,6 +96,7 @@ void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& re
         return;
     }
     codec_.send(conn_, message);
+	MessageStatistics(message);
 }
 
 void RpcChannel::onMessage(const TcpConnectionPtr& conn,
@@ -175,6 +178,7 @@ void RpcChannel::Route2Node(uint32_t message_id, const ::google::protobuf::Messa
     }
     message.set_message_id(message_id);
     codec_.send(conn_, message);
+	MessageStatistics(message);
 }
 
 void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
@@ -225,6 +229,7 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
     }
     rpc_response.set_message_id(message.message_id());
     codec_.send(conn_, rpc_response);
+	MessageStatistics(message);
 }
 
 void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
@@ -310,6 +315,7 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
         }
         rpc_response.set_message_id(message.message_id());
         codec_.send(conn_, rpc_response);
+		MessageStatistics(rpc_response);
     }
 }
 
@@ -319,6 +325,7 @@ void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
     response.set_type(RESPONSE);
     response.set_error(error);
     codec_.send(conn_, response);
+	MessageStatistics(response);
 }
 
 void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& body)
@@ -334,5 +341,16 @@ void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::
     response.set_response(body); // FIXME: error check
     response.set_message_id(message_id);
     codec_.send(conn_, response);
+	MessageStatistics(response);
+}
+
+void RpcChannel::MessageStatistics(const RpcMessage& message)
+{
+	if (!g_test_switch_list[kMessageStatistics])
+	{
+		return;
+	}
+	auto& statistic = g_message_statistics[message.message_id()];
+	statistic.set_count(statistic.count() + 1);
 }
 

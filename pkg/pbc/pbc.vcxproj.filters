@@ -411,6 +411,24 @@
     <ClCompile Include="src\tip_code_proto\login_tip_code.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\common_proto\statistics.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua\statistics_sol2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\constants_proto\function_switch.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\constants_proto\test_switch.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua\function_switch_sol2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua\test_switch_sol2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client_player_proto\common_client_player.pb.h">
@@ -636,6 +654,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\tip_code_proto\login_tip_code.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\statistics.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\constants_proto\function_switch.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\constants_proto\test_switch.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

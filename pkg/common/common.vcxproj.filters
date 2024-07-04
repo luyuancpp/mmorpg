@@ -37,6 +37,8 @@
     <ClInclude Include="src\util\utility.h" />
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\macros\game_log.h" />
+    <ClInclude Include="src\network\message_statistics.h" />
+    <ClInclude Include="src\test\test.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />
@@ -62,6 +64,8 @@
     <ClCompile Include="src\util\pb.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
+    <ClCompile Include="src\network\message_statistics.cpp" />
+    <ClCompile Include="src\test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\autogen.bat" />

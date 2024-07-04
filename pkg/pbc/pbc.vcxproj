@@ -43,6 +43,7 @@
     <ClCompile Include="src\common_proto\mysql_database_test.pb.cc" />
     <ClCompile Include="src\common_proto\node_common.pb.cc" />
     <ClCompile Include="src\common_proto\session.pb.cc" />
+    <ClCompile Include="src\common_proto\statistics.pb.cc" />
     <ClCompile Include="src\common_proto\tip.pb.cc" />
     <ClCompile Include="src\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="src\component_proto\item_base_comp.pb.cc" />
@@ -55,8 +56,10 @@
     <ClCompile Include="src\component_proto\player_scene_comp.pb.cc" />
     <ClCompile Include="src\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="src\component_proto\team_comp.pb.cc" />
+    <ClCompile Include="src\constants_proto\function_switch.pb.cc" />
     <ClCompile Include="src\constants_proto\node.pb.cc" />
     <ClCompile Include="src\constants_proto\scene.pb.cc" />
+    <ClCompile Include="src\constants_proto\test_switch.pb.cc" />
     <ClCompile Include="src\event_proto\mission_event.pb.cc" />
     <ClCompile Include="src\event_proto\scene_event.pb.cc" />
     <ClCompile Include="src\event_proto\server_event.pb.cc" />
@@ -91,6 +94,7 @@
     <ClCompile Include="src\lua\comp_sol2.cpp" />
     <ClCompile Include="src\lua\controller_team_sol2.cpp" />
     <ClCompile Include="src\lua\empty_sol2.cpp" />
+    <ClCompile Include="src\lua\function_switch_sol2.cpp" />
     <ClCompile Include="src\lua\game_scene_server_player_service_lua.cpp" />
     <ClCompile Include="src\lua\game_scene_server_player_sol2.cpp" />
     <ClCompile Include="src\lua\game_scene_service_lua.cpp" />
@@ -125,9 +129,11 @@
     <ClCompile Include="src\lua\scene_sol2.cpp" />
     <ClCompile Include="src\lua\server_event_sol2.cpp" />
     <ClCompile Include="src\lua\session_sol2.cpp" />
+    <ClCompile Include="src\lua\statistics_sol2.cpp" />
     <ClCompile Include="src\lua\team_client_player_service_lua.cpp" />
     <ClCompile Include="src\lua\team_client_player_sol2.cpp" />
     <ClCompile Include="src\lua\team_comp_sol2.cpp" />
+    <ClCompile Include="src\lua\test_switch_sol2.cpp" />
     <ClCompile Include="src\lua\tip_sol2.cpp" />
     <ClCompile Include="src\server_player_proto\centre_common_server_player.pb.cc" />
     <ClCompile Include="src\server_player_proto\centre_scene_server_player.pb.cc" />
@@ -177,6 +183,7 @@
     <ClInclude Include="src\common_proto\mysql_database_test.pb.h" />
     <ClInclude Include="src\common_proto\node_common.pb.h" />
     <ClInclude Include="src\common_proto\session.pb.h" />
+    <ClInclude Include="src\common_proto\statistics.pb.h" />
     <ClInclude Include="src\common_proto\tip.pb.h" />
     <ClInclude Include="src\component_proto\gs_node_comp.pb.h" />
     <ClInclude Include="src\component_proto\item_base_comp.pb.h" />
@@ -189,8 +196,10 @@
     <ClInclude Include="src\component_proto\player_scene_comp.pb.h" />
     <ClInclude Include="src\component_proto\scene_comp.pb.h" />
     <ClInclude Include="src\component_proto\team_comp.pb.h" />
+    <ClInclude Include="src\constants_proto\function_switch.pb.h" />
     <ClInclude Include="src\constants_proto\node.pb.h" />
     <ClInclude Include="src\constants_proto\scene.pb.h" />
+    <ClInclude Include="src\constants_proto\test_switch.pb.h" />
     <ClInclude Include="src\event_proto\mission_event.pb.h" />
     <ClInclude Include="src\event_proto\scene_event.pb.h" />
     <ClInclude Include="src\event_proto\server_event.pb.h" />

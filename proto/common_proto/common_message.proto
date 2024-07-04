@@ -36,3 +36,4 @@ message RegisterSessionCentreNodeResponse
 {
   SessionInfo session_info = 1;
 }
+
