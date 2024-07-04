@@ -429,6 +429,9 @@
     <ClCompile Include="src\lua\test_switch_sol2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\component_proto\actor_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client_player_proto\common_client_player.pb.h">
@@ -663,6 +666,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\constants_proto\test_switch.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\component_proto\actor_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

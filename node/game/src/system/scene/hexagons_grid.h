@@ -535,11 +535,3 @@ void test_all()
     test_doubled_from_cube();
     test_doubled_to_cube();
 }
-
-
-
-
-
-//int main() {
-//    test_all();
-//}

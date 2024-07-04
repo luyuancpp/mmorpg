@@ -41,7 +41,7 @@ void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database
 	// on loaded db
 	tls.registry.emplace<Player>(player);
 	tls.registry.emplace<Guid>(player, player_id);
-	tls.registry.emplace<Vector3>(player, message.pos());
+	tls.registry.emplace<Transform>(player, message.transform());
 	tls.registry.emplace<PlayerNodeInfo>(player).set_centre_node_id(async_it->second.centre_node_id());
 	// on load db complete
 
@@ -73,8 +73,7 @@ void PlayerNodeSystem::SavePlayer(entt::entity player)
 	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
 
 	pb->set_player_id(tls.registry.get<Guid>(player));
-	pb->mutable_pos()->CopyFrom(tls.registry.get<Vector3>(player));
-
+	pb->mutable_transform()->CopyFrom(tls.registry.get<Transform>(player));
 	tls_game.player_redis()->Save(pb, tls.registry.get<Guid>(player));
 }
 

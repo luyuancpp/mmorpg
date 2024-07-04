@@ -6,7 +6,7 @@ import "common_proto/db_base.proto";
 import "common_proto/account_database.proto";
 import "common_proto/comp.proto";
 import "component_proto/player_scene_comp.proto";
-
+import "component_proto/actor_comp.proto";
 
 /////////////         game
 message account_database
@@ -38,7 +38,7 @@ message player_database
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
-  Vector3 pos = 2;
+  Transform transform = 2;
   int64 register_time = 3;
 }
 
