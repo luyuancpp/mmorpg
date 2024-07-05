@@ -2,6 +2,8 @@
 #include "event_proto/scene_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "muduo/base/Logging.h"
+#include "system/scene/node_scene.h"
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register()
 {
@@ -28,6 +30,14 @@ void SceneEventHandler::UnRegister()
 void SceneEventHandler::OnSceneCreateHandler(const OnSceneCreate& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	entt::entity scene = entt::to_entity(message.entity());
+	if (!tls.scene_registry.valid(scene))
+	{
+		LOG_ERROR << "scene not found" << message.entity();
+		return;
+	}
+	GameNodeSceneSystem::OnSceneCreateHandler(message);
+	
 ///<<< END WRITING YOUR CODE
 }
 

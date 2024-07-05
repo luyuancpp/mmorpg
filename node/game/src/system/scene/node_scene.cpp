@@ -14,6 +14,8 @@
 #include "system/recast.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage.h"
+#include "event_proto/scene_event.pb.h"
+#include "comp/scene/grid.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "constants_proto/node.pb.h"
@@ -43,18 +45,6 @@ void GameNodeSceneSystem::InitNodeScene()
         CreateGameNodeSceneParam p{ .node_ = entt::entity{g_game_node->GetNodeId()} };
         p.scene_info.set_scene_confid(it.id());
         ScenesSystem::CreateScene2GameNode(p);
-    }
-}
-
-void GameNodeSceneSystem::CreateScene(CreateGameNodeSceneParam& p)
-{
-    ScenesSystem::CreateScene2GameNode(p);
-    //init scene 
-    if (const auto p_scene_row = get_scene_conf(p.scene_info.scene_confid());
-        nullptr == p_scene_row)
-    {
-        LOG_ERROR << "scene config null" << p.scene_info.scene_confid();
-        return;
     }
 }
 
@@ -97,4 +87,10 @@ void GameNodeSceneSystem::RegisterSceneToCentre()
         rq.mutable_scenes_info()->Add()->CopyFrom(scene_info);
     }
     BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, rq);
+}
+
+void GameNodeSceneSystem::OnSceneCreateHandler(const OnSceneCreate& message)
+{
+    entt::entity scene = entt::to_entity(message.entity());
+    tls.scene_registry.emplace<SceneGridList>(scene);
 }
