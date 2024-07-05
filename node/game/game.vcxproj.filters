@@ -99,7 +99,7 @@
     <ClCompile Include="src\system\config\config_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\game_node_scene.cpp">
+    <ClCompile Include="src\system\scene\node_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\player\player_scene.cpp">
@@ -131,9 +131,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\comp\game_node_scene.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\event_handler\event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -212,7 +209,7 @@
     <ClInclude Include="src\system\config\config_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\game_node_scene.h">
+    <ClInclude Include="src\system\scene\node_scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player\player_scene.h">

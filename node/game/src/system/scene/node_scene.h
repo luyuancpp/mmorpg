@@ -2,7 +2,7 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "comp/game_node_scene.h"
+#include "comp/scene/nav.h"
 
 struct EnterSceneParam;
 struct CreateGameNodeSceneParam;

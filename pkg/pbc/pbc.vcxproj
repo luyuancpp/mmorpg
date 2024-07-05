@@ -46,6 +46,7 @@
     <ClCompile Include="src\common_proto\statistics.pb.cc" />
     <ClCompile Include="src\common_proto\tip.pb.cc" />
     <ClCompile Include="src\component_proto\actor_comp.pb.cc" />
+    <ClCompile Include="src\component_proto\frame_comp.pb.cc" />
     <ClCompile Include="src\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="src\component_proto\item_base_comp.pb.cc" />
     <ClCompile Include="src\component_proto\item_comp.pb.cc" />
@@ -187,6 +188,7 @@
     <ClInclude Include="src\common_proto\statistics.pb.h" />
     <ClInclude Include="src\common_proto\tip.pb.h" />
     <ClInclude Include="src\component_proto\actor_comp.pb.h" />
+    <ClInclude Include="src\component_proto\frame_comp.pb.h" />
     <ClInclude Include="src\component_proto\gs_node_comp.pb.h" />
     <ClInclude Include="src\component_proto\item_base_comp.pb.h" />
     <ClInclude Include="src\component_proto\item_comp.pb.h" />

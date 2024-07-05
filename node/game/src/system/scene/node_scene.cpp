@@ -1,4 +1,4 @@
-#include "game_node_scene.h"
+#include "node_scene.h"
 
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
 
