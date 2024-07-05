@@ -180,6 +180,7 @@
     <ClInclude Include="src\comp\scene.h" />
     <ClInclude Include="src\comp\node_scene.h" />
     <ClInclude Include="src\constants\file.h" />
+    <ClInclude Include="src\constants\frame.h" />
     <ClInclude Include="src\constants\game_log.h" />
     <ClInclude Include="src\constants\mission.h" />
     <ClInclude Include="src\constants\op_code.h" />

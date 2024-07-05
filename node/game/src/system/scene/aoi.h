@@ -4,5 +4,5 @@
 class AoiSystem
 {
 public:
-    void Update(entt::entity scene);
+    static void Update(double delta);
 };
