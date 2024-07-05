@@ -170,6 +170,7 @@
     <ClCompile Include="src\timer_task\duration_manager.cpp" />
     <ClCompile Include="src\timer_task\timer_duration.cpp" />
     <ClCompile Include="src\timer_task\timer_task.cpp" />
+    <ClCompile Include="src\timer_task\time_ measurement.cpp" />
     <ClCompile Include="src\util\color_console_log.cpp" />
     <ClCompile Include="src\util\session.cpp" />
   </ItemGroup>
@@ -201,6 +202,7 @@
     <ClInclude Include="src\timer_task\timer_duration.h" />
     <ClInclude Include="src\timer_task\timer_list.h" />
     <ClInclude Include="src\timer_task\timer_task.h" />
+    <ClInclude Include="src\timer_task\time_ measurement.h" />
     <ClInclude Include="src\type_alias\player_session.h" />
     <ClInclude Include="src\type_alias\session_id_gen.h" />
     <ClInclude Include="src\util\color_console_log.h" />
