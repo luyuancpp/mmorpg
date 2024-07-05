@@ -3,13 +3,15 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 //https://github.com/raysan5/raylib.git
+//https://github.com/recastnavigation/recastnavigation.git
 message FrameTime
 {
- double previous_time = 1;    // Previous time measure
- double current_time = 2;     // Current time measure
- double update_drawTime = 3;  // Update + Draw time
- double wait_time = 4;        // Wait time (if target fps required)
+ uint64 previous_time = 1;    // Previous time measure
+ uint64 current_time = 2;     // Current time measure
+ uint64 update_draw_time = 3;  // Update + Draw time
+ uint64 wait_time = 4;        // Wait time (if target fps required)
  double delta_time = 5;       // Frame time (Update + Draw + Wait time)
- double timeCounter = 6;      // Accumulative time counter (seconds)
- uint32 targetFPS = 7;    	  // Our initial target fps
+ uint64 time_counter = 6;      // Accumulative time counter (seconds)
+ uint32 target_fps = 7;    	  // Our initial target fps
+ double time_acc = 9;      // Accumulative time counter (seconds)
 }

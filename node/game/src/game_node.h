@@ -65,6 +65,7 @@ private:
     RpcClientPtr zone_centre_node_;
     GameServiceHandler game_service_;
     TimerTask deploy_rpc_timer_;
+    TimerTask world_timer_;
 };
 
 extern GameNode* g_game_node;

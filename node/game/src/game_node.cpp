@@ -26,6 +26,7 @@
 #include "thread_local/storage_game.h"
 #include "util/color_console_log.h"
 #include "util/game_registry.h"
+#include "system/world.h"
 
 GameNode* g_game_node = nullptr;
 
@@ -149,6 +150,8 @@ void GameNode::StartServer(const ::nodes_info_data& info)
 
     tls.dispatcher.trigger<OnServerStart>();
 
+    World::Init();
+    world_timer_.RunEvery(0.001, World::Update);
     LOG_INFO << "game node  start " << GetNodeConf().DebugString();
 }
 
