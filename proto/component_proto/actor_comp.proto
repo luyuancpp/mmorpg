@@ -37,3 +37,10 @@ message Velocity
 	double y = 2;
 	double z = 3;
 }
+
+message Acceleration 
+{
+	double x = 1;
+	double y = 2;
+	double z = 3;
+}

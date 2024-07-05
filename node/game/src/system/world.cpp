@@ -6,6 +6,8 @@
 #include "thread_local/storage_game.h"
 #include "Recast/Recast.h"
 #include "system/scene/aoi.h"
+#include "system/scene/movement.h"
+#include "system/scene/movement_acceleration.h"
 
 #include "component_proto/frame_comp.pb.h"
 
@@ -32,12 +34,15 @@ void World::Update()
 
     auto time_acc = rcClamp(tls_game.frame_time_.time_acc() + dt, -1.0f, 1.0f);
     int sim_iter = 0;
-    while (time_acc > tls_game.frame_time_.delta_time())
+    const auto delta_time = tls_game.frame_time_.delta_time();
+    while (time_acc > delta_time)
     {
-        time_acc -= tls_game.frame_time_.delta_time();
+        time_acc -= delta_time;
         if (sim_iter < 5)
         {
-            AoiSystem::Update(tls_game.frame_time_.delta_time());
+            AoiSystem::Update(delta_time);
+            MovementSystem::Update(delta_time);
+            MovementAccelerationSystem::Update(delta_time);
         }
         sim_iter++;
     }
