@@ -18,10 +18,7 @@ void AoiSystem::Update(double delta)
         for (auto&& [e, transform] : tls.registry.view<Transform>().each())
         {
             const auto hex = pixel_to_hex(KFlat, Point(transform.localtion().x(), transform.localtion().y()));
-            const uint64_t q = static_cast<uint64_t>(hex.q);
-            const uint64_t r = static_cast<uint64_t>(hex.r);
-            absl::uint128 key = q;
-            key = key << 64 & r;
+            absl::uint128 key = static_cast<absl::uint128>(hex.q) << 64 & static_cast<uint64_t>(hex.r);
             //to test
             grid_list[key].entity_list_.emplace(e);
         }

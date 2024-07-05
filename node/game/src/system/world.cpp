@@ -20,6 +20,7 @@ void World::Init()
 {
     tls_game.frame_time_.set_previous_time(GetTime());
     tls_game.frame_time_.set_target_fps(kTargetFPS);
+    tls_game.frame_time_.set_delta_time(1.0 / tls_game.frame_time_.target_fps());
 }
 
 void World::Update()
@@ -28,14 +29,13 @@ void World::Update()
     auto time = GetTime();
     double dt = (time - tls_game.frame_time_.previous_time()) / 1000.0;
     auto time_acc = rcClamp(tls_game.frame_time_.time_acc() + dt, -1.0f, 1.0f);
-    double delta_time = 1.0 / tls_game.frame_time_.target_fps();
     int sim_iter = 0;
-    while (time_acc > delta_time)
+    while (time_acc > tls_game.frame_time_.delta_time())
     {
-        time_acc -= delta_time;
+        time_acc -= tls_game.frame_time_.delta_time();
         if (sim_iter < 5)
         {
-            AoiSystem::Update(dt);
+            AoiSystem::Update(tls_game.frame_time_.delta_time());
         }
         sim_iter++;
     }
