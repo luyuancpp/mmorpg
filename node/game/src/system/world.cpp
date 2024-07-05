@@ -28,6 +28,8 @@ void World::Update()
     //https://github.com/recastnavigation/recastnavigation.git
     auto time = GetTime();
     double dt = (time - tls_game.frame_time_.previous_time()) / 1000.0;
+    tls_game.frame_time_.set_previous_time(time);
+
     auto time_acc = rcClamp(tls_game.frame_time_.time_acc() + dt, -1.0f, 1.0f);
     int sim_iter = 0;
     while (time_acc > tls_game.frame_time_.delta_time())
@@ -40,6 +42,5 @@ void World::Update()
         sim_iter++;
     }
     tls_game.frame_time_.set_time_acc(time_acc);
-    tls_game.frame_time_.set_previous_time(time);
 }
 

@@ -151,7 +151,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     tls.dispatcher.trigger<OnServerStart>();
 
     World::Init();
-    world_timer_.RunEvery(0.001, World::Update);
+    world_timer_.RunEvery(tls_game.frame_time_.delta_time(), World::Update);
     LOG_INFO << "game node  start " << GetNodeConf().DebugString();
 }
 
