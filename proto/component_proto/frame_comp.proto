@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+//https://github.com/raysan5/raylib.git
+message FrameTime
+{
+ double previous_time = 1;    // Previous time measure
+ double current_time = 2;     // Current time measure
+ double update_drawTime = 3;  // Update + Draw time
+ double wait_time = 4;        // Wait time (if target fps required)
+ double delta_time = 5;       // Frame time (Update + Draw + Wait time)
+ double timeCounter = 6;      // Accumulative time counter (seconds)
+ uint32 targetFPS = 7;    	  // Our initial target fps
+}
