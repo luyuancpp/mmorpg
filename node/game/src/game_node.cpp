@@ -126,7 +126,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
 {
     node_net_info_ = info;
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
-    tls_game.redis_system().Init(redis_addr);
+    tls_game.redis_.Init(redis_addr);
 
     node_info_.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
     node_info_.set_node_type(eNodeType::kGameNode);

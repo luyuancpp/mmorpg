@@ -21,14 +21,14 @@
 void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database& message)
 {
 	LOG_DEBUG << "player load" << player_id;
-	const auto async_it = tls_game.aysnc_player_list().find(player_id);
-	if (async_it == tls_game.aysnc_player_list().end())
+	const auto async_it = tls_game.async_player_list_.find(player_id);
+	if (async_it == tls_game.async_player_list_.end())
 	{
 		LOG_ERROR << "player disconnect" << player_id;
 		return;
 	}
 
-	defer(tls_game.aysnc_player_list().erase(player_id));
+	defer(tls_game.async_player_list_.erase(player_id));
 
 	auto player = tls.registry.create();
 	if (const auto [fst, snd] = tls_cl.player_list().emplace(player_id, player);
@@ -74,7 +74,7 @@ void PlayerNodeSystem::SavePlayer(entt::entity player)
 
 	pb->set_player_id(tls.registry.get<Guid>(player));
 	pb->mutable_transform()->CopyFrom(tls.registry.get<Transform>(player));
-	tls_game.player_redis()->Save(pb, tls.registry.get<Guid>(player));
+	tls_game.player_redis_->Save(pb, tls.registry.get<Guid>(player));
 }
 
 //考虑: 没load 完再次进入别的gs
