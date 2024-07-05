@@ -42,6 +42,12 @@ void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database
 	tls.registry.emplace<Player>(player);
 	tls.registry.emplace<Guid>(player, player_id);
 	tls.registry.emplace<Transform>(player, message.transform());
+	Velocity v;
+	v.set_x(1);
+	v.set_y(1);
+	v.set_z(1);
+	tls.registry.emplace<Velocity>(player, v);
+	tls.registry.emplace<ViewRadius>(player).set_radius(10);
 	tls.registry.emplace<PlayerNodeInfo>(player).set_centre_node_id(async_it->second.centre_node_id());
 	// on load db complete
 

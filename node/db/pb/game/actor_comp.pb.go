@@ -398,6 +398,55 @@ func (x *Acceleration) GetZ() float64 {
 	return 0
 }
 
+// https://blog.codingnow.com/2008/11/aoi_server.html
+// 视野半径
+type ViewRadius struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Radius float64 `protobuf:"fixed64,1,opt,name=radius,proto3" json:"radius,omitempty"`
+}
+
+func (x *ViewRadius) Reset() {
+	*x = ViewRadius{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_component_proto_actor_comp_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ViewRadius) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ViewRadius) ProtoMessage() {}
+
+func (x *ViewRadius) ProtoReflect() protoreflect.Message {
+	mi := &file_component_proto_actor_comp_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ViewRadius.ProtoReflect.Descriptor instead.
+func (*ViewRadius) Descriptor() ([]byte, []int) {
+	return file_component_proto_actor_comp_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ViewRadius) GetRadius() float64 {
+	if x != nil {
+		return x.Radius
+	}
+	return 0
+}
+
 var File_component_proto_actor_comp_proto protoreflect.FileDescriptor
 
 var file_component_proto_actor_comp_proto_rawDesc = []byte{
@@ -427,8 +476,11 @@ var file_component_proto_actor_comp_proto_rawDesc = []byte{
 	0x01, 0x7a, 0x22, 0x38, 0x0a, 0x0c, 0x41, 0x63, 0x63, 0x65, 0x6c, 0x65, 0x72, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x78,
 	0x12, 0x0c, 0x0a, 0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x79, 0x12, 0x0c,
-	0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x42, 0x09, 0x5a, 0x07,
-	0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x24, 0x0a, 0x0a,
+	0x56, 0x69, 0x65, 0x77, 0x52, 0x61, 0x64, 0x69, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x61,
+	0x64, 0x69, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x72, 0x61, 0x64, 0x69,
+	0x75, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -443,7 +495,7 @@ func file_component_proto_actor_comp_proto_rawDescGZIP() []byte {
 	return file_component_proto_actor_comp_proto_rawDescData
 }
 
-var file_component_proto_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_component_proto_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_component_proto_actor_comp_proto_goTypes = []interface{}{
 	(*Location)(nil),     // 0: Location
 	(*Rotation)(nil),     // 1: Rotation
@@ -451,6 +503,7 @@ var file_component_proto_actor_comp_proto_goTypes = []interface{}{
 	(*Transform)(nil),    // 3: Transform
 	(*Velocity)(nil),     // 4: Velocity
 	(*Acceleration)(nil), // 5: Acceleration
+	(*ViewRadius)(nil),   // 6: ViewRadius
 }
 var file_component_proto_actor_comp_proto_depIdxs = []int32{
 	0, // 0: Transform.localtion:type_name -> Location
@@ -541,6 +594,18 @@ func file_component_proto_actor_comp_proto_init() {
 				return nil
 			}
 		}
+		file_component_proto_actor_comp_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ViewRadius); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -548,7 +613,7 @@ func file_component_proto_actor_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_component_proto_actor_comp_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

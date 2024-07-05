@@ -38,9 +38,17 @@ message Velocity
 	double z = 3;
 }
 
+
 message Acceleration 
 {
 	double x = 1;
 	double y = 2;
 	double z = 3;
+}
+
+//https://blog.codingnow.com/2008/11/aoi_server.html
+//视野半径
+message ViewRadius
+{
+	double radius = 1;
 }
