@@ -10,11 +10,8 @@ void MovementAccelerationSystem::Update(double delta)
     for (auto&& [e, transform, velocity, acceleration] : view.each())
     {
         auto& location = *transform.mutable_localtion();
-        auto x_vel = (velocity.x() + acceleration.x()) * delta;
-        auto y_vel = (velocity.y() + acceleration.y()) * delta;
-        auto z_vel = (velocity.z() + acceleration.z()) * delta;
-        location.set_x(location.x() + x_vel);
-        location.set_y(location.y() + y_vel);
-        location.set_z(location.z() + z_vel);
+        location.set_x(location.x() + (velocity.x() + acceleration.x()) * delta);
+        location.set_y(location.y() + (velocity.y() + acceleration.y()) * delta);
+        location.set_z(location.z() + (velocity.z() + acceleration.z()) * delta);
     }
 }
