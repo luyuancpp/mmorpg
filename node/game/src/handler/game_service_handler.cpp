@@ -49,14 +49,14 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
     //todo 异步加载不了
     EnterGsInfo enter_info;
     enter_info.set_centre_node_id(request->centre_node_id());
-    if ( const auto async_player_it = tls_game.aysnc_player_list().emplace(request->player_id(), enter_info) ;
+    if ( const auto async_player_it = tls_game.async_player_list_.emplace(request->player_id(), enter_info) ;
         !async_player_it.second)
     {
         LOG_ERROR << "EnterGs emplace player  " << request->player_id();
         return;
     }
     //异步加载过程中断开了，怎么处理？
-    tls_game.player_redis()->AsyncLoad(request->player_id());
+    tls_game.player_redis_->AsyncLoad(request->player_id());
 ///<<< END WRITING YOUR CODE
 }
 
