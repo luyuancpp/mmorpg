@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <absl/hash/hash.h>
+#include <absl/numeric/int128.h>
 
 #include "entt/src/entt/entity/registry.hpp"
 
@@ -34,6 +36,9 @@ using UInt64UInt64UnorderedMap = std::unordered_map<uint64_t, uint64_t>;
 using UInt32UInt32UnorderedMap = std::unordered_map<uint32_t, uint32_t>;
 using UInt32UInt64UnorderedMap = std::unordered_map<uint32_t, uint64_t>;
 using GuidUint64Map = std::unordered_map<Guid, uint64_t>;
+
+using PlayerPairList = std::unordered_set<absl::uint128, absl::Hash<absl::uint128>>;
+using UInt128Set = std::unordered_set<absl::uint128, absl::Hash<absl::uint128>>;
 
 static constexpr Guid kInvalidGuid{UINT64_MAX};
 static constexpr uint64_t kInvalidSessionId{UINT64_MAX};
