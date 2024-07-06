@@ -20,6 +20,7 @@
 #include "comp/scene/grid.h"
 #include "constants/scene.h"
 #include "comp/scene.h"
+#include "constants/dt_crowd.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "constants_proto/node.pb.h"
@@ -102,7 +103,14 @@ void GameNodeSceneSystem::OnSceneCreateHandler(const OnSceneCreate& message)
 {
     entt::entity scene = entt::to_entity(message.entity());
     tls.scene_registry.emplace<SceneGridList>(scene);
-    tls.scene_registry.emplace<dtCrowd>(scene);
+
+    auto& scene_info = tls.scene_registry.get<SceneInfo>(scene);
+    if (tls_game.scene_nav_.contains(scene_info.scene_confid()))
+    {
+        //auto& dt_crowd = tls.scene_registry.emplace<dtCrowd>(scene);
+        //dt_crowd.init(1000, kAgentRadius, &tls_game.scene_nav_[scene_info.scene_confid()].nav_mesh);
+    }
+
 }
 
 void GameNodeSceneSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
