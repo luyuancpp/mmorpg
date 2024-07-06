@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="server_sequence_test.cpp">
+    <ClCompile Include="node_sequence_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
