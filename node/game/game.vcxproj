@@ -176,6 +176,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\thread_local\storage_game.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\comp\actor.h" />
     <ClInclude Include="src\comp\scene\nav.h" />
     <ClInclude Include="src\comp\scene\grid.h" />
     <ClInclude Include="src\event_handler\event_handler.h" />
