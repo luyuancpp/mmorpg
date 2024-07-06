@@ -20,6 +20,12 @@ message GateNodeKickConnRequest
   uint64 session_id = 1;
 }
 
+message BroadCast2PlayerRequest
+{
+ repeated uint64 session_list = 1;
+ MessageBody body = 2;
+}
+
 service GateService {
   rpc RegisterGame (RegisterGameRequest) returns (Empty);
   rpc UnRegisterGame (UnRegisterGameRequest) returns (Empty);
@@ -28,4 +34,5 @@ service GateService {
   rpc KickConnByCentre (GateNodeKickConnRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc BroadCast2PlayerMessage (BroadCast2PlayerRequest) returns (Empty);
 }

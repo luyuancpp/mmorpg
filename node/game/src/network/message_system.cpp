@@ -9,6 +9,7 @@
 #include "service/gate_service_service.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_common_logic.h"
+#include "comp/session.h"
 
 #include "comp/player.h"
 #include "component_proto/player_network_comp.pb.h"
@@ -141,5 +142,50 @@ void BroadCastToCentre(uint32_t message_id, const google::protobuf::Message& mes
 	for (auto&& [_, node] : tls.centre_node_registry.view<RpcClientPtr>().each())
 	{
 		node->CallMethod(message_id, message);
+	}
+}
+
+void BroadCast2Player(const std::set<entt::entity>& player_list,
+	uint32_t message_id, 
+	const google::protobuf::Message& message)
+{
+	std::unordered_map<entt::entity, BroadCastSessionIdList> gate_info_list;
+	for (auto& player : player_list)
+	{
+        if (!tls.registry.valid(player))
+        {
+            continue;
+        }
+        const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+        if (nullptr == player_node_info)
+        {
+            LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
+			continue;
+        }
+        entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+        if (!tls.gate_node_registry.valid(gate_node_id))
+        {
+            LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
+			continue;
+        }
+		gate_info_list[gate_node_id].emplace(player_node_info->gate_session_id());
+	}
+  
+	BroadCast2PlayerRequest request;
+	for (auto&& [gate_node_id, session_id_list] : gate_info_list)
+	{
+        const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
+        if (nullptr == gate_node)
+        {
+			LOG_ERROR << "gate not found ";
+            continue;
+        }
+        request.mutable_body()->set_message_id(message_id);
+        request.mutable_body()->set_body(message.SerializeAsString());
+		for (auto&& session_id : session_id_list)
+		{
+			request.mutable_session_list()->Add(session_id);
+		}
+        (*gate_node)->Send(GateServiceBroadCast2PlayerMessageMsgId, request);
 	}
 }

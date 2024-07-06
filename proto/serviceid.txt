@@ -28,6 +28,7 @@
 27=CentreSceneServiceUnRegisterScene
 28=CentreServiceLsLoginAccount
 29=CentreSceneServiceRegisterScene
+30=GateServiceBroadCast2PlayerMessage
 31=CentreServiceRegisterGame
 33=LoginServiceCreatePlayer
 34=LoginServiceLogin

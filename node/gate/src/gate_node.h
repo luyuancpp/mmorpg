@@ -34,7 +34,7 @@ public:
     inline const NodeInfo& GetNodeInfo()const { return node_info_; }
     inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return log_; }
 
-    inline void Send2Client(const muduo::net::TcpConnectionPtr& conn,
+    inline void Send(const muduo::net::TcpConnectionPtr& conn,
                             const ::google::protobuf::Message& message) const { client_message_processor_.Send2Client(conn, message); }
 
     void Init();

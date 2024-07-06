@@ -100,6 +100,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -180,6 +181,7 @@
     <ClInclude Include="src\comp\player_scene.h" />
     <ClInclude Include="src\comp\scene.h" />
     <ClInclude Include="src\comp\node_scene.h" />
+    <ClInclude Include="src\comp\session.h" />
     <ClInclude Include="src\constants\file.h" />
     <ClInclude Include="src\constants\frame.h" />
     <ClInclude Include="src\constants\game_log.h" />

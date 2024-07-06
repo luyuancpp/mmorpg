@@ -16,3 +16,7 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, Nod
 void CallCentreNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id);
 
 void BroadCastToCentre(uint32_t message_id, const google::protobuf::Message& message);
+
+void BroadCast2Player(const std::set<entt::entity>& player_list, 
+    uint32_t message_id, 
+    const google::protobuf::Message& message);
