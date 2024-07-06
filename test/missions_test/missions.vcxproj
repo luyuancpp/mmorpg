@@ -21,9 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{25282015-32e5-471d-97a6-31adda31e797}</ProjectGuid>
+    <ProjectGuid>{965317EA-E4F3-4258-9C8C-715DEAB96C58}</ProjectGuid>
     <RootNamespace>missions</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>missions_test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -116,9 +117,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_TCHAR_DEFINED;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../pkg/common/src/;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../node/master/;../../common/src/pb/pbc/;../../third_party/protobuf/third_party/abseil-cpp/;../../node/game/src/;../../pkg/common/;../../pkg/pbc/src/;../../pkg/logic/src/;../../pkg/config/src/;../../pkg/pbc/src/game_config/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../pkg/common/src/;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../;../../pkg/pbc/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/logic/src/;../../pkg/pbc/src/;../../node/centre/src/;../../pkg/config/src/;../../pkg/pbc/src/game_config/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <DisableSpecificWarnings>4819;4244;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4819;4244;4267;</DisableSpecificWarnings>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -147,30 +148,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\node\game\src\event_handler\mission_event_handler.cpp" />
-    <ClCompile Include="..\..\pkg\common\src\util\file2string.cpp" />
-    <ClCompile Include="..\..\pkg\common\src\util\game_registry.cpp" />
-    <ClCompile Include="..\..\pkg\config\src\mission_config.cpp" />
-    <ClCompile Include="..\..\pkg\logic\src\comp\mission_comp.cpp" />
-    <ClCompile Include="..\..\pkg\logic\src\system\mission\mission_system.cpp" />
-    <ClCompile Include="..\..\pkg\pbc\src\component_proto\mission_comp.pb.cc" />
-    <ClCompile Include="..\..\pkg\pbc\src\event_proto\mission_event.pb.cc" />
-    <ClCompile Include="..\..\pkg\pbc\src\game_config\condition_config.pb.cc" />
-    <ClCompile Include="..\..\pkg\pbc\src\game_config\mission_config.pb.cc" />
     <ClCompile Include="missions_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\node\game\src\event_handler\mission_event_handler.h" />
-    <ClInclude Include="..\..\pkg\common\src\util\file2string.h" />
-    <ClInclude Include="..\..\pkg\common\src\util\game_registry.h" />
-    <ClInclude Include="..\..\pkg\config\src\mission_config.h" />
-    <ClInclude Include="..\..\pkg\logic\src\comp\mission_comp.h" />
-    <ClInclude Include="..\..\pkg\logic\src\constants\mission_constants.h" />
-    <ClInclude Include="..\..\pkg\logic\src\system\mission\missions_config_template.h" />
-    <ClInclude Include="..\..\pkg\logic\src\system\mission\mission_system.h" />
-    <ClInclude Include="..\..\pkg\pbc\src\component_proto\mission_comp.pb.h" />
-    <ClInclude Include="..\..\pkg\pbc\src\event_proto\mission_event.pb.h" />
-    <ClInclude Include="..\..\pkg\pbc\src\game_config\condition_config.pb.h" />
-    <ClInclude Include="..\..\pkg\pbc\src\game_config\mission_config.pb.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
