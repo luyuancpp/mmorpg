@@ -8,12 +8,8 @@
 
 struct SceneNav
 {
-    using DtNavMeshPtr = std::unique_ptr<dtNavMesh>;
-    using DtNavMeshQueryPtr = std::unique_ptr<dtNavMeshQuery>;
-    DtNavMeshPtr p_nav_;
-    DtNavMeshQueryPtr p_nav_query_;
+    dtNavMesh nav_mesh;
+    dtNavMeshQuery nav_query;
 };
 
-using SceneNavPtr = std::shared_ptr<SceneNav>;
-
-using SceneNavs = std::unordered_map<uint32_t, SceneNavPtr>;
+using SceneNavs = std::unordered_map<uint32_t, SceneNav>;

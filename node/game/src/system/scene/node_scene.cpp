@@ -14,8 +14,10 @@
 #include "system/recast.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage.h"
+#include "thread_local/storage_game.h"
 #include "event_proto/scene_event.pb.h"
 #include "comp/scene/grid.h"
+#include "constants/scene.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "constants_proto/node.pb.h"
@@ -25,10 +27,15 @@ void GameNodeSceneSystem::LoadAllMainSceneNavBin()
     auto& config_all = mainscene_config::GetSingleton().all();
     for (auto& it : config_all.data())
     {
-        const auto scene_nav_ptr = std::make_shared<SceneNavPtr::element_type>();
-        scene_nav_ptr->p_nav_  = std::make_unique<SceneNav::DtNavMeshPtr::element_type>();
-        scene_nav_ptr->p_nav_query_ = std::make_unique<SceneNav::DtNavMeshQueryPtr::element_type>();
-        RecastSystem::LoadNavMesh(it.nav_bin_file().c_str(), scene_nav_ptr->p_nav_.get());
+        auto nav_it = tls_game.scene_nav_.emplace(it.id(), SceneNav{});
+        if (!nav_it.second)
+        {
+            LOG_ERROR << "load scene nav err" << it.id();
+            continue;
+        }
+        auto& nav = nav_it.first;
+        RecastSystem::LoadNavMesh(it.nav_bin_file().c_str(), &nav->second.nav_mesh);
+        nav->second.nav_query.init(&nav->second.nav_mesh, kMaxMeshQueryNodes);
     }
 }
 
