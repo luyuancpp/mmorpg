@@ -70,6 +70,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "centre", "node\centre\centr
 		{FC29015B-FD9B-4AC9-832D-F660D2D7169D} = {FC29015B-FD9B-4AC9-832D-F660D2D7169D}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{99B5DD1D-6789-47B9-A4A3-1555F1E39454}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene_test", "unit_test\game_server_load_balance\game_server_load_balance.vcxproj", "{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -150,6 +154,14 @@ Global
 		{13118878-9993-4729-84B4-86C0197DAD06}.Release|x64.Build.0 = Release|x64
 		{13118878-9993-4729-84B4-86C0197DAD06}.Release|x86.ActiveCfg = Release|Win32
 		{13118878-9993-4729-84B4-86C0197DAD06}.Release|x86.Build.0 = Release|Win32
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}.Debug|x64.ActiveCfg = Debug|x64
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}.Debug|x64.Build.0 = Debug|x64
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}.Debug|x86.ActiveCfg = Debug|Win32
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}.Debug|x86.Build.0 = Debug|Win32
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}.Release|x64.ActiveCfg = Release|x64
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}.Release|x64.Build.0 = Release|x64
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}.Release|x86.ActiveCfg = Release|Win32
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -164,6 +176,7 @@ Global
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {4AFA0052-539B-4118-BE90-A2FAB7AA256B}
 		{30D7288B-8317-4FB0-80B5-2FCCAD2AE1FA} = {4AFA0052-539B-4118-BE90-A2FAB7AA256B}
 		{13118878-9993-4729-84B4-86C0197DAD06} = {4AFA0052-539B-4118-BE90-A2FAB7AA256B}
+		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6} = {99B5DD1D-6789-47B9-A4A3-1555F1E39454}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {39DD7ACD-8F24-4314-9D3C-74F6B00572A2}
