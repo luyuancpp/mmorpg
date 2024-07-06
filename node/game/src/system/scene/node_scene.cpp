@@ -110,7 +110,6 @@ void GameNodeSceneSystem::OnSceneCreateHandler(const OnSceneCreate& message)
         //auto& dt_crowd = tls.scene_registry.emplace<dtCrowd>(scene);
         //dt_crowd.init(1000, kAgentRadius, &tls_game.scene_nav_[scene_info.scene_confid()].nav_mesh);
     }
-
 }
 
 void GameNodeSceneSystem::AfterEnterSceneHandler(const AfterEnterScene& message)

@@ -38,5 +38,10 @@ public:
 		::RoutePlayerMsgStringResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
+	void BroadCast2PlayerMessage(::google::protobuf::RpcController* controller,
+		const ::BroadCast2PlayerRequest* request,
+		::Empty* response,
+		 ::google::protobuf::Closure* done)override;
+
 };
 

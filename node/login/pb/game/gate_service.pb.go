@@ -114,6 +114,61 @@ func (x *GateNodeKickConnRequest) GetSessionId() uint64 {
 	return 0
 }
 
+type BroadCast2PlayerRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	SessionList []uint64     `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
+	Body        *MessageBody `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
+}
+
+func (x *BroadCast2PlayerRequest) Reset() {
+	*x = BroadCast2PlayerRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_common_proto_gate_service_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BroadCast2PlayerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BroadCast2PlayerRequest) ProtoMessage() {}
+
+func (x *BroadCast2PlayerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_gate_service_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BroadCast2PlayerRequest.ProtoReflect.Descriptor instead.
+func (*BroadCast2PlayerRequest) Descriptor() ([]byte, []int) {
+	return file_common_proto_gate_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *BroadCast2PlayerRequest) GetSessionList() []uint64 {
+	if x != nil {
+		return x.SessionList
+	}
+	return nil
+}
+
+func (x *BroadCast2PlayerRequest) GetBody() *MessageBody {
+	if x != nil {
+		return x.Body
+	}
+	return nil
+}
+
 var File_common_proto_gate_service_proto protoreflect.FileDescriptor
 
 var file_common_proto_gate_service_proto_rawDesc = []byte{
@@ -133,7 +188,13 @@ var file_common_proto_gate_service_proto_rawDesc = []byte{
 	0x61, 0x74, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x4b, 0x69, 0x63, 0x6b, 0x43, 0x6f, 0x6e, 0x6e, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
 	0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x73, 0x65, 0x73, 0x73,
-	0x69, 0x6f, 0x6e, 0x49, 0x64, 0x32, 0xc6, 0x03, 0x0a, 0x0b, 0x47, 0x61, 0x74, 0x65, 0x53, 0x65,
+	0x69, 0x6f, 0x6e, 0x49, 0x64, 0x22, 0x5e, 0x0a, 0x17, 0x42, 0x72, 0x6f, 0x61, 0x64, 0x43, 0x61,
+	0x73, 0x74, 0x32, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x12, 0x21, 0x0a, 0x0c, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x69, 0x73, 0x74,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x0b, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x4c,
+	0x69, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x0c, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x6f, 0x64, 0x79, 0x52,
+	0x04, 0x62, 0x6f, 0x64, 0x79, 0x32, 0x83, 0x04, 0x0a, 0x0b, 0x47, 0x61, 0x74, 0x65, 0x53, 0x65,
 	0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x2c, 0x0a, 0x0c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
 	0x72, 0x47, 0x61, 0x6d, 0x65, 0x12, 0x14, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72,
 	0x47, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x06, 0x2e, 0x45, 0x6d,
@@ -161,9 +222,13 @@ var file_common_proto_gate_service_proto_rawDesc = []byte{
 	0x67, 0x12, 0x1c, 0x2e, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x4d,
 	0x73, 0x67, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
 	0x1d, 0x2e, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x4d, 0x73, 0x67,
-	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x0c,
-	0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x80, 0x01, 0x01, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b,
+	0x0a, 0x17, 0x42, 0x72, 0x6f, 0x61, 0x64, 0x43, 0x61, 0x73, 0x74, 0x32, 0x50, 0x6c, 0x61, 0x79,
+	0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x18, 0x2e, 0x42, 0x72, 0x6f, 0x61,
+	0x64, 0x43, 0x61, 0x73, 0x74, 0x32, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x42, 0x0c, 0x5a, 0x07, 0x70,
+	0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x80, 0x01, 0x01, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -178,41 +243,46 @@ func file_common_proto_gate_service_proto_rawDescGZIP() []byte {
 	return file_common_proto_gate_service_proto_rawDescData
 }
 
-var file_common_proto_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_common_proto_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_common_proto_gate_service_proto_goTypes = []interface{}{
 	(*GsMessageExtern)(nil),                 // 0: GsMessageExtern
 	(*GateNodeKickConnRequest)(nil),         // 1: GateNodeKickConnRequest
-	(*RegisterGameRequest)(nil),             // 2: RegisterGameRequest
-	(*UnRegisterGameRequest)(nil),           // 3: UnRegisterGameRequest
-	(*RegisterSessionGameNodeRequest)(nil),  // 4: RegisterSessionGameNodeRequest
-	(*NodeRouteMessageRequest)(nil),         // 5: NodeRouteMessageRequest
-	(*RouteMsgStringRequest)(nil),           // 6: RouteMsgStringRequest
-	(*RoutePlayerMsgStringRequest)(nil),     // 7: RoutePlayerMsgStringRequest
-	(*Empty)(nil),                           // 8: Empty
-	(*RegisterSessionGameNodeResponse)(nil), // 9: RegisterSessionGameNodeResponse
-	(*RouteMsgStringResponse)(nil),          // 10: RouteMsgStringResponse
-	(*RoutePlayerMsgStringResponse)(nil),    // 11: RoutePlayerMsgStringResponse
+	(*BroadCast2PlayerRequest)(nil),         // 2: BroadCast2PlayerRequest
+	(*MessageBody)(nil),                     // 3: MessageBody
+	(*RegisterGameRequest)(nil),             // 4: RegisterGameRequest
+	(*UnRegisterGameRequest)(nil),           // 5: UnRegisterGameRequest
+	(*RegisterSessionGameNodeRequest)(nil),  // 6: RegisterSessionGameNodeRequest
+	(*NodeRouteMessageRequest)(nil),         // 7: NodeRouteMessageRequest
+	(*RouteMsgStringRequest)(nil),           // 8: RouteMsgStringRequest
+	(*RoutePlayerMsgStringRequest)(nil),     // 9: RoutePlayerMsgStringRequest
+	(*Empty)(nil),                           // 10: Empty
+	(*RegisterSessionGameNodeResponse)(nil), // 11: RegisterSessionGameNodeResponse
+	(*RouteMsgStringResponse)(nil),          // 12: RouteMsgStringResponse
+	(*RoutePlayerMsgStringResponse)(nil),    // 13: RoutePlayerMsgStringResponse
 }
 var file_common_proto_gate_service_proto_depIdxs = []int32{
-	2,  // 0: GateService.RegisterGame:input_type -> RegisterGameRequest
-	3,  // 1: GateService.UnRegisterGame:input_type -> UnRegisterGameRequest
-	4,  // 2: GateService.PlayerEnterGs:input_type -> RegisterSessionGameNodeRequest
-	5,  // 3: GateService.PlayerMessage:input_type -> NodeRouteMessageRequest
-	1,  // 4: GateService.KickConnByCentre:input_type -> GateNodeKickConnRequest
-	6,  // 5: GateService.RouteNodeStringMsg:input_type -> RouteMsgStringRequest
-	7,  // 6: GateService.RoutePlayerStringMsg:input_type -> RoutePlayerMsgStringRequest
-	8,  // 7: GateService.RegisterGame:output_type -> Empty
-	8,  // 8: GateService.UnRegisterGame:output_type -> Empty
-	9,  // 9: GateService.PlayerEnterGs:output_type -> RegisterSessionGameNodeResponse
-	8,  // 10: GateService.PlayerMessage:output_type -> Empty
-	8,  // 11: GateService.KickConnByCentre:output_type -> Empty
-	10, // 12: GateService.RouteNodeStringMsg:output_type -> RouteMsgStringResponse
-	11, // 13: GateService.RoutePlayerStringMsg:output_type -> RoutePlayerMsgStringResponse
-	7,  // [7:14] is the sub-list for method output_type
-	0,  // [0:7] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+	3,  // 0: BroadCast2PlayerRequest.body:type_name -> MessageBody
+	4,  // 1: GateService.RegisterGame:input_type -> RegisterGameRequest
+	5,  // 2: GateService.UnRegisterGame:input_type -> UnRegisterGameRequest
+	6,  // 3: GateService.PlayerEnterGs:input_type -> RegisterSessionGameNodeRequest
+	7,  // 4: GateService.PlayerMessage:input_type -> NodeRouteMessageRequest
+	1,  // 5: GateService.KickConnByCentre:input_type -> GateNodeKickConnRequest
+	8,  // 6: GateService.RouteNodeStringMsg:input_type -> RouteMsgStringRequest
+	9,  // 7: GateService.RoutePlayerStringMsg:input_type -> RoutePlayerMsgStringRequest
+	2,  // 8: GateService.BroadCast2PlayerMessage:input_type -> BroadCast2PlayerRequest
+	10, // 9: GateService.RegisterGame:output_type -> Empty
+	10, // 10: GateService.UnRegisterGame:output_type -> Empty
+	11, // 11: GateService.PlayerEnterGs:output_type -> RegisterSessionGameNodeResponse
+	10, // 12: GateService.PlayerMessage:output_type -> Empty
+	10, // 13: GateService.KickConnByCentre:output_type -> Empty
+	12, // 14: GateService.RouteNodeStringMsg:output_type -> RouteMsgStringResponse
+	13, // 15: GateService.RoutePlayerStringMsg:output_type -> RoutePlayerMsgStringResponse
+	10, // 16: GateService.BroadCast2PlayerMessage:output_type -> Empty
+	9,  // [9:17] is the sub-list for method output_type
+	1,  // [1:9] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_gate_service_proto_init() }
@@ -249,6 +319,18 @@ func file_common_proto_gate_service_proto_init() {
 				return nil
 			}
 		}
+		file_common_proto_gate_service_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BroadCast2PlayerRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -256,7 +338,7 @@ func file_common_proto_gate_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_common_proto_gate_service_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -85,7 +85,7 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
         LOG_ERROR << "conn id not found  session id " << "," << request->head().session_id();
         return;
     }
-	g_gate_node->Send2Client(it->second.conn_, request->body());
+	g_gate_node->Send(it->second.conn_, request->body());
 	///<<< END WRITING YOUR CODE
 }
 
@@ -117,5 +117,24 @@ void GateServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
+}
+
+void GateServiceHandler::BroadCast2PlayerMessage(::google::protobuf::RpcController* controller,
+	const ::BroadCast2PlayerRequest* request,
+	::Empty* response,
+	 ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+	for (auto&& session_id : request->session_list())
+	{
+        auto it = tls_gate.sessions().find(session_id);
+        if (it == tls_gate.sessions().end())
+        {
+            LOG_ERROR << "conn id not found  session id " << "," << session_id;
+            continue;
+        }
+        g_gate_node->Send(it->second.conn_, request->body());
+	}
+///<<< END WRITING YOUR CODE
 }
 
