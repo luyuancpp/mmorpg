@@ -178,7 +178,7 @@ uint32_t ScenesSystem::CheckEnterScene(const EnterSceneParam& param)
 	{
         return kRetCheckEnterSceneSceneParam;
 	}
-	if (scene_info->creators().find(tls.game_node_registry.get<Guid>(param.player_)) == 
+	if (scene_info->creators().find(tls.registry.get<Guid>(param.player_)) == 
 		scene_info->creators().end())
 	{
 		return kRetCheckEnterSceneCreator;
