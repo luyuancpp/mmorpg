@@ -1,9 +1,9 @@
 #include "aoi.h"
 
-#include "comp/actor.h"
 #include "comp/scene.h"
 #include "comp/scene/grid.h"
 #include "component_proto/actor_comp.pb.h"
+#include "event_proto/scene_event.pb.h"
 #include "muduo/base/Logging.h"
 #include "system/scene/hexagons_grid.h"
 #include "thread_local/storage.h"
@@ -11,8 +11,6 @@
 const Point kDefaultSize(20.0, 20.0);
 const Point kOrigin(0.0, 0.0);
 const auto KFlat = Layout(layout_flat, kDefaultSize, kOrigin);
-
-using GridSet = std::unordered_set<absl::uint128>;
 
 void AoiSystem::Update(double delta)
 {
@@ -37,13 +35,8 @@ void AoiSystem::Update(double delta)
         // 新进入
         if (!tls.registry.any_of<Hex>(player))
         {
+            ScanNeighborGridId(hex,enter_grid_set);
             grid_list[grid_id].entity_list_.emplace(player);
-            enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 0)));
-            enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 1)));
-            enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 2)));
-            enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 3)));
-            enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 4)));
-            enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 5)));
             tls.registry.emplace<Hex>(player, hex);
         }
         else
@@ -58,19 +51,8 @@ void AoiSystem::Update(double delta)
             {
                 // 如果相邻格子移动,则计算差值
 
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 0)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 1)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 2)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 3)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 4)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 5)));
-                
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 0)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 1)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 2)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 3)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 4)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 5)));
+                ScanNeighborGridId(hex_old, leave_grid_set);
+                ScanNeighborGridId(hex, enter_grid_set);
 
                 copy_leaver_grid_set = leave_grid_set;
                 copy_enter_grid_set = enter_grid_set;
@@ -86,31 +68,16 @@ void AoiSystem::Update(double delta)
             else
             {
                 // 通知旧的格子离开
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 0)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 1)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 2)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 3)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 4)));
-                leave_grid_set.emplace(GetGridId(hex_neighbor(hex_old, 5)));
-
                 //通知新的格子进入
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 0)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 1)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 2)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 3)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 4)));
-                enter_grid_set.emplace(GetGridId(hex_neighbor(hex, 5)));
+                ScanNeighborGridId(hex_old, leave_grid_set);
+                ScanNeighborGridId(hex, enter_grid_set);
             }
            
             grid_list[grid_id].entity_list_.emplace(player);
-            tls.registry.emplace_or_replace<Hex>(player, hex);
+            tls.registry.remove<Hex>(player);
+            tls.registry.emplace<Hex>(player, hex);
 
-            const auto grid_id_old = GetGridId(hex_old);
-            grid_list[grid_id_old].entity_list_.erase(player);
-            if (grid_list[grid_id_old].entity_list_.empty())
-            {
-                grid_list.erase(grid_id_old);
-            }
+            LeaveGrid(hex_old, grid_list, player);
         }
     }
 }
@@ -126,4 +93,54 @@ absl::uint128 AoiSystem::GetGridId(const Location& l)
 absl::uint128 AoiSystem::GetGridId(const Hex& hex)
 {
     return static_cast<absl::uint128>(hex.q) << 64 & static_cast<uint64_t>(hex.r);
+}
+
+void AoiSystem::ScanNeighborGridId(const Hex& hex, GridSet& grid_set)
+{
+    grid_set.emplace(GetGridId(hex_neighbor(hex, 0)));
+    grid_set.emplace(GetGridId(hex_neighbor(hex, 1)));
+    grid_set.emplace(GetGridId(hex_neighbor(hex, 2)));
+    grid_set.emplace(GetGridId(hex_neighbor(hex, 3)));
+    grid_set.emplace(GetGridId(hex_neighbor(hex, 4)));
+    grid_set.emplace(GetGridId(hex_neighbor(hex, 5)));
+}
+
+void  AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
+{
+    const auto player = entt::to_entity(message.entity());
+    if ( !tls.registry.valid(player))
+    {
+        LOG_ERROR << "scene not found" ;
+        return;
+    }
+    const auto scene_entity = tls.registry.try_get<SceneEntity>(player);
+    if (nullptr == scene_entity)
+    {
+        LOG_ERROR << "scene not found";
+        return;
+    }
+    const auto hex = tls.registry.try_get<Hex>(player);
+    if (nullptr == hex)
+    {
+        return;
+    }
+    const auto grid_id = GetGridId(*hex);
+    GridSet leave_grid_set;
+    ScanNeighborGridId(*hex, leave_grid_set);
+
+    
+    
+    auto& grid_list =
+        tls.scene_registry.get<SceneGridList>(scene_entity->scene_entity_);
+    LeaveGrid(*hex, grid_list, player);
+}
+
+void AoiSystem::LeaveGrid(const Hex& hex, SceneGridList& grid_list, entt::entity player)
+{
+    const auto grid_id_old = GetGridId(hex);
+    grid_list[grid_id_old].entity_list_.erase(player);
+    if (grid_list[grid_id_old].entity_list_.empty())
+    {
+        grid_list.erase(grid_id_old);
+    }
 }
