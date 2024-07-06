@@ -1,15 +1,21 @@
 #pragma once
 
-#include <unordered_map>
-#include <absl/hash/hash.h>
-#include <absl/numeric/int128.h>
-
 #include "type_define/type_define.h"
 
 class HexagonsGrid
 {
 public:
-    EntitySet entity_list_;
+    EntitySet entity_list;
+};
+
+struct WatcherList
+{
+    UInt128Set watcher_list;
+};
+
+struct MarkerList
+{
+    UInt128Set marker_list;
 };
 
 using GridKey = absl::uint128;

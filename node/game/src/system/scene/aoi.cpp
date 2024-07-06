@@ -36,7 +36,7 @@ void AoiSystem::Update(double delta)
         if (!tls.registry.any_of<Hex>(player))
         {
             ScanNeighborGridId(hex,enter_grid_set);
-            grid_list[grid_id].entity_list_.emplace(player);
+            grid_list[grid_id].entity_list.emplace(player);
             tls.registry.emplace<Hex>(player, hex);
         }
         else
@@ -73,7 +73,7 @@ void AoiSystem::Update(double delta)
                 ScanNeighborGridId(hex, enter_grid_set);
             }
            
-            grid_list[grid_id].entity_list_.emplace(player);
+            grid_list[grid_id].entity_list.emplace(player);
             tls.registry.remove<Hex>(player);
             tls.registry.emplace<Hex>(player, hex);
 
@@ -138,8 +138,8 @@ void  AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 void AoiSystem::LeaveGrid(const Hex& hex, SceneGridList& grid_list, entt::entity player)
 {
     const auto grid_id_old = GetGridId(hex);
-    grid_list[grid_id_old].entity_list_.erase(player);
-    if (grid_list[grid_id_old].entity_list_.empty())
+    grid_list[grid_id_old].entity_list.erase(player);
+    if (grid_list[grid_id_old].entity_list.empty())
     {
         grid_list.erase(grid_id_old);
     }
