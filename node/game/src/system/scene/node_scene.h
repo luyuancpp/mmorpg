@@ -7,6 +7,8 @@
 struct EnterSceneParam;
 struct CreateGameNodeSceneParam;
 class OnSceneCreate;
+class AfterEnterScene;
+class BeforeLeaveScene;
 
 class GameNodeSceneSystem
 {
@@ -18,4 +20,7 @@ public:
     static void RegisterSceneToCentre();
     static void RegisterSceneToCentre(entt::entity scene);
     static void OnSceneCreateHandler(const OnSceneCreate& message);
+    static void AfterEnterSceneHandler(const AfterEnterScene& message);
+    static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
+private:
 };

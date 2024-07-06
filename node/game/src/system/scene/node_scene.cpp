@@ -7,6 +7,7 @@
 #include "mainscene_config.h"
 #include "scene_config.h"
 
+#include "DetourCrowd/DetourCrowd.h"
 #include "game_node.h"
 #include "network/message_system.h"
 #include "service/centre_scene_service.h"
@@ -18,6 +19,7 @@
 #include "event_proto/scene_event.pb.h"
 #include "comp/scene/grid.h"
 #include "constants/scene.h"
+#include "comp/scene.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "constants_proto/node.pb.h"
@@ -100,4 +102,16 @@ void GameNodeSceneSystem::OnSceneCreateHandler(const OnSceneCreate& message)
 {
     entt::entity scene = entt::to_entity(message.entity());
     tls.scene_registry.emplace<SceneGridList>(scene);
+    tls.scene_registry.emplace<dtCrowd>(scene);
 }
+
+void GameNodeSceneSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
+{
+   
+}
+
+void GameNodeSceneSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
+{
+   
+}
+

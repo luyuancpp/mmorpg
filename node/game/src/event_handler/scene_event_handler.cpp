@@ -5,6 +5,7 @@
 #include "muduo/base/Logging.h"
 #include "system/scene/aoi.h"
 #include "system/scene/node_scene.h"
+#include "system/scene/scene_crowd.h"
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register()
 {
@@ -50,12 +51,16 @@ void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& message)
 void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	//GameNodeSceneSystem::AfterEnterSceneHandler(message);
+	SceneCrowdSystem::AfterEnterSceneHandler(message);
 ///<<< END WRITING YOUR CODE
 }
 
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	//GameNodeSceneSystem::BeforeLeaveSceneHandler(message);
+	SceneCrowdSystem::BeforeLeaveSceneHandler(message);
 	AoiSystem::BeforeLeaveSceneHandler(message);
 ///<<< END WRITING YOUR CODE
 }
