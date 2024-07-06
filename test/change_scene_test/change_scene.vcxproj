@@ -111,7 +111,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../../pkg/common/src/;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../;../../pkg/pbc/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/logic/src/;../../pkg/pbc/src/;../../node/centre/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <DisableSpecificWarnings>4819;4267;4244;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4819;4267;4244;4018;</DisableSpecificWarnings>
       <TreatWarningAsError>false</TreatWarningAsError>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
