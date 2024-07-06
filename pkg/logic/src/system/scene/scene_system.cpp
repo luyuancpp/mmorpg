@@ -115,12 +115,12 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 	tls.scene_registry.emplace<ScenePlayers>(scene);
 
 	if (auto* server_player_info
-		= tls.game_node_registry.try_get<GameNodePlayerInfoPtr>(param.node_))
+		= tls.game_node_registry.try_get<GameNodePlayerInfoPtr>(param.node))
 	{
 		tls.scene_registry.emplace<GameNodePlayerInfoPtr>(scene, *server_player_info);
 	}
 
-	if (auto* p_server_comp = tls.game_node_registry.try_get<ServerComp>(param.node_);
+	if (auto* p_server_comp = tls.game_node_registry.try_get<ServerComp>(param.node);
 		nullptr != p_server_comp)
 	{
 		p_server_comp->AddScene(scene);
@@ -139,17 +139,17 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 		return;
 	}
 	// todo 人得换场景
-	auto* p_server_comp = tls.game_node_registry.try_get<ServerComp>(param.node_);
+	auto* p_server_comp = tls.game_node_registry.try_get<ServerComp>(param.node);
 	if (nullptr == p_server_comp)
 	{
 		return;
 	}
 	
 	OnDestroyScene destroy_scene_event;
-	destroy_scene_event.set_entity(entt::to_integral(param.scene_));
+	destroy_scene_event.set_entity(entt::to_integral(param.scene));
 	tls.dispatcher.trigger(destroy_scene_event);
 	
-	p_server_comp->RemoveScene(param.scene_);
+	p_server_comp->RemoveScene(param.scene);
 }
 
 void ScenesSystem::OnDestroyServer(entt::entity node)
@@ -169,16 +169,16 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 
 uint32_t ScenesSystem::CheckEnterScene(const EnterSceneParam& param)
 {
-	if (!tls.scene_registry.valid(param.scene_))
+	if (!tls.scene_registry.valid(param.scene))
 	{
 		return kRetCheckEnterSceneSceneParam;
 	}
-	auto scene_info = tls.scene_registry.try_get<SceneInfo>(param.scene_);
+	auto scene_info = tls.scene_registry.try_get<SceneInfo>(param.scene);
 	if (nullptr == scene_info)
 	{
         return kRetCheckEnterSceneSceneParam;
 	}
-	if (scene_info->creators().find(tls.registry.get<Guid>(param.player_)) == 
+	if (scene_info->creators().find(tls.registry.get<Guid>(param.enter)) == 
 		scene_info->creators().end())
 	{
 		return kRetCheckEnterSceneCreator;
@@ -215,19 +215,19 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	}
 
 	BeforeEnterScene before_enter_scene_event;
-	before_enter_scene_event.set_entity(entt::to_integral(param.player_));
+	before_enter_scene_event.set_entity(entt::to_integral(param.enter));
 	tls.dispatcher.trigger(before_enter_scene_event);
 
-	tls.scene_registry.get<ScenePlayers>(param.scene_).emplace(param.player_);
-	tls.registry.emplace<SceneEntity>(param.player_, param.scene_);
+	tls.scene_registry.get<ScenePlayers>(param.scene).emplace(param.enter);
+	tls.registry.emplace<SceneEntity>(param.enter, param.scene);
 	// todo weak_ptr ?
-	if (const auto* const game_player_info = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
+	if (const auto* const game_player_info = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(param.scene))
 	{
 		(*game_player_info)->set_player_size((*game_player_info)->player_size() + 1);
 	}
 
 	AfterEnterScene on_enter_scene_event;
-	on_enter_scene_event.set_entity(entt::to_integral(param.player_));
+	on_enter_scene_event.set_entity(entt::to_integral(param.enter));
 	tls.dispatcher.trigger(on_enter_scene_event);
 }
 
@@ -239,7 +239,7 @@ void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param)
 		return;
 	}
 	const auto default_scene = NodeSceneSystem::GetNotFullScene({});
-	EnterScene({default_scene, param.player_});
+	EnterScene({default_scene, param.enter});
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
@@ -249,20 +249,20 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 		LOG_ERROR << "entity null";
 		return;
 	}
-	if (nullptr == tls.registry.try_get<SceneEntity>(param.leaver_))
+	if (nullptr == tls.registry.try_get<SceneEntity>(param.leaver))
 	{
 		LOG_ERROR << "leave scene empty";
 		return;
 	}
 
-	const auto scene = tls.registry.get<SceneEntity>(param.leaver_).scene_entity_;
+	const auto scene = tls.registry.get<SceneEntity>(param.leaver).scene_entity;
 
 	BeforeLeaveScene before_leave_scene_event;
-	before_leave_scene_event.set_entity(entt::to_integral(param.leaver_));
+	before_leave_scene_event.set_entity(entt::to_integral(param.leaver));
 	tls.dispatcher.trigger(before_leave_scene_event);
 
-	tls.scene_registry.get<ScenePlayers>(scene).erase(param.leaver_);
-	tls.registry.remove<SceneEntity>(param.leaver_);
+	tls.scene_registry.get<ScenePlayers>(scene).erase(param.leaver);
+	tls.registry.remove<SceneEntity>(param.leaver);
 
 	if (const auto* const game_player_info = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(scene))
 	{
@@ -270,7 +270,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 	}
 
 	AfterLeaveScene on_leave_scene_event;
-	on_leave_scene_event.set_entity(entt::to_integral(param.leaver_));
+	on_leave_scene_event.set_entity(entt::to_integral(param.leaver));
 	tls.dispatcher.trigger(on_leave_scene_event);
 }
 
@@ -280,7 +280,7 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 	entt::entity scene_entity = dest_node_scene.GetMinPlayerSizeSceneByConfigId(param.scene_conf_id_);
 	if (entt::null == scene_entity)
 	{
-		CreateGameNodeSceneParam p{ .node_ = param.dest_node_ };
+		CreateGameNodeSceneParam p{ .node = param.dest_node_ };
 		p.scene_info.set_scene_confid(param.scene_conf_id_);
 		scene_entity = CreateScene2GameNode(p);
 	}
@@ -305,7 +305,7 @@ void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest
 			{
 				continue;
 			}
-			CreateGameNodeSceneParam p{ .node_ = dest_node };
+			CreateGameNodeSceneParam p{ .node = dest_node };
 			p.scene_info.set_scene_confid(p_scene_info->scene_confid());
 			CreateScene2GameNode(p);
 		}

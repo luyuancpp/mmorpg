@@ -42,8 +42,8 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     {
         //但是进不去
         if (kRetOK == ScenesSystem::CheckEnterScene(
-            { .scene_ = scene_id, 
-            .player_ = player }))
+            { .scene = scene_id, 
+            .enter = player }))
         {
             can_enter_scene = true;
         }
@@ -51,8 +51,8 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     else if (tls.scene_registry.valid(scene_id_last_time))
     {
         if (kRetOK == ScenesSystem::CheckEnterScene(
-            { .scene_ = scene_id_last_time, 
-            .player_ = player }))
+            { .scene = scene_id_last_time, 
+            .enter = player }))
         {
             can_enter_scene_last_time = true;
         }
@@ -114,7 +114,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
 
-    const auto scene_info = tls.scene_registry.try_get<SceneInfo>((*p_scene).scene_entity_);
+    const auto scene_info = tls.scene_registry.try_get<SceneInfo>((*p_scene).scene_entity);
     if (nullptr == scene_info)
     {
         LOG_ERROR << "scene info " << player_id;
@@ -199,7 +199,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-    const auto from_scene_info = tls.scene_registry.try_get<SceneInfo>(from_scene->scene_entity_);
+    const auto from_scene_info = tls.scene_registry.try_get<SceneInfo>(from_scene->scene_entity);
     if (nullptr == from_scene_info)
     {
         return;
