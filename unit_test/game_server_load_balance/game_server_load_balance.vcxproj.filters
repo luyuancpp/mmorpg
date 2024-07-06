@@ -24,7 +24,7 @@
     <ClCompile Include="..\..\pkg\logic\src\system\scene\node_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pkg\common\src\thread_local\thread_local_storage.cpp">
+    <ClCompile Include="..\..\pkg\common\src\thread_local\storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\pkg\pbc\src\event_proto\scene_event.pb.cc">
@@ -39,7 +39,7 @@
     <ClCompile Include="..\..\pkg\common\src\util\game_registry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pkg\common\src\thread_local\thread_local_storage_common_logic.cpp">
+    <ClCompile Include="..\..\pkg\common\src\thread_local\storage_common_logic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\pkg\pbc\src\common_proto\node_common.pb.cc">
@@ -53,7 +53,7 @@
     <ClInclude Include="..\..\pkg\logic\src\system\scene\node_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pkg\common\src\thread_local\thread_local_storage.h">
+    <ClInclude Include="..\..\pkg\common\src\thread_local\storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\pkg\pbc\src\event_proto\scene_event.pb.h">
@@ -68,7 +68,7 @@
     <ClInclude Include="..\..\pkg\common\src\util\game_registry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pkg\common\src\thread_local\thread_local_storage_common_logic.h">
+    <ClInclude Include="..\..\pkg\common\src\thread_local\storage_common_logic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\pkg\pbc\src\common_proto\node_common.pb.h">
