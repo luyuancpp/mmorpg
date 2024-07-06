@@ -53,8 +53,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
     ap.separationWeight = kSeparationWeight;
     dtReal p[] = { transform->localtion().x(), transform->localtion().y(), transform->localtion().z() };
     int idx = dt_crowd->addAgent(p, ap, nullptr);
-   
-}
+} 
 
 void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {

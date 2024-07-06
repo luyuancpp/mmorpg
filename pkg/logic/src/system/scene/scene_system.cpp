@@ -12,7 +12,7 @@
 #include "component_proto/gs_node_comp.pb.h"
 #include "event_proto/scene_event.pb.h"
 
-static constexpr std::size_t kMaxMainScenePlayer = 1000;
+static constexpr std::size_t kMaxScenePlayer = 1000;
 
 using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
@@ -189,7 +189,7 @@ uint32_t ScenesSystem::CheckEnterScene(const EnterSceneParam& param)
 uint32_t ScenesSystem::CheckScenePlayerSize(const entt::entity scene)
 {
 	//todo weak ptr ?
-	if (tls.scene_registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
+	if (tls.scene_registry.get<ScenePlayers>(scene).size() >= kMaxScenePlayer)
 	{
 		return kRetEnterSceneNotFull;
 	}
