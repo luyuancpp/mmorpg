@@ -58,7 +58,7 @@ void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,
 
 void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,
 	const ::SceneInfoRequest* request,
-	::SceneInfoResponse* response)
+	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     SceneInfoRequest rq;
@@ -68,6 +68,22 @@ void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,
 
 void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,
 	const ::SceneInfoS2C* request,
+	::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ClientPlayerSceneServiceHandler::PushActorCreateS2C(entt::entity player,
+	const ::ActorCreateS2C* request,
+	::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ClientPlayerSceneServiceHandler::PushActorDestroyS2C(entt::entity player,
+	const ::ActorDestroyS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
