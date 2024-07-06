@@ -13,7 +13,7 @@ void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController*
 	for (auto&& scene_info : request->scenes_info())
 	{
 		ScenesSystem::CreateScene2GameNode(
-			{ .node_ = entt::entity{request->game_node_id()}, .scene_info = scene_info });
+			{ .node = entt::entity{request->game_node_id()}, .scene_info = scene_info });
 	}
 ///<<< END WRITING YOUR CODE
 }

@@ -52,7 +52,7 @@ void GameNodeSceneSystem::InitNodeScene()
     const auto& main_scene_conf = mainscene_config::GetSingleton().all();
     for (auto& it : main_scene_conf.data())
     {
-        CreateGameNodeSceneParam p{ .node_ = entt::entity{g_game_node->GetNodeId()} };
+        CreateGameNodeSceneParam p{ .node = entt::entity{g_game_node->GetNodeId()} };
         p.scene_info.set_scene_confid(it.id());
         ScenesSystem::CreateScene2GameNode(p);
     }
@@ -61,9 +61,9 @@ void GameNodeSceneSystem::InitNodeScene()
 void GameNodeSceneSystem::EnterScene(const EnterSceneParam& param)
 {
     ScenesSystem::EnterScene(param);
-    if (tls.registry.any_of<Player>(param.player_))
+    if (tls.registry.any_of<Player>(param.enter))
     {
-        PlayerSceneSystem::OnEnterScene(param.player_, param.scene_);
+        PlayerSceneSystem::OnEnterScene(param.enter, param.scene);
     }
     else
     {
@@ -72,7 +72,7 @@ void GameNodeSceneSystem::EnterScene(const EnterSceneParam& param)
 
 void GameNodeSceneSystem::LeaveScene(entt::entity leaver)
 {
-    ScenesSystem::LeaveScene({.leaver_= leaver });
+    ScenesSystem::LeaveScene({.leaver= leaver });
 }
 
 void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)

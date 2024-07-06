@@ -43,11 +43,11 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
-	NodeRouteMessageRequest request;
-	request.mutable_body()->set_message_id(message_id);
-	request.mutable_body()->set_body(message.SerializeAsString());
-	request.mutable_head()->set_session_id(player_node_info->gate_session_id());
-	(*gate_node)->Send(GateServicePlayerMessageMsgId, request);
+	NodeRouteMessageRequest rq;
+	rq.mutable_body()->set_message_id(message_id);
+	rq.mutable_body()->set_body(message.SerializeAsString());
+	rq.mutable_head()->set_session_id(player_node_info->gate_session_id());
+	(*gate_node)->Send(GateServicePlayerMessageMsgId, rq);
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
@@ -171,7 +171,7 @@ void BroadCast2Player(const std::set<entt::entity>& player_list,
 		gate_info_list[gate_node_id].emplace(player_node_info->gate_session_id());
 	}
   
-	BroadCast2PlayerRequest request;
+	BroadCast2PlayerRequest rq;
 	for (auto&& [gate_node_id, session_id_list] : gate_info_list)
 	{
         const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
@@ -180,12 +180,12 @@ void BroadCast2Player(const std::set<entt::entity>& player_list,
 			LOG_ERROR << "gate not found ";
             continue;
         }
-        request.mutable_body()->set_message_id(message_id);
-        request.mutable_body()->set_body(message.SerializeAsString());
+        rq.mutable_body()->set_message_id(message_id);
+        rq.mutable_body()->set_body(message.SerializeAsString());
 		for (auto&& session_id : session_id_list)
 		{
-			request.mutable_session_list()->Add(session_id);
+			rq.mutable_session_list()->Add(session_id);
 		}
-        (*gate_node)->Send(GateServiceBroadCast2PlayerMessageMsgId, request);
+        (*gate_node)->Send(GateServiceBroadCast2PlayerMessageMsgId, rq);
 	}
 }

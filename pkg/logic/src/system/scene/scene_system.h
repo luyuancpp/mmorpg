@@ -10,41 +10,41 @@ struct EnterSceneParam
 {
 	inline bool CheckValid() const
 	{
-		return scene_ == entt::null || player_ == entt::null;
+		return scene == entt::null || enter == entt::null;
 	}
 
-	entt::entity scene_{entt::null};
-	entt::entity player_{entt::null};
+	entt::entity scene{entt::null};
+	entt::entity enter{entt::null};
 };
 
 struct EnterDefaultSceneParam
 {
 	inline bool CheckValid() const
 	{
-		return player_ == entt::null;
+		return enter == entt::null;
 	}
 
-	entt::entity player_{entt::null};
+	entt::entity enter{entt::null};
 };
 
 struct LeaveSceneParam
 {
 	inline bool CheckValid() const
 	{
-		return leaver_ == entt::null;
+		return leaver == entt::null;
 	}
 
-	entt::entity leaver_{entt::null};
+	entt::entity leaver{entt::null};
 };
 
 struct CreateGameNodeSceneParam
 {
 	inline bool CheckValid() const
 	{
-		return node_ == entt::null;
+		return node == entt::null;
 	}
 
-	entt::entity node_{entt::null};
+	entt::entity node{entt::null};
 	SceneInfo scene_info;
 };
 
@@ -52,10 +52,10 @@ struct DestroySceneParam
 {
 	inline bool CheckValid() const
 	{
-		return node_ == entt::null || scene_ == entt::null;
+		return node == entt::null || scene == entt::null;
 	}
-    entt::entity node_{ entt::null };
-    entt::entity scene_{ entt::null };
+    entt::entity node{ entt::null };
+    entt::entity scene{ entt::null };
 };
 
 void AddMainSceneNodeComponent(entt::registry& reg, entt::entity server);
