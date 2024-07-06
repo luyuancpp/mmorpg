@@ -21,45 +21,9 @@
     <ClCompile Include="..\..\node\centre\src\system\player_change_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pkg\common\src\thread_local\storage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pkg\logic\src\system\scene\node_scene_system.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pkg\logic\src\system\scene\scene_system.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pkg\pbc\src\component_proto\player_network_comp.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pkg\pbc\src\component_proto\scene_comp.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pkg\pbc\src\event_proto\scene_event.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\node\centre\src\system\player_change_scene.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pkg\common\src\thread_local\storage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pkg\logic\src\system\scene\node_scene_system.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pkg\logic\src\system\scene\scene_system.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pkg\pbc\src\component_proto\player_network_comp.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pkg\pbc\src\component_proto\scene_comp.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pkg\pbc\src\event_proto\scene_event.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
