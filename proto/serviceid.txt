@@ -42,8 +42,10 @@
 44=GameServiceCreateScene
 45=CentreServiceRoutePlayerStringMsg
 46=GamePlayerSceneServiceEnterScene
+47=ClientPlayerSceneServicePushActorCreateS2C
 48=GameSceneServiceTest
 49=ClientPlayerTeamServiceTeamInfoNotify
+50=ClientPlayerSceneServicePushActorDestroyS2C
 51=LoginServiceLeaveGame
 52=LoginServiceEnterGame
 54=CentreServiceOnLoginEnterGame
