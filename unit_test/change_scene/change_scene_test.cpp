@@ -5,7 +5,7 @@
 #include "muduo/base/Timestamp.h"
 
 #include "type_define/type_define.h"
-#include "thread_local/thread_local_storage.h"
+#include "thread_local/storage.h"
 #include "constants/tips_id.h"
 #include "system/player_change_scene.h"
 #include "system/scene/scene_system.h"

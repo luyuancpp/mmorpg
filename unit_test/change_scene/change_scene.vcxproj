@@ -106,7 +106,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../../pkg/common/src/;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../;../../pkg/pbc/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/logic/src/;../../pkg/pbc/src/;../../node/centre/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <DisableSpecificWarnings>4819</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4819;4267;4244;</DisableSpecificWarnings>
       <TreatWarningAsError>false</TreatWarningAsError>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -136,7 +136,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\node\centre\src\system\player_change_scene.cpp" />
-    <ClCompile Include="..\..\pkg\common\src\thread_local\thread_local_storage.cpp" />
+    <ClCompile Include="..\..\pkg\common\src\thread_local\storage.cpp" />
     <ClCompile Include="..\..\pkg\logic\src\system\scene\node_scene_system.cpp" />
     <ClCompile Include="..\..\pkg\logic\src\system\scene\scene_system.cpp" />
     <ClCompile Include="..\..\pkg\pbc\src\component_proto\player_network_comp.pb.cc" />
@@ -146,7 +146,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\node\centre\src\system\player_change_scene.h" />
-    <ClInclude Include="..\..\pkg\common\src\thread_local\thread_local_storage.h" />
+    <ClInclude Include="..\..\pkg\common\src\thread_local\storage.h" />
     <ClInclude Include="..\..\pkg\logic\src\system\scene\node_scene_system.h" />
     <ClInclude Include="..\..\pkg\logic\src\system\scene\scene_system.h" />
     <ClInclude Include="..\..\pkg\pbc\src\component_proto\player_network_comp.pb.h" />
