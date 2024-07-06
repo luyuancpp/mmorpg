@@ -24,6 +24,7 @@
     <ProjectGuid>{96c26f40-ae31-4e5b-8318-f6d183ad8185}</ProjectGuid>
     <RootNamespace>changescene</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>change_scene_test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -24,7 +24,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{7cbe473e-e7f7-46b4-8444-b6db0aa147c6}</ProjectGuid>
+    <ProjectGuid>{33AAE8BA-41BB-4F7E-834E-9E7DCEBFE350}</ProjectGuid>
     <RootNamespace>gameserverloadbalance</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>scene_test</ProjectName>

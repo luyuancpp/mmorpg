@@ -24,7 +24,7 @@
     <ProjectGuid>{8d72197c-e232-4c9e-a24a-0c31da625d3f}</ProjectGuid>
     <RootNamespace>serversequence</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>node_sequence</ProjectName>
+    <ProjectName>node_sequence_test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
