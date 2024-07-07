@@ -38,7 +38,7 @@ message SceneInfoResponse
   repeated SceneInfo scene_info = 1;
 }
 
-message ActorCreateInfo
+message ActorCreateS2C
 {
 	uint64 entity = 1;
 	Transform transform = 2;
@@ -47,14 +47,9 @@ message ActorCreateInfo
 	uint64 config_id = 5;
 }
 
-message ActorCreateS2C
-{
-	repeated ActorCreateInfo actor_list = 1;
-}
-
 message ActorDestroyS2C
 {
-	repeated uint64 actor_list = 1;
+	uint64 entity = 1;
 }
 
 service ClientPlayerSceneService 

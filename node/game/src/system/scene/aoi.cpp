@@ -7,6 +7,8 @@
 #include "component_proto/npc_comp.pb.h"
 #include "event_proto/scene_event.pb.h"
 #include "muduo/base/Logging.h"
+#include "network/message_system.h"
+#include "service/scene_client_player_service.h"
 #include "system/scene/hexagons_grid.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
@@ -21,17 +23,18 @@ void AoiSystem::Update(double delta)
     GridSet leave_grid_set;
     GridSet copy_leaver_grid_set;
     GridSet copy_enter_grid_set;
-    EntitySet enter_player_set;
-    EntitySet leave_player_set;
-    for (auto&& [entrant, transform, player_scene] : tls.registry.view<Transform, SceneEntity>().each())
+    EntitySet observer_entrant_player_set;
+    EntitySet observer_leave_player_set;
+    for (auto&& [mover, transform, player_scene] : tls.registry.view<Transform, SceneEntity>().each())
     {
         if (!tls.scene_registry.valid(player_scene.scene_entity))
         {
-            LOG_ERROR << "scene not found " << tls.registry.get<Guid>(entrant);
+            LOG_ERROR << "scene not found " << tls.registry.get<Guid>(mover);
             continue;
         }
         enter_grid_set.clear();
         leave_grid_set.clear();
+        observer_entrant_player_set.clear();
         
         auto& grid_list = tls.scene_registry.get<SceneGridList>(player_scene.scene_entity);
         const auto hex =
@@ -39,16 +42,16 @@ void AoiSystem::Update(double delta)
         const auto grid_id = GetGridId(hex);
        
         // 计算格子差
-        if (!tls.registry.any_of<Hex>(entrant))
+        if (!tls.registry.any_of<Hex>(mover))
         {
             // 新进入
             ScanNeighborGridId(hex,enter_grid_set);
-            grid_list[grid_id].entity_list.emplace(entrant);
-            tls.registry.emplace<Hex>(entrant, hex);
+            grid_list[grid_id].entity_list.emplace(mover);
+            tls.registry.emplace<Hex>(mover, hex);
         }
         else
         {
-            const auto& hex_old = tls.registry.get<Hex>(entrant);
+            const auto& hex_old = tls.registry.get<Hex>(mover);
             if (const auto distance = hex_distance(hex_old, hex);
                 distance == 0)
             {
@@ -80,11 +83,11 @@ void AoiSystem::Update(double delta)
                 ScanNeighborGridId(hex, enter_grid_set);
             }
            
-            grid_list[grid_id].entity_list.emplace(entrant);
-            tls.registry.remove<Hex>(entrant);
-            tls.registry.emplace<Hex>(entrant, hex);
+            grid_list[grid_id].entity_list.emplace(mover);
+            tls.registry.remove<Hex>(mover);
+            tls.registry.emplace<Hex>(mover, hex);
 
-            LeaveGrid(hex_old, grid_list, entrant);
+            LeaveGrid(hex_old, grid_list, mover);
         }
 
         // 计算可以看到的人，并填充网络包
@@ -98,56 +101,49 @@ void AoiSystem::Update(double delta)
                 continue;
             }
             
-            //npc 
-            for (const auto& observer_entity_list = grid_list[grid].entity_list;
-                auto& observer : observer_entity_list)
+            //npc
+            const auto& observer_list = grid_list[grid].entity_list;
+            for (auto& observer : observer_list)
             {
-                if (!tls.registry.any_of<Npc>(entrant))
+                if (!tls.registry.any_of<Npc>(mover))
                 {
                     continue;
                 }
-                if (!ViewSystem::CheckSendNpcEnterMessage(observer, entrant))
+                if (!ViewSystem::CheckSendNpcEnterMessage(observer, mover))
                 {
                     continue;
                 }
-                ViewSystem::FillActorCreateS2CInfo(entrant);
+                ViewSystem::FillActorCreateS2CInfo(mover);
+                observer_entrant_player_set.emplace(observer);
             }
             //玩家进入视野
-            for (const auto& observer_entity_list = grid_list[grid].entity_list;
-               auto& observer : observer_entity_list)
+            for (auto& observer : observer_list)
             {
-                if (tls.registry.any_of<Npc>(entrant))
+                if (tls.registry.any_of<Npc>(mover))
                 {
                     continue;
                 }
-                if (!ViewSystem::CheckSendPlayerEnterMessage(observer, entrant))
+                if (!ViewSystem::CheckSendPlayerEnterMessage(observer, mover))
                 {
                     continue;
                 }
-                ViewSystem::FillActorCreateS2CInfo(entrant);
+                ViewSystem::FillActorCreateS2CInfo(mover);
+                observer_entrant_player_set.emplace(observer);
             }
         }
+        BroadCast2Player(observer_entrant_player_set, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
 
-        for (auto& grid : enter_grid_set)
-        {
-            //todo remove
-            if (!grid_list.contains(grid))
-            {
-                LOG_ERROR << "grid not found";
-                continue;
-            }
-            for (auto&& other_entity_list = grid_list[grid].entity_list;
-                auto& other_player : other_entity_list)
-            {
-                ViewSystem::CheckSendNpcEnterMessage(entrant, other_player);
-                ViewSystem::CheckSendNpcEnterMessage(other_player, entrant);
-            }
-        }
-
+        tls_actor_destroy_s2c.Clear();
+        tls_actor_destroy_s2c.set_entity(entt::to_integral(mover));
         for (auto& grid : leave_grid_set)
         {
-           
+            for (const auto& observer_list = grid_list[grid].entity_list;
+                auto& observer : observer_list)
+            {
+                observer_leave_player_set.emplace(observer);
+            }
         }
+        BroadCast2Player(observer_leave_player_set, ClientPlayerSceneServicePushActorDestroyS2CMsgId, tls_actor_destroy_s2c);
     }
 }
 

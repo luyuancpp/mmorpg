@@ -1,3 +1,3 @@
 ﻿#pragma once
 
-constexpr double kViewRadius = 10;
+constexpr double kMaxViewRadius = 10;
