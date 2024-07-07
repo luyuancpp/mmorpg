@@ -49,9 +49,6 @@ private:
     static void InitGameConfig();
     static void InitTimeZone();
     
-    static void InitSystemBeforeConnect();
-    static void InitSystemAfterConnect();
-
     inline NodeId GetNodeConfIndex()const { return GetNodeId() - 1; }
 
     muduo::net::EventLoop* loop_{ nullptr };

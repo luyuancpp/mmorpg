@@ -9,7 +9,7 @@ void MovementAccelerationSystem::Update(double delta)
     auto view = tls.registry.view <Transform, Velocity, Acceleration>();
     for (auto&& [e, transform, velocity, acceleration] : view.each())
     {
-        auto& location = *transform.mutable_localtion();
+        auto& location = *transform.mutable_location();
         location.set_x(location.x() + (velocity.x() + acceleration.x()) * delta);
         location.set_y(location.y() + (velocity.y() + acceleration.y()) * delta);
         location.set_z(location.z() + (velocity.z() + acceleration.z()) * delta);

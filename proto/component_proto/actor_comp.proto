@@ -26,7 +26,7 @@ message Scale
 
 message Transform
 {
-	Location localtion = 1;
+	Location location = 1;
 	Rotation rotation = 2;
 	Scale scale = 3;
 }
