@@ -3,11 +3,13 @@
 #include <ctime>
 
 #include "constants/frame.h"
-#include "thread_local/storage_game.h"
 #include "Recast/Recast.h"
+#undef  TEXT
+#include "system/player/player_session.h"
 #include "system/scene/aoi.h"
 #include "system/scene/movement.h"
 #include "system/scene/movement_acceleration.h"
+#include "thread_local/storage_game.h"
 
 #include "component_proto/frame_comp.pb.h"
 
@@ -18,18 +20,24 @@ uint64_t GetTime(void)
     return duration_cast<std::chrono::milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
-void World::Init()
+void World::InitSystemBeforeConnect()
 {
     tls_game.frame_time_.set_previous_time(GetTime());
     tls_game.frame_time_.set_target_fps(kTargetFPS);
     tls_game.frame_time_.set_delta_time(1.0 / tls_game.frame_time_.target_fps());
+    
+    PlayerSessionSystem::Init();
+}
+
+void World::InitSystemAfterConnect()
+{
 }
 
 void World::Update()
 {
     //https://github.com/recastnavigation/recastnavigation.git
-    auto time = GetTime();
-    double dt = (time - tls_game.frame_time_.previous_time()) / 1000.0;
+    const auto time = GetTime();
+    const double dt = (time - tls_game.frame_time_.previous_time()) / 1000.0;
     tls_game.frame_time_.set_previous_time(time);
 
     auto time_acc = rcClamp(tls_game.frame_time_.time_acc() + dt, -1.0f, 1.0f);

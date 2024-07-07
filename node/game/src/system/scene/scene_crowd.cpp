@@ -51,7 +51,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
     ap.updateFlags |= DT_CROWD_SEPARATION;
     ap.obstacleAvoidanceType = kObstacleAvoidanceType;
     ap.separationWeight = kSeparationWeight;
-    dtReal p[] = { transform->localtion().x(), transform->localtion().y(), transform->localtion().z() };
+    dtReal p[] = { transform->location().x(), transform->location().y(), transform->location().z() };
     int idx = dt_crowd->addAgent(p, ap, nullptr);
 } 
 

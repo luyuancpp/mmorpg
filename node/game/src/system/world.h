@@ -3,6 +3,7 @@
 class World
 {
 public:
-    static void Init();
+    static void InitSystemBeforeConnect();
+    static void InitSystemAfterConnect();
     static void Update();
 };

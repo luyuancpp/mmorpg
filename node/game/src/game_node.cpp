@@ -20,7 +20,6 @@
 #include "network/rpc_session.h"
 #include "replied_handler/player_service_replied.h"
 #include "service/service.h"
-#include "system/player/player_session.h"
 #include "system/config/config_system.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
@@ -74,7 +73,7 @@ void GameNode::Init()
     InitPlayerServiceReplied();
     void InitServiceHandler();
     InitServiceHandler();
-    InitSystemBeforeConnect();
+    World::InitSystemBeforeConnect();
 
     InitNodeByReqInfo();
 }
@@ -144,13 +143,13 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     server_->start();
 
     Connect2Centre();
-    InitSystemAfterConnect();
+    World::InitSystemAfterConnect();
 
     deploy_rpc_timer_.Cancel();
 
     tls.dispatcher.trigger<OnServerStart>();
 
-    World::Init();
+    
     world_timer_.RunEvery(tls_game.frame_time_.delta_time(), World::Update);
     LOG_INFO << "game node  start " << GetNodeConf().DebugString();
 }
@@ -256,14 +255,4 @@ void GameNode::Connect2Centre()
             zone_centre_node_ = centre_node;
         }
     }
-}
-
-void GameNode::InitSystemBeforeConnect()
-{
-    PlayerSessionSystem::Init();
-}
-
-void GameNode::InitSystemAfterConnect()
-{
-
 }
