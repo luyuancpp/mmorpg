@@ -25,6 +25,7 @@ void AoiSystem::Update(double delta)
     GridSet copy_enter_grid_set;
     EntitySet observer_entrant_player_set;
     EntitySet observer_leave_player_set;
+
     for (auto&& [mover, transform, player_scene] : tls.registry.view<Transform, SceneEntity>().each())
     {
         if (!tls.scene_registry.valid(player_scene.scene_entity))
@@ -35,6 +36,7 @@ void AoiSystem::Update(double delta)
         enter_grid_set.clear();
         leave_grid_set.clear();
         observer_entrant_player_set.clear();
+        observer_leave_player_set.clear();
         
         auto& grid_list = tls.scene_registry.get<SceneGridList>(player_scene.scene_entity);
         const auto hex =
@@ -94,13 +96,6 @@ void AoiSystem::Update(double delta)
         tls_actor_create_s2c.Clear();
         for (const auto& grid : enter_grid_set)
         {
-            //todo remove
-            if (!grid_list.contains(grid))
-            {
-                LOG_ERROR << "grid not found";
-                continue;
-            }
-            
             //npc
             const auto& observer_list = grid_list[grid].entity_list;
             for (auto& observer : observer_list)
@@ -133,17 +128,7 @@ void AoiSystem::Update(double delta)
         }
         BroadCast2Player(observer_entrant_player_set, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
 
-        tls_actor_destroy_s2c.Clear();
-        tls_actor_destroy_s2c.set_entity(entt::to_integral(mover));
-        for (auto& grid : leave_grid_set)
-        {
-            for (const auto& observer_list = grid_list[grid].entity_list;
-                auto& observer : observer_list)
-            {
-                observer_leave_player_set.emplace(observer);
-            }
-        }
-        BroadCast2Player(observer_leave_player_set, ClientPlayerSceneServicePushActorDestroyS2CMsgId, tls_actor_destroy_s2c);
+        BroadCastLeaveGridMessage(grid_list, mover, leave_grid_set);
     }
 }
 
@@ -189,15 +174,30 @@ void  AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
     {
         return;
     }
+    auto& grid_list = tls.scene_registry.get<SceneGridList>(scene_entity->scene_entity);
+
     const auto grid_id = GetGridId(*hex);
     GridSet leave_grid_set;
     ScanNeighborGridId(*hex, leave_grid_set);
 
-    
-    
-    auto& grid_list =
-        tls.scene_registry.get<SceneGridList>(scene_entity->scene_entity);
+    BroadCastLeaveGridMessage(grid_list, player, leave_grid_set);
+
     LeaveGrid(*hex, grid_list, player);
+}
+
+void AoiSystem::UpdateLogGridSize(double delta)
+{
+    for (auto&& [scene, grid_list] : tls.scene_registry.view<SceneGridList>().each())
+    {
+        for (const auto& entity_list : grid_list)
+        {
+            if (entity_list.second.entity_list.empty())
+            {
+                LOG_ERROR << "grid empty not remove" << tls.scene_registry.get<SceneInfo>(scene).guid();
+                continue;
+            }
+        }
+    }
 }
 
 void AoiSystem::LeaveGrid(const Hex& hex, SceneGridList& grid_list, entt::entity player)
@@ -208,4 +208,24 @@ void AoiSystem::LeaveGrid(const Hex& hex, SceneGridList& grid_list, entt::entity
     {
         grid_list.erase(grid_id_old);
     }
+}
+
+void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& grid_list, entt::entity player, const GridSet& leave_grid_set)
+{
+    EntitySet observer_leave_player_set;
+    tls_actor_destroy_s2c.Clear();
+    tls_actor_destroy_s2c.set_entity(entt::to_integral(player));
+    for (auto& grid : leave_grid_set)
+    {
+        auto it = grid_list.find(grid);
+        if (it == grid_list.end())
+        {
+            continue;
+        }
+        for (auto & observer : it->second.entity_list)
+        {
+            observer_leave_player_set.emplace(observer);
+        }
+    }
+    BroadCast2Player(observer_leave_player_set, ClientPlayerSceneServicePushActorDestroyS2CMsgId, tls_actor_destroy_s2c);
 }
