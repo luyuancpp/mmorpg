@@ -19,5 +19,7 @@ public:
     static inline void ScanNeighborGridId(const Hex& hex, GridSet& grid_set);
     static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
 private:
+    static void UpdateLogGridSize(double delta);
     static inline void LeaveGrid(const Hex& hex, SceneGridList& grid_list, entt::entity player);
+    static inline void BroadCastLeaveGridMessage(const SceneGridList& grid_list, entt::entity player, const GridSet& leave_grid_set);
 };
