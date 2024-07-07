@@ -145,8 +145,8 @@ void BroadCastToCentre(uint32_t message_id, const google::protobuf::Message& mes
 	}
 }
 
-void BroadCast2Player(const std::set<entt::entity>& player_list,
-	uint32_t message_id, 
+void BroadCast2Player(const EntitySet& player_list,
+                      const uint32_t message_id, 
 	const google::protobuf::Message& message)
 {
 	std::unordered_map<entt::entity, BroadCastSessionIdList> gate_info_list;

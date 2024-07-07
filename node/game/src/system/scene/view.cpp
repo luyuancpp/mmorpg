@@ -1,6 +1,8 @@
 ﻿#include "view.h"
 
 #include "constants/view.h"
+
+#include "../../../../../pkg/muduo_windows/src/muduo/base/Logging.h"
 #include "client_player_proto/scene_client_player.pb.h"
 #include "component_proto/actor_comp.pb.h"
 #include "component_proto/npc_comp.pb.h"
@@ -12,6 +14,7 @@
 void ViewSystem::Init()
 {
     tls.global_registry.emplace<ActorCreateS2C>(global_entity());
+    tls.global_registry.emplace<ActorDestroyS2C>(global_entity());
 }
 
 bool ViewSystem::CheckSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
@@ -52,24 +55,24 @@ bool ViewSystem::CheckSendPlayerEnterMessage(entt::entity observer, entt::entity
     }
     
     // 如果突然失去视野需要重新刷新视野
-    double view_radius = kViewRadius;
+    double view_radius = kMaxViewRadius;
     if (const auto observer_view_radius = tls.registry.try_get<ViewRadius>(observer);
         nullptr != observer_view_radius)
     {
         view_radius = observer_view_radius->radius();
     }
-    
-    auto observer_transform = tls.registry.try_get<Transform>(observer);
-    auto entrant_transform = tls.registry.try_get<Transform>(entrant);
+
+    const auto observer_transform = tls.registry.try_get<Transform>(observer);
+    const auto entrant_transform = tls.registry.try_get<Transform>(entrant);
     if (nullptr == observer_transform || nullptr == entrant_transform)
     {
         return false;
     }
-    dtReal observer_location[] =
+    
+    const dtReal observer_location[] =
         {observer_transform->location().x(), observer_transform->location().y(), observer_transform->location().z()};
-    dtReal entrant_location[] =
+    const dtReal entrant_location[] =
     {entrant_transform->location().x(), entrant_transform->location().y(), entrant_transform->location().z()};
-
     if (dtVdist(observer_location, entrant_location) > view_radius)
     {
         return false;
@@ -80,18 +83,18 @@ bool ViewSystem::CheckSendPlayerEnterMessage(entt::entity observer, entt::entity
     return true;
 }
 
-void ViewSystem::FillActorCreateS2CInfo(entt::entity entrant)
+void ViewSystem::FillActorCreateS2CInfo(const entt::entity entrant)
 {
-    const auto actor_info = tls_actor_create_s2c.mutable_actor_list()->Add();
-    actor_info->set_entity(entt::to_integral(entrant));
+    auto& actor_info = tls_actor_create_s2c;
+    actor_info.set_entity(entt::to_integral(entrant));
     if (const auto entrant_transform = tls.registry.try_get<Transform>(entrant);
         nullptr != entrant_transform)
     {
-        actor_info->mutable_transform()->CopyFrom(*entrant_transform);
+        actor_info.mutable_transform()->CopyFrom(*entrant_transform);
     }
     if (const auto guid = tls.registry.try_get<Guid>(entrant);
         nullptr != guid)
     {
-        actor_info->set_guid(*guid);
+        actor_info.set_guid(*guid);
     }
 }
