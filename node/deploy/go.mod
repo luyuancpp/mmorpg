@@ -5,10 +5,11 @@ go 1.22.3
 require (
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/luyuancpp/dbprotooption v0.0.4
-	github.com/luyuancpp/pbmysql-go v0.0.8
+	github.com/luyuancpp/pbmysql-go v0.0.10
 	github.com/zeromicro/go-zero v1.6.5
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -81,7 +82,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.29.3 // indirect
 	k8s.io/apimachinery v0.29.4 // indirect
 	k8s.io/client-go v0.29.3 // indirect
