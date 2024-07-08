@@ -108,12 +108,12 @@ func InitDBTable() {
 }
 
 func AlterCreateDBTable() {
-	PbDb.AlterTableAddField(&game.DatabaseNodeDb{})
-	PbDb.AlterTableAddField(&game.LoginNodeDb{})
-	PbDb.AlterTableAddField(&game.CentreNodeDb{})
-	PbDb.AlterTableAddField(&game.RedisNodeDb{})
-	PbDb.AlterTableAddField(&game.GateNodeDb{})
-	PbDb.AlterTableAddField(&game.GameNodeDb{})
+	PbDb.UpdateTableField(&game.DatabaseNodeDb{})
+	PbDb.UpdateTableField(&game.LoginNodeDb{})
+	PbDb.UpdateTableField(&game.CentreNodeDb{})
+	PbDb.UpdateTableField(&game.RedisNodeDb{})
+	PbDb.UpdateTableField(&game.GateNodeDb{})
+	PbDb.UpdateTableField(&game.GameNodeDb{})
 }
 
 func InitDB(path string) {
