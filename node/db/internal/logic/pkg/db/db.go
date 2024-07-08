@@ -97,11 +97,11 @@ func createDBTable() {
 }
 
 func alterDBTable() {
-	DB.PbDB.AlterTableAddField(&game.AccountDatabase{})
-	DB.PbDB.AlterTableAddField(&game.AccountShareDatabase{})
-	DB.PbDB.AlterTableAddField(&game.PlayerCentreDatabase{})
-	DB.PbDB.AlterTableAddField(&game.PlayerDatabase{})
-	DB.PbDB.AlterTableAddField(&game.PlayerUnimportanceDatabase{})
+	DB.PbDB.UpdateTableField(&game.AccountDatabase{})
+	DB.PbDB.UpdateTableField(&game.AccountShareDatabase{})
+	DB.PbDB.UpdateTableField(&game.PlayerCentreDatabase{})
+	DB.PbDB.UpdateTableField(&game.PlayerDatabase{})
+	DB.PbDB.UpdateTableField(&game.PlayerUnimportanceDatabase{})
 }
 
 func initDBConsume() {
