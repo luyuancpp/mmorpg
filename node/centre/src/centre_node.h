@@ -22,7 +22,7 @@ public:
 	inline uint32_t GetNodeId()const { return node_info_.node_id(); }
 	inline const NodeInfo& GetNodeInfo()const { return node_info_; }
 
-	inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return log_; }
+	inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduo_log_; }
 	
 	void        Init();
 	void		Exit();
@@ -50,13 +50,13 @@ private:
 	NodeId GetNodeConfIndex() const { return GetNodeId() - 1; }
 
 	muduo::net::EventLoop* loop_{ nullptr };
-	muduo::AsyncLogging log_;
+	muduo::AsyncLogging muduo_log_;
 private:
 	PbSyncRedisClientPtr redis_;
 	RpcServerPtr server_;
 	CentreServiceHandler centre_service_;
 	NodeInfo node_info_;
-	nodes_info_data server_infos_;
+	nodes_info_data servers_info_;
     TimerTask deploy_rpc_timer_;
 };
 

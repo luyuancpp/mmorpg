@@ -41,7 +41,7 @@ void AsyncOutput(const char* msg, int len)
 
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
     : loop_(loop),
-      log_ { "logs/centre", kMaxLogFileRollSize, 1},
+      muduo_log_ { "logs/centre", kMaxLogFileRollSize, 1},
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
 }
@@ -85,7 +85,7 @@ void CentreNode::InitEventCallback()
 
 void CentreNode::Exit()
 {
-    log_.stop();
+    muduo_log_.stop();
     tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
 }
 
@@ -122,8 +122,8 @@ void CentreNode::InitNodeByReqInfo()
 
 void CentreNode::StartServer(const ::nodes_info_data& info)
 {
-    server_infos_ = info;
-    auto& my_node_info = server_infos_.centre_info().centre_info()[GetNodeConfIndex()];
+    servers_info_ = info;
+    auto& my_node_info = servers_info_.centre_info().centre_info()[GetNodeConfIndex()];
    
     InetAddress service_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
@@ -214,7 +214,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 void CentreNode::InitLog ( )
 {
     muduo::Logger::setOutput(AsyncOutput);
-    log_.start();
+    muduo_log_.start();
 }
 
 void CentreNode::InitConfig()
@@ -237,8 +237,8 @@ void CentreNode::InitSystemBeforeConnect()
 
 void CentreNode::InitSystemAfterConnect() const
 {
-    InetAddress redis_addr(server_infos_.redis_info().redis_info(0).ip(), 
-        server_infos_.redis_info().redis_info(0).port());
+    InetAddress redis_addr(servers_info_.redis_info().redis_info(0).ip(), 
+        servers_info_.redis_info().redis_info(0).port());
     tls_centre.redis_system().Init(redis_addr);
 }
 

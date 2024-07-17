@@ -45,7 +45,7 @@ void InitRepliedHandler();
 
 GameNode::GameNode(muduo::net::EventLoop* loop)
     :loop_(loop),
-     log_ { "logs/game", kMaxLogFileRollSize, 1},
+     muduo_log_ { "logs/game", kMaxLogFileRollSize, 1},
      redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 {
 }
@@ -82,12 +82,12 @@ void GameNode::Init()
 void GameNode::InitLog ( )
 {
     muduo::Logger::setOutput(AsyncOutput);
-    log_.start();
+    muduo_log_.start();
 }
 
 void GameNode::Exit ( )
 {
-    log_.stop();
+    muduo_log_.stop();
     tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GameNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameNode::Receive2>(*this);
 }
