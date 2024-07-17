@@ -168,7 +168,7 @@ void CentreNode::SetNodeId(NodeId node_id)
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)
 {
-    if ( auto& conn = es.conn_ ; conn->connected())
+    if (auto& conn = es.conn_; conn->connected())
     {
         const auto e = tls.network_registry.create();
 		tls.network_registry.emplace<RpcSession>(e, RpcSession{ conn });
