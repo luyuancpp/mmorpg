@@ -31,7 +31,7 @@ void AsyncOutput(const char* msg, int len)
 
 GateNode::GateNode(EventLoop* loop)
     : loop_(loop),
-    log_{"logs/gate", kMaxLogFileRollSize, 1},
+    muduo_log_{"logs/gate", kMaxLogFileRollSize, 1},
     dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),
     codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
     client_message_processor_(codec_, dispatcher_)
@@ -63,7 +63,7 @@ void GateNode::Init()
 
 void GateNode::Exit()
 {
-    log_.stop();
+    muduo_log_.stop();
     tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateNode::Receive1>(*this);
 }
 
@@ -213,7 +213,7 @@ void GateNode::Connect2Login() const
 void GateNode::InitLog ( )
 {
     muduo::Logger::setOutput(AsyncOutput);
-    log_.start();
+    muduo_log_.start();
 }
 
 void GateNode::InitConfig ( )

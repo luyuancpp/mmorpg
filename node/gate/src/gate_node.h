@@ -32,7 +32,7 @@ public:
     inline uint32_t GetNodeId()const { return node_info_.node_id(); }
     inline RpcClientPtr& GetZoneCentreNode() { return zone_centre_node_; }
     inline const NodeInfo& GetNodeInfo()const { return node_info_; }
-    inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return log_; }
+    inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduo_log_; }
 
     inline void Send(const muduo::net::TcpConnectionPtr& conn,
                             const ::google::protobuf::Message& message) const { client_message_processor_.Send2Client(conn, message); }
@@ -75,9 +75,9 @@ private:
     inline NodeId GetNodeConfIndex() const { return GetNodeId() - 1; }
 
     muduo::net::EventLoop* loop_{ nullptr };
-    muduo::AsyncLogging log_;
+    muduo::AsyncLogging muduo_log_;
 
-    private:
+private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     ClientMessageProcessor client_message_processor_;
