@@ -50,7 +50,7 @@ private:
 
 using PbSyncRedisClientPtr = std::shared_ptr<MessageSyncRedisClient>;
 
-template <class Key, class MessageValue>
+template <class MessageKey, class MessageValue>
 class MessageAsyncClient
 {
 public:
@@ -59,14 +59,14 @@ public:
     struct Element
     {
         using MessageValuePtr = std::shared_ptr<MessageValue>;
-        Key key_;
-        std::string redis_key_;
-        MessageValuePtr value_;
+        MessageKey message_key;
+        std::string redis_key;
+        MessageValuePtr message_value;
     };
 
     using ElementPtr = std::shared_ptr<Element>;
     using LoadingQueue = std::unordered_map<std::string, ElementPtr>;
-    using CommandCallback = std::function<void(Key, MessageValue&)>;
+    using EventCallback = std::function<void(MessageKey, MessageValue&)>;
 
     explicit MessageAsyncClient(hiredis::Hiredis& hiredis)
         : hiredis_(hiredis)
@@ -74,24 +74,24 @@ public:
     }
 
     inline const std::string& full_name() const { return MessageValue::GetDescriptor()->full_name(); }
-    void SetSaveCallback(const CommandCallback& cb) { save_callback_ = cb; }
-    void SetLoadCallback(const CommandCallback& cb) { load_callback_ = cb; }
+    void SetSaveCallback(const EventCallback& cb) { save_callback_ = cb; }
+    void SetLoadCallback(const EventCallback& cb) { load_callback_ = cb; }
 
-    void Save(const MessageValuePtr& message, const Key& key)
+    void Save(const MessageValuePtr& message, const MessageKey& key)
     {
         ElementPtr element = std::make_shared<Element>();
-        element->key_ = key;
-        element->redis_key_ = full_name() + std::to_string(key);
-        element->value_ = message;
+        element->message_key = key;
+        element->redis_key = full_name() + std::to_string(key);
+        element->message_value = message;
         MessageCachedArray message_cached_array(message->ByteSizeLong());
         message->SerializeWithCachedSizesToArray(message_cached_array.data());
         hiredis_.command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
-            "SET %b %b", element->redis_key_.c_str(), element->redis_key_.length(),
+            "SET %b %b", element->redis_key.c_str(), element->redis_key.length(),
             message_cached_array.data(),
             message_cached_array.size());
     }
 
-    void AsyncLoad(const Key& key)
+    void AsyncLoad(const MessageKey& key)
     {
         const std::string redis_key = full_name() + std::to_string(key);
         if (loading_queue_.find(redis_key) != loading_queue_.end())
@@ -99,10 +99,10 @@ public:
             return;
         }
         ElementPtr element = std::make_shared<Element>();
-        element->key_ = key;
-        element->redis_key_ = std::move(redis_key);
-        loading_queue_.emplace(element->redis_key_, element);
-        const std::string format = std::string("GET ") + element->redis_key_;
+        element->message_key = key;
+        element->redis_key = std::move(redis_key);
+        loading_queue_.emplace(element->redis_key, element);
+        const std::string format = std::string("GET ") + element->redis_key;
         hiredis_.command(std::bind(&MessageAsyncClient::OnLoaded, this, std::placeholders::_1, std::placeholders::_2, element),
             format.c_str());
     }
@@ -115,24 +115,24 @@ private:
         {
             return;
         }
-        save_callback_(element->key_, *element->value_);
+        save_callback_(element->message_key, *element->message_value);
     }
 
     void OnLoaded(hiredis::Hiredis* c, redisReply* reply, ElementPtr element)
     {
-        element->value_ = CreateMessage();
-        element->value_->ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
-        loading_queue_.erase(element->redis_key_);
+        element->message_value = CreateMessage();
+        element->message_value->ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
+        loading_queue_.erase(element->redis_key);
         if (!load_callback_)
         {
             return;
         }
-        load_callback_(element->key_, *element->value_);
+        load_callback_(element->message_key, *element->message_value);
     }
 
     hiredis::Hiredis& hiredis_;
     LoadingQueue loading_queue_;
-    CommandCallback save_callback_;
-    CommandCallback load_callback_;
+    EventCallback save_callback_;
+    EventCallback load_callback_;
 };
 
