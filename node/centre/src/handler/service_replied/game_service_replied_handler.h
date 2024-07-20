@@ -1,5 +1,5 @@
 #pragma once
-#include "common_proto/game_service.pb.h"
+#include "proto/common/game_service.pb.h"
 #include "muduo/net/TcpConnection.h"
 using namespace muduo;
 using namespace muduo::net;

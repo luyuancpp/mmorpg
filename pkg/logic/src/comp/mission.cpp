@@ -7,8 +7,8 @@
 #include "thread_local/storage.h"
 #include "constants/tips_id.h"
 
-#include "component_proto/mission_comp.pb.h"
-#include "event_proto/mission_event.pb.h"
+#include "proto/logic/component/mission_comp.pb.h"
+#include "proto/logic/event/mission_event.pb.h"
 
 MissionsComp::MissionsComp()
 	: mission_config_(&MissionConfig::GetSingleton()),

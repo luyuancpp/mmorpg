@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "component_proto/mission_comp.pb.h"
+#include "proto/logic/component/mission_comp.pb.h"
 #include "type_define/type_define.h"
 #include "system/mission/missions_config_template.h"
 #include "util/game_registry.h"

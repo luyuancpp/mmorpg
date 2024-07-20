@@ -1,7 +1,7 @@
 #pragma once
 
-#include "common_proto/deploy_service.grpc.pb.h"
-#include "common_proto/deploy_service.pb.h"
+#include "proto/common/deploy_service.grpc.pb.h"
+#include "proto/common/deploy_service.pb.h"
 
 using grpc::ClientContext;
 using grpc::Status;

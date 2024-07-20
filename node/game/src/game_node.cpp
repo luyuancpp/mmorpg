@@ -3,11 +3,11 @@
 #include <ranges>
 
 #include "all_config.h"
-#include "common_proto/deploy_service.grpc.pb.h"
+#include "proto/common/deploy_service.grpc.pb.h"
 #include "constants/file.h"
-#include "constants_proto/node.pb.h"
+#include "proto/logic/constants/node.pb.h"
 #include "handler/event/event_handler.h"
-#include "event_proto/server_event.pb.h"
+#include "proto/logic/event/server_event.pb.h"
 #include "game_config/deploy_json.h"
 #include "game_config/lobby_config.h"
 #include "grpc/deploy/deployclient.h"

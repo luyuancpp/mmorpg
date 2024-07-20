@@ -9,7 +9,7 @@
 #include "network/codec/dispatcher.h"
 #include "type_define/type_define.h"
 
-#include "common_proto/c2gate.pb.h"
+#include "proto/common/c2gate.pb.h"
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 

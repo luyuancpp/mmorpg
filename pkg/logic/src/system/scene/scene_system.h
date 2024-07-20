@@ -4,7 +4,7 @@
 
 #include "system/scene/node_scene_system.h"
 #include "util/snow_flake.h"
-#include <component_proto/scene_comp.pb.h>
+#include "proto/logic/component/scene_comp.pb.h"
 
 struct EnterSceneParam
 {

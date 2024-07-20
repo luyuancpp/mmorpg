@@ -3,9 +3,9 @@
 #include "system/redis.h"
 #include "comp/scene/nav.h"
 
-#include "common_proto/mysql_database_table.pb.h"
-#include "component_proto/player_async_comp.pb.h"
-#include "component_proto/frame_comp.pb.h"
+#include "proto/common/mysql_database_table.pb.h"
+#include "proto/logic/component/player_async_comp.pb.h"
+#include "proto/logic/component/frame_comp.pb.h"
 
 using PlayerRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 using PlayerEnterGSInfoList = std::unordered_map<Guid, EnterGsInfo>;

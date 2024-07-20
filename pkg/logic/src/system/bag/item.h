@@ -5,7 +5,7 @@
 #include "util/snow_flake.h"
 #include "thread_local/storage.h"
 
-#include "component_proto/item_base_comp.pb.h"
+#include "proto/logic/component/item_base_comp.pb.h"
 
 extern NodeBit12Sequence g_bag_node_sequence;
 

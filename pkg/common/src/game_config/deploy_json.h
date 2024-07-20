@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common_proto/deploy_config.pb.h"
+#include "proto/common/deploy_config.pb.h"
 
 class ZoneConfig
 {

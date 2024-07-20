@@ -6,7 +6,7 @@
 #include "constants/node.h"
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage.h"
-#include "component_proto/scene_comp.pb.h"
+#include "proto/logic/component/scene_comp.pb.h"
 
 using SceneList = EntitySet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;

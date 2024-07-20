@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common_proto/deploy_service.pb.h"
+#include "proto/common/deploy_service.pb.h"
 #include "entt/src/entt/entity/registry.hpp"
 #include "handler/service/centre_service_handler.h"
 #include "muduo/base/AsyncLogging.h"

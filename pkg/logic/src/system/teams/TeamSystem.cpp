@@ -5,7 +5,7 @@
 #include "constants/tips_id.h"
 #include "util/game_registry.h"
 
-#include "component_proto/team_comp.pb.h"
+#include "proto/logic/component/team_comp.pb.h"
 
 TeamSystem::~TeamSystem()
 {
