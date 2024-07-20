@@ -4,7 +4,7 @@
 #include "muduo/net/EventLoop.h"
 #include "muduo/base/AsyncLogging.h"
 
-#include "handler/game_service_handler.h"
+#include "handler/service/game_service_handler.h"
 #include "network/rpc_client.h"
 #include "network/rpc_connection_event.h"
 #include "network/rpc_server.h"

@@ -36,28 +36,28 @@
     <ClCompile Include="src\grpc\async_client_call.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\centre_common_server_player_handler.cpp">
+    <ClCompile Include="src\handler\service\centre_common_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\centre_scene_handler.cpp">
+    <ClCompile Include="src\handler\service\centre_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\centre_scene_server_player_handler.cpp">
+    <ClCompile Include="src\handler\service\centre_scene_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\centre_service_handler.cpp">
+    <ClCompile Include="src\handler\service\centre_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\common_client_player_handler.cpp">
+    <ClCompile Include="src\handler\service\common_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\player_service.cpp">
+    <ClCompile Include="src\handler\service\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\register_handler.cpp">
+    <ClCompile Include="src\handler\service\register_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\team_client_player_handler.cpp">
+    <ClCompile Include="src\handler\service\team_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\message_system.cpp">
@@ -146,28 +146,28 @@
     <ClInclude Include="src\grpc\async_client_call.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\centre_common_server_player_handler.h">
+    <ClInclude Include="src\handler\service\centre_common_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\centre_scene_handler.h">
+    <ClInclude Include="src\handler\service\centre_scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\centre_scene_server_player_handler.h">
+    <ClInclude Include="src\handler\service\centre_scene_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\centre_service_handler.h">
+    <ClInclude Include="src\handler\service\centre_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\common_client_player_handler.h">
+    <ClInclude Include="src\handler\service\common_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\player_service.h">
+    <ClInclude Include="src\handler\service\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\register_handler.h">
+    <ClInclude Include="src\handler\service\register_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\team_client_player_handler.h">
+    <ClInclude Include="src\handler\service\team_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\game_node.h">
