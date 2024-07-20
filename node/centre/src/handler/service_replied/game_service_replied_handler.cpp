@@ -13,7 +13,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_session.h"
 
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;

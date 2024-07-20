@@ -4,7 +4,7 @@
 #include "system/scene/scene_system.h"
 #include "thread_local/storage.h"
 
-#include "event_proto/scene_event.pb.h"
+#include "proto/logic/event/scene_event.pb.h"
 
 //todo 各种服务器崩溃
 void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)

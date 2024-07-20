@@ -11,10 +11,10 @@
 #include "util/defer.h"
 
 #include "proto/common/centre_service.pb.h"
-#include "component_proto/player_async_comp.pb.h"
-#include "component_proto/player_comp.pb.h"
-#include "component_proto/player_login_comp.pb.h"
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_async_comp.pb.h"
+#include "proto/logic/component/player_comp.pb.h"
+#include "proto/logic/component/player_login_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 
 #include "game_node.h"
 

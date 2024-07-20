@@ -11,7 +11,7 @@
 #include "system/scene/movement_acceleration.h"
 #include "thread_local/storage_game.h"
 
-#include "component_proto/frame_comp.pb.h"
+#include "proto/logic/component/frame_comp.pb.h"
 
 using namespace std::chrono;
 

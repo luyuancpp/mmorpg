@@ -13,7 +13,7 @@
 #include "system/player_change_scene.h"
 #include "service/scene_client_player_service.h"
 
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 	const ::CentreEnterSceneRequest* request,
