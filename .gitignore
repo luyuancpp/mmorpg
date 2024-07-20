@@ -19,7 +19,6 @@ compile_commands.json
 *.dll
 *.log
 pkg/pbc/src/*
-output/
 x64/
 .vs/
 common/src/game_config/proto/*
@@ -43,3 +42,4 @@ third_party/lua/vs2022
 lib/LIST.TXT
 third_party/protobuf
 *.tmp
+bin/vsout/
