@@ -14,11 +14,11 @@ public:
 	static void Register();
 	static void UnRegister();
 
-	static void OnSceneCreateHandler(const OnSceneCreate& message);
-	static void OnDestroySceneHandler(const OnDestroyScene& message);
-	static void BeforeEnterSceneHandler(const BeforeEnterScene& message);
-	static void AfterEnterSceneHandler(const AfterEnterScene& message);
-	static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
-	static void AfterLeaveSceneHandler(const AfterLeaveScene& message);
-	static void S2CEnterSceneHandler(const S2CEnterScene& message);
+	static void OnSceneCreateHandler(const OnSceneCreate& event);
+	static void OnDestroySceneHandler(const OnDestroyScene& event);
+	static void BeforeEnterSceneHandler(const BeforeEnterScene& event);
+	static void AfterEnterSceneHandler(const AfterEnterScene& event);
+	static void BeforeLeaveSceneHandler(const BeforeLeaveScene& event);
+	static void AfterLeaveSceneHandler(const AfterLeaveScene& event);
+	static void S2CEnterSceneHandler(const S2CEnterScene& event);
 };

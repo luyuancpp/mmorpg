@@ -26,10 +26,10 @@ void ServerEventHandler::UnRegister()
 		tls.dispatcher.sink<OnServerStart>().disconnect<&ServerEventHandler::OnServerStartHandler>();
 }
 
-void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& message)
+void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity centre_id{ message.entity() };
+    entt::entity centre_id{ event.entity() };
     
     auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_id);
     if (centre_node == nullptr)
@@ -52,25 +52,25 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& message
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerEventHandler::OnConnect2GameHandler(const OnConnect2Game& message)
+void ServerEventHandler::OnConnect2GameHandler(const OnConnect2Game& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerEventHandler::OnConnect2GateHandler(const OnConnect2Gate& message)
+void ServerEventHandler::OnConnect2GateHandler(const OnConnect2Gate& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& message)
+void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerEventHandler::OnServerStartHandler(const OnServerStart& message)
+void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
     ScenesSystem::set_sequence_node_id(g_game_node->GetNodeId());

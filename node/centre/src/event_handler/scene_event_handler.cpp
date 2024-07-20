@@ -39,37 +39,37 @@ void SceneEventHandler::UnRegister()
 		tls.dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventHandler::S2CEnterSceneHandler>();
 }
 
-void SceneEventHandler::OnSceneCreateHandler(const OnSceneCreate& message)
+void SceneEventHandler::OnSceneCreateHandler(const OnSceneCreate& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::OnDestroySceneHandler(const OnDestroyScene& message)
-{
-///<<< BEGIN WRITING YOUR CODE
-
-///<<< END WRITING YOUR CODE
-}
-
-void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& message)
+void SceneEventHandler::OnDestroySceneHandler(const OnDestroyScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& message)
+void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& event)
+{
+///<<< BEGIN WRITING YOUR CODE
+
+///<<< END WRITING YOUR CODE
+}
+
+void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
   
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
+void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    const auto player = entt::to_entity(message.entity());
+    const auto player = entt::to_entity(event.entity());
     auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
@@ -89,16 +89,16 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::AfterLeaveSceneHandler(const AfterLeaveScene& message)
+void SceneEventHandler::AfterLeaveSceneHandler(const AfterLeaveScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
+void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    PlayerSceneSystem::Send2GsEnterScene(entt::to_entity(message.entity()));
+    PlayerSceneSystem::Send2GsEnterScene(entt::to_entity(event.entity()));
 ///<<< END WRITING YOUR CODE
 }
 
