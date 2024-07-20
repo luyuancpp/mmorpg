@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common_proto/tip.proto";
+import "common/tip.proto";
 option cc_generic_services = true;
 
 message TeamInfoS2CRequest

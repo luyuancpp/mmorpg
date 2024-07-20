@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.34.1
 // 	protoc        v4.25.1
-// source: logic_proto/component_proto/actor_comp.proto
+// source: logic/component/actor_comp.proto
 
 package game
 
@@ -33,7 +33,7 @@ type Location struct {
 func (x *Location) Reset() {
 	*x = Location{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[0]
+		mi := &file_logic_component_actor_comp_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -46,7 +46,7 @@ func (x *Location) String() string {
 func (*Location) ProtoMessage() {}
 
 func (x *Location) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[0]
+	mi := &file_logic_component_actor_comp_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *Location) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Location.ProtoReflect.Descriptor instead.
 func (*Location) Descriptor() ([]byte, []int) {
-	return file_logic_proto_component_proto_actor_comp_proto_rawDescGZIP(), []int{0}
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Location) GetX() float64 {
@@ -96,7 +96,7 @@ type Rotation struct {
 func (x *Rotation) Reset() {
 	*x = Rotation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[1]
+		mi := &file_logic_component_actor_comp_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -109,7 +109,7 @@ func (x *Rotation) String() string {
 func (*Rotation) ProtoMessage() {}
 
 func (x *Rotation) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[1]
+	mi := &file_logic_component_actor_comp_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -122,7 +122,7 @@ func (x *Rotation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Rotation.ProtoReflect.Descriptor instead.
 func (*Rotation) Descriptor() ([]byte, []int) {
-	return file_logic_proto_component_proto_actor_comp_proto_rawDescGZIP(), []int{1}
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Rotation) GetX() float64 {
@@ -159,7 +159,7 @@ type Scale struct {
 func (x *Scale) Reset() {
 	*x = Scale{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[2]
+		mi := &file_logic_component_actor_comp_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -172,7 +172,7 @@ func (x *Scale) String() string {
 func (*Scale) ProtoMessage() {}
 
 func (x *Scale) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[2]
+	mi := &file_logic_component_actor_comp_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -185,7 +185,7 @@ func (x *Scale) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Scale.ProtoReflect.Descriptor instead.
 func (*Scale) Descriptor() ([]byte, []int) {
-	return file_logic_proto_component_proto_actor_comp_proto_rawDescGZIP(), []int{2}
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Scale) GetX() float64 {
@@ -222,7 +222,7 @@ type Transform struct {
 func (x *Transform) Reset() {
 	*x = Transform{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[3]
+		mi := &file_logic_component_actor_comp_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -235,7 +235,7 @@ func (x *Transform) String() string {
 func (*Transform) ProtoMessage() {}
 
 func (x *Transform) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[3]
+	mi := &file_logic_component_actor_comp_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,7 +248,7 @@ func (x *Transform) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Transform.ProtoReflect.Descriptor instead.
 func (*Transform) Descriptor() ([]byte, []int) {
-	return file_logic_proto_component_proto_actor_comp_proto_rawDescGZIP(), []int{3}
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Transform) GetLocation() *Location {
@@ -285,7 +285,7 @@ type Velocity struct {
 func (x *Velocity) Reset() {
 	*x = Velocity{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[4]
+		mi := &file_logic_component_actor_comp_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -298,7 +298,7 @@ func (x *Velocity) String() string {
 func (*Velocity) ProtoMessage() {}
 
 func (x *Velocity) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[4]
+	mi := &file_logic_component_actor_comp_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -311,7 +311,7 @@ func (x *Velocity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Velocity.ProtoReflect.Descriptor instead.
 func (*Velocity) Descriptor() ([]byte, []int) {
-	return file_logic_proto_component_proto_actor_comp_proto_rawDescGZIP(), []int{4}
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Velocity) GetX() float64 {
@@ -348,7 +348,7 @@ type Acceleration struct {
 func (x *Acceleration) Reset() {
 	*x = Acceleration{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[5]
+		mi := &file_logic_component_actor_comp_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -361,7 +361,7 @@ func (x *Acceleration) String() string {
 func (*Acceleration) ProtoMessage() {}
 
 func (x *Acceleration) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[5]
+	mi := &file_logic_component_actor_comp_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -374,7 +374,7 @@ func (x *Acceleration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Acceleration.ProtoReflect.Descriptor instead.
 func (*Acceleration) Descriptor() ([]byte, []int) {
-	return file_logic_proto_component_proto_actor_comp_proto_rawDescGZIP(), []int{5}
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Acceleration) GetX() float64 {
@@ -411,7 +411,7 @@ type ViewRadius struct {
 func (x *ViewRadius) Reset() {
 	*x = ViewRadius{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[6]
+		mi := &file_logic_component_actor_comp_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -424,7 +424,7 @@ func (x *ViewRadius) String() string {
 func (*ViewRadius) ProtoMessage() {}
 
 func (x *ViewRadius) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_proto_component_proto_actor_comp_proto_msgTypes[6]
+	mi := &file_logic_component_actor_comp_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -437,7 +437,7 @@ func (x *ViewRadius) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ViewRadius.ProtoReflect.Descriptor instead.
 func (*ViewRadius) Descriptor() ([]byte, []int) {
-	return file_logic_proto_component_proto_actor_comp_proto_rawDescGZIP(), []int{6}
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ViewRadius) GetRadius() float64 {
@@ -447,56 +447,56 @@ func (x *ViewRadius) GetRadius() float64 {
 	return 0
 }
 
-var File_logic_proto_component_proto_actor_comp_proto protoreflect.FileDescriptor
+var File_logic_component_actor_comp_proto protoreflect.FileDescriptor
 
-var file_logic_proto_component_proto_actor_comp_proto_rawDesc = []byte{
-	0x0a, 0x2c, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f,
-	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x61, 0x63,
-	0x74, 0x6f, 0x72, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x34,
-	0x0a, 0x08, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x78, 0x12, 0x0c, 0x0a, 0x01, 0x79, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x01, 0x52, 0x01, 0x79, 0x12, 0x0c, 0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x01, 0x52, 0x01, 0x7a, 0x22, 0x34, 0x0a, 0x08, 0x52, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+var file_logic_component_actor_comp_proto_rawDesc = []byte{
+	0x0a, 0x20, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e,
+	0x74, 0x2f, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x22, 0x34, 0x0a, 0x08, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x0c,
+	0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x78, 0x12, 0x0c, 0x0a, 0x01,
+	0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x79, 0x12, 0x0c, 0x0a, 0x01, 0x7a, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x34, 0x0a, 0x08, 0x52, 0x6f, 0x74, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52,
+	0x01, 0x78, 0x12, 0x0c, 0x0a, 0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x79,
+	0x12, 0x0c, 0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x31,
+	0x0a, 0x05, 0x53, 0x63, 0x61, 0x6c, 0x65, 0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x01, 0x52, 0x01, 0x78, 0x12, 0x0c, 0x0a, 0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01,
+	0x52, 0x01, 0x79, 0x12, 0x0c, 0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01,
+	0x7a, 0x22, 0x77, 0x0a, 0x09, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x6f, 0x72, 0x6d, 0x12, 0x25,
+	0x0a, 0x08, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x09, 0x2e, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x08, 0x6c, 0x6f, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x25, 0x0a, 0x08, 0x72, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x52, 0x6f, 0x74, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x08, 0x72, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1c, 0x0a, 0x05,
+	0x73, 0x63, 0x61, 0x6c, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x06, 0x2e, 0x53, 0x63,
+	0x61, 0x6c, 0x65, 0x52, 0x05, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x22, 0x34, 0x0a, 0x08, 0x56, 0x65,
+	0x6c, 0x6f, 0x63, 0x69, 0x74, 0x79, 0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x01, 0x52, 0x01, 0x78, 0x12, 0x0c, 0x0a, 0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52,
+	0x01, 0x79, 0x12, 0x0c, 0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a,
+	0x22, 0x38, 0x0a, 0x0c, 0x41, 0x63, 0x63, 0x65, 0x6c, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
 	0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x78, 0x12, 0x0c,
 	0x0a, 0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x79, 0x12, 0x0c, 0x0a, 0x01,
-	0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x31, 0x0a, 0x05, 0x53, 0x63,
-	0x61, 0x6c, 0x65, 0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01,
-	0x78, 0x12, 0x0c, 0x0a, 0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x79, 0x12,
-	0x0c, 0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x77, 0x0a,
-	0x09, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x6f, 0x72, 0x6d, 0x12, 0x25, 0x0a, 0x08, 0x6c, 0x6f,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x4c,
-	0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x08, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x25, 0x0a, 0x08, 0x72, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x52, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x08,
-	0x72, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1c, 0x0a, 0x05, 0x73, 0x63, 0x61, 0x6c,
-	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x06, 0x2e, 0x53, 0x63, 0x61, 0x6c, 0x65, 0x52,
-	0x05, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x22, 0x34, 0x0a, 0x08, 0x56, 0x65, 0x6c, 0x6f, 0x63, 0x69,
-	0x74, 0x79, 0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x78,
-	0x12, 0x0c, 0x0a, 0x01, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x79, 0x12, 0x0c,
-	0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x38, 0x0a, 0x0c,
-	0x41, 0x63, 0x63, 0x65, 0x6c, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x0c, 0x0a, 0x01,
-	0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x78, 0x12, 0x0c, 0x0a, 0x01, 0x79, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x79, 0x12, 0x0c, 0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x24, 0x0a, 0x0a, 0x56, 0x69, 0x65, 0x77, 0x52, 0x61,
-	0x64, 0x69, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x61, 0x64, 0x69, 0x75, 0x73, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x72, 0x61, 0x64, 0x69, 0x75, 0x73, 0x42, 0x09, 0x5a, 0x07,
-	0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x24, 0x0a, 0x0a, 0x56, 0x69,
+	0x65, 0x77, 0x52, 0x61, 0x64, 0x69, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x61, 0x64, 0x69,
+	0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x72, 0x61, 0x64, 0x69, 0x75, 0x73,
+	0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
-	file_logic_proto_component_proto_actor_comp_proto_rawDescOnce sync.Once
-	file_logic_proto_component_proto_actor_comp_proto_rawDescData = file_logic_proto_component_proto_actor_comp_proto_rawDesc
+	file_logic_component_actor_comp_proto_rawDescOnce sync.Once
+	file_logic_component_actor_comp_proto_rawDescData = file_logic_component_actor_comp_proto_rawDesc
 )
 
-func file_logic_proto_component_proto_actor_comp_proto_rawDescGZIP() []byte {
-	file_logic_proto_component_proto_actor_comp_proto_rawDescOnce.Do(func() {
-		file_logic_proto_component_proto_actor_comp_proto_rawDescData = protoimpl.X.CompressGZIP(file_logic_proto_component_proto_actor_comp_proto_rawDescData)
+func file_logic_component_actor_comp_proto_rawDescGZIP() []byte {
+	file_logic_component_actor_comp_proto_rawDescOnce.Do(func() {
+		file_logic_component_actor_comp_proto_rawDescData = protoimpl.X.CompressGZIP(file_logic_component_actor_comp_proto_rawDescData)
 	})
-	return file_logic_proto_component_proto_actor_comp_proto_rawDescData
+	return file_logic_component_actor_comp_proto_rawDescData
 }
 
-var file_logic_proto_component_proto_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
-var file_logic_proto_component_proto_actor_comp_proto_goTypes = []interface{}{
+var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_logic_component_actor_comp_proto_goTypes = []interface{}{
 	(*Location)(nil),     // 0: Location
 	(*Rotation)(nil),     // 1: Rotation
 	(*Scale)(nil),        // 2: Scale
@@ -505,7 +505,7 @@ var file_logic_proto_component_proto_actor_comp_proto_goTypes = []interface{}{
 	(*Acceleration)(nil), // 5: Acceleration
 	(*ViewRadius)(nil),   // 6: ViewRadius
 }
-var file_logic_proto_component_proto_actor_comp_proto_depIdxs = []int32{
+var file_logic_component_actor_comp_proto_depIdxs = []int32{
 	0, // 0: Transform.location:type_name -> Location
 	1, // 1: Transform.rotation:type_name -> Rotation
 	2, // 2: Transform.scale:type_name -> Scale
@@ -516,13 +516,13 @@ var file_logic_proto_component_proto_actor_comp_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_logic_proto_component_proto_actor_comp_proto_init() }
-func file_logic_proto_component_proto_actor_comp_proto_init() {
-	if File_logic_proto_component_proto_actor_comp_proto != nil {
+func init() { file_logic_component_actor_comp_proto_init() }
+func file_logic_component_actor_comp_proto_init() {
+	if File_logic_component_actor_comp_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_logic_proto_component_proto_actor_comp_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_logic_component_actor_comp_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Location); i {
 			case 0:
 				return &v.state
@@ -534,7 +534,7 @@ func file_logic_proto_component_proto_actor_comp_proto_init() {
 				return nil
 			}
 		}
-		file_logic_proto_component_proto_actor_comp_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_logic_component_actor_comp_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Rotation); i {
 			case 0:
 				return &v.state
@@ -546,7 +546,7 @@ func file_logic_proto_component_proto_actor_comp_proto_init() {
 				return nil
 			}
 		}
-		file_logic_proto_component_proto_actor_comp_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_logic_component_actor_comp_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Scale); i {
 			case 0:
 				return &v.state
@@ -558,7 +558,7 @@ func file_logic_proto_component_proto_actor_comp_proto_init() {
 				return nil
 			}
 		}
-		file_logic_proto_component_proto_actor_comp_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_logic_component_actor_comp_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Transform); i {
 			case 0:
 				return &v.state
@@ -570,7 +570,7 @@ func file_logic_proto_component_proto_actor_comp_proto_init() {
 				return nil
 			}
 		}
-		file_logic_proto_component_proto_actor_comp_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_logic_component_actor_comp_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Velocity); i {
 			case 0:
 				return &v.state
@@ -582,7 +582,7 @@ func file_logic_proto_component_proto_actor_comp_proto_init() {
 				return nil
 			}
 		}
-		file_logic_proto_component_proto_actor_comp_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_logic_component_actor_comp_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Acceleration); i {
 			case 0:
 				return &v.state
@@ -594,7 +594,7 @@ func file_logic_proto_component_proto_actor_comp_proto_init() {
 				return nil
 			}
 		}
-		file_logic_proto_component_proto_actor_comp_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_logic_component_actor_comp_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ViewRadius); i {
 			case 0:
 				return &v.state
@@ -611,18 +611,18 @@ func file_logic_proto_component_proto_actor_comp_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_logic_proto_component_proto_actor_comp_proto_rawDesc,
+			RawDescriptor: file_logic_component_actor_comp_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_logic_proto_component_proto_actor_comp_proto_goTypes,
-		DependencyIndexes: file_logic_proto_component_proto_actor_comp_proto_depIdxs,
-		MessageInfos:      file_logic_proto_component_proto_actor_comp_proto_msgTypes,
+		GoTypes:           file_logic_component_actor_comp_proto_goTypes,
+		DependencyIndexes: file_logic_component_actor_comp_proto_depIdxs,
+		MessageInfos:      file_logic_component_actor_comp_proto_msgTypes,
 	}.Build()
-	File_logic_proto_component_proto_actor_comp_proto = out.File
-	file_logic_proto_component_proto_actor_comp_proto_rawDesc = nil
-	file_logic_proto_component_proto_actor_comp_proto_goTypes = nil
-	file_logic_proto_component_proto_actor_comp_proto_depIdxs = nil
+	File_logic_component_actor_comp_proto = out.File
+	file_logic_component_actor_comp_proto_rawDesc = nil
+	file_logic_component_actor_comp_proto_goTypes = nil
+	file_logic_component_actor_comp_proto_depIdxs = nil
 }

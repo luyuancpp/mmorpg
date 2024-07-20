@@ -2,8 +2,8 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common_proto/tip.proto";
-import "common_proto/account_database.proto";
+import "common/tip.proto";
+import "common/account_database.proto";
 
 message c_account_simple_player
 {
@@ -65,7 +65,7 @@ enum ClientMessageType
 enum TipCode
 {
   CLIENT_RPC_NO_ERROR = 0;
-  CLIENT_WRONG_PROTO = 1;
+  CLIENT_WRONG = 1;
   CLIENT_NO_SERVICE = 2;
   CLIENT_NO_METHOD = 3;
   CLIENT_INVALID_REQUEST = 4;

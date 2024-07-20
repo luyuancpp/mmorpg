@@ -43,11 +43,8 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 					"--cpp_out="+config.PbcOutDir,
 					fileName,
 					"-I="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common_proto/",
-					"-I="+config.ProtoDir+"component_proto/",
-					"-I="+config.ProtoDir+"event_proto/",
-					"-I="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 
 			} else {
@@ -55,11 +52,8 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 					"--cpp_out="+config.PbcOutDir,
 					fileName,
 					"-I="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common_proto/",
-					"-I="+config.ProtoDir+"component_proto/",
-					"-I="+config.ProtoDir+"event_proto/",
-					"-I="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -118,11 +112,8 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 					"--plugin=protoc-gen-grpc=grpc_cpp_plugin",
 					fileName,
 					"--proto_path="+config.ProtoDir,
-					"--proto_path="+config.ProtoDir+"common_proto/",
-					"--proto_path="+config.ProtoDir+"component_proto/",
-					"--proto_path="+config.ProtoDir+"event_proto/",
-					"--proto_path="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"--proto_path="+config.ProtoDir+"common/",
+					"--proto_path="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				cmd = exec.Command("./protoc.exe",
@@ -130,11 +121,8 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 					"--plugin=protoc-gen-grpc=grpc_cpp_plugin.exe",
 					fileName,
 					"--proto_path="+config.ProtoDir,
-					"--proto_path="+config.ProtoDir+"common_proto/",
-					"--proto_path="+config.ProtoDir+"component_proto/",
-					"--proto_path="+config.ProtoDir+"event_proto/",
-					"--proto_path="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"--proto_path="+config.ProtoDir+"common/",
+					"--proto_path="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -196,22 +184,16 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.LoginDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common_proto/",
-					"-I="+config.ProtoDir+"component_proto/",
-					"-I="+config.ProtoDir+"event_proto/",
-					"-I="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				cmd = exec.Command("./protoc.exe",
 					"--go_out="+config.LoginDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common_proto/",
-					"-I="+config.ProtoDir+"component_proto/",
-					"-I="+config.ProtoDir+"event_proto/",
-					"-I="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -273,22 +255,16 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.DbDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common_proto/",
-					"-I="+config.ProtoDir+"component_proto/",
-					"-I="+config.ProtoDir+"event_proto/",
-					"-I="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				cmd = exec.Command("./protoc.exe",
 					"--go_out="+config.DbDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common_proto/",
-					"-I="+config.ProtoDir+"component_proto/",
-					"-I="+config.ProtoDir+"event_proto/",
-					"-I="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -347,22 +323,16 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.ClientGoOutDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common_proto/",
-					"-I="+config.ProtoDir+"component_proto/",
-					"-I="+config.ProtoDir+"event_proto/",
-					"-I="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				cmd = exec.Command("./protoc.exe",
 					"--go_out="+config.ClientGoOutDir,
 					fileName,
 					"--proto_path="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common_proto/",
-					"-I="+config.ProtoDir+"component_proto/",
-					"-I="+config.ProtoDir+"event_proto/",
-					"-I="+config.ProtoDir+"logic_proto/",
-					"-I="+config.ProtoDir+"constants_proto/",
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
