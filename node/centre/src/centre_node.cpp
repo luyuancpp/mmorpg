@@ -8,7 +8,7 @@
 #include "common_proto/deploy_service.grpc.pb.h"
 #include "constants/file.h"
 #include "constants_proto/node.pb.h"
-#include "event_handler/event_handler.h"
+#include "handler/event/event_handler.h"
 #include "game_config/lobby_config.h"
 #include "grpc/deploy/deployclient.h"
 #include "handler/player_service.h"
