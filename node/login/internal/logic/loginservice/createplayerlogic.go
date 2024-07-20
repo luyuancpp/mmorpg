@@ -63,7 +63,7 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 	}
 
 	playerDb := &game.AccountSimplePlayer{}
-	playerDb.PlayerId = 1
+	playerDb.PlayerId = uint64(l.svcCtx.SnowFlake.Generate())
 	accountData.SimplePlayers.Players = append(accountData.SimplePlayers.Players, playerDb)
 	for _, player := range accountData.SimplePlayers.Players {
 		resp.ClientMsgBody.Players = append(resp.ClientMsgBody.Players, &game.CAccountSimplePlayer{Player: player})

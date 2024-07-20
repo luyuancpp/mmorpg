@@ -2,9 +2,9 @@ package config
 
 import (
 	"github.com/zeromicro/go-zero/core/logx"
+	"gopkg.in/yaml.v3"
 	"os"
 )
-import "gopkg.in/yaml.v3"
 
 type RedisConf struct {
 	Addr string `yaml:"addr"`
