@@ -84,7 +84,7 @@ var ProtoDirNames = [...]string{
 	"common_proto/",
 	"component_proto/",
 	"event_proto/",
-	"logic_proto/",
+	"logic_proto/server_proto",
 	"client_player_proto/",
 	"server_player_proto/",
 	"tip_code_proto/",
