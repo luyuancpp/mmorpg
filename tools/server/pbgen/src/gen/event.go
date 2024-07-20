@@ -52,7 +52,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 	var handlerFunction string
 	for _, s := range eventList {
 		classDeclareHeader += "class " + s + ";\n"
-		handlerFunction += config.Tab + "static void " + s + "Handler(const " + s + "& message);\n"
+		handlerFunction += config.Tab + "static void " + s + "Handler(const " + s + "& event);\n"
 		registerFunctionBody += config.Tab2 + "tls.dispatcher.sink<" + s + ">().connect<&" +
 			className + "::" + s + "Handler>();\n"
 		unregisterFunctionBody += config.Tab2 + "tls.dispatcher.sink<" + s + ">().disconnect<&" +
@@ -89,7 +89,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 				"{\n" + unregisterFunctionBody + "}\n\n"
 		}
 		if isEventIndex {
-			dataCpp += "void " + className + "::" + eventList[j] + "Handler(const " + eventList[j] + "& message)\n{\n"
+			dataCpp += "void " + className + "::" + eventList[j] + "Handler(const " + eventList[j] + "& event)\n{\n"
 		}
 		dataCpp += yourCodes[i]
 		if isEventIndex {

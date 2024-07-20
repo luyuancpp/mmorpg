@@ -21,28 +21,28 @@ void MissionEventHandler::UnRegister()
 		tls.dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventHandler::OnMissionAwardEventHandler>();
 }
 
-void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& message)
+void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	MissionSystem::Accept(message);
+	MissionSystem::Accept(event);
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& message)
+void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    MissionSystem::Receive(message);
+    MissionSystem::Receive(event);
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& message)
+void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
      //触发接任务自动匹配当前的任务进度,接受的时候已经拥有金币刷新任务的进度
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::OnMissionAwardEventHandler(const OnMissionAwardEvent& message)
+void MissionEventHandler::OnMissionAwardEventHandler(const OnMissionAwardEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
