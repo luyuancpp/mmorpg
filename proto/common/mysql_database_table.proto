@@ -5,8 +5,8 @@ option go_package = "pb/game";
 import "common/db_base.proto";
 import "common/account_database.proto";
 import "common/comp.proto";
-import "component/player_scene_comp.proto";
-import "component/actor_comp.proto";
+import "logic/component/player_scene_comp.proto";
+import "logic/component/actor_comp.proto";
 
 /////////////         game
 message account_database
