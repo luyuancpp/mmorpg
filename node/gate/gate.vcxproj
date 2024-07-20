@@ -25,8 +25,8 @@
     <ClCompile Include="src\grpc\handler\login_grpc_reply_handler.cpp" />
     <ClCompile Include="src\grpc\request\deploy_grpc_requst.cpp" />
     <ClCompile Include="src\grpc\request\login_grpc_request.cpp" />
-    <ClCompile Include="src\handler\client_message_processor.cpp" />
-    <ClCompile Include="src\handler\gate_service_handler.cpp" />
+    <ClCompile Include="src\handler\service\client_message_processor.cpp" />
+    <ClCompile Include="src\handler\service\gate_service_handler.cpp" />
     <ClCompile Include="src\replied_handler\centre_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\game_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\register_replied_handler.cpp" />
@@ -42,8 +42,8 @@
     <ClInclude Include="src\grpc\client\login_async_client_call.h" />
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h" />
     <ClInclude Include="src\grpc\request\login_grpc_request.h" />
-    <ClInclude Include="src\handler\client_message_processor.h" />
-    <ClInclude Include="src\handler\gate_service_handler.h" />
+    <ClInclude Include="src\handler\service\client_message_processor.h" />
+    <ClInclude Include="src\handler\service\gate_service_handler.h" />
     <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\message_system.h" />
     <ClInclude Include="src\replied_handler\centre_service_replied_handler.h" />
