@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common.proto";
+import "common/common.proto";
 
 message RouteNodeInfo
 {

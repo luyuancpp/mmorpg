@@ -1,7 +1,7 @@
 #include "movement_acceleration.h"
 
 #include "thread_local/storage.h"
-#include "component_proto/actor_comp.pb.h"
+#include "proto/logic/component/actor_comp.pb.h"
 #include "proto/common/comp.pb.h"
 
 void MovementAccelerationSystem::Update(double delta)

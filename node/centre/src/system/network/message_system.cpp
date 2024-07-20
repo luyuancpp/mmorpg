@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "comp/scene.h"
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "service/game_service_service.h"

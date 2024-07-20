@@ -22,8 +22,8 @@
 #include "comp/scene.h"
 #include "constants/dt_crowd.h"
 
-#include "component_proto/player_comp.pb.h"
-#include "constants_proto/node.pb.h"
+#include "proto/logic/component/player_comp.pb.h"
+#include "proto/logic/constants/node.pb.h"
 
 void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 {

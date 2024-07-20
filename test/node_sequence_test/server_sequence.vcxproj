@@ -119,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../pkg/common/src;../../game_proto/pbc/src;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost;../../third_party/googletest/googletest/include/;../../third_party/;../../third_party/protobuf/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../pkg/common/src;../../game_proto/pbc/src;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost;../../third_party/googletest/googletest/include/;../../third_party/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>

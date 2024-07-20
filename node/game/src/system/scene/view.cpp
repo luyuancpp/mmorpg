@@ -3,9 +3,9 @@
 #include "constants/view.h"
 
 #include "../../../../../pkg/muduo_windows/src/muduo/base/Logging.h"
-#include "client_player_proto/scene_client_player.pb.h"
-#include "component_proto/actor_comp.pb.h"
-#include "component_proto/npc_comp.pb.h"
+#include "proto/logic/client_player/scene_client_player.pb.h"
+#include "proto/logic/component/actor_comp.pb.h"
+#include "proto/logic/component/npc_comp.pb.h"
 #include "Detour/DetourCommon.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"

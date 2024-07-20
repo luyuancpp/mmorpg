@@ -18,9 +18,9 @@
 #include "type_alias/player_loading.h"
 #include "util/defer.h"
 
-#include "component_proto/player_comp.pb.h"
-#include "component_proto/player_login_comp.pb.h"
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_comp.pb.h"
+#include "proto/logic/component/player_login_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 
 void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
 {

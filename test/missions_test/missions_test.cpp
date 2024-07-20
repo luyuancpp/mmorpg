@@ -10,8 +10,8 @@
 #include "util/random.h"
 #include "thread_local/storage.h"
 
-#include "component_proto/mission_comp.pb.h"
-#include "event_proto/mission_event.pb.h"
+#include "proto/logic/component/mission_comp.pb.h"
+#include "proto/logic/event/mission_event.pb.h"
 
 decltype(auto) CreateMission()
 {
