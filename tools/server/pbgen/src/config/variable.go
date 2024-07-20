@@ -94,7 +94,7 @@ var ProtoDirs []string
 var ProtoMd5Dirs []string
 
 const HandlerDirName = "src/handler/service/"
-const RepliedHandlerDirName = "src/replied_handler/"
+const RepliedHandlerDirName = "src/handler/service_replied/"
 const ServiceIdsFileName = ProtoDir + "serviceid.txt"
 
 const EventHandlerDirName = "src/handler/event/"
