@@ -23,7 +23,7 @@ void AoiSystem::Update(double delta)
     GridSet leave_grid_set;
     GridSet copy_leaver_grid_set;
     GridSet copy_enter_grid_set;
-    EntitySet observer_entrant_player_set;
+    EntitySet player_entrant_observer_list;
     EntitySet observer_leave_player_set;
 
     for (auto&& [mover, transform, player_scene] : tls.registry.view<Transform, SceneEntity>().each())
@@ -35,7 +35,7 @@ void AoiSystem::Update(double delta)
         }
         enter_grid_set.clear();
         leave_grid_set.clear();
-        observer_entrant_player_set.clear();
+        player_entrant_observer_list.clear();
         observer_leave_player_set.clear();
         
         auto& grid_list = tls.scene_registry.get<SceneGridList>(player_scene.scene_entity);
@@ -47,7 +47,7 @@ void AoiSystem::Update(double delta)
         if (!tls.registry.any_of<Hex>(mover))
         {
             // 新进入
-            ScanNeighborGridId(hex,enter_grid_set);
+            ScanNeighborGridId(hex, enter_grid_set);
             grid_list[grid_id].entity_list.emplace(mover);
             tls.registry.emplace<Hex>(mover, hex);
         }
@@ -62,7 +62,6 @@ void AoiSystem::Update(double delta)
             else if (distance < 3)
             {
                 // 如果相邻格子移动,则计算差值
-
                 ScanNeighborGridId(hex_old, leave_grid_set);
                 ScanNeighborGridId(hex, enter_grid_set);
 
@@ -84,12 +83,11 @@ void AoiSystem::Update(double delta)
                 ScanNeighborGridId(hex_old, leave_grid_set);
                 ScanNeighborGridId(hex, enter_grid_set);
             }
-           
+            LeaveGrid(hex_old, grid_list, mover);
+
             grid_list[grid_id].entity_list.emplace(mover);
             tls.registry.remove<Hex>(mover);
             tls.registry.emplace<Hex>(mover, hex);
-
-            LeaveGrid(hex_old, grid_list, mover);
         }
 
         // 计算可以看到的人，并填充网络包
@@ -109,7 +107,7 @@ void AoiSystem::Update(double delta)
                     continue;
                 }
                 ViewSystem::FillActorCreateS2CInfo(mover);
-                observer_entrant_player_set.emplace(observer);
+                player_entrant_observer_list.emplace(observer);
             }
             //玩家进入视野
             for (auto& observer : observer_list)
@@ -123,10 +121,10 @@ void AoiSystem::Update(double delta)
                     continue;
                 }
                 ViewSystem::FillActorCreateS2CInfo(mover);
-                observer_entrant_player_set.emplace(observer);
+                player_entrant_observer_list.emplace(observer);
             }
         }
-        BroadCast2Player(observer_entrant_player_set, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
+        BroadCast2Player(player_entrant_observer_list, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
 
         BroadCastLeaveGridMessage(grid_list, mover, leave_grid_set);
     }
@@ -136,7 +134,8 @@ absl::uint128 AoiSystem::GetGridId(const Location& l)
 {
     const auto hex =
            hex_round(pixel_to_hex(KFlat, Point(l.x(), l.y())));
-    const absl::uint128 index = static_cast<absl::uint128>(hex.q) << 64 & static_cast<uint64_t>(hex.r);
+    const absl::uint128 index = 
+        static_cast<absl::uint128>(hex.q) << 64 & static_cast<uint64_t>(hex.r);
     return index;
 }
 
@@ -203,8 +202,9 @@ void AoiSystem::UpdateLogGridSize(double delta)
 void AoiSystem::LeaveGrid(const Hex& hex, SceneGridList& grid_list, entt::entity player)
 {
     const auto grid_id_old = GetGridId(hex);
-    grid_list[grid_id_old].entity_list.erase(player);
-    if (grid_list[grid_id_old].entity_list.empty())
+    auto& leave_grid = grid_list[grid_id_old];
+    leave_grid.entity_list.erase(player);
+    if (leave_grid.entity_list.empty())
     {
         grid_list.erase(grid_id_old);
     }
