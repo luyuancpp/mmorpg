@@ -9,7 +9,7 @@
 
 #include "DetourCrowd/DetourCrowd.h"
 #include "game_node.h"
-#include "network/message_system.h"
+#include "system/network/message_system.h"
 #include "service/centre_scene_service.h"
 #include "system/player/player_scene.h"
 #include "system/recast.h"
