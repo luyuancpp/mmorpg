@@ -57,7 +57,7 @@ var SourceDirs = [...]string{
 var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
 
-const PbcDirName = "pkg/pbc/src/proto"
+const PbcDirName = "pkg/pbc/src/proto/"
 
 const PbcOutDir = ProjectDir + PbcDirName
 const GrpcOutDir = ProjectDir + PbcDirName
