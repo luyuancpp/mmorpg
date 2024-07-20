@@ -2,8 +2,9 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "component/scene_comp.proto";
 import "common/empty.proto";
+import "logic/component/scene_comp.proto";
+
 option cc_generic_services = true;
 
 message RegisterSceneRequest
