@@ -171,12 +171,6 @@
     <ClCompile Include="src\logic_proto\game_team.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\lua\account_database_sol2.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lua\empty_sol2.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\server_player_proto\centre_common_server_player.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -187,54 +181,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\server_player_proto\game_server_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\centre_common_server_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\centre_scene_server_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\centre_scene_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\centre_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\common_client_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\db_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\deploy_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\game_scene_server_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\game_scene_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\game_server_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\game_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\gate_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\login_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\scene_client_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\team_client_player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\tip_code_proto\common_tip_code.pb.cc">
@@ -429,54 +375,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_player_proto\game_server_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\centre_common_server_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\centre_scene_server_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\centre_scene_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\centre_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\common_client_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\db_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\deploy_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\game_scene_server_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\game_scene_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\game_server_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\game_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\gate_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\login_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\scene_client_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\team_client_player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\tip_code_proto\common_tip_code.pb.h">

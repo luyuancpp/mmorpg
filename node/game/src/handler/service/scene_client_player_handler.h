@@ -1,5 +1,5 @@
 #pragma once
-#include "client_player_proto/scene_client_player.pb.h"
+#include "logic_proto/client_player_proto/scene_client_player.pb.h"
 #include "player_service.h"
 class ClientPlayerSceneServiceHandler : public ::PlayerService
 {

@@ -1,5 +1,5 @@
 #pragma once
-#include "logic_proto/centre_scene.pb.h"
+#include "logic_proto/server_proto/centre_scene.pb.h"
 class CentreSceneServiceHandler : public ::CentreSceneService
 {
 public:
