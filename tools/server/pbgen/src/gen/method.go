@@ -151,7 +151,7 @@ func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string
 	firstMethodInfo := (*methodList)[0]
 	data = firstMethodInfo.CppHandlerIncludeName() +
 		"#include \"thread_local/storage.h\"\n" +
-		"#include \"network/message_system.h\"\n"
+		"#include \"system/network/message_system.h\"\n"
 
 	className := firstMethodInfo.Service + config.HandlerName
 	for i := 0; i < len(yourCodes); i++ {
@@ -229,7 +229,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos, classN
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	data = includeName +
 		"#include \"thread_local/storage.h\"\n" +
-		"#include \"network/message_system.h\"\n"
+		"#include \"system/network/message_system.h\"\n"
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isMessage := j >= 0 && j < methodLen
