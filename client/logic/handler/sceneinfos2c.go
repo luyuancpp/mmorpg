@@ -16,6 +16,6 @@ func SceneInfoS2CHandler(client *pkg.GameClient, response *game.SceneInfoS2C) {
 		randomIndex := rand.Intn(len(response.SceneInfo))
 		req.SceneInfo = response.SceneInfo[randomIndex]
 	}
-	log.Println(req)
+	log.Println("SceneInfo ", logic.GMainPlayer.PlayerId, req)
 	logic.GMainPlayer.Send(req, 16)
 }

@@ -46,7 +46,7 @@ void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, cons
 	const auto player = GetPlayerByConnId(replied->session_info().session_id());
 	if (entt::null == player)
 	{
-		LOG_ERROR << "player not found " << tls.registry.get<Guid>(player);
+		LOG_ERROR << "session player not found " << replied->session_info().session_id();
 		return;
 	}
 	PlayerNodeSystem::OnRegister2GatePlayerGameNode(player);

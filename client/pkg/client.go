@@ -12,7 +12,7 @@ type GameClient struct {
 }
 
 func NewGameClient(client *muduo.Client) *GameClient {
-	return &GameClient{client}
+	return &GameClient{Client: client}
 }
 
 func (c *GameClient) Send(message proto.Message, messageId uint32) {

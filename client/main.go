@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	for i := 5; i < 6; i++ {
+	for i := 1; i < 6; i++ {
 		go func(i int) {
 			client, err := muduo.NewClient("127.0.0.1", 8000, &muduo.TcpCodec{})
 			if err != nil {
