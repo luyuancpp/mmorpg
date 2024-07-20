@@ -3,12 +3,12 @@
 #include "system/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "comp/scene.h"
-#include "component_proto/player_comp.pb.h"
+#include "proto/logic/component/player_comp.pb.h"
 #include "service/scene_client_player_service.h"
 #include "system/player/player_node.h"
 #include "system/player/player_scene.h"
 
-#include "client_player_proto/scene_client_player.pb.h"
+#include "proto/logic/client_player/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
 void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,
 	const ::GsEnterSceneRequest* request,

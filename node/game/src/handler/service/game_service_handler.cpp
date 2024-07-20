@@ -19,8 +19,8 @@
 #include "util/defer.h"
 #include "util/pb.h"
 
-#include "component_proto/player_async_comp.pb.h"
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_async_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 

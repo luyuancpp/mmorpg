@@ -7,7 +7,7 @@
 
 #include "system/player/player_node.h"
 
-#include "component_proto/player_login_comp.pb.h"
+#include "proto/logic/component/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,
 	const ::Centre2GsLoginRequest* request,

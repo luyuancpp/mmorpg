@@ -3,7 +3,7 @@
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE 
 
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 #include "muduo/base/Logging.h"
 
 #include "comp/scene.h"
@@ -15,7 +15,7 @@
 #include "system/scene/scene_system.h"
 #include "type_define/type_define.h"
 
-#include "component_proto/scene_comp.pb.h"
+#include "proto/logic/component/scene_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register()
 {
