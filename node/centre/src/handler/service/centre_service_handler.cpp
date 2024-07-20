@@ -1,6 +1,6 @@
 #include "centre_service_handler.h"
 #include "thread_local/storage.h"
-#include "network/message_system.h"
+#include "system/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
 #include "mainscene_config.h"
@@ -14,7 +14,7 @@
 #include "handler/service/register_handler.h"
 #include "muduo/net/Callbacks.h"
 #include "muduo/net/InetAddress.h"
-#include "network/game_node.h"
+#include "comp/game_node.h"
 #include "network/gate_session.h"
 #include "network/rpc_msg_route.h"
 #include "service/game_service_service.h"
