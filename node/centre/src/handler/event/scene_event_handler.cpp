@@ -7,8 +7,8 @@
 #include "muduo/base/Logging.h"
 
 #include "comp/scene.h"
-#include "network/game_node.h"
-#include "network/message_system.h"
+#include "comp/game_node.h"
+#include "system/network/message_system.h"
 #include "service/game_scene_server_player_service.h"
 #include "system/player_change_scene.h"
 #include "system/player_scene.h"

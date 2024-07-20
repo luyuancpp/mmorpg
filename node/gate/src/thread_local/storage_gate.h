@@ -1,6 +1,6 @@
 #pragma once
 
-#include "network/gate_session.h"
+#include "comp/gate_session.h"
 #include "util/consistent_hash_node.h"
 
 #include "type_alias/session_id_gen.h"
