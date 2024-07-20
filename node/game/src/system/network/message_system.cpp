@@ -12,7 +12,7 @@
 #include "comp/session.h"
 
 #include "comp/player.h"
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
