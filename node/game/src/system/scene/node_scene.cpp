@@ -16,7 +16,7 @@
 #include "system/scene/scene_system.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
-#include "event_proto/scene_event.pb.h"
+#include "logic/event/scene_event.pb.h"
 #include "comp/scene/grid.h"
 #include "constants/scene.h"
 #include "comp/scene.h"
