@@ -10,7 +10,7 @@
 #include "thread_local/storage_gate.h"
 #include "util/pb.h"
 
-#include "component_proto/player_network_comp.pb.h"
+#include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,
 	const ::RegisterGameRequest* request,

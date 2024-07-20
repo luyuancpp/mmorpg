@@ -2,10 +2,10 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "common_proto/deploy_service.grpc.pb.h"
-#include "common_proto/login_service.grpc.pb.h"
+#include "proto/common/deploy_service.grpc.pb.h"
+#include "proto/common/login_service.grpc.pb.h"
 #include "constants/file.h"
-#include "constants_proto/node.pb.h"
+#include "proto/logic/constants/node.pb.h"
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deployclient.h"
 #include "muduo/base/TimeZone.h"

@@ -12,7 +12,7 @@
 #include "timer_task/timer_task.h"
 #include "type_define/type_define.h"
 
-#include "common_proto/deploy_service.pb.h"
+#include "proto/common/deploy_service.pb.h"
 
 class GameNode : muduo::noncopyable
 {

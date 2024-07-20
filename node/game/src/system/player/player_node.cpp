@@ -10,7 +10,7 @@
 #include "type_alias/player_session.h"
 #include "util/defer.h"
 
-#include "common_proto/centre_service.pb.h"
+#include "proto/common/centre_service.pb.h"
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"

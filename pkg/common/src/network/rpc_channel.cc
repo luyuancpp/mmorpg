@@ -18,7 +18,7 @@
 #include "service/service.h"
 #include "test/test.h"
 
-#include "common_proto/empty.pb.h"
+#include "proto/common/empty.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

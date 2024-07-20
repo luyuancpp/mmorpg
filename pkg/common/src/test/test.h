@@ -1,6 +1,6 @@
 #pragma once
 
-#include "constants_proto/test_switch.pb.h"
+#include "logic/constants/test_switch.pb.h"
 
 #include <bitset>
 

@@ -5,7 +5,7 @@
 #include "comp/node_scene.h"
 #include "thread_local/storage.h"
 
-#include "component_proto/gs_node_comp.pb.h"
+#include "proto/logic/component/gs_node_comp.pb.h"
 
 using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
