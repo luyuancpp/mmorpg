@@ -72,10 +72,9 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
             if (const auto& login_node = GetLoginNode(session_uid);
                 entt::null != login_node)
             {
-                //todo 
-                //LoginNodeDisconnectRequest rq;
-                //rq.set_session_id(session_id);
-                //session_login_node->CallMethod(LoginServiceDisconnectMsgId, rq);
+                LoginNodeDisconnectRequest rq;
+                rq.set_session_id(session_uid);
+                SendDisconnectC2LRequest(login_node, rq);
             }			
         }
         // centre

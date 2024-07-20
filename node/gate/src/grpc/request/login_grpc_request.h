@@ -29,3 +29,12 @@ struct EnterGameC2LCompletionQueue
 };
 
 void SendEnterGameC2LRequest(entt::entity login_node, EnterGameC2LRequest& request);
+
+
+class LoginNodeDisconnectRequest;
+struct DisconnectC2LCompletionQueue
+{
+    CompletionQueue cq;
+};
+
+void SendDisconnectC2LRequest(entt::entity login_node, LoginNodeDisconnectRequest& request);

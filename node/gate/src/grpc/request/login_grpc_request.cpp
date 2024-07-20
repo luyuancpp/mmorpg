@@ -52,3 +52,18 @@ void SendEnterGameC2LRequest(entt::entity login_node, EnterGameC2LRequest& reque
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
+void SendDisconnectC2LRequest(entt::entity login_node, LoginNodeDisconnectRequest& request)
+{
+    if (!tls_gate.login_node_registry.valid(login_node))
+    {
+        return;
+    }
+    const auto& stub = tls_gate.login_node_registry.get<GrpcLoginStubPtr>(login_node);
+    const auto  call(new DisconnectC2LAsyncClientCall);
+    call->response_reader =
+        stub->PrepareAsyncDisconnect(&call->context, request,
+            &tls_gate.login_node_registry.get<DisconnectC2LCompletionQueue>(login_node).cq);
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+}
+

@@ -112,6 +112,30 @@ void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
     }
 }
 
+void AsyncCompleteDisconnectC2L(CompletionQueue& cq)
+{
+    void* got_tag;
+    bool ok = false;
+
+    gpr_timespec tm;
+    tm.tv_sec = 0;
+    tm.tv_nsec = 0;
+    tm.clock_type = GPR_CLOCK_MONOTONIC;
+    if (CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm))
+    {
+        return;
+    }
+
+    std::unique_ptr<DisconnectC2LAsyncClientCall> call(static_cast<DisconnectC2LAsyncClientCall*>(got_tag));
+
+    CHECK(ok);
+
+    if (!call->status.ok())
+    {
+        LOG_ERROR << "RPC failed";
+    }
+}
+
 void InitLoginNodeComponent()
 {
     for (auto&& e : tls_gate.login_node_registry.view<GrpcLoginStubPtr>())
@@ -119,6 +143,7 @@ void InitLoginNodeComponent()
         tls_gate.login_node_registry.emplace<LoginC2LCompletionQueue>(e);
         tls_gate.login_node_registry.emplace<CreatePlayerC2LCompletionQueue>(e);
         tls_gate.login_node_registry.emplace<EnterGameC2LCompletionQueue>(e);
+        tls_gate.login_node_registry.emplace<DisconnectC2LCompletionQueue>(e);
     }
 }
 
@@ -132,5 +157,7 @@ void AsyncCompleteRpcLoginService()
             tls_gate.login_node_registry.get<CreatePlayerC2LCompletionQueue>(e).cq);
         AsyncCompleteEnterGameC2L(
             tls_gate.login_node_registry.get<EnterGameC2LCompletionQueue>(e).cq);
+        AsyncCompleteDisconnectC2L(
+            tls_gate.login_node_registry.get<DisconnectC2LCompletionQueue>(e).cq);
     }
 }
