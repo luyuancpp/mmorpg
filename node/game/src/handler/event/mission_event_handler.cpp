@@ -1,5 +1,5 @@
 #include "mission_event_handler.h"
-#include "logic_proto/event_proto/mission_event.pb.h"
+#include "logic/event/mission_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "comp/mission.h"

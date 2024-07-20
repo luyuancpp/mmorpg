@@ -2,10 +2,10 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common_proto/empty.proto";
-import "common_proto/common.proto";
-import "common_proto/node_common.proto";
-import "component_proto/scene_comp.proto";
+import "common/empty.proto";
+import "common/common.proto";
+import "common/node_common.proto";
+import "component/scene_comp.proto";
 
 option cc_generic_services = true;
 

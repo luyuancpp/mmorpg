@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.34.1
 // 	protoc        v4.25.1
-// source: common_proto/account_database.proto
+// source: common/account_database.proto
 
 package game
 
@@ -31,7 +31,7 @@ type AccountSimplePlayer struct {
 func (x *AccountSimplePlayer) Reset() {
 	*x = AccountSimplePlayer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_account_database_proto_msgTypes[0]
+		mi := &file_common_account_database_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -44,7 +44,7 @@ func (x *AccountSimplePlayer) String() string {
 func (*AccountSimplePlayer) ProtoMessage() {}
 
 func (x *AccountSimplePlayer) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_account_database_proto_msgTypes[0]
+	mi := &file_common_account_database_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *AccountSimplePlayer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountSimplePlayer.ProtoReflect.Descriptor instead.
 func (*AccountSimplePlayer) Descriptor() ([]byte, []int) {
-	return file_common_proto_account_database_proto_rawDescGZIP(), []int{0}
+	return file_common_account_database_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *AccountSimplePlayer) GetPlayerId() uint64 {
@@ -78,7 +78,7 @@ type AccountSimplePlayers struct {
 func (x *AccountSimplePlayers) Reset() {
 	*x = AccountSimplePlayers{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_common_proto_account_database_proto_msgTypes[1]
+		mi := &file_common_account_database_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -91,7 +91,7 @@ func (x *AccountSimplePlayers) String() string {
 func (*AccountSimplePlayers) ProtoMessage() {}
 
 func (x *AccountSimplePlayers) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_account_database_proto_msgTypes[1]
+	mi := &file_common_account_database_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -104,7 +104,7 @@ func (x *AccountSimplePlayers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountSimplePlayers.ProtoReflect.Descriptor instead.
 func (*AccountSimplePlayers) Descriptor() ([]byte, []int) {
-	return file_common_proto_account_database_proto_rawDescGZIP(), []int{1}
+	return file_common_account_database_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AccountSimplePlayers) GetPlayers() []*AccountSimplePlayer {
@@ -114,41 +114,40 @@ func (x *AccountSimplePlayers) GetPlayers() []*AccountSimplePlayer {
 	return nil
 }
 
-var File_common_proto_account_database_proto protoreflect.FileDescriptor
+var File_common_account_database_proto protoreflect.FileDescriptor
 
-var file_common_proto_account_database_proto_rawDesc = []byte{
-	0x0a, 0x23, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x61,
-	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x62, 0x61, 0x73, 0x65, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x32, 0x0a, 0x13, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
-	0x53, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x12, 0x1b, 0x0a, 0x09,
-	0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52,
-	0x08, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x49, 0x64, 0x22, 0x48, 0x0a, 0x16, 0x61, 0x63, 0x63,
-	0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x5f, 0x70, 0x6c, 0x61, 0x79,
-	0x65, 0x72, 0x73, 0x12, 0x2e, 0x0a, 0x07, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x69,
-	0x6d, 0x70, 0x6c, 0x65, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x52, 0x07, 0x70, 0x6c, 0x61, 0x79,
-	0x65, 0x72, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+var file_common_account_database_proto_rawDesc = []byte{
+	0x0a, 0x1d, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x5f, 0x64, 0x61, 0x74, 0x61, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
+	0x32, 0x0a, 0x13, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x69, 0x6d, 0x70, 0x6c, 0x65,
+	0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x12, 0x1b, 0x0a, 0x09, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x70, 0x6c, 0x61, 0x79, 0x65,
+	0x72, 0x49, 0x64, 0x22, 0x48, 0x0a, 0x16, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x73,
+	0x69, 0x6d, 0x70, 0x6c, 0x65, 0x5f, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x73, 0x12, 0x2e, 0x0a,
+	0x07, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x14,
+	0x2e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x50, 0x6c,
+	0x61, 0x79, 0x65, 0x72, 0x52, 0x07, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x73, 0x42, 0x09, 0x5a,
+	0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_common_proto_account_database_proto_rawDescOnce sync.Once
-	file_common_proto_account_database_proto_rawDescData = file_common_proto_account_database_proto_rawDesc
+	file_common_account_database_proto_rawDescOnce sync.Once
+	file_common_account_database_proto_rawDescData = file_common_account_database_proto_rawDesc
 )
 
-func file_common_proto_account_database_proto_rawDescGZIP() []byte {
-	file_common_proto_account_database_proto_rawDescOnce.Do(func() {
-		file_common_proto_account_database_proto_rawDescData = protoimpl.X.CompressGZIP(file_common_proto_account_database_proto_rawDescData)
+func file_common_account_database_proto_rawDescGZIP() []byte {
+	file_common_account_database_proto_rawDescOnce.Do(func() {
+		file_common_account_database_proto_rawDescData = protoimpl.X.CompressGZIP(file_common_account_database_proto_rawDescData)
 	})
-	return file_common_proto_account_database_proto_rawDescData
+	return file_common_account_database_proto_rawDescData
 }
 
-var file_common_proto_account_database_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_common_proto_account_database_proto_goTypes = []interface{}{
+var file_common_account_database_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_common_account_database_proto_goTypes = []interface{}{
 	(*AccountSimplePlayer)(nil),  // 0: AccountSimplePlayer
 	(*AccountSimplePlayers)(nil), // 1: account_simple_players
 }
-var file_common_proto_account_database_proto_depIdxs = []int32{
+var file_common_account_database_proto_depIdxs = []int32{
 	0, // 0: account_simple_players.players:type_name -> AccountSimplePlayer
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
@@ -157,13 +156,13 @@ var file_common_proto_account_database_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_common_proto_account_database_proto_init() }
-func file_common_proto_account_database_proto_init() {
-	if File_common_proto_account_database_proto != nil {
+func init() { file_common_account_database_proto_init() }
+func file_common_account_database_proto_init() {
+	if File_common_account_database_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_common_proto_account_database_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_common_account_database_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AccountSimplePlayer); i {
 			case 0:
 				return &v.state
@@ -175,7 +174,7 @@ func file_common_proto_account_database_proto_init() {
 				return nil
 			}
 		}
-		file_common_proto_account_database_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_common_account_database_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AccountSimplePlayers); i {
 			case 0:
 				return &v.state
@@ -192,18 +191,18 @@ func file_common_proto_account_database_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_common_proto_account_database_proto_rawDesc,
+			RawDescriptor: file_common_account_database_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_common_proto_account_database_proto_goTypes,
-		DependencyIndexes: file_common_proto_account_database_proto_depIdxs,
-		MessageInfos:      file_common_proto_account_database_proto_msgTypes,
+		GoTypes:           file_common_account_database_proto_goTypes,
+		DependencyIndexes: file_common_account_database_proto_depIdxs,
+		MessageInfos:      file_common_account_database_proto_msgTypes,
 	}.Build()
-	File_common_proto_account_database_proto = out.File
-	file_common_proto_account_database_proto_rawDesc = nil
-	file_common_proto_account_database_proto_goTypes = nil
-	file_common_proto_account_database_proto_depIdxs = nil
+	File_common_account_database_proto = out.File
+	file_common_account_database_proto_rawDesc = nil
+	file_common_account_database_proto_goTypes = nil
+	file_common_account_database_proto_depIdxs = nil
 }

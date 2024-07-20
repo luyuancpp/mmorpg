@@ -1,5 +1,5 @@
 #pragma once
-#include "common_proto/gate_service.pb.h"
+#include "common/gate_service.pb.h"
 class GateServiceHandler : public ::GateService
 {
 public:

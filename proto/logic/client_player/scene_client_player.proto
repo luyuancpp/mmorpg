@@ -2,11 +2,11 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common_proto/tip.proto";
-import "common_proto/common.proto";
-import "common_proto/empty.proto";
-import "component_proto/scene_comp.proto";
-import "component_proto/actor_comp.proto";
+import "common/tip.proto";
+import "common/common.proto";
+import "common/empty.proto";
+import "component/scene_comp.proto";
+import "component/actor_comp.proto";
 option cc_generic_services = true;
 
 message EnterSceneC2SRequest
