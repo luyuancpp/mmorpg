@@ -9,6 +9,7 @@
 #include "system/scene/aoi.h"
 #include "system/scene/movement.h"
 #include "system/scene/movement_acceleration.h"
+#include "system/scene/view.h"
 #include "thread_local/storage_game.h"
 
 #include "proto/logic/component/frame_comp.pb.h"
@@ -27,6 +28,7 @@ void World::InitSystemBeforeConnect()
     tls_game.frame_time_.set_delta_time(1.0 / tls_game.frame_time_.target_fps());
     
     PlayerSessionSystem::Init();
+    ViewSystem::Init();
 }
 
 void World::InitSystemAfterConnect()
