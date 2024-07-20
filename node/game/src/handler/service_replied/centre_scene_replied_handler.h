@@ -1,5 +1,5 @@
 #pragma once
-#include "logic_proto/centre_scene.pb.h"
+#include "proto/logic/server/centre_scene.pb.h"
 #include "muduo/net/TcpConnection.h"
 using namespace muduo;
 using namespace muduo::net;
