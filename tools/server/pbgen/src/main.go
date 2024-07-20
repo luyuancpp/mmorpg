@@ -74,7 +74,7 @@ func main() {
 	gen.ReadServiceIdFile()
 	gen.ReadAllProtoFileServices()
 	gen.BuildAllProtoc()
-	gen.WriteLoadClientLuaFile()
+	//gen.WriteLoadClientLuaFile()
 	gen.WriteEventHandlerFile()
 	gen.WriteSol2LuaFile()
 	util.Wg.Wait()
@@ -86,6 +86,6 @@ func main() {
 	//所有service初始化完以后
 	gen.WriteServiceRegisterInfoFile()
 	gen.WriteLuaServiceHeadHandlerFile()
-	gen.WriteClientServiceHeadHandlerFile()
+	//gen.WriteClientServiceHeadHandlerFile()
 	util.Wg.Wait()
 }

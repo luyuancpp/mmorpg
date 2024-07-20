@@ -1,5 +1,5 @@
 #pragma once
-#include "client_player_proto/common_client_player.pb.h"
+#include "logic/client_player/common_client_player.pb.h"
 #include "player_service_replied.h"
 class ClientPlayerCommonServiceRepliedHandler : public ::PlayerServiceReplied
 {
