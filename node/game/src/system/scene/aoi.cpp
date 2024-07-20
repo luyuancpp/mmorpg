@@ -7,7 +7,7 @@
 #include "component_proto/npc_comp.pb.h"
 #include "event_proto/scene_event.pb.h"
 #include "muduo/base/Logging.h"
-#include "network/message_system.h"
+#include "system/network/message_system.h"
 #include "service/scene_client_player_service.h"
 #include "system/scene/hexagons_grid.h"
 #include "thread_local/storage.h"

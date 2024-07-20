@@ -7,7 +7,7 @@
 #include "system/scene/scene_system.h"
 
 #include "constants/tips_id.h"
-#include "network//game_node.h"
+#include "comp/game_node.h"
 #include "network/message_system.h"
 #include "service/game_scene_server_player_service.h"
 #include "service/game_service_service.h"
