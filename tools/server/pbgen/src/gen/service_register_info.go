@@ -252,7 +252,7 @@ func GetSortServiceList() (ServiceList []string) {
 	return ServiceList
 }
 
-func writeGlobalServiceInfoFile() {
+func writeServiceInfoCppFile() {
 	defer util.Wg.Done()
 	var includeData = "#include <array>\n"
 	includeData += "#include \"service.h\"\n"
@@ -300,7 +300,7 @@ func writeGlobalServiceInfoFile() {
 	WriteMd5Data2File(config.ServiceCppFileName, data)
 }
 
-func writeGlobalServiceInfoHeadFile() {
+func writeServiceInfoHeadFile() {
 	defer util.Wg.Done()
 	var data = "#pragma once\n#include <memory>\n" +
 		"#include <string>\n" +
@@ -459,11 +459,11 @@ func writeCentreGlobalPlayerServiceRepliedInstanceFile() {
 	WriteMd5Data2File(config.CentreMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
 }
 
-func WriteServiceHandlerFile() {
+func WriteServiceRegisterInfoFile() {
 	util.Wg.Add(1)
-	go writeGlobalServiceInfoFile()
+	go writeServiceInfoCppFile()
 	util.Wg.Add(1)
-	go writeGlobalServiceInfoHeadFile()
+	go writeServiceInfoHeadFile()
 	util.Wg.Add(1)
 	writeGsGlobalPlayerServiceInstanceFile()
 	util.Wg.Add(1)
