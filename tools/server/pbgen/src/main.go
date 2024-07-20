@@ -84,7 +84,7 @@ func main() {
 	gen.WriteMethodFile()
 	util.Wg.Wait()
 	//所有service初始化完以后
-	gen.WriteServiceHandlerFile()
+	gen.WriteServiceRegisterInfoFile()
 	gen.WriteLuaServiceHeadHandlerFile()
 	gen.WriteClientServiceHeadHandlerFile()
 	util.Wg.Wait()

@@ -81,14 +81,14 @@ const ClientPlayerDirIndex = 4
 const ServerPlayerDirIndex = 5
 
 var ProtoDirNames = [...]string{
-	"common_proto/",
-	"logic_proto/component_proto/",
-	"logic_proto/event_proto/",
-	"logic_proto/server_proto/",
-	"logic_proto/client_player_proto/",
-	"logic_proto/server_player_proto/",
-	"logic_proto/tip_code_proto/",
-	"logic_proto/constants_proto/",
+	"common/",
+	"logic/component/",
+	"logic/event/",
+	"logic/server/",
+	"logic/client_player/",
+	"logic/server_player/",
+	"logic/tip_code/",
+	"logic/constants/",
 }
 var ProtoDirs []string
 var ProtoMd5Dirs []string
