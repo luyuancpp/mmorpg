@@ -38,3 +38,13 @@ public:
     EnterGameC2LResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<EnterGameC2LResponse>> response_reader;
 };
+
+class DisconnectC2LAsyncClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+
+    Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<Empty>> response_reader;
+};

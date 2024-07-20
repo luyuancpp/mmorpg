@@ -4,9 +4,11 @@ import (
 	"client/pb/game"
 	"client/pkg"
 	"github.com/golang/protobuf/proto"
+	"log"
 )
 
 func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
+	log.Println(response)
 	if response.MessageId == 18 {
 		message := &game.SceneInfoS2C{}
 		err := proto.Unmarshal(response.Body, message)
