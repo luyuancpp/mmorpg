@@ -1,5 +1,5 @@
 #include "scene_event_handler.h"
-#include "event_proto/scene_event.pb.h"
+#include "logic_proto/event_proto/scene_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE 
 

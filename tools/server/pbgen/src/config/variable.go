@@ -57,7 +57,7 @@ var SourceDirs = [...]string{
 var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
 
-const PbcDirName = "pkg/pbc/src/"
+const PbcDirName = "pkg/pbc/src/proto"
 
 const PbcOutDir = ProjectDir + PbcDirName
 const GrpcOutDir = ProjectDir + PbcDirName
@@ -82,13 +82,13 @@ const ServerPlayerDirIndex = 5
 
 var ProtoDirNames = [...]string{
 	"common_proto/",
-	"component_proto/",
-	"event_proto/",
-	"logic_proto/server_proto",
-	"client_player_proto/",
-	"server_player_proto/",
-	"tip_code_proto/",
-	"constants_proto/",
+	"logic_proto/component_proto/",
+	"logic_proto/event_proto/",
+	"logic_proto/server_proto/",
+	"logic_proto/client_player_proto/",
+	"logic_proto/server_player_proto/",
+	"logic_proto/tip_code_proto/",
+	"logic_proto/constants_proto/",
 }
 var ProtoDirs []string
 var ProtoMd5Dirs []string
