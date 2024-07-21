@@ -3,6 +3,7 @@ package loginservicelogic
 import (
 	"context"
 	"github.com/golang/protobuf/proto"
+	"login/client/dbservice/playerdbservice"
 	"login/data"
 	"strconv"
 
@@ -43,7 +44,8 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	key := string(reflection.Descriptor().FullName()) + playerIdStr
 	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	if len(cmd.Val()) == 0 {
-		_, err := l.svcCtx.DBPlayerService.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
+		service := playerdbservice.NewPlayerDBService(*l.svcCtx.DBClient)
+		_, err := service.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
 		if err != nil {
 			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 			return resp, err
