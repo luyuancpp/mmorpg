@@ -44,7 +44,6 @@ private:
     void Connect2Centre();
 
     void InitLog();
-    static void InitConfig();
     static void InitNodeConfig();
     static void InitGameConfig();
     static void InitTimeZone();
