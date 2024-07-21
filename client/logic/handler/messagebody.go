@@ -36,5 +36,15 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 			return
 		}
 		TipS2CHandler(player, message)
+	} else if response.MessageId == 16 {
+		message := &game.EnterSceneC2SResponse{}
+		err := proto.Unmarshal(response.Body, message)
+		if err != nil {
+			return
+		}
+	} else if response.MessageId == 23 {
+
+	} else {
+		zap.L().Info("un handle message", zap.String("response", response.String()))
 	}
 }

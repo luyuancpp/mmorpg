@@ -8,13 +8,13 @@ import (
 )
 
 func SceneInfoS2CHandler(player *logic.Player, response *game.SceneInfoS2C) {
-	req := &game.EnterSceneC2SRequest{}
+	rq := &game.EnterSceneC2SRequest{}
 	randomIndex := rand.Intn(len(response.SceneInfo))
-	req.SceneInfo = response.SceneInfo[randomIndex]
-	for player.SceneId == req.SceneInfo.Guid {
+	rq.SceneInfo = response.SceneInfo[randomIndex]
+	for player.SceneId == rq.SceneInfo.Guid {
 		randomIndex := rand.Intn(len(response.SceneInfo))
-		req.SceneInfo = response.SceneInfo[randomIndex]
+		rq.SceneInfo = response.SceneInfo[randomIndex]
 	}
-	zap.L().Debug("enter scene ", zap.String("request", req.String()))
-	player.Client.Send(req, 16)
+	zap.L().Debug("enter scene ", zap.String("request", rq.String()))
+	player.Client.Send(rq, 16)
 }
