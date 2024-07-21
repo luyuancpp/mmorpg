@@ -4,7 +4,7 @@ import (
 	"client/pb/game"
 	"github.com/golang/protobuf/proto"
 	"github.com/luyuancpp/muduoclient/muduo"
-	"log"
+	"go.uber.org/zap"
 )
 
 type GameClient struct {
@@ -21,7 +21,7 @@ func (c *GameClient) Send(message proto.Message, messageId uint32) {
 	var err error
 	rq.Body, err = proto.Marshal(message)
 	if err != nil {
-		log.Println(err)
+		zap.L().Error("send message ", zap.Error(err))
 		return
 	}
 	c.Client.Send(rq)

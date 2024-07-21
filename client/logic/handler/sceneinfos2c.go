@@ -3,7 +3,7 @@ package handler
 import (
 	"client/logic"
 	"client/pb/game"
-	"log"
+	"go.uber.org/zap"
 	"math/rand"
 )
 
@@ -15,6 +15,6 @@ func SceneInfoS2CHandler(player *logic.Player, response *game.SceneInfoS2C) {
 		randomIndex := rand.Intn(len(response.SceneInfo))
 		req.SceneInfo = response.SceneInfo[randomIndex]
 	}
-	log.Println("SceneInfo ", player.Client.PlayerId, req)
+	zap.L().Debug("enter scene ", zap.String("request", req.String()))
 	player.Client.Send(req, 16)
 }

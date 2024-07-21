@@ -5,14 +5,14 @@ import (
 	"client/pb/game"
 	"client/pkg"
 	"github.com/golang/protobuf/proto"
-	"log"
+	"go.uber.org/zap"
 )
 
 func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
-	//log.Println(response)
+	zap.L().Debug("message body", zap.String("response ", response.String()))
 	player, ok := logic.PlayerList.Get(client.PlayerId)
 	if !ok {
-		log.Println("player not found ", client.PlayerId)
+		zap.L().Error("player not found", zap.Uint64("player id ", client.PlayerId))
 		return
 	}
 	if response.MessageId == 18 {

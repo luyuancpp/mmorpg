@@ -4,7 +4,7 @@ import (
 	"client/logic"
 	"client/pb/game"
 	"client/pkg"
-	"log"
+	"go.uber.org/zap"
 )
 
 func CreatePlayerHandler(client *pkg.GameClient, response *game.CreatePlayerResponse) {
@@ -12,7 +12,7 @@ func CreatePlayerHandler(client *pkg.GameClient, response *game.CreatePlayerResp
 		return
 	}
 	player := logic.NewMainPlayer(response.Players[0].Player.PlayerId, client)
-	log.Println(player.Client.PlayerId)
+	zap.L().Info("create player ", zap.Uint64("player id", player.Client.PlayerId))
 	rq := &game.EnterGameRequest{PlayerId: player.Client.PlayerId}
 	client.Send(rq, 52)
 }

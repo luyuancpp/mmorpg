@@ -47,8 +47,8 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 	rdKey := "account" + in.ClientMsgBody.Account
 	cmd := l.svcCtx.Redis.Get(l.ctx, rdKey)
 	if len(cmd.Val()) <= 0 {
-		as := accountdbservice.NewAccountDBService(*l.svcCtx.DBClient)
-		_, err := as.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.ClientMsgBody.Account})
+		service := accountdbservice.NewAccountDBService(*l.svcCtx.DBClient)
+		_, err := service.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.ClientMsgBody.Account})
 		if err != nil {
 			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 			return resp, err

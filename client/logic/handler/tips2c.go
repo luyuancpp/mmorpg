@@ -3,9 +3,9 @@ package handler
 import (
 	"client/logic"
 	"client/pb/game"
-	"log"
+	"go.uber.org/zap"
 )
 
 func TipS2CHandler(player *logic.Player, response *game.TipS2C) {
-	log.Println(response)
+	zap.L().Info("tip", zap.String("response", response.String()))
 }

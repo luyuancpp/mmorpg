@@ -4,6 +4,8 @@ import (
 	"client/logic/handler"
 	"client/pb/game"
 	"client/pkg"
+	"go.uber.org/zap"
+
 	"github.com/luyuancpp/muduoclient/muduo"
 	"log"
 	"strconv"
@@ -11,6 +13,15 @@ import (
 )
 
 func main() {
+
+	logger, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+	lvl := zap.NewAtomicLevel()
+	lvl.SetLevel(zap.ErrorLevel)
+	defer logger.Sync()
+	zap.ReplaceGlobals(logger)
 
 	for i := 1; i < 6; i++ {
 		go func(i int) {

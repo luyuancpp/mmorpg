@@ -64,7 +64,6 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 
 	playerDb := &game.AccountSimplePlayer{}
 	playerDb.PlayerId = uint64(l.svcCtx.SnowFlake.Generate())
-	logx.Info("playerid:", playerDb.PlayerId)
 	accountData.SimplePlayers.Players = append(accountData.SimplePlayers.Players, playerDb)
 	for _, player := range accountData.SimplePlayers.Players {
 		resp.ClientMsgBody.Players = append(resp.ClientMsgBody.Players, &game.CAccountSimplePlayer{Player: player})
@@ -75,6 +74,6 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 		logx.Error(err)
 		return resp, nil
 	}
-	l.svcCtx.Redis.Set(l.ctx, key, dataMessage, time.Duration(12*time.Millisecond))
+	l.svcCtx.Redis.Set(l.ctx, key, dataMessage, time.Duration(12*time.Hour))
 	return resp, err
 }
