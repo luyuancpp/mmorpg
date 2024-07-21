@@ -5,6 +5,21 @@
 #include "gate_node.h"
 #include "network/gate_session.h"
 #include "thread_local/storage_gate.h"
+
+#include "network/message_statistics.h"
+
+#include "test/test.h"
+
+void MessageStatistics(const MessageBody& message)
+{
+    if (!g_test_switch_list[kMessageStatistics])
+    {
+        return;
+    }
+    auto& statistic = g_message_statistics[message.message_id()];
+    statistic.set_count(statistic.count() + 1);
+}
+
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 

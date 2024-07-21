@@ -161,23 +161,15 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
                 request->body().data(), request->body().size());
             SendEnterGameC2LRequest(login_node, rq);
         }
-        /*RouteMsgStringRequest rq;
-        rq.set_body(request->body());
-        rq.set_session_id(session_uid);
-        rq.set_id(request->id());
-        const auto message = rq.add_route_data_list();
-        message->set_message_id(request->message_id());
-        message->mutable_node_info()->CopyFrom(g_gate_node->node_info());*/
-        //todo 
     }
 }
 
 void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id)
 {
-    TipS2C tips;
-    tips.mutable_tips()->set_id(tip_id);
+    TipS2C tip;
+    tip.mutable_tips()->set_id(tip_id);
     MessageBody msg;
-    msg.set_body(tips.SerializeAsString());
+    msg.set_body(tip.SerializeAsString());
     msg.set_message_id(ClientPlayerCommonServicePushTipS2CMsgId);
     g_gate_node->Codec().send(conn, msg);
 }
