@@ -5,6 +5,7 @@ go 1.22.3
 require (
 	github.com/golang/protobuf v1.5.4
 	github.com/luyuancpp/dbprotooption v0.0.4
+	github.com/luyuancpp/muduoclient v0.0.8
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/redis/go-redis/v9 v9.5.3
 	github.com/zeromicro/go-zero v1.6.5
@@ -38,7 +39,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/luyuancpp/muduoclient v0.0.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
