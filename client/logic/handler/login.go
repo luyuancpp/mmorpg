@@ -4,6 +4,7 @@ import (
 	"client/logic"
 	"client/pb/game"
 	"client/pkg"
+	"log"
 )
 
 func LoginHandler(client *pkg.GameClient, response *game.LoginResponse) {
@@ -11,8 +12,10 @@ func LoginHandler(client *pkg.GameClient, response *game.LoginResponse) {
 		rq := &game.CreatePlayerRequest{}
 		client.Send(rq, 33)
 	} else {
-		logic.GMainPlayer = logic.NewMainPlayer(response.Players[0].Player.PlayerId, client)
-		rq := &game.EnterGameRequest{PlayerId: logic.GMainPlayer.PlayerId}
+		playerId := response.Players[0].Player.PlayerId
+		log.Println(playerId)
+		logic.PlayerList.Set(playerId, logic.NewMainPlayer(playerId, client))
+		rq := &game.EnterGameRequest{PlayerId: playerId}
 		client.Send(rq, 52)
 	}
 }

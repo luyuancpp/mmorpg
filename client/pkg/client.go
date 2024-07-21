@@ -8,7 +8,8 @@ import (
 )
 
 type GameClient struct {
-	Client *muduo.Client
+	Client   *muduo.Client
+	PlayerId uint64
 }
 
 func NewGameClient(client *muduo.Client) *GameClient {

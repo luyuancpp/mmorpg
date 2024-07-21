@@ -42,7 +42,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
 		return resp, nil
 	}
-	data.SessionList.Set(sessionId, &data.Player{})
+	data.SessionList.Set(sessionId, &data.Player{Account: in.ClientMsgBody.Account})
 
 	rdKey := "account" + in.ClientMsgBody.Account
 	cmd := l.svcCtx.Redis.Get(l.ctx, rdKey)

@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"client/logic"
 	"client/pb/game"
-	"client/pkg"
 	"log"
 )
 
-func TipS2CHandler(client *pkg.GameClient, response *game.TipS2C) {
+func TipS2CHandler(player *logic.Player, response *game.TipS2C) {
 	log.Println(response)
 }
