@@ -37,5 +37,4 @@ void Log2Console(const char* msg, int len)
         console_msg = LOG_LIGHT_RED + console_msg;
     }
     fwrite(console_msg.data(), 1, console_msg.length(), stdout);
-
 }
