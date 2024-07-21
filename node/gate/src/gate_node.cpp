@@ -47,8 +47,9 @@ void GateNode::Init()
     g_gate_node = this;
     InitTimeZone();
     InitLog();
-    InitConfig();
-
+    InitNodeConfig();
+    muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
+        ZoneConfig::GetSingleton().config_info().loglevel()));
     InitNodeByReqInfo();
 
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
@@ -214,11 +215,6 @@ void GateNode::InitLog ( )
 {
     muduo::Logger::setOutput(AsyncOutput);
     muduo_log_.start();
-}
-
-void GateNode::InitConfig ( )
-{
-    InitNodeConfig();
 }
 
 void GateNode::InitNodeConfig()

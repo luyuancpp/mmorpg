@@ -62,10 +62,10 @@ void GameNode::Init()
 
     InitTimeZone();
     InitLog();
-    InitConfig();
-	
-    muduo::Logger::setLogLevel(static_cast < muduo::Logger::LogLevel > (
-        ZoneConfig::GetSingleton ( ) . config_info ( ) . loglevel ( ) ));
+    InitNodeConfig();
+    muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
+        ZoneConfig::GetSingleton().config_info().loglevel()));
+    InitGameConfig();	
     
     InitMessageInfo();
     InitPlayerService();
@@ -92,19 +92,13 @@ void GameNode::Exit ( )
     tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameNode::Receive2>(*this);
 }
 
-void GameNode::InitConfig()
-{
-    InitGameConfig();
-    InitNodeConfig();
-}
-
 void  GameNode::InitNodeConfig ( )
 {
     ZoneConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void GameNode::InitGameConfig ( )
+void GameNode::InitGameConfig()
 {
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();

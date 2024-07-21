@@ -59,11 +59,13 @@ void CentreNode::Init()
     InitTimeZone();
     InitLog();
     EventHandler::Register();
-    InitConfig();
+    InitNodeConfig();
+  
 	node_info_.set_node_type(kCentreNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel(static_cast < muduo::Logger::LogLevel > (
         ZoneConfig::GetSingleton ( ) . config_info ( ) . loglevel ( ) ));
+    InitGameConfig();
 
     InitPlayerService();
     InitPlayerServiceReplied();
@@ -219,8 +221,7 @@ void CentreNode::InitLog ( )
 
 void CentreNode::InitConfig()
 {
-    InitNodeConfig();
-    InitGameConfig();
+ 
 }
 
 void CentreNode::InitNodeConfig()

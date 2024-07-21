@@ -67,7 +67,6 @@ private:
     }
 
     void InitLog();
-    static void InitConfig();
     static void InitNodeConfig();
     static void InitGameConfig();
     static void InitTimeZone();
