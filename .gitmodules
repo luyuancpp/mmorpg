@@ -9,15 +9,11 @@
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
-	branch = v1.14.x
+	branch = v1.15.x
 [submodule "third_party/redis"]
 	path = third_party/redis
 	url = https://github.com/redis/redis.git
 	branch = 7.2
-[submodule "third_party/zlib"]
-	path = third_party/zlib
-	url = https://github.com/madler/zlib.git
-	branch = master
 [submodule "third_party/muduo-linux"]
 	path = third_party/muduo-linux
 	url = https://github.com/chenshuo/muduo.git
@@ -44,7 +40,7 @@
 [submodule "third_party/grpc"]
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
-	branch = v1.64.0
+	branch = v1.65.1
 [submodule "third_party/spdlog"]
 	path = third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
