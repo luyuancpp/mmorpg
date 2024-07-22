@@ -30,9 +30,6 @@
 	path = third_party/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
 	branch = 25.x
-[submodule "pkg/muduo_windows/src"]
-	path = pkg/muduo_windows/src
-	url = https://github.com/luyuancpp/muduo-cross-platform.git
 [submodule "third_party/yaml-cpp"]
 	path = third_party/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
