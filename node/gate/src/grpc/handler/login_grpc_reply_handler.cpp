@@ -24,9 +24,11 @@ void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
     }
 
     std::unique_ptr<LoginC2LAsyncClientCall> call(static_cast<LoginC2LAsyncClientCall*>(got_tag));
-
-    CHECK(ok);
-
+	if (!ok)
+	{
+		LOG_ERROR << "RPC failed";
+		return;
+	}
     if (call->status.ok())
     {
         auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
@@ -59,9 +61,11 @@ void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
     }
 
     std::unique_ptr<CreatePlayerC2LAsyncClientCall> call(static_cast<CreatePlayerC2LAsyncClientCall*>(got_tag));
-
-    CHECK(ok);
-
+	if (!ok)
+	{
+		LOG_ERROR << "RPC failed";
+		return;
+	}
     if (call->status.ok())
     {
         auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
@@ -93,9 +97,11 @@ void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
     }
 
     std::unique_ptr<EnterGameC2LAsyncClientCall> call(static_cast<EnterGameC2LAsyncClientCall*>(got_tag));
-
-    CHECK(ok);
-
+	if (!ok)
+	{
+		LOG_ERROR << "RPC failed";
+		return;
+	}
     if (call->status.ok())
     {
         auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
@@ -127,9 +133,11 @@ void AsyncCompleteDisconnectC2L(CompletionQueue& cq)
     }
 
     std::unique_ptr<DisconnectC2LAsyncClientCall> call(static_cast<DisconnectC2LAsyncClientCall*>(got_tag));
-
-    CHECK(ok);
-
+	if (!ok)
+	{
+		LOG_ERROR << "RPC failed";
+		return;
+	}
     if (!call->status.ok())
     {
         LOG_ERROR << "RPC failed";
