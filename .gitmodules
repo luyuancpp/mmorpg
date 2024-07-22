@@ -23,14 +23,7 @@
 [submodule "third_party/boost"]
 	path = third_party/boost
 	url = https://github.com/luyuancpp/boost.git
-[submodule "third_party/protobuf"]
-	path = third_party/protobuf
-	url = https://github.com/protocolbuffers/protobuf.git
-	branch = v5.26.1
-[submodule "third_party/grpc"]
-	path = third_party/grpc
-	url = https://github.com/grpc/grpc.git
-	branch = v1.65.1
+
 [submodule "third_party/spdlog"]
 	path = third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
