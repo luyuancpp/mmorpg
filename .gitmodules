@@ -38,4 +38,4 @@
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
-	branch = v26.x
+	branch = v26.1
