@@ -19,9 +19,11 @@ void AsyncCompleteGrpcDeployService()
     }
 
     std::unique_ptr<DeployAsyncClientCall> call (static_cast<DeployAsyncClientCall*>(got_tag));
-
-    CHECK(ok);
-
+	if (!ok)
+	{
+		LOG_ERROR << "RPC failed";
+		return;
+	}
     if (call->status.ok())
     {
         g_gate_node->SetNodeId(call->reply.node_id());
