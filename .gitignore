@@ -40,6 +40,5 @@ cmake-build-debug*/
 third_party/lua/vs2022
 *.pc
 lib/LIST.TXT
-third_party/protobuf
 *.tmp
 bin/vsout/
