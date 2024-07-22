@@ -35,3 +35,6 @@
 	path = third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
 	branch = v1.x
+[submodule "third_party/ue5navmesh"]
+	path = third_party/ue5navmesh
+	url = https://github.com/luyuancpp/ue5navmesh.git
