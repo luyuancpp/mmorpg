@@ -150,7 +150,8 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
     const auto player = tls_cl.get_player(it->second.player_id());
     if (entt::null == player)
     {
-        LOG_ERROR << "GatePlayerService player not loading" << request->message_id();;
+        LOG_ERROR << "GatePlayerService player not loading " << request->message_id() <<
+            "player_id" << it->second.player_id() ;
         return;
     }
     const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
