@@ -20,9 +20,6 @@
 [submodule "third_party/recastnavigation"]
 	path = third_party/recastnavigation
 	url = https://github.com/recastnavigation/recastnavigation.git
-[submodule "third_party/ue5navmesh"]
-	path = third_party/ue5navmesh
-	url = https://github.com/luyuancpp/ue5navmesh.git
 [submodule "third_party/boost"]
 	path = third_party/boost
 	url = https://github.com/luyuancpp/boost.git
@@ -30,10 +27,6 @@
 	path = third_party/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
 	branch = 27.x
-[submodule "third_party/yaml-cpp"]
-	path = third_party/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
-	branch = 0.8.0
 [submodule "third_party/grpc"]
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
