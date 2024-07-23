@@ -40,3 +40,6 @@
 	path = third_party/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
 	branch = 26.x
+[submodule "pkg/muduo_windows/src"]
+	path = pkg/muduo_windows/src
+	url = https://github.com/luyuancpp/muduo-cross-platform.git
