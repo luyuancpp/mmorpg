@@ -36,3 +36,7 @@
 	url = https://github.com/grpc/grpc.git
 	branch = v1.65.x
 
+[submodule "third_party/protobuf"]
+	path = third_party/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git
+	branch = 26.x
