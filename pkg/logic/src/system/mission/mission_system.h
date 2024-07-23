@@ -33,6 +33,7 @@ struct CompleteMissionParam
 class AcceptMissionEvent;
 class MissionConditionEvent;
 class MissionsComp;
+class condition_row;
 
 class MissionSystem
 {
@@ -49,6 +50,8 @@ public:
 private:
 	static void DeleteMissionClassify(entt::entity player, uint32_t mission_id);
 	static bool UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission);
+	static bool UpdateMissionProgress(const MissionConditionEvent& condition_event, MissionPbComp& mission, int index, const condition_row* const condition_row);
+	static void UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& mission_conditions);
 	static void OnMissionComplete(entt::entity player, const UInt32Set& completed_missions);
 	static uint32_t CheckAcceptConditions(const AcceptMissionEvent& accept_event, MissionsComp* mission_comp);
 	static void RemoveMissionFromClassify(MissionsComp* mission_comp, uint32_t mission_id);
