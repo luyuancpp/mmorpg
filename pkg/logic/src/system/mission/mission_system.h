@@ -32,6 +32,7 @@ struct CompleteMissionParam
 
 class AcceptMissionEvent;
 class MissionConditionEvent;
+class MissionsComp;
 
 class MissionSystem
 {
@@ -49,7 +50,8 @@ private:
 	static void DeleteMissionClassify(entt::entity player, uint32_t mission_id);
 	static bool UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission);
 	static void OnMissionComplete(entt::entity player, const UInt32Set& completed_missions);
-
+	static uint32_t CheckAcceptConditions(const AcceptMissionEvent& accept_event, MissionsComp* mission_comp);
+	static void RemoveMissionFromClassify(MissionsComp* mission_comp, uint32_t mission_id);
 };
 
 

@@ -44,6 +44,24 @@ uint32_t MissionSystem::GetReward(const GetRewardParam& param)
 	return kRetOK;
 }
 
+uint32_t MissionSystem::CheckAcceptConditions(const AcceptMissionEvent& accept_event, MissionsComp* mission_comp)
+{
+	RET_CHECK_RET(mission_comp->IsUnAccepted(accept_event.mission_id())) //已经接受过
+		RET_CHECK_RET(mission_comp->IsUnCompleted(accept_event.mission_id())) //已经完成
+		CHECK_CONDITION(!mission_comp->GetMissionConfig()->HasKey(accept_event.mission_id()), kRetTableId)
+
+		auto mission_sub_type = mission_comp->GetMissionConfig()->GetMissionSubType(accept_event.mission_id());
+	auto mission_type = mission_comp->GetMissionConfig()->GetMissionType(accept_event.mission_id());
+
+	if (mission_comp->IsMissionTypeNotRepeated())
+	{
+		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
+		CHECK_CONDITION(mission_comp->GetTypeFilter().find(mission_and_mission_subtype_pair) != mission_comp->GetTypeFilter().end(), kRetMissionTypeRepeated)
+	}
+
+	return kRetOK;
+}
+
 uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event)
 {
 	const entt::entity player = entt::to_entity(accept_event.entity());
@@ -52,10 +70,13 @@ uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event)
 	{
 		return kRetMissionPlayerMissionCompNotFound;
 	}
-	//check
-	RET_CHECK_RET(mission_comp->IsUnAccepted(accept_event.mission_id())) //已经接受过
-	RET_CHECK_RET(mission_comp->IsUnCompleted(accept_event.mission_id())) //已经完成
-	CHECK_CONDITION(!mission_comp->GetMissionConfig()->HasKey(accept_event.mission_id()), kRetTableId)
+
+	// 检查接受条件
+	auto ret = CheckAcceptConditions(accept_event, mission_comp);
+	if (ret != kRetOK)
+	{
+		return ret;
+	}
 
 	auto mission_sub_type = mission_comp->GetMissionConfig()->GetMissionSubType(accept_event.mission_id());
 	auto mission_type = mission_comp->GetMissionConfig()->GetMissionType(accept_event.mission_id());
@@ -205,13 +226,8 @@ void MissionSystem::Receive(const MissionConditionEvent& condition_event)
 	OnMissionComplete(player, temp_complete);
 }
 
-void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_id)
+void MissionSystem::RemoveMissionFromClassify(MissionsComp* mission_comp, uint32_t mission_id)
 {
-	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
-	if (nullptr == mission_comp)
-	{
-		return;
-	}
 	const auto& config_conditions = mission_comp->GetMissionConfig()->condition_id(mission_id);
 	for (int32_t i = 0; i < config_conditions.size(); ++i)
 	{
@@ -222,6 +238,18 @@ void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_
 		}
 		mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].erase(mission_id);
 	}
+}
+
+void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_id)
+{
+	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
+	if (nullptr == mission_comp)
+	{
+		return;
+	}
+	// 删除任务分类中的任务
+	RemoveMissionFromClassify(mission_comp, mission_id);
+
 	if (auto mission_sub_type = mission_comp->GetMissionConfig()->GetMissionSubType(mission_id);
 		mission_sub_type > 0 &&
 		 mission_comp->IsMissionTypeNotRepeated())
