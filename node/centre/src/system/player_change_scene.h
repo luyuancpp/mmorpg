@@ -12,7 +12,9 @@ public:
 	static void TryProcessChangeSceneQueue(entt::entity player);
 	static void PopFrontChangeSceneQueue(entt::entity player);
 	static void SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s);
-	static void CopyTo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info);
+	static void CopySceneInfoToChangeInfo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info);
 private:
+	static void ProcessSameGsChangeScene(entt::entity player, const CentreChangeSceneInfo& change_info);
+	static void ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfo& change_info);
 	static void OnEnterSceneOk(entt::entity player);
 };
