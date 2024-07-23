@@ -60,7 +60,6 @@ void GameNode::Init()
     g_game_node = this; 
     EventHandler::Register();
 
-    InitTimeZone();
     InitLog();
     InitNodeConfig();
     muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
@@ -81,6 +80,7 @@ void GameNode::Init()
 
 void GameNode::InitLog ( )
 {
+    InitTimeZone();
     muduo::Logger::setOutput(AsyncOutput);
     muduo_log_.start();
 }

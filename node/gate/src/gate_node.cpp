@@ -45,7 +45,7 @@ GateNode::~GateNode()
 void GateNode::Init()
 {
     g_gate_node = this;
-    InitTimeZone();
+    
     InitLog();
     InitNodeConfig();
     muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
@@ -81,7 +81,7 @@ void GateNode::InitNodeByReqInfo()
         NodeInfoRequest rq;
         rq.set_node_type(kGateNode);
         rq.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
-        void SendGetNodeInfo(const NodeInfoRequest&);
+        void SendGetNodeInfo(const NodeInfoRequest& rq);
         SendGetNodeInfo(rq);
     }
 }
@@ -213,6 +213,7 @@ void GateNode::Connect2Login() const
 
 void GateNode::InitLog ( )
 {
+    InitTimeZone();
     muduo::Logger::setOutput(AsyncOutput);
     muduo_log_.start();
 }

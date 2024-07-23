@@ -93,7 +93,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     //todo 会话没有了玩家还在
     CallPlayerEnterGs(player, ScenesSystem::get_game_node_id(scene));
     CentreChangeSceneInfo change_scene_info;
-    PlayerChangeSceneSystem::CopyTo(change_scene_info, tls.scene_registry.get<SceneInfo>(scene));
+    PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, tls.scene_registry.get<SceneInfo>(scene));
     change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
     change_scene_info.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
     PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);

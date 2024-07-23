@@ -56,7 +56,7 @@ void CentreNode::Init()
     g_centre_node = this;
     
     InitEventCallback();
-    InitTimeZone();
+    
     InitLog();
     EventHandler::Register();
     InitNodeConfig();
@@ -117,7 +117,7 @@ void CentreNode::InitNodeByReqInfo()
     {
         NodeInfoRequest rq;
         rq.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
-        void SendGetNodeInfo(const NodeInfoRequest & request);
+        void SendGetNodeInfo(const NodeInfoRequest& request);
         SendGetNodeInfo(rq);
     }
 }
@@ -215,6 +215,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 
 void CentreNode::InitLog ( )
 {
+    InitTimeZone();
     muduo::Logger::setOutput(AsyncOutput);
     muduo_log_.start();
 }
