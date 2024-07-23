@@ -126,10 +126,10 @@
     <ClCompile Include="src\muduo\net\poller\WindowsPollPoller.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\muduo\net\protorpc\RpcCodec.cc">
+    <ClCompile Include="src\contrib\hiredis\Hiredis.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\contrib\hiredis\Hiredis.cc">
+    <ClCompile Include="src\muduo\net\protorpc\RpcCodec.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -293,10 +293,10 @@
     <ClInclude Include="src\muduo\net\poller\EPollPoller.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\muduo\net\protorpc\RpcCodec.h">
+    <ClInclude Include="src\contrib\hiredis\Hiredis.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\contrib\hiredis\Hiredis.h">
+    <ClInclude Include="src\muduo\net\protorpc\RpcCodec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
