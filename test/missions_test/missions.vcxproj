@@ -155,9 +155,6 @@
     <ClCompile Include="..\..\node\game\src\handler\event\mission_event_handler.cpp" />
     <ClCompile Include="missions_test.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\node\game\src\event_handler\mission_event_handler.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
