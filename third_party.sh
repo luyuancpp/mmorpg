@@ -19,7 +19,6 @@ if [ ! -d "cmakeinstall" ]; then
    echo "cmake install ok"
 fi
 
-
 cd third_party/redis
 make -j$cpu
 if test $? -ne 0; then 
