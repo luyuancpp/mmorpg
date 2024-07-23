@@ -259,22 +259,108 @@ void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_
 	}
 }
 
-bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	MissionPbComp& mission)
+//bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	MissionPbComp& mission)
+//{
+//	//todo 活跃度减少超
+//	if (condition_event.condtion_ids().empty())
+//	{
+//		return false;
+//	}
+//
+//	const entt::entity player = entt::to_entity(condition_event.entity());
+//	const auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
+//	if (nullptr == mission_comp)
+//	{
+//		return false;
+//	}
+//
+//	bool mission_updated = false;
+//	//如果我删除了某个条件，老玩家数据会不会错?正常任务是不能删除的，但是可以考虑删除条件
+//	const auto& mission_conditions = mission_comp->GetMissionConfig()->condition_id(mission.id());
+// 
+//	for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i)
+//	{
+//		const auto* const condition_row = condition_config::GetSingleton().get(mission_conditions.at(i));
+//		if (nullptr == condition_row)
+//		{
+//			continue;
+//		}
+//		const auto old_progress = mission.progress(i);
+//		if (IsConditionCompleted(condition_row->id(), old_progress))
+//		{
+//			continue;
+//		}
+//		if (condition_event.type() != condition_row->condition_type())
+//		{
+//			continue;
+//		}
+//		//表检测至少有一个condition
+//		std::size_t config_condition_size = 0;
+//		std::size_t match_condition_size = 0;
+//		auto calc_match_condition_size = [&match_condition_size, &condition_event, &config_condition_size
+//		](const int32_t index, const auto& config_conditions)
+//		{
+//			if (config_conditions.size() > 0)
+//			{
+//				++config_condition_size;
+//			}
+//			if (condition_event.condtion_ids().size() <= index)
+//			{
+//				return;
+//			}
+//			//验证条件和表里面的每列的多个条件是否有一项匹配
+//			for (int32_t ci = 0; ci < config_conditions.size(); ++ci)
+//			{
+//				if (condition_event.condtion_ids(index) != config_conditions.Get(ci))
+//				{
+//					continue;
+//				}
+//				//在这列中有一项匹配
+//				++match_condition_size;
+//				break;
+//			}
+//		};
+//		calc_match_condition_size(0, condition_row->condition1());
+//		calc_match_condition_size(1, condition_row->condition2());
+//		calc_match_condition_size(2, condition_row->condition3());
+//		calc_match_condition_size(3, condition_row->condition4());
+//		//有效列中的条件列表都匹配了
+//		if (config_condition_size == 0 || match_condition_size != config_condition_size)
+//		{
+//			continue;
+//		}
+//		mission_updated = true;
+//		mission.set_progress(i, condition_event.amount() + old_progress);
+//		auto new_progress = mission.progress(i);
+//		if (!IsConditionCompleted(condition_row->id(), new_progress))
+//		{
+//			continue;
+//		}
+//		// todo send to client
+//		mission.set_progress(i, std::min(new_progress, condition_row->amount()));
+//		// todo  send to client
+//	}
+//	return mission_updated;
+//}
+
+bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission)
 {
-	//todo 活跃度减少超
+	//todo 活跃度减少
 	if (condition_event.condtion_ids().empty())
 	{
 		return false;
 	}
+
 	const entt::entity player = entt::to_entity(condition_event.entity());
 	const auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
 	if (nullptr == mission_comp)
 	{
 		return false;
 	}
+
 	bool mission_updated = false;
-	//如果我删除了某个条件，老玩家数据会不会错?正常任务是不能删除的，但是可以考虑删除条件
 	const auto& mission_conditions = mission_comp->GetMissionConfig()->condition_id(mission.id());
+
 	for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i)
 	{
 		const auto* const condition_row = condition_config::GetSingleton().get(mission_conditions.at(i));
@@ -282,53 +368,84 @@ bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	
 		{
 			continue;
 		}
-		const auto old_progress = mission.progress(i);
-		if (IsConditionCompleted(condition_row->id(), old_progress))
+
+		// 更新任务进度
+		if (UpdateMissionProgress(condition_event, mission, i, condition_row))
 		{
-			continue;
+			mission_updated = true;
 		}
-		if (condition_event.type() != condition_row->condition_type())
+	}
+
+	if (mission_updated)
+	{
+		UpdateMissionStatus(mission, mission_conditions);
+	}
+
+	return mission_updated;
+}
+
+bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition_event, MissionPbComp& mission, int index, const condition_row* const condition_row)
+{
+	const auto old_progress = mission.progress(index);
+
+	if (IsConditionCompleted(condition_row->id(), old_progress))
+	{
+		return false;
+	}
+
+	if (condition_event.type() != condition_row->condition_type())
+	{
+		return false;
+	}
+
+	// 验证条件是否匹配
+	//表检测至少有一个condition
+	size_t config_condition_size = 0;
+	size_t match_condition_size = 0;
+
+	auto calc_match_condition_size = [&match_condition_size, &condition_event, &config_condition_size](const auto& config_conditions, size_t index)
 		{
-			continue;
-		}
-		//表检测至少有一个condition
-		std::size_t config_condition_size = 0;
-		std::size_t match_condition_size = 0;
-		auto calc_match_condition_size = [&match_condition_size, &condition_event, &config_condition_size
-		](const int32_t index, const auto& config_conditions)
-		{
-			if (config_conditions.size() > 0)
+			if (config_conditions.size() > index)
 			{
 				++config_condition_size;
-			}
-			if (condition_event.condtion_ids().size() <= index)
-			{
-				return;
-			}
-			//验证条件和表里面的每列的多个条件是否有一项匹配
-			for (int32_t ci = 0; ci < config_conditions.size(); ++ci)
-			{
-				if (condition_event.condtion_ids(index) != config_conditions.Get(ci))
+
+				//验证条件和表里面的每列的多个条件是否有一项匹配
+				if (std::find(condition_event.condtion_ids().begin(), condition_event.condtion_ids().end(), config_conditions.Get(index)) != condition_event.condtion_ids().end())
 				{
-					continue;
+					//在这列中有一项匹配
+					++match_condition_size;
 				}
-				//在这列中有一项匹配
-				++match_condition_size;
-				break;
 			}
 		};
-		calc_match_condition_size(0, condition_row->condition1());
-		calc_match_condition_size(1, condition_row->condition2());
-		calc_match_condition_size(2, condition_row->condition3());
-		calc_match_condition_size(3, condition_row->condition4());
-		//有效列中的条件列表都匹配了
-		if (config_condition_size == 0 || match_condition_size != config_condition_size)
+
+	calc_match_condition_size(condition_row->condition1(), 0);
+	calc_match_condition_size(condition_row->condition2(), 1);
+	calc_match_condition_size(condition_row->condition3(), 2);
+	calc_match_condition_size(condition_row->condition4(), 3);
+
+	//有效列中的条件列表都匹配了
+	if (config_condition_size > 0 && match_condition_size != config_condition_size)
+	{
+		return false;
+	}
+
+	mission.set_progress(index, condition_event.amount() + old_progress);
+
+	return true;
+}
+
+void MissionSystem::UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& mission_conditions)
+{
+	for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i)
+	{
+		const auto* const condition_row = condition_config::GetSingleton().get(mission_conditions.at(i));
+		if (nullptr == condition_row)
 		{
 			continue;
 		}
-		mission_updated = true;
-		mission.set_progress(i, condition_event.amount() + old_progress);
+
 		auto new_progress = mission.progress(i);
+
 		if (!IsConditionCompleted(condition_row->id(), new_progress))
 		{
 			continue;
@@ -337,7 +454,6 @@ bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	
 		mission.set_progress(i, std::min(new_progress, condition_row->amount()));
 		// todo  send to client
 	}
-	return mission_updated;
 }
 
 void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& completed_missions_this_time)
