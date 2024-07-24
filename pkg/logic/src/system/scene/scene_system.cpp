@@ -56,7 +56,7 @@ NodeId ScenesSystem::GetGameNodeId(entt::entity scene) {
 		return GetGameNodeId(sceneInfo->guid());
 	}
 	else {
-		LOG_ERROR << "GetGameNodeId: SceneInfo not found for entity: " << entt::to_integral(scene);
+		LOG_ERROR << "SceneInfo not found for entity: " << entt::to_integral(scene);
 		return kInvalidNodeId;
 	}
 }
@@ -112,7 +112,7 @@ bool ScenesSystem::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
 // Create a new scene associated with a game node
 entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& param) {
 	if (param.CheckValid()) {
-		LOG_ERROR << "CreateScene2GameNode: Invalid parameters";
+		LOG_ERROR << "Invalid parameters for creating scene";
 		return entt::null;
 	}
 
@@ -123,7 +123,7 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 
 	const auto scene = tls.scene_registry.create(entt::entity{ sceneInfo.guid() });
 	if (scene == entt::null) {
-		LOG_ERROR << "CreateScene2GameNode: Failed to create scene in registry";
+		LOG_ERROR << "Failed to create scene in registry";
 		return entt::null;
 	}
 
@@ -151,19 +151,19 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 // Destroy a scene
 void ScenesSystem::DestroyScene(const DestroySceneParam& param) {
 	if (param.CheckValid()) {
-		LOG_ERROR << "DestroyScene: Invalid parameters";
+		LOG_ERROR << "Invalid parameters for destroying scene";
 		return;
 	}
 
 	auto* pServerComp = tls.game_node_registry.try_get<ServerComp>(param.node);
 	if (!pServerComp) {
-		LOG_ERROR << "DestroyScene: ServerComp not found for node";
+		LOG_ERROR << "ServerComp not found for node";
 		return;
 	}
 
 	auto* sceneInfo = tls.scene_registry.try_get<SceneInfo>(param.scene);
 	if (!sceneInfo) {
-		LOG_ERROR << "DestroyScene: SceneInfo not found for scene";
+		LOG_ERROR << "SceneInfo not found for scene";
 		return;
 	}
 
@@ -309,7 +309,6 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 		LOG_INFO << "Player left scene: " << tls.registry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(sceneEntity);
 	}
 }
-
 // Force a player to change scenes
 void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 	auto& destNodeScene = tls.game_node_registry.get<ServerComp>(param.destNode);
