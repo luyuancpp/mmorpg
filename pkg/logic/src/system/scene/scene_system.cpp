@@ -49,10 +49,10 @@ NodeId ScenesSystem::get_game_node_id(entt::entity scene)
 
 uint32_t ScenesSystem::GenSceneGuid()
 {
-    auto scene_id = node_sequence_.Generate();
+    auto scene_id = nodeSequence.Generate();
     while (tls.scene_registry.valid(entt::entity{ scene_id }))
     {
-        scene_id = node_sequence_.Generate();
+        scene_id = nodeSequence.Generate();
     }
 	return scene_id;
 }
@@ -167,7 +167,7 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 	Destroy(tls.game_node_registry, node);
 }
 
-uint32_t ScenesSystem::CheckEnterScene(const EnterSceneParam& param)
+uint32_t ScenesSystem::CheckPlayerEnterScene(const EnterSceneParam& param)
 {
 	if (!tls.scene_registry.valid(param.scene))
 	{

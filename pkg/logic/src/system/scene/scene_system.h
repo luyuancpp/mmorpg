@@ -71,21 +71,21 @@ public:
 
 	static NodeId get_game_node_id(uint64_t scene_id)
 	{
-		return node_sequence_.node_id(static_cast<NodeId>(scene_id));
+		return nodeSequence.node_id(static_cast<NodeId>(scene_id));
 	}
 
     static NodeId get_game_node_id(entt::entity scene);
 
     static entt::entity get_game_node_eid(uint64_t scene_id)
     {
-		return entt::entity{ node_sequence_.node_id(static_cast<NodeId>(scene_id)) };
+		return entt::entity{ nodeSequence.node_id(static_cast<NodeId>(scene_id)) };
     }
 
 	static uint32_t GenSceneGuid();
 
 	static std::size_t scenes_size(uint32_t scene_config_id);
 	static std::size_t scenes_size();
-	static void set_sequence_node_id(const uint32_t node_id) { node_sequence_.set_node_id(node_id); }
+	static void set_sequence_node_id(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
 
 	static uint32_t CheckScenePlayerSize(entt::entity scene);
 
@@ -94,7 +94,7 @@ public:
 	static void DestroyScene(const DestroySceneParam& param);
 	static void OnDestroyServer(entt::entity node);
 
-	static uint32_t CheckEnterScene(const EnterSceneParam& param);
+	static uint32_t CheckPlayerEnterScene(const EnterSceneParam& param);
 	static void EnterScene(const EnterSceneParam& param);
 	static void EnterDefaultScene(const EnterDefaultSceneParam& param);
 
@@ -108,5 +108,5 @@ public:
     static bool ConfigSceneListNotEmpty(uint32_t scene_config_id);
     static bool IsSceneEmpty();
 private:
-	inline static NodeBit12Sequence node_sequence_;
+	inline static NodeBit12Sequence nodeSequence;
 };
