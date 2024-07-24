@@ -858,10 +858,10 @@ TEST(GS, CheckEnterRoomScene)
     }
     auto scene = ScenesSystem::CreateScene2GameNode({.node= CreateMainSceneNode(), .scene_info = scene_info});
 
-    const auto player = tls.game_node_registry.create();
-    tls.game_node_registry.emplace<Guid>(player, 1);
-    const auto player1 = tls.game_node_registry.create();
-    tls.game_node_registry.emplace<Guid>(player1, 100);
+    const auto player = tls.registry.create();
+    tls.registry.emplace<Guid>(player, 1);
+    const auto player1 = tls.registry.create();
+    tls.registry.emplace<Guid>(player1, 100);
 
     EXPECT_EQ(kOK, ScenesSystem::CheckEnterScene({.scene = scene, .enter = player}));
     EXPECT_EQ(kRetCheckEnterSceneCreator, ScenesSystem::CheckEnterScene({.scene = scene, .enter = player1}));
