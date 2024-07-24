@@ -13,18 +13,10 @@
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
 
-decltype(auto) CreateMission()
-{
-	const auto player = tls.registry.create();
-	auto& ms = tls.registry.emplace<MissionsComp>(player);
-    ms.set_event_owner(player);
-    MissionEventHandler::Register();
-    return &ms;
-}
-
 decltype(auto) CreatePlayerMission()
 {
 	const auto player = tls.registry.create();
+    tls.registry.emplace<Guid>(player);
 	auto& ms = tls.registry.emplace<MissionsComp>(player);
 	ms.set_event_owner(player);
 	MissionEventHandler::Register();
@@ -65,7 +57,7 @@ TEST(MissionsComp, RepeatedMission)
     	accept_mission_event.set_entity(entt::to_integral(player));
 		accept_mission_event.set_mission_id(mission_id);
         EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-        EXPECT_EQ(kRetMissionIdRepeated, MissionSystem::AcceptMission(accept_mission_event));
+        EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(accept_mission_event));
     }
 
     {
@@ -203,7 +195,7 @@ TEST(MissionsComp, CompleteAcceptMission)
     MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_FALSE(ms.IsAccepted(mission_id));
     EXPECT_TRUE(ms.IsComplete(mission_id));
-    EXPECT_EQ(kRetMissionComplete, MissionSystem::AcceptMission(accept_mission_event));
+    EXPECT_EQ(kMissionAlreadyCompleted, MissionSystem::AcceptMission(accept_mission_event));
 }
 
 TEST(MissionsComp, EventTriggerMutableMission)
