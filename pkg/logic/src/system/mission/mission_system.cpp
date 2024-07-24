@@ -32,24 +32,27 @@ namespace {
 uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	// Check if player exists in the registry
 	if (!tls.registry.valid(param.playerId)) {
-		LOG_ERROR << "player not found";
+		LOG_ERROR << "GetMissionReward: Player not found for playerId = " << tls.registry.get<Guid>(param.playerId);
 		return kInvalidParameter;
 	}
 
 	// Retrieve mission reward component for the player
 	auto* const missionRewardComp = tls.registry.try_get<MissionRewardPbComp>(param.playerId);
 	if (nullptr == missionRewardComp) {
+		LOG_ERROR << "GetMissionReward: Mission reward component not found for playerId = " << tls.registry.get<Guid>(param.playerId);
 		return kPlayerMissionComponentNotFound;
 	}
 
 	// Check if the mission ID is valid for reward
 	auto rewardMissionIdMap = missionRewardComp->mutable_can_reward_mission_id();
 	if (rewardMissionIdMap->find(param.missionId) == rewardMissionIdMap->end()) {
+		LOG_ERROR << "GetMissionReward: Mission ID " << param.missionId << " not found in reward list for playerId = " << tls.registry.get<Guid>(param.playerId);
 		return kMissionIdNotInRewardList;
 	}
 
 	// Remove mission ID from reward list
 	rewardMissionIdMap->erase(param.missionId);
+	LOG_INFO << "GetMissionReward: Removed mission ID " << param.missionId << " from reward list for playerId = " << tls.registry.get<Guid>(param.playerId);
 	return kOK;
 }
 
@@ -83,12 +86,15 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	// Retrieve mission component for the player
 	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
 	if (nullptr == missionComp) {
+		LOG_ERROR << "AcceptMission: Missions component not found for playerEntity = " << tls.registry.get<Guid>(playerEntity);
 		return kPlayerMissionComponentNotFound;
 	}
 
 	// Check acceptance conditions
 	auto ret = CheckMissionAcceptance(acceptEvent, missionComp);
 	if (ret != kOK) {
+		LOG_ERROR << "AcceptMission: CheckMissionAcceptance failed for mission_id = " << acceptEvent.mission_id()
+			<< ", playerEntity = " << tls.registry.get<Guid>(playerEntity);
 		return ret;
 	}
 
@@ -110,7 +116,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	for (const auto& conditionId : missionComp->GetMissionConfig()->GetConditionIds(acceptEvent.mission_id())) {
 		const auto* const conditionConfig = condition_config::GetSingleton().get(conditionId);
 		if (nullptr == conditionConfig) {
-			LOG_ERROR << "condition not found: " << conditionId;
+			LOG_ERROR << "AcceptMission: Condition config not found for conditionId = " << conditionId;
 			continue;
 		}
 		missionPb.add_progress(0);
@@ -126,21 +132,27 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 		onAcceptedMissionEvent.set_entity(entt::to_integral(playerEntity));
 		onAcceptedMissionEvent.set_mission_id(acceptEvent.mission_id());
 		tls.dispatcher.enqueue(onAcceptedMissionEvent);
+		LOG_INFO << "AcceptMission: Mission accepted for playerEntity = " << tls.registry.get<Guid>(playerEntity) << ", mission_id = " << acceptEvent.mission_id();
 	}
 
 	return kOK;
 }
+
 
 // Abandon a mission
 uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 	// Retrieve mission component for the player
 	auto* const missionComp = tls.registry.try_get<MissionsComp>(param.playerId);
 	if (nullptr == missionComp) {
+		LOG_ERROR << "AbandonMission: Missions component not found for playerId = " << tls.registry.get<Guid>(param.playerId) ;
 		return kPlayerMissionComponentNotFound;
 	}
 
 	// Check if mission is uncompleted
-	RET_CHECK_RETURN(missionComp->IsMissionUncompleted(param.missionId));
+	if (kMissionAlreadyCompleted == missionComp->IsMissionUncompleted(param.missionId)) {
+		LOG_ERROR << "AbandonMission: Mission is already completed for playerId = " << tls.registry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
+		return kMissionAlreadyCompleted;
+	}
 
 	// Remove mission ID from reward list if applicable
 	auto* const missionReward = tls.registry.try_get<MissionRewardPbComp>(param.playerId);
@@ -155,8 +167,10 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 
 	// Delete mission classification
 	DeleteMissionClassification(param.playerId, param.missionId);
+	LOG_INFO << "AbandonMission: Mission abandoned for playerId = " << tls.registry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
 	return kOK;
 }
+
 
 // Complete all missions for a player
 void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation) {
@@ -216,6 +230,7 @@ bool MissionSystem::AreAllConditionsFulfilled(const MissionPbComp& mission, uint
 void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent) {
 	// Ignore if no conditions are provided
 	if (conditionEvent.condtion_ids().empty()) {
+		LOG_ERROR << "HandleMissionConditionEvent: Empty condition IDs for entity = " << conditionEvent.entity();
 		return;
 	}
 
@@ -225,12 +240,15 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 	// Retrieve mission component for the player
 	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
 	if (nullptr == missionComp) {
+		LOG_ERROR << "HandleMissionConditionEvent: Missions component not found for playerEntity = " << tls.registry.get<Guid>(playerEntity);
 		return;
 	}
 
 	// Find relevant missions based on condition type
 	auto classifyMissionsIt = missionComp->GetEventMissionsClassify().find(conditionEvent.condition_type());
 	if (classifyMissionsIt == missionComp->GetEventMissionsClassify().end()) {
+		LOG_ERROR << "HandleMissionConditionEvent: No missions found for condition type = " << conditionEvent.condition_type()
+			<< " for playerEntity = " << tls.registry.get<Guid>(playerEntity);
 		return;
 	}
 
@@ -243,7 +261,7 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 		if (missionIter == missionComp->GetMissionsComp().mutable_missions()->end()) {
 			continue;
 		}
-		auto&mission = missionIter->second;
+		auto& mission = missionIter->second;
 
 		// Update mission progress
 		if (!UpdateMissionProgress(conditionEvent, mission)) {
@@ -254,6 +272,7 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 		if (!AreAllConditionsFulfilled(mission, missionId, missionComp)) {
 			continue;
 		}
+
 		mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
 		completedMissionsThisTime.emplace(missionId);
 		missionComp->GetMissionsComp().mutable_missions()->erase(missionIter);

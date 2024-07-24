@@ -95,11 +95,11 @@ enum  EnumCode : uint32_t
     kRetTeamCreateTeamMaxMemberSize = 5014,
 
     //mission
-    kRetMissionIdRepeated = 6000,
-    kMissionTypeRepeated = 6001,
-    kRetMissionComplete = 6002,
-    kMissionIdNotInRewardList = 6003,
-    kPlayerMissionComponentNotFound = 6004,
+    kMissionTypeRepeated = 6000,
+    kMissionAlreadyCompleted = 6001,
+    kMissionIdNotInRewardList = 6002,
+    kPlayerMissionComponentNotFound = 6003,
+    kMissionIdRepeated = 6004,
 
     //bag 
     kRetBagDeleteItemFindGuid = 7000,
