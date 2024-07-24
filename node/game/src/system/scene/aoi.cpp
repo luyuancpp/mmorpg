@@ -28,7 +28,7 @@ void AoiSystem::Update(double delta)
 
     for (auto&& [mover, transform, player_scene] : tls.registry.view<Transform, SceneEntity>().each())
     {
-        if (!tls.scene_registry.valid(player_scene.scene_entity))
+        if (!tls.scene_registry.valid(player_scene.sceneEntity))
         {
             LOG_ERROR << "scene not found " << tls.registry.get<Guid>(mover);
             continue;
@@ -38,7 +38,7 @@ void AoiSystem::Update(double delta)
         player_entrant_observer_list.clear();
         observer_leave_player_set.clear();
         
-        auto& grid_list = tls.scene_registry.get<SceneGridList>(player_scene.scene_entity);
+        auto& grid_list = tls.scene_registry.get<SceneGridList>(player_scene.sceneEntity);
         const auto hex =
             hex_round(pixel_to_hex(KFlat, Point(transform.location().x(), transform.location().y())));
         const auto grid_id = GetGridId(hex);
@@ -173,7 +173,7 @@ void  AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
     {
         return;
     }
-    auto& grid_list = tls.scene_registry.get<SceneGridList>(scene_entity->scene_entity);
+    auto& grid_list = tls.scene_registry.get<SceneGridList>(scene_entity->sceneEntity);
 
     const auto grid_id = GetGridId(*hex);
     GridSet leave_grid_set;

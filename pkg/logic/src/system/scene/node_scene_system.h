@@ -20,12 +20,12 @@ struct CompelChangeSceneParam
 {
 	inline bool IsNull() const
 	{
-		return player_ == entt::null || dest_node_ == entt::null;
+		return player_ == entt::null || destNode == entt::null;
 	}
 
 	entt::entity player_{entt::null};
-	entt::entity dest_node_{entt::null};
-	uint32_t scene_conf_id_{0};
+	entt::entity destNode{entt::null};
+	uint32_t sceneConfId{0};
 };
 
 class NodeSceneSystem

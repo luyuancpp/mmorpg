@@ -91,7 +91,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
         return;
     }
     //todo 会话没有了玩家还在
-    CallPlayerEnterGs(player, ScenesSystem::get_game_node_id(scene));
+    CallPlayerEnterGs(player, ScenesSystem::GetGameNodeId(scene));
     CentreChangeSceneInfo change_scene_info;
     PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, tls.scene_registry.get<SceneInfo>(scene));
     change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
@@ -114,7 +114,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
 
-    const auto scene_info = tls.scene_registry.try_get<SceneInfo>((*p_scene).scene_entity);
+    const auto scene_info = tls.scene_registry.try_get<SceneInfo>((*p_scene).sceneEntity);
     if (nullptr == scene_info)
     {
         LOG_ERROR << "scene info " << player_id;
@@ -199,7 +199,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-    const auto from_scene_info = tls.scene_registry.try_get<SceneInfo>(from_scene->scene_entity);
+    const auto from_scene_info = tls.scene_registry.try_get<SceneInfo>(from_scene->sceneEntity);
     if (nullptr == from_scene_info)
     {
         return;

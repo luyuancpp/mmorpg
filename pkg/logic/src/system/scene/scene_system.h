@@ -45,7 +45,7 @@ struct CreateGameNodeSceneParam
 	}
 
 	entt::entity node{entt::null};
-	SceneInfo scene_info;
+	SceneInfo sceneInfo;
 };
 
 struct DestroySceneParam
@@ -69,12 +69,12 @@ public:
 	ScenesSystem();
 	~ScenesSystem();
 
-	static NodeId get_game_node_id(uint64_t scene_id)
+	static NodeId GetGameNodeId(uint64_t scene_id)
 	{
 		return nodeSequence.node_id(static_cast<NodeId>(scene_id));
 	}
 
-    static NodeId get_game_node_id(entt::entity scene);
+    static NodeId GetGameNodeId(entt::entity scene);
 
     static entt::entity get_game_node_eid(uint64_t scene_id)
     {
@@ -83,9 +83,9 @@ public:
 
 	static uint32_t GenSceneGuid();
 
-	static std::size_t scenes_size(uint32_t scene_config_id);
-	static std::size_t scenes_size();
-	static void set_sequence_node_id(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
+	static std::size_t GetScenesSize(uint32_t scene_config_id);
+	static std::size_t GetScenesSize();
+	static void SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
 
 	static uint32_t CheckScenePlayerSize(entt::entity scene);
 
