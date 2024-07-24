@@ -356,7 +356,7 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 	return missionUpdated;
 }
 
-// Update mission progress if condition matches event
+// Update mission progress if conditions match the event
 bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPbComp& mission, int index, const condition_row* conditionRow) {
 	// Retrieve old progress value
 	const auto oldProgress = mission.progress(index);
@@ -376,26 +376,23 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 	size_t matchConditionCount = 0;
 
 	auto countMatchingConditions = [&matchConditionCount, &conditionEvent, &configConditionCount](const auto& configConditions, size_t index) {
-			if (configConditions.size() > 0)
-			{
-				++configConditionCount;
+		if (!configConditions.empty()) {
+			++configConditionCount;
+		}
+		if (index >= conditionEvent.condtion_ids().size()) {
+			return;
+		}
+		auto eventConditionId = conditionEvent.condtion_ids(index);
+		// Check if any condition in the table's columns matches any of the event's conditions
+		for (int32_t ci = 0; ci < configConditions.size(); ++ci) {
+			if (configConditions.Get(ci) != eventConditionId) {
+				continue;
 			}
-			if (conditionEvent.condtion_ids().size() <= index)
-			{
-				return;
-			}
-			//验证条件和表里面的每列的多个条件是否有一项匹配
-			for (int32_t ci = 0; ci < configConditions.size(); ++ci)
-			{
-				if (conditionEvent.condtion_ids(index) != configConditions.Get(ci))
-				{
-					continue;
-				}
-				//在这列中有一项匹配
-				++matchConditionCount;
-				break;
-			}
-	};
+			// Found a match in this column
+			++matchConditionCount;
+			break;
+		}
+		};
 
 	// Count matching conditions for up to four condition slots
 	countMatchingConditions(conditionRow->condition1(), 0);
@@ -412,6 +409,7 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 	mission.set_progress(index, conditionEvent.amount() + oldProgress);
 	return true;
 }
+
 
 // Update mission status based on progress
 void MissionSystem::UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
