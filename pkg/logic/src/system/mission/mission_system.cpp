@@ -32,7 +32,7 @@ namespace {
 uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	// Check if player exists in the registry
 	if (!tls.registry.valid(param.playerId)) {
-		LOG_ERROR << "Player not found";
+		LOG_ERROR << "player not found";
 		return kInvalidParameter;
 	}
 
@@ -110,7 +110,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	for (const auto& conditionId : missionComp->GetMissionConfig()->GetConditionIds(acceptEvent.mission_id())) {
 		const auto* const conditionConfig = condition_config::GetSingleton().get(conditionId);
 		if (nullptr == conditionConfig) {
-			LOG_ERROR << "Condition not found: " << conditionId;
+			LOG_ERROR << "condition not found: " << conditionId;
 			continue;
 		}
 		missionPb.add_progress(0);
