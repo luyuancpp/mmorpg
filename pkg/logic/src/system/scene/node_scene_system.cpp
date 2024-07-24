@@ -4,17 +4,19 @@
 #include "thread_local/storage.h"
 #include "proto/logic/component/gs_node_comp.pb.h"
 
+
 using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
 template <typename ServerType>
 entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, const GetSceneFilterParam& filterStateParam) {
 	auto sceneConfigId = param.sceneConfId_;
-	entt::entity node{ entt::null };
+	entt::entity bestNode{ entt::null };
 	std::size_t minServerPlayerSize = UINT64_MAX;
 
 	for (auto entity : tls.game_node_registry.view<ServerType>()) {
-		if (const auto& serverComp = tls.game_node_registry.get<ServerComp>(entity);
-			!serverComp.IsStateNormal() ||
+		const auto& serverComp = tls.game_node_registry.get<ServerComp>(entity);
+
+		if (!serverComp.IsStateNormal() ||
 			serverComp.GetSceneListByConfig(sceneConfigId).empty() ||
 			serverComp.GetServerPressureState() != filterStateParam.nodePressureState) {
 			continue;
@@ -26,22 +28,22 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 			continue;
 		}
 
-		node = entity;
+		bestNode = entity;
 		minServerPlayerSize = serverPlayerSize;
 	}
 
-	if (entt::null == node) {
+	if (entt::null == bestNode) {
 		return entt::null;
 	}
 
-	const auto& serverComps = tls.game_node_registry.get<ServerComp>(node);
+	const auto& serverComps = tls.game_node_registry.get<ServerComp>(bestNode);
 	return serverComps.GetSceneWithMinPlayerCountByConfigId(sceneConfigId);
 }
 
 template <typename ServerType>
 entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetSceneFilterParam& filterStateParam) {
 	auto sceneConfigId = param.sceneConfId_;
-	entt::entity server{ entt::null };
+	entt::entity bestNode{ entt::null };
 
 	for (auto entity : tls.game_node_registry.view<ServerType>()) {
 		if (const auto& serverComp = tls.game_node_registry.get<ServerComp>(entity);
@@ -57,35 +59,37 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetScene
 			continue;
 		}
 
-		server = entity;
+		bestNode = entity;
 		break;
 	}
 
-	if (entt::null == server) {
+	if (entt::null == bestNode) {
 		return entt::null;
 	}
 
-	entt::entity scene{ entt::null };
-	const auto& serverComps = tls.game_node_registry.get<ServerComp>(server);
+	entt::entity bestScene{ entt::null };
+	const auto& serverComps = tls.game_node_registry.get<ServerComp>(bestNode);
 
 	for (const auto& sceneIt : serverComps.GetSceneListByConfig(sceneConfigId)) {
-		if (const auto scenePlayerSize = tls.scene_registry.get<ScenePlayers>(sceneIt).size();
-			scenePlayerSize >= kMaxScenePlayerSize) {
+		auto scenePlayerSize = tls.scene_registry.get<ScenePlayers>(sceneIt).size();
+
+		if (scenePlayerSize >= kMaxScenePlayerSize) {
 			continue;
 		}
 
-		scene = sceneIt;
+		bestScene = sceneIt;
 		break;
 	}
 
-	return scene;
+	return bestScene;
 }
 
 entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParam& param) {
 	constexpr GetSceneFilterParam filterParam;
 
-	if (const auto scene = FindSceneWithMinPlayerCountTemplate<MainSceneServer>(param, filterParam); entt::null != scene) {
-		return scene;
+	auto bestScene = FindSceneWithMinPlayerCountTemplate<MainSceneServer>(param, filterParam);
+	if (bestScene != entt::null) {
+		return bestScene;
 	}
 
 	return FindSceneWithMinPlayerCountTemplate<MainSceneServer>(param, filterParam);
@@ -94,9 +98,9 @@ entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParam& p
 entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParam& param) {
 	GetSceneFilterParam filterParam;
 
-	if (const auto sceneEntity = FindNotFullSceneTemplate<MainSceneServer>(param, filterParam);
-		entt::null != sceneEntity) {
-		return sceneEntity;
+	auto bestScene = FindNotFullSceneTemplate<MainSceneServer>(param, filterParam);
+	if (bestScene != entt::null) {
+		return bestScene;
 	}
 
 	filterParam.nodePressureState = NodePressureState::kPressure;
