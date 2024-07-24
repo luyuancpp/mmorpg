@@ -179,7 +179,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     if (to_scene_guid <= 0)
     {
         GetSceneParam getp;
-        getp.scene_conf_id_ = change_scene_info.scene_confid();
+        getp.sceneConfId_ = change_scene_info.scene_confid();
         to_scene = NodeSceneSystem::GetNotFullScene(getp);
         if (entt::null == to_scene)
         {
