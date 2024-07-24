@@ -69,6 +69,8 @@ public:
 	ScenesSystem();
 	~ScenesSystem();
 
+	void Clear();
+
 	static NodeId GetGameNodeId(uint64_t scene_id)
 	{
 		return nodeSequence.node_id(static_cast<NodeId>(scene_id));
