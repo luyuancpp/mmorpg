@@ -41,7 +41,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     if (tls.scene_registry.valid(scene_id))
     {
         //但是进不去
-        if (kOK == ScenesSystem::CheckEnterScene(
+        if (kOK == ScenesSystem::CheckPlayerEnterScene(
             { .scene = scene_id, 
             .enter = player }))
         {
@@ -50,7 +50,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     }
     else if (tls.scene_registry.valid(scene_id_last_time))
     {
-        if (kOK == ScenesSystem::CheckEnterScene(
+        if (kOK == ScenesSystem::CheckPlayerEnterScene(
             { .scene = scene_id_last_time, 
             .enter = player }))
         {

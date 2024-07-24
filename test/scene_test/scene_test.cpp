@@ -863,8 +863,8 @@ TEST(GS, CheckEnterRoomScene)
     const auto player1 = tls.registry.create();
     tls.registry.emplace<Guid>(player1, 100);
 
-    EXPECT_EQ(kOK, ScenesSystem::CheckEnterScene({.scene = scene, .enter = player}));
-    EXPECT_EQ(kRetCheckEnterSceneCreator, ScenesSystem::CheckEnterScene({.scene = scene, .enter = player1}));
+    EXPECT_EQ(kOK, ScenesSystem::CheckPlayerEnterScene({.scene = scene, .enter = player}));
+    EXPECT_EQ(kRetCheckEnterSceneCreator, ScenesSystem::CheckPlayerEnterScene({.scene = scene, .enter = player1}));
 }
 
 int32_t main(int argc, char** argv)
