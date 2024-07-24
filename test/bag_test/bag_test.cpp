@@ -18,7 +18,7 @@ TEST(BagTest, AddNewGridItem)
     CreateItemParam p;
     p.item_base_db.set_config_id(1);
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(1, bag.item_size());
     EXPECT_EQ(1, bag.pos_size());
     EXPECT_EQ(bag.GetItemByBos(0)->config_id(), p.item_base_db.config_id());
@@ -39,7 +39,7 @@ TEST(BagTest, AddNewGridItemFull)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         auto item = CreateItem(p);
-        EXPECT_EQ(kRetOK, bag.AddItem(item));
+        EXPECT_EQ(kOK, bag.AddItem(item));
         EXPECT_EQ(i + 1, bag.item_size());
         EXPECT_EQ(i + 1, bag.pos_size());
         EXPECT_EQ(bag.GetItemByBos(i)->config_id(), p.item_base_db.config_id());
@@ -61,7 +61,7 @@ TEST(BagTest, AddNewGridItemFull)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         auto item = CreateItem(p);
-        EXPECT_EQ(kRetOK, bag.AddItem(item));
+        EXPECT_EQ(kOK, bag.AddItem(item));
         uint32_t newindex = i + (uint32_t)BagCapacity::kDefaultCapacity;
         EXPECT_EQ(newindex + 1 , bag.item_size());
         EXPECT_EQ(newindex + 1, bag.pos_size());
@@ -90,11 +90,11 @@ TEST(BagTest, Add10CanStack10CanNotStack)
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);
     item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.item_size());
     EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.pos_size());
 }
@@ -116,7 +116,7 @@ TEST(BagTest, AddStackItemHalfAdd)
             p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() / 2 + 1);
         }
         auto item = CreateItem(p);
-        EXPECT_EQ(kRetOK, bag.AddItem(item));
+        EXPECT_EQ(kOK, bag.AddItem(item));
         auto index = i / 2;
         auto sz = i / 2 + 1;
         EXPECT_EQ(sz, bag.item_size());
@@ -151,7 +151,7 @@ TEST(BagTest, AddStackItemUnlock)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         auto item = CreateItem(p);
-        EXPECT_EQ(kRetOK, bag.AddItem(item));
+        EXPECT_EQ(kOK, bag.AddItem(item));
         EXPECT_EQ(i + 1, bag.item_size());
         EXPECT_EQ(i + 1, bag.pos_size());
         EXPECT_EQ(bag.GetItemByBos(i)->config_id(), p.item_base_db.config_id());
@@ -173,7 +173,7 @@ TEST(BagTest, AddStackItemUnlock)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         auto item = CreateItem(p);
-        EXPECT_EQ(kRetOK, bag.AddItem(item));
+        EXPECT_EQ(kOK, bag.AddItem(item));
         uint32_t newindex = i + (uint32_t)BagCapacity::kDefaultCapacity;
         EXPECT_EQ(newindex + 1, bag.item_size());
         EXPECT_EQ(newindex + 1, bag.pos_size());
@@ -199,7 +199,7 @@ TEST(BagTest, AdequateSizeAddItemCannotStackItemFull)
     UInt32UInt32UnorderedMap adequate_add{ {config_id, (uint32_t)BagCapacity::kDefaultCapacity + 1 } };
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));
     adequate_add[config_id] = (uint32_t)BagCapacity::kDefaultCapacity;
-    EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
+    EXPECT_EQ(kOK, bag.AdequateSizeAddItem(adequate_add));
 }
 
 //�ɵ��ӻ��,������Ʒ����ȫ�����������999
@@ -214,32 +214,32 @@ TEST(BagTest, AdequateSizeAddItemmixtureFull)
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));
     //�ĳ�һ�����ɵ��ӣ��Ÿ����Ե���
     adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 1) * get_item_conf(stack_config_id)->max_statck_size();
-    EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
+    EXPECT_EQ(kOK, bag.AdequateSizeAddItem(adequate_add));
 
     //���һ�������Ժ󲻿��Ե����ˣ����һ�����Ե��ӵ���Ʒ
     CreateItemParam p;
     p.item_base_db.set_config_id(cannot_stack_config_id);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//��Ϊռ����һ�����ӣ������ܹ�����ʮ������
     //�ĳ�8�����Ե��ӵĸ���,һ�����ɵ��ӣ��ܹ���Ҫ�Ÿ�����
     adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 2) * get_item_conf(stack_config_id)->max_statck_size();
-    EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
+    EXPECT_EQ(kOK, bag.AdequateSizeAddItem(adequate_add));
     //��һ�����Ե��ӵĸ���
     p.item_base_db.set_config_id(stack_config_id);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//��Ϊռ�����������ӣ������ܹ�����ʮ������
     //�ĳ�7�����Ե��ӵĸ���,1�����ɵ��ӣ��ܹ���Ҫ8������
     adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 3) * get_item_conf(stack_config_id)->max_statck_size();
-    EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
+    EXPECT_EQ(kOK, bag.AdequateSizeAddItem(adequate_add));
     //��һ�����Ե��ӵĸ��ӣ�������100
     p.item_base_db.set_config_id(stack_config_id);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() - 100);
     item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//��Ϊռ�����������ӣ������ܹ�����ʮ������
 }
 
@@ -258,20 +258,20 @@ TEST(BagTest, AdequateItem)
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AdequateItem(adequate_item));
     adequate_item[config_id10] = get_item_conf(p.item_base_db.config_id())->max_statck_size() / 2;
-    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    EXPECT_EQ(kOK, bag.AdequateItem(adequate_item));
     adequate_item.emplace(config_id1, 1);//���ɵ���һ��
     EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));
 
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     item = CreateItem(p);//����һ�������Ե��ӵ�
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AdequateItem(adequate_item));
     adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size();//1��10�ɵ���999
-    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    EXPECT_EQ(kOK, bag.AdequateItem(adequate_item));
     adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size() + 1;//1��10�ɵ���1000
     EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));
     adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size() * 3;//3��10�ɵ���999*3
@@ -280,23 +280,23 @@ TEST(BagTest, AdequateItem)
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     item = CreateItem(p);//����һ�����Ե��ӵ�
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));//2��10�ĵ���999
 
     p.item_base_db.set_config_id(config_id11);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * 3);
     item = CreateItem(p);//����һ�����Ե��ӵ�
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));//2��10�ĵ���999
 
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     item = CreateItem(p);//����һ�����Ե��ӵ�
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));//3��10�ĵ���999
+    EXPECT_EQ(kOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AdequateItem(adequate_item));//3��10�ĵ���999
 
     adequate_item[config_id11] = get_item_conf(config_id11)->max_statck_size() * 3;//3��10�ɵ���999 3��11�ɵ���999
-    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    EXPECT_EQ(kOK, bag.AdequateItem(adequate_item));
 }
 
 //��Ʒ�㹻����
@@ -313,26 +313,26 @@ TEST(BagTest, DelItem)
     p.item_base_db.set_config_id(test_config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * 2);// 999 * 2
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
 
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 1
     item = CreateItem(p);//����һ�������Ե��ӵ�
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
 
     p.item_base_db.set_config_id(config_id2);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());//  1
     item = CreateItem(p);//����һ�����Ե��ӵ�
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
 
     p.item_base_db.set_config_id(config_id11);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 999 * 1
     item = CreateItem(p);//����һ�����Ե��ӵ�
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
 
     UInt32UInt32UnorderedMap try_del;
     try_del.emplace(test_config_id10, 1);
-    EXPECT_EQ(kRetOK, bag.DelItem(try_del));
+    EXPECT_EQ(kOK, bag.DelItem(try_del));
     EXPECT_EQ(get_item_conf(test_config_id10)->max_statck_size() * 2 - 1, bag.GetItemStackSize(test_config_id10));
     EXPECT_EQ(get_item_conf(config_id1)->max_statck_size(), bag.GetItemStackSize(config_id1));
     EXPECT_EQ(get_item_conf(config_id2)->max_statck_size(), bag.GetItemStackSize(config_id2));
@@ -341,7 +341,7 @@ TEST(BagTest, DelItem)
     try_del[config_id1] = get_item_conf(config_id1)->max_statck_size();
     try_del[config_id2] = get_item_conf(config_id2)->max_statck_size();
     try_del[config_id11] = get_item_conf(config_id11)->max_statck_size();
-    EXPECT_EQ(kRetOK, bag.DelItem(try_del));
+    EXPECT_EQ(kOK, bag.DelItem(try_del));
     EXPECT_EQ(0, bag.GetItemStackSize(test_config_id10));
     EXPECT_EQ(0, bag.GetItemStackSize(config_id1));
     EXPECT_EQ(0, bag.GetItemStackSize(config_id2));
@@ -365,10 +365,10 @@ TEST(BagTest, Del)
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 1
     auto item = CreateItem(p);//����һ�������Ե��ӵ�
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(1, bag.item_size());
     EXPECT_EQ(1, bag.pos_size());
-    EXPECT_EQ(kRetOK, bag.DelItem(g_bag_node_sequence.LastId()));
+    EXPECT_EQ(kOK, bag.DelItem(g_bag_node_sequence.LastId()));
     EXPECT_EQ(0, bag.item_size());
     EXPECT_EQ(0, bag.pos_size());
 }
@@ -381,7 +381,7 @@ TEST(BagTest, DelItemByPos)
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 999
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     EXPECT_EQ(1, bag.item_size());
     EXPECT_EQ(1, bag.pos_size());
     DelItemByPosParam dp;
@@ -391,10 +391,10 @@ TEST(BagTest, DelItemByPos)
     dp.item_guid_ = g_bag_node_sequence.LastId();
     EXPECT_EQ(kRetBagDelItemConfig, bag.DelItemByPos(dp));
     dp.item_config_id_ = config_id10;
-    EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     EXPECT_EQ(get_item_conf(config_id10)->max_statck_size() - 1, bag.GetItemStackSize(config_id10));
     dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
-    EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     EXPECT_EQ(0, bag.GetItemStackSize(config_id10));
     EXPECT_EQ(1, bag.item_size());
     EXPECT_EQ(1, bag.pos_size());
@@ -414,12 +414,12 @@ TEST(BagTest, Neaten1)
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);// 999 * 10
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     auto id10 = g_bag_node_sequence.LastId();
     p.item_base_db.set_config_id(config_id11);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);// 999 * 10
     item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     auto id11 = g_bag_node_sequence.LastId();
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; ++i)
     {
@@ -428,7 +428,7 @@ TEST(BagTest, Neaten1)
         dp.item_guid_ = id10 - (BagCapacity::kDefaultCapacity - i) + 1;
         dp.item_config_id_ = config_id10;
         dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
-        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+        EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }   
     for (uint32_t i = (uint32_t)BagCapacity::kDefaultCapacity; i < bag.pos_size(); ++i)
     {
@@ -437,7 +437,7 @@ TEST(BagTest, Neaten1)
         dp.item_guid_ = id11 - (BagCapacity::kDefaultCapacity - (i - BagCapacity::kDefaultCapacity)) + 1;
         dp.item_config_id_ = config_id11;
         dp.size_ = get_item_conf(config_id11)->max_statck_size() - 1;
-        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+        EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
     for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
     {
@@ -466,12 +466,12 @@ TEST(BagTest, Neaten400)
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(unlock_size / 2));// 999 * 200
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     auto id10 = g_bag_node_sequence.LastId();
     p.item_base_db.set_config_id(config_id11);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(unlock_size / 2));// 999 * 200
     item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     auto id11 = g_bag_node_sequence.LastId();
     auto config_id10_sz = unlock_size / 2;
     for (uint32_t i = 0; i < config_id10_sz; ++i)
@@ -481,7 +481,7 @@ TEST(BagTest, Neaten400)
         dp.item_guid_ = id10 - (config_id10_sz - i) + 1;
         dp.item_config_id_ = config_id10;
         dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
-        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+        EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
     for (uint32_t i = uint32_t(config_id10_sz); i < bag.pos_size(); ++i)
     {
@@ -490,7 +490,7 @@ TEST(BagTest, Neaten400)
         dp.item_guid_ = id11 - (config_id10_sz - (i - config_id10_sz)) + 1;
         dp.item_config_id_ = config_id11;
         dp.size_ = get_item_conf(config_id11)->max_statck_size() - 1;
-        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+        EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
     for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
     {
@@ -522,12 +522,12 @@ TEST(BagTest, Neaten400_1)
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(per_grid_size));// 999 * 200
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     auto id10 = g_bag_node_sequence.LastId();
     p.item_base_db.set_config_id(config_id11);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(per_grid_size));// 999 * 200
     item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     auto id11 = g_bag_node_sequence.LastId();
     auto config_id10_sz = per_grid_size;
     auto use_config_id10_sz = unlock_size / 4;
@@ -542,7 +542,7 @@ TEST(BagTest, Neaten400_1)
         dp.item_guid_ = id10 - (config_id10_sz - i) + 1;
         dp.item_config_id_ = config_id10;
         dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
-        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+        EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
     auto use_config_id11_sz = unlock_size / 4 + config_id10_sz;
     for (uint32_t i = uint32_t(config_id10_sz); i < bag.pos_size(); ++i)
@@ -556,7 +556,7 @@ TEST(BagTest, Neaten400_1)
         dp.item_guid_ = id11 - (config_id10_sz - (i - config_id10_sz)) + 1;
         dp.item_config_id_ = config_id11;
         dp.size_ = get_item_conf(config_id11)->max_statck_size() - 1;
-        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+        EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
     auto index1 = use_config_id10_sz;//��һ�ٸ�������ǰ1
     auto index2 = use_config_id10_sz * 2;//�ڶ��ٸ�������ǰ999
@@ -625,12 +625,12 @@ TEST(BagTest, NeatenCanNotStack)
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);// 999 * 10
     auto item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     auto id10 = g_bag_node_sequence.LastId();
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);// 999 * 10
     item = CreateItem(p);
-    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(item));
     auto id11 = g_bag_node_sequence.LastId();
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; ++i)
     {
@@ -639,7 +639,7 @@ TEST(BagTest, NeatenCanNotStack)
         dp.item_guid_ = id10 - (BagCapacity::kDefaultCapacity - i) + 1;
         dp.item_config_id_ = config_id10;
         dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
-        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+        EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
  
     for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)

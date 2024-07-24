@@ -45,12 +45,12 @@ TEST(MissionsComp, AcceptMission)
     for (int32_t i = 0; i < data.data_size(); ++i)
     {
         accept_mission_event.set_mission_id(data.data(i).id());
-        auto m = MissionSystem::Accept(accept_mission_event);
+        auto m = MissionSystem::AcceptMission(accept_mission_event);
         ++sz;
     }
     EXPECT_EQ(sz, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
-    MissionSystem::CompleteAllMission(player, 0);
+    MissionSystem::CompleteAllMissions(player, 0);
     EXPECT_EQ(0, ms.MissionSize());
     EXPECT_EQ(sz, ms.CompleteSize());
 }
@@ -64,8 +64,8 @@ TEST(MissionsComp, RepeatedMission)
 		AcceptMissionEvent accept_mission_event;
     	accept_mission_event.set_entity(entt::to_integral(player));
 		accept_mission_event.set_mission_id(mission_id);
-        EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
-        EXPECT_EQ(kRetMissionIdRepeated, MissionSystem::Accept(accept_mission_event));
+        EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
+        EXPECT_EQ(kRetMissionIdRepeated, MissionSystem::AcceptMission(accept_mission_event));
     }
 
     {
@@ -75,8 +75,8 @@ TEST(MissionsComp, RepeatedMission)
 		AcceptMissionEvent accept_mission_event2;
     	accept_mission_event2.set_entity(entt::to_integral(player));
         accept_mission_event2.set_mission_id(2);
-		EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event1));
-		EXPECT_EQ(kRetMissionTypeRepeated, MissionSystem::Accept(accept_mission_event2));
+		EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event1));
+		EXPECT_EQ(kMissionTypeRepeated, MissionSystem::AcceptMission(accept_mission_event2));
     }
 }
 
@@ -88,32 +88,32 @@ TEST(MissionsComp, TriggerCondition)
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
     EXPECT_EQ(1, ms.TypeSetSize());
     MissionConditionEvent ce;
     ce.set_entity(ms);
-    ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+    ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
     ce.add_condtion_ids(1);
     ce.set_amount(1);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
 
     ce.clear_condtion_ids();
     ce.add_condtion_ids(2);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
 
 	ce.clear_condtion_ids();
 	ce.add_condtion_ids(3);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
 
 	ce.clear_condtion_ids();
 	ce.add_condtion_ids(4);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(0, ms.MissionSize());
     EXPECT_EQ(1, ms.CompleteSize());
     EXPECT_EQ(0, ms.TypeSetSize());
@@ -128,7 +128,7 @@ TEST(MissionsComp, TypeSize)
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
     EXPECT_TRUE(ms.IsAccepted(mission_id));
     EXPECT_FALSE(ms.IsComplete(mission_id));
     for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionCustom); ++i)
@@ -138,41 +138,41 @@ TEST(MissionsComp, TypeSize)
     
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
 
-    ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionTalkWithNpc));
-    MissionSystem::Receive(ce);
+    ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionTalkWithNpc));
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
 
-    ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteCondition));
-    MissionSystem::Receive(ce);
+    ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteCondition));
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
 
-    ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionUseItem));
+    ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionUseItem));
     ce.add_condtion_ids(2);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
 
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionLevelUp));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionLevelUp));
     ce.clear_condtion_ids();
     ce.add_condtion_ids(10);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CompleteSize());
 
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionInteraction));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionInteraction));
 	ce.clear_condtion_ids();
 	ce.add_condtion_ids(1);
     ce.add_condtion_ids(2);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     tls.dispatcher.update<MissionConditionEvent>();
     EXPECT_EQ(0, ms.MissionSize());
     EXPECT_EQ(1, ms.CompleteSize());
@@ -193,17 +193,17 @@ TEST(MissionsComp, CompleteAcceptMission)
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
     EXPECT_EQ(1, ms.TypeSetSize());
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_FALSE(ms.IsAccepted(mission_id));
     EXPECT_TRUE(ms.IsComplete(mission_id));
-    EXPECT_EQ(kRetMissionComplete, MissionSystem::Accept(accept_mission_event));
+    EXPECT_EQ(kRetMissionComplete, MissionSystem::AcceptMission(accept_mission_event));
 }
 
 TEST(MissionsComp, EventTriggerMutableMission)
@@ -215,26 +215,26 @@ TEST(MissionsComp, EventTriggerMutableMission)
 	constexpr uint32_t mission_id2 = 2;
 	accept_mission_event.set_mission_id(mission_id1);
 	accept_mission_event.set_entity(entt::to_integral(player));
-	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
 	accept_mission_event.set_mission_id(mission_id2);
-	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
 
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
     ce.set_amount(4);
     ce.clear_condtion_ids();
 	ce.add_condtion_ids(1);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     ce.clear_condtion_ids();
 	ce.add_condtion_ids(2);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     ce.clear_condtion_ids();
 	ce.add_condtion_ids(3);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     ce.clear_condtion_ids();
 	ce.add_condtion_ids(4);	
-	MissionSystem::Receive(ce);
+	MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_TRUE(ms.IsComplete(mission_id1));
     EXPECT_TRUE(ms.IsComplete(mission_id2));
 }
@@ -247,14 +247,14 @@ TEST(MissionsComp, OnCompleteMission)
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
     EXPECT_EQ(1, ms.TypeSetSize());
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     tls.dispatcher.update<AcceptMissionEvent>();
     EXPECT_FALSE(ms.IsAccepted(mission_id));
     EXPECT_TRUE(ms.IsComplete(mission_id));
@@ -266,7 +266,7 @@ TEST(MissionsComp, OnCompleteMission)
     {
         ce.clear_condtion_ids();
         ce.add_condtion_ids(i);
-        MissionSystem::Receive(ce);
+        MissionSystem::HandleMissionConditionEvent(ce);
         EXPECT_FALSE(ms.IsAccepted(mission_id));
         EXPECT_TRUE(ms.IsComplete(mission_id));
         tls.dispatcher.update<AcceptMissionEvent>();
@@ -284,14 +284,14 @@ TEST(MissionsComp, AcceptNextMirroMission)
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
 	EXPECT_EQ(1, ms.TypeSetSize());
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
-	MissionSystem::Receive(ce);
+	MissionSystem::HandleMissionConditionEvent(ce);
 	EXPECT_FALSE(ms.IsAccepted(mission_id));
 	EXPECT_TRUE(ms.IsComplete(mission_id));
 	const auto next_mission_id = ++mission_id;
@@ -310,24 +310,24 @@ TEST(MissionsComp, MissionCondition)
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
 	AcceptMissionEvent accept_mission_event1;
 	accept_mission_event1.set_mission_id(mission_id1);
 	accept_mission_event1.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event1));
+    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event1));
 	AcceptMissionEvent accept_mission_event2;
 	accept_mission_event2.set_mission_id(mission_id2);
 	accept_mission_event2.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event2));
+    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event2));
 
     EXPECT_TRUE(ms.IsAccepted(mission_id));
     EXPECT_FALSE(ms.IsComplete(mission_id));
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     tls.dispatcher.update<AcceptMissionEvent>();
     tls.dispatcher.update<MissionConditionEvent>();
     EXPECT_FALSE(ms.IsAccepted(mission_id));
@@ -347,19 +347,19 @@ TEST(MissionsComp, ConditionAmount)
     AcceptMissionEvent accept_mission_event;
     accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
 
     EXPECT_TRUE(ms.IsAccepted(mission_id));
     EXPECT_FALSE(ms.IsComplete(mission_id));
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_TRUE(ms.IsAccepted(mission_id));
     EXPECT_FALSE(ms.IsComplete(mission_id));
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_FALSE(ms.IsAccepted(mission_id));
     EXPECT_TRUE(ms.IsComplete(mission_id));
 }
@@ -375,23 +375,23 @@ TEST(MissionsComp, MissionRewardList)
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
     GetRewardParam param;
-    param.mission_id_ = mission_id;
-    param.player_ = player;
-    EXPECT_EQ(kRetMissionGetRewardNoMissionId, MissionSystem::GetReward(param));
+    param.missionId = mission_id;
+    param.playerId = player;
+    EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
     EXPECT_TRUE(ms.IsAccepted(mission_id));
     EXPECT_FALSE(ms.IsComplete(mission_id));
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
-	ce.set_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
-    MissionSystem::Receive(ce);
+    MissionSystem::HandleMissionConditionEvent(ce);
     EXPECT_FALSE(ms.IsAccepted(mission_id));
     EXPECT_TRUE(ms.IsComplete(mission_id));
-    EXPECT_EQ(kRetOK, MissionSystem::GetReward(param));
-    EXPECT_EQ(kRetMissionGetRewardNoMissionId, MissionSystem::GetReward(param));
+    EXPECT_EQ(kOK, MissionSystem::GetMissionReward(param));
+    EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
     EXPECT_EQ(0, ms.CanGetRewardSize());
 }
 
@@ -403,7 +403,7 @@ TEST(MissionsComp, AbandonMission)
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mission_id);
 	accept_mission_event.set_entity(entt::to_integral(player));
-	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
 
     EXPECT_EQ(1, ms.MissionSize());
     EXPECT_EQ(0, ms.CanGetRewardSize());
@@ -413,10 +413,10 @@ TEST(MissionsComp, AbandonMission)
     EXPECT_EQ(1, type_missions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
     tls.registry.emplace_or_replace<MissionRewardPbComp>(ms).mutable_can_reward_mission_id()->insert({ mission_id, true });
     AbandonParam param;
-	param.mission_id_ = mission_id;
-	param.player_ = player;
+	param.missionId = mission_id;
+	param.playerId = player;
     
-    MissionSystem::Abandon(param);
+    MissionSystem::AbandonMission(param);
 
     EXPECT_EQ(0, ms.MissionSize());
     EXPECT_EQ(0, ms.CanGetRewardSize());

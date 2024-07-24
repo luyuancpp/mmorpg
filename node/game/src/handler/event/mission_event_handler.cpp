@@ -24,14 +24,14 @@ void MissionEventHandler::UnRegister()
 void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	MissionSystem::Accept(event);
+	MissionSystem::AcceptMission(event);
 ///<<< END WRITING YOUR CODE
 }
 
 void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    MissionSystem::Receive(event);
+    MissionSystem::HandleMissionConditionEvent(event);
 ///<<< END WRITING YOUR CODE
 }
 

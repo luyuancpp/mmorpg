@@ -9,357 +9,457 @@
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
 
-// 定义5种比较函数，用于任务条件的比较
-std::array<std::function<bool(uint32_t, uint32_t)>, 5> function_compare({
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value >= conf_value; }},
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value > conf_value; }},
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value <= conf_value; }},
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value < conf_value; }},
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value == conf_value; }},
-	});
+#include <functional>
+#include <unordered_map>
+#include <unordered_set>
 
-// 获取任务奖励
-uint32_t MissionSystem::GetReward(const GetRewardParam& param) {
-	if (!tls.registry.valid(param.player_)) {
-		LOG_ERROR << "player not found";
-		return kInvalidParam;
+namespace {
+
+	// Comparison functions for mission conditions
+	std::array<std::function<bool(uint32_t, uint32_t)>, 5> condition_comparison_functions = {
+		{
+			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value >= config_value; },
+			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value > config_value; },
+			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value <= config_value; },
+			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value < config_value; },
+			[](const uint32_t actual_value, const uint32_t config_value) { return actual_value == config_value; }
+		}
+	};
+
+} // anonymous namespace
+
+// Get reward for completing a mission
+uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
+	// Check if player exists in the registry
+	if (!tls.registry.valid(param.playerId)) {
+		LOG_ERROR << "Player not found";
+		return kInvalidParameter;
 	}
-	auto* const mission_reward = tls.registry.try_get<MissionRewardPbComp>(param.player_);
-	if (nullptr == mission_reward) {
-		return kRetMissionPlayerMissionCompNotFound;
+
+	// Retrieve mission reward component for the player
+	auto* const missionRewardComp = tls.registry.try_get<MissionRewardPbComp>(param.playerId);
+	if (nullptr == missionRewardComp) {
+		return kPlayerMissionComponentNotFound;
 	}
-	google::protobuf::Map<uint32_t, bool>* reward_mission_id = mission_reward->mutable_can_reward_mission_id();
-	if (const auto mission_reward_it = reward_mission_id->find(param.mission_id_);
-		mission_reward_it == reward_mission_id->end()) {
-		return kRetMissionGetRewardNoMissionId;
+
+	// Check if the mission ID is valid for reward
+	auto rewardMissionIdMap = missionRewardComp->mutable_can_reward_mission_id();
+	if (rewardMissionIdMap->find(param.missionId) == rewardMissionIdMap->end()) {
+		return kMissionIdNotInRewardList;
 	}
-	reward_mission_id->erase(param.mission_id_);
-	return kRetOK;
+
+	// Remove mission ID from reward list
+	rewardMissionIdMap->erase(param.missionId);
+	return kOK;
 }
 
-// 检查接受任务的条件
-uint32_t MissionSystem::CheckAcceptConditions(const AcceptMissionEvent& accept_event, MissionsComp* mission_comp) {
-	RET_CHECK_RET(mission_comp->IsUnAccepted(accept_event.mission_id()))
-	RET_CHECK_RET(mission_comp->IsUnCompleted(accept_event.mission_id()))
-	CHECK_CONDITION(!mission_comp->GetMissionConfig()->HasKey(accept_event.mission_id()), kRetTableId)
+// Check conditions before accepting a mission
+uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp* missionComp) {
+	// Check if mission is unaccepted and uncompleted
+	RET_CHECK_RETURN(missionComp->IsMissionUnaccepted(acceptEvent.mission_id()));
+	RET_CHECK_RETURN(missionComp->IsMissionUncompleted(acceptEvent.mission_id()));
 
-	auto mission_sub_type = mission_comp->GetMissionConfig()->GetMissionSubType(accept_event.mission_id());
-	auto mission_type = mission_comp->GetMissionConfig()->GetMissionType(accept_event.mission_id());
+	// Ensure mission configuration is valid
+	CHECK_CONDITION(!missionComp->GetMissionConfig()->HasKey(acceptEvent.mission_id()), kTableIdInvalid);
 
-	if (mission_comp->IsMissionTypeNotRepeated()) {
-		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
-		CHECK_CONDITION(mission_comp->GetTypeFilter().find(mission_and_mission_subtype_pair) != mission_comp->GetTypeFilter().end(), kRetMissionTypeRepeated)
+	// Retrieve mission sub-type and type
+	auto missionSubType = missionComp->GetMissionConfig()->GetMissionSubType(acceptEvent.mission_id());
+	auto missionType = missionComp->GetMissionConfig()->GetMissionType(acceptEvent.mission_id());
+
+	// If mission type should not repeat, check type filter
+	if (missionComp->IsMissionTypeNotRepeated()) {
+		auto missionTypeSubTypePair = std::make_pair(missionType, missionSubType);
+		CHECK_CONDITION(missionComp->GetTypeFilter().find(missionTypeSubTypePair) != missionComp->GetTypeFilter().end(), kMissionTypeRepeated);
 	}
 
-	return kRetOK;
+	return kOK;
 }
 
-// 接受任务
-uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event) {
-	const entt::entity player = entt::to_entity(accept_event.entity());
-	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
-	if (nullptr == mission_comp) {
-		return kRetMissionPlayerMissionCompNotFound;
+// Accept a mission
+uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
+	// Convert entity ID to player entity
+	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
+
+	// Retrieve mission component for the player
+	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	if (nullptr == missionComp) {
+		return kPlayerMissionComponentNotFound;
 	}
 
-	auto ret = CheckAcceptConditions(accept_event, mission_comp);
-	if (ret != kRetOK) {
+	// Check acceptance conditions
+	auto ret = CheckMissionAcceptance(acceptEvent, missionComp);
+	if (ret != kOK) {
 		return ret;
 	}
 
-	auto mission_sub_type = mission_comp->GetMissionConfig()->GetMissionSubType(accept_event.mission_id());
-	auto mission_type = mission_comp->GetMissionConfig()->GetMissionType(accept_event.mission_id());
-	if (mission_comp->IsMissionTypeNotRepeated()) {
-		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
-		mission_comp->GetTypeFilter().emplace(mission_and_mission_subtype_pair);
+	// Retrieve mission sub-type and type
+	auto missionSubType = missionComp->GetMissionConfig()->GetMissionSubType(acceptEvent.mission_id());
+	auto missionType = missionComp->GetMissionConfig()->GetMissionType(acceptEvent.mission_id());
+
+	// Add mission type filter if type should not repeat
+	if (missionComp->IsMissionTypeNotRepeated()) {
+		auto missionTypeSubTypePair = std::make_pair(missionType, missionSubType);
+		missionComp->GetTypeFilter().emplace(missionTypeSubTypePair);
 	}
 
-	MissionPbComp mission_pb;
-	mission_pb.set_id(accept_event.mission_id());
-	for (const auto& condition_id : mission_comp->GetMissionConfig()->condition_id(accept_event.mission_id())) {
-		const auto* const condition_row = condition_config::GetSingleton().get(condition_id);
-		if (nullptr == condition_row) {
-			LOG_ERROR << "has not condition" << condition_id;
+	// Create mission protobuf component
+	MissionPbComp missionPb;
+	missionPb.set_id(acceptEvent.mission_id());
+
+	// Initialize mission progress based on conditions
+	for (const auto& conditionId : missionComp->GetMissionConfig()->GetConditionIds(acceptEvent.mission_id())) {
+		const auto* const conditionConfig = condition_config::GetSingleton().get(conditionId);
+		if (nullptr == conditionConfig) {
+			LOG_ERROR << "Condition not found: " << conditionId;
 			continue;
 		}
-		mission_pb.add_progress(0);
-		mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].emplace(accept_event.mission_id());
+		missionPb.add_progress(0);
+		missionComp->GetEventMissionsClassify()[conditionConfig->condition_type()].emplace(acceptEvent.mission_id());
 	}
-	mission_comp->GetMissionsComp().mutable_missions()->insert({ accept_event.mission_id(), std::move(mission_pb) });
 
+	// Insert mission into missions component
+	missionComp->GetMissionsComp().mutable_missions()->insert({ acceptEvent.mission_id(), std::move(missionPb) });
+
+	// Dispatch event for mission acceptance
 	{
-		OnAcceptedMissionEvent on_accepted_mission_event;
-		on_accepted_mission_event.set_entity(entt::to_integral(player));
-		on_accepted_mission_event.set_mission_id(accept_event.mission_id());
-		tls.dispatcher.enqueue(on_accepted_mission_event);
+		OnAcceptedMissionEvent onAcceptedMissionEvent;
+		onAcceptedMissionEvent.set_entity(entt::to_integral(playerEntity));
+		onAcceptedMissionEvent.set_mission_id(acceptEvent.mission_id());
+		tls.dispatcher.enqueue(onAcceptedMissionEvent);
 	}
-	return kRetOK;
+
+	return kOK;
 }
 
-// 放弃任务
-uint32_t MissionSystem::Abandon(const AbandonParam& param) {
-	auto* const mission_comp = tls.registry.try_get<MissionsComp>(param.player_);
-	if (nullptr == mission_comp) {
-		return kRetMissionPlayerMissionCompNotFound;
+// Abandon a mission
+uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
+	// Retrieve mission component for the player
+	auto* const missionComp = tls.registry.try_get<MissionsComp>(param.playerId);
+	if (nullptr == missionComp) {
+		return kPlayerMissionComponentNotFound;
 	}
 
-	RET_CHECK_RET(mission_comp->IsUnCompleted(param.mission_id_))
+	// Check if mission is uncompleted
+	RET_CHECK_RETURN(missionComp->IsMissionUncompleted(param.missionId));
 
-		auto* const mission_reward = tls.registry.try_get<MissionRewardPbComp>(param.player_);
-	if (nullptr != mission_reward) {
-		mission_reward->mutable_can_reward_mission_id()->erase(param.mission_id_);
+	// Remove mission ID from reward list if applicable
+	auto* const missionReward = tls.registry.try_get<MissionRewardPbComp>(param.playerId);
+	if (nullptr != missionReward) {
+		missionReward->mutable_can_reward_mission_id()->erase(param.missionId);
 	}
 
-	mission_comp->GetMissionsComp().mutable_missions()->erase(param.mission_id_);
-	mission_comp->GetMissionsComp().mutable_complete_missions()->erase(param.mission_id_);
-	mission_comp->GetMissionsComp().mutable_mission_begin_time()->erase(param.mission_id_);
+	// Remove mission from missions component
+	missionComp->GetMissionsComp().mutable_missions()->erase(param.missionId);
+	missionComp->GetMissionsComp().mutable_complete_missions()->erase(param.missionId);
+	missionComp->GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
 
-	DeleteMissionClassify(param.player_, param.mission_id_);
-	return kRetOK;
+	// Delete mission classification
+	DeleteMissionClassification(param.playerId, param.missionId);
+	return kOK;
 }
 
-// 完成所有任务
-void MissionSystem::CompleteAllMission(entt::entity player, uint32_t op) {
-	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
-	if (nullptr == mission_comp) {
+// Complete all missions for a player
+void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation) {
+	// Retrieve mission component for the player
+	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	if (nullptr == missionComp) {
 		return;
 	}
 
-	for (const auto& key : mission_comp->GetMissionsComp().missions() | std::views::keys) {
-		mission_comp->GetMissionsComp().mutable_complete_missions()->insert({ key, false });
+	// Mark all missions as complete
+	for (const auto& missionId : missionComp->GetMissionsComp().missions() | std::views::keys) {
+		missionComp->GetMissionsComp().mutable_complete_missions()->insert({ missionId, false });
 	}
 
-	mission_comp->GetMissionsComp().mutable_missions()->clear();
+	// Clear all missions
+	missionComp->GetMissionsComp().mutable_missions()->clear();
 }
 
-// 检查条件是否已完成
-bool IsConditionCompleted(uint32_t condition_id, const uint32_t progress_value) {
-	const auto* p_condition_row = condition_config::GetSingleton().get(condition_id);
-	if (nullptr == p_condition_row) {
+// Check if a condition is completed
+bool IsConditionFulfilled(uint32_t conditionId, const uint32_t progressValue) {
+	const auto* conditionRow = condition_config::GetSingleton().get(conditionId);
+	if (nullptr == conditionRow) {
 		return false;
 	}
 
-	if (p_condition_row->operation() >= function_compare.size()) {
-		return function_compare[0](progress_value, p_condition_row->amount());
+	// Perform comparison using predefined function
+	auto operation = conditionRow->operation();
+	if (operation >= condition_comparison_functions.size()) {
+		operation = 0; // Default to the first comparison function
 	}
-	return function_compare.at(p_condition_row->operation())(progress_value, p_condition_row->amount());
+	return condition_comparison_functions[operation](progressValue, conditionRow->amount());
 }
 
-// 处理任务条件事件
-void MissionSystem::Receive(const MissionConditionEvent& condition_event) {
-	if (condition_event.condtion_ids().empty()) {
-		return;
-	}
+// Check if all conditions of a mission are fulfilled
+bool MissionSystem::AreAllConditionsFulfilled(const MissionPbComp& mission, uint32_t missionId, MissionsComp* missionComp) {
+	// Retrieve mission conditions from configuration
+	const auto& conditions = missionComp->GetMissionConfig()->GetConditionIds(missionId);
 
-	const entt::entity player = entt::to_entity(condition_event.entity());
-	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
-	if (nullptr == mission_comp) {
-		return;
-	}
-
-	const auto classify_mission_it = mission_comp->GetEventMissionsClassify().find(condition_event.type());
-	if (classify_mission_it == mission_comp->GetEventMissionsClassify().end()) {
-		return;
-	}
-
-	UInt32Set temp_complete;
-	for (auto lit : classify_mission_it->second) {
-		auto mit = mission_comp->GetMissionsComp().mutable_missions()->find(lit);
-		if (mit == mission_comp->GetMissionsComp().mutable_missions()->end()) {
-			continue;
-		}
-		auto& mission = mit->second;
-
-		if (!UpdateMission(condition_event, mission)) {
+	// Ensure progress matches condition requirements
+	for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i) {
+		const auto* const conditionRow = condition_config::GetSingleton().get(conditions.at(i));
+		if (nullptr == conditionRow) {
 			continue;
 		}
 
-		const auto& conditions = mission_comp->GetMissionConfig()->condition_id(mission.id());
-		bool is_all_condition_complete = true;
-		for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i) {
-			if (IsConditionCompleted(conditions[i], mission.progress(i))) {
-				continue;
-			}
-			is_all_condition_complete = false;
-			break;
-		}
-
-		if (!is_all_condition_complete) {
-			continue;
-		}
-
-		mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
-		temp_complete.emplace(mission.id());
-		mission_comp->GetMissionsComp().mutable_missions()->erase(mit);
-	}
-
-	OnMissionComplete(player, temp_complete);
-}
-
-// 移除任务分类
-void MissionSystem::RemoveMissionFromClassify(MissionsComp* mission_comp, uint32_t mission_id) {
-	const auto& config_conditions = mission_comp->GetMissionConfig()->condition_id(mission_id);
-	for (int32_t i =
-
-		0; i < config_conditions.size(); ++i) {
-		const auto* const condition_row = condition_config::GetSingleton().get(config_conditions.Get(i));
-		if (nullptr == condition_row) {
-			continue;
-		}
-		mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].erase(mission_id);
-	}
-}
-
-// 删除任务分类
-void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_id) {
-	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
-	if (nullptr == mission_comp) {
-		return;
-	}
-
-	RemoveMissionFromClassify(mission_comp, mission_id);
-
-	if (auto mission_sub_type = mission_comp->GetMissionConfig()->GetMissionSubType(mission_id);
-		mission_sub_type > 0 && mission_comp->IsMissionTypeNotRepeated()) {
-		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_comp->GetMissionConfig()->GetMissionType(mission_id), mission_sub_type);
-		mission_comp->GetTypeFilter().erase(mission_and_mission_subtype_pair);
-	}
-}
-
-// 更新任务进度
-bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission) {
-	if (condition_event.condtion_ids().empty()) {
-		return false;
-	}
-
-	const entt::entity player = entt::to_entity(condition_event.entity());
-	const auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
-	if (nullptr == mission_comp) {
-		return false;
-	}
-
-	bool mission_updated = false;
-	const auto& mission_conditions = mission_comp->GetMissionConfig()->condition_id(mission.id());
-
-	for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i) {
-		const auto* const condition_row = condition_config::GetSingleton().get(mission_conditions.at(i));
-		if (nullptr == condition_row) {
-			continue;
-		}
-
-		if (UpdateMissionProgress(condition_event, mission, i, condition_row)) {
-			mission_updated = true;
+		// Check if condition is fulfilled
+		if (!IsConditionFulfilled(conditionRow->id(), mission.progress(i))) {
+			return false;
 		}
 	}
-
-	if (mission_updated) {
-		UpdateMissionStatus(mission, mission_conditions);
-	}
-
-	return mission_updated;
-}
-
-// 更新任务进度
-bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition_event, MissionPbComp& mission, int index, const condition_row* const condition_row) {
-	const auto old_progress = mission.progress(index);
-
-	if (IsConditionCompleted(condition_row->id(), old_progress)) {
-		return false;
-	}
-
-	if (condition_event.type() != condition_row->condition_type()) {
-		return false;
-	}
-
-	size_t config_condition_size = 0;
-	size_t match_condition_size = 0;
-
-	auto calc_match_condition_size = [&match_condition_size, &condition_event, &config_condition_size](const auto& config_conditions, size_t index) {
-		if (config_conditions.size() > index) {
-			++config_condition_size;
-			if (std::find(condition_event.condtion_ids().begin(), condition_event.condtion_ids().end(), config_conditions.Get(index)) != condition_event.condtion_ids().end()) {
-				++match_condition_size;
-			}
-		}
-		};
-
-	calc_match_condition_size(condition_row->condition1(), 0);
-	calc_match_condition_size(condition_row->condition2(), 1);
-	calc_match_condition_size(condition_row->condition3(), 2);
-	calc_match_condition_size(condition_row->condition4(), 3);
-
-	if (config_condition_size > 0 && match_condition_size != config_condition_size) {
-		return false;
-	}
-
-	mission.set_progress(index, condition_event.amount() + old_progress);
 
 	return true;
 }
 
-// 更新任务状态
-void MissionSystem::UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& mission_conditions) {
-	for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i) {
-		const auto* const condition_row = condition_config::GetSingleton().get(mission_conditions.at(i));
-		if (nullptr == condition_row) {
+
+// Process mission condition events
+void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent) {
+	// Ignore if no conditions are provided
+	if (conditionEvent.condtion_ids().empty()) {
+		return;
+	}
+
+	// Convert entity ID to player entity
+	const entt::entity playerEntity = entt::to_entity(conditionEvent.entity());
+
+	// Retrieve mission component for the player
+	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	if (nullptr == missionComp) {
+		return;
+	}
+
+	// Find relevant missions based on condition type
+	auto classifyMissionsIt = missionComp->GetEventMissionsClassify().find(conditionEvent.condition_type());
+	if (classifyMissionsIt == missionComp->GetEventMissionsClassify().end()) {
+		return;
+	}
+
+	// Track completed missions
+	std::unordered_set<uint32_t> completedMissionsThisTime;
+
+	// Iterate through classified missions
+	for (auto& missionId : classifyMissionsIt->second) {
+		auto missionIter = missionComp->GetMissionsComp().mutable_missions()->find(missionId);
+		if (missionIter == missionComp->GetMissionsComp().mutable_missions()->end()) {
+			continue;
+		}
+		auto&mission = missionIter->second;
+
+		// Update mission progress
+		if (!UpdateMissionProgress(conditionEvent, mission)) {
 			continue;
 		}
 
-		auto new_progress = mission.progress(i);
-
-		if (!IsConditionCompleted(condition_row->id(), new_progress)) {
+		// Check if all conditions are now fulfilled
+		if (!AreAllConditionsFulfilled(mission, missionId, missionComp)) {
 			continue;
 		}
+		mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
+		completedMissionsThisTime.emplace(missionId);
+		missionComp->GetMissionsComp().mutable_missions()->erase(missionIter);
+	}
 
-		mission.set_progress(i, std::min(new_progress, condition_row->amount()));
+	// Process completion events for completed missions
+	OnMissionCompletion(playerEntity, completedMissionsThisTime);
+}
+
+// Remove mission classification
+void MissionSystem::RemoveMissionClassification(MissionsComp* missionComp, uint32_t missionId) {
+	// Retrieve conditions from mission configuration
+	const auto& configConditions = missionComp->GetMissionConfig()->GetConditionIds(missionId);
+
+	// Remove mission classification based on condition type
+	for (int32_t i = 0; i < configConditions.size(); ++i) {
+		const auto* conditionRow = condition_config::GetSingleton().get(configConditions.Get(i));
+		if (nullptr == conditionRow) {
+			continue;
+		}
+		missionComp->GetEventMissionsClassify()[conditionRow->condition_type()].erase(missionId);
 	}
 }
 
-// 处理任务完成事件
-void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& completed_missions_this_time) {
-	if (completed_missions_this_time.empty()) {
+// Delete mission classification
+void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId) {
+	// Retrieve mission component for the player
+	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	if (nullptr == missionComp) {
 		return;
 	}
 
-	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
-	if (nullptr == mission_comp) {
+	// Remove mission classification
+	RemoveMissionClassification(missionComp, missionId);
+
+	// Remove mission type filter if applicable
+	auto missionSubType = missionComp->GetMissionConfig()->GetMissionSubType(missionId);
+	if (missionSubType > 0 && missionComp->IsMissionTypeNotRepeated()) {
+		auto missionTypeSubTypePair = std::make_pair(missionComp->GetMissionConfig()->GetMissionType(missionId), missionSubType);
+		missionComp->GetTypeFilter().erase(missionTypeSubTypePair);
+	}
+}
+
+// Update mission progress based on event
+bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPbComp& mission) {
+	// Ignore if no conditions are provided
+	if (conditionEvent.condtion_ids().empty()) {
+		return false;
+	}
+
+	// Retrieve mission component for the player
+	const auto* const missionComp = tls.registry.try_get<MissionsComp>(entt::to_entity(conditionEvent.entity()));
+	if (nullptr == missionComp) {
+		return false;
+	}
+
+	bool missionUpdated = false;
+
+	// Retrieve mission conditions from configuration
+	const auto& missionConditions = missionComp->GetMissionConfig()->GetConditionIds(mission.id());
+
+	// Iterate through mission conditions and update progress
+	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
+		const auto* const conditionRow = condition_config::GetSingleton().get(missionConditions.at(i));
+		if (nullptr == conditionRow) {
+			continue;
+		}
+
+		// Update progress if condition matches event
+		if (UpdateProgressIfConditionMatches(conditionEvent, mission, i, conditionRow)) {
+			missionUpdated = true;
+		}
+	}
+
+	// Update mission status based on progress
+	if (missionUpdated) {
+		UpdateMissionStatus(mission, missionConditions);
+	}
+
+	return missionUpdated;
+}
+
+// Update mission progress if condition matches event
+bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPbComp& mission, int index, const condition_row* conditionRow) {
+	// Retrieve old progress value
+	const auto oldProgress = mission.progress(index);
+
+	// Check if condition is already completed
+	if (IsConditionFulfilled(conditionRow->id(), oldProgress)) {
+		return false;
+	}
+
+	// Check if condition type matches event type
+	if (conditionEvent.condition_type() != conditionRow->condition_type()) {
+		return false;
+	}
+
+	// Count matching conditions
+	size_t configConditionCount = 0;
+	size_t matchConditionCount = 0;
+
+	auto countMatchingConditions = [&matchConditionCount, &conditionEvent, &configConditionCount](const auto& configConditions, size_t index) {
+		if (configConditions.size() > index) {
+			++configConditionCount;
+			if (std::find(conditionEvent.condtion_ids().begin(), conditionEvent.condtion_ids().end(), configConditions.Get(index)) != conditionEvent.condtion_ids().end()) {
+				++matchConditionCount;
+			}
+		}
+		};
+
+	// Count matching conditions for up to four condition slots
+	countMatchingConditions(conditionRow->condition1(), 0);
+	countMatchingConditions(conditionRow->condition2(), 1);
+	countMatchingConditions(conditionRow->condition3(), 2);
+	countMatchingConditions(conditionRow->condition4(), 3);
+
+	// Ensure all expected conditions match
+	if (configConditionCount > 0 && matchConditionCount != configConditionCount) {
+		return false;
+	}
+
+	// Update mission progress
+	mission.set_progress(index, conditionEvent.amount() + oldProgress);
+	return true;
+}
+
+// Update mission status based on progress
+void MissionSystem::UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
+	// Iterate through mission conditions and update progress
+	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
+		const auto* const conditionRow = condition_config::GetSingleton().get(missionConditions.at(i));
+		if (nullptr == conditionRow) {
+			continue;
+		}
+
+		auto newProgress = mission.progress(i);
+
+		// Clamp progress to condition amount if exceeded
+		if (!IsConditionFulfilled(conditionRow->id(), newProgress)) {
+			continue;
+		}
+
+		mission.set_progress(i, std::min(newProgress, conditionRow->amount()));
+	}
+}
+
+// Process completion events for completed missions
+void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t>& completedMissionsThisTime) {
+	// Ignore if no missions are completed
+	if (completedMissionsThisTime.empty()) {
 		return;
 	}
 
-	for (const auto& mission_id : completed_missions_this_time) {
-		DeleteMissionClassify(player, mission_id);
+	// Retrieve mission component for the player
+	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	if (nullptr == missionComp) {
+		return;
 	}
 
-	auto* const mission_reward = tls.registry.try_get<MissionRewardPbComp>(player);
-	MissionConditionEvent mission_condition_event;
-	mission_condition_event.set_entity(entt::to_integral(player));
-	mission_condition_event.set_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteMission));
-	mission_condition_event.set_amount(1);
+	// Process each completed mission
+	for (const auto& missionId : completedMissionsThisTime) {
+		// Delete mission classification
+		DeleteMissionClassification(playerEntity, missionId);
 
-	for (const auto& mission_id : completed_missions_this_time) {
-		mission_comp->GetMissionsComp().mutable_complete_missions()->insert({ mission_id, true });
+		// Retrieve mission reward component for the player
+		auto* const missionReward = tls.registry.try_get<MissionRewardPbComp>(playerEntity);
 
-		if (mission_comp->GetMissionConfig()->reward_id(mission_id) > 0 && mission_comp->GetMissionConfig()->auto_reward(mission_id)) {
-			OnMissionAwardEvent mission_award_event;
-			mission_award_event.set_entity(entt::to_integral(player));
-			mission_award_event.set_mission_id(mission_id);
-			tls.dispatcher.enqueue(mission_award_event);
+		// Create mission condition event
+		MissionConditionEvent missionConditionEvent;
+		missionConditionEvent.set_entity(entt::to_integral(playerEntity));
+		missionConditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteMission));
+		missionConditionEvent.set_amount(1);
+
+		// Process mission completion rewards and events
+		for (const auto& missionId : completedMissionsThisTime) {
+			// Mark mission as complete
+			missionComp->GetMissionsComp().mutable_complete_missions()->insert({ missionId, true });
+
+			// Check if mission has rewards and should be automatically rewarded
+			if (missionComp->GetMissionConfig()->GetRewardId(missionId) > 0 && missionComp->GetMissionConfig()->AutoReward(missionId)) {
+				// Enqueue mission award event
+				OnMissionAwardEvent missionAwardEvent;
+				missionAwardEvent.set_entity(entt::to_integral(playerEntity));
+				missionAwardEvent.set_mission_id(missionId);
+				tls.dispatcher.enqueue(missionAwardEvent);
+			}
+			else if (nullptr != missionReward && missionComp->GetMissionConfig()->GetRewardId(missionId) > 0) {
+				// Mark mission as rewardable
+				missionReward->mutable_can_reward_mission_id()->insert({ missionId, false });
+			}
+
+			// Create mission acceptance event for next missions
+			AcceptMissionEvent acceptMissionEvent;
+			acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+			const auto& nextMissions = missionComp->GetMissionConfig()->getNextMissionIds(missionId);
+
+			// Enqueue acceptance event for each next mission
+			for (int32_t i = 0; i < nextMissions.size(); ++i) {
+				acceptMissionEvent.set_mission_id(nextMissions.Get(i));
+				tls.dispatcher.enqueue(acceptMissionEvent);
+			}
+
+			// Add mission ID to condition event for next processing
+			missionConditionEvent.clear_condtion_ids();
+			missionConditionEvent.mutable_condtion_ids()->Add(missionId);
+			tls.dispatcher.enqueue(missionConditionEvent);
 		}
-		else if (nullptr != mission_reward && mission_comp->GetMissionConfig()->reward_id(mission_id) > 0) {
-			mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
-		}
-
-		AcceptMissionEvent accept_mission_event;
-		accept_mission_event.set_entity(entt::to_integral(player));
-		const auto& next_missions = mission_comp->GetMissionConfig()->next_mission_id(mission_id);
-
-		for (int32_t i = 0; i < next_missions.size(); ++i) {
-			accept_mission_event.set_mission_id(next_missions.Get(i));
-			tls.dispatcher.enqueue(accept_mission_event);
-		}
-
-		mission_condition_event.clear_condtion_ids();
-		mission_condition_event.mutable_condtion_ids()->Add(mission_id);
-		tls.dispatcher.enqueue(mission_condition_event);
 	}
 }

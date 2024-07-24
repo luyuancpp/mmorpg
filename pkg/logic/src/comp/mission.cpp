@@ -30,20 +30,20 @@ std::size_t MissionsComp::CanGetRewardSize() const
 	return static_cast<std::size_t>(mission_reward->can_reward_mission_id_size());
 }
 
-uint32_t MissionsComp::IsUnAccepted(const uint32_t mission_id) const
+uint32_t MissionsComp::IsMissionUnaccepted(const uint32_t mission_id) const
 {
 	if (missions_comp_.missions().find(mission_id) != missions_comp_.missions().end())
 	{
 		return kRetMissionIdRepeated;
 	}
-	return kRetOK;
+	return kOK;
 }
 
-uint32_t MissionsComp::IsUnCompleted(const uint32_t mission_id) const
+uint32_t MissionsComp::IsMissionUncompleted(const uint32_t mission_id) const
 {
 	if (missions_comp_.complete_missions().count(mission_id) > 0) //已经完成
 	{
 		return kRetMissionComplete;
 	}
-	return kRetOK;
+	return kOK;
 }

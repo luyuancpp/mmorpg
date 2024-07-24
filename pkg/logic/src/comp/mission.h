@@ -63,8 +63,8 @@ public:
     { return missions_comp_.missions().find(mission_id) != missions_comp_.missions().end(); }
 	[[nodiscard]] bool IsComplete(const uint32_t mission_id) const
     { return missions_comp_.complete_missions().find(mission_id) != missions_comp_.complete_missions().end(); }
-	[[nodiscard]] uint32_t IsUnAccepted(uint32_t mission_id) const;
-	[[nodiscard]] uint32_t IsUnCompleted(uint32_t mission_id) const;
+	[[nodiscard]] uint32_t IsMissionUnaccepted(uint32_t mission_id) const;
+	[[nodiscard]] uint32_t IsMissionUncompleted(uint32_t mission_id) const;
 	
 private:
 	const IMissionConfig* mission_config_{ nullptr };

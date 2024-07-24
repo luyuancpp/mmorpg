@@ -11,23 +11,23 @@
 
 struct GetRewardParam
 {
-	entt::entity player_{entt::null};
-	uint32_t mission_id_{ 0 };
-	uint32_t op_{ 0 };
+	entt::entity playerId{entt::null};
+	uint32_t missionId{ 0 };
+	uint32_t op{ 0 };
 };
 
 struct AbandonParam
 {
-	entt::entity player_{ entt::null };
-	uint32_t mission_id_{ 0 };
-	uint32_t op_{ 0 };
+	entt::entity playerId{ entt::null };
+	uint32_t missionId{ 0 };
+	uint32_t op{ 0 };
 };
 
 struct CompleteMissionParam
 {
-	entt::entity player_{ entt::null };
-	uint32_t mission_id_{ 0 };
-	uint32_t op_{ 0 };
+	entt::entity playerId{ entt::null };
+	uint32_t missionId{ 0 };
+	uint32_t op{ 0 };
 };
 
 class AcceptMissionEvent;
@@ -40,21 +40,23 @@ class MissionSystem
 public:
 	using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
 
-	static uint32_t GetReward(const GetRewardParam& param);
-	static uint32_t Accept(const AcceptMissionEvent& accept_event);
-	static uint32_t Abandon(const AbandonParam& param);
-	static void CompleteAllMission(entt::entity player, uint32_t op);
+	static uint32_t GetMissionReward(const GetRewardParam& param);
+	static uint32_t AcceptMission(const AcceptMissionEvent& accept_event);
+	static uint32_t AbandonMission(const AbandonParam& param);
+	static void CompleteAllMissions(entt::entity player, uint32_t op);
 
-	static void Receive(const MissionConditionEvent& condition_event);
+	static void HandleMissionConditionEvent(const MissionConditionEvent& condition_event);
 
 private:
-	static void DeleteMissionClassify(entt::entity player, uint32_t mission_id);
+	static void DeleteMissionClassification(entt::entity player, uint32_t mission_id);
 	static bool UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission);
-	static bool UpdateMissionProgress(const MissionConditionEvent& condition_event, MissionPbComp& mission, int index, const condition_row* const condition_row);
+	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPbComp& mission);
 	static void UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& mission_conditions);
-	static void OnMissionComplete(entt::entity player, const UInt32Set& completed_missions);
-	static uint32_t CheckAcceptConditions(const AcceptMissionEvent& accept_event, MissionsComp* mission_comp);
-	static void RemoveMissionFromClassify(MissionsComp* mission_comp, uint32_t mission_id);
+	static void OnMissionCompletion(entt::entity player, const UInt32Set& completed_missions);
+	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& accept_event, MissionsComp* mission_comp);
+	static void RemoveMissionClassification(MissionsComp* mission_comp, uint32_t mission_id);
+	static bool AreAllConditionsFulfilled(const MissionPbComp& mission, uint32_t missionId, MissionsComp* missionComp);
+	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPbComp& mission, int index, const condition_row* conditionRow);
 };
 
 

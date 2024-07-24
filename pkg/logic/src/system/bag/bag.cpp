@@ -63,7 +63,7 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_add_item_m
 		auto p_conf_item = get_item_conf(try_item.first);
 		if (nullptr == p_conf_item)
 		{
-			return kRetTableId;
+			return kTableIdInvalid;
 		}
 		if (p_conf_item->max_statck_size() <= 0)
 		{
@@ -88,7 +88,7 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_add_item_m
 
 	if (!has_stack_item)//没有需要去背包里面叠加的物品
 	{
-		return kRetOK;
+		return kOK;
 	}
 
 	for (auto& item : items_)
@@ -124,7 +124,7 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_add_item_m
 		}
 		empty_size -= need_grid_size;
 	}
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
@@ -141,7 +141,7 @@ uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
 			auto p_c_item = get_item_conf(ji.first);
 			if (nullptr == p_c_item)
 			{
-				return kRetTableId;
+				return kTableIdInvalid;
 			}
 			if (p_c_item->max_statck_size() <= 0)
 			{
@@ -157,19 +157,19 @@ uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
 		}
 		if (stack_item_list.empty())
 		{
-			return kRetOK;
+			return kOK;
 		}
 	}
 	if (!stack_item_list.empty())
 	{
 		return kRetBagAdequateItem;
 	}
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t  Bag::DelItem(const UInt32UInt32UnorderedMap& try_del_items)
 {
-	RET_CHECK_RET(AdequateItem(try_del_items));
+	RET_CHECK_RETURN(AdequateItem(try_del_items));
 	auto try_del_items_back = try_del_items;
 	ItemRawPtrVector real_del_item;//删除的物品
 	for (auto& it : items_)
@@ -200,7 +200,7 @@ uint32_t  Bag::DelItem(const UInt32UInt32UnorderedMap& try_del_items)
 			break;
 		}
 	}
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
@@ -234,7 +234,7 @@ uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
 		return kRetBagDelItemNotAdequateSize;
 	}
 	item.set_size(old_size - p.size_);
-	return kRetOK;
+	return kOK;
 }
 
 void Bag::Neaten()
@@ -338,7 +338,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 	auto p_c_item = get_item_conf(item_base_db.config_id());
 	if (nullptr == p_c_item)
 	{
-		return kRetTableId;
+		return kTableIdInvalid;
 	}
 	if (p_c_item->max_statck_size() <= 0)
 	{
@@ -446,7 +446,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 
 		if (need_stack_size <= 0)//可以放完
 		{
-			return kRetOK;
+			return kOK;
 		}
 
 		//放到新格子里面
@@ -475,7 +475,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 			OnNewGrid(it.first->second);
 		}
 	}
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t Bag::DelItem(Guid del_guid)
@@ -495,7 +495,7 @@ uint32_t Bag::DelItem(Guid del_guid)
 		pos_.erase(pit.first);
 		break;
 	}
-	return kRetOK;
+	return kOK;
 }
 
 void Bag::Unlock(std::size_t sz)
