@@ -8,12 +8,12 @@ constexpr uint32_t kDefaultSceneId = 1;
 
 struct GetSceneParam
 {
-	uint32_t scene_conf_id_{kDefaultSceneId};
+	uint32_t sceneConfId_{kDefaultSceneId};
 };
 
 struct GetSceneFilterParam
 {
-	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
+	NodePressureState nodePressureState{NodePressureState::kNoPressure};
 };
 
 struct CompelChangeSceneParam
