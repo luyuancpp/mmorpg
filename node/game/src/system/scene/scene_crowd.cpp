@@ -18,12 +18,12 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
         return;
     }
     const auto scene_entity = tls.registry.try_get<SceneEntity>(player);
-    if (nullptr == scene_entity || !tls.scene_registry.valid(scene_entity->scene_entity))
+    if (nullptr == scene_entity || !tls.scene_registry.valid(scene_entity->sceneEntity))
     {
         LOG_ERROR << "scene not found";
         return;
     }
-    auto scene = scene_entity->scene_entity;
+    auto scene = scene_entity->sceneEntity;
     auto dt_crowd = tls.scene_registry.try_get<dtCrowd>(scene);
     if (nullptr == dt_crowd)
     {

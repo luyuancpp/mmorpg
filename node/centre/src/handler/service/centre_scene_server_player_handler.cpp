@@ -75,7 +75,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	}
 	player_node_info->set_game_node_id(kInvalidNodeId);
 
-	PlayerSceneSystem::CallPlayerEnterGs(player, ScenesSystem::get_game_node_id(to_scene));
+	PlayerSceneSystem::CallPlayerEnterGs(player, ScenesSystem::GetGameNodeId(to_scene));
 ///<<< END WRITING YOUR CODE
 }
 

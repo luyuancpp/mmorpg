@@ -53,7 +53,7 @@ void GameNodeSceneSystem::InitNodeScene()
     for (auto& it : main_scene_conf.data())
     {
         CreateGameNodeSceneParam p{ .node = entt::entity{g_game_node->GetNodeId()} };
-        p.scene_info.set_scene_confid(it.id());
+        p.sceneInfo.set_scene_confid(it.id());
         ScenesSystem::CreateScene2GameNode(p);
     }
 }
