@@ -181,65 +181,73 @@ void ScenesSystem::OnDestroyServer(entt::entity node) {
 	auto& serverComp = tls.game_node_registry.get<ServerComp>(node);
 	auto sceneLists = serverComp.GetSceneList();
 
+	// Destroy all scenes associated with the server node
 	for (auto& confIdSceneList : sceneLists | std::views::values) {
 		for (auto scene : confIdSceneList) {
 			DestroyScene({ node, scene });
 		}
 	}
 
+	// Destroy the server node itself
 	Destroy(tls.game_node_registry, node);
+
+	// Log server destruction
 	LOG_INFO << "Destroyed server with ID: " << entt::to_integral(node);
 }
+
 
 // Check if a player can enter a scene
 uint32_t ScenesSystem::CheckPlayerEnterScene(const EnterSceneParam& param) {
 	if (!tls.scene_registry.valid(param.scene)) {
-		LOG_ERROR << "CheckPlayerEnterScene: Invalid scene entity: " << entt::to_integral(param.scene);
+		LOG_ERROR << "Invalid scene entity when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
 		return kRetCheckEnterSceneSceneParam;
 	}
 
 	auto* sceneInfo = tls.scene_registry.try_get<SceneInfo>(param.scene);
 	if (!sceneInfo) {
-		LOG_ERROR << "CheckPlayerEnterScene: SceneInfo not found for entity: " << entt::to_integral(param.scene);
+		LOG_ERROR << "SceneInfo not found when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
 		return kRetCheckEnterSceneSceneParam;
 	}
 
 	auto creatorId = tls.registry.get<Guid>(param.enter);
 	if (sceneInfo->creators().find(creatorId) == sceneInfo->creators().end()) {
-		LOG_WARN << "Player cannot enter scene: " << entt::to_integral(param.scene);
+		LOG_WARN << "Player cannot enter scene due to creator restriction - Scene ID: " << entt::to_integral(param.scene);
 		return kRetCheckEnterSceneCreator;
 	}
 
 	return kOK;
 }
 
+
 // Check if scene player size limits are respected
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene) {
 	auto& scenePlayers = tls.scene_registry.get<ScenePlayers>(scene);
 
 	if (scenePlayers.size() >= kMaxScenePlayer) {
-		LOG_WARN << "Scene player size exceeded for scene: " << entt::to_integral(scene);
+		LOG_WARN << "Scene player size limit exceeded - Scene ID: " << entt::to_integral(scene);
 		return kRetEnterSceneNotFull;
 	}
 
 	auto* gsPlayerInfo = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(scene);
 	if (!gsPlayerInfo) {
-		LOG_ERROR << "CheckScenePlayerSize: GameNodePlayerInfoPtr not found for scene: " << entt::to_integral(scene);
+		LOG_ERROR << "GameNodePlayerInfoPtr not found for scene - Scene ID: " << entt::to_integral(scene);
 		return kRetEnterSceneGsInfoNull;
 	}
 
 	if ((*gsPlayerInfo)->player_size() >= kMaxServerPlayerSize) {
-		LOG_WARN << "Game node player size exceeded for scene: " << entt::to_integral(scene);
+		LOG_WARN << "Game node player size limit exceeded - Scene ID: " << entt::to_integral(scene);
 		return kRetEnterSceneGsFull;
 	}
 
 	return kOK;
 }
 
+
+
 // Enter a player into a scene
 void ScenesSystem::EnterScene(const EnterSceneParam& param) {
 	if (param.CheckValid()) {
-		LOG_ERROR << "EnterScene: Invalid parameters";
+		LOG_ERROR << "Invalid parameters when entering scene";
 		return;
 	}
 
@@ -247,9 +255,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param) {
 	scenePlayers.emplace(param.enter);
 	tls.registry.emplace<SceneEntity>(param.enter, param.scene);
 
-	auto* gsPlayerInfo = tls.scene_registry.try_get<GameNodePlayerInfoPtr
-
-	>(param.scene);
+	auto* gsPlayerInfo = tls.scene_registry.try_get<GameNodePlayerInfoPtr>(param.scene);
 	if (gsPlayerInfo) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() + 1);
 	}
@@ -258,36 +264,43 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param) {
 	afterEnterScene.set_entity(entt::to_integral(param.enter));
 	tls.dispatcher.trigger(afterEnterScene);
 
-	if (tls.registry.any_of<Guid>(param.enter))
-	{
-		LOG_INFO << "Player entered scene: " << tls.registry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
-	}	
+	if (tls.registry.any_of<Guid>(param.enter)) {
+		LOG_INFO << "Player entered scene - Player GUID: " << tls.registry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(param.scene);
+	}
 }
+
 
 // Enter a player into the default scene
 void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 	if (param.CheckValid()) {
-		LOG_ERROR << "EnterDefaultScene: Invalid parameters";
+		LOG_ERROR << "Invalid parameters when entering default scene";
 		return;
 	}
 
+	// Get a scene that is not full from the NodeSceneSystem
 	auto defaultScene = NodeSceneSystem::GetNotFullScene({});
+
+	// Enter the player into the retrieved default scene
 	EnterScene({ defaultScene, param.enter });
+
+	// Log the entry into the default scene
+	if (tls.registry.any_of<Guid>(param.enter))
+	{
+		LOG_INFO << "Player entered default scene - Player GUID: " << tls.registry.get<Guid>(param.enter) << ", Scene ID: " << entt::to_integral(defaultScene);
+	}	
 }
+
 
 // Remove a player from a scene
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 	if (param.CheckValid()) {
-		LOG_ERROR << "LeaveScene: Invalid parameters";
+		LOG_ERROR << "Invalid parameters when leaving scene";
 		return;
 	}
 
 	auto sceneEntity = tls.registry.get<SceneEntity>(param.leaver).sceneEntity;
 	if (!tls.scene_registry.valid(sceneEntity)) {
-		if (tls.registry.any_of<Guid>(param.leaver))
-		{
-			LOG_ERROR << "LeaveScene: SceneEntity not valid for entity: " << tls.registry.get<Guid>(param.leaver);
-		}
+		LOG_ERROR << "Invalid scene entity when leaving scene - Player GUID: " << tls.registry.get<Guid>(param.leaver);
 		return;
 	}
 
@@ -304,11 +317,11 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 	afterLeaveScene.set_entity(entt::to_integral(param.leaver));
 	tls.dispatcher.trigger(afterLeaveScene);
 
-	if (tls.registry.any_of<Guid>(param.leaver))
-	{
-		LOG_INFO << "Player left scene: " << tls.registry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(sceneEntity);
+	if (tls.registry.any_of<Guid>(param.leaver)) {
+		LOG_INFO << "Player left scene - Player GUID: " << tls.registry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(sceneEntity);
 	}
 }
+
 // Force a player to change scenes
 void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 	auto& destNodeScene = tls.game_node_registry.get<ServerComp>(param.destNode);
