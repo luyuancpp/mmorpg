@@ -278,7 +278,7 @@ void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 	}
 
 	// Get a scene that is not full from the NodeSceneSystem
-	auto defaultScene = NodeSceneSystem::GetNotFullScene({});
+	auto defaultScene = NodeSceneSystem::FindNotFullScene({});
 
 	// Enter the player into the retrieved default scene
 	EnterScene({ defaultScene, param.enter });
@@ -325,7 +325,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 // Force a player to change scenes
 void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 	auto& destNodeScene = tls.game_node_registry.get<ServerComp>(param.destNode);
-	auto sceneEntity = destNodeScene.GetMinPlayerSizeSceneByConfigId(param.sceneConfId);
+	auto sceneEntity = destNodeScene.GetSceneWithMinPlayerCountByConfigId(param.sceneConfId);
 
 	if (sceneEntity == entt::null) {
 		CreateGameNodeSceneParam p{ .node = param.destNode };

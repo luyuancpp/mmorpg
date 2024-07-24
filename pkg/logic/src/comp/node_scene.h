@@ -75,7 +75,7 @@ public:
 		}
 	}
 
-	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(const uint32_t scene_config_id) const
+	[[nodiscard]] entt::entity GetSceneWithMinPlayerCountByConfigId(const uint32_t scene_config_id) const
 	{
 		const auto& scene_list = GetSceneListByConfig(scene_config_id);
 		if (scene_list.empty())
@@ -97,7 +97,7 @@ public:
 		return scene;
 	}
 
-	inline void SetNodeState(const NodeState state) { node_state_ = state; }
+	inline void SetState(const NodeState state) { node_state_ = state; }
 	[[nodiscard]] NodeState GetNodeState() const { return node_state_; }
 	inline bool IsStateNormal() const { return node_state_ == NodeState::kNormal; }
 

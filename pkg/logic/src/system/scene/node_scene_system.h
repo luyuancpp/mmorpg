@@ -32,14 +32,14 @@ class NodeSceneSystem
 {
 public:
     //从人数少的服务器中找到一个对应场景人数最少的,效率有些低
-	static entt::entity GetSceneOnMinPlayerSizeNode(const GetSceneParam& param);
+	static entt::entity FindSceneWithMinPlayerCount(const GetSceneParam& param);
 
 	//得到有该场景的人数不满的服务器,效率比上面函数高一点点
-	static entt::entity GetNotFullScene(const GetSceneParam& param);
+	static entt::entity FindNotFullScene(const GetSceneParam& param);
 
-	static void NodeEnterPressure(entt::entity node);
+	static void SetNodePressure(entt::entity node);
 
-	static void NodeEnterNoPressure(entt::entity node);
+	static void ClearNodePressure(entt::entity node);
 
 	static void SetNodeState(entt::entity node, NodeState node_state);
 };

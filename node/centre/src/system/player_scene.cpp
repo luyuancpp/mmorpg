@@ -71,10 +71,10 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     {
         if (scene_info_comp->scene_info().scene_confid() > 0)
         {
-            scene = NodeSceneSystem::GetNotFullScene({ scene_info_comp->scene_info().scene_confid() });
+            scene = NodeSceneSystem::FindNotFullScene({ scene_info_comp->scene_info().scene_confid() });
             if (entt::null == scene)
             {
-                scene = NodeSceneSystem::GetNotFullScene({ scene_info_comp->scene_info().scene_confid() });
+                scene = NodeSceneSystem::FindNotFullScene({ scene_info_comp->scene_info().scene_confid() });
             }
         }
     }
@@ -82,7 +82,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     //找不到上次的场景,或者上次场景满了，放到默认场景里面
     if (scene == entt::null)
     {
-        scene = NodeSceneSystem::GetNotFullScene({ GetDefaultSceneConfigId() });
+        scene = NodeSceneSystem::FindNotFullScene({ GetDefaultSceneConfigId() });
     }
 
     if (scene == entt::null)
@@ -180,7 +180,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     {
         GetSceneParam getp;
         getp.sceneConfId_ = change_scene_info.scene_confid();
-        to_scene = NodeSceneSystem::GetNotFullScene(getp);
+        to_scene = NodeSceneSystem::FindNotFullScene(getp);
         if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
