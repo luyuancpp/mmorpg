@@ -376,13 +376,26 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 	size_t matchConditionCount = 0;
 
 	auto countMatchingConditions = [&matchConditionCount, &conditionEvent, &configConditionCount](const auto& configConditions, size_t index) {
-		if (configConditions.size() > index) {
-			++configConditionCount;
-			if (std::find(conditionEvent.condtion_ids().begin(), conditionEvent.condtion_ids().end(), configConditions.Get(index)) != conditionEvent.condtion_ids().end()) {
-				++matchConditionCount;
+			if (configConditions.size() > 0)
+			{
+				++configConditionCount;
 			}
-		}
-		};
+			if (conditionEvent.condtion_ids().size() <= index)
+			{
+				return;
+			}
+			//验证条件和表里面的每列的多个条件是否有一项匹配
+			for (int32_t ci = 0; ci < configConditions.size(); ++ci)
+			{
+				if (conditionEvent.condtion_ids(index) != configConditions.Get(ci))
+				{
+					continue;
+				}
+				//在这列中有一项匹配
+				++matchConditionCount;
+				break;
+			}
+	};
 
 	// Count matching conditions for up to four condition slots
 	countMatchingConditions(conditionRow->condition1(), 0);
