@@ -1,4 +1,5 @@
-﻿#include "mission_system.h"
+﻿
+#include "mission_system.h"
 #include <ranges>
 #include "muduo/base/Logging.h"
 #include "condition_config.h"
@@ -28,7 +29,7 @@ namespace {
 
 } // anonymous namespace
 
-// Get reward for completing a mission
+// Function to retrieve reward for completing a mission
 uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	// Check if player exists in the registry
 	if (!tls.registry.valid(param.playerId)) {
@@ -56,7 +57,7 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	return kOK;
 }
 
-// Check conditions before accepting a mission
+// Function to check conditions before accepting a mission
 uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp* missionComp) {
 	// Check if mission is unaccepted and uncompleted
 	RET_CHECK_RETURN(missionComp->IsMissionUnaccepted(acceptEvent.mission_id()));
@@ -78,7 +79,7 @@ uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptE
 	return kOK;
 }
 
-// Accept a mission
+// Function to accept a mission
 uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	// Convert entity ID to player entity
 	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
@@ -138,13 +139,12 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	return kOK;
 }
 
-
-// Abandon a mission
+// Function to abandon a mission
 uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 	// Retrieve mission component for the player
 	auto* const missionComp = tls.registry.try_get<MissionsComp>(param.playerId);
 	if (nullptr == missionComp) {
-		LOG_ERROR << "AbandonMission: Missions component not found for playerId = " << tls.registry.get<Guid>(param.playerId) ;
+		LOG_ERROR << "AbandonMission: Missions component not found for playerId = " << tls.registry.get<Guid>(param.playerId);
 		return kPlayerMissionComponentNotFound;
 	}
 
@@ -171,8 +171,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 	return kOK;
 }
 
-
-// Complete all missions for a player
+// Function to complete all missions for a player
 void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation) {
 	// Retrieve mission component for the player
 	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
@@ -189,20 +188,22 @@ void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t oper
 	missionComp->GetMissionsComp().mutable_missions()->clear();
 }
 
-// Check if a condition is completed
-bool IsConditionFulfilled(uint32_t conditionId, const uint32_t progressValue) {
+// Function to check if a condition is completed
+bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
 	const auto* conditionRow = condition_config::GetSingleton().get(conditionId);
 	if (nullptr == conditionRow) {
+		LOG_ERROR << "IsConditionFulfilled: Condition config not found for conditionId = " << conditionId;
 		return false;
 	}
 
-	// Perform comparison using predefined function
-	auto operation = conditionRow->operation();
-	if (operation >= condition_comparison_functions.size()) {
-		operation = 0; // Default to the first comparison function
+	if (conditionRow->operation() >= condition_comparison_functions.size()) {
+		LOG_ERROR << "IsConditionFulfilled: Invalid condition operation for conditionId = " << conditionId;
+		return false;
 	}
-	return condition_comparison_functions[operation](progressValue, conditionRow->amount());
+
+	return condition_comparison_functions[conditionRow->operation()](progressValue, conditionRow->amount());
 }
+
 
 // Check if all conditions of a mission are fulfilled
 bool MissionSystem::AreAllConditionsFulfilled(const MissionPbComp& mission, uint32_t missionId, MissionsComp* missionComp) {
