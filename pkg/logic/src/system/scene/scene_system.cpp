@@ -183,7 +183,7 @@ uint32_t ScenesSystem::CheckEnterScene(const EnterSceneParam& param)
 	{
 		return kRetCheckEnterSceneCreator;
 	}
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(const entt::entity scene)
@@ -203,7 +203,7 @@ uint32_t ScenesSystem::CheckScenePlayerSize(const entt::entity scene)
 	{
 		return kRetEnterSceneGsFull;
 	}
-	return kRetOK;
+	return kOK;
 }
 
 void ScenesSystem::EnterScene(const EnterSceneParam& param)

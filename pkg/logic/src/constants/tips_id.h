@@ -6,8 +6,8 @@
 
 enum  EnumCode : uint32_t
 {
-    kRetOK = 0,
-    kRetTableId = 2,
+    kOK = 0,
+    kTableIdInvalid = 2,
     kRetConfigData = 3,
     kRetEnttNull = 4,
     //改功能暂时关闭gate 用,gate写死了
@@ -15,7 +15,7 @@ enum  EnumCode : uint32_t
     //服务器关闭请重新登录 gate 用,gate写死了
     kRetServerCrush = 6,
     //未知参数
-    kInvalidParam = 7,
+    kInvalidParameter = 7,
 
     //login server
     //找不到账号
@@ -96,10 +96,10 @@ enum  EnumCode : uint32_t
 
     //mission
     kRetMissionIdRepeated = 6000,
-    kRetMissionTypeRepeated = 6001,
+    kMissionTypeRepeated = 6001,
     kRetMissionComplete = 6002,
-    kRetMissionGetRewardNoMissionId = 6003,
-    kRetMissionPlayerMissionCompNotFound = 6004,
+    kMissionIdNotInRewardList = 6003,
+    kPlayerMissionComponentNotFound = 6004,
 
     //bag 
     kRetBagDeleteItemFindGuid = 7000,
@@ -119,10 +119,10 @@ enum  EnumCode : uint32_t
 };
 
 
-#define RET_CHECK_RET(f)\
+#define RET_CHECK_RETURN(f)\
 {\
 uint32_t ret(f);\
-if (ret != kRetOK)\
+if (ret != kOK)\
 {\
     return  ret;\
 }\

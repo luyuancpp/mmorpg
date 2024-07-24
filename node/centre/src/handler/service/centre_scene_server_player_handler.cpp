@@ -23,7 +23,7 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 	//正在切换场景中，不能马上切换，gs崩溃了怎么办
 	CentreChangeSceneInfo change_scene_info;
 	PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, request->scene_info());
-	if ( const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info) ; ret != kRetOK)
+	if ( const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info) ; ret != kOK)
 	{
 		PlayerTipSystem::Tip(player, ret, {});
 		return;

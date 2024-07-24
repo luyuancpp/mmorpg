@@ -23,7 +23,7 @@ uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const
     change_scene_queue->change_scene_queue_.push_back(change_info);
     //todo
     change_scene_queue->change_scene_queue_.front().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());
-    return kRetOK;
+    return kOK;
 }
 
 void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)

@@ -194,7 +194,7 @@ uint32_t TeamSystem::CreateTeam(const CreateTeamP& param)
 	{
 		return kRetTeamCreateTeamMaxMemberSize;
 	}
-	RET_CHECK_RET(CheckMemberInTeam(param.member_list))
+	RET_CHECK_RETURN(CheckMemberInTeam(param.member_list))
 	const auto team_entity = tls.registry.create();
 	auto& team = tls.registry.emplace<Team>(team_entity);
 	team.leader_id_ = param.leader_id_;
@@ -204,7 +204,7 @@ uint32_t TeamSystem::CreateTeam(const CreateTeamP& param)
 		team.AddMember(member_it);
 	}
 	last_team_id_ = entt::to_integral(team_entity);
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::JoinTeam(const Guid team_id, const Guid guid)
@@ -233,7 +233,7 @@ uint32_t TeamSystem::JoinTeam(const Guid team_id, const Guid guid)
 		try_team->applicants_.erase(applicant_it);
 	}
 	try_team->AddMember(guid);
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::JoinTeam(const UInt64Set& member_list, const Guid team_id)
@@ -253,12 +253,12 @@ uint32_t TeamSystem::JoinTeam(const UInt64Set& member_list, const Guid team_id)
 		return kRetTeamJoinTeamMemberListToMax;
 	}
 
-	RET_CHECK_RET(CheckMemberInTeam(member_list))
+	RET_CHECK_RETURN(CheckMemberInTeam(member_list))
 	for (const auto& member_it : member_list)
 	{
-		RET_CHECK_RET(JoinTeam(team_id, member_it))
+		RET_CHECK_RETURN(JoinTeam(team_id, member_it))
 	}
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::CheckMemberInTeam(const UInt64Set& member_list)
@@ -270,7 +270,7 @@ uint32_t TeamSystem::CheckMemberInTeam(const UInt64Set& member_list)
 			return kRetTeamMemberInTeam;
 		}
 	}
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::LeaveTeam(const Guid guid)
@@ -300,7 +300,7 @@ uint32_t TeamSystem::LeaveTeam(const Guid guid)
 	{
 		EraseTeam(try_team->to_entity_id());
 	}
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::KickMember(const Guid team_id, const Guid current_leader_id, const Guid be_kick_id)
@@ -332,7 +332,7 @@ uint32_t TeamSystem::KickMember(const Guid team_id, const Guid current_leader_id
 		return kRetTeamMemberNotInTeam;
 	}
 	try_team->DelMember(be_kick_id);
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::Disbanded(const Guid team_id, const Guid current_leader_id)
@@ -357,7 +357,7 @@ uint32_t TeamSystem::Disbanded(const Guid team_id, const Guid current_leader_id)
 		try_team->DelMember(member_it);
 	}
 	EraseTeam(team_entity);
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::DisbandedTeamNoLeader(const Guid team_id)
@@ -400,7 +400,7 @@ uint32_t TeamSystem::AppointLeader(const Guid team_id, const Guid current_leader
 		return kRetTeamAppointSelf;
 	}
 	try_team->OnAppointLeader(new_leader_id);
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::ApplyToTeam(Guid team_id, Guid guid)
@@ -428,7 +428,7 @@ uint32_t TeamSystem::ApplyToTeam(Guid team_id, Guid guid)
 		try_team->applicants_.erase(try_team->applicants_.begin());
 	}
 	try_team->applicants_.emplace_back(guid);
-	return kRetOK;
+	return kOK;
 }
 
 uint32_t TeamSystem::DelApplicant(Guid team_id, Guid guid)
@@ -448,7 +448,7 @@ uint32_t TeamSystem::DelApplicant(Guid team_id, Guid guid)
 	{
 		try_team->applicants_.erase(app_it);
 	}
-	return kRetOK;
+	return kOK;
 }
 
 void TeamSystem::ClearApplyList(const Guid team_id)

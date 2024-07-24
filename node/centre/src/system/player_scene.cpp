@@ -41,7 +41,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     if (tls.scene_registry.valid(scene_id))
     {
         //但是进不去
-        if (kRetOK == ScenesSystem::CheckEnterScene(
+        if (kOK == ScenesSystem::CheckEnterScene(
             { .scene = scene_id, 
             .enter = player }))
         {
@@ -50,7 +50,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     }
     else if (tls.scene_registry.valid(scene_id_last_time))
     {
-        if (kRetOK == ScenesSystem::CheckEnterScene(
+        if (kOK == ScenesSystem::CheckEnterScene(
             { .scene = scene_id_last_time, 
             .enter = player }))
         {
@@ -224,7 +224,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     //不是跨服才在本地判断,跨服有自己的判断
     if (!change_scene_info.ignore_full())
     {
-        if ( const auto ret = ScenesSystem::CheckScenePlayerSize(to_scene) ; kRetOK != ret)
+        if ( const auto ret = ScenesSystem::CheckScenePlayerSize(to_scene) ; kOK != ret)
         {
             PlayerTipSystem::Tip(player, ret, {});
             PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
