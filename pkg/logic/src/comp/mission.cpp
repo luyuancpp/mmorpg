@@ -11,13 +11,13 @@
 #include "proto/logic/event/mission_event.pb.h"
 
 MissionsComp::MissionsComp()
-	: mission_config_(&MissionConfig::GetSingleton()),
-	mission_type_not_repeated_(mission_config_->CheckTypeRepeated())
+	: missionConfig(&MissionConfig::GetSingleton()),
+	missionTypeNotRepeated(missionConfig->CheckTypeRepeated())
 {
 	// Initialize event-related mission classification containers
 	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionTypeMax); ++i)
 	{
-		event_missions_classify_.emplace(i, UInt32Set{});
+		eventMissionsClassify.emplace(i, UInt32Set{});
 	}
 }
 
@@ -35,7 +35,7 @@ std::size_t MissionsComp::CanGetRewardSize() const
 uint32_t MissionsComp::IsMissionUnaccepted(const uint32_t mission_id) const
 {
 	// Check if the mission has been accepted
-	if (missions_comp_.missions().find(mission_id) != missions_comp_.missions().end())
+	if (missionsComp.missions().find(mission_id) != missionsComp.missions().end())
 	{
 		return kMissionIdRepeated; // Return kMissionIdRepeated if mission is already accepted
 	}
@@ -45,7 +45,7 @@ uint32_t MissionsComp::IsMissionUnaccepted(const uint32_t mission_id) const
 uint32_t MissionsComp::IsMissionUncompleted(const uint32_t mission_id) const
 {
 	// Check if the mission is completed
-	if (missions_comp_.complete_missions().count(mission_id) > 0)
+	if (missionsComp.complete_missions().count(mission_id) > 0)
 	{
 		return kMissionAlreadyCompleted; // Return kMissionAlreadyCompleted if mission is already completed
 	}
