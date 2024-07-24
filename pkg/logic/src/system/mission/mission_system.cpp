@@ -363,30 +363,3 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 		tls.dispatcher.enqueue(mission_condition_event);
 	}
 }
-/*
-```
-
-### 主要功能点和结构分析：
-
-1. * *任务系统类 MissionSystem * *：
-- 包含了接受任务（Accept）、放弃任务（Abandon）、完成任务（CompleteAllMission）等操作的方法。
-- 使用了多种数据结构和工具，包括Google Protobuf、Entt（一个ECS库）、条件配置（condition_config.h）、日志记录等。
-
-2. * *任务状态和进度管理 * *：
-- 任务状态通过枚举和Protobuf消息进行管理（MissionPbComp），任务的进度通过更新、检查条件来动态变化。
-- 每个任务有特定的条件（通过condition_config.h配置），任务完成时需要满足所有条件。
-
-3. * *条件检查和更新 * *：
-- `IsConditionCompleted`函数根据条件配置和实际进度判断条件是否完成。
-- `UpdateMission`和相关函数用于更新任务进度和状态，并在满足条件时触发任务完成事件。
-
-4. * *任务事件处理 * *：
-- `Receive`函数处理任务相关事件，根据事件类型和条件更新任务进度和状态，并触发相应的任务完成事件。
-
-5. * *任务分类和过滤 * *：
-- 使用了分类集合（`EventMissionsClassify`和`TypeFilter`）来区分不同类型的任务，并进行相关的过滤和管理。
-
-6. * *奖励和事件触发 * *：
-- 完成任务时，根据配置自动或手动领取奖励，并触发相关的奖励事件（`OnMissionAwardEvent`）和后续任务接受事件。
-
-这些功能共同构成了一个完整的任务系统，管理着游戏中玩家的任务接受、进度更新和奖励领取等流程。*/
