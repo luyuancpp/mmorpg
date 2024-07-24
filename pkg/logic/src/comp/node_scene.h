@@ -102,7 +102,7 @@ public:
 	inline bool IsStateNormal() const { return node_state_ == NodeState::kNormal; }
 
 	inline void SetNodePressureState(const NodePressureState state) { node_pressure_state_ = state; }
-	[[nodiscard]] NodePressureState get_server_pressure_state() const { return node_pressure_state_; }
+	[[nodiscard]] NodePressureState GetServerPressureState() const { return node_pressure_state_; }
 	inline bool IsNodeNoPressure() const { return node_pressure_state_ == NodePressureState::kNoPressure; }
 	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
 
