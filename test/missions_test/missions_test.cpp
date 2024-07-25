@@ -98,7 +98,6 @@ TEST(MissionsComp, RepeatedMissionType)
 	}
 }
 
-
 TEST(MissionsComp, TriggerCondition)
 {
 	const auto player = CreatePlayerWithMissionComponent();
