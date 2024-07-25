@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+﻿#include <gtest/gtest.h>
 
 #include "condition_config.h"
 #include "mission_config.h"
@@ -264,242 +264,334 @@ TEST(MissionsComp, ConditionTypeSize)
 
 TEST(MissionsComp, CompleteAcceptMission)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
+	// 创建带有任务组件的玩家实体
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+
+	// 设置任务ID为4的接受任务事件
 	constexpr uint32_t mission_id = 4;
-	AcceptMissionEvent accept_mission_event;
-	accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-    EXPECT_EQ(1, ms.TypeSetSize());
-	MissionConditionEvent ce;
-	ce.set_entity(ms);
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-	ce.add_condtion_ids(1);
-	ce.set_amount(1);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_FALSE(ms.IsAccepted(mission_id));
-    EXPECT_TRUE(ms.IsComplete(mission_id));
-    EXPECT_EQ(kMissionAlreadyCompleted, MissionSystem::AcceptMission(accept_mission_event));
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+	acceptMissionEvent.set_mission_id(mission_id);
+
+	// 验证接受任务是否成功
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
+
+	// 验证任务类型集合的大小
+	EXPECT_EQ(1, missionsComponent.TypeSetSize());
+
+	// 准备任务条件事件
+	MissionConditionEvent missionConditionEvent;
+	missionConditionEvent.set_entity(entt::to_integral(playerEntity));
+	missionConditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	missionConditionEvent.add_condtion_ids(1);
+	missionConditionEvent.set_amount(1);
+
+	// 处理任务条件事件，标记任务为完成状态
+	MissionSystem::HandleMissionConditionEvent(missionConditionEvent);
+
+	// 验证任务不再处于接受状态，已经完成
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id));
+
+	// 再次尝试接受已经完成的任务，预期返回kMissionAlreadyCompleted
+	EXPECT_EQ(kMissionAlreadyCompleted, MissionSystem::AcceptMission(acceptMissionEvent));
 }
 
 TEST(MissionsComp, EventTriggerMutableMission)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
-	AcceptMissionEvent accept_mission_event;
-	constexpr uint32_t mission_id1 = 1;
-	constexpr uint32_t mission_id2 = 2;
-	accept_mission_event.set_mission_id(mission_id1);
-	accept_mission_event.set_entity(entt::to_integral(player));
-	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-	accept_mission_event.set_mission_id(mission_id2);
-	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
+	// 创建带有任务组件的玩家实体
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
 
-	MissionConditionEvent ce;
-	ce.set_entity(ms);
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-    ce.set_amount(4);
-    ce.clear_condtion_ids();
-	ce.add_condtion_ids(1);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    ce.clear_condtion_ids();
-	ce.add_condtion_ids(2);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    ce.clear_condtion_ids();
-	ce.add_condtion_ids(3);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    ce.clear_condtion_ids();
-	ce.add_condtion_ids(4);	
-	MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_TRUE(ms.IsComplete(mission_id1));
-    EXPECT_TRUE(ms.IsComplete(mission_id2));
+	// 设置任务ID为1的接受任务事件
+	constexpr uint32_t mission_id1 = 1;
+	AcceptMissionEvent acceptMissionEvent1;
+	acceptMissionEvent1.set_entity(entt::to_integral(playerEntity));
+	acceptMissionEvent1.set_mission_id(mission_id1);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent1));
+
+	// 设置任务ID为2的接受任务事件
+	constexpr uint32_t mission_id2 = 2;
+	AcceptMissionEvent acceptMissionEvent2;
+	acceptMissionEvent2.set_entity(entt::to_integral(playerEntity));
+	acceptMissionEvent2.set_mission_id(mission_id2);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent2));
+
+	// 准备任务条件事件
+	MissionConditionEvent missionConditionEvent;
+	missionConditionEvent.set_entity(entt::to_integral(playerEntity));
+	missionConditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	missionConditionEvent.set_amount(4);
+
+	// 处理任务条件事件，逐步完成任务
+	for (int i = 1; i <= 4; ++i)
+	{
+		missionConditionEvent.clear_condtion_ids();
+		missionConditionEvent.add_condtion_ids(i);
+		MissionSystem::HandleMissionConditionEvent(missionConditionEvent);
+	}
+
+	// 验证任务ID为1和2的任务是否完成
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id1));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id2));
 }
 
 TEST(MissionsComp, OnCompleteMission)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
-    uint32_t mission_id = 7;
-	AcceptMissionEvent accept_mission_event;
-	accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-    EXPECT_EQ(1, ms.TypeSetSize());
-	MissionConditionEvent ce;
-	ce.set_entity(ms);
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-	ce.add_condtion_ids(1);
-	ce.set_amount(1);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    tls.dispatcher.update<AcceptMissionEvent>();
-    EXPECT_FALSE(ms.IsAccepted(mission_id));
-    EXPECT_TRUE(ms.IsComplete(mission_id));
+	// 创建带有任务组件的玩家实体
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
 
-    auto next_mission = ++mission_id;
-    EXPECT_TRUE(ms.IsAccepted(mission_id));
-    EXPECT_FALSE(ms.IsComplete(mission_id));
-    for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionInteraction); ++i)
-    {
-        ce.clear_condtion_ids();
-        ce.add_condtion_ids(i);
-        MissionSystem::HandleMissionConditionEvent(ce);
-        EXPECT_FALSE(ms.IsAccepted(mission_id));
-        EXPECT_TRUE(ms.IsComplete(mission_id));
-        tls.dispatcher.update<AcceptMissionEvent>();
-        EXPECT_EQ(0, tls.dispatcher.size<AcceptMissionEvent>());
-        EXPECT_TRUE(ms.IsAccepted(++mission_id));
-        EXPECT_FALSE(ms.IsComplete(mission_id));
-    }
+	// 接受任务ID为7的任务
+	uint32_t mission_id = 7;
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+	acceptMissionEvent.set_mission_id(mission_id);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(1, missionsComponent.TypeSetSize());
+
+	// 设置任务条件事件
+	MissionConditionEvent conditionEvent;
+	conditionEvent.set_entity(entt::to_integral(playerEntity));
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	conditionEvent.add_condtion_ids(1);
+	conditionEvent.set_amount(1);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// 更新任务状态，验证任务是否完成
+	tls.dispatcher.update<AcceptMissionEvent>();
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id));
+
+	// 测试接受下一个任务，并验证其状态
+	auto next_mission = ++mission_id;
+	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_FALSE(missionsComponent.IsComplete(mission_id));
+
+	// 循环处理任务条件，完成后验证任务状态变化
+	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionInteraction); ++i)
+	{
+		conditionEvent.clear_condtion_ids();
+		conditionEvent.add_condtion_ids(i);
+		MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+		EXPECT_FALSE(missionsComponent.IsAccepted(mission_id));
+		EXPECT_TRUE(missionsComponent.IsComplete(mission_id));
+
+		tls.dispatcher.update<AcceptMissionEvent>();
+		EXPECT_EQ(0, tls.dispatcher.size<AcceptMissionEvent>());
+
+		EXPECT_TRUE(missionsComponent.IsAccepted(++mission_id));
+		EXPECT_FALSE(missionsComponent.IsComplete(mission_id));
+	}
 }
 
 TEST(MissionsComp, AcceptNextMirroMission)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
+	// 创建带有任务组件的玩家实体
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+
+	// 接受任务ID为7的任务
 	uint32_t mission_id = 7;
-	AcceptMissionEvent accept_mission_event;
-	accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-	EXPECT_EQ(1, ms.TypeSetSize());
-	MissionConditionEvent ce;
-	ce.set_entity(ms);
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-	ce.add_condtion_ids(1);
-	ce.set_amount(1);
-	MissionSystem::HandleMissionConditionEvent(ce);
-	EXPECT_FALSE(ms.IsAccepted(mission_id));
-	EXPECT_TRUE(ms.IsComplete(mission_id));
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+	acceptMissionEvent.set_mission_id(mission_id);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(1, missionsComponent.TypeSetSize());
+
+	// 设置任务条件事件
+	MissionConditionEvent conditionEvent;
+	conditionEvent.set_entity(entt::to_integral(playerEntity));
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	conditionEvent.add_condtion_ids(1);
+	conditionEvent.set_amount(1);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// 更新任务状态，验证任务完成
+	tls.dispatcher.update<AcceptMissionEvent>();
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id));
+
+	// 接受下一个任务，并验证其状态
 	const auto next_mission_id = ++mission_id;
-    tls.dispatcher.update<AcceptMissionEvent>();
-	EXPECT_TRUE(ms.IsAccepted(next_mission_id));
-	EXPECT_FALSE(ms.IsComplete(next_mission_id));
+	tls.dispatcher.update<AcceptMissionEvent>();
+	EXPECT_TRUE(missionsComponent.IsAccepted(next_mission_id));
+	EXPECT_FALSE(missionsComponent.IsComplete(next_mission_id));
 }
 
 TEST(MissionsComp, MissionCondition)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
-    uint32_t mission_id = 14;
-    uint32_t mission_id1 = 15;
-    uint32_t mission_id2 = 16;
-	AcceptMissionEvent accept_mission_event;
-	accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-	AcceptMissionEvent accept_mission_event1;
-	accept_mission_event1.set_mission_id(mission_id1);
-	accept_mission_event1.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event1));
-	AcceptMissionEvent accept_mission_event2;
-	accept_mission_event2.set_mission_id(mission_id2);
-	accept_mission_event2.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event2));
+	// 创建带有任务组件的玩家实体
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
 
-    EXPECT_TRUE(ms.IsAccepted(mission_id));
-    EXPECT_FALSE(ms.IsComplete(mission_id));
-	MissionConditionEvent ce;
-	ce.set_entity(ms);
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-	ce.add_condtion_ids(1);
-	ce.set_amount(1);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    tls.dispatcher.update<AcceptMissionEvent>();
-    tls.dispatcher.update<MissionConditionEvent>();
-    EXPECT_FALSE(ms.IsAccepted(mission_id));
-    EXPECT_TRUE(ms.IsComplete(mission_id));
-    EXPECT_FALSE(ms.IsAccepted(mission_id1));
-    EXPECT_TRUE(ms.IsComplete(mission_id1));
-    EXPECT_FALSE(ms.IsAccepted(mission_id2));
-    EXPECT_TRUE(ms.IsComplete(mission_id2));
+	// 接受三个不同任务
+	uint32_t mission_id = 14;
+	uint32_t mission_id1 = 15;
+	uint32_t mission_id2 = 16;
+
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+
+	acceptMissionEvent.set_mission_id(mission_id);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
+
+	acceptMissionEvent.set_mission_id(mission_id1);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
+
+	acceptMissionEvent.set_mission_id(mission_id2);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
+
+	// 验证三个任务都已接受但未完成
+	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_FALSE(missionsComponent.IsComplete(mission_id));
+	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id1));
+	EXPECT_FALSE(missionsComponent.IsComplete(mission_id1));
+	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id2));
+	EXPECT_FALSE(missionsComponent.IsComplete(mission_id2));
+
+	// 设置任务条件事件（杀死怪物）
+	MissionConditionEvent conditionEvent;
+	conditionEvent.set_entity(entt::to_integral(playerEntity));
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	conditionEvent.add_condtion_ids(1);
+	conditionEvent.set_amount(1);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// 更新任务状态
+	tls.dispatcher.update<AcceptMissionEvent>();
+	tls.dispatcher.update<MissionConditionEvent>();
+
+	// 验证任务完成状态
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id));
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id1));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id1));
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id2));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id2));
 }
+
 
 TEST(MissionsComp, ConditionAmount)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
-	constexpr uint32_t mission_id = 13;
+	// 创建带有任务组件的玩家实体
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
 
-    AcceptMissionEvent accept_mission_event;
-    accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
+	// 接受任务
+	uint32_t mission_id = 13;
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+	acceptMissionEvent.set_mission_id(mission_id);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
 
-    EXPECT_TRUE(ms.IsAccepted(mission_id));
-    EXPECT_FALSE(ms.IsComplete(mission_id));
-	MissionConditionEvent ce;
-	ce.set_entity(ms);
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-	ce.add_condtion_ids(1);
-	ce.set_amount(1);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_TRUE(ms.IsAccepted(mission_id));
-    EXPECT_FALSE(ms.IsComplete(mission_id));
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_FALSE(ms.IsAccepted(mission_id));
-    EXPECT_TRUE(ms.IsComplete(mission_id));
+	// 验证任务已接受但未完成
+	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_FALSE(missionsComponent.IsComplete(mission_id));
+
+	// 设置任务条件事件（杀死怪物）
+	MissionConditionEvent conditionEvent;
+	conditionEvent.set_entity(entt::to_integral(playerEntity));
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	conditionEvent.add_condtion_ids(1);
+	conditionEvent.set_amount(1);
+
+	// 处理任务条件事件，第一次应该能够继续接受任务
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_FALSE(missionsComponent.IsComplete(mission_id));
+
+	// 处理任务条件事件，第二次完成任务条件，任务应该完成
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id));
 }
 
 TEST(MissionsComp, MissionRewardList)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-    auto& ms = tls.registry.get<MissionsComp>(player);
-    tls.registry.emplace<MissionRewardPbComp>(player);
+	// 创建带有任务和任务奖励组件的玩家实体
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+	tls.registry.emplace<MissionRewardPbComp>(playerEntity);
 
-	constexpr uint32_t mission_id = 12;
+	// 接受任务
+	uint32_t mission_id = 12;
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+	acceptMissionEvent.set_mission_id(mission_id);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
 
-	AcceptMissionEvent accept_mission_event;
-	accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-    GetRewardParam param;
-    param.missionId = mission_id;
-    param.playerId = player;
-    EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
-    EXPECT_TRUE(ms.IsAccepted(mission_id));
-    EXPECT_FALSE(ms.IsComplete(mission_id));
-	MissionConditionEvent ce;
-	ce.set_entity(ms);
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-	ce.add_condtion_ids(1);
-	ce.set_amount(1);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_FALSE(ms.IsAccepted(mission_id));
-    EXPECT_TRUE(ms.IsComplete(mission_id));
-    EXPECT_EQ(kOK, MissionSystem::GetMissionReward(param));
-    EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
-    EXPECT_EQ(0, ms.CanGetRewardSize());
+	// 设置获取奖励的参数
+	GetRewardParam param;
+	param.missionId = mission_id;
+	param.playerId = playerEntity;
+
+	// 验证任务不在奖励列表中
+	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
+	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_FALSE(missionsComponent.IsComplete(mission_id));
+
+	// 设置任务条件事件（杀死怪物）
+	MissionConditionEvent conditionEvent;
+	conditionEvent.set_entity(entt::to_integral(playerEntity));
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	conditionEvent.add_condtion_ids(1);
+	conditionEvent.set_amount(1);
+
+	// 处理任务条件事件，任务完成
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id));
+
+	// 验证获取任务奖励成功并且不能重复获取
+	EXPECT_EQ(kOK, MissionSystem::GetMissionReward(param));
+	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
+
+	// 验证任务完成后奖励列表中的任务数为0
+	EXPECT_EQ(0, missionsComponent.CanGetRewardSize());
 }
 
 TEST(MissionsComp, AbandonMission)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
-    uint32_t mission_id = 12;
-	AcceptMissionEvent accept_mission_event;
-	accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-	EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
+	// 创建带有任务和任务奖励组件的玩家实体
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
 
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CanGetRewardSize());
-    EXPECT_EQ(1, ms.TypeSetSize());
-    auto& type_missions = ms.classify_for_unittest();
+	// 接受任务
+	uint32_t mission_id = 12;
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+	acceptMissionEvent.set_mission_id(mission_id);
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
 
-    EXPECT_EQ(1, type_missions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
-    tls.registry.emplace_or_replace<MissionRewardPbComp>(ms).mutable_can_reward_mission_id()->insert({ mission_id, true });
-    AbandonParam param;
-	param.missionId = mission_id;
-	param.playerId = player;
-    
-    MissionSystem::AbandonMission(param);
+	// 验证接受任务后的状态
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CanGetRewardSize());
+	EXPECT_EQ(1, missionsComponent.TypeSetSize());
 
-    EXPECT_EQ(0, ms.MissionSize());
-    EXPECT_EQ(0, ms.CanGetRewardSize());
-    EXPECT_EQ(0, ms.TypeSetSize());
-    EXPECT_EQ(0, type_missions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
+	auto& typeMissions = missionsComponent.classify_for_unittest();
+	EXPECT_EQ(1, typeMissions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
+
+	// 设置可奖励的任务
+	tls.registry.emplace_or_replace<MissionRewardPbComp>(playerEntity).mutable_can_reward_mission_id()->insert({ mission_id, true });
+
+	// 准备放弃任务的参数
+	AbandonParam abandonParam;
+	abandonParam.missionId = mission_id;
+	abandonParam.playerId = playerEntity;
+
+	// 执行放弃任务操作
+	MissionSystem::AbandonMission(abandonParam);
+
+	// 验证放弃任务后的状态
+	EXPECT_EQ(0, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CanGetRewardSize());
+	EXPECT_EQ(0, missionsComponent.TypeSetSize());
+	EXPECT_EQ(0, typeMissions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
 }
+
 
 TEST(MissionsComp, MissionAutoReward)
 {
