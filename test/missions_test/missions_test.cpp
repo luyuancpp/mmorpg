@@ -13,43 +13,48 @@
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
 
-decltype(auto) CreatePlayerMission()
+decltype(auto) CreatePlayerWithMissionComponent()
 {
-	const auto player = tls.registry.create();
-    tls.registry.emplace<Guid>(player);
-	auto& ms = tls.registry.emplace<MissionsComp>(player);
-	ms.set_event_owner(player);
-	MissionEventHandler::Register();
-	return player;
+    const auto playerEntity = tls.registry.create();
+    tls.registry.emplace<Guid>(playerEntity);
+    auto& missionsComponent = tls.registry.emplace<MissionsComp>(playerEntity);
+    missionsComponent.set_event_owner(playerEntity);
+    MissionEventHandler::Register();
+    return playerEntity;
 }
 
 TEST(MissionsComp, AcceptMission)
 {
-	constexpr uint32_t mission_id = 1;
-    const auto player = CreatePlayerMission();
-	auto& ms = tls.registry.get<MissionsComp>(player);
-	ms.SetMissionTypeNotRepeated(false);
-    AcceptMissionEvent accept_mission_event;
-    accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-    auto& data = mission_config::GetSingleton().all();
-    std::size_t sz = 0;
-    for (int32_t i = 0; i < data.data_size(); ++i)
-    {
-        accept_mission_event.set_mission_id(data.data(i).id());
-        auto m = MissionSystem::AcceptMission(accept_mission_event);
-        ++sz;
-    }
-    EXPECT_EQ(sz, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
-    MissionSystem::CompleteAllMissions(player, 0);
-    EXPECT_EQ(0, ms.MissionSize());
-    EXPECT_EQ(sz, ms.CompleteSize());
+	constexpr uint32_t testMissionId = 1;
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+	missionsComponent.SetMissionTypeNotRepeated(false);
+
+	// Simulating accepting missions from a list
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_mission_id(testMissionId);
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+	auto& missionConfigData = mission_config::GetSingleton().all();
+	std::size_t acceptedMissionCount = 0;
+	for (int32_t i = 0; i < missionConfigData.data_size(); ++i)
+	{
+		acceptMissionEvent.set_mission_id(missionConfigData.data(i).id());
+		auto acceptResult = MissionSystem::AcceptMission(acceptMissionEvent);
+		++acceptedMissionCount;
+	}
+
+	EXPECT_EQ(acceptedMissionCount, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	// Complete all accepted missions
+	MissionSystem::CompleteAllMissions(playerEntity, 0);
+	EXPECT_EQ(0, missionsComponent.MissionSize());
+	EXPECT_EQ(acceptedMissionCount, missionsComponent.CompleteSize());
 }
 
 TEST(MissionsComp, RepeatedMission)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
     {
 	    constexpr uint32_t mission_id = 1;
@@ -74,7 +79,7 @@ TEST(MissionsComp, RepeatedMission)
 
 TEST(MissionsComp, TriggerCondition)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
 	constexpr uint32_t mission_id = 1;
 	AcceptMissionEvent accept_mission_event;
@@ -113,7 +118,7 @@ TEST(MissionsComp, TriggerCondition)
 
 TEST(MissionsComp, TypeSize)
 {
-	auto player = CreatePlayerMission();
+	auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
 	tls.dispatcher.update<AcceptMissionEvent>();
     uint32_t mission_id = 6;
@@ -179,7 +184,7 @@ TEST(MissionsComp, TypeSize)
 
 TEST(MissionsComp, CompleteAcceptMission)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
 	constexpr uint32_t mission_id = 4;
 	AcceptMissionEvent accept_mission_event;
@@ -200,7 +205,7 @@ TEST(MissionsComp, CompleteAcceptMission)
 
 TEST(MissionsComp, EventTriggerMutableMission)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
 	AcceptMissionEvent accept_mission_event;
 	constexpr uint32_t mission_id1 = 1;
@@ -233,7 +238,7 @@ TEST(MissionsComp, EventTriggerMutableMission)
 
 TEST(MissionsComp, OnCompleteMission)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mission_id = 7;
 	AcceptMissionEvent accept_mission_event;
@@ -270,7 +275,7 @@ TEST(MissionsComp, OnCompleteMission)
 
 TEST(MissionsComp, AcceptNextMirroMission)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
 	uint32_t mission_id = 7;
 	AcceptMissionEvent accept_mission_event;
@@ -294,7 +299,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
 
 TEST(MissionsComp, MissionCondition)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mission_id = 14;
     uint32_t mission_id1 = 15;
@@ -332,7 +337,7 @@ TEST(MissionsComp, MissionCondition)
 
 TEST(MissionsComp, ConditionAmount)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
 	constexpr uint32_t mission_id = 13;
 
@@ -358,7 +363,7 @@ TEST(MissionsComp, ConditionAmount)
 
 TEST(MissionsComp, MissionRewardList)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
     auto& ms = tls.registry.get<MissionsComp>(player);
     tls.registry.emplace<MissionRewardPbComp>(player);
 
@@ -389,7 +394,7 @@ TEST(MissionsComp, MissionRewardList)
 
 TEST(MissionsComp, AbandonMission)
 {
-	const auto player = CreatePlayerMission();
+	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mission_id = 12;
 	AcceptMissionEvent accept_mission_event;
