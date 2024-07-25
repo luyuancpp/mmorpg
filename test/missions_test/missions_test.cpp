@@ -156,72 +156,111 @@ TEST(MissionsComp, TriggerMissionCondition)
 	EXPECT_EQ(0, missionsComponent.TypeSetSize());
 }
 
-
-TEST(MissionsComp, TypeSize)
+TEST(MissionsComp, ConditionTypeSize)
 {
-	auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
+	// Create a player entity with a mission component
+	auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+
+	// Trigger update to handle any pending mission events
 	tls.dispatcher.update<AcceptMissionEvent>();
-    uint32_t mission_id = 6;
-	AcceptMissionEvent accept_mission_event;
-	accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-    EXPECT_TRUE(ms.IsAccepted(mission_id));
-    EXPECT_FALSE(ms.IsComplete(mission_id));
-    for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionCustom); ++i)
-    {
-        EXPECT_EQ(1, ms.classify_for_unittest().find(i)->second.size());
-    }    
-    
-	MissionConditionEvent ce;
-	ce.set_entity(ms);
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-	ce.add_condtion_ids(1);
-	ce.set_amount(1);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
 
-    ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionTalkWithNpc));
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
+	// Accept mission with mission_id = 6
+	uint32_t mission_id = 6;
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_mission_id(mission_id);
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
 
-    ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteCondition));
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
+	// Ensure mission_id 6 is accepted but not completed
+	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_FALSE(missionsComponent.IsComplete(mission_id));
 
-    ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionUseItem));
-    ce.add_condtion_ids(2);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
+	// Validate that each condition type has one mission tracked for testing purposes
+	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionCustom); ++i)
+	{
+		EXPECT_EQ(1, missionsComponent.classify_for_unittest().find(i)->second.size());
+	}
 
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionLevelUp));
-    ce.clear_condtion_ids();
-    ce.add_condtion_ids(10);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
+	// Handle various mission condition events
+	MissionConditionEvent conditionEvent;
+	conditionEvent.set_entity(missionsComponent);
 
-	ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionInteraction));
-	ce.clear_condtion_ids();
-	ce.add_condtion_ids(1);
-    ce.add_condtion_ids(2);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    tls.dispatcher.update<MissionConditionEvent>();
-    EXPECT_EQ(0, ms.MissionSize());
-    EXPECT_EQ(1, ms.CompleteSize());
-    EXPECT_FALSE(ms.IsAccepted(mission_id));
-    EXPECT_TRUE(ms.IsComplete(mission_id));
-    EXPECT_EQ(0, ms.TypeSetSize());
-    for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionCustom); ++i)
-    {
-        EXPECT_EQ(0, ms.classify_for_unittest().find(i)->second.size());
-    }
+	// Handle condition: kConditionKillMonster, condition_ids = {1}, amount = 1
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	conditionEvent.add_condtion_ids(1);
+	conditionEvent.set_amount(1);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling kConditionKillMonster, expect 1 mission in progress and 0 completed missions
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	// Handle condition: kConditionTalkWithNpc, condition_ids = {1}, amount = 1
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionTalkWithNpc));
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling kConditionTalkWithNpc, expect 1 mission still in progress and 0 completed missions
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	// Handle condition: kConditionCompleteCondition, condition_ids = {1}, amount = 1
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteCondition));
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling kConditionCompleteCondition, expect 1 mission still in progress and 0 completed missions
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	// Handle condition: kConditionUseItem, condition_ids = {2}, amount = 1
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionUseItem));
+	conditionEvent.clear_condtion_ids();
+	conditionEvent.add_condtion_ids(1);
+	conditionEvent.add_condtion_ids(2);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling kConditionUseItem, expect 1 mission still in progress and 0 completed missions
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	// Handle condition: kConditionLevelUp, condition_ids = {10}, amount = 1
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionLevelUp));
+	conditionEvent.clear_condtion_ids();
+	conditionEvent.add_condtion_ids(10);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling kConditionLevelUp, expect 1 mission still in progress and 0 completed missions
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	// Handle condition: kConditionInteraction, condition_ids = {1, 2}
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionInteraction));
+	conditionEvent.clear_condtion_ids();
+	conditionEvent.add_condtion_ids(1);
+	conditionEvent.add_condtion_ids(2);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// Trigger update to handle any pending mission condition events
+	tls.dispatcher.update<MissionConditionEvent>();
+
+	// After handling kConditionInteraction, expect 0 missions in progress and 1 completed mission
+	EXPECT_EQ(0, missionsComponent.MissionSize());
+	EXPECT_EQ(1, missionsComponent.CompleteSize());
+
+	// Ensure mission_id 6 is no longer accepted and is marked as complete
+	EXPECT_FALSE(missionsComponent.IsAccepted(mission_id));
+	EXPECT_TRUE(missionsComponent.IsComplete(mission_id));
+
+	// Ensure there are no mission types being tracked after completion
+	EXPECT_EQ(0, missionsComponent.TypeSetSize());
+
+	// Validate that no mission types are tracked after completion
+	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionCustom); ++i)
+	{
+		EXPECT_EQ(0, missionsComponent.classify_for_unittest().find(i)->second.size());
+	}
 }
+
 
 TEST(MissionsComp, CompleteAcceptMission)
 {
