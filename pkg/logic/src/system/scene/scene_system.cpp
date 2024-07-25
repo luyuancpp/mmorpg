@@ -333,13 +333,13 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) 
 		sceneEntity = CreateScene2GameNode(p);
 	}
 
-	LeaveScene({ param.player_ });
+	LeaveScene({ param.player });
 	if (sceneEntity == entt::null) {
-		EnterDefaultScene({ param.player_ });
+		EnterDefaultScene({ param.player });
 		return;
 	}
 
-	EnterScene({ sceneEntity, param.player_ });
+	EnterScene({ sceneEntity, param.player });
 }
 
 // Replace a crashed server node with a new node

@@ -291,14 +291,14 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     NodeSceneSystem::SetNodeState(*server_entities.begin(), NodeState::kMaintain);
 
     GetSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.sceneConfId_ = 0;
+    weight_round_robin_scene.sceneConfId = 0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto can_enter = node_system.FindSceneWithMinPlayerCount(weight_round_robin_scene);
         EXPECT_TRUE(can_enter != entt::null);
     }
 
-    weight_round_robin_scene.sceneConfId_ = 1;
+    weight_round_robin_scene.sceneConfId = 1;
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto can_enter = node_system.FindSceneWithMinPlayerCount(weight_round_robin_scene);
@@ -346,7 +346,7 @@ TEST(GS, CompelToChangeScene)
     compel_change_param1.sceneConfId = server2_param.sceneInfo.scene_confid();
     for (auto& it : player_list1)
     {
-        compel_change_param1.player_ = it;
+        compel_change_param1.player = it;
         sm.CompelPlayerChangeScene(compel_change_param1);
         EXPECT_TRUE(tls.registry.try_get<SceneEntity>(it)->sceneEntity == scene2);
     }
@@ -413,7 +413,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
     GetSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.sceneConfId_ = scene_config_id0;
+    weight_round_robin_scene.sceneConfId = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
@@ -517,7 +517,7 @@ TEST(GS, WeightRoundRobinMainScene)
         uint32_t scene_config_id0 = 0;
         uint32_t scene_config_id1 = 1;
         GetSceneParam weight_round_robin_scene;
-        weight_round_robin_scene.sceneConfId_ = scene_config_id0;
+        weight_round_robin_scene.sceneConfId = scene_config_id0;
 
         uint32_t player_size = 1000;
 
@@ -546,7 +546,7 @@ TEST(GS, WeightRoundRobinMainScene)
         }
 
         std::unordered_map<entt::entity, entt::entity> player_scene2;
-        weight_round_robin_scene.sceneConfId_ = scene_config_id1;
+        weight_round_robin_scene.sceneConfId = scene_config_id1;
         for (uint32_t i = 0; i < player_size; ++i)
         {
             auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
@@ -641,7 +641,7 @@ TEST(GS, ServerEnterLeavePressure)
     uint32_t scene_config_id1 = 1;
 
     GetSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.sceneConfId_ = scene_config_id0;
+    weight_round_robin_scene.sceneConfId = scene_config_id0;
 
     std::unordered_map<entt::entity, entt::entity> player_scene1;
 
@@ -662,7 +662,7 @@ TEST(GS, ServerEnterLeavePressure)
     nssys.ClearNodePressure(*server_entities.begin());
 
     std::unordered_map<entt::entity, entt::entity> player_scene2;
-    weight_round_robin_scene.sceneConfId_ = scene_config_id1;
+    weight_round_robin_scene.sceneConfId = scene_config_id1;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
@@ -735,7 +735,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		uint32_t scene_config_id0 = 0;
 		uint32_t scene_config_id1 = 1;
 		GetSceneParam weight_round_robin_scene;
-		weight_round_robin_scene.sceneConfId_ = scene_config_id0;
+		weight_round_robin_scene.sceneConfId = scene_config_id0;
 
 		uint32_t player_size = 1001;
 
@@ -768,7 +768,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 		}
 
 		std::unordered_map<entt::entity, entt::entity> player_scene2;
-		weight_round_robin_scene.sceneConfId_ = scene_config_id1;
+		weight_round_robin_scene.sceneConfId = scene_config_id1;
 		for (uint32_t i = 0; i < player_size; ++i)
 		{
 			auto can_enter = nssys.FindNotFullScene(weight_round_robin_scene);

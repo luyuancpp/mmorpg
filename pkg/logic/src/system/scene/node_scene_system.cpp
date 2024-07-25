@@ -9,7 +9,7 @@ using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
 template <typename ServerType>
 entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, const GetSceneFilterParam& filterStateParam) {
-	auto sceneConfigId = param.sceneConfId_;
+	auto sceneConfigId = param.sceneConfId;
 	entt::entity bestNode{ entt::null };
 	std::size_t minServerPlayerSize = UINT64_MAX;
 
@@ -49,7 +49,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 
 template <typename ServerType>
 entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetSceneFilterParam& filterStateParam) {
-	auto sceneConfigId = param.sceneConfId_;
+	auto sceneConfigId = param.sceneConfId;
 	entt::entity bestNode{ entt::null };
 
 	for (auto entity : tls.game_node_registry.view<ServerType>()) {
