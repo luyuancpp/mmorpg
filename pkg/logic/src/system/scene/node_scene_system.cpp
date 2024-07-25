@@ -22,14 +22,20 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 			continue;
 		}
 
-		auto serverPlayerSize = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		auto nodePlayerSize = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		if (nodePlayerSize == 0)
+		{
+			bestNode = entity;
+			minServerPlayerSize = nodePlayerSize;
+			break;
+		}
 
-		if (serverPlayerSize >= minServerPlayerSize || serverPlayerSize >= kMaxServerPlayerSize) {
+		if (nodePlayerSize >= minServerPlayerSize || nodePlayerSize >= kMaxServerPlayerSize) {
 			continue;
 		}
 
 		bestNode = entity;
-		minServerPlayerSize = serverPlayerSize;
+		minServerPlayerSize = nodePlayerSize;
 	}
 
 	if (entt::null == bestNode) {
@@ -60,9 +66,9 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetScene
 			continue;
 		}
 
-		auto serverPlayerSize = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		auto nodePlayerSize = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
 
-		if (serverPlayerSize >= kMaxServerPlayerSize) {
+		if (nodePlayerSize >= kMaxServerPlayerSize) {
 			continue;
 		}
 
