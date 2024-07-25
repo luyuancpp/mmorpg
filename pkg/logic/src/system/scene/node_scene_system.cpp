@@ -17,8 +17,8 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 		const auto& nodeSceneComp = tls.game_node_registry.get<NodeSceneComp>(entity);
 
 		if (!nodeSceneComp.IsStateNormal() ||
-			nodeSceneComp.GetSceneListByConfig(sceneConfigId).empty() ||
-			nodeSceneComp.GetServerPressureState() != filterStateParam.nodePressureState) {
+			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
+			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
 			continue;
 		}
 
@@ -55,8 +55,8 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetScene
 	for (auto entity : tls.game_node_registry.view<ServerType>()) {
 		if (const auto& nodeSceneComp = tls.game_node_registry.get<NodeSceneComp>(entity);
 			!nodeSceneComp.IsStateNormal() ||
-			nodeSceneComp.GetSceneListByConfig(sceneConfigId).empty() ||
-			nodeSceneComp.GetServerPressureState() != filterStateParam.nodePressureState) {
+			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
+			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
 			continue;
 		}
 
@@ -78,7 +78,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetScene
 	entt::entity bestScene{ entt::null };
 	const auto& nodeSceneComps = tls.game_node_registry.get<NodeSceneComp>(bestNode);
 
-	for (const auto& sceneIt : nodeSceneComps.GetSceneListByConfig(sceneConfigId)) {
+	for (const auto& sceneIt : nodeSceneComps.GetScenesByConfig(sceneConfigId)) {
 		auto scenePlayerSize = tls.scene_registry.get<ScenePlayers>(sceneIt).size();
 
 		if (scenePlayerSize >= kMaxScenePlayerSize) {

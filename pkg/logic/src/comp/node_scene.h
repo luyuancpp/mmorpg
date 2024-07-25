@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <ranges>
@@ -10,7 +11,7 @@
 
 using SceneList = EntitySet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
-using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
+using ScenePlayers = EntitySet; // 弱引用，要解除玩家和场景的耦合
 
 entt::entity global_entity();
 
@@ -33,81 +34,123 @@ struct CrossRoomSceneNode
 class NodeSceneComp
 {
 public:
-	[[nodiscard]] const ConfigSceneListType& GetSceneList() const
+	[[nodiscard]] const ConfigSceneListType& GetSceneLists() const
 	{
-		return conf_scene_list_;
+		return configSceneLists;
 	}
 
-	inline std::size_t GetSceneSize() const
+	std::size_t GetTotalSceneCount() const
 	{
-		std::size_t size = 0;
-		for (const auto& val : conf_scene_list_ | std::views::values)
+		std::size_t totalSize = 0;
+		for (const auto& scenes : configSceneLists | std::views::values)
 		{
-			size += val.size();
+			totalSize += scenes.size();
 		}
-		return size;
+		return totalSize;
 	}
 
-	[[nodiscard]] const SceneList& GetSceneListByConfig(uint32_t scene_config_id) const
+	[[nodiscard]] const SceneList& GetScenesByConfig(uint32_t scene_config_id) const
 	{
-		const auto it = conf_scene_list_.find(scene_config_id);
-		if (it == conf_scene_list_.end())
+		const auto it = configSceneLists.find(scene_config_id);
+		if (it == configSceneLists.end())
 		{
-			static const SceneList empty_result;
-			return empty_result;
+			static const SceneList emptyList;
+			return emptyList;
 		}
 		return it->second;
 	}
 
 	void AddScene(entt::entity scene_id)
 	{
-		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_id);
-		conf_scene_list_[scene_info.scene_confid()].emplace(scene_id);
+		const auto& sceneInfo = tls.scene_registry.get<SceneInfo>(scene_id);
+		configSceneLists[sceneInfo.scene_confid()].emplace(scene_id);
 	}
 
-	inline void RemoveScene(const entt::entity scene_eid)
+	void RemoveScene(entt::entity scene_eid)
 	{
-		const auto& scene_info = tls.scene_registry.get<SceneInfo>(scene_eid);
-		conf_scene_list_[scene_info.scene_confid()].erase(scene_eid);
+		const auto& sceneInfo = tls.scene_registry.get<SceneInfo>(scene_eid);
+		auto it = configSceneLists.find(sceneInfo.scene_confid());
+		if (it != configSceneLists.end())
+		{
+			it->second.erase(scene_eid);
+		}
 		if (tls.scene_registry.valid(scene_eid))
 		{
 			Destroy(tls.scene_registry, scene_eid);
 		}
 	}
 
-	[[nodiscard]] entt::entity GetSceneWithMinPlayerCountByConfigId(const uint32_t scene_config_id) const
+	[[nodiscard]] entt::entity GetSceneWithMinPlayerCountByConfigId(uint32_t scene_config_id) const
 	{
-		const auto& scene_list = GetSceneListByConfig(scene_config_id);
-		if (scene_list.empty())
+		const auto& sceneList = GetScenesByConfig(scene_config_id);
+		if (sceneList.empty())
 		{
 			return entt::null;
 		}
-		entt::entity scene{entt::null};
-		std::size_t min_scene_player_size = UINT64_MAX;
-		for (const auto& scene_it : scene_list)
+
+		entt::entity minPlayerScene = entt::null;
+		std::size_t minPlayers = UINT64_MAX;
+
+		for (auto scene : sceneList)
 		{
-			const auto scene_player_size = tls.scene_registry.get<ScenePlayers>(scene_it).size();
-			if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
+			const auto playerSize = tls.scene_registry.get<ScenePlayers>(scene).size();
+			if (playerSize >= kMaxScenePlayerSize) // 可以避免重复的大小比较
 			{
 				continue;
 			}
-			min_scene_player_size = scene_player_size;
-			scene = scene_it;
+			if (playerSize < minPlayers)
+			{
+				minPlayers = playerSize;
+				minPlayerScene = scene;
+
+				if (playerSize == 0) // 如果已经找到人数为0的场景，可以直接返回，因为不可能有更小的人数
+				{
+					return minPlayerScene;
+				}
+			}
 		}
-		return scene;
+		return minPlayerScene;
 	}
 
-	inline void SetState(const NodeState state) { node_state_ = state; }
-	[[nodiscard]] NodeState GetNodeState() const { return node_state_; }
-	inline bool IsStateNormal() const { return node_state_ == NodeState::kNormal; }
 
-	inline void SetNodePressureState(const NodePressureState state) { node_pressure_state_ = state; }
-	[[nodiscard]] NodePressureState GetServerPressureState() const { return node_pressure_state_; }
-	inline bool IsNodeNoPressure() const { return node_pressure_state_ == NodePressureState::kNoPressure; }
-	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
+	void SetState(NodeState state)
+	{
+		nodeState = state;
+	}
+
+	[[nodiscard]] NodeState GetNodeState() const
+	{
+		return nodeState;
+	}
+
+	bool IsStateNormal() const
+	{
+		return nodeState == NodeState::kNormal;
+	}
+
+	void SetNodePressureState(NodePressureState state)
+	{
+		nodePressureState = state;
+	}
+
+	[[nodiscard]] NodePressureState GetNodePressureState() const
+	{
+		return nodePressureState;
+	}
+
+	bool IsNodeNoPressure() const
+	{
+		return nodePressureState == NodePressureState::kNoPressure;
+	}
+
+	bool IsNodePressure() const
+	{
+		return nodePressureState == NodePressureState::kPressure;
+	}
 
 private:
-	ConfigSceneListType conf_scene_list_; //配置表对应的场景列表,不要对它进行任何操作了,只是用来优化性能用
-	NodeState node_state_{NodeState::kNormal};
-	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
+	ConfigSceneListType configSceneLists;
+	NodeState nodeState{ NodeState::kNormal };
+	NodePressureState nodePressureState{ NodePressureState::kNoPressure };
 };
+
