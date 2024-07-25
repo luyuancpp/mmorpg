@@ -54,28 +54,44 @@ TEST(MissionsComp, AcceptMission)
 
 TEST(MissionsComp, RepeatedMission)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+
+	// Test case 1: Repeating mission_id = 1
 	{
-		constexpr uint32_t mission_id = 1;
-		AcceptMissionEvent accept_mission_event;
-		accept_mission_event.set_entity(entt::to_integral(player));
-		accept_mission_event.set_mission_id(mission_id);
-		EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-		EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(accept_mission_event));
+		constexpr uint32_t missionId1 = 1;
+		AcceptMissionEvent acceptMissionEvent;
+		acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
+		acceptMissionEvent.set_mission_id(missionId1);
+
+		// First accept should succeed
+		EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
+
+		// Second accept should fail due to mission_id being repeated
+		EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(acceptMissionEvent));
 	}
 
+	// Test case 2: Repeating different mission types
 	{
-		AcceptMissionEvent accept_mission_event1;
-		accept_mission_event1.set_entity(entt::to_integral(player));
-		accept_mission_event1.set_mission_id(3);
-		AcceptMissionEvent accept_mission_event2;
-		accept_mission_event2.set_entity(entt::to_integral(player));
-		accept_mission_event2.set_mission_id(2);
-		EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event1));
-		EXPECT_EQ(kMissionTypeRepeated, MissionSystem::AcceptMission(accept_mission_event2));
+		AcceptMissionEvent acceptMissionEvent1;
+		acceptMissionEvent1.set_entity(entt::to_integral(playerEntity));
+		acceptMissionEvent1.set_mission_id(3);
+
+		AcceptMissionEvent acceptMissionEvent2;
+		acceptMissionEvent2.set_entity(entt::to_integral(playerEntity));
+		acceptMissionEvent2.set_mission_id(2);
+
+		// First accept for mission_id = 3 should succeed
+		EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent1));
+
+		// First accept for mission_id = 2 should succeed
+		EXPECT_EQ(kMissionTypeRepeated, MissionSystem::AcceptMission(acceptMissionEvent2));
+
+		// Second accept for mission_id = 3 (same type as mission_id = 1) should fail
+		EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(acceptMissionEvent1));
 	}
 }
+
 
 TEST(MissionsComp, TriggerCondition)
 {
