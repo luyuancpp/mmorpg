@@ -56,25 +56,25 @@ TEST(MissionsComp, RepeatedMission)
 {
 	const auto player = CreatePlayerWithMissionComponent();
 	auto& ms = tls.registry.get<MissionsComp>(player);
-    {
-	    constexpr uint32_t mission_id = 1;
+	{
+		constexpr uint32_t mission_id = 1;
 		AcceptMissionEvent accept_mission_event;
-    	accept_mission_event.set_entity(entt::to_integral(player));
+		accept_mission_event.set_entity(entt::to_integral(player));
 		accept_mission_event.set_mission_id(mission_id);
-        EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-        EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(accept_mission_event));
-    }
+		EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
+		EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(accept_mission_event));
+	}
 
-    {
+	{
 		AcceptMissionEvent accept_mission_event1;
-    	accept_mission_event1.set_entity(entt::to_integral(player));
-        accept_mission_event1.set_mission_id(3);
+		accept_mission_event1.set_entity(entt::to_integral(player));
+		accept_mission_event1.set_mission_id(3);
 		AcceptMissionEvent accept_mission_event2;
-    	accept_mission_event2.set_entity(entt::to_integral(player));
-        accept_mission_event2.set_mission_id(2);
+		accept_mission_event2.set_entity(entt::to_integral(player));
+		accept_mission_event2.set_mission_id(2);
 		EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event1));
 		EXPECT_EQ(kMissionTypeRepeated, MissionSystem::AcceptMission(accept_mission_event2));
-    }
+	}
 }
 
 TEST(MissionsComp, TriggerCondition)
