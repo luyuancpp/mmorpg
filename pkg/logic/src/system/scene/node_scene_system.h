@@ -8,7 +8,7 @@ constexpr uint32_t kDefaultSceneId = 1;
 
 struct GetSceneParam
 {
-	uint32_t sceneConfId_{kDefaultSceneId};
+	uint32_t sceneConfId{kDefaultSceneId};
 };
 
 struct GetSceneFilterParam
@@ -20,10 +20,10 @@ struct CompelChangeSceneParam
 {
 	inline bool IsNull() const
 	{
-		return player_ == entt::null || destNode == entt::null;
+		return player == entt::null || destNode == entt::null;
 	}
 
-	entt::entity player_{entt::null};
+	entt::entity player{entt::null};
 	entt::entity destNode{entt::null};
 	uint32_t sceneConfId{0};
 };
