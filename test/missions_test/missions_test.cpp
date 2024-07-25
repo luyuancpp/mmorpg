@@ -52,12 +52,12 @@ TEST(MissionsComp, AcceptMission)
 	EXPECT_EQ(acceptedMissionCount, missionsComponent.CompleteSize());
 }
 
-TEST(MissionsComp, RepeatedMission)
+TEST(MissionsComp, RepeatedMissionId)
 {
 	const auto playerEntity = CreatePlayerWithMissionComponent();
 	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
 
-	// Test case 1: Repeating mission_id = 1
+	// Test case : Repeating mission_id = 1
 	{
 		constexpr uint32_t missionId1 = 1;
 		AcceptMissionEvent acceptMissionEvent;
@@ -70,8 +70,14 @@ TEST(MissionsComp, RepeatedMission)
 		// Second accept should fail due to mission_id being repeated
 		EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(acceptMissionEvent));
 	}
+}
 
-	// Test case 2: Repeating different mission types
+TEST(MissionsComp, RepeatedMissionType)
+{
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+
+	// Test case : Repeating different mission types
 	{
 		AcceptMissionEvent acceptMissionEvent1;
 		acceptMissionEvent1.set_entity(entt::to_integral(playerEntity));
