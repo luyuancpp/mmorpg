@@ -14,23 +14,23 @@ using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
 
 entt::entity global_entity();
 
-struct MainSceneServer
+struct MainSceneNode
 {
 };
 
-struct CrossMainSceneServer
+struct CrossMainSceneNode
 {
 };
 
-struct RoomSceneServer
+struct RoomSceneNode
 {
 };
 
-struct CrossRoomSceneServer
+struct CrossRoomSceneNode
 {
 };
 
-class ServerComp
+class NodeSceneComp
 {
 public:
 	[[nodiscard]] const ConfigSceneListType& GetSceneList() const

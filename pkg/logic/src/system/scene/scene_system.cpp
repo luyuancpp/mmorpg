@@ -26,8 +26,8 @@ void SetServerSequenceNodeId(uint32_t nodeId) {
 // Function to add main scene node components
 void AddMainSceneNodeComponent(entt::registry& reg, const entt::entity node) {
 	LOG_TRACE << "Adding main scene node components for entity: " << entt::to_integral(node);
-	reg.emplace<MainSceneServer>(node);
-	reg.emplace<ServerComp>(node);
+	reg.emplace<MainSceneNode>(node);
+	reg.emplace<NodeSceneComp>(node);
 	reg.emplace<GameNodePlayerInfoPtr>(node, std::make_shared<GameNodeInfo>());
 }
 
@@ -41,6 +41,18 @@ ScenesSystem::~ScenesSystem() {
 	LOG_TRACE << "ScenesSystem destructor called";
 	Clear();
 }
+
+NodeId ScenesSystem::GetGameNodeId(uint64_t scene_id)
+{
+	return nodeSequence.node_id(static_cast<NodeId>(scene_id));
+}
+
+entt::entity ScenesSystem::get_game_node_eid(uint64_t scene_id)
+{
+	return entt::entity{ nodeSequence.node_id(static_cast<NodeId>(scene_id)) };
+}
+
+void ScenesSystem::SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
 
 void ScenesSystem::Clear() {
 	LOG_TRACE << "Clearing scene system data";
@@ -74,9 +86,9 @@ uint32_t ScenesSystem::GenSceneGuid() {
 // Get total number of scenes associated with a specific configuration ID
 std::size_t ScenesSystem::GetScenesSize(uint32_t sceneConfigId) {
 	std::size_t sceneSize = 0;
-	for (auto node : tls.game_node_registry.view<ServerComp>()) {
-		auto& serverComp = tls.game_node_registry.get<ServerComp>(node);
-		sceneSize += serverComp.GetSceneListByConfig(sceneConfigId).size();
+	for (auto node : tls.game_node_registry.view<NodeSceneComp>()) {
+		auto& nodeSceneComp = tls.game_node_registry.get<NodeSceneComp>(node);
+		sceneSize += nodeSceneComp.GetSceneListByConfig(sceneConfigId).size();
 	}
 	LOG_TRACE << "Total scenes size for config ID " << sceneConfigId << ": " << sceneSize;
 	return sceneSize;
@@ -98,9 +110,9 @@ bool ScenesSystem::IsSceneEmpty() {
 
 // Check if there are non-empty scene lists for a specific configuration
 bool ScenesSystem::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
-	for (auto nodeEid : tls.game_node_registry.view<ServerComp>()) {
-		auto& serverComp = tls.game_node_registry.get<ServerComp>(nodeEid);
-		if (!serverComp.GetSceneListByConfig(sceneConfigId).empty()) {
+	for (auto nodeEid : tls.game_node_registry.view<NodeSceneComp>()) {
+		auto& nodeSceneComp = tls.game_node_registry.get<NodeSceneComp>(nodeEid);
+		if (!nodeSceneComp.GetSceneListByConfig(sceneConfigId).empty()) {
 			LOG_TRACE << "Non-empty scene list found for config ID: " << sceneConfigId;
 			return true;
 		}
@@ -135,7 +147,7 @@ entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& 
 		tls.scene_registry.emplace<GameNodePlayerInfoPtr>(scene, *serverPlayerInfo);
 	}
 
-	auto* pServerComp = tls.game_node_registry.try_get<ServerComp>(param.node);
+	auto* pServerComp = tls.game_node_registry.try_get<NodeSceneComp>(param.node);
 	if (pServerComp) {
 		pServerComp->AddScene(scene);
 	}
@@ -155,7 +167,7 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param) {
 		return;
 	}
 
-	auto* pServerComp = tls.game_node_registry.try_get<ServerComp>(param.node);
+	auto* pServerComp = tls.game_node_registry.try_get<NodeSceneComp>(param.node);
 	if (!pServerComp) {
 		LOG_ERROR << "ServerComp not found for node";
 		return;
@@ -178,8 +190,8 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param) {
 
 // Handle server node destruction
 void ScenesSystem::OnDestroyServer(entt::entity node) {
-	auto& serverComp = tls.game_node_registry.get<ServerComp>(node);
-	auto sceneLists = serverComp.GetSceneList();
+	auto& nodeSceneComp = tls.game_node_registry.get<NodeSceneComp>(node);
+	auto sceneLists = nodeSceneComp.GetSceneList();
 
 	// Destroy all scenes associated with the server node
 	for (auto& confIdSceneList : sceneLists | std::views::values) {
@@ -324,7 +336,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 
 // Force a player to change scenes
 void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
-	auto& destNodeScene = tls.game_node_registry.get<ServerComp>(param.destNode);
+	auto& destNodeScene = tls.game_node_registry.get<NodeSceneComp>(param.destNode);
 	auto sceneEntity = destNodeScene.GetSceneWithMinPlayerCountByConfigId(param.sceneConfId);
 
 	if (sceneEntity == entt::null) {
@@ -344,7 +356,7 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) 
 
 // Replace a crashed server node with a new node
 void ScenesSystem::ReplaceCrashServer(entt::entity crashNode, entt::entity destNode) {
-	auto& crashNodeScene = tls.game_node_registry.get<ServerComp>(crashNode);
+	auto& crashNodeScene = tls.game_node_registry.get<NodeSceneComp>(crashNode);
 	auto sceneLists = crashNodeScene.GetSceneList();
 
 	for (auto& confIdSceneList : sceneLists | std::views::values) {
