@@ -133,6 +133,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "snow_flake_test", "test\sno
 		{FC29015B-FD9B-4AC9-832D-F660D2D7169D} = {FC29015B-FD9B-4AC9-832D-F660D2D7169D}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "consistent_hash_node_test", "test\consistent_hash_node_test\consistent_hash_node_test.vcxproj", "{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -269,6 +271,14 @@ Global
 		{220B73A2-D0BA-47FC-BC79-D7F283CA502D}.Release|x64.Build.0 = Release|x64
 		{220B73A2-D0BA-47FC-BC79-D7F283CA502D}.Release|x86.ActiveCfg = Release|Win32
 		{220B73A2-D0BA-47FC-BC79-D7F283CA502D}.Release|x86.Build.0 = Release|Win32
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}.Debug|x64.ActiveCfg = Debug|x64
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}.Debug|x64.Build.0 = Debug|x64
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}.Debug|x86.ActiveCfg = Debug|Win32
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}.Debug|x86.Build.0 = Debug|Win32
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}.Release|x64.ActiveCfg = Release|x64
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}.Release|x64.Build.0 = Release|x64
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}.Release|x86.ActiveCfg = Release|Win32
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -290,6 +300,7 @@ Global
 		{7CBE473E-E7F7-46B4-8444-B6DB0AA147C6} = {99B5DD1D-6789-47B9-A4A3-1555F1E39454}
 		{33AAE8BA-41BB-4F7E-834E-9E7DCEBFE350} = {99B5DD1D-6789-47B9-A4A3-1555F1E39454}
 		{220B73A2-D0BA-47FC-BC79-D7F283CA502D} = {99B5DD1D-6789-47B9-A4A3-1555F1E39454}
+		{EEC1C7C0-D92B-434D-A72D-6DE65DDF4B0E} = {99B5DD1D-6789-47B9-A4A3-1555F1E39454}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {39DD7ACD-8F24-4314-9D3C-74F6B00572A2}

@@ -100,6 +100,8 @@ enum  EnumCode : uint32_t
     kMissionIdNotInRewardList = 6002,
     kPlayerMissionComponentNotFound = 6003,
     kMissionIdRepeated = 6004,
+    kConditionIdOutOfRange = 6005,
+    kMissionNotInProgress = 6006,
 
     //bag 
     kRetBagDeleteItemFindGuid = 7000,
