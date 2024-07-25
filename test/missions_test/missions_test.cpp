@@ -98,44 +98,64 @@ TEST(MissionsComp, RepeatedMissionType)
 	}
 }
 
-TEST(MissionsComp, TriggerCondition)
+TEST(MissionsComp, TriggerMissionCondition)
 {
-	const auto player = CreatePlayerWithMissionComponent();
-	auto& ms = tls.registry.get<MissionsComp>(player);
+	// Create a player entity with a mission component
+	const auto playerEntity = CreatePlayerWithMissionComponent();
+	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+
 	constexpr uint32_t mission_id = 1;
-	AcceptMissionEvent accept_mission_event;
-	accept_mission_event.set_mission_id(mission_id);
-	accept_mission_event.set_entity(entt::to_integral(player));
-    EXPECT_EQ(kOK, MissionSystem::AcceptMission(accept_mission_event));
-    EXPECT_EQ(1, ms.TypeSetSize());
-    MissionConditionEvent ce;
-    ce.set_entity(ms);
-    ce.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
-    ce.add_condtion_ids(1);
-    ce.set_amount(1);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
+	AcceptMissionEvent acceptMissionEvent;
+	acceptMissionEvent.set_mission_id(mission_id);
+	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 
-    ce.clear_condtion_ids();
-    ce.add_condtion_ids(2);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
+	// Accept mission with mission_id = 1
+	EXPECT_EQ(kOK, MissionSystem::AcceptMission(acceptMissionEvent));
 
-	ce.clear_condtion_ids();
-	ce.add_condtion_ids(3);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(1, ms.MissionSize());
-    EXPECT_EQ(0, ms.CompleteSize());
+	// Ensure there is 1 type of mission accepted
+	EXPECT_EQ(1, missionsComponent.TypeSetSize());
 
-	ce.clear_condtion_ids();
-	ce.add_condtion_ids(4);
-    MissionSystem::HandleMissionConditionEvent(ce);
-    EXPECT_EQ(0, ms.MissionSize());
-    EXPECT_EQ(1, ms.CompleteSize());
-    EXPECT_EQ(0, ms.TypeSetSize());
+	MissionConditionEvent conditionEvent;
+	conditionEvent.set_entity(missionsComponent);
+	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
+	conditionEvent.add_condtion_ids(1); // Condition id 1
+	conditionEvent.set_amount(1);
+
+	// Handle condition event for mission
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling condition 1, expect 1 mission in progress and 0 completed missions
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	conditionEvent.clear_condtion_ids();
+	conditionEvent.add_condtion_ids(2); // Condition id 2
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling condition 2, expect 1 mission still in progress and 0 completed missions
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	conditionEvent.clear_condtion_ids();
+	conditionEvent.add_condtion_ids(3); // Condition id 3
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling condition 3, expect 1 mission still in progress and 0 completed missions
+	EXPECT_EQ(1, missionsComponent.MissionSize());
+	EXPECT_EQ(0, missionsComponent.CompleteSize());
+
+	conditionEvent.clear_condtion_ids();
+	conditionEvent.add_condtion_ids(4); // Condition id 4
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
+
+	// After handling condition 4, expect 0 missions in progress and 1 completed mission
+	EXPECT_EQ(0, missionsComponent.MissionSize());
+	EXPECT_EQ(1, missionsComponent.CompleteSize());
+
+	// Ensure there are no more mission types being tracked
+	EXPECT_EQ(0, missionsComponent.TypeSetSize());
 }
+
 
 TEST(MissionsComp, TypeSize)
 {
