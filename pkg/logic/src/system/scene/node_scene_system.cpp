@@ -23,8 +23,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 		}
 
 		auto nodePlayerSize = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
-		if (nodePlayerSize == 0)
-		{
+		if (nodePlayerSize == 0) {
 			bestNode = entity;
 			minServerPlayerSize = nodePlayerSize;
 			break;
@@ -39,7 +38,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 	}
 
 	if (entt::null == bestNode) {
-		LOG_WARN << "FindSceneWithMinPlayerCountTemplate: No suitable node found for scene configuration ID: " << sceneConfigId;
+		LOG_WARN << "No suitable node found for scene configuration ID: " << sceneConfigId;
 		return entt::null;
 	}
 
@@ -47,7 +46,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 	auto bestScene = nodeSceneComps.GetSceneWithMinPlayerCountByConfigId(sceneConfigId);
 
 	if (bestScene == entt::null) {
-		LOG_WARN << "FindSceneWithMinPlayerCountTemplate: No scene found with minimum player count for node: " << entt::to_integral(bestNode);
+		LOG_WARN << "No scene found with minimum player count for node: " << entt::to_integral(bestNode);
 	}
 
 	return bestScene;
@@ -77,7 +76,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetScene
 	}
 
 	if (entt::null == bestNode) {
-		LOG_WARN << "FindNotFullSceneTemplate: No suitable node found for scene configuration ID: " << sceneConfigId;
+		LOG_WARN << "No suitable node found for scene configuration ID: " << sceneConfigId;
 		return entt::null;
 	}
 
@@ -96,7 +95,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetScene
 	}
 
 	if (bestScene == entt::null) {
-		LOG_WARN << "FindNotFullSceneTemplate: No scene found that is not full for node: " << entt::to_integral(bestNode);
+		LOG_WARN << "No scene found that is not full for node: " << entt::to_integral(bestNode);
 	}
 
 	return bestScene;
@@ -107,11 +106,11 @@ entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParam& p
 
 	auto bestScene = FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
 	if (bestScene != entt::null) {
-		LOG_INFO << "FindSceneWithMinPlayerCount: Found scene with minimum player count, Scene ID: " << entt::to_integral(bestScene);
+		LOG_INFO << "Found scene with minimum player count, Scene ID: " << entt::to_integral(bestScene);
 		return bestScene;
 	}
 
-	LOG_WARN << "FindSceneWithMinPlayerCount: No scene found with minimum player count";
+	LOG_WARN << "No scene found with minimum player count";
 	return FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
 }
 
@@ -120,11 +119,11 @@ entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParam& param) {
 
 	auto bestScene = FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
 	if (bestScene != entt::null) {
-		LOG_INFO << "FindNotFullScene: Found scene that is not full, Scene ID: " << entt::to_integral(bestScene);
+		LOG_INFO << "Found scene that is not full, Scene ID: " << entt::to_integral(bestScene);
 		return bestScene;
 	}
 
-	LOG_WARN << "FindNotFullScene: No scene found that is not full";
+	LOG_WARN << "No scene found that is not full";
 	filterParam.nodePressureState = NodePressureState::kPressure;
 	return FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
 }
@@ -133,34 +132,34 @@ void NodeSceneSystem::SetNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tls.game_node_registry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == nodeSceneComp) {
-		LOG_ERROR << "SetNodePressure: ServerComp not found for node: " << entt::to_integral(node);
+		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
 		return;
 	}
 
 	nodeSceneComp->SetNodePressureState(NodePressureState::kPressure);
-	LOG_INFO << "SetNodePressure: Node entered pressure state, Node ID: " << entt::to_integral(node);
+	LOG_INFO << "Node entered pressure state, Node ID: " << entt::to_integral(node);
 }
 
 void NodeSceneSystem::ClearNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tls.game_node_registry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == nodeSceneComp) {
-		LOG_ERROR << "ClearNodePressure: ServerComp not found for node: " << entt::to_integral(node);
+		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
 		return;
 	}
 
 	nodeSceneComp->SetNodePressureState(NodePressureState::kNoPressure);
-	LOG_INFO << "ClearNodePressure: Node exited pressure state, Node ID: " << entt::to_integral(node);
+	LOG_INFO << "Node exited pressure state, Node ID: " << entt::to_integral(node);
 }
 
 void NodeSceneSystem::SetNodeState(entt::entity node, NodeState state) {
 	auto* const tryServerComp = tls.game_node_registry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == tryServerComp) {
-		LOG_ERROR << "SetNodeState: ServerComp not found for node: " << entt::to_integral(node);
+		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
 		return;
 	}
 
 	tryServerComp->SetState(state);
-	LOG_INFO << "SetNodeState: Node state set successfully, Node ID: " << entt::to_integral(node) << ", State: " << static_cast<int>(state);
+	LOG_INFO << "Node state set successfully, Node ID: " << entt::to_integral(node) << ", State: " << static_cast<int>(state);
 }
