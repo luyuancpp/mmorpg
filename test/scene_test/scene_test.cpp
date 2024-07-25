@@ -62,13 +62,13 @@ TEST(GS, CreateScene2Sever)
     const auto nodecomp1 = tls.game_node_registry.try_get<NodeSceneComp>(node1);
     if (nullptr != nodecomp1)
     {
-        EXPECT_EQ(1, nodecomp1->GetSceneSize());
+        EXPECT_EQ(1, nodecomp1->GetTotalSceneCount());
     }
 
     const auto nodecomp2 = tls.game_node_registry.try_get<NodeSceneComp>(node2);
     if (nullptr != nodecomp2)
     {
-		EXPECT_EQ(1, nodecomp2->GetSceneSize());
+		EXPECT_EQ(1, nodecomp2->GetTotalSceneCount());
     }
 
     EXPECT_EQ(1, sm.GetScenesSize(create_gs_scene_param1.sceneInfo.scene_confid()));
@@ -95,7 +95,7 @@ TEST(GS, DestroyScene)
 	auto servercomp1 = tls.game_node_registry.try_get<NodeSceneComp>(node1);
 	if (nullptr != servercomp1)
 	{
-		EXPECT_EQ(1, servercomp1->GetSceneSize());
+		EXPECT_EQ(1, servercomp1->GetTotalSceneCount());
 	}
 
     sm.DestroyScene({ node1, scene });
@@ -124,8 +124,8 @@ TEST(GS, DestroySever)
     auto scene1 = sm.CreateScene2GameNode(create_gs_scene_param1);
     auto scene2 = sm.CreateScene2GameNode(create_gs_scene_param2);
 
-    EXPECT_EQ(1, tls.game_node_registry.get<NodeSceneComp>(node1).GetSceneSize());
-    EXPECT_EQ(1, tls.game_node_registry.get<NodeSceneComp>(node2).GetSceneSize());
+    EXPECT_EQ(1, tls.game_node_registry.get<NodeSceneComp>(node1).GetTotalSceneCount());
+    EXPECT_EQ(1, tls.game_node_registry.get<NodeSceneComp>(node2).GetTotalSceneCount());
 
     EXPECT_EQ(2, sm.GetScenesSize());
     EXPECT_EQ(sm.GetScenesSize(), sm.GetScenesSize());
@@ -137,7 +137,7 @@ TEST(GS, DestroySever)
     EXPECT_TRUE(tls.game_node_registry.valid(node2));
     EXPECT_TRUE(tls.scene_registry.valid(scene2));
 
-    EXPECT_EQ(1, tls.game_node_registry.get<NodeSceneComp>(node2).GetSceneSize());
+    EXPECT_EQ(1, tls.game_node_registry.get<NodeSceneComp>(node2).GetTotalSceneCount());
     EXPECT_EQ(1, sm.GetScenesSize());
     EXPECT_EQ(0, sm.GetScenesSize(create_gs_scene_param1.sceneInfo.scene_confid()));
     EXPECT_EQ(1, sm.GetScenesSize(create_gs_scene_param2.sceneInfo.scene_confid()));
@@ -481,7 +481,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     for (auto& it : node_list)
     {
         auto& server_scene =  tls.game_node_registry.get<NodeSceneComp>(it);
-        EXPECT_EQ(server_scene.GetSceneSize(), scene_list.size());
+        EXPECT_EQ(server_scene.GetTotalSceneCount(), scene_list.size());
     }
     
 }
