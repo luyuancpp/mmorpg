@@ -9,7 +9,7 @@ public:
 	static void InitChangeSceneQueue(entt::entity player);
 	//队长拉人也得等待，不然太复杂了,队长拉进副本得等玩家继续切换次数切完了
 	static uint32_t PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& change_info);
-	static void TryProcessChangeSceneQueue(entt::entity player);
+	static void ProcessChangeSceneQueue(entt::entity player);
 	static void PopFrontChangeSceneQueue(entt::entity player);
 	static void SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s);
 	static void CopySceneInfoToChangeInfo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info);

@@ -62,7 +62,7 @@ void PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(CentreChangeSceneInfo& c
 	changeInfo.set_mirror_confid(sceneInfo.mirror_confid());
 }
 
-void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
+void PlayerChangeSceneSystem::ProcessChangeSceneQueue(entt::entity player)
 {
 	auto* const tryChangeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
 	if (nullptr == tryChangeSceneQueue)
