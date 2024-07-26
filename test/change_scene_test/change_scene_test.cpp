@@ -80,16 +80,21 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tls.scene_registry.get<SceneInfo>(fromSceneEntity).guid();
 	ScenesSystem::EnterScene({ fromSceneEntity, playerEntity });
+
 	CentreChangeSceneInfo changeInfo;
 	changeInfo.set_guid(sceneId);
 	changeInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs); // todo scene logic
 	changeInfo.set_change_gs_status(CentreChangeSceneInfo::eLeaveGsScene);
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
+
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(playerEntity);
 	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).change_scene_queue_.empty());
+
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
+
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(playerEntity);
 	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).change_scene_queue_.empty());
+
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(playerEntity);
 	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).change_scene_queue_.empty());
@@ -108,6 +113,7 @@ TEST(PlayerChangeScene, DiffGs)
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(playerEntity);
 	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).change_scene_queue_.empty());
+
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(playerEntity);
 	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).change_scene_queue_.empty());
