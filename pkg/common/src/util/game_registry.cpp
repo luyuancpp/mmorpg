@@ -11,7 +11,7 @@ entt::entity error_entity()
 {
     if (tls.error_entity == entt::null)
     {
-        tls.error_entity = tls.global_registry.create();
+        tls.error_entity = tls.globalRegistry.create();
     }
     return tls.error_entity;
 }
@@ -20,7 +20,7 @@ entt::entity op_entity()
 {
     if (tls.op_entity == entt::null)
     {
-        tls.op_entity = tls.global_registry.create();
+        tls.op_entity = tls.globalRegistry.create();
     }
     return tls.op_entity;
 }
@@ -29,7 +29,7 @@ entt::entity global_entity()
 {
     if (tls.global_entity == entt::null)
     {
-        tls.global_entity = tls.global_registry.create();
+        tls.global_entity = tls.globalRegistry.create();
     }
     return tls.global_entity;
 }

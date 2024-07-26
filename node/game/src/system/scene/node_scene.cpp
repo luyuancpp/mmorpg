@@ -77,7 +77,7 @@ void GameNodeSceneSystem::LeaveScene(entt::entity leaver)
 
 void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
 {
-    const auto scene_info = tls.scene_registry.try_get<SceneInfo>(scene);
+    const auto scene_info = tls.sceneRegistry.try_get<SceneInfo>(scene);
     if (nullptr == scene_info)
     {
         return;
@@ -92,7 +92,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre()
 {
     RegisterSceneRequest rq;
     rq.set_game_node_id(g_game_node->GetNodeId());
-    for (auto&& [e, scene_info] : tls.scene_registry.view<SceneInfo>().each())
+    for (auto&& [e, scene_info] : tls.sceneRegistry.view<SceneInfo>().each())
     {
         rq.mutable_scenes_info()->Add()->CopyFrom(scene_info);
     }
@@ -102,9 +102,9 @@ void GameNodeSceneSystem::RegisterSceneToCentre()
 void GameNodeSceneSystem::OnSceneCreateHandler(const OnSceneCreate& message)
 {
     entt::entity scene = entt::to_entity(message.entity());
-    tls.scene_registry.emplace<SceneGridList>(scene);
+    tls.sceneRegistry.emplace<SceneGridList>(scene);
 
-    auto& scene_info = tls.scene_registry.get<SceneInfo>(scene);
+    auto& scene_info = tls.sceneRegistry.get<SceneInfo>(scene);
     if (tls_game.scene_nav_.contains(scene_info.scene_confid()))
     {
         //auto& dt_crowd = tls.scene_registry.emplace<dtCrowd>(scene);

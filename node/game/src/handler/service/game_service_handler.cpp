@@ -188,14 +188,14 @@ void GameServiceHandler::RegisterGate(::google::protobuf::RpcController* control
 {
 ///<<< BEGIN WRITING YOUR CODE
     const InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-    for (const auto& [e, session] : tls.network_registry.view<RpcSession>().each())
+    for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
     {
         if (session.conn_->peerAddress().toIpPort() != session_addr.toIpPort())
         {
             continue;
         }
-        const auto gate_node_id = tls.gate_node_registry.create(entt::entity{ request->gate_node_id() });
-            tls.gate_node_registry.emplace<RpcSessionPtr>(gate_node_id, 
+        const auto gate_node_id = tls.gateNodeRegistry.create(entt::entity{ request->gate_node_id() });
+            tls.gateNodeRegistry.emplace<RpcSessionPtr>(gate_node_id, 
                 std::make_shared<RpcSessionPtr::element_type>(session.conn_));
         assert(gate_node_id == entt::entity{ request->gate_node_id() });
         LOG_DEBUG << " gate register: " << MessageToJsonString(request);
@@ -314,7 +314,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
     PlayerNodeSystem::RemovePlayerSession(request->player_id());
     //todo test
 if ( const entt::entity gate_node_id{ get_gate_node_id(request->session_id()) } ;
-    !tls.gate_node_registry.valid(gate_node_id))
+    !tls.gateNodeRegistry.valid(gate_node_id))
     {
         LOG_ERROR << "gate not found " << get_gate_node_id(request->session_id());
         return;

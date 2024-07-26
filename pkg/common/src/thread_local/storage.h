@@ -5,16 +5,14 @@
 class ThreadLocalStorage
 {
 public:
-    entt::registry global_registry;
+    entt::registry globalRegistry;
 	entt::registry registry;
-    entt::registry scene_registry;
-    entt::registry game_node_registry;
-    entt::registry gate_node_registry;
-    entt::registry centre_node_registry;
-    entt::registry item_registry;
-    entt::registry network_registry;
-    entt::registry team_registry;
-    entt::registry mission_registry;
+    entt::registry sceneRegistry;
+    entt::registry gameNodeRegistry;
+    entt::registry gateNodeRegistry;
+    entt::registry centreNodeRegistry;
+    entt::registry itemRegistry;
+    entt::registry networkRegistry;
 
 	entt::dispatcher dispatcher;
 

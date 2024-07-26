@@ -144,13 +144,13 @@ void CentreNode::StartServer(const ::nodes_info_data& info)
 
 void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::entity gate)
 {
-	auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate);
+	auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate);
 	if (nullptr == gate_node)
 	{
 		LOG_ERROR << "gate not found ";
 		return;
 	}
-    auto game_node_service_addr = tls.game_node_registry.try_get<InetAddress>(game_node_id);
+    auto game_node_service_addr = tls.gameNodeRegistry.try_get<InetAddress>(game_node_id);
     if (nullptr == game_node_service_addr)
     {
         LOG_ERROR << "game not found ";
@@ -172,23 +172,23 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 {
     if (auto& conn = es.conn_; conn->connected())
     {
-        const auto e = tls.network_registry.create();
-		tls.network_registry.emplace<RpcSession>(e, RpcSession{ conn });
+        const auto e = tls.networkRegistry.create();
+		tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
     }
     else
     {
 		auto& current_addr = conn->peerAddress();
-        for (const auto& [e, game_node]: tls.game_node_registry.view<RpcSessionPtr>().each())
+        for (const auto& [e, game_node]: tls.gameNodeRegistry.view<RpcSessionPtr>().each())
         {
             //如果是游戏逻辑服则删除
             if (game_node->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
             {
-                Destroy(tls.game_node_registry, e);
+                Destroy(tls.gameNodeRegistry, e);
                 break;
             }
         }
             
-        for (const auto& [e, gate_node] : tls.gate_node_registry.view<RpcSessionPtr>().each())
+        for (const auto& [e, gate_node] : tls.gateNodeRegistry.view<RpcSessionPtr>().each())
         {
             //如果是游戏逻辑服则删除
             if (nullptr != gate_node &&
@@ -196,18 +196,18 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
             {
                 //remove AfterChangeGsEnterScene
                 //todo 
-                Destroy(tls.gate_node_registry, e);
+                Destroy(tls.gateNodeRegistry, e);
                 break;
             }
         }
 
-        for (const auto& [e, session] : tls.network_registry.view<RpcSession>().each())
+        for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
         {
             if (session.conn_->peerAddress().toIpPort() != current_addr.toIpPort())
             {
                 continue;
             }
-            Destroy(tls.network_registry, e);
+            Destroy(tls.networkRegistry, e);
             break;
         }
     }

@@ -20,20 +20,20 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	///<<< BEGIN WRITING YOUR CODE
 	//centre服务器通知过来
 	entt::entity request_game_node_id{ request->game_node_id() };
-	if (tls.game_node_registry.valid(request_game_node_id))
+	if (tls.gameNodeRegistry.valid(request_game_node_id))
 	{
         LOG_ERROR << " game node reconnect";
 		return;
 	}
-	Destroy(tls.game_node_registry, request_game_node_id);
-	auto game_node_id = tls.game_node_registry.create(request_game_node_id);
+	Destroy(tls.gameNodeRegistry, request_game_node_id);
+	auto game_node_id = tls.gameNodeRegistry.create(request_game_node_id);
 	if (game_node_id != request_game_node_id)
 	{
 		LOG_ERROR << "create game node ";
 		return;
 	}
     InetAddress game_servcie_addr(request->rpc_server().ip(), request->rpc_server().port());
-    auto& game_node = tls.game_node_registry.emplace<RpcClientPtr>(game_node_id,
+    auto& game_node = tls.gameNodeRegistry.emplace<RpcClientPtr>(game_node_id,
         std::make_unique<RpcClientPtr::element_type>(
             EventLoop::getEventLoopOfCurrentThread(),
             game_servcie_addr));
@@ -51,7 +51,7 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 {
 	///<<< BEGIN WRITING YOUR CODE
     entt::entity request_game_node_id{ request->game_node_id() };
-    Destroy(tls.game_node_registry, request_game_node_id);
+    Destroy(tls.gameNodeRegistry, request_game_node_id);
 	LOG_DEBUG << "on  game unregister" << MessageToJsonString(request);
 	///<<< END WRITING YOUR CODE
 }
@@ -95,7 +95,7 @@ void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	Destroy(tls.scene_registry, entt::entity{request->session_id()});
+	Destroy(tls.sceneRegistry, entt::entity{request->session_id()});
 	LOG_DEBUG << "session id be kick " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }

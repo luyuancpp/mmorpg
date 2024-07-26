@@ -24,7 +24,7 @@
 
 void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
 {
-    auto& loading_list = tls.global_registry.get<PlayerLoadingInfoList>(global_entity());
+    auto& loading_list = tls.globalRegistry.get<PlayerLoadingInfoList>(global_entity());
     defer(loading_list.erase(player_id));
     const auto it = loading_list.find(player_id);
     if ( it == loading_list.end() )
@@ -91,12 +91,12 @@ void PlayerNodeSystem::Register2GatePlayerGameNode(entt::entity player)
         return;
     }
     entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
-    if (!tls.gate_node_registry.valid(gate_node_id))
+    if (!tls.gateNodeRegistry.valid(gate_node_id))
     {
         LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
         return;
     }
-    auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_node_id);
+    auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
     if (nullptr == gate_node)
     {
         LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());

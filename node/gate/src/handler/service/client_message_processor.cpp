@@ -115,12 +115,12 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
         entt::entity game_node_id{ it->second.game_node_id_ };
-		if (!tls.game_node_registry.valid(game_node_id))
+		if (!tls.gameNodeRegistry.valid(game_node_id))
 		{
             Tip(conn, kRetServerCrush);
 			return;
 		}
-        auto game_node = tls.game_node_registry.get<RpcClientPtr>(game_node_id);
+        auto game_node = tls.gameNodeRegistry.get<RpcClientPtr>(game_node_id);
         GameNodeRpcClientRequest rq;
         rq.set_body(request->body());
         rq.set_session_id(session_id);

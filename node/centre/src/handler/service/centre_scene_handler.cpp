@@ -25,13 +25,13 @@ void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcControlle
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const entt::entity scene{request->scene()};
-	if (tls.scene_registry.valid(scene))
+	if (tls.sceneRegistry.valid(scene))
 	{
 		LOG_ERROR << "scene not found" << request->scene();
 		return;
 	}
 	const entt::entity game_node{request->game_node_id()};
-	if (tls.game_node_registry.valid(game_node))
+	if (tls.gameNodeRegistry.valid(game_node))
 	{
 		LOG_ERROR << "node not found" << request->game_node_id();
 		return;

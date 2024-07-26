@@ -62,21 +62,21 @@ public:
 
 	void AddScene(entt::entity scene_id)
 	{
-		const auto& sceneInfo = tls.scene_registry.get<SceneInfo>(scene_id);
+		const auto& sceneInfo = tls.sceneRegistry.get<SceneInfo>(scene_id);
 		configSceneLists[sceneInfo.scene_confid()].emplace(scene_id);
 	}
 
 	void RemoveScene(entt::entity scene_eid)
 	{
-		const auto& sceneInfo = tls.scene_registry.get<SceneInfo>(scene_eid);
+		const auto& sceneInfo = tls.sceneRegistry.get<SceneInfo>(scene_eid);
 		auto it = configSceneLists.find(sceneInfo.scene_confid());
 		if (it != configSceneLists.end())
 		{
 			it->second.erase(scene_eid);
 		}
-		if (tls.scene_registry.valid(scene_eid))
+		if (tls.sceneRegistry.valid(scene_eid))
 		{
-			Destroy(tls.scene_registry, scene_eid);
+			Destroy(tls.sceneRegistry, scene_eid);
 		}
 	}
 
@@ -93,7 +93,7 @@ public:
 
 		for (auto scene : sceneList)
 		{
-			const auto playerSize = tls.scene_registry.get<ScenePlayers>(scene).size();
+			const auto playerSize = tls.sceneRegistry.get<ScenePlayers>(scene).size();
 			if (playerSize >= kMaxScenePlayerSize) // 可以避免重复的大小比较
 			{
 				continue;

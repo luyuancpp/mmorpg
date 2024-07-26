@@ -114,7 +114,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
 {
     if ( auto& conn = es.conn_ ; conn->connected())
     {
-        for (auto&& [_, centre_node] : tls.centre_node_registry.view<RpcClientPtr>().each())
+        for (auto&& [_, centre_node] : tls.centreNodeRegistry.view<RpcClientPtr>().each())
         {
             if (IsSameAddr(conn->peerAddress(), centre_node->peer_addr()))
             {
@@ -133,7 +133,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
         }
 
         //todo 断线重连
-        for (auto&& [e, game_node] : tls.game_node_registry.view<RpcClientPtr>().each())
+        for (auto&& [e, game_node] : tls.gameNodeRegistry.view<RpcClientPtr>().each())
         {
             if (!IsSameAddr(game_node->peer_addr(), conn->peerAddress()))
             {
@@ -154,13 +154,13 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
     }
     else
     {
-        for (const auto& [e, game_node] : tls.game_node_registry.view<RpcClientPtr>().each())
+        for (const auto& [e, game_node] : tls.gameNodeRegistry.view<RpcClientPtr>().each())
         {
             if (!IsSameAddr(game_node->peer_addr(), conn->peerAddress()))
             {
                 continue;
             }
-            Destroy(tls.game_node_registry, e);
+            Destroy(tls.gameNodeRegistry, e);
         }
     }
 }
@@ -170,14 +170,14 @@ void GateNode::Connect2Centre()
     for (auto& centre_node_info : node_net_info_.centre_info().centre_info())
     {
         entt::entity id{ centre_node_info.id() };
-        const auto centre_node_id = tls.centre_node_registry.create(id);
+        const auto centre_node_id = tls.centreNodeRegistry.create(id);
         if (centre_node_id != id)
         {
             LOG_ERROR << "centre id ";
             continue;
         }
         InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-        auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(centre_node_id,
+        auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
             std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
         centre_node->registerService(&service_handler_);
         centre_node->connect();

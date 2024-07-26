@@ -5,6 +5,6 @@
 
 void PlayerSessionSystem::Init()
 {
-    tls.global_registry.emplace<SessionList>(global_entity());
+    tls.globalRegistry.emplace<SessionList>(global_entity());
 }
 
