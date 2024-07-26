@@ -38,7 +38,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     bool can_enter_scene_last_time = false;
 
     //之前的场景有效
-    if (tls.scene_registry.valid(scene_id))
+    if (tls.sceneRegistry.valid(scene_id))
     {
         //但是进不去
         if (kOK == ScenesSystem::CheckPlayerEnterScene(
@@ -48,7 +48,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
             can_enter_scene = true;
         }
     }
-    else if (tls.scene_registry.valid(scene_id_last_time))
+    else if (tls.sceneRegistry.valid(scene_id_last_time))
     {
         if (kOK == ScenesSystem::CheckPlayerEnterScene(
             { .scene = scene_id_last_time, 
@@ -93,7 +93,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
     //todo 会话没有了玩家还在
     CallPlayerEnterGs(player, ScenesSystem::GetGameNodeId(scene));
     CentreChangeSceneInfo change_scene_info;
-    PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, tls.scene_registry.get<SceneInfo>(scene));
+    PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, tls.sceneRegistry.get<SceneInfo>(scene));
     change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
     change_scene_info.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
     PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
@@ -114,7 +114,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
 
-    const auto scene_info = tls.scene_registry.try_get<SceneInfo>((*p_scene).sceneEntity);
+    const auto scene_info = tls.sceneRegistry.try_get<SceneInfo>((*p_scene).sceneEntity);
     if (nullptr == scene_info)
     {
         LOG_ERROR << "scene info " << player_id;
@@ -199,15 +199,15 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-    const auto from_scene_info = tls.scene_registry.try_get<SceneInfo>(from_scene->sceneEntity);
+    const auto from_scene_info = tls.sceneRegistry.try_get<SceneInfo>(from_scene->sceneEntity);
     if (nullptr == from_scene_info)
     {
         return;
     }
     const auto from_scene_game_node = ScenesSystem::get_game_node_eid(from_scene_info->guid()) ;
     const auto to_scene_game_node   = ScenesSystem::get_game_node_eid(to_scene_guid);
-    if (!tls.game_node_registry.valid(from_scene_game_node) || 
-        !tls.game_node_registry.valid(to_scene_game_node))
+    if (!tls.gameNodeRegistry.valid(from_scene_game_node) || 
+        !tls.gameNodeRegistry.valid(to_scene_game_node))
     {
         LOG_ERROR << "scene not found " << from_scene_info->guid() << " " << to_scene_guid;
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);

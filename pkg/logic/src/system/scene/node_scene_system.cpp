@@ -13,8 +13,8 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 	entt::entity bestNode{ entt::null };
 	std::size_t minServerPlayerSize = UINT64_MAX;
 
-	for (auto entity : tls.game_node_registry.view<ServerType>()) {
-		const auto& nodeSceneComp = tls.game_node_registry.get<NodeSceneComp>(entity);
+	for (auto entity : tls.gameNodeRegistry.view<ServerType>()) {
+		const auto& nodeSceneComp = tls.gameNodeRegistry.get<NodeSceneComp>(entity);
 
 		if (!nodeSceneComp.IsStateNormal() ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
@@ -22,7 +22,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 			continue;
 		}
 
-		auto nodePlayerSize = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtr>(entity)).player_size();
 		if (nodePlayerSize == 0) {
 			bestNode = entity;
 			minServerPlayerSize = nodePlayerSize;
@@ -42,7 +42,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParam& param, con
 		return entt::null;
 	}
 
-	const auto& nodeSceneComps = tls.game_node_registry.get<NodeSceneComp>(bestNode);
+	const auto& nodeSceneComps = tls.gameNodeRegistry.get<NodeSceneComp>(bestNode);
 	auto bestScene = nodeSceneComps.GetSceneWithMinPlayerCountByConfigId(sceneConfigId);
 
 	if (bestScene == entt::null) {
@@ -57,15 +57,15 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetScene
 	auto sceneConfigId = param.sceneConfId;
 	entt::entity bestNode{ entt::null };
 
-	for (auto entity : tls.game_node_registry.view<ServerType>()) {
-		if (const auto& nodeSceneComp = tls.game_node_registry.get<NodeSceneComp>(entity);
+	for (auto entity : tls.gameNodeRegistry.view<ServerType>()) {
+		if (const auto& nodeSceneComp = tls.gameNodeRegistry.get<NodeSceneComp>(entity);
 			!nodeSceneComp.IsStateNormal() ||
 			nodeSceneComp.GetScenesByConfig(sceneConfigId).empty() ||
 			nodeSceneComp.GetNodePressureState() != filterStateParam.nodePressureState) {
 			continue;
 		}
 
-		auto nodePlayerSize = (*tls.game_node_registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtr>(entity)).player_size();
 
 		if (nodePlayerSize >= kMaxServerPlayerSize) {
 			continue;
@@ -81,10 +81,10 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParam& param, const GetScene
 	}
 
 	entt::entity bestScene{ entt::null };
-	const auto& nodeSceneComps = tls.game_node_registry.get<NodeSceneComp>(bestNode);
+	const auto& nodeSceneComps = tls.gameNodeRegistry.get<NodeSceneComp>(bestNode);
 
 	for (const auto& sceneIt : nodeSceneComps.GetScenesByConfig(sceneConfigId)) {
-		auto scenePlayerSize = tls.scene_registry.get<ScenePlayers>(sceneIt).size();
+		auto scenePlayerSize = tls.sceneRegistry.get<ScenePlayers>(sceneIt).size();
 
 		if (scenePlayerSize >= kMaxScenePlayerSize) {
 			continue;
@@ -129,7 +129,7 @@ entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParam& param) {
 }
 
 void NodeSceneSystem::SetNodePressure(entt::entity node) {
-	auto* const nodeSceneComp = tls.game_node_registry.try_get<NodeSceneComp>(node);
+	auto* const nodeSceneComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == nodeSceneComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
@@ -141,7 +141,7 @@ void NodeSceneSystem::SetNodePressure(entt::entity node) {
 }
 
 void NodeSceneSystem::ClearNodePressure(entt::entity node) {
-	auto* const nodeSceneComp = tls.game_node_registry.try_get<NodeSceneComp>(node);
+	auto* const nodeSceneComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == nodeSceneComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);
@@ -153,7 +153,7 @@ void NodeSceneSystem::ClearNodePressure(entt::entity node) {
 }
 
 void NodeSceneSystem::SetNodeState(entt::entity node, NodeState state) {
-	auto* const tryServerComp = tls.game_node_registry.try_get<NodeSceneComp>(node);
+	auto* const tryServerComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == tryServerComp) {
 		LOG_ERROR << "ServerComp not found for node: " << entt::to_integral(node);

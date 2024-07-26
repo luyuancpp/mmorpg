@@ -16,7 +16,7 @@ void PlayerSceneSystem::EnterScene(entt::entity player, Guid scene)
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
 {
-	const auto info = tls.scene_registry.try_get<SceneInfo>(scene);
+	const auto info = tls.sceneRegistry.try_get<SceneInfo>(scene);
 	if (nullptr == info)
 	{
 		LOG_ERROR << "enter scene error" << tls.registry.get<Guid>(player);

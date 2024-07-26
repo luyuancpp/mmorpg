@@ -152,7 +152,7 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
 {
     if ( auto& conn = es.conn_ ; conn->connected())
     {
-        for (const auto& [it, centre_node] : tls.centre_node_registry.view<RpcClientPtr>().each())
+        for (const auto& [it, centre_node] : tls.centreNodeRegistry.view<RpcClientPtr>().each())
         {
             if (conn->connected() &&
                 IsSameAddr(centre_node->peer_addr(), conn->peerAddress()))
@@ -177,28 +177,28 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
     if ( auto& conn = es.conn_ ; conn->connected())
 	{
 		auto e = tls.registry.create();
-		tls.network_registry.emplace<RpcSession>(e, RpcSession{ conn });
+		tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
 	}
     else
     {
         auto& current_addr = conn->peerAddress();
-        for (const auto& [e, session] : tls.network_registry.view<RpcSession>().each())
+        for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
         {
             if (session.conn_->peerAddress().toIpPort() != current_addr.toIpPort())
             {
                 continue;
             }
             
-            for (const auto& [gate_e, gate_node] : tls.gate_node_registry.view<RpcSessionPtr>().each())
+            for (const auto& [gate_e, gate_node] : tls.gateNodeRegistry.view<RpcSessionPtr>().each())
             {
                 if (nullptr != gate_node &&
                     gate_node->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
                 {
-                    Destroy(tls.gate_node_registry, gate_e);
+                    Destroy(tls.gateNodeRegistry, gate_e);
                     break;
                 }
             }
-            Destroy(tls.network_registry, e);
+            Destroy(tls.networkRegistry, e);
             break;
         }
     }
@@ -232,14 +232,14 @@ void GameNode::Connect2Centre()
     for (auto& centre_node_info : node_net_info_.centre_info().centre_info())
     {
         entt::entity id{ centre_node_info.id() };
-        const auto   centre_node_id = tls.centre_node_registry.create(id);
+        const auto   centre_node_id = tls.centreNodeRegistry.create(id);
         if (centre_node_id != id)
         {
             LOG_ERROR << "centre id ";
             continue;
         }
         InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-        const auto& centre_node = tls.centre_node_registry.emplace<RpcClientPtr>(centre_node_id,
+        const auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
             std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
         centre_node->registerService(&game_service_);
         centre_node->connect();

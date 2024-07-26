@@ -13,8 +13,8 @@
 
 void ViewSystem::Init()
 {
-    tls.global_registry.emplace<ActorCreateS2C>(global_entity());
-    tls.global_registry.emplace<ActorDestroyS2C>(global_entity());
+    tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
+    tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
 }
 
 bool ViewSystem::CheckSendNpcEnterMessage(entt::entity observer, entt::entity entrant)

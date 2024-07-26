@@ -64,7 +64,7 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.scene_registry.get<SceneInfo>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
 	ScenesSystem::EnterScene({ fromSceneEntity, playerEntity });
 	CentreChangeSceneInfo changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -78,7 +78,7 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.scene_registry.get<SceneInfo>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
 	ScenesSystem::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
@@ -104,7 +104,7 @@ TEST(PlayerChangeScene, DiffGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.scene_registry.get<SceneInfo>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
 	ScenesSystem::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
@@ -123,7 +123,7 @@ TEST(PlayerChangeScene, SameGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.scene_registry.get<SceneInfo>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
 	ScenesSystem::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
@@ -138,7 +138,7 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.scene_registry.get<SceneInfo>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
 	ScenesSystem::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
@@ -157,7 +157,7 @@ TEST(PlayerChangeScene, ServerCrush)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.scene_registry.get<SceneInfo>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
 	ScenesSystem::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;

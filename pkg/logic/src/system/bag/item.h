@@ -29,8 +29,8 @@ public:
 	void set_size(uint32_t sz) { itembase().set_size(sz); }
 
 private:
-	inline const ItemBaseDb& itembase()const { return tls.item_registry.get<ItemBaseDb>(entity()); }
-	inline ItemBaseDb& itembase(){ return tls.item_registry.get<ItemBaseDb>(entity()); }
+	inline const ItemBaseDb& itembase()const { return tls.itemRegistry.get<ItemBaseDb>(entity()); }
+	inline ItemBaseDb& itembase(){ return tls.itemRegistry.get<ItemBaseDb>(entity()); }
 	ItemEntity entity_;
 };
 

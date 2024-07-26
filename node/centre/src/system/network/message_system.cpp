@@ -17,12 +17,12 @@
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
 	entt::entity game_node_id{ node_id };
-	if (!tls.game_node_registry.valid(game_node_id))
+	if (!tls.gameNodeRegistry.valid(game_node_id))
 	{
         LOG_ERROR << "gs not found ->" << node_id;
 		return;
 	}
-	const auto node =  tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
+	const auto node =  tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
 	if (nullptr == node)
 	{
 		LOG_ERROR << "gs not found ->" << node_id;
@@ -43,12 +43,12 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 		return;
 	}
 	entt::entity game_node_id{ player_node_info->game_node_id() };
-	if (!tls.game_node_registry.valid(game_node_id))
+	if (!tls.gameNodeRegistry.valid(game_node_id))
 	{
 		LOG_ERROR << "game node not found" << player_node_info->game_node_id();
 		return;
 	}
-	auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
+	auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
 	if (nullptr == game_node)
 	{
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
@@ -85,12 +85,12 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 		return;
 	}
 	entt::entity game_node_id{ player_node_info->game_node_id() };
-    if (tls.game_node_registry.valid(game_node_id))
+    if (tls.gameNodeRegistry.valid(game_node_id))
     {
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
         return;
     }
-    auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
+    auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == game_node)
     {
         LOG_ERROR << "game node not found" << player_node_info->game_node_id();
@@ -116,12 +116,12 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		return;
 	}
 	entt::entity gate_id{ get_gate_node_id(player_node_info->gate_session_id()) };
-	if (!tls.gate_node_registry.valid(gate_id))
+	if (!tls.gateNodeRegistry.valid(gate_id))
 	{
 		LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
 		return;
 	}
-	const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_id);
+	const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_id);
 	if (nullptr == gate_node)
 	{
         LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
@@ -153,12 +153,12 @@ void Send2Gate(const uint32_t message_id,
 	NodeId gate_node_id)
 {
 	entt::entity gate_id{ gate_node_id };
-    if (!tls.gate_node_registry.valid(gate_id))
+    if (!tls.gateNodeRegistry.valid(gate_id))
     {
         LOG_ERROR << "gate not found " << gate_node_id;
         return;
     }
-	const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(gate_id);
+	const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_id);
 	if (nullptr == gate_node)
 	{
         LOG_ERROR << "gate not found " << gate_node_id;
@@ -179,11 +179,11 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 		return;
 	}
 	entt::entity game_node_id{ player_node_info->game_node_id() };
-	if (tls.game_node_registry.valid(game_node_id))
+	if (tls.gameNodeRegistry.valid(game_node_id))
 	{
 		return;
 	}
-	const auto gate_node = tls.gate_node_registry.try_get<RpcSessionPtr>(game_node_id);
+	const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == gate_node)
     {
         LOG_ERROR << "gate not found " << player_node_info->game_node_id();
@@ -201,11 +201,11 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 void CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
 	const entt::entity game_node_id{ node_id };
-    if (!tls.game_node_registry.valid(game_node_id))
+    if (!tls.gameNodeRegistry.valid(game_node_id))
     {
         return;
     }
-	const auto game_node = tls.game_node_registry.try_get<RpcSessionPtr>(game_node_id);
+	const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
     if (nullptr == game_node)
     {
         LOG_ERROR << "gate not found " << node_id;

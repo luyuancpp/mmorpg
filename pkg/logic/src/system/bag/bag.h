@@ -44,13 +44,13 @@ class Bag
 public:
 	using BagEntity = ItemEntity;
 	[[nodiscard]] entt::entity entity() const { return entity_.entity(); }
-	[[nodiscard]] Guid player_guid() const { return tls.item_registry.get<Guid>(entity()); }
-	inline std::size_t size() const { return tls.item_registry.get<BagCapacity>(entity()).size_; }
+	[[nodiscard]] Guid player_guid() const { return tls.itemRegistry.get<Guid>(entity()); }
+	inline std::size_t size() const { return tls.itemRegistry.get<BagCapacity>(entity()).size_; }
 	inline std::size_t item_size() const { return items_.size(); }
 	inline std::size_t pos_size() const { return pos_.size(); }
 	inline const PosMap& pos() const { return pos_; }
 
-	inline void set_player(Guid guid) const { tls.item_registry.emplace<Guid>(entity(), guid); }
+	inline void set_player(Guid guid) const { tls.itemRegistry.emplace<Guid>(entity(), guid); }
 
 	[[nodiscard]] std::size_t GetItemStackSize(uint32_t config_id) const;
 	Item* GetItemByGuid(Guid guid);

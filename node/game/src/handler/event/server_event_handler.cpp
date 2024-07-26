@@ -30,7 +30,7 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
     entt::entity centre_id{ event.entity() };
-    auto centre_node = tls.centre_node_registry.try_get<RpcClientPtr>(centre_id);
+    auto centre_node = tls.centreNodeRegistry.try_get<RpcClientPtr>(centre_id);
     if (centre_node == nullptr)
     {
         return;
