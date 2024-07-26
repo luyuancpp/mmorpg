@@ -75,11 +75,11 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
     {
         return;
     }
-    if (change_scene_queue->change_scene_queue_.empty())
+    if (change_scene_queue->changeSceneQueue.empty())
     {
         return;
     }
-    const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
+    const auto& change_scene_info = change_scene_queue->changeSceneQueue.front();
     GsLeaveSceneRequest request;
     request.set_change_gs(
         change_scene_info.change_gs_type() == CentreChangeSceneInfo::eDifferentGs);
