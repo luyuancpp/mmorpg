@@ -258,12 +258,12 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipS2C beKickTip;
 			beKickTip.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
-			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTip, rq.player_id());
+			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, rq.player_id());
 			//删除老会话,需要玩家收到消息后再删除gate连接
 			defer(tls_sessions.erase(player_node_info->gate_session_id()));
 			GateNodeKickConnRequest message;
 			message.set_session_id(session_id);
-			Send2Gate(GateServiceKickConnByCentreMsgId, message, 
+			SendToGate(GateServiceKickConnByCentreMsgId, message, 
 				get_gate_node_id(player_node_info->gate_session_id()));
 			player_node_info->set_gate_session_id(session_id);
 		}

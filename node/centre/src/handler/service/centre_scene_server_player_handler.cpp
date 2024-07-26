@@ -90,7 +90,7 @@ void CentreScenePlayerServiceHandler::SceneInfoC2S(entt::entity player,
     {
         message.mutable_scene_info()->Add()->CopyFrom(info);
     }
-    Send2Player(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
+    SendToPlayer(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
 

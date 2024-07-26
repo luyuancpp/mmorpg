@@ -24,7 +24,7 @@ void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
 	}
 	EnterSceneS2C rq;
 	rq.mutable_scene_info()->CopyFrom(*info);
-	Send2Player(ClientPlayerSceneServicePushEnterSceneS2CMsgId, rq, player);
+	SendToPlayer(ClientPlayerSceneServicePushEnterSceneS2CMsgId, rq, player);
 }
 
 void PlayerSceneSystem::LeaveScene(entt::entity player)

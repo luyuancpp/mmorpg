@@ -78,7 +78,7 @@ void PlayerNodeSystem::OnLogin(entt::entity player)
         Centre2GsLoginRequest message;
         message.set_enter_gs_type(enter_game_node_flag->enter_gs_type());
         tls.registry.remove<EnterGsFlag>(player);
-        Send2GsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, player);
+        SendToGsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, player);
     }
 }
 
@@ -127,7 +127,7 @@ void PlayerNodeSystem::OnRegister2GatePlayerGameNode(entt::entity player)
     RegisterPlayerSessionRequest rq;
     rq.set_session_id(player_node_info->gate_session_id());
     rq.set_player_id(*player_id);
-    Send2Gs(GameServiceUpdateSessionMsgId, rq, player_node_info->game_node_id());
+    SendToGs(GameServiceUpdateSessionMsgId, rq, player_node_info->game_node_id());
 
     if (const auto* const enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
         nullptr != enter_game_node_flag)

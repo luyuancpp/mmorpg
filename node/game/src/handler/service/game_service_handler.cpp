@@ -223,7 +223,7 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
         LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
-    ::Send2Player(request->body().message_id(), request->body(), player);
+    ::SendToPlayer(request->body().message_id(), request->body(), player);
 ///<<< END WRITING YOUR CODE
 }
 
