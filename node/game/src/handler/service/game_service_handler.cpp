@@ -339,7 +339,7 @@ if ( const entt::entity gate_node_id{ GetGateNodeId(request->session_id()) } ;
     {
         player_node_info->set_gate_session_id(request->session_id());
     }
-    PlayerNodeSystem::OnRegister2GatePlayerGameNode(player);
+    PlayerNodeSystem::OnPlayerRegisteredToGateNode(player);
 ///<<< END WRITING YOUR CODE
 }
 

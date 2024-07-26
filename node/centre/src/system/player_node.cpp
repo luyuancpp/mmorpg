@@ -22,7 +22,7 @@
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
-void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
 {
     auto& loading_list = tls.globalRegistry.get<PlayerLoadingInfoList>(global_entity());
     defer(loading_list.erase(player_id));
@@ -52,12 +52,12 @@ void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_centre_d
     // on loaded db
 }
 
-void PlayerNodeSystem::OnPlayerAsyncSaved(Guid player_id, player_centre_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid player_id, player_centre_database& message)
 {
 
 }
 
-void PlayerNodeSystem::OnLogin(entt::entity player)
+void PlayerNodeSystem::HandlePlayerLogin(entt::entity player)
 {
     const auto enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
 	if (nullptr == enter_game_node_flag)
@@ -82,7 +82,7 @@ void PlayerNodeSystem::OnLogin(entt::entity player)
     }
 }
 
-void PlayerNodeSystem::Register2GatePlayerGameNode(entt::entity player)
+void PlayerNodeSystem::RegisterPlayerToGateNode(entt::entity player)
 {
     auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
     if (nullptr == player_node_info)
@@ -110,7 +110,7 @@ void PlayerNodeSystem::Register2GatePlayerGameNode(entt::entity player)
 }
 
 
-void PlayerNodeSystem::OnRegister2GatePlayerGameNode(entt::entity player)
+void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity player)
 {
     const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
     if (nullptr == player_node_info)
@@ -135,12 +135,12 @@ void PlayerNodeSystem::OnRegister2GatePlayerGameNode(entt::entity player)
         if (const auto enter_gs_type = enter_game_node_flag->enter_gs_type();
             enter_gs_type != LOGIN_NONE)
         {
-            PlayerNodeSystem::OnLogin(player);
+            PlayerNodeSystem::HandlePlayerLogin(player);
         }
     }
 }
 
-void PlayerNodeSystem::LeaveGame(Guid player_uid)
+void PlayerNodeSystem::HandlePlayerLeave(Guid player_uid)
 {
     //todo 登录的时候leave
     //todo 断线不能马上下线，这里之后会改
