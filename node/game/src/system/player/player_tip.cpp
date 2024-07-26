@@ -4,7 +4,7 @@
 #include "service/common_client_player_service.h"
 #include "thread_local/storage_common_logic.h"
 
-void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVector& str_param)
+void PlayerTipSystem::SendTipToPlayer(entt::entity player, uint32_t tip_id, const StringVector& str_param)
 {
 	TipMessage message;
 	message.mutable_tip_info()->set_id(tip_id);
@@ -15,7 +15,7 @@ void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVect
 	SendToPlayer(ClientPlayerCommonServicePushTipS2CMsgId, message, player);
 }
 
-void PlayerTipSystem::Tip(Guid player_id, uint32_t tip_id, const StringVector& str_param)
+void PlayerTipSystem::SendTipToPlayer(Guid player_id, uint32_t tip_id, const StringVector& str_param)
 {
-	Tip(tls_cl.get_player(player_id), tip_id, str_param);
+	SendTipToPlayer(tls_cl.get_player(player_id), tip_id, str_param);
 }

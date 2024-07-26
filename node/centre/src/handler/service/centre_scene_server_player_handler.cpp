@@ -25,7 +25,7 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 	PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, request->scene_info());
 	if ( const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info) ; ret != kOK)
 	{
-		PlayerTipSystem::Tip(player, ret, {});
+		PlayerTipSystem::SendTipToPlayer(player, ret, {});
 		return;
 	}
 	PlayerSceneSystem::TryEnterNextScene(player);

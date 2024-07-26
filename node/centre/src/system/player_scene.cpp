@@ -148,7 +148,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 	const auto* fromScene = tls.registry.try_get<SceneEntity>(player);
 	if (!fromScene)
 	{
-		PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});
+		PlayerTipSystem::SendTipToPlayer(player, kRetEnterSceneYourSceneIsNull, {});
 		return;
 	}
 
@@ -169,7 +169,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 		toScene = NodeSceneSystem::FindNotFullScene(getSceneParam);
 		if (toScene == entt::null)
 		{
-			PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
+			PlayerTipSystem::SendTipToPlayer(player, kRetEnterSceneSceneFull, {});
 			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 			return;
 		}
@@ -180,7 +180,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 		toScene = entt::entity{ toSceneGuid };
 		if (toScene == entt::null)
 		{
-			PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
+			PlayerTipSystem::SendTipToPlayer(player, kRetEnterSceneSceneNotFound, {});
 			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 			return;
 		}
@@ -203,7 +203,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 
 	if (toSceneGuid == fromSceneInfo->guid())
 	{
-		PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+		PlayerTipSystem::SendTipToPlayer(player, kRetEnterSceneYouInCurrentScene, {});
 		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
 	}
@@ -212,7 +212,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 	{
 		if (const auto ret = ScenesSystem::CheckScenePlayerSize(toScene); ret != kOK)
 		{
-			PlayerTipSystem::Tip(player, ret, {});
+			PlayerTipSystem::SendTipToPlayer(player, ret, {});
 			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 			return;
 		}
