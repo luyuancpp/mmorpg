@@ -13,15 +13,15 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
 
-void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
+void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
 {
-	if (!tls.registry.valid(player))
+	if (!tls.registry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player not found";
 		return;
 	}
 
-	const auto* playerSceneInfoComp = tls.registry.try_get<PlayerSceneInfoComp>(player);
+	const auto* playerSceneInfoComp = tls.registry.try_get<PlayerSceneInfoComp>(playerEntity);
 	if (!playerSceneInfoComp)
 	{
 		LOG_ERROR << "Player scene info not found";
@@ -34,14 +34,14 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
 	// Check if previous scene is valid
 	if (tls.sceneRegistry.valid(entt::entity{ playerSceneInfoComp->scene_info().guid() }))
 	{
-		if (kOK == ScenesSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfoComp->scene_info().guid() }, .enter = player }))
+		if (kOK == ScenesSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfoComp->scene_info().guid() }, .enter = playerEntity }))
 		{
 			sceneId = entt::entity{ playerSceneInfoComp->scene_info().guid() };
 		}
 	}
 	else if (tls.sceneRegistry.valid(entt::entity{ playerSceneInfoComp->scene_info_last_time().guid() }))
 	{
-		if (kOK == ScenesSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfoComp->scene_info_last_time().guid() }, .enter = player }))
+		if (kOK == ScenesSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfoComp->scene_info_last_time().guid() }, .enter = playerEntity }))
 		{
 			lastSceneId = entt::entity{ playerSceneInfoComp->scene_info_last_time().guid() };
 		}
@@ -63,7 +63,7 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
 	// If still no valid scene found, fallback to default scene
 	if (sceneId == entt::null)
 	{
-		sceneId = NodeSceneSystem::FindNotFullScene({ GetDefaultSceneConfigId() });
+		sceneId = NodeSceneSystem::FindNotFullScene({ GetDefaultSceneConfigurationId() });
 	}
 
 	if (sceneId == entt::null)
@@ -73,17 +73,17 @@ void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
 	}
 
 	// Call method to handle player entering the game server
-	CallPlayerEnterGs(player, ScenesSystem::GetGameNodeId(sceneId));
+	ProcessPlayerEnterGameServer(playerEntity, ScenesSystem::GetGameNodeId(sceneId));
 
 	// Prepare change scene information
 	CentreChangeSceneInfo changeSceneInfo;
 	PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(changeSceneInfo, tls.sceneRegistry.get<SceneInfo>(sceneId));
 	changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
 	changeSceneInfo.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
-	PlayerChangeSceneSystem::PushChangeSceneInfo(player, changeSceneInfo);
+	PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeSceneInfo);
 }
 
-void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
+void PlayerSceneSystem::SendToGameServerEnterScene(entt::entity player)
 {
 	if (player == entt::null)
 	{
@@ -121,7 +121,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 	LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->game_node_id();
 }
 
-void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId nodeId)
+void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity player, NodeId nodeId)
 {
 	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (!playerNodeInfo)
@@ -137,7 +137,7 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId nodeId)
 	CallGameNodeMethod(GameServiceEnterGsMsgId, request, nodeId);
 }
 
-void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
+void PlayerSceneSystem::AttemptEnterNextScene(entt::entity player)
 {
 	auto* changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
 	if (!changeSceneQueue)
@@ -230,7 +230,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 }
 
-uint32_t PlayerSceneSystem::GetDefaultSceneConfigId()
+uint32_t PlayerSceneSystem::GetDefaultSceneConfigurationId()
 {
 	return 1;
 }
