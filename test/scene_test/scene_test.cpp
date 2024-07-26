@@ -252,68 +252,68 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 
 TEST(GS, MainTainWeightRoundRobinMainScene)
 {
-    tls.game_node_registry.clear();
-    ScenesSystem sm;
-    NodeSceneSystem node_system;
-    EntitySet server_entities;
-    const uint32_t server_size = 2;
-    const uint32_t per_server_scene = 2;
-    EntitySet scene_entities;
+	tls.game_node_registry.clear();
+	ScenesSystem sm;
+	NodeSceneSystem nodeSystem;
+	EntitySet serverEntities;
+	const uint32_t serverSize = 2;
+	const uint32_t perServerScene = 2;
+	EntitySet sceneEntities;
 
-    for (uint32_t i = 0; i < server_size; ++i)
-    {
-        server_entities.emplace(CreateMainSceneNode());
-    }
+	for (uint32_t i = 0; i < serverSize; ++i)
+	{
+		serverEntities.emplace(CreateMainSceneNode());
+	}
 
-    CreateGameNodeSceneParam create_server_scene_param;
-    for (uint32_t i = 0; i < per_server_scene; ++i)
-    {
-        create_server_scene_param.sceneInfo.set_scene_confid(i);
-        for (auto& it : server_entities)
-        {
-            create_server_scene_param.node = it;
-            auto scene = sm.CreateScene2GameNode(create_server_scene_param);
-            if (scene_entities.empty())
-            {
-                scene_entities.emplace(scene);
-            }
-        }
-    }
+	CreateGameNodeSceneParam createServerSceneParam;
+	for (uint32_t i = 0; i < perServerScene; ++i)
+	{
+		createServerSceneParam.sceneInfo.set_scene_confid(i);
+		for (auto& it : serverEntities)
+		{
+			createServerSceneParam.node = it;
+			auto scene = sm.CreateScene2GameNode(createServerSceneParam);
+			if (sceneEntities.empty())
+			{
+				sceneEntities.emplace(scene);
+			}
+		}
+	}
 
-    constexpr uint32_t player_size = 1000;
+	constexpr uint32_t playerSize = 1000;
 
-    std::unordered_map<entt::entity, entt::entity> player_scene1;
+	std::unordered_map<entt::entity, entt::entity> playerScene1;
 
-    EnterSceneParam enter_param1;
-    //todo
-    // 进入第一个场景 
-    for (uint32_t i = 0; i < player_size; ++i)
-    {
-        for (auto&& sceneEntity : scene_entities)
-        {
-            enter_param1.enter = tls.game_node_registry.create();
-            enter_param1.scene = sceneEntity;
-            player_scene1.emplace(enter_param1.enter, enter_param1.scene);
-            sm.EnterScene(enter_param1);
-        }
-    }
-    NodeSceneSystem::SetNodeState(*server_entities.begin(), NodeState::kMaintain);
+	EnterSceneParam enterParam1;
+	// TODO: Enter the first scene
+	for (uint32_t i = 0; i < playerSize; ++i)
+	{
+		for (auto&& sceneEntity : sceneEntities)
+		{
+			enterParam1.enter = tls.game_node_registry.create();
+			enterParam1.scene = sceneEntity;
+			playerScene1.emplace(enterParam1.enter, enterParam1.scene);
+			sm.EnterScene(enterParam1);
+		}
+	}
+	NodeSceneSystem::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
 
-    GetSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.sceneConfId = 0;
-    for (uint32_t i = 0; i < player_size; ++i)
-    {
-        auto can_enter = node_system.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-        EXPECT_TRUE(can_enter != entt::null);
-    }
+	GetSceneParam weightRoundRobinScene;
+	weightRoundRobinScene.sceneConfId = 0;
+	for (uint32_t i = 0; i < playerSize; ++i)
+	{
+		auto canEnter = nodeSystem.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		EXPECT_TRUE(canEnter != entt::null);
+	}
 
-    weight_round_robin_scene.sceneConfId = 1;
-    for (uint32_t i = 0; i < player_size; ++i)
-    {
-        auto can_enter = node_system.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-        EXPECT_TRUE(can_enter != entt::null);
-    }
+	weightRoundRobinScene.sceneConfId = 1;
+	for (uint32_t i = 0; i < playerSize; ++i)
+	{
+		auto canEnter = nodeSystem.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		EXPECT_TRUE(canEnter != entt::null);
+	}
 }
+
 
 TEST(GS, CompelToChangeScene)
 {
