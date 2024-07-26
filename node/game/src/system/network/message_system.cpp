@@ -14,12 +14,12 @@
 #include "comp/player.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
-void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
+void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2Player(message_id, message, tls_cl.get_player(player_id));
+	SendToPlayer(message_id, message, tls_cl.get_player(player_id));
 }
 
-void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
+void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -103,7 +103,7 @@ void Send2Centre(const uint32_t message_id, const google::protobuf::Message& mes
 	(*centre_node)->Send(message_id, messag);
 }
 
-void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, NodeId node_id)
+void SendToGate(uint32_t message_id, const google::protobuf::Message& messag, NodeId node_id)
 {
 	entt::entity gate_node_id{ get_gate_node_id(node_id) };
     if (!tls.gateNodeRegistry.valid(gate_node_id))

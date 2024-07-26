@@ -83,7 +83,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
     GsLeaveSceneRequest request;
     request.set_change_gs(
         change_scene_info.change_gs_type() == CentreChangeSceneInfo::eDifferentGs);
-    Send2GsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, request, player);
+    SendToGsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, request, player);
     LOG_DEBUG << "player leave scene " << tls.registry.get<Guid>(player) 
         << " " << tls.sceneRegistry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).sceneEntity).guid();
 ///<<< END WRITING YOUR CODE

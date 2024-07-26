@@ -14,7 +14,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "type_define/type_define.h"
 
-void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
+void SendToGs(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
 	entt::entity game_node_id{ node_id };
 	if (!tls.gameNodeRegistry.valid(game_node_id))
@@ -31,7 +31,7 @@ void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, Node
 	(*node)->Send(message_id, message);
 }
 
-void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
+void SendToGsPlayer(const uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -63,17 +63,17 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 }
 
 
-void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
+void SendToGsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2GsPlayer(message_id, message, tls_cl.get_player(player_id));
+	SendToGsPlayer(message_id, message, tls_cl.get_player(player_id));
 }
 
-void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
+void SendToPlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2PlayerViaGs(message_id, message, tls_cl.get_player(player_id));
+	SendToPlayerViaGs(message_id, message, tls_cl.get_player(player_id));
 }
 
-void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
+void SendToPlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -104,7 +104,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 	(*game_node)->Send(message_id, request);
 }
 
-void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
+void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -127,10 +127,10 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
         LOG_ERROR << "gate not found " << player_node_info->gate_session_id();
         return;
 	}
-	Send2Player(message_id, message, *gate_node, player_node_info->gate_session_id());
+	SendToPlayer(message_id, message, *gate_node, player_node_info->gate_session_id());
 }
 
-void Send2Player(uint32_t message_id, 
+void SendToPlayer(uint32_t message_id, 
 	const google::protobuf::Message& message, 
 	RpcSessionPtr& gate, uint64_t session_id)
 {
@@ -143,12 +143,12 @@ void Send2Player(uint32_t message_id,
 	gate->Send(GateServicePlayerMessageMsgId, request);
 }
 
-void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
+void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2Player(message_id, message, tls_cl.get_player(player_id));
+	SendToPlayer(message_id, message, tls_cl.get_player(player_id));
 }
 
-void Send2Gate(const uint32_t message_id, 
+void SendToGate(const uint32_t message_id, 
 	const google::protobuf::Message& message, 
 	NodeId gate_node_id)
 {
