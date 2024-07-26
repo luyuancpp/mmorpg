@@ -313,10 +313,10 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
 ///<<< BEGIN WRITING YOUR CODE
     PlayerNodeSystem::RemovePlayerSession(request->player_id());
     //todo test
-if ( const entt::entity gate_node_id{ get_gate_node_id(request->session_id()) } ;
+if ( const entt::entity gate_node_id{ GetGateNodeId(request->session_id()) } ;
     !tls.gateNodeRegistry.valid(gate_node_id))
     {
-        LOG_ERROR << "gate not found " << get_gate_node_id(request->session_id());
+        LOG_ERROR << "gate not found " << GetGateNodeId(request->session_id());
         return;
     }
 

@@ -31,16 +31,16 @@ void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message,
 		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+	entt::entity gate_node_id{ GetGateNodeId(player_node_info->gate_session_id()) };
 	if (!tls.gateNodeRegistry.valid(gate_node_id))
 	{
-		LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
+		LOG_ERROR << "gate not found " << GetGateNodeId(player_node_info->gate_session_id());
 		return;
 	}
 	const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
 	if (nullptr == gate_node)
 	{
-		LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
+		LOG_ERROR << "gate not found " << GetGateNodeId(player_node_info->gate_session_id());
 		return;
 	}
 	NodeRouteMessageRequest rq;
@@ -105,16 +105,16 @@ void Send2Centre(const uint32_t message_id, const google::protobuf::Message& mes
 
 void SendToGate(uint32_t message_id, const google::protobuf::Message& messag, NodeId node_id)
 {
-	entt::entity gate_node_id{ get_gate_node_id(node_id) };
+	entt::entity gate_node_id{ GetGateNodeId(node_id) };
     if (!tls.gateNodeRegistry.valid(gate_node_id))
     {
-		LOG_ERROR << "gate not found " << get_gate_node_id(node_id);
+		LOG_ERROR << "gate not found " << GetGateNodeId(node_id);
         return;
     }
     const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
     if (nullptr == gate_node)
     {
-        LOG_ERROR << "gate not found " << get_gate_node_id(node_id);
+        LOG_ERROR << "gate not found " << GetGateNodeId(node_id);
         return;
     }
 	(*gate_node)->Send(GateServicePlayerMessageMsgId, messag);
@@ -162,10 +162,10 @@ void BroadCast2Player(const EntitySet& player_list,
             LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 			continue;
         }
-        entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+        entt::entity gate_node_id{ GetGateNodeId(player_node_info->gate_session_id()) };
         if (!tls.gateNodeRegistry.valid(gate_node_id))
         {
-            LOG_ERROR << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
+            LOG_ERROR << "gate not found " << GetGateNodeId(player_node_info->gate_session_id());
 			continue;
         }
 		gate_info_list[gate_node_id].emplace(player_node_info->gate_session_id());

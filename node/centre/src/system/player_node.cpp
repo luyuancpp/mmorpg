@@ -90,16 +90,16 @@ void PlayerNodeSystem::Register2GatePlayerGameNode(entt::entity player)
         LOG_ERROR << "player session not found" << tls.registry.try_get<Guid>(player);
         return;
     }
-    entt::entity gate_node_id{ get_gate_node_id(player_node_info->gate_session_id()) };
+    entt::entity gate_node_id{ GetGateNodeId(player_node_info->gate_session_id()) };
     if (!tls.gateNodeRegistry.valid(gate_node_id))
     {
-        LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
+        LOG_ERROR << "gate crash" << GetGateNodeId(player_node_info->gate_session_id());
         return;
     }
     auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
     if (nullptr == gate_node)
     {
-        LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
+        LOG_ERROR << "gate crash" << GetGateNodeId(player_node_info->gate_session_id());
         return;
     }
 

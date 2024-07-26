@@ -264,7 +264,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 			GateNodeKickConnRequest message;
 			message.set_session_id(session_id);
 			SendToGate(GateServiceKickConnByCentreMsgId, message, 
-				get_gate_node_id(player_node_info->gate_session_id()));
+				GetGateNodeId(player_node_info->gate_session_id()));
 			player_node_info->set_gate_session_id(session_id);
 		}
 		else
