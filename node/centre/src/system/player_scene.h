@@ -7,11 +7,11 @@
 class PlayerSceneSystem
 {
 public:
-    static void OnLoginEnterScene(entt::entity player);
-    static void Send2GsEnterScene(entt::entity player);
-    static void CallPlayerEnterGs(entt::entity player, NodeId node_id);
-    static void TryEnterNextScene(entt::entity player);
-    static uint32_t GetDefaultSceneConfigId();
+    static void HandleLoginEnterScene(entt::entity player);
+    static void SendToGameServerEnterScene(entt::entity player);
+    static void ProcessPlayerEnterGameServer(entt::entity player, NodeId node_id);
+    static void AttemptEnterNextScene(entt::entity player);
+    static uint32_t GetDefaultSceneConfigurationId();
 };
 
 
