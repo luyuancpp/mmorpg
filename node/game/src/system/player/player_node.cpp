@@ -18,7 +18,7 @@
 
 #include "game_node.h"
 
-void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid player_id, const player_database& message)
 {
 	LOG_DEBUG << "player load" << player_id;
 	const auto async_it = tls_game.async_player_list_.find(player_id);
@@ -54,7 +54,7 @@ void PlayerNodeSystem::OnPlayerAsyncLoaded(Guid player_id, const player_database
 	EnterGs(player, async_it->second);
 }
 
-void PlayerNodeSystem::OnPlayerAsyncSaved(Guid player_id, player_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid player_id, player_database& message)
 {
 	//todo session 啥时候删除？
 	//告诉Centre 保存完毕，可以切换场景了
@@ -122,7 +122,7 @@ void PlayerNodeSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_type
 	}
 }
 
-void PlayerNodeSystem::OnRegister2GatePlayerGameNode(entt::entity player)
+void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity player)
 {
 
 }

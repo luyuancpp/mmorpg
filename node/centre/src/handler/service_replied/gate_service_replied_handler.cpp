@@ -49,7 +49,7 @@ void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, cons
 		LOG_ERROR << "session player not found " << replied->session_info().session_id();
 		return;
 	}
-	PlayerNodeSystem::OnRegister2GatePlayerGameNode(player);
+	PlayerNodeSystem::OnPlayerRegisteredToGateNode(player);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
