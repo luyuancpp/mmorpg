@@ -37,8 +37,8 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
     PlayerNodeSystem::RemovePlayerSession(request->player_id());
 
     //已经在线，直接进入,判断是需要发送哪些信息
-    const auto player_it = tls_cl.player_list().find(request->player_id());
-    if (player_it != tls_cl.player_list().end())
+    const auto player_it = tls_cl.PlayerList().find(request->player_id());
+    if (player_it != tls_cl.PlayerList().end())
     {
         EnterGsInfo enter_info;
         enter_info.set_centre_node_id(request->centre_node_id());
@@ -73,8 +73,8 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
         << " message id " << request->body().message_id();
         return;
     }
-    const auto player_it = tls_cl.player_list().find(it->second.player_id());
-    if (player_it == tls_cl.player_list().end())
+    const auto player_it = tls_cl.PlayerList().find(it->second.player_id());
+    if (player_it == tls_cl.PlayerList().end())
     {
         return;
     }
@@ -173,7 +173,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 ///<<< BEGIN WRITING YOUR CODE
         //异步加载过程中断开了？
     auto player = tls_cl.get_player(request->player_id());
-    defer(tls_cl.player_list().erase(request->player_id()));
+    defer(tls_cl.PlayerList().erase(request->player_id()));
     PlayerNodeSystem::RemovePlayerSession(request->player_id());
     Destroy(tls.registry,player);
    //todo  应该是controller 通知过来

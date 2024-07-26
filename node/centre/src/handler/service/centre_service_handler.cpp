@@ -48,8 +48,8 @@ Guid GetPlayerIdBySessionId(const uint64_t session_id)
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
 {
-	const auto it = tls_cl.player_list().find(GetPlayerIdBySessionId(session_id));
-	if (it == tls_cl.player_list().end())
+	const auto it = tls_cl.PlayerList().find(GetPlayerIdBySessionId(session_id));
+	if (it == tls_cl.PlayerList().end())
 	{
 		return entt::null;
 	}
@@ -204,7 +204,7 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE
     
-	if (tls_cl.player_list().size() >= kMaxPlayerSize)
+	if (tls_cl.PlayerList().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -236,8 +236,8 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	tls_sessions.emplace(session_id, session_info);
     //todo把旧的connection 断掉
 
-	if ( const auto player_it = tls_cl.player_list().find(rq.player_id()) ;
-		player_it == tls_cl.player_list().end())
+	if ( const auto player_it = tls_cl.PlayerList().find(rq.player_id()) ;
+		player_it == tls_cl.PlayerList().end())
 	{
         tls.globalRegistry.get<PlayerLoadingInfoList>(global_entity()).emplace(
             rq.player_id(), *request);

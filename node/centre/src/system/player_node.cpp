@@ -34,7 +34,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 
 	auto playerEntity = tls.registry.create();
 
-	if (const auto [first, success] = tls_cl.player_list().emplace(playerId, playerEntity); !success)
+	if (const auto [first, success] = tls_cl.PlayerList().emplace(playerId, playerEntity); !success)
 	{
 		LOG_ERROR << "Error emplacing server: " << playerId;
 		return;
@@ -152,7 +152,7 @@ void PlayerNodeSystem::HandlePlayerLeave(Guid playerUid)
 	// TODO: Handle leave during login
 	// TODO: Immediate logout on disconnect will be revisited later
 	// TODO: Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
-	defer(tls_cl.player_list().erase(playerUid));
+	defer(tls_cl.PlayerList().erase(playerUid));
 
 	const auto playerEntity = tls_cl.get_player(playerUid);
 	if (!tls.registry.valid(playerEntity))

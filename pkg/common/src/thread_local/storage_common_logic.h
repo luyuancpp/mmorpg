@@ -3,11 +3,13 @@
 #include "proto/common/node_common.pb.h"
 #include "type_define/type_define.h"
 
-using PlayerList = std::unordered_map<Guid, entt::entity>;
+
 
 class ThreadLocalStorageCommonLogic
 {
 public:
+    using PlayerListMap = std::unordered_map<Guid, entt::entity>;
+
     RouteNodeInfo& route_data() { return route_data_; }
     std::string& route_msg_body() { return route_msg_body_; }
     void set_next_route_node_type(const uint32_t node_type) { next_route_node_type_ = node_type; }
@@ -18,8 +20,8 @@ public:
     uint64_t session_id() const { return current_session_id_; }
 
     entt::entity get_player(Guid player_uid);
-    inline PlayerList& player_list() { return players_list_; }
-    inline const PlayerList& player_list() const { return players_list_; }
+    inline PlayerListMap& PlayerList() { return players_list_; }
+    inline const PlayerListMap& PlayerList() const { return players_list_; }
 private:
     RouteNodeInfo route_data_;
     std::string route_msg_body_;
@@ -27,7 +29,7 @@ private:
     uint32_t next_route_node_id_{UINT32_MAX};
     uint64_t current_session_id_{kInvalidSessionId};
     std::string prev_node_replied_;
-    PlayerList players_list_;
+    PlayerListMap players_list_;
 };
 
 extern thread_local ThreadLocalStorageCommonLogic tls_cl;
