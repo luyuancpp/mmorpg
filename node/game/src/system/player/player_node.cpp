@@ -117,7 +117,7 @@ void PlayerNodeSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_type
 	else if (enter_gs_type == LOGIN_REPLACE)
 	{
 	}
-	else if (enter_gs_type == LOGIN_RECONNET)//重连
+	else if (enter_gs_type == LOGIN_RECONNECT)//重连
 	{
 	}
 }

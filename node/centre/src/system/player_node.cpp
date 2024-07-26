@@ -1,5 +1,4 @@
 #include "player_node.h"
-
 #include "muduo/base/Logging.h"
 
 #include "comp/scene.h"
@@ -22,141 +21,151 @@
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid player_id, const player_centre_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
-    auto& loading_list = tls.globalRegistry.get<PlayerLoadingInfoList>(global_entity());
-    defer(loading_list.erase(player_id));
-    const auto it = loading_list.find(player_id);
-    if ( it == loading_list.end() )
-    {
-        LOG_ERROR << "loading player  error" << player_id;
-        return;
-    }
-    auto player = tls.registry.create();
-    if (const auto [fst, snd] = tls_cl.player_list().emplace(player_id, player); !snd)
-    {
-        LOG_ERROR << "server emplace error" << player_id;
-        return;
-    }
- 
-    tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(
-        it->second.session_info().session_id());
+	auto& loadingList = tls.globalRegistry.get<PlayerLoadingInfoList>(global_entity());
+	defer(loadingList.erase(playerId));
+	const auto it = loadingList.find(playerId);
+	if (it == loadingList.end())
+	{
+		LOG_ERROR << "loading player: " << playerId;
+		return;
+	}
 
-    tls.registry.emplace<Player>(player);
-    tls.registry.emplace<Guid>(player, player_id);
-    tls.registry.emplace<PlayerSceneInfoComp>(player, message.scene_info());
-    PlayerChangeSceneSystem::InitChangeSceneQueue(player);
-    //第一次登录
-    tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
-    PlayerSceneSystem::OnLoginEnterScene(player);
-    // on loaded db
+	auto playerEntity = tls.registry.create();
+
+	if (const auto [first, success] = tls_cl.player_list().emplace(playerId, playerEntity); !success)
+	{
+		LOG_ERROR << "emplacing server: " << playerId;
+		return;
+	}
+
+	tls.registry.emplace_or_replace<PlayerNodeInfo>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
+	tls.registry.emplace<Player>(playerEntity);
+	tls.registry.emplace<Guid>(playerEntity, playerId);
+	tls.registry.emplace<PlayerSceneInfoComp>(playerEntity, playerData.scene_info());
+
+	PlayerChangeSceneSystem::InitChangeSceneQueue(playerEntity);
+
+	// First login flag
+	tls.registry.emplace<EnterGsFlag>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+
+	PlayerSceneSystem::OnLoginEnterScene(playerEntity);
+	// On loaded database
 }
 
-void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid player_id, player_centre_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
 {
-
+	// Placeholder for handling saved player data asynchronously
 }
 
-void PlayerNodeSystem::HandlePlayerLogin(entt::entity player)
+void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 {
-    const auto enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
-	if (nullptr == enter_game_node_flag)
+	const auto enterGameFlag = tls.registry.try_get<EnterGsFlag>(playerEntity);
+	if (!enterGameFlag)
 	{
 		return;
 	}
-	if (enter_game_node_flag->enter_gs_type() == LOGIN_FIRST)
+
+	if (enterGameFlag->enter_gs_type() == LOGIN_FIRST)
 	{
+		// Handle first login scenario
 	}
-	else if (enter_game_node_flag->enter_gs_type() == LOGIN_REPLACE)//顶号
+	else if (enterGameFlag->enter_gs_type() == LOGIN_REPLACE)
 	{
+		// Handle login replace scenario (顶号)
 	}
-    else if (enter_game_node_flag->enter_gs_type() == LOGIN_RECONNET)//重连
-    {
-    }
+	else if (enterGameFlag->enter_gs_type() == LOGIN_RECONNECT)
+	{
+		// Handle reconnect scenario (重连)
+	}
 
-    {
-        Centre2GsLoginRequest message;
-        message.set_enter_gs_type(enter_game_node_flag->enter_gs_type());
-        tls.registry.remove<EnterGsFlag>(player);
-        SendToGsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, player);
-    }
+	{
+		Centre2GsLoginRequest message;
+		message.set_enter_gs_type(enterGameFlag->enter_gs_type());
+		tls.registry.remove<EnterGsFlag>(playerEntity);
+		SendToGsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, playerEntity);
+	}
 }
 
-void PlayerNodeSystem::RegisterPlayerToGateNode(entt::entity player)
+void PlayerNodeSystem::RegisterPlayerToGateNode(entt::entity playerEntity)
 {
-    auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-    if (nullptr == player_node_info)
-    {
-        LOG_ERROR << "player session not found" << tls.registry.try_get<Guid>(player);
-        return;
-    }
-    entt::entity gate_node_id{ GetGateNodeId(player_node_info->gate_session_id()) };
-    if (!tls.gateNodeRegistry.valid(gate_node_id))
-    {
-        LOG_ERROR << "gate crash" << GetGateNodeId(player_node_info->gate_session_id());
-        return;
-    }
-    auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
-    if (nullptr == gate_node)
-    {
-        LOG_ERROR << "gate crash" << GetGateNodeId(player_node_info->gate_session_id());
-        return;
-    }
+	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
+	if (!playerNodeInfo)
+	{
+		LOG_ERROR << "Player session not found for player: " << tls.registry.try_get<Guid>(playerEntity);
+		return;
+	}
 
-    RegisterSessionGameNodeRequest rq;
-    rq.mutable_session_info()->set_session_id(player_node_info->gate_session_id());
-    rq.set_game_node_id(player_node_info->game_node_id());
-    (*gate_node)->CallMethod(GateServicePlayerEnterGsMsgId, rq);
+	entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
+	if (!tls.gateNodeRegistry.valid(gateNodeId))
+	{
+		LOG_ERROR << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
+		return;
+	}
+
+	auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gateNodeId);
+	if (!gateNode)
+	{
+		LOG_ERROR << "Gate crash for session id: " << playerNodeInfo->gate_session_id();
+		return;
+	}
+
+	RegisterSessionGameNodeRequest request;
+	request.mutable_session_info()->set_session_id(playerNodeInfo->gate_session_id());
+	request.set_game_node_id(playerNodeInfo->game_node_id());
+	(*gateNode)->CallMethod(GateServicePlayerEnterGsMsgId, request);
 }
 
-
-void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity player)
+void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
 {
-    const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-    if (nullptr == player_node_info)
-    {
-        LOG_ERROR << "player session not valid";
-        return;
-    }
-    const auto* const player_id = tls.registry.try_get<Guid>(player);
-    if (nullptr == player_id)
-    {
-        LOG_ERROR << "player  not found ";
-        return;
-    }
-    RegisterPlayerSessionRequest rq;
-    rq.set_session_id(player_node_info->gate_session_id());
-    rq.set_player_id(*player_id);
-    SendToGs(GameServiceUpdateSessionMsgId, rq, player_node_info->game_node_id());
+	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
+	if (!playerNodeInfo)
+	{
+		LOG_ERROR << "Invalid player session";
+		return;
+	}
 
-    if (const auto* const enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
-        nullptr != enter_game_node_flag)
-    {
-        if (const auto enter_gs_type = enter_game_node_flag->enter_gs_type();
-            enter_gs_type != LOGIN_NONE)
-        {
-            PlayerNodeSystem::HandlePlayerLogin(player);
-        }
-    }
+	const auto* const playerId = tls.registry.try_get<Guid>(playerEntity);
+	if (!playerId)
+	{
+		LOG_ERROR << "Player not found";
+		return;
+	}
+
+	RegisterPlayerSessionRequest request;
+	request.set_session_id(playerNodeInfo->gate_session_id());
+	request.set_player_id(*playerId);
+	SendToGs(GameServiceUpdateSessionMsgId, request, playerNodeInfo->game_node_id());
+
+	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGsFlag>(playerEntity))
+	{
+		if (enterGameFlag->enter_gs_type() != LOGIN_NONE)
+		{
+			HandlePlayerLogin(playerEntity);
+		}
+	}
 }
 
-void PlayerNodeSystem::HandlePlayerLeave(Guid player_uid)
+void PlayerNodeSystem::HandlePlayerLeave(Guid playerUid)
 {
-    //todo 登录的时候leave
-    //todo 断线不能马上下线，这里之后会改
-    //没进入场景，只是登录，或者切换场景过程中
-    defer(tls_cl.player_list().erase(player_uid));
-    const auto player = tls_cl.get_player(player_uid);
-    if (!tls.registry.valid(player))
-    {
-        return;
-    }
-    if (nullptr == tls.registry.try_get<SceneEntity>(player))
-    {
-    }
-    else
-    {
-        ScenesSystem::LeaveScene({ player });
-    }
-}
+	// TODO: Handle leave during login
+	// TODO: Immediate logout on disconnect will be revisited later
+	//todo 没进入场景，只是登录，或者切换场景过程中
+	defer(tls_cl.player_list().erase(playerUid));
 
+	const auto playerEntity = tls_cl.get_player(playerUid);
+	if (!tls.registry.valid(playerEntity))
+	{
+		return;
+	}
+
+	if (!tls.registry.try_get<SceneEntity>(playerEntity))
+	{
+		// Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
+	}
+	else
+	{
+		ScenesSystem::LeaveScene({ playerEntity });
+	}
+}
