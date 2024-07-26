@@ -257,7 +257,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		{
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipMessage beKickTip;
-			beKickTip.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
+			beKickTip.mutable_tip_info()->set_id(kRetLoginBeKickByAnOtherAccount);
 			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, rq.player_id());
 			//删除老会话,需要玩家收到消息后再删除gate连接
 			defer(tls_sessions.erase(player_node_info->gate_session_id()));

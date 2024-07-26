@@ -20,5 +20,5 @@ message IpPort
 
 message TipMessage
 {
-  Tip tips = 1;
+  Tip tip_info = 1;
 }
