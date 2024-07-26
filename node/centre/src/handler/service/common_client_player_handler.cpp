@@ -4,8 +4,8 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 void ClientPlayerCommonServiceHandler::PushTipsS2C(entt::entity player,
-	const ::TipS2C* request,
-	::TipS2C* response)
+	const ::TipMessage* request,
+	::TipMessage* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
