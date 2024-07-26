@@ -28,7 +28,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	const auto it = loadingList.find(playerId);
 	if (it == loadingList.end())
 	{
-		LOG_ERROR << "loading player: " << playerId;
+		LOG_ERROR << "Failed to load player: " << playerId;
 		return;
 	}
 
@@ -36,7 +36,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 
 	if (const auto [first, success] = tls_cl.player_list().emplace(playerId, playerEntity); !success)
 	{
-		LOG_ERROR << "emplacing server: " << playerId;
+		LOG_ERROR << "Error emplacing server: " << playerId;
 		return;
 	}
 
@@ -47,11 +47,11 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 
 	PlayerChangeSceneSystem::InitChangeSceneQueue(playerEntity);
 
-	// First login flag
+	// Set flag for first login
 	tls.registry.emplace<EnterGsFlag>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
 	PlayerSceneSystem::OnLoginEnterScene(playerEntity);
-	// On loaded database
+	// On database loaded
 }
 
 void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
@@ -73,11 +73,11 @@ void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 	}
 	else if (enterGameFlag->enter_gs_type() == LOGIN_REPLACE)
 	{
-		// Handle login replace scenario (顶号)
+		// Handle login replace scenario
 	}
 	else if (enterGameFlag->enter_gs_type() == LOGIN_RECONNECT)
 	{
-		// Handle reconnect scenario (重连)
+		// Handle reconnect scenario
 	}
 
 	{
@@ -151,7 +151,7 @@ void PlayerNodeSystem::HandlePlayerLeave(Guid playerUid)
 {
 	// TODO: Handle leave during login
 	// TODO: Immediate logout on disconnect will be revisited later
-	//todo 没进入场景，只是登录，或者切换场景过程中
+	// TODO: Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
 	defer(tls_cl.player_list().erase(playerUid));
 
 	const auto playerEntity = tls_cl.get_player(playerUid);
