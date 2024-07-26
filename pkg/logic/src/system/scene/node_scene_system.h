@@ -5,9 +5,9 @@
 
 constexpr uint32_t kDefaultSceneId = 1;
 
-struct GetSceneParam
+struct GetSceneParams
 {
-	uint32_t sceneConfId{ kDefaultSceneId };
+	uint32_t sceneConfigurationId{ kDefaultSceneId };
 };
 
 struct GetSceneFilterParam
@@ -31,10 +31,10 @@ class NodeSceneSystem
 {
 public:
 	// Find a scene with the minimum player count among servers, less efficient
-	static entt::entity FindSceneWithMinPlayerCount(const GetSceneParam& param);
+	static entt::entity FindSceneWithMinPlayerCount(const GetSceneParams& param);
 
 	// Find a server with the scene where player count is not full, more efficient than the above function
-	static entt::entity FindNotFullScene(const GetSceneParam& param);
+	static entt::entity FindNotFullScene(const GetSceneParams& param);
 
 	// Set node pressure state
 	static void SetNodePressure(entt::entity node);

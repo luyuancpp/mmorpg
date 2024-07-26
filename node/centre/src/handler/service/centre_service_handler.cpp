@@ -389,7 +389,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 
 	PlayerNodeSystem::RegisterPlayerToGateNode(player);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eEnterGsSceneSucceed);
-	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+	PlayerChangeSceneSystem::ProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }
 

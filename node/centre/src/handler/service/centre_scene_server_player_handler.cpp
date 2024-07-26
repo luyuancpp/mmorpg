@@ -25,10 +25,10 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 	PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, request->scene_info());
 	if ( const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info) ; ret != kOK)
 	{
-		PlayerTipSystem::SendTipToPlayer(player, ret, {});
+		PlayerTipSystem::SendToPlayer(player, ret, {});
 		return;
 	}
-	PlayerSceneSystem::TryEnterNextScene(player);
+	PlayerSceneSystem::AttemptEnterNextScene(player);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -75,7 +75,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	}
 	player_node_info->set_game_node_id(kInvalidNodeId);
 
-	PlayerSceneSystem::CallPlayerEnterGs(player, ScenesSystem::GetGameNodeId(to_scene));
+	PlayerSceneSystem::ProcessPlayerEnterGameServer(player, ScenesSystem::GetGameNodeId(to_scene));
 ///<<< END WRITING YOUR CODE
 }
 
