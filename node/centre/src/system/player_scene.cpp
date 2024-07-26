@@ -1,11 +1,8 @@
 #include "player_scene.h"
-
 #include "muduo/base/Logging.h"
-
 #include "centre_node.h"
 #include "comp/scene.h"
 #include "system/scene/scene_system.h"
-
 #include "constants/tips_id.h"
 #include "comp/game_node.h"
 #include "network/message_system.h"
@@ -13,248 +10,227 @@
 #include "service/game_service_service.h"
 #include "system/player_change_scene.h"
 #include "system/player_tip.h"
-
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
 
 void PlayerSceneSystem::OnLoginEnterScene(entt::entity player)
 {
-    if (!tls.registry.valid(player))
-    {
-        LOG_ERROR << "player not found";
-        return;
-    }
-    const auto scene_info_comp = tls.registry.try_get<PlayerSceneInfoComp>(player);
-    if (nullptr == scene_info_comp)
-    {
-        LOG_ERROR << "player not found";
-        return;
-    }
-    entt::entity scene_id = entt::entity{ scene_info_comp->scene_info().guid() };
-    entt::entity scene_id_last_time =
-        entt::entity{ scene_info_comp->scene_info_last_time().guid() };
+	if (!tls.registry.valid(player))
+	{
+		LOG_ERROR << "Player not found";
+		return;
+	}
 
-    bool can_enter_scene = false;
-    bool can_enter_scene_last_time = false;
+	const auto* playerSceneInfoComp = tls.registry.try_get<PlayerSceneInfoComp>(player);
+	if (!playerSceneInfoComp)
+	{
+		LOG_ERROR << "Player scene info not found";
+		return;
+	}
 
-    //之前的场景有效
-    if (tls.sceneRegistry.valid(scene_id))
-    {
-        //但是进不去
-        if (kOK == ScenesSystem::CheckPlayerEnterScene(
-            { .scene = scene_id, 
-            .enter = player }))
-        {
-            can_enter_scene = true;
-        }
-    }
-    else if (tls.sceneRegistry.valid(scene_id_last_time))
-    {
-        if (kOK == ScenesSystem::CheckPlayerEnterScene(
-            { .scene = scene_id_last_time, 
-            .enter = player }))
-        {
-            can_enter_scene_last_time = true;
-        }
-    }
+	entt::entity sceneId = entt::null;
+	entt::entity lastSceneId = entt::null;
 
-    entt::entity scene = entt::null;
-    if (can_enter_scene)
-    {
-        scene = scene_id;
-    }
-    else if (can_enter_scene_last_time)
-    {
-        scene = scene_id_last_time;
-    }
-    else
-    {
-        if (scene_info_comp->scene_info().scene_confid() > 0)
-        {
-            scene = NodeSceneSystem::FindNotFullScene({ scene_info_comp->scene_info().scene_confid() });
-            if (entt::null == scene)
-            {
-                scene = NodeSceneSystem::FindNotFullScene({ scene_info_comp->scene_info().scene_confid() });
-            }
-        }
-    }
-    
-    //找不到上次的场景,或者上次场景满了，放到默认场景里面
-    if (scene == entt::null)
-    {
-        scene = NodeSceneSystem::FindNotFullScene({ GetDefaultSceneConfigId() });
-    }
+	// Check if previous scene is valid
+	if (tls.sceneRegistry.valid(entt::entity{ playerSceneInfoComp->scene_info().guid() }))
+	{
+		if (kOK == ScenesSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfoComp->scene_info().guid() }, .enter = player }))
+		{
+			sceneId = entt::entity{ playerSceneInfoComp->scene_info().guid() };
+		}
+	}
+	else if (tls.sceneRegistry.valid(entt::entity{ playerSceneInfoComp->scene_info_last_time().guid() }))
+	{
+		if (kOK == ScenesSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfoComp->scene_info_last_time().guid() }, .enter = player }))
+		{
+			lastSceneId = entt::entity{ playerSceneInfoComp->scene_info_last_time().guid() };
+		}
+	}
 
-    if (scene == entt::null)
-    {
-        LOG_ERROR << "player login enter scene ";
-        return;
-    }
-    //todo 会话没有了玩家还在
-    CallPlayerEnterGs(player, ScenesSystem::GetGameNodeId(scene));
-    CentreChangeSceneInfo change_scene_info;
-    PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, tls.sceneRegistry.get<SceneInfo>(scene));
-    change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
-    change_scene_info.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
-    PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
+	// Find appropriate scene for the player to enter
+	if (sceneId == entt::null && lastSceneId == entt::null)
+	{
+		if (playerSceneInfoComp->scene_info().scene_confid() > 0)
+		{
+			sceneId = NodeSceneSystem::FindNotFullScene({ playerSceneInfoComp->scene_info().scene_confid() });
+			if (sceneId == entt::null)
+			{
+				sceneId = NodeSceneSystem::FindNotFullScene({ playerSceneInfoComp->scene_info().scene_confid() });
+			}
+		}
+	}
+
+	// If still no valid scene found, fallback to default scene
+	if (sceneId == entt::null)
+	{
+		sceneId = NodeSceneSystem::FindNotFullScene({ GetDefaultSceneConfigId() });
+	}
+
+	if (sceneId == entt::null)
+	{
+		LOG_ERROR << "Failed to find a scene for player login";
+		return;
+	}
+
+	// Call method to handle player entering the game server
+	CallPlayerEnterGs(player, ScenesSystem::GetGameNodeId(sceneId));
+
+	// Prepare change scene information
+	CentreChangeSceneInfo changeSceneInfo;
+	PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(changeSceneInfo, tls.sceneRegistry.get<SceneInfo>(sceneId));
+	changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
+	changeSceneInfo.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
+	PlayerChangeSceneSystem::PushChangeSceneInfo(player, changeSceneInfo);
 }
 
 void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 {
-    if (entt::null == player)
-    {
-		LOG_ERROR << "player is null ";
+	if (player == entt::null)
+	{
+		LOG_ERROR << "Player entity is null";
 		return;
-    }
-    const auto p_scene = tls.registry.try_get<SceneEntity>(player);
-    const auto player_id = tls.registry.get<Guid>(player);
-    if (nullptr == p_scene)
-    {
-        LOG_ERROR << "player do not enter scene " << player_id;
-        return;
-    }
+	}
 
-    const auto scene_info = tls.sceneRegistry.try_get<SceneInfo>((*p_scene).sceneEntity);
-    if (nullptr == scene_info)
-    {
-        LOG_ERROR << "scene info " << player_id;
-        return;
-    }
+	const auto* pScene = tls.registry.try_get<SceneEntity>(player);
+	const auto playerId = tls.registry.get<Guid>(player);
+	if (!pScene)
+	{
+		LOG_ERROR << "Player has not entered a scene: " << playerId;
+		return;
+	}
 
-    const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-    if (nullptr == player_node_info)
-    {
-        LOG_ERROR << "player session not valid" << player_id;
-        return;
-    }
-    Centre2GsEnterSceneRequest request;
-    request.set_scene_id(scene_info->guid());
-    request.set_player_id(player_id);
-    CallGameNodeMethod(GameServiceEnterSceneMsgId, request, player_node_info->game_node_id());
+	const auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfo>((*pScene).sceneEntity);
+	if (!sceneInfo)
+	{
+		LOG_ERROR << "Scene info not found for player: " << playerId;
+		return;
+	}
 
-    LOG_DEBUG << "player enter scene " << player_id << " "
-        << scene_info->guid()  << " " 
-        << player_node_info->game_node_id();
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (!playerNodeInfo)
+	{
+		LOG_ERROR << "Player session not valid for player: " << playerId;
+		return;
+	}
+
+	Centre2GsEnterSceneRequest request;
+	request.set_scene_id(sceneInfo->guid());
+	request.set_player_id(playerId);
+	CallGameNodeMethod(GameServiceEnterSceneMsgId, request, playerNodeInfo->game_node_id());
+
+	LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->game_node_id();
 }
 
-
-void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id)
+void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId nodeId)
 {
-    const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-    if (nullptr == player_node_info)
-    {
-        return;
-    }
-    //todo gs崩溃
-    GameNodeEnterGsRequest rq;
-    rq.set_player_id(tls.registry.get<Guid>(player));
-    rq.set_session_id((*player_node_info).gate_session_id());
-    rq.set_centre_node_id(g_centre_node->GetNodeId());
-    CallGameNodeMethod(GameServiceEnterGsMsgId, rq, node_id);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (!playerNodeInfo)
+	{
+		LOG_ERROR << "Player session not valid";
+		return;
+	}
+
+	GameNodeEnterGsRequest request;
+	request.set_player_id(tls.registry.get<Guid>(player));
+	request.set_session_id(playerNodeInfo->gate_session_id());
+	request.set_centre_node_id(g_centre_node->GetNodeId());
+	CallGameNodeMethod(GameServiceEnterGsMsgId, request, nodeId);
 }
 
-//前一个队列完成的时候才应该调用到这里去判断当前队列
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
-    if (nullptr == change_scene_queue)
-    {
-        return;
-    }
-    const auto* const from_scene = tls.registry.try_get<SceneEntity>(player);
-    if (nullptr == from_scene)
-    {
-        PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});// todo 
-        return;
-    }
-    auto& change_scene_info = change_scene_queue->changeSceneQueue.front();
-    if (change_scene_info.processing())
-    {
-        return;
-    }
-    change_scene_info.set_processing(true);
-    auto to_scene_guid = change_scene_info.guid();
-    entt::entity to_scene = entt::null;
-    //用scene_config id 去换本服的centre
-    if (to_scene_guid <= 0)
-    {
-        GetSceneParam getp;
-        getp.sceneConfId = change_scene_info.scene_confid();
-        to_scene = NodeSceneSystem::FindNotFullScene(getp);
-        if (entt::null == to_scene)
-        {
-            PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
-            PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-            return;
-        }
-        to_scene_guid = tls.registry.get<SceneInfo>(to_scene).guid();
-    }
-    else
-    {
-        to_scene = entt::entity{to_scene_guid};
-        if (entt::null == to_scene)
-        {
-            PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
-            PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-            return;
-        }
-    }
-    const auto from_scene_info = tls.sceneRegistry.try_get<SceneInfo>(from_scene->sceneEntity);
-    if (nullptr == from_scene_info)
-    {
-        return;
-    }
-    const auto from_scene_game_node = ScenesSystem::get_game_node_eid(from_scene_info->guid()) ;
-    const auto to_scene_game_node   = ScenesSystem::get_game_node_eid(to_scene_guid);
-    if (!tls.gameNodeRegistry.valid(from_scene_game_node) || 
-        !tls.gameNodeRegistry.valid(to_scene_game_node))
-    {
-        LOG_ERROR << "scene not found " << from_scene_info->guid() << " " << to_scene_guid;
-        PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-        return;
-    }
+	auto* changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
+	if (!changeSceneQueue)
+	{
+		return;
+	}
 
-    if (to_scene_guid == from_scene_info->guid())
-    {
-        PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
-        PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-        return;
-    }
+	const auto* fromScene = tls.registry.try_get<SceneEntity>(player);
+	if (!fromScene)
+	{
+		PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});
+		return;
+	}
 
-    //不是跨服才在本地判断,跨服有自己的判断
-    if (!change_scene_info.ignore_full())
-    {
-        if ( const auto ret = ScenesSystem::CheckScenePlayerSize(to_scene) ; kOK != ret)
-        {
-            PlayerTipSystem::Tip(player, ret, {});
-            PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-            return;
-        }
-    }
+	auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
+	if (changeSceneInfo.processing())
+	{
+		return;
+	}
 
-    if (entt::null != from_scene_game_node)
-    {
-        if (from_scene_game_node == to_scene_game_node)
-        {
-            change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eSameGs);
-        }
-        else if (from_scene_game_node != to_scene_game_node)
-        {
-            change_scene_info.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
-        }
-    }
+	changeSceneInfo.set_processing(true);
+	auto toSceneGuid = changeSceneInfo.guid();
+	entt::entity toScene = entt::null;
 
-    //跨服间切换,如果另一个跨服满了就不应该进去了
-    //如果是跨服，就应该先跨服去处理
-    //原来服务器之间换场景，不用通知跨服离开场景
-    //todo 如果是进出镜像，一定保持在原来的gs切换,主世界分线和镜像没关系，这样就节省了玩家切换流程，效率也提高了
-    //todo 跨服的时候重新上线
-     //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
+	if (toSceneGuid <= 0)
+	{
+		GetSceneParam getSceneParam;
+		getSceneParam.sceneConfId = changeSceneInfo.scene_confid();
+		toScene = NodeSceneSystem::FindNotFullScene(getSceneParam);
+		if (toScene == entt::null)
+		{
+			PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+			return;
+		}
+		toSceneGuid = tls.registry.get<SceneInfo>(toScene).guid();
+	}
+	else
+	{
+		toScene = entt::entity{ toSceneGuid };
+		if (toScene == entt::null)
+		{
+			PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+			return;
+		}
+	}
 
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);//不跨服就开始处理同一个gs 或者不同gs
+	const auto* fromSceneInfo = tls.sceneRegistry.try_get<SceneInfo>(fromScene->sceneEntity);
+	if (!fromSceneInfo)
+	{
+		return;
+	}
+
+	const auto fromSceneGameNode = ScenesSystem::get_game_node_eid(fromSceneInfo->guid());
+	const auto toSceneGameNode = ScenesSystem::get_game_node_eid(toSceneGuid);
+	if (!tls.gameNodeRegistry.valid(fromSceneGameNode) || !tls.gameNodeRegistry.valid(toSceneGameNode))
+	{
+		LOG_ERROR << "Scene not found: " << fromSceneInfo->guid() << " to " << toSceneGuid;
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+		return;
+	}
+
+	if (toSceneGuid == fromSceneInfo->guid())
+	{
+		PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+		return;
+	}
+
+	if (!changeSceneInfo.ignore_full())
+	{
+		if (const auto ret = ScenesSystem::CheckScenePlayerSize(toScene); ret != kOK)
+		{
+			PlayerTipSystem::Tip(player, ret, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+			return;
+		}
+	}
+
+	if (fromSceneGameNode == toSceneGameNode)
+	{
+		changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eSameGs);
+	}
+	else
+	{
+		changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
+	}
+
+	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 }
 
 uint32_t PlayerSceneSystem::GetDefaultSceneConfigId()
 {
-    return 1;
+	return 1;
 }
