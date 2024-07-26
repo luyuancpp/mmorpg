@@ -146,7 +146,7 @@ func (x *IpPort) GetPort() uint32 {
 	return 0
 }
 
-type TipS2C struct {
+type TipMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -154,8 +154,8 @@ type TipS2C struct {
 	Tips *Tip `protobuf:"bytes,1,opt,name=tips,proto3" json:"tips,omitempty"`
 }
 
-func (x *TipS2C) Reset() {
-	*x = TipS2C{}
+func (x *TipMessage) Reset() {
+	*x = TipMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_common_common_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -163,13 +163,13 @@ func (x *TipS2C) Reset() {
 	}
 }
 
-func (x *TipS2C) String() string {
+func (x *TipMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TipS2C) ProtoMessage() {}
+func (*TipMessage) ProtoMessage() {}
 
-func (x *TipS2C) ProtoReflect() protoreflect.Message {
+func (x *TipMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_common_common_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -181,12 +181,12 @@ func (x *TipS2C) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TipS2C.ProtoReflect.Descriptor instead.
-func (*TipS2C) Descriptor() ([]byte, []int) {
+// Deprecated: Use TipMessage.ProtoReflect.Descriptor instead.
+func (*TipMessage) Descriptor() ([]byte, []int) {
 	return file_common_common_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *TipS2C) GetTips() *Tip {
+func (x *TipMessage) GetTips() *Tip {
 	if x != nil {
 		return x.Tips
 	}
@@ -210,10 +210,10 @@ var file_common_common_proto_rawDesc = []byte{
 	0x65, 0x22, 0x2c, 0x0a, 0x06, 0x49, 0x70, 0x50, 0x6f, 0x72, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69,
 	0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x12, 0x12, 0x0a, 0x04, 0x70,
 	0x6f, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x22,
-	0x22, 0x0a, 0x06, 0x54, 0x69, 0x70, 0x53, 0x32, 0x43, 0x12, 0x18, 0x0a, 0x04, 0x74, 0x69, 0x70,
-	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x04, 0x2e, 0x54, 0x69, 0x70, 0x52, 0x04, 0x74,
-	0x69, 0x70, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x26, 0x0a, 0x0a, 0x54, 0x69, 0x70, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x18, 0x0a,
+	0x04, 0x74, 0x69, 0x70, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x04, 0x2e, 0x54, 0x69,
+	0x70, 0x52, 0x04, 0x74, 0x69, 0x70, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61,
+	0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -230,13 +230,13 @@ func file_common_common_proto_rawDescGZIP() []byte {
 
 var file_common_common_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_common_common_proto_goTypes = []any{
-	(*NodeInfo)(nil), // 0: NodeInfo
-	(*IpPort)(nil),   // 1: IpPort
-	(*TipS2C)(nil),   // 2: TipS2C
-	(*Tip)(nil),      // 3: Tip
+	(*NodeInfo)(nil),   // 0: NodeInfo
+	(*IpPort)(nil),     // 1: IpPort
+	(*TipMessage)(nil), // 2: TipMessage
+	(*Tip)(nil),        // 3: Tip
 }
 var file_common_common_proto_depIdxs = []int32{
-	3, // 0: TipS2C.tips:type_name -> Tip
+	3, // 0: TipMessage.tips:type_name -> Tip
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -276,7 +276,7 @@ func file_common_common_proto_init() {
 			}
 		}
 		file_common_common_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*TipS2C); i {
+			switch v := v.(*TipMessage); i {
 			case 0:
 				return &v.state
 			case 1:

@@ -18,7 +18,7 @@ message IpPort
   uint32 port = 2;
 }
 
-message TipS2C
+message TipMessage
 {
   Tip tips = 1;
 }

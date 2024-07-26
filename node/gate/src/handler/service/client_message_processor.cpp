@@ -166,7 +166,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 
 void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id)
 {
-    TipS2C tip;
+    TipMessage tip;
     tip.mutable_tips()->set_id(tip_id);
     MessageBody msg;
     msg.set_body(tip.SerializeAsString());
