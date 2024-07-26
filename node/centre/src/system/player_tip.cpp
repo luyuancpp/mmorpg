@@ -11,16 +11,16 @@ void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVect
 	for (auto& it : str_param)
 	{
 		*message.mutable_tips()->mutable_param()->Add() = it;
-	}	
+	}
 	SendToPlayer(ClientPlayerCommonServicePushTipS2CMsgId, message, player);
 }
 
 void PlayerTipSystem::Tip(Guid player_id, uint32_t tip_id, const StringVector& str_param)
 {
 	const auto player_it = tls_cl.player_list().find(player_id);
-    if (player_it == tls_cl.player_list().end())
-    {
-        return;
-    }
+	if (player_it == tls_cl.player_list().end())
+	{
+		return;
+	}
 	Tip(player_it->second, tip_id, str_param);
 }
