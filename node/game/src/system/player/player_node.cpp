@@ -31,7 +31,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid player_id, const player_data
 	defer(tls_game.async_player_list_.erase(player_id));
 
 	auto player = tls.registry.create();
-	if (const auto [fst, snd] = tls_cl.player_list().emplace(player_id, player);
+	if (const auto [fst, snd] = tls_cl.PlayerList().emplace(player_id, player);
 		!snd)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
@@ -130,8 +130,8 @@ void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity player)
 //todo 检测
 void PlayerNodeSystem::RemovePlayerSession(const Guid player_id)
 {
-	auto player_it = tls_cl.player_list().find(player_id);
-	if (player_it == tls_cl.player_list().end())
+	auto player_it = tls_cl.PlayerList().find(player_id);
+	if (player_it == tls_cl.PlayerList().end())
 	{
 		return;
 	}
@@ -151,7 +151,7 @@ void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 
 void PlayerNodeSystem::DestroyPlayer(Guid player_id)
 {
-	defer(tls_cl.player_list().erase(player_id));
+	defer(tls_cl.PlayerList().erase(player_id));
 	Destroy(tls.registry, tls_cl.get_player(player_id));
 }
 

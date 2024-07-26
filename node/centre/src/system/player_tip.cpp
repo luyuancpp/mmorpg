@@ -4,23 +4,23 @@
 #include "service/common_client_player_service.h"
 #include "thread_local/storage_common_logic.h"
 
-void PlayerTipSystem::SendTipToPlayer(entt::entity player, uint32_t tip_id, const StringVector& str_param)
+void PlayerTipSystem::SendTipToPlayer(entt::entity playerEntity, uint32_t tipId, const StringVector& parameters)
 {
 	TipMessage message;
-	message.mutable_tip_info()->set_id(tip_id);
-	for (auto& it : str_param)
+	message.mutable_tip_info()->set_id(tipId);
+	for (auto& param : parameters)
 	{
-		*message.mutable_tip_info()->mutable_parameters()->Add() = it;
+		*message.mutable_tip_info()->mutable_parameters()->Add() = param;
 	}
-	SendToPlayer(ClientPlayerCommonServicePushTipS2CMsgId, message, player);
+	SendToPlayer(ClientPlayerCommonServicePushTipS2CMsgId, message, playerEntity);
 }
 
-void PlayerTipSystem::SendTipToPlayer(Guid player_id, uint32_t tip_id, const StringVector& str_param)
+void PlayerTipSystem::SendTipToPlayer(Guid playerId, uint32_t tipId, const StringVector& parameters)
 {
-	const auto player_it = tls_cl.player_list().find(player_id);
-	if (player_it == tls_cl.player_list().end())
+	const auto playerIterator = tls_cl.PlayerList().find(playerId);
+	if (playerIterator == tls_cl.PlayerList().end())
 	{
 		return;
 	}
-	SendTipToPlayer(player_it->second, tip_id, str_param);
+	SendTipToPlayer(playerIterator->second, tipId, parameters);
 }
