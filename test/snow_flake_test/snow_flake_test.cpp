@@ -8,16 +8,16 @@
 
 using Guid = uint64_t;
 
-using guid_vector = std::vector<Guid>;
-using guid_set = std::unordered_set<Guid>;
+using GuidVector = std::vector<Guid>;
+using GuidSet = std::unordered_set<Guid>;
 
 SnowFlakeThreadSafe sf;
-guid_vector first_v;
-guid_vector second_v;
-guid_vector third_v;
+GuidVector firstV;
+GuidVector secondV;
+GuidVector thirdV;
 static const std::size_t kTestSize = 1000000;
 
-void EmplaceToVector(guid_vector& v)
+void emplaceToVector(GuidVector& v)
 {
 	for (std::size_t i = 0; i < kTestSize; ++i)
 	{
@@ -25,22 +25,22 @@ void EmplaceToVector(guid_vector& v)
 	}
 }
 
-void GenerateThread1()
+void generateThread1()
 {
-	EmplaceToVector(first_v);
+	emplaceToVector(firstV);
 }
 
-void GenerateThread2()
+void generateThread2()
 {
-	EmplaceToVector(second_v);
+	emplaceToVector(secondV);
 }
 
-void GenerateThread3()
+void generateThread3()
 {
-	EmplaceToVector(third_v);
+	emplaceToVector(thirdV);
 }
 
-void PutVectorInToSet(guid_set& s, guid_vector& v)
+void putVectorIntoSet(GuidSet& s, GuidVector& v)
 {
 	for (auto& it : v)
 	{
@@ -48,18 +48,18 @@ void PutVectorInToSet(guid_set& s, guid_vector& v)
 	}
 }
 
-TEST(TestSnowFlake, GenerateNormal)
+TEST(TestSnowFlake, generateNormal)
 {
-	guid_set guid_set;
-	guid_vector v;
+	GuidSet guidSet;
+	GuidVector v;
 
-	EmplaceToVector(v);
-	PutVectorInToSet(guid_set, v);
+	emplaceToVector(v);
+	putVectorIntoSet(guidSet, v);
 
-	EXPECT_EQ(guid_set.size(), v.size());
+	EXPECT_EQ(guidSet.size(), v.size());
 }
 
-TEST(TestSnowFlakeThreadSafe, JustGenerateTime)
+TEST(TestSnowFlakeThreadSafe, justGenerateTime)
 {
 	auto start = std::chrono::high_resolution_clock::now();
 	Guid id = sf.Generate();
@@ -70,29 +70,26 @@ TEST(TestSnowFlakeThreadSafe, JustGenerateTime)
 	std::cout << "Generated ID: " << id << std::endl;
 }
 
-TEST(TestSnowFlakeThreadSafe, Generate)
+TEST(TestSnowFlakeThreadSafe, generate)
 {
-	guid_set guid_set;
-	first_v.clear();
-	second_v.clear();
-	third_v.clear();
+	GuidSet guidSet;
+	firstV.clear();
+	secondV.clear();
+	thirdV.clear();
 
-	auto first_cb = std::bind(GenerateThread1);
-	auto second_cb = std::bind(GenerateThread2);
-	auto third_cb = std::bind(GenerateThread3);
-	std::thread first_thread(first_cb);
-	std::thread second_thread(second_cb);
-	std::thread third_thread(third_cb);
+	std::thread firstThread(generateThread1);
+	std::thread secondThread(generateThread2);
+	std::thread thirdThread(generateThread3);
 
-	first_thread.join();
-	second_thread.join();
-	third_thread.join();
+	firstThread.join();
+	secondThread.join();
+	thirdThread.join();
 
-	PutVectorInToSet(guid_set, first_v);
-	PutVectorInToSet(guid_set, second_v);
-	PutVectorInToSet(guid_set, third_v);
+	putVectorIntoSet(guidSet, firstV);
+	putVectorIntoSet(guidSet, secondV);
+	putVectorIntoSet(guidSet, thirdV);
 
-	EXPECT_EQ(guid_set.size(), (first_v.size() + second_v.size() + third_v.size()));
+	EXPECT_EQ(guidSet.size(), (firstV.size() + secondV.size() + thirdV.size()));
 }
 
 int main(int argc, char** argv)
