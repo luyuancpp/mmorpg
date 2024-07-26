@@ -432,274 +432,285 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 //崩溃时候的消息不能处理
 TEST(GS, CrashMovePlayer2NewServer)
 {
-    ScenesSystem sm;
-    NodeSceneSystem nssys;
-    EntitySet node_list;
-    EntitySet scene_list;
-    uint32_t node_size = 2;
-    uint32_t per_node_scene = 2;
-    entt::entity first_scene = entt::null;
+	ScenesSystem sm;
+	NodeSceneSystem nsSys;
+	EntitySet nodeList;
+	EntitySet sceneList;
+	uint32_t nodeSize = 2;
+	uint32_t perNodeScene = 2;
+	entt::entity firstScene = entt::null;
 
-    for (uint32_t i = 0; i < node_size; ++i)
-    {
-        node_list.emplace(CreateMainSceneNode());
-    }
+	for (uint32_t i = 0; i < nodeSize; ++i)
+	{
+		nodeList.emplace(CreateMainSceneNode());
+	}
 
-    CreateGameNodeSceneParam create_node_scene_param;
-    for (uint32_t i = 0; i < per_node_scene; ++i)
-    {
-        create_node_scene_param.sceneInfo.set_scene_confid(i);
-        for (auto& it : node_list)
-        {
-            create_node_scene_param.node = it;
-            auto e = sm.CreateScene2GameNode(create_node_scene_param);
-            scene_list.emplace(e);
-            if (first_scene == entt::null)
-            {
-                first_scene = e;
-            }
-        }
-    }
+	CreateGameNodeSceneParam createNodeSceneParam;
+	for (uint32_t i = 0; i < perNodeScene; ++i)
+	{
+		createNodeSceneParam.sceneInfo.set_scene_confid(i);
+		for (auto& it : nodeList)
+		{
+			createNodeSceneParam.node = it;
+			auto e = sm.CreateScene2GameNode(createNodeSceneParam);
+			sceneList.emplace(e);
+			if (firstScene == entt::null)
+			{
+				firstScene = e;
+			}
+		}
+	}
 
-    uint32_t player_size = 1000;
+	uint32_t playerSize = 1000;
 
-    std::unordered_map<entt::entity, entt::entity> player_scene1;
+	std::unordered_map<entt::entity, entt::entity> playerScene1;
 
-    EnterSceneParam enter_param1;
+	EnterSceneParam enterParam1;
 
-    for (uint32_t i = 0; i < player_size; ++i)
-    {
-        auto player = tls.game_node_registry.create();
-        enter_param1.enter = player;
-        enter_param1.scene = first_scene;
-        player_scene1.emplace(enter_param1.enter, enter_param1.scene);
-        sm.EnterScene(enter_param1);
-    }
-    
-    nssys.SetNodeState(*node_list.begin(), NodeState::kCrash);
+	for (uint32_t i = 0; i < playerSize; ++i)
+	{
+		auto player = tls.game_node_registry.create();
+		enterParam1.enter = player;
+		enterParam1.scene = firstScene;
+		playerScene1.emplace(enterParam1.enter, enterParam1.scene);
+		sm.EnterScene(enterParam1);
+	}
 
-   
-    entt::entity cransh_node = *node_list.begin();
-     entt::entity replace_node = *(++node_list.begin());
-    sm.ReplaceCrashServer(cransh_node, replace_node);
+	nsSys.SetNodeState(*nodeList.begin(), NodeState::kCrash);
 
-    EXPECT_FALSE(tls.game_node_registry.valid(cransh_node));
-    node_list.erase(cransh_node);
-    for (auto& it : node_list)
-    {
-        auto& server_scene =  tls.game_node_registry.get<NodeSceneComp>(it);
-        EXPECT_EQ(server_scene.GetTotalSceneCount(), scene_list.size());
-    }
-    
+	entt::entity crashNode = *nodeList.begin();
+	entt::entity replaceNode = *(++nodeList.begin());
+	sm.ReplaceCrashServer(crashNode, replaceNode);
+
+	EXPECT_FALSE(tls.game_node_registry.valid(crashNode));
+	nodeList.erase(crashNode);
+	for (auto& it : nodeList)
+	{
+		auto& serverScene = tls.game_node_registry.get<NodeSceneComp>(it);
+		EXPECT_EQ(serverScene.GetTotalSceneCount(), sceneList.size());
+	}
 }
+
 
 TEST(GS, WeightRoundRobinMainScene)
 {
-    tls.game_node_registry.clear();
-    ScenesSystem sm;
-    NodeSceneSystem nssys;
-    EntitySet node_list;
-    uint32_t server_size = 10;
-    uint32_t per_server_scene = 10;
-    for (uint32_t i = 0; i < server_size; ++i)
-    {
+	tls.game_node_registry.clear();
+	ScenesSystem sm;
+	NodeSceneSystem nssys;
+	EntitySet node_list;
+	uint32_t server_size = 10;
+	uint32_t per_server_scene = 10;
+	for (uint32_t i = 0; i < server_size; ++i)
+	{
 
-        node_list.emplace(CreateMainSceneNode());
-    }
+		node_list.emplace(CreateMainSceneNode());
+	}
 
-    CreateGameNodeSceneParam create_server_scene_param;
+	CreateGameNodeSceneParam create_server_scene_param;
 
-    for (uint32_t i = 0; i < per_server_scene; ++i)
-    {
-        create_server_scene_param.sceneInfo.set_scene_confid(i);
-        for (auto& it :node_list)
-        {
-            create_server_scene_param.node = it;
-            sm.CreateScene2GameNode(create_server_scene_param);
-        }        
-    }
+	for (uint32_t i = 0; i < per_server_scene; ++i)
+	{
+		create_server_scene_param.sceneInfo.set_scene_confid(i);
+		for (auto& it : node_list)
+		{
+			create_server_scene_param.node = it;
+			sm.CreateScene2GameNode(create_server_scene_param);
+		}
+	}
 
-    auto enter_leave_lambda = [&node_list, server_size, per_server_scene, &sm, &nssys]()->void
-    {
-        uint32_t scene_config_id0 = 0;
-        uint32_t scene_config_id1 = 1;
-        GetSceneParam weight_round_robin_scene;
-        weight_round_robin_scene.sceneConfId = scene_config_id0;
+	auto enter_leave_lambda = [&node_list, server_size, per_server_scene, &sm, &nssys]()->void
+		{
+			uint32_t scene_config_id0 = 0;
+			uint32_t scene_config_id1 = 1;
+			GetSceneParam weight_round_robin_scene;
+			weight_round_robin_scene.sceneConfId = scene_config_id0;
 
-        uint32_t player_size = 1000;
+			uint32_t player_size = 1000;
 
-        std::unordered_map<entt::entity, entt::entity> player_scene1;
-        EnterSceneParam enter_param1;
+			std::unordered_map<entt::entity, entt::entity> player_scene1;
+			EnterSceneParam enter_param1;
 
-        EntitySet scene_sets;
+			EntitySet scene_sets;
 
-        for (uint32_t i = 0; i < player_size; ++i)
-        {
-            auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-            auto p_e = tls.game_node_registry.create();
-            enter_param1.enter = p_e;
-            enter_param1.scene = can_enter;
-            player_scene1.emplace(enter_param1.enter, can_enter);
-            scene_sets.emplace(can_enter);
-            sm.EnterScene(enter_param1);
-        }
+			for (uint32_t i = 0; i < player_size; ++i)
+			{
+				auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
+				auto p_e = tls.game_node_registry.create();
+				enter_param1.enter = p_e;
+				enter_param1.scene = can_enter;
+				player_scene1.emplace(enter_param1.enter, can_enter);
+				scene_sets.emplace(can_enter);
+				sm.EnterScene(enter_param1);
+			}
 
-        uint32_t player_scene_guid = 0;
-        for (auto& it : player_scene1)
-        {
-            auto& pse = tls.registry.get<SceneEntity>(it.first);
-            EXPECT_TRUE(pse.sceneEntity == it.second);
-            EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.sceneEntity).scene_confid(), scene_config_id0);
-        }
+			uint32_t player_scene_guid = 0;
+			for (auto& it : player_scene1)
+			{
+				auto& pse = tls.registry.get<SceneEntity>(it.first);
+				EXPECT_TRUE(pse.sceneEntity == it.second);
+				EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.sceneEntity).scene_confid(), scene_config_id0);
+			}
 
-        std::unordered_map<entt::entity, entt::entity> player_scene2;
-        weight_round_robin_scene.sceneConfId = scene_config_id1;
-        for (uint32_t i = 0; i < player_size; ++i)
-        {
-            auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-            auto player = tls.game_node_registry.create();
-            enter_param1.enter = player;
-            enter_param1.scene = can_enter;
-            player_scene2.emplace(enter_param1.enter, enter_param1.scene);
-            scene_sets.emplace(can_enter);
-            sm.EnterScene(enter_param1);
-        }
-        player_scene_guid = 0;
-        for (auto& it : player_scene2)
-        {
-            auto& pse = tls.registry.get<SceneEntity>(it.first);
-            EXPECT_TRUE(pse.sceneEntity == it.second);
-            EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.sceneEntity).scene_confid(), scene_config_id1);
-        }
+			std::unordered_map<entt::entity, entt::entity> player_scene2;
+			weight_round_robin_scene.sceneConfId = scene_config_id1;
+			for (uint32_t i = 0; i < player_size; ++i)
+			{
+				auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
+				auto player = tls.game_node_registry.create();
+				enter_param1.enter = player;
+				enter_param1.scene = can_enter;
+				player_scene2.emplace(enter_param1.enter, enter_param1.scene);
+				scene_sets.emplace(can_enter);
+				sm.EnterScene(enter_param1);
+			}
+			player_scene_guid = 0;
+			for (auto& it : player_scene2)
+			{
+				auto& pse = tls.registry.get<SceneEntity>(it.first);
+				EXPECT_TRUE(pse.sceneEntity == it.second);
+				EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.sceneEntity).scene_confid(), scene_config_id1);
+			}
 
-        std::size_t server_player_size = player_size * 2 / server_size;
+			std::size_t server_player_size = player_size * 2 / server_size;
 
 
-        for (auto& it : node_list)
-        {
-            auto& ps = tls.game_node_registry.get<GameNodeInfoPtr>(it);
-            EXPECT_EQ((*ps).player_size(), server_player_size);
-        }
-        EXPECT_EQ(scene_sets.size(), std::size_t(2 * per_server_scene));
+			for (auto& it : node_list)
+			{
+				auto& ps = tls.game_node_registry.get<GameNodeInfoPtr>(it);
+				EXPECT_EQ((*ps).player_size(), server_player_size);
+			}
+			EXPECT_EQ(scene_sets.size(), std::size_t(2 * per_server_scene));
 
-        LeaveSceneParam leave_scene;
-        for (auto& it : player_scene1)
-        {
-            auto& pse = tls.registry.get<SceneEntity>(it.first);
-            leave_scene.leaver = it.first;
-            sm.LeaveScene(leave_scene);
-        }
-        for (auto& it : player_scene2)
-        {
-            auto& pse = tls.registry.get<SceneEntity>(it.first);
-            leave_scene.leaver = it.first;
-            sm.LeaveScene(leave_scene);
-        }
-        for (auto& it : node_list)
-        {
-            auto& ps = tls.game_node_registry.get<GameNodeInfoPtr>(it);
-            EXPECT_EQ((*ps).player_size(), 0);
-        }
-        for (auto& it : player_scene1)
-        {
-            EXPECT_EQ(tls.scene_registry.get<ScenePlayers>(it.second).size(), 0);
-        }
-        for (auto& it : player_scene2)
-        {
-            EXPECT_EQ(tls.scene_registry.get<ScenePlayers>(it.second).size(), 0);
-        }
-    };
-    for (uint32_t i = 0; i < 2; ++i)
-    {
-        enter_leave_lambda();
-    }    
-    //leave 
+			LeaveSceneParam leave_scene;
+			for (auto& it : player_scene1)
+			{
+				auto& pse = tls.registry.get<SceneEntity>(it.first);
+				leave_scene.leaver = it.first;
+				sm.LeaveScene(leave_scene);
+			}
+			for (auto& it : player_scene2)
+			{
+				auto& pse = tls.registry.get<SceneEntity>(it.first);
+				leave_scene.leaver = it.first;
+				sm.LeaveScene(leave_scene);
+			}
+			for (auto& it : node_list)
+			{
+				auto& ps = tls.game_node_registry.get<GameNodeInfoPtr>(it);
+				EXPECT_EQ((*ps).player_size(), 0);
+			}
+			for (auto& it : player_scene1)
+			{
+				EXPECT_EQ(tls.scene_registry.get<ScenePlayers>(it.second).size(), 0);
+			}
+			for (auto& it : player_scene2)
+			{
+				EXPECT_EQ(tls.scene_registry.get<ScenePlayers>(it.second).size(), 0);
+			}
+		};
+	for (uint32_t i = 0; i < 2; ++i)
+	{
+		enter_leave_lambda();
+	}
+	//leave 
 }
 
 TEST(GS, ServerEnterLeavePressure)
 {
-    tls.game_node_registry.clear();
-    ScenesSystem sm;
-    NodeSceneSystem nssys;
-    EntitySet server_entities;
-    uint32_t server_size = 2;
-    uint32_t per_server_scene = 10;
+	tls.game_node_registry.clear();
+	ScenesSystem sm;
+	NodeSceneSystem nsSys;
+	EntitySet serverEntities;
+	uint32_t serverSize = 2;
+	uint32_t perServerScene = 10;
 
-    for (uint32_t i = 0; i < server_size; ++i)
-    {
-        server_entities.emplace(CreateMainSceneNode());
-    }
+	// Create server nodes
+	for (uint32_t i = 0; i < serverSize; ++i)
+	{
+		serverEntities.emplace(CreateMainSceneNode());
+	}
 
-    CreateGameNodeSceneParam create_server_scene_param;
+	// Create scenes on each server node
+	CreateGameNodeSceneParam createServerSceneParam;
+	for (uint32_t i = 0; i < perServerScene; ++i)
+	{
+		createServerSceneParam.sceneInfo.set_scene_confid(i);
+		for (auto& it : serverEntities)
+		{
+			createServerSceneParam.node = it;
+			sm.CreateScene2GameNode(createServerSceneParam);
+		}
+	}
 
-    for (uint32_t i = 0; i < per_server_scene; ++i)
-    {
-        create_server_scene_param.sceneInfo.set_scene_confid(i);
-        for (auto& it : server_entities)
-        {
-            create_server_scene_param.node = it;
-            sm.CreateScene2GameNode(create_server_scene_param);
-        }
-    }
+	// Set pressure on the first server node
+	nsSys.SetNodePressure(*serverEntities.begin());
 
-    nssys.SetNodePressure(*server_entities.begin());
+	uint32_t sceneConfigId0 = 0;
+	uint32_t sceneConfigId1 = 1;
 
-    uint32_t scene_config_id0 = 0;
-    uint32_t scene_config_id1 = 1;
+	GetSceneParam weightRoundRobinScene;
+	weightRoundRobinScene.sceneConfId = sceneConfigId0;
 
-    GetSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.sceneConfId = scene_config_id0;
+	std::unordered_map<entt::entity, entt::entity> playerScene1;
+	EnterSceneParam enterParam1;
 
-    std::unordered_map<entt::entity, entt::entity> player_scene1;
+	// Enter players into scenes with sceneConfigId0
+	for (uint32_t i = 0; i < perServerScene; ++i)
+	{
+		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		auto playerEntity = tls.game_node_registry.create();
+		enterParam1.enter = playerEntity;
+		enterParam1.scene = canEnter;
+		playerScene1.emplace(enterParam1.enter, enterParam1.scene);
+		sm.EnterScene(enterParam1);
+	}
 
-    EnterSceneParam enter_param1;
+	// Clear pressure on the first server node
+	nsSys.ClearNodePressure(*serverEntities.begin());
 
-    for (uint32_t i = 0; i < per_server_scene; ++i)
-    {
-        auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-        auto p_e = tls.game_node_registry.create();
-        enter_param1.enter = p_e;
-        enter_param1.scene = can_enter;
-        player_scene1.emplace(enter_param1.enter, enter_param1.scene);
-        sm.EnterScene(enter_param1);
-    }
+	std::unordered_map<entt::entity, entt::entity> playerScene2;
+	weightRoundRobinScene.sceneConfId = sceneConfigId1;
 
-    uint32_t player_scene_guid = 0;
-
-    nssys.ClearNodePressure(*server_entities.begin());
-
-    std::unordered_map<entt::entity, entt::entity> player_scene2;
-    weight_round_robin_scene.sceneConfId = scene_config_id1;
-    for (uint32_t i = 0; i < per_server_scene; ++i)
-    {
-        auto can_enter = nssys.FindSceneWithMinPlayerCount(weight_round_robin_scene);
-        auto p_e = tls.game_node_registry.create();
-        enter_param1.enter = p_e;
-        enter_param1.scene = can_enter;
-        player_scene2.emplace(enter_param1.enter, enter_param1.scene);
-        sm.EnterScene(enter_param1);
-    }
+	// Enter players into scenes with sceneConfigId1
+	for (uint32_t i = 0; i < perServerScene; ++i)
+	{
+		auto canEnter = nsSys.FindSceneWithMinPlayerCount(weightRoundRobinScene);
+		auto playerEntity = tls.game_node_registry.create();
+		enterParam1.enter = playerEntity;
+		enterParam1.scene = canEnter;
+		playerScene2.emplace(enterParam1.enter, enterParam1.scene);
+		sm.EnterScene(enterParam1);
+	}
 }
 
 TEST(GS, EnterDefaultScene)
 {
-    const auto game_node = CreateMainSceneNode();
-    CreateGameNodeSceneParam create_gs_scene_param{game_node};
-    for (uint32_t i = 1; i < kConfigSceneListSize; ++i)
-    {
-        create_gs_scene_param.sceneInfo.set_scene_confid(i);
-        for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
-        {
-            ScenesSystem::CreateScene2GameNode(create_gs_scene_param);
-        }
-    }
-    const auto player = tls.game_node_registry.create();
-    const EnterDefaultSceneParam enter_param{player};
-    ScenesSystem::EnterDefaultScene(enter_param);
-    const auto [sceneEntity] = tls.registry.get<SceneEntity>(player);
-    const auto& scene_info = tls.scene_registry.get<SceneInfo>(sceneEntity);
-    EXPECT_EQ(scene_info.scene_confid(), kDefaultSceneId);
+	const auto gameNode = CreateMainSceneNode();
+	CreateGameNodeSceneParam createGSSceneParam{ gameNode };
+
+	// Create multiple scenes for the game node
+	for (uint32_t i = 1; i < kConfigSceneListSize; ++i)
+	{
+		createGSSceneParam.sceneInfo.set_scene_confid(i);
+		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
+		{
+			ScenesSystem::CreateScene2GameNode(createGSSceneParam);
+		}
+	}
+
+	// Create a player entity
+	const auto player = tls.game_node_registry.create();
+
+	// Enter the default scene with the player
+	const EnterDefaultSceneParam enterParam{ player };
+	ScenesSystem::EnterDefaultScene(enterParam);
+
+	// Verify the player is in the default scene
+	const auto [sceneEntity] = tls.registry.get<SceneEntity>(player);
+	const auto& sceneInfo = tls.scene_registry.get<SceneInfo>(sceneEntity);
+	EXPECT_EQ(sceneInfo.scene_confid(), kDefaultSceneId);
 }
+
 
 struct TestNodeId
 {
@@ -711,141 +722,163 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 	tls.game_node_registry.clear();
 	ScenesSystem sm;
 	NodeSceneSystem nssys;
-	EntitySet server_entities;
-	uint32_t server_size = 10;
-	uint32_t per_server_scene = 10;
+	EntitySet serverEntities;
+	uint32_t serverSize = 10;
+	uint32_t perServerScene = 10;
 
-	for (uint32_t i = 0; i < server_size; ++i)
+	// Create server entities and assign node IDs
+	for (uint32_t i = 0; i < serverSize; ++i)
 	{
-        auto server = CreateMainSceneNode();
-		server_entities.emplace(server);
-        tls.game_node_registry.emplace<TestNodeId>(server).node_id_ = i;
+		auto server = CreateMainSceneNode();
+		serverEntities.emplace(server);
+		tls.game_node_registry.emplace<TestNodeId>(server).node_id_ = i;
 	}
 
-	CreateGameNodeSceneParam create_server_scene_param;
+	CreateGameNodeSceneParam createServerSceneParam;
 
-	for (uint32_t i = 0; i < per_server_scene; ++i)
+	// Create scenes for each server entity
+	for (uint32_t i = 0; i < perServerScene; ++i)
 	{
-		create_server_scene_param.sceneInfo.set_scene_confid(i);
-		for (auto& it : server_entities)
+		createServerSceneParam.sceneInfo.set_scene_confid(i);
+		for (auto& it : serverEntities)
 		{
-			create_server_scene_param.node = it;
-			auto s1 = sm.CreateScene2GameNode(create_server_scene_param);
-            tls.game_node_registry.emplace<TestNodeId>(s1, tls.game_node_registry.get<TestNodeId>(it));
-            auto s2 = sm.CreateScene2GameNode(create_server_scene_param);
-            tls.game_node_registry.emplace<TestNodeId>(s2, tls.game_node_registry.get<TestNodeId>(it));    
+			createServerSceneParam.node = it;
+			auto scene1 = sm.CreateScene2GameNode(createServerSceneParam);
+			tls.game_node_registry.emplace<TestNodeId>(scene1, tls.game_node_registry.get<TestNodeId>(it));
+			auto scene2 = sm.CreateScene2GameNode(createServerSceneParam);
+			tls.game_node_registry.emplace<TestNodeId>(scene2, tls.game_node_registry.get<TestNodeId>(it));
 		}
 	}
 
-	auto enter_leave_lambda = [&server_entities, server_size, per_server_scene, &sm, &nssys]()->void
-	{
-		uint32_t scene_config_id0 = 0;
-		uint32_t scene_config_id1 = 1;
-		GetSceneParam weight_round_robin_scene;
-		weight_round_robin_scene.sceneConfId = scene_config_id0;
+	// Lambda function to simulate entering and leaving scenes
+	auto enterLeaveLambda = [&serverEntities, serverSize, perServerScene, &sm, &nssys]() -> void
+		{
+			uint32_t sceneConfigId0 = 0;
+			uint32_t sceneConfigId1 = 1;
+			GetSceneParam weightRoundRobinScene;
+			weightRoundRobinScene.sceneConfId = sceneConfigId0;
 
-		uint32_t player_size = 1001;
+			uint32_t playerSize = 1001;
 
-		std::unordered_map<entt::entity, entt::entity> player_scene1;
-		EnterSceneParam enter_param1;
+			std::unordered_map<entt::entity, entt::entity> playerScene1;
+			EnterSceneParam enterParam1;
+			EntitySet sceneSets;
 
-		EntitySet scene_sets;
+			// Enter players into scenes with sceneConfigId0
+			for (uint32_t i = 0; i < playerSize; ++i)
+			{
+				auto canEnter = nssys.FindNotFullScene(weightRoundRobinScene);
+				if (canEnter == entt::null)
+				{
+					continue;
+				}
+				auto playerEntity = tls.game_node_registry.create();
+				enterParam1.enter = playerEntity;
+				enterParam1.scene = canEnter;
+				playerScene1.emplace(enterParam1.enter, canEnter);
+				sceneSets.emplace(canEnter);
+				sm.EnterScene(enterParam1);
+			}
 
-		for (uint32_t i = 0; i < player_size; ++i)
-		{
-			auto can_enter = nssys.FindNotFullScene(weight_round_robin_scene);
-            if (can_enter == entt::null)
-            {
-                continue;
-            }
-			auto p_e = tls.game_node_registry.create();
-			enter_param1.enter = p_e;
-			enter_param1.scene = can_enter;
-			player_scene1.emplace(enter_param1.enter, can_enter);
-			scene_sets.emplace(can_enter);
-			sm.EnterScene(enter_param1);
-		}
+			// Verify players are correctly placed in scenes and sceneConfigId0 is assigned
+			for (auto& it : playerScene1)
+			{
+				auto& pse = tls.registry.get<SceneEntity>(it.first);
+				EXPECT_TRUE(pse.sceneEntity == it.second);
+				EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.sceneEntity).scene_confid(), sceneConfigId0);
+			}
 
-		uint32_t player_scene_guid = 0;
-		for (auto& it : player_scene1)
-		{
-			auto& pse = tls.registry.get<SceneEntity>(it.first);
-			EXPECT_TRUE(pse.sceneEntity == it.second);
-			EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.sceneEntity).scene_confid(), scene_config_id0);
-		}
+			// Enter players into scenes with sceneConfigId1
+			std::unordered_map<entt::entity, entt::entity> playerScene2;
+			weightRoundRobinScene.sceneConfId = sceneConfigId1;
+			for (uint32_t i = 0; i < playerSize; ++i)
+			{
+				auto canEnter = nssys.FindNotFullScene(weightRoundRobinScene);
+				if (canEnter == entt::null)
+				{
+					continue;
+				}
+				auto playerEntity = tls.game_node_registry.create();
+				enterParam1.enter = playerEntity;
+				enterParam1.scene = canEnter;
+				playerScene2.emplace(enterParam1.enter, enterParam1.scene);
+				sceneSets.emplace(canEnter);
+				sm.EnterScene(enterParam1);
+			}
 
-		std::unordered_map<entt::entity, entt::entity> player_scene2;
-		weight_round_robin_scene.sceneConfId = scene_config_id1;
-		for (uint32_t i = 0; i < player_size; ++i)
-		{
-			auto can_enter = nssys.FindNotFullScene(weight_round_robin_scene);
-			auto player = tls.game_node_registry.create();
-			enter_param1.enter = player;
-			enter_param1.scene = can_enter;
-			player_scene2.emplace(enter_param1.enter, enter_param1.scene);
-			scene_sets.emplace(can_enter);
-			sm.EnterScene(enter_param1);
-		}
-		player_scene_guid = 0;
-		for (auto& it : player_scene2)
-		{
-			auto& pse = tls.registry.get<SceneEntity>(it.first);
-			EXPECT_TRUE(pse.sceneEntity == it.second);
-			EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.sceneEntity).scene_confid(), scene_config_id1);
-		}
+			// Verify players are correctly placed in scenes and sceneConfigId1 is assigned
+			for (auto& it : playerScene2)
+			{
+				auto& pse = tls.registry.get<SceneEntity>(it.first);
+				EXPECT_TRUE(pse.sceneEntity == it.second);
+				EXPECT_EQ(tls.scene_registry.get<SceneInfo>(pse.sceneEntity).scene_confid(), sceneConfigId1);
+			}
 
-		std::size_t server_player_size = player_size * 2 / server_size;
-        std::size_t remain_server_size = player_size * 2 - kMaxScenePlayerSize * 2;
-		for (auto& it : server_entities)
-		{
-			auto& ps = tls.game_node_registry.get<GameNodeInfoPtr>(it);
-            if (tls.game_node_registry.get<TestNodeId>(it).node_id_ == 9)
-            {
-                EXPECT_EQ((*ps).player_size(), kMaxServerPlayerSize);
-            }
-            else if (tls.game_node_registry.get<TestNodeId>(it).node_id_ == 8)
-            {
-                EXPECT_EQ((*ps).player_size(), remain_server_size);
-            }
-            else
-            {
-                EXPECT_EQ((*ps).player_size(), 0);
-            }
-		}
-		EXPECT_EQ(scene_sets.size(), std::size_t(4));
+			// Calculate expected player distribution across servers
+			std::size_t serverPlayerSize = playerSize * 2 / serverSize;
+			std::size_t remainServerSize = playerSize * 2 - kMaxScenePlayerSize * 2;
 
-		LeaveSceneParam leave_scene;
-		for (auto& it : player_scene1)
-		{
-			auto& pse = tls.registry.get<SceneEntity>(it.first);
-			leave_scene.leaver = it.first;
-			sm.LeaveScene(leave_scene);
-		}
-		for (auto& it : player_scene2)
-		{
-			auto& pse = tls.registry.get<SceneEntity>(it.first);
-			leave_scene.leaver = it.first;
-			sm.LeaveScene(leave_scene);
-		}
-		for (auto& it : server_entities)
-		{
-			auto& ps = tls.game_node_registry.get<GameNodeInfoPtr>(it);
-			EXPECT_EQ((*ps).player_size(), 0);
-		}
-		for (auto& it : player_scene1)
-		{
-			EXPECT_EQ(tls.scene_registry.get<ScenePlayers>(it.second).size(), 0);
-		}
-		for (auto& it : player_scene2)
-		{
-			EXPECT_EQ(tls.scene_registry.get<ScenePlayers>(it.second).size(), 0);
-		}
-	};
+			// Verify player distribution across server entities
+			for (auto& it : serverEntities)
+			{
+				auto& ps = tls.game_node_registry.get<GameNodeInfoPtr>(it);
+				if (tls.game_node_registry.get<TestNodeId>(it).node_id_ == 9)
+				{
+					EXPECT_EQ((*ps).player_size(), kMaxServerPlayerSize);
+				}
+				else if (tls.game_node_registry.get<TestNodeId>(it).node_id_ == 8)
+				{
+					EXPECT_EQ((*ps).player_size(), remainServerSize);
+				}
+				else
+				{
+					EXPECT_EQ((*ps).player_size(), 0);
+				}
+			}
+
+			// Verify the total number of unique scenes entered
+			EXPECT_EQ(sceneSets.size(), std::size_t(4));
+
+			// Leave scenes for playerScene1
+			LeaveSceneParam leaveScene;
+			for (auto& it : playerScene1)
+			{
+				leaveScene.leaver = it.first;
+				sm.LeaveScene(leaveScene);
+			}
+
+			// Leave scenes for playerScene2
+			for (auto& it : playerScene2)
+			{
+				leaveScene.leaver = it.first;
+				sm.LeaveScene(leaveScene);
+			}
+
+			// Verify all server entities have no players after leaving scenes
+			for (auto& it : serverEntities)
+			{
+				auto& ps = tls.game_node_registry.get<GameNodeInfoPtr>(it);
+				EXPECT_EQ((*ps).player_size(), 0);
+			}
+
+			// Verify no scenes have players after leaving scenes
+			for (auto& it : playerScene1)
+			{
+				EXPECT_EQ(tls.scene_registry.get<ScenePlayers>(it.second).size(), 0);
+			}
+			for (auto& it : playerScene2)
+			{
+				EXPECT_EQ(tls.scene_registry.get<ScenePlayers>(it.second).size(), 0);
+			}
+		};
+
+	// Execute enterLeaveLambda twice to simulate multiple test iterations
 	for (uint32_t i = 0; i < 2; ++i)
 	{
-		enter_leave_lambda();
+		enterLeaveLambda();
 	}
 }
+
 
 TEST(GS, CreateDungeon)
 {
@@ -858,21 +891,25 @@ TEST(GS, Route)
 
 TEST(GS, CheckEnterRoomScene)
 {
-    SceneInfo scene_info;
-    for (uint64_t i = 1; i < 10; ++i)
-    {
-        scene_info.mutable_creators()->emplace(i,false);
-    }
-    auto scene = ScenesSystem::CreateScene2GameNode({.node= CreateMainSceneNode(), .sceneInfo = scene_info});
+	// Create a scene with creators set
+	SceneInfo sceneInfo;
+	for (uint64_t i = 1; i < 10; ++i)
+	{
+		sceneInfo.mutable_creators()->emplace(i, false); // Assuming creators are added with a boolean indicating creator status
+	}
+	auto scene = ScenesSystem::CreateScene2GameNode({ .node = CreateMainSceneNode(), .sceneInfo = sceneInfo });
 
-    const auto player = tls.registry.create();
-    tls.registry.emplace<Guid>(player, 1);
-    const auto player1 = tls.registry.create();
-    tls.registry.emplace<Guid>(player1, 100);
+	// Create players with different GUIDs
+	const auto player1 = tls.registry.create();
+	tls.registry.emplace<Guid>(player1, 1);   // Player 1 with GUID 1
+	const auto player2 = tls.registry.create();
+	tls.registry.emplace<Guid>(player2, 100); // Player 2 with GUID 100
 
-    EXPECT_EQ(kOK, ScenesSystem::CheckPlayerEnterScene({.scene = scene, .enter = player}));
-    EXPECT_EQ(kRetCheckEnterSceneCreator, ScenesSystem::CheckPlayerEnterScene({.scene = scene, .enter = player1}));
+	// Test cases
+	EXPECT_EQ(kOK, ScenesSystem::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));
+	EXPECT_EQ(kRetCheckEnterSceneCreator, ScenesSystem::CheckPlayerEnterScene({ .scene = scene, .enter = player2 }));
 }
+
 
 int32_t main(int argc, char** argv)
 {
