@@ -167,7 +167,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});// todo 
         return;
     }
-    auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
+    auto& change_scene_info = change_scene_queue->changeSceneQueue.front();
     if (change_scene_info.processing())
     {
         return;

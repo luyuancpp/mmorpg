@@ -51,11 +51,11 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	{
 		return;
 	}
-	if (change_scene_queue->change_scene_queue_.empty())
+	if (change_scene_queue->changeSceneQueue.empty())
 	{
 		return;
 	}
-	const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
+	const auto& change_scene_info = change_scene_queue->changeSceneQueue.front();
 	LOG_DEBUG << "Gs2CentreLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
 	const auto to_scene = entt::to_entity(change_scene_info.guid());
 	//todo异步加载完场景已经不在了scene了
