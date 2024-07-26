@@ -14,21 +14,21 @@ public:
 	}
 
 	template <typename RandType>
-	inline RandType Rand(RandType min_num, RandType max_num)
+	inline RandType Rand(RandType minNum, RandType maxNum)
 	{
-		std::uniform_int_distribution<RandType> dist(min_num, max_num);
+		std::uniform_int_distribution<RandType> dist(minNum, maxNum);
 		return dist(rand);
 	}
 
-	inline double Rand(double min_num, double max_num)
+	inline double Rand(double minNum, double maxNum)
 	{
-		std::uniform_real_distribution<double> dist(min_num, max_num);
+		std::uniform_real_distribution<double> dist(minNum, maxNum);
 		return dist(rand);
 	}
 
-	inline float Rand(float min_num, float max_num)
+	inline float Rand(float minNum, float maxNum)
 	{
-		std::uniform_real_distribution<float> dist(min_num, max_num);
+		std::uniform_real_distribution<float> dist(minNum, maxNum);
 		return dist(rand);
 	}
 
