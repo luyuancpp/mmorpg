@@ -19,6 +19,22 @@ extern const Point kDefaultSize(20.0, 20.0);
 extern const Point kOrigin(0.0, 0.0);
 extern const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
+// Mocking necessary classes and functions for testing
+class MockViewSystem {
+public:
+    static bool CheckSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
+        return true; // Mock behavior
+    }
+
+    static bool CheckSendPlayerEnterMessage(entt::entity observer, entt::entity entity) {
+        return true; // Mock behavior
+    }
+
+    static void FillActorCreateS2CInfo(entt::entity entity) {
+        // Mock behavior
+    }
+};
+
 // Mock class for testing purposes
 class MockAoiSystem : public AoiSystem {
 public:
@@ -35,9 +51,35 @@ class AoiSystemTest : public ::testing::Test {
 protected:
     MockAoiSystem aoi_system;
 
+    AoiSystem aoiSystem;
+    entt::registry registry;
+    entt::entity entity1;
+    entt::entity entity2;
+    SceneEntityComp sceneEntityComp1;
+    SceneEntityComp sceneEntityComp2;
+
     void SetUp() override {
         tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
         tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
+
+        // Setup mock data
+        entity1 = registry.create();
+        entity2 = registry.create();
+
+        // Set up mock components
+        sceneEntityComp1.sceneEntity = 1;
+        sceneEntityComp2.sceneEntity = 1;
+        registry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
+        registry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
+
+        // Set initial positions
+        registry.emplace<Transform>(entity1, Point(0.0, 0.0));
+        registry.emplace<Transform>(entity2, Point(100.0, 100.0));
+
+        // Set up grid list
+        SceneGridList& gridList = tls.sceneRegistry.get_or_emplace<SceneGridList>(1);
+        gridList[GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(0.0, 0.0))))].entity_list.emplace(entity1);
+        gridList[GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(100.0, 100.0))))].entity_list.emplace(entity2);
     }
 
     void TearDown() override {
@@ -169,7 +211,31 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     EXPECT_EQ(expected_size, 1);
 }
 
-// Add more tests as needed
+// Test case for entering the view
+TEST_F(AoiSystemTest, TestEntityEnterView) {
+    // Move entity2 to be within view range of entity1
+    registry.get<Transform>(entity2).location = Point(20.0, 20.0);
+
+    aoiSystem.Update(0.0);
+
+    // Check that entity1 should be notified of entity2 entering its view
+    // Add your assertions here
+    // For example:
+    // EXPECT_TRUE(entitiesToNotifyEntry.contains(entity2));
+}
+
+// Test case for leaving the view
+TEST_F(AoiSystemTest, TestEntityLeaveView) {
+    // Move entity2 out of view range of entity1
+    registry.get<Transform>(entity2).location = Point(500.0, 500.0);
+
+    aoiSystem.Update(0.0);
+
+    // Check that entity1 should be notified of entity2 leaving its view
+    // Add your assertions here
+    // For example:
+    // EXPECT_TRUE(entitiesToNotifyExit.contains(entity2));
+}
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
