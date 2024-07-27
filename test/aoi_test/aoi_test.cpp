@@ -15,15 +15,21 @@
 #include "type_alias/actor.h"
 #include "util/random.h"
 
-// Create a mock class for testing purposes
+extern const Point kDefaultSize(20.0, 20.0);
+extern const Point kOrigin(0.0, 0.0);
+extern const auto KFlat = Layout(layout_flat, kDefaultSize, kOrigin);
+
+// Mock class for testing purposes
 class MockAoiSystem : public AoiSystem {
 public:
     using AoiSystem::GetGridId;
     using AoiSystem::ScanNeighborGridId;
-    using AoiSystem::HandlePlayerMovement;
+    using AoiSystem::Update;
+    using AoiSystem::BeforeLeaveSceneHandler;
+    using AoiSystem::UpdateLogGridSize;
 };
 
-// Define the test fixture
+// Test fixture for AoiSystem
 class AoiSystemTest : public ::testing::Test {
 protected:
     MockAoiSystem aoi_system;
@@ -47,8 +53,9 @@ TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
     loc.set_x(10);
     loc.set_y(20);
     auto grid_id = aoi_system.GetGridId(loc);
-    // Assuming some expected value based on the grid_id calculation
-    absl::uint128 expected_grid_id = 1/* Expected value */;
+
+    // Expected value should be calculated based on your logic
+    absl::uint128 expected_grid_id = aoi_system.GetGridId(hex_round(pixel_to_hex(KFlat, Point(10, 20))));
     EXPECT_EQ(grid_id, expected_grid_id);
 }
 
@@ -62,36 +69,37 @@ TEST_F(AoiSystemTest, TestScanNeighborGridId) {
     EXPECT_EQ(grid_set.size(), 6);
 
     // Check if specific neighbors are present
-    EXPECT_NE(grid_set.find(aoi_system.GetGridId(hex_neighbor(hex, 0))), grid_set.end());
-    EXPECT_NE(grid_set.find(aoi_system.GetGridId(hex_neighbor(hex, 1))), grid_set.end());
-    EXPECT_NE(grid_set.find(aoi_system.GetGridId(hex_neighbor(hex, 2))), grid_set.end());
+    for (int i = 0; i < 6; ++i) {
+        EXPECT_NE(grid_set.find(aoi_system.GetGridId(hex_neighbor(hex, i))), grid_set.end());
+    }
 }
 
-// Test HandlePlayerMovement
-TEST_F(AoiSystemTest, TestHandlePlayerMovement) {
-    // Setup mock data
+// Test Update method for player movement
+TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
+    // Mock data setup
     auto sceneEntity = tls.sceneRegistry.create();
     auto& sceneGridList = tls.sceneRegistry.emplace<SceneGridList>(sceneEntity);
 
-    std::unordered_map<absl::uint128, uint32_t, absl::Hash<absl::uint128>> exList;
+    SceneEntityComp sceneEntityComp{ sceneEntity };
 
-    for (uint32_t i = 0; i < 100; ++i)
-    {
-        entt::entity playerEntity = tls.registry.create();/* Create or mock a player entity */;
+    std::unordered_map<absl::uint128, uint32_t, absl::Hash<absl::uint128>> expectedEntityCount;
+
+    for (uint32_t i = 0; i < 10; ++i) {
+        auto playerEntity = tls.registry.create();
 
         Transform& transform = tls.registry.emplace<Transform>(playerEntity);
-        transform.mutable_location()->set_x(tls_rand.RandDobule(0, 10000));
-        transform.mutable_location()->set_y(tls_rand.RandDobule(0, 10000));
+        transform.mutable_location()->set_x(tls_rand.RandDouble(0, 1000));
+        transform.mutable_location()->set_y(tls_rand.RandDouble(0, 1000));
 
-        SceneEntityComp sceneEntityComp{ sceneEntity };
+        tls.registry.emplace<SceneEntityComp>(playerEntity, sceneEntityComp);
 
-        // Call the method to test
-        aoi_system.HandlePlayerMovement(playerEntity, transform, sceneEntityComp);
+        // Invoke Update method
+        aoi_system.Update(0.1);
 
         auto grid_id = aoi_system.GetGridId(transform.location());
-        ++exList[grid_id];
+        ++expectedEntityCount[grid_id];
         EXPECT_TRUE(sceneGridList[grid_id].entity_list.contains(playerEntity));
-        EXPECT_EQ(sceneGridList[grid_id].entity_list.size(), exList[grid_id]);
+        EXPECT_EQ(sceneGridList[grid_id].entity_list.size(), expectedEntityCount[grid_id]);
     }
 }
 
