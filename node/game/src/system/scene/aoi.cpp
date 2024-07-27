@@ -19,40 +19,40 @@ const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
 void AoiSystem::Update(double delta_time) {
     GridSet grids_to_enter, grids_to_leave;
-    EntitySet players_to_notify_entry, players_to_notify_exit;
+    EntitySet entities_to_notify_entry, entities_to_notify_exit;
 
-    for (auto&& [entity, transform, scene_comp] : tls.registry.view<Transform, SceneEntityComp>().each()) {
+    for (auto&& [entity, transform, scene_component] : tls.registry.view<Transform, SceneEntityComp>().each()) {
 
-        if (!tls.sceneRegistry.valid(scene_comp.sceneEntity)) {
+        if (!tls.sceneRegistry.valid(scene_component.sceneEntity)) {
             LOG_ERROR << "Scene not found for entity " << tls.registry.get<Guid>(entity);
             continue;
         }
 
         grids_to_enter.clear();
         grids_to_leave.clear();
-        players_to_notify_entry.clear();
-        players_to_notify_exit.clear();
+        entities_to_notify_entry.clear();
+        entities_to_notify_exit.clear();
 
-        auto& grid_list = tls.sceneRegistry.get<SceneGridList>(scene_comp.sceneEntity);
-        const auto hex_position = hex_round(pixel_to_hex(kHexLayout, Point(transform.location().x(), transform.location().y())));
-        const auto current_grid_id = GetGridId(hex_position);
+        auto& grid_list = tls.sceneRegistry.get<SceneGridList>(scene_component.sceneEntity);
+        const auto current_hex_position = hex_round(pixel_to_hex(kHexLayout, Point(transform.location().x(), transform.location().y())));
+        const auto current_grid_id = GetGridId(current_hex_position);
 
         // Calculate grid changes
         if (!tls.registry.any_of<Hex>(entity)) {
             // Entity is entering the scene
-            ScanNeighborGridIds(hex_position, grids_to_enter);
+            ScanNeighborGridIds(current_hex_position, grids_to_enter);
             grid_list[current_grid_id].entity_list.emplace(entity);
-            tls.registry.emplace<Hex>(entity, hex_position);
+            tls.registry.emplace<Hex>(entity, current_hex_position);
         }
         else {
             const auto& previous_hex_position = tls.registry.get<Hex>(entity);
-            const auto distance = hex_distance(previous_hex_position, hex_position);
+            const auto distance = hex_distance(previous_hex_position, current_hex_position);
             if (distance == 0) {
                 return;
             }
 
             ScanNeighborGridIds(previous_hex_position, grids_to_leave);
-            ScanNeighborGridIds(hex_position, grids_to_enter);
+            ScanNeighborGridIds(current_hex_position, grids_to_enter);
 
             if (distance < 3) {
                 for (const auto& grid : grids_to_enter) {
@@ -66,7 +66,7 @@ void AoiSystem::Update(double delta_time) {
             LeaveGrid(previous_hex_position, grid_list, entity);
             grid_list[current_grid_id].entity_list.emplace(entity);
             tls.registry.remove<Hex>(entity);
-            tls.registry.emplace<Hex>(entity, hex_position);
+            tls.registry.emplace<Hex>(entity, current_hex_position);
         }
 
         // Calculate visible entities and fill network packets
@@ -80,21 +80,21 @@ void AoiSystem::Update(double delta_time) {
             for (const auto& observer : observers) {
                 if (tls.registry.any_of<Npc>(entity) && ViewSystem::CheckSendNpcEnterMessage(observer, entity)) {
                     ViewSystem::FillActorCreateS2CInfo(entity);
-                    players_to_notify_entry.emplace(observer);
+                    entities_to_notify_entry.emplace(observer);
                 }
                 else if (!tls.registry.any_of<Npc>(entity) && ViewSystem::CheckSendPlayerEnterMessage(observer, entity)) {
                     ViewSystem::FillActorCreateS2CInfo(entity);
-                    players_to_notify_entry.emplace(observer);
+                    entities_to_notify_entry.emplace(observer);
                 }
             }
         }
 
-        BroadCastToPlayer(players_to_notify_entry, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
+        BroadCastToPlayer(entities_to_notify_entry, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
         BroadCastLeaveGridMessage(grid_list, entity, grids_to_leave);
     }
 }
 
-void AoiSystem::HandlePlayerMovement(entt::entity entity, const Transform& transform, SceneEntityComp& scene_comp) {
+void AoiSystem::HandlePlayerMovement(entt::entity entity, const Transform& transform, SceneEntityComp& scene_component) {
     // Function implementation here
 }
 
@@ -119,8 +119,8 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
         return;
     }
 
-    const auto scene_comp = tls.registry.try_get<SceneEntityComp>(entity);
-    if (!scene_comp) {
+    const auto scene_component = tls.registry.try_get<SceneEntityComp>(entity);
+    if (!scene_component) {
         return;
     }
 
@@ -129,7 +129,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
         return;
     }
 
-    auto& grid_list = tls.sceneRegistry.get<SceneGridList>(scene_comp->sceneEntity);
+    auto& grid_list = tls.sceneRegistry.get<SceneGridList>(scene_component->sceneEntity);
     GridSet grids_to_leave;
     ScanNeighborGridIds(*hex_position, grids_to_leave);
 
@@ -138,7 +138,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
 }
 
 void AoiSystem::UpdateLogGridSize(double delta_time) {
-    for (auto&& [sceneEntity, grid_list] : tls.sceneRegistry.view<SceneGridList>().each()) {
+    for (auto&& [scene_entity, grid_list] : tls.sceneRegistry.view<SceneGridList>().each()) {
         for (const auto& [grid_id, entity_list] : grid_list) {
             if (entity_list.entity_list.empty()) {
                 LOG_ERROR << "Grid is empty but not removed";
