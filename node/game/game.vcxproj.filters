@@ -144,9 +144,6 @@
     <ClCompile Include="src\system\scene\view.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\scene\hexagons_grid.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -261,9 +258,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\scene\aoi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\system\scene\hexagons_grid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\scene\grid.h">

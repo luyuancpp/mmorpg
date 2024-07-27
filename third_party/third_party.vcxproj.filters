@@ -66,6 +66,9 @@
     <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCacheRegion.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hexagons_grids\hexagons_grid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ue5navmesh\Public\Detour\DetourAlloc.h">
@@ -123,6 +126,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ue5navmesh\Public\CoreMinimal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hexagons_grids\hexagons_grid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

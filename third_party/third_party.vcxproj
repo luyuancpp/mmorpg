@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="hexagons_grids\hexagons_grid.cpp" />
     <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourCrowd.cpp" />
     <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourLocalBoundary.cpp" />
     <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourObstacleAvoidance.cpp" />
@@ -38,6 +39,7 @@
     <ClCompile Include="ue5navmesh\Private\Detour\DetourNode.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="hexagons_grids\hexagons_grid.h" />
     <ClInclude Include="ue5navmesh\Public\CoreMinimal.h" />
     <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourCrowd.h" />
     <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourLocalBoundary.h" />
@@ -135,7 +137,7 @@
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <DisableSpecificWarnings>4819;4200;4146;4018;4100;4505;4189;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4819;4200;4146;4018;4100;4505;4189;4267;</DisableSpecificWarnings>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
