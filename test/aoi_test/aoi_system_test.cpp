@@ -19,22 +19,6 @@ extern const Point kDefaultSize(20.0, 20.0);
 extern const Point kOrigin(0.0, 0.0);
 extern const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
-// Mocking necessary classes and functions for testing
-class MockViewSystem {
-public:
-    static bool CheckSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
-        return true; // Mock behavior
-    }
-
-    static bool CheckSendPlayerEnterMessage(entt::entity observer, entt::entity entity) {
-        return true; // Mock behavior
-    }
-
-    static void FillActorCreateS2CInfo(entt::entity entity) {
-        // Mock behavior
-    }
-};
-
 // Mock class for testing purposes
 class MockAoiSystem : public AoiSystem {
 public:
@@ -51,40 +35,9 @@ class AoiSystemTest : public ::testing::Test {
 protected:
     MockAoiSystem aoi_system;
 
-    AoiSystem aoiSystem;
-    entt::registry registry;
-    entt::entity entity1;
-    entt::entity entity2;
-    SceneEntityComp sceneEntityComp1;
-    SceneEntityComp sceneEntityComp2;
-
     void SetUp() override {
         tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
         tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
-
-        // Setup mock data
-        entity1 = registry.create();
-        entity2 = registry.create();
-
-        // Set up mock components
-        auto sceneEntity = tls.sceneRegistry.create();
-        sceneEntityComp1.sceneEntity = sceneEntity;
-        sceneEntityComp2.sceneEntity = sceneEntity;
-        registry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
-        registry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
-
-        // Set initial positions
-        auto& transform1 = registry.emplace<Transform>(entity1);
-
-        auto& transform2 = registry.emplace<Transform>(entity2);
-        transform2.mutable_location()->set_x(100);
-        transform2.mutable_location()->set_y(100);
-
-
-        // Set up grid list
-        SceneGridList& gridList = tls.sceneRegistry.get_or_emplace<SceneGridList>(sceneEntityComp1.sceneEntity);
-        gridList[aoi_system.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(0.0, 0.0))))].entity_list.emplace(entity1);
-        gridList[aoi_system.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(100.0, 100.0))))].entity_list.emplace(entity2);
     }
 
     void TearDown() override {
@@ -216,8 +169,70 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     EXPECT_EQ(expected_size, 1);
 }
 
+
+
+// Mocking necessary classes and functions for testing
+class MockViewSystem {
+public:
+    static bool CheckSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
+        return true; // Mock behavior
+    }
+
+    static bool CheckSendPlayerEnterMessage(entt::entity observer, entt::entity entity) {
+        return true; // Mock behavior
+    }
+
+    static void FillActorCreateS2CInfo(entt::entity entity) {
+        // Mock behavior
+    }
+};
+
+// Test fixture class
+class AoiSystemTest1 : public ::testing::Test {
+protected:
+    AoiSystem aoiSystem;
+    entt::entity entity1;
+    entt::entity entity2;
+    SceneEntityComp sceneEntityComp1;
+    SceneEntityComp sceneEntityComp2;
+
+    void SetUp() override {
+        tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
+
+        // Setup mock data
+        entity1 = tls.registry.create();
+        entity2 = tls.registry.create();
+
+        // Set up mock components
+        auto sceneEntity = tls.sceneRegistry.create();
+        sceneEntityComp1.sceneEntity = sceneEntity;
+        sceneEntityComp2.sceneEntity = sceneEntity;
+        tls.registry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
+        tls.registry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
+
+        // Set initial positions
+        auto& transform1 = tls.registry.emplace<Transform>(entity1);
+
+        auto& transform2 = tls.registry.emplace<Transform>(entity2);
+        transform2.mutable_location()->set_x(100);
+        transform2.mutable_location()->set_y(100);
+
+
+        // Set up grid list
+        SceneGridList& gridList = tls.sceneRegistry.get_or_emplace<SceneGridList>(sceneEntityComp1.sceneEntity);
+        gridList[aoiSystem.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(0.0, 0.0))))].entity_list.emplace(entity1);
+        gridList[aoiSystem.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(100.0, 100.0))))].entity_list.emplace(entity2);
+    }
+
+    void TearDown() override {
+        tls.globalRegistry.remove<ActorCreateS2C>(global_entity());
+        tls.globalRegistry.remove<ActorDestroyS2C>(global_entity());
+    }
+};
+
 // Test case for entering the view
-TEST_F(AoiSystemTest, TestEntityEnterView) {
+TEST_F(AoiSystemTest1, TestEntityEnterView) {
     // Move entity2 to be within view range of entity1
     auto& location = *tls.registry.get<Transform>(entity2).mutable_location();
     location.set_x(20);
@@ -233,7 +248,7 @@ TEST_F(AoiSystemTest, TestEntityEnterView) {
 }
 
 // Test case for leaving the view
-TEST_F(AoiSystemTest, TestEntityLeaveView) {
+TEST_F(AoiSystemTest1, TestEntityLeaveView) {
     // Move entity2 out of view range of entity1
     auto& location = *tls.registry.get<Transform>(entity2).mutable_location();
     location.set_x(500);
