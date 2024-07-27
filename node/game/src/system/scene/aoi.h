@@ -17,8 +17,6 @@ public:
     static void Update(double delta);
     static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
     static void UpdateLogGridSize(double delta);
-
-private:
     static absl::uint128 GetGridId(const Location& l);
     static absl::uint128 GetGridId(const Hex& hex);
     static void ScanNeighborGridId(const Hex& hex, GridSet& grid_set);
