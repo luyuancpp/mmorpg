@@ -13,7 +13,7 @@
 [submodule "third_party/redis"]
 	path = third_party/redis
 	url = https://github.com/redis/redis.git
-	branch = 7.2
+	branch = 7.4
 [submodule "third_party/muduo-linux"]
 	path = third_party/muduo-linux
 	url = https://github.com/chenshuo/muduo.git
@@ -23,7 +23,6 @@
 [submodule "third_party/boost"]
 	path = third_party/boost
 	url = https://github.com/luyuancpp/boost.git
-
 [submodule "third_party/spdlog"]
 	path = third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
@@ -35,7 +34,6 @@
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
 	branch = v1.65.x
-
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
