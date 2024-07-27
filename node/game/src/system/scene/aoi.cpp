@@ -165,7 +165,7 @@ void  AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
     const auto scene_entity = tls.registry.try_get<SceneEntity>(player);
     if (nullptr == scene_entity)
     {
-        LOG_ERROR << "scene not found";
+        //LOG_ERROR << "scene not found";
         return;
     }
     const auto hex = tls.registry.try_get<Hex>(player);

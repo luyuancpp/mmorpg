@@ -11,7 +11,7 @@
 
 void PlayerSceneSystem::EnterScene(entt::entity player, Guid scene)
 {
-	GameNodeSceneSystem::EnterScene({ entt::entity{scene}, player});
+	GameNodeSceneSystem::EnterScene({ .scene = entt::entity{scene}, .enter = player});
 }
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)

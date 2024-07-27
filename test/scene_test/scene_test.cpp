@@ -913,6 +913,7 @@ TEST(GS, CheckEnterRoomScene)
 
 int32_t main(int argc, char** argv)
 {
+	muduo::Logger::setLogLevel(muduo::Logger::ERROR_);
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
