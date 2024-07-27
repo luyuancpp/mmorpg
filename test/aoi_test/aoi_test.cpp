@@ -13,6 +13,7 @@
 #include "hexagons_grid.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
+#include "util/random.h"
 
 // Create a mock class for testing purposes
 class MockAoiSystem : public AoiSystem {
@@ -28,11 +29,15 @@ protected:
     MockAoiSystem aoi_system;
 
     void SetUp() override {
-        // Setup code here, if needed
+        tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
     }
 
     void TearDown() override {
-        // Cleanup code here, if needed
+        tls.globalRegistry.remove<ActorCreateS2C>(global_entity());
+        tls.globalRegistry.remove<ActorDestroyS2C>(global_entity());
+        tls.sceneRegistry.clear();
+        tls.registry.clear();
     }
 };
 
@@ -44,15 +49,6 @@ TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
     auto grid_id = aoi_system.GetGridId(loc);
     // Assuming some expected value based on the grid_id calculation
     absl::uint128 expected_grid_id = 1/* Expected value */;
-    EXPECT_EQ(grid_id, expected_grid_id);
-}
-
-// Test GetGridId for Hex
-TEST_F(AoiSystemTest, TestGetGridIdForHex) {
-    Hex hex{ 2, 3, 0 };
-    auto grid_id = aoi_system.GetGridId(hex);
-    // Assuming some expected value based on the grid_id calculation
-    absl::uint128 expected_grid_id = 1;/* Expected value */;
     EXPECT_EQ(grid_id, expected_grid_id);
 }
 
@@ -74,16 +70,29 @@ TEST_F(AoiSystemTest, TestScanNeighborGridId) {
 // Test HandlePlayerMovement
 TEST_F(AoiSystemTest, TestHandlePlayerMovement) {
     // Setup mock data
-    entt::entity player = tls.registry.create();/* Create or mock a player entity */;
-    Transform transform{/* Initialize with test values */ };
-    SceneEntity scene_entity{/* Initialize with test values */ };
+    auto sceneEntity = tls.sceneRegistry.create();
+    auto& sceneGridList = tls.sceneRegistry.emplace<SceneGridList>(sceneEntity);
 
-    // Call the method to test
-    aoi_system.HandlePlayerMovement(player, transform, scene_entity);
+    std::unordered_map<absl::uint128, uint32_t, absl::Hash<absl::uint128>> exList;
 
-    // Check expected changes in the system state
-    // This depends on your implementation details
-    // For example, you might check if player was correctly added to the grid, etc.
+    for (uint32_t i = 0; i < 100; ++i)
+    {
+        entt::entity playerEntity = tls.registry.create();/* Create or mock a player entity */;
+
+        Transform& transform = tls.registry.emplace<Transform>(playerEntity);
+        transform.mutable_location()->set_x(tls_rand.RandDobule(0, 10000));
+        transform.mutable_location()->set_y(tls_rand.RandDobule(0, 10000));
+
+        SceneEntityComp sceneEntityComp{ sceneEntity };
+
+        // Call the method to test
+        aoi_system.HandlePlayerMovement(playerEntity, transform, sceneEntityComp);
+
+        auto grid_id = aoi_system.GetGridId(transform.location());
+        ++exList[grid_id];
+        EXPECT_TRUE(sceneGridList[grid_id].entity_list.contains(playerEntity));
+        EXPECT_EQ(sceneGridList[grid_id].entity_list.size(), exList[grid_id]);
+    }
 }
 
 // Add more tests as needed

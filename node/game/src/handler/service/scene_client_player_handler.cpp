@@ -31,7 +31,7 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
         return;
     }
     //您当前就在这个场景，无需切换
-    if (const auto current_scene = tls.registry.try_get<SceneEntity>(player); nullptr != current_scene)
+    if (const auto current_scene = tls.registry.try_get<SceneEntityComp>(player); nullptr != current_scene)
     {
         if (const auto my_scene_info = tls.registry.try_get<SceneInfo>(current_scene->sceneEntity);
             nullptr != my_scene_info &&

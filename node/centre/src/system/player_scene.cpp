@@ -91,7 +91,7 @@ void PlayerSceneSystem::SendToGameServerEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* playerSceneEntity = tls.registry.try_get<SceneEntity>(playerEntity);
+    const auto* playerSceneEntity = tls.registry.try_get<SceneEntityComp>(playerEntity);
     const auto playerId = tls.registry.get<Guid>(playerEntity);
     if (!playerSceneEntity)
     {
@@ -145,7 +145,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* fromSceneEntity = tls.registry.try_get<SceneEntity>(playerEntity);
+    const auto* fromSceneEntity = tls.registry.try_get<SceneEntityComp>(playerEntity);
     if (!fromSceneEntity)
     {
         PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneYourSceneIsNull, {});

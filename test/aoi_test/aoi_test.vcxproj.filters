@@ -24,5 +24,8 @@
     <ClCompile Include="..\..\node\game\src\system\scene\view.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_adapters\message_system_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

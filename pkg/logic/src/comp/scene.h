@@ -4,7 +4,7 @@
 
 #include "util/game_registry.h"
 
-struct SceneEntity
+struct SceneEntityComp
 {
 	entt::entity sceneEntity{entt::null};
 };
