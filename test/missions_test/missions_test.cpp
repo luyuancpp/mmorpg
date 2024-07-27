@@ -615,7 +615,6 @@ class C
 
 int main(int argc, char** argv)
 {
-    Random::GetSingleton();
     condition_config::GetSingleton().load();
     mission_config::GetSingleton().load();
     testing::InitGoogleTest(&argc, argv);
