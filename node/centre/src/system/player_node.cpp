@@ -160,7 +160,7 @@ void PlayerNodeSystem::HandlePlayerLeave(Guid playerUid)
 		return;
 	}
 
-	if (!tls.registry.try_get<SceneEntity>(playerEntity))
+	if (!tls.registry.try_get<SceneEntityComp>(playerEntity))
 	{
 		// Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
 	}

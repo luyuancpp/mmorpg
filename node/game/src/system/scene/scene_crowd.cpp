@@ -17,7 +17,7 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
         LOG_ERROR << "scene not found";
         return;
     }
-    const auto scene_entity = tls.registry.try_get<SceneEntity>(player);
+    const auto scene_entity = tls.registry.try_get<SceneEntityComp>(player);
     if (nullptr == scene_entity || !tls.sceneRegistry.valid(scene_entity->sceneEntity))
     {
         LOG_ERROR << "scene not found";

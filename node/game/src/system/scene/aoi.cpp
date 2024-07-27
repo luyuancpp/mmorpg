@@ -18,12 +18,12 @@ const Point kOrigin(0.0, 0.0);
 const auto KFlat = Layout(layout_flat, kDefaultSize, kOrigin);
 
 void AoiSystem::Update(double delta) {
-    for (auto&& [mover, transform, player_scene] : tls.registry.view<Transform, SceneEntity>().each()) {
+    for (auto&& [mover, transform, player_scene] : tls.registry.view<Transform, SceneEntityComp>().each()) {
         HandlePlayerMovement(mover, transform, player_scene);
     }
 }
 
-void AoiSystem::HandlePlayerMovement(entt::entity mover, const Transform& transform, SceneEntity& player_scene) {
+void AoiSystem::HandlePlayerMovement(entt::entity mover, const Transform& transform, SceneEntityComp& player_scene) {
     if (!tls.sceneRegistry.valid(player_scene.sceneEntity)) {
         LOG_ERROR << "scene not found " << tls.registry.get<Guid>(mover);
         return;
@@ -109,7 +109,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
         return;
     }
 
-    const auto scene_entity = tls.registry.try_get<SceneEntity>(player);
+    const auto scene_entity = tls.registry.try_get<SceneEntityComp>(player);
     if (!scene_entity) {
         return;
     }
@@ -157,7 +157,7 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& grid_list, entt::
         {
             continue;
         }
-        for (auto & observer : it->second.entity_list)
+        for (auto& observer : it->second.entity_list)
         {
             observer_leave_player_set.emplace(observer);
         }

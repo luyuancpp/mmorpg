@@ -40,7 +40,7 @@ void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,
 	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto scene_entity = tls.registry.try_get<SceneEntity>(player);
+	const auto scene_entity = tls.registry.try_get<SceneEntityComp>(player);
 	if (nullptr == scene_entity)
 	{
 		LOG_ERROR << " player not enter scene ";

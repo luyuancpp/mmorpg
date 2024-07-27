@@ -7,12 +7,6 @@ class Random
 public:
 	Random() : rand(std::random_device{}()) {}
 
-	static Random& GetSingleton()
-	{
-		thread_local Random singleton;
-		return singleton;
-	}
-
 	template <typename RandType>
 	inline RandType Rand(RandType minNum, RandType maxNum)
 	{
@@ -20,18 +14,20 @@ public:
 		return dist(rand);
 	}
 
-	inline double Rand(double minNum, double maxNum)
+	inline double RandDobule(double minNum, double maxNum)
 	{
 		std::uniform_real_distribution<double> dist(minNum, maxNum);
 		return dist(rand);
 	}
 
-	inline float Rand(float minNum, float maxNum)
+	inline float RandFloat(float minNum, float maxNum)
 	{
 		std::uniform_real_distribution<float> dist(minNum, maxNum);
 		return dist(rand);
 	}
 
 private:
-	std::mt19937 rand;
+	std::mt19937_64 rand;
 };
+
+thread_local Random tls_rand;

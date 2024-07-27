@@ -265,7 +265,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param) {
 
 	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(param.scene);
 	scenePlayers.emplace(param.enter);
-	tls.registry.emplace<SceneEntity>(param.enter, param.scene);
+	tls.registry.emplace<SceneEntityComp>(param.enter, param.scene);
 
 	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtr>(param.scene);
 	if (gsPlayerInfo) {
@@ -310,7 +310,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 		return;
 	}
 
-	auto sceneEntity = tls.registry.get<SceneEntity>(param.leaver).sceneEntity;
+	auto sceneEntity = tls.registry.get<SceneEntityComp>(param.leaver).sceneEntity;
 	if (!tls.sceneRegistry.valid(sceneEntity)) {
 		LOG_ERROR << "Invalid scene entity when leaving scene - Player GUID: " << tls.registry.get<Guid>(param.leaver);
 		return;
@@ -322,7 +322,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 
 	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(sceneEntity);
 	scenePlayers.erase(param.leaver);
-	tls.registry.remove<SceneEntity>(param.leaver);
+	tls.registry.remove<SceneEntityComp>(param.leaver);
 
 	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtr>(sceneEntity);
 	if (gsPlayerInfo) {
