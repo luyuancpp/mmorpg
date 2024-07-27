@@ -9,7 +9,7 @@
 #include "muduo/base/Logging.h"
 #include "system/network/message_system.h"
 #include "service/scene_client_player_service.h"
-#include "system/scene/hexagons_grid.h"
+#include "hexagons_grid.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
 

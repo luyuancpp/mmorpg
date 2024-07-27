@@ -45,3 +45,6 @@
 	path = third_party/zlib
 	url = https://github.com/madler/zlib.git
 	branch = master
+[submodule "third_party/hexagons_grids"]
+	path = third_party/hexagons_grids
+	url = https://github.com/luyuancpp/game_hexagons_grids.git
