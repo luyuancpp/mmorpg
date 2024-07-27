@@ -67,19 +67,24 @@ protected:
         entity2 = registry.create();
 
         // Set up mock components
-        sceneEntityComp1.sceneEntity = 1;
-        sceneEntityComp2.sceneEntity = 1;
+        auto sceneEntity = tls.sceneRegistry.create();
+        sceneEntityComp1.sceneEntity = sceneEntity;
+        sceneEntityComp2.sceneEntity = sceneEntity;
         registry.emplace<SceneEntityComp>(entity1, sceneEntityComp1);
         registry.emplace<SceneEntityComp>(entity2, sceneEntityComp2);
 
         // Set initial positions
-        registry.emplace<Transform>(entity1, Point(0.0, 0.0));
-        registry.emplace<Transform>(entity2, Point(100.0, 100.0));
+        auto& transform1 = registry.emplace<Transform>(entity1);
+
+        auto& transform2 = registry.emplace<Transform>(entity2);
+        transform2.mutable_location()->set_x(100);
+        transform2.mutable_location()->set_y(100);
+
 
         // Set up grid list
-        SceneGridList& gridList = tls.sceneRegistry.get_or_emplace<SceneGridList>(1);
-        gridList[GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(0.0, 0.0))))].entity_list.emplace(entity1);
-        gridList[GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(100.0, 100.0))))].entity_list.emplace(entity2);
+        SceneGridList& gridList = tls.sceneRegistry.get_or_emplace<SceneGridList>(sceneEntityComp1.sceneEntity);
+        gridList[aoi_system.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(0.0, 0.0))))].entity_list.emplace(entity1);
+        gridList[aoi_system.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(100.0, 100.0))))].entity_list.emplace(entity2);
     }
 
     void TearDown() override {
@@ -214,7 +219,10 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
 // Test case for entering the view
 TEST_F(AoiSystemTest, TestEntityEnterView) {
     // Move entity2 to be within view range of entity1
-    registry.get<Transform>(entity2).location = Point(20.0, 20.0);
+    auto& location = *tls.registry.get<Transform>(entity2).mutable_location();
+    location.set_x(20);
+    location.set_x(20);
+
 
     aoiSystem.Update(0.0);
 
@@ -227,7 +235,9 @@ TEST_F(AoiSystemTest, TestEntityEnterView) {
 // Test case for leaving the view
 TEST_F(AoiSystemTest, TestEntityLeaveView) {
     // Move entity2 out of view range of entity1
-    registry.get<Transform>(entity2).location = Point(500.0, 500.0);
+    auto& location = *tls.registry.get<Transform>(entity2).mutable_location();
+    location.set_x(500);
+    location.set_x(500);
 
     aoiSystem.Update(0.0);
 
