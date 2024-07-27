@@ -102,6 +102,14 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         EXPECT_TRUE(sceneGridList[grid_id].entity_list.contains(playerEntity));
         EXPECT_EQ(sceneGridList[grid_id].entity_list.size(), expectedEntityCount[grid_id]);
     }
+
+    for (auto&& [scene, grid_list] : tls.sceneRegistry.view<SceneGridList>().each()) {
+        for (const auto& [_, entity_list] : grid_list) {
+            EXPECT_FALSE(entity_list.entity_list.empty());
+        }
+    }
+
+    aoi_system.UpdateLogGridSize(0.1);
 }
 
 // Test player movement across six neighboring hexes
@@ -146,6 +154,20 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
         EXPECT_TRUE(sceneGridList[initialGridId].entity_list.contains(playerEntity));
         EXPECT_FALSE(sceneGridList[newGridId].entity_list.contains(playerEntity));
     }
+
+    std::size_t expectedSize = 0;
+    for (auto&& [scene, grid_list] : tls.sceneRegistry.view<SceneGridList>().each()) {
+        for (const auto& [_, entity_list] : grid_list) {
+            if (entity_list.entity_list.empty())
+            {
+                continue;
+            }
+            EXPECT_EQ(entity_list.entity_list.size(), 1);
+            expectedSize += entity_list.entity_list.size();
+        }
+    }
+
+    EXPECT_EQ(expectedSize, 1);
 }
 
 // Add more tests as needed
