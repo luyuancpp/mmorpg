@@ -316,6 +316,10 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 		return;
 	}
 
+    BeforeLeaveScene beforeLeaveScene;
+    beforeLeaveScene.set_entity(entt::to_integral(param.leaver));
+    tls.dispatcher.trigger(beforeLeaveScene);
+
 	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(sceneEntity);
 	scenePlayers.erase(param.leaver);
 	tls.registry.remove<SceneEntity>(param.leaver);
@@ -325,9 +329,9 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param) {
 		(*gsPlayerInfo)->set_player_size((*gsPlayerInfo)->player_size() - 1);
 	}
 
-	AfterLeaveScene afterLeaveScene;
+	/*AfterLeaveScene afterLeaveScene;
 	afterLeaveScene.set_entity(entt::to_integral(param.leaver));
-	tls.dispatcher.trigger(afterLeaveScene);
+	tls.dispatcher.trigger(afterLeaveScene);*/
 
 	if (tls.registry.any_of<Guid>(param.leaver)) {
 		LOG_INFO << "Player left scene - Player GUID: " << tls.registry.get<Guid>(param.leaver) << ", Scene ID: " << entt::to_integral(sceneEntity);
