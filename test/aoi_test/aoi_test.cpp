@@ -27,6 +27,7 @@ public:
     using AoiSystem::Update;
     using AoiSystem::BeforeLeaveSceneHandler;
     using AoiSystem::UpdateLogGridSize;
+    using AoiSystem::LeaveGrid;
 };
 
 // Test fixture for AoiSystem
@@ -100,6 +101,50 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         ++expectedEntityCount[grid_id];
         EXPECT_TRUE(sceneGridList[grid_id].entity_list.contains(playerEntity));
         EXPECT_EQ(sceneGridList[grid_id].entity_list.size(), expectedEntityCount[grid_id]);
+    }
+}
+
+// Test player movement across six neighboring hexes
+TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
+    // Mock data setup
+    auto sceneEntity = tls.sceneRegistry.create();
+    auto& sceneGridList = tls.sceneRegistry.emplace<SceneGridList>(sceneEntity);
+
+    auto playerEntity = tls.registry.create();
+
+    Transform& transform = tls.registry.emplace<Transform>(playerEntity);
+    transform.mutable_location()->set_x(0);
+    transform.mutable_location()->set_y(0);
+
+    SceneEntityComp sceneEntityComp{ sceneEntity };
+    tls.registry.emplace<SceneEntityComp>(playerEntity, sceneEntityComp);
+
+    // Initial position
+    aoi_system.Update(0.1);
+    Hex initialHex = hex_round(pixel_to_hex(KFlat, Point(0, 0)));
+    auto initialGridId = aoi_system.GetGridId(initialHex);
+    EXPECT_TRUE(sceneGridList[initialGridId].entity_list.contains(playerEntity));
+
+    // Move the player to each neighboring hex
+    for (int i = 0; i < 6; ++i) {
+        Hex neighborHex = hex_neighbor(initialHex, i);
+        Point neighborPoint = hex_to_pixel(KFlat, neighborHex);
+        transform.mutable_location()->set_x(neighborPoint.x);
+        transform.mutable_location()->set_y(neighborPoint.y);
+
+        // Update the system
+        aoi_system.Update(0.1);
+
+        auto newGridId = aoi_system.GetGridId(neighborHex);
+        EXPECT_TRUE(sceneGridList[newGridId].entity_list.contains(playerEntity));
+        EXPECT_FALSE(sceneGridList[initialGridId].entity_list.contains(playerEntity));
+
+        // Move back to initial hex for next iteration
+        transform.mutable_location()->set_x(0);
+        transform.mutable_location()->set_y(0);
+        aoi_system.Update(0.1);
+        EXPECT_TRUE(sceneGridList[initialGridId].entity_list.contains(playerEntity));
+        EXPECT_FALSE(sceneGridList[newGridId].entity_list.contains(playerEntity));
     }
 }
 

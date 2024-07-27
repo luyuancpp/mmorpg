@@ -14,7 +14,7 @@ public:
 		return dist(rand);
 	}
 
-	inline double RandDobule(double minNum, double maxNum)
+	inline double RandDouble(double minNum, double maxNum)
 	{
 		std::uniform_real_distribution<double> dist(minNum, maxNum);
 		return dist(rand);
