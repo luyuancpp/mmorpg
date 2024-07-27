@@ -163,6 +163,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\handler\service_replied\scene_client_player_replied_handler.cpp" />
     <ClCompile Include="src\handler\service_replied\team_client_player_replied_handler.cpp" />
     <ClCompile Include="src\system\config\config_system.cpp" />
+    <ClCompile Include="src\system\scene\hexagons_grid.cpp" />
     <ClCompile Include="src\system\scene\movement.cpp" />
     <ClCompile Include="src\system\scene\movement_acceleration.cpp" />
     <ClCompile Include="src\system\scene\node_scene.cpp" />

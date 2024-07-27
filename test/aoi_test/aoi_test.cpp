@@ -1,7 +1,7 @@
 ﻿// test_aoi_system.cpp
 
 #include <gtest/gtest.h>
-#include "aoi.h"
+#include "system/scene/aoi.h"
 #include "comp/scene.h"
 #include "comp/scene/grid.h"
 #include "proto/logic/component/actor_comp.pb.h"
@@ -38,25 +38,27 @@ protected:
 
 // Test GetGridId for Location
 TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
-    Location loc{ 10.0, 20.0 };
+    Location loc;
+    loc.set_x(10);
+    loc.set_y(20);
     auto grid_id = aoi_system.GetGridId(loc);
     // Assuming some expected value based on the grid_id calculation
-    absl::uint128 expected_grid_id = /* Expected value */;
+    absl::uint128 expected_grid_id = 1/* Expected value */;
     EXPECT_EQ(grid_id, expected_grid_id);
 }
 
 // Test GetGridId for Hex
 TEST_F(AoiSystemTest, TestGetGridIdForHex) {
-    Hex hex{ 2, 3 };
+    Hex hex{ 2, 3, 0 };
     auto grid_id = aoi_system.GetGridId(hex);
     // Assuming some expected value based on the grid_id calculation
-    absl::uint128 expected_grid_id = /* Expected value */;
+    absl::uint128 expected_grid_id = 1;/* Expected value */;
     EXPECT_EQ(grid_id, expected_grid_id);
 }
 
 // Test ScanNeighborGridId
 TEST_F(AoiSystemTest, TestScanNeighborGridId) {
-    Hex hex{ 0, 0 };
+    Hex hex{ 0, 0, 0 };
     GridSet grid_set;
     aoi_system.ScanNeighborGridId(hex, grid_set);
 
@@ -72,7 +74,7 @@ TEST_F(AoiSystemTest, TestScanNeighborGridId) {
 // Test HandlePlayerMovement
 TEST_F(AoiSystemTest, TestHandlePlayerMovement) {
     // Setup mock data
-    entt::entity player = /* Create or mock a player entity */;
+    entt::entity player = tls.registry.create();/* Create or mock a player entity */;
     Transform transform{/* Initialize with test values */ };
     SceneEntity scene_entity{/* Initialize with test values */ };
 

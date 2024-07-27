@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "google/protobuf/message.h"
 #include "entt/src/entt/entt.hpp"

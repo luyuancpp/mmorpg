@@ -145,7 +145,7 @@ void BroadCastToCentre(uint32_t message_id, const google::protobuf::Message& mes
 	}
 }
 
-void BroadCast2Player(const EntitySet& player_list,
+void BroadCastToPlayer(const EntitySet& player_list,
                       const uint32_t message_id, 
 	const google::protobuf::Message& message)
 {

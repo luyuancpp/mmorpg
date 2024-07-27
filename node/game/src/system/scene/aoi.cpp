@@ -1,4 +1,4 @@
-#include "aoi.h"
+﻿#include "aoi.h"
 
 #include "view.h"
 #include "comp/scene.h"
@@ -84,7 +84,7 @@ void AoiSystem::HandlePlayerMovement(entt::entity mover, const Transform& transf
         }
     }
 
-    BroadCast2Player(player_entrant_observer_list, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
+    BroadCastToPlayer(player_entrant_observer_list, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
     BroadCastLeaveGridMessage(grid_list, mover, leave_grid_set);
 }
 
@@ -162,5 +162,5 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& grid_list, entt::
             observer_leave_player_set.emplace(observer);
         }
     }
-    BroadCast2Player(observer_leave_player_set, ClientPlayerSceneServicePushActorDestroyS2CMsgId, tls_actor_destroy_s2c);
+    BroadCastToPlayer(observer_leave_player_set, ClientPlayerSceneServicePushActorDestroyS2CMsgId, tls_actor_destroy_s2c);
 }
