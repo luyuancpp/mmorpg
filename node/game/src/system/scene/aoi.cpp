@@ -160,10 +160,10 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
 
     auto& gridList = tls.sceneRegistry.get<SceneGridList>(sceneComponent->sceneEntity);
     GridSet gridsToLeave;
-    ScanNeighborGridIds(*hexPosition, gridsToLeave);
+    ScanCurrentAndNeighborGridIds(*hexPosition, gridsToLeave);
 
-    BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
     LeaveGrid(*hexPosition, gridList, entity);
+    BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
 }
 
 void AoiSystem::UpdateLogGridSize(double deltaTime) {
