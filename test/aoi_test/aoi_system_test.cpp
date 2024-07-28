@@ -187,8 +187,8 @@ public:
     }
 };
 
-EntitySet entitiesToNotifyEntry;
-EntitySet entitiesToNotifyExit;
+EntityUnorderedMap entitiesToNotifyEntry;
+EntityUnorderedMap entitiesToNotifyExit;
 
 // Test fixture class
 class AoiSystemTest1 : public ::testing::Test {
@@ -253,7 +253,8 @@ TEST_F(AoiSystemTest1, TestEntityEnterView) {
     // Check that entity1 should be notified of entity2 entering its view
     // Add your assertions here
     // For example:
-    EXPECT_TRUE(entitiesToNotifyEntry.contains(entity2));
+    EXPECT_TRUE(entitiesToNotifyEntry.find(entity2)->second == entity1);
+    EXPECT_TRUE(entitiesToNotifyEntry.find(entity1)->second == entity2);
 }
 
 // Test case for leaving the view
@@ -265,6 +266,9 @@ TEST_F(AoiSystemTest1, TestEntityLeaveView) {
 
     aoiSystem.Update(0.0);
 
+    EXPECT_TRUE(entitiesToNotifyEntry.find(entity2)->second == entity1);
+    EXPECT_TRUE(entitiesToNotifyEntry.find(entity1)->second == entity2);
+
     location.set_x(50);
     location.set_y(50);
 
@@ -273,7 +277,8 @@ TEST_F(AoiSystemTest1, TestEntityLeaveView) {
     // Check that entity1 should be notified of entity2 leaving its view
     // Add your assertions here
     // For example:
-    EXPECT_TRUE(entitiesToNotifyExit.contains(entity2));
+    EXPECT_TRUE(entitiesToNotifyExit.find(entity2)->second == entity1);
+    EXPECT_TRUE(entitiesToNotifyExit.find(entity1)->second == entity2);
 }
 
 int main(int argc, char** argv) {

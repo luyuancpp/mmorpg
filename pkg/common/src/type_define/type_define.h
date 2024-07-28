@@ -29,7 +29,8 @@ using UInt32Set = std::unordered_set<uint32_t>;
 using UInt64Set = std::unordered_set<uint64_t>;
 using UInt32PairSet = std::set<UInt32Pair>;
 
-using EntitySet = std::unordered_set<entt::entity>;
+using EntityUnorderedSet = std::unordered_set<entt::entity>;
+using EntityUnorderedMap = std::unordered_map<entt::entity, entt::entity>;
 using EntityVector = std::vector<entt::entity>;
 
 using UInt64UInt64UnorderedMap = std::unordered_map<uint64_t, uint64_t>;
