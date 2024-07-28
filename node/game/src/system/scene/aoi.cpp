@@ -120,6 +120,10 @@ void AoiSystem::Update(double deltaTime) {
     }
 }
 
+Hex AoiSystem::CalculateHexPosition(const Transform& transform) {
+    return hex_round(pixel_to_hex(kHexLayout, Point(transform.location().x(), transform.location().y())));
+}
+
 absl::uint128 AoiSystem::GetGridId(const Location& location) {
     return GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(location.x(), location.y()))));
 }
@@ -134,8 +138,7 @@ void AoiSystem::ScanNeighborGridIds(const Hex& hex, GridSet& gridSet) {
     }
 }
 
-void AoiSystem::ScanCurrentAndNeighborGridIds(const Hex& hex, GridSet& grid_set)
-{
+void AoiSystem::ScanCurrentAndNeighborGridIds(const Hex& hex, GridSet& grid_set) {
     auto currentGridId = GetGridId(hex);
     grid_set.emplace(currentGridId);
     ScanNeighborGridIds(hex, grid_set);
@@ -179,8 +182,7 @@ void AoiSystem::UpdateLogGridSize(double deltaTime) {
 void AoiSystem::LeaveGrid(const Hex& hex, SceneGridList& gridList, entt::entity entity) {
     const auto previousGridId = GetGridId(hex);
     auto previousGridIt = gridList.find(previousGridId);
-    if (previousGridIt == gridList.end())
-    {
+    if (previousGridIt == gridList.end()) {
         return;
     }
     auto& previousGrid = previousGridIt->second;
@@ -190,31 +192,24 @@ void AoiSystem::LeaveGrid(const Hex& hex, SceneGridList& gridList, entt::entity 
     }
 }
 
-void AoiSystem::ClearEmptyGrids()
-{
-    std::vector<absl::uint128> destroyEntites;
-    for (auto&& [_, gridList] : tls.registry.view<SceneGridList>().each())
-    {
-        destroyEntites.clear();
-        for (auto& it : gridList)
-        {
-            if (!it.second.entity_list.empty())
-            {
-                continue;
+void AoiSystem::ClearEmptyGrids() {
+    std::vector<absl::uint128> destroyEntities;
+    for (auto&& [_, gridList] : tls.registry.view<SceneGridList>().each()) {
+        destroyEntities.clear();
+        for (auto& it : gridList) {
+            if (it.second.entity_list.empty()) {
+                destroyEntities.emplace_back(it.first);
             }
-            destroyEntites.emplace_back(it.first);
         }
 
-        for (auto&& it : destroyEntites)
-        {
+        for (auto&& it : destroyEntities) {
             gridList.erase(it);
         }
     }
 }
 
 void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& gridList, entt::entity entity, const GridSet& gridsToLeave) {
-    if (gridsToLeave.empty() || gridList.empty())
-    {
+    if (gridsToLeave.empty() || gridList.empty()) {
         return;
     }
 

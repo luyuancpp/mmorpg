@@ -25,4 +25,5 @@ public:
     static void ClearEmptyGrids();
 private:
     static void BroadCastLeaveGridMessage(const SceneGridList& grid_list, entt::entity player, const GridSet& leave_grid_set);
+    static Hex CalculateHexPosition(const Transform& transform);
 };
