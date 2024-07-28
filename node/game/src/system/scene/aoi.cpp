@@ -19,7 +19,7 @@ const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
 void AoiSystem::Update(double deltaTime) {
     GridSet gridsToEnter, gridsToLeave;
-    EntitySet entitiesToNotifyEntry, entitiesToNotifyExit;
+    EntityUnorderedSet entitiesToNotifyEntry, entitiesToNotifyExit;
 
     for (auto&& [entity, transform, sceneComponent] : tls.registry.view<Transform, SceneEntityComp>().each()) {
 
@@ -205,7 +205,7 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& gridList, entt::e
         return;
     }
 
-    EntitySet observersToNotifyExit;
+    EntityUnorderedSet observersToNotifyExit;
     tls_actor_destroy_s2c.Clear();
     tls_actor_destroy_s2c.set_entity(entt::to_integral(entity));
     for (const auto& gridId : gridsToLeave) {

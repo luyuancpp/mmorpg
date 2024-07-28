@@ -178,8 +178,8 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 	enterParam2.scene = scene2;
 
 	uint32_t playerSize = 100;
-	EntitySet playerEntitySet1;
-	EntitySet playerEntitiesSet2;
+	EntityUnorderedSet playerEntitySet1;
+	EntityUnorderedSet playerEntitiesSet2;
 
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
@@ -255,10 +255,10 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 	tls.gameNodeRegistry.clear();
 	ScenesSystem sm;
 	NodeSceneSystem nodeSystem;
-	EntitySet serverEntities;
+	EntityUnorderedSet serverEntities;
 	const uint32_t serverSize = 2;
 	const uint32_t perServerScene = 2;
-	EntitySet sceneEntities;
+	EntityUnorderedSet sceneEntities;
 
 	for (uint32_t i = 0; i < serverSize; ++i)
 	{
@@ -341,7 +341,7 @@ TEST(GS, CompelToChangeScene)
 	enterParam2.scene = scene2;
 
 	constexpr uint32_t playerSize = 100;
-	EntitySet playerList1;
+	EntityUnorderedSet playerList1;
 	for (uint32_t i = 0; i < playerSize; ++i)
 	{
 		auto player = tls.gameNodeRegistry.create();
@@ -372,11 +372,11 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 {
 	ScenesSystem sm;
 	NodeSceneSystem nsSys;
-	EntitySet serverEntities;
+	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 2;
 
-	EntitySet sceneEntities;
+	EntityUnorderedSet sceneEntities;
 
 	for (uint32_t i = 0; i < serverSize; ++i)
 	{
@@ -434,8 +434,8 @@ TEST(GS, CrashMovePlayer2NewServer)
 {
 	ScenesSystem sm;
 	NodeSceneSystem nsSys;
-	EntitySet nodeList;
-	EntitySet sceneList;
+	EntityUnorderedSet nodeList;
+	EntityUnorderedSet sceneList;
 	uint32_t nodeSize = 2;
 	uint32_t perNodeScene = 2;
 	entt::entity firstScene = entt::null;
@@ -497,7 +497,7 @@ TEST(GS, WeightRoundRobinMainScene)
 	tls.gameNodeRegistry.clear();
 	ScenesSystem sm;
 	NodeSceneSystem nssys;
-	EntitySet node_list;
+	EntityUnorderedSet node_list;
 	uint32_t server_size = 10;
 	uint32_t per_server_scene = 10;
 	for (uint32_t i = 0; i < server_size; ++i)
@@ -530,7 +530,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			std::unordered_map<entt::entity, entt::entity> player_scene1;
 			EnterSceneParam enter_param1;
 
-			EntitySet scene_sets;
+			EntityUnorderedSet scene_sets;
 
 			for (uint32_t i = 0; i < player_size; ++i)
 			{
@@ -620,7 +620,7 @@ TEST(GS, ServerEnterLeavePressure)
 	tls.gameNodeRegistry.clear();
 	ScenesSystem sm;
 	NodeSceneSystem nsSys;
-	EntitySet serverEntities;
+	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 10;
 
@@ -722,7 +722,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 	tls.gameNodeRegistry.clear();
 	ScenesSystem sm;
 	NodeSceneSystem nssys;
-	EntitySet serverEntities;
+	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 10;
 	uint32_t perServerScene = 10;
 
@@ -762,7 +762,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 
 			std::unordered_map<entt::entity, entt::entity> playerScene1;
 			EnterSceneParam enterParam1;
-			EntitySet sceneSets;
+			EntityUnorderedSet sceneSets;
 
 			// Enter players into scenes with sceneConfigId0
 			for (uint32_t i = 0; i < playerSize; ++i)

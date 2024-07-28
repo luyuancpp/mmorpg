@@ -9,9 +9,9 @@
 #include "thread_local/storage.h"
 #include "proto/logic/component/scene_comp.pb.h"
 
-using SceneList = EntitySet;
+using SceneList = EntityUnorderedSet;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
-using ScenePlayers = EntitySet; // 弱引用，要解除玩家和场景的耦合
+using ScenePlayers = EntityUnorderedSet; // 弱引用，要解除玩家和场景的耦合
 
 entt::entity global_entity();
 

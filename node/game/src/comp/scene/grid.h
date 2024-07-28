@@ -5,7 +5,7 @@
 class HexagonsGrid
 {
 public:
-    EntitySet entity_list;
+    EntityUnorderedSet entity_list;
 };
 
 struct WatcherList
