@@ -75,19 +75,18 @@ bool ViewSystem::CheckSendPlayerEnterMessage(entt::entity observer, entt::entity
     return true;
 }
 
-void ViewSystem::FillActorCreateS2CInfo(const entt::entity entrant)
+void ViewSystem::FillActorCreateS2CInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& createMessage)
 {
-    auto& actor_info = tls_actor_create_s2c;
-    actor_info.set_entity(entt::to_integral(entrant));
-    if (const auto entrant_transform = tls.registry.try_get<Transform>(entrant);
+    createMessage.set_entity(entt::to_integral(entity));
+    if (const auto entrant_transform = tls.registry.try_get<Transform>(entity);
         nullptr != entrant_transform)
     {
-        actor_info.mutable_transform()->CopyFrom(*entrant_transform);
+        createMessage.mutable_transform()->CopyFrom(*entrant_transform);
     }
-    if (const auto guid = tls.registry.try_get<Guid>(entrant);
+    if (const auto guid = tls.registry.try_get<Guid>(entity);
         nullptr != guid)
     {
-        actor_info.set_guid(*guid);
+        createMessage.set_guid(*guid);
     }
 }
 
