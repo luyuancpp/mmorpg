@@ -90,3 +90,19 @@ void ClientPlayerSceneServiceHandler::PushActorDestroyS2C(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
+void ClientPlayerSceneServiceHandler::PushMainActorCreateS2C(entt::entity player,
+	const ::MainActorCreateS2C* request,
+	::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ClientPlayerSceneServiceHandler::PushMainActorDestroyS2C(entt::entity player,
+	const ::MainActorDestroyS2C* request,
+	::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+

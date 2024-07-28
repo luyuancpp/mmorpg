@@ -37,6 +37,7 @@
 38=CentreServiceEnterGsSucceed
 39=CentreServiceLsDisconnect
 40=GateServiceUnRegisterGame
+41=ClientPlayerSceneServicePushMainActorDestroyS2C
 42=CentreServiceRouteNodeStringMsg
 43=GamePlayerSceneServiceEnterSceneS2C
 44=GameServiceCreateScene
@@ -48,6 +49,7 @@
 50=ClientPlayerSceneServicePushActorDestroyS2C
 51=LoginServiceLeaveGame
 52=LoginServiceEnterGame
+53=ClientPlayerSceneServicePushMainActorCreateS2C
 54=CentreServiceOnLoginEnterGame
 55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene

@@ -7,3 +7,5 @@
 
 #define actorCreateMessage tls.globalRegistry.get<ActorCreateS2C>(global_entity())
 #define actorDestroyMessage tls.globalRegistry.get<ActorDestroyS2C>(global_entity())
+#define mainActorCreateMessage tls.globalRegistry.get<MainActorCreateS2C>(global_entity())
+#define mainActorDestroyMessage tls.globalRegistry.get<MainActorDestroyS2C>(global_entity())
