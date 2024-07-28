@@ -39,15 +39,15 @@ protected:
         tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
         tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
 
-        tls.globalRegistry.emplace<MainActorCreateS2C>(global_entity());
-        tls.globalRegistry.emplace<MainActorDestroyS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorListCreateS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorListDestroyS2C>(global_entity());
     }
 
     void TearDown() override {
         tls.globalRegistry.remove<ActorCreateS2C>(global_entity());
         tls.globalRegistry.remove<ActorDestroyS2C>(global_entity());
-        tls.globalRegistry.remove<MainActorCreateS2C>(global_entity());
-        tls.globalRegistry.remove<MainActorDestroyS2C>(global_entity());
+        tls.globalRegistry.remove<ActorListCreateS2C>(global_entity());
+        tls.globalRegistry.remove<ActorListDestroyS2C>(global_entity());
 
         tls.sceneRegistry.clear();
         tls.registry.clear();
@@ -210,8 +210,8 @@ protected:
 
         tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
         tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
-        tls.globalRegistry.emplace<MainActorCreateS2C>(global_entity());
-        tls.globalRegistry.emplace<MainActorDestroyS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorListCreateS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorListDestroyS2C>(global_entity());
         
         // Setup mock data
         entity1 = tls.registry.create();
@@ -239,8 +239,8 @@ protected:
     void TearDown() override {
         tls.globalRegistry.remove<ActorCreateS2C>(global_entity());
         tls.globalRegistry.remove<ActorDestroyS2C>(global_entity());
-        tls.globalRegistry.remove<MainActorCreateS2C>(global_entity());
-        tls.globalRegistry.remove<MainActorDestroyS2C>(global_entity());
+        tls.globalRegistry.remove<ActorListCreateS2C>(global_entity());
+        tls.globalRegistry.remove<ActorListDestroyS2C>(global_entity());
 
         tls.registry.clear();
         tls.sceneRegistry.clear();

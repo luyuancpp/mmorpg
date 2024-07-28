@@ -52,12 +52,12 @@ message ActorDestroyS2C
 	uint64 entity = 1;
 }
 
-message MainActorCreateS2C
+message ActorListCreateS2C
 {
 	repeated ActorCreateS2C actor_list = 1;
 }
 
-message MainActorDestroyS2C
+message ActorListDestroyS2C
 {
 	repeated uint64 entity = 1;
 }
@@ -70,6 +70,6 @@ service ClientPlayerSceneService
   rpc PushSceneInfoS2C (SceneInfoS2C) returns (Empty);
   rpc PushActorCreateS2C (ActorCreateS2C) returns (Empty);
   rpc PushActorDestroyS2C (ActorDestroyS2C) returns (Empty);
-  rpc PushMainActorCreateS2C (MainActorCreateS2C) returns (Empty);
-  rpc PushMainActorDestroyS2C (MainActorDestroyS2C) returns (Empty);
+  rpc PushActorListCreateS2C (ActorListCreateS2C) returns (Empty);
+  rpc PushActorListDestroyS2C (ActorListDestroyS2C) returns (Empty);
 }

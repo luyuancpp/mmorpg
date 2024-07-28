@@ -30,6 +30,7 @@
 29=CentreSceneServiceRegisterScene
 30=GateServiceBroadCast2PlayerMessage
 31=CentreServiceRegisterGame
+32=ClientPlayerSceneServicePushActorListDestroyS2C
 33=LoginServiceCreatePlayer
 34=LoginServiceLogin
 36=CentreServiceGatePlayerService
@@ -37,7 +38,6 @@
 38=CentreServiceEnterGsSucceed
 39=CentreServiceLsDisconnect
 40=GateServiceUnRegisterGame
-41=ClientPlayerSceneServicePushMainActorDestroyS2C
 42=CentreServiceRouteNodeStringMsg
 43=GamePlayerSceneServiceEnterSceneS2C
 44=GameServiceCreateScene
@@ -49,7 +49,6 @@
 50=ClientPlayerSceneServicePushActorDestroyS2C
 51=LoginServiceLeaveGame
 52=LoginServiceEnterGame
-53=ClientPlayerSceneServicePushMainActorCreateS2C
 54=CentreServiceOnLoginEnterGame
 55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene
@@ -57,6 +56,7 @@
 58=GameServiceSend2Player
 59=GameServiceClientSend2Player
 60=GameServiceDisconnect
+62=ClientPlayerSceneServicePushActorListCreateS2C
 63=GameServiceCallPlayer
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg

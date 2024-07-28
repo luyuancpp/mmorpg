@@ -51,16 +51,16 @@ void ClientPlayerSceneServiceRepliedHandler::PushActorDestroyS2C(entt::entity pl
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceRepliedHandler::PushMainActorCreateS2C(entt::entity player,
-	const ::MainActorCreateS2C* request,
+void ClientPlayerSceneServiceRepliedHandler::PushActorListCreateS2C(entt::entity player,
+	const ::ActorListCreateS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceRepliedHandler::PushMainActorDestroyS2C(entt::entity player,
-	const ::MainActorDestroyS2C* request,
+void ClientPlayerSceneServiceRepliedHandler::PushActorListDestroyS2C(entt::entity player,
+	const ::ActorListDestroyS2C* request,
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
