@@ -72,6 +72,7 @@ void AoiSystem::Update(double deltaTime) {
 
         // Calculate visible entities and fill network packets
         actorCreateMessage.Clear();
+        mainActorCreateMessage.Clear();
 
         for (const auto& gridId : gridsToEnter) {
 
@@ -82,26 +83,33 @@ void AoiSystem::Update(double deltaTime) {
 
             for (const auto& observer : gridIt->second.entity_list) {
 
-                if (observer == entity)
+                // 处理npc进入我的视野
+
+                if (observer == entity || 
+                    !tls.registry.any_of<Npc>(observer) ||
+                    !ViewSystem::CheckSendNpcEnterMessage(entity, observer)){
+                    continue;
+                }
+
+                ViewSystem::FillActorCreateS2CInfo(entity, observer, actorCreateMessage);
+            }
+
+            for (const auto& observer : gridIt->second.entity_list) {
+
+                if (observer == entity || 
+                    tls.registry.any_of<Npc>(entity))
                 {
                     continue;
                 }
 
                 // 我进入别人视野
-                if (tls.registry.any_of<Npc>(entity) && ViewSystem::CheckSendNpcEnterMessage(observer, entity)) {
-                    ViewSystem::FillActorCreateS2CInfo(observer, entity, actorCreateMessage);
-                    entitiesToNotifyEntry.emplace(observer);
-                }
-                else if (!tls.registry.any_of<Npc>(entity) && ViewSystem::CheckSendPlayerEnterMessage(observer, entity)) {
+                if (ViewSystem::CheckSendPlayerEnterMessage(observer, entity)) {
                     ViewSystem::FillActorCreateS2CInfo(observer, entity, actorCreateMessage);
                     entitiesToNotifyEntry.emplace(observer);
                 }
 
                 //别人进入我的视野
-                if (tls.registry.any_of<Npc>(observer) && ViewSystem::CheckSendNpcEnterMessage(entity, observer)) {
-                    ViewSystem::FillActorCreateS2CInfo(entity, observer, actorCreateMessage);
-                }
-                else if (!tls.registry.any_of<Npc>(observer) && ViewSystem::CheckSendPlayerEnterMessage(entity, observer)) {
+                if (ViewSystem::CheckSendPlayerEnterMessage(entity, observer)) {
                     ViewSystem::FillActorCreateS2CInfo(entity, observer, actorCreateMessage);
                 }
             }
