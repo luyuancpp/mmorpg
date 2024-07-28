@@ -34,7 +34,7 @@ void AoiSystem::Update(double deltaTime) {
         entitiesToNotifyExit.clear();
 
         auto& gridList = tls.sceneRegistry.get<SceneGridList>(sceneComponent.sceneEntity);
-        const auto currentHexPosition = hex_round(pixel_to_hex(kHexLayout, Point(transform.location().x(), transform.location().y())));
+        const auto currentHexPosition = CalculateHexPosition(transform);
         const auto currentGridId = GetGridId(currentHexPosition);
 
         // Calculate grid changes
