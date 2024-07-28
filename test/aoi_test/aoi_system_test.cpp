@@ -257,7 +257,6 @@ TEST_F(AoiSystemTest1, TestEntityEnterView) {
     location.set_x(20);
     location.set_y(20);
 
-
     aoiSystem.Update(0.0);
 
     // Check that entity1 should be notified of entity2 entering its view
