@@ -72,7 +72,7 @@ void AoiSystem::Update(double deltaTime) {
 
         // Calculate visible entities and fill network packets
         actorCreateMessage.Clear();
-        mainActorCreateMessage.Clear();
+        actorListCreateMessage.Clear();
 
         for (const auto& gridId : gridsToEnter) {
 
@@ -84,7 +84,6 @@ void AoiSystem::Update(double deltaTime) {
             for (const auto& observer : gridIt->second.entity_list) {
 
                 // 处理npc进入我的视野
-
                 if (observer == entity || 
                     !tls.registry.any_of<Npc>(observer) ||
                     !ViewSystem::CheckSendNpcEnterMessage(entity, observer)){
@@ -110,10 +109,11 @@ void AoiSystem::Update(double deltaTime) {
 
                 //别人进入我的视野
                 if (ViewSystem::CheckSendPlayerEnterMessage(entity, observer)) {
-                    ViewSystem::FillActorCreateS2CInfo(entity, observer, actorCreateMessage);
+                    ViewSystem::FillActorCreateS2CInfo(entity, observer, *actorListCreateMessage.add_actor_list());
                 }
             }
         }
+        SendToPlayer(ClientPlayerSceneServicePushActorListCreateS2CMsgId, actorListCreateMessage, entity);
 
         BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServicePushActorCreateS2CMsgId, actorCreateMessage);
         BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
@@ -220,6 +220,7 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& gridList, entt::e
 
     EntityUnorderedSet observersToNotifyExit;
     actorDestroyMessage.Clear();
+    actorListDestroyMessage.Clear();
     actorDestroyMessage.set_entity(entt::to_integral(entity));
     for (const auto& gridId : gridsToLeave) {
         auto it = gridList.find(gridId);
@@ -228,9 +229,12 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& gridList, entt::e
         }
         for (const auto& observer : it->second.entity_list) {
             observersToNotifyExit.emplace(observer);
+            actorListDestroyMessage.add_entity(entt::to_entity(observer));
+
             ViewSystem::HandlerPlayerLeaveMessage(observer, entity);
             ViewSystem::HandlerPlayerLeaveMessage(entity, observer);
         }
     }
+    SendToPlayer(ClientPlayerSceneServicePushActorListDestroyS2CMsgId, actorListDestroyMessage, entity);
     BroadCastToPlayer(observersToNotifyExit, ClientPlayerSceneServicePushActorDestroyS2CMsgId, actorDestroyMessage);
 }

@@ -419,7 +419,7 @@ func (x *ActorDestroyS2C) GetEntity() uint64 {
 	return 0
 }
 
-type MainActorCreateS2C struct {
+type ActorListCreateS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -427,8 +427,8 @@ type MainActorCreateS2C struct {
 	ActorList []*ActorCreateS2C `protobuf:"bytes,1,rep,name=actor_list,json=actorList,proto3" json:"actor_list,omitempty"`
 }
 
-func (x *MainActorCreateS2C) Reset() {
-	*x = MainActorCreateS2C{}
+func (x *ActorListCreateS2C) Reset() {
+	*x = ActorListCreateS2C{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_client_player_scene_client_player_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -436,13 +436,13 @@ func (x *MainActorCreateS2C) Reset() {
 	}
 }
 
-func (x *MainActorCreateS2C) String() string {
+func (x *ActorListCreateS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MainActorCreateS2C) ProtoMessage() {}
+func (*ActorListCreateS2C) ProtoMessage() {}
 
-func (x *MainActorCreateS2C) ProtoReflect() protoreflect.Message {
+func (x *ActorListCreateS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_client_player_scene_client_player_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -454,19 +454,19 @@ func (x *MainActorCreateS2C) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MainActorCreateS2C.ProtoReflect.Descriptor instead.
-func (*MainActorCreateS2C) Descriptor() ([]byte, []int) {
+// Deprecated: Use ActorListCreateS2C.ProtoReflect.Descriptor instead.
+func (*ActorListCreateS2C) Descriptor() ([]byte, []int) {
 	return file_logic_client_player_scene_client_player_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *MainActorCreateS2C) GetActorList() []*ActorCreateS2C {
+func (x *ActorListCreateS2C) GetActorList() []*ActorCreateS2C {
 	if x != nil {
 		return x.ActorList
 	}
 	return nil
 }
 
-type MainActorDestroyS2C struct {
+type ActorListDestroyS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -474,8 +474,8 @@ type MainActorDestroyS2C struct {
 	Entity []uint64 `protobuf:"varint,1,rep,packed,name=entity,proto3" json:"entity,omitempty"`
 }
 
-func (x *MainActorDestroyS2C) Reset() {
-	*x = MainActorDestroyS2C{}
+func (x *ActorListDestroyS2C) Reset() {
+	*x = ActorListDestroyS2C{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_client_player_scene_client_player_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -483,13 +483,13 @@ func (x *MainActorDestroyS2C) Reset() {
 	}
 }
 
-func (x *MainActorDestroyS2C) String() string {
+func (x *ActorListDestroyS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MainActorDestroyS2C) ProtoMessage() {}
+func (*ActorListDestroyS2C) ProtoMessage() {}
 
-func (x *MainActorDestroyS2C) ProtoReflect() protoreflect.Message {
+func (x *ActorListDestroyS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_client_player_scene_client_player_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -501,12 +501,12 @@ func (x *MainActorDestroyS2C) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MainActorDestroyS2C.ProtoReflect.Descriptor instead.
-func (*MainActorDestroyS2C) Descriptor() ([]byte, []int) {
+// Deprecated: Use ActorListDestroyS2C.ProtoReflect.Descriptor instead.
+func (*ActorListDestroyS2C) Descriptor() ([]byte, []int) {
 	return file_logic_client_player_scene_client_player_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *MainActorDestroyS2C) GetEntity() []uint64 {
+func (x *ActorListDestroyS2C) GetEntity() []uint64 {
 	if x != nil {
 		return x.Entity
 	}
@@ -560,12 +560,12 @@ var file_logic_client_player_scene_client_player_proto_rawDesc = []byte{
 	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x49, 0x64, 0x22, 0x29, 0x0a, 0x0f, 0x41, 0x63, 0x74, 0x6f,
 	0x72, 0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43, 0x12, 0x16, 0x0a, 0x06, 0x65,
 	0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74,
-	0x69, 0x74, 0x79, 0x22, 0x44, 0x0a, 0x12, 0x4d, 0x61, 0x69, 0x6e, 0x41, 0x63, 0x74, 0x6f, 0x72,
+	0x69, 0x74, 0x79, 0x22, 0x44, 0x0a, 0x12, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x4c, 0x69, 0x73, 0x74,
 	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x32, 0x43, 0x12, 0x2e, 0x0a, 0x0a, 0x61, 0x63, 0x74,
 	0x6f, 0x72, 0x5f, 0x6c, 0x69, 0x73, 0x74, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e,
 	0x41, 0x63, 0x74, 0x6f, 0x72, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x32, 0x43, 0x52, 0x09,
-	0x61, 0x63, 0x74, 0x6f, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x2d, 0x0a, 0x13, 0x4d, 0x61, 0x69,
-	0x6e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43,
+	0x61, 0x63, 0x74, 0x6f, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x2d, 0x0a, 0x13, 0x41, 0x63, 0x74,
+	0x6f, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43,
 	0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04,
 	0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x32, 0xad, 0x03, 0x0a, 0x18, 0x43, 0x6c, 0x69,
 	0x65, 0x6e, 0x74, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x53, 0x65,
@@ -588,12 +588,12 @@ var file_logic_client_player_scene_client_player_proto_rawDesc = []byte{
 	0x63, 0x74, 0x6f, 0x72, 0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43, 0x12, 0x10,
 	0x2e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43,
 	0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x35, 0x0a, 0x16, 0x50, 0x75, 0x73, 0x68,
-	0x4d, 0x61, 0x69, 0x6e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53,
-	0x32, 0x43, 0x12, 0x13, 0x2e, 0x4d, 0x61, 0x69, 0x6e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x43, 0x72,
+	0x41, 0x63, 0x74, 0x6f, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53,
+	0x32, 0x43, 0x12, 0x13, 0x2e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x72,
 	0x65, 0x61, 0x74, 0x65, 0x53, 0x32, 0x43, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12,
-	0x37, 0x0a, 0x17, 0x50, 0x75, 0x73, 0x68, 0x4d, 0x61, 0x69, 0x6e, 0x41, 0x63, 0x74, 0x6f, 0x72,
-	0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43, 0x12, 0x14, 0x2e, 0x4d, 0x61, 0x69,
-	0x6e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43,
+	0x37, 0x0a, 0x17, 0x50, 0x75, 0x73, 0x68, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x4c, 0x69, 0x73, 0x74,
+	0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43, 0x12, 0x14, 0x2e, 0x41, 0x63, 0x74,
+	0x6f, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x73, 0x74, 0x72, 0x6f, 0x79, 0x53, 0x32, 0x43,
 	0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x42, 0x0c, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67,
 	0x61, 0x6d, 0x65, 0x80, 0x01, 0x01, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
@@ -620,8 +620,8 @@ var file_logic_client_player_scene_client_player_proto_goTypes = []any{
 	(*SceneInfoResponse)(nil),     // 5: SceneInfoResponse
 	(*ActorCreateS2C)(nil),        // 6: ActorCreateS2C
 	(*ActorDestroyS2C)(nil),       // 7: ActorDestroyS2C
-	(*MainActorCreateS2C)(nil),    // 8: MainActorCreateS2C
-	(*MainActorDestroyS2C)(nil),   // 9: MainActorDestroyS2C
+	(*ActorListCreateS2C)(nil),    // 8: ActorListCreateS2C
+	(*ActorListDestroyS2C)(nil),   // 9: ActorListDestroyS2C
 	(*SceneInfo)(nil),             // 10: SceneInfo
 	(*Tip)(nil),                   // 11: Tip
 	(*Transform)(nil),             // 12: Transform
@@ -634,23 +634,23 @@ var file_logic_client_player_scene_client_player_proto_depIdxs = []int32{
 	10, // 3: SceneInfoS2C.scene_info:type_name -> SceneInfo
 	10, // 4: SceneInfoResponse.scene_info:type_name -> SceneInfo
 	12, // 5: ActorCreateS2C.transform:type_name -> Transform
-	6,  // 6: MainActorCreateS2C.actor_list:type_name -> ActorCreateS2C
+	6,  // 6: ActorListCreateS2C.actor_list:type_name -> ActorCreateS2C
 	0,  // 7: ClientPlayerSceneService.EnterSceneC2S:input_type -> EnterSceneC2SRequest
 	2,  // 8: ClientPlayerSceneService.PushEnterSceneS2C:input_type -> EnterSceneS2C
 	4,  // 9: ClientPlayerSceneService.SceneInfoC2S:input_type -> SceneInfoRequest
 	3,  // 10: ClientPlayerSceneService.PushSceneInfoS2C:input_type -> SceneInfoS2C
 	6,  // 11: ClientPlayerSceneService.PushActorCreateS2C:input_type -> ActorCreateS2C
 	7,  // 12: ClientPlayerSceneService.PushActorDestroyS2C:input_type -> ActorDestroyS2C
-	8,  // 13: ClientPlayerSceneService.PushMainActorCreateS2C:input_type -> MainActorCreateS2C
-	9,  // 14: ClientPlayerSceneService.PushMainActorDestroyS2C:input_type -> MainActorDestroyS2C
+	8,  // 13: ClientPlayerSceneService.PushActorListCreateS2C:input_type -> ActorListCreateS2C
+	9,  // 14: ClientPlayerSceneService.PushActorListDestroyS2C:input_type -> ActorListDestroyS2C
 	1,  // 15: ClientPlayerSceneService.EnterSceneC2S:output_type -> EnterSceneC2SResponse
 	13, // 16: ClientPlayerSceneService.PushEnterSceneS2C:output_type -> Empty
 	13, // 17: ClientPlayerSceneService.SceneInfoC2S:output_type -> Empty
 	13, // 18: ClientPlayerSceneService.PushSceneInfoS2C:output_type -> Empty
 	13, // 19: ClientPlayerSceneService.PushActorCreateS2C:output_type -> Empty
 	13, // 20: ClientPlayerSceneService.PushActorDestroyS2C:output_type -> Empty
-	13, // 21: ClientPlayerSceneService.PushMainActorCreateS2C:output_type -> Empty
-	13, // 22: ClientPlayerSceneService.PushMainActorDestroyS2C:output_type -> Empty
+	13, // 21: ClientPlayerSceneService.PushActorListCreateS2C:output_type -> Empty
+	13, // 22: ClientPlayerSceneService.PushActorListDestroyS2C:output_type -> Empty
 	15, // [15:23] is the sub-list for method output_type
 	7,  // [7:15] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
@@ -766,7 +766,7 @@ func file_logic_client_player_scene_client_player_proto_init() {
 			}
 		}
 		file_logic_client_player_scene_client_player_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*MainActorCreateS2C); i {
+			switch v := v.(*ActorListCreateS2C); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -778,7 +778,7 @@ func file_logic_client_player_scene_client_player_proto_init() {
 			}
 		}
 		file_logic_client_player_scene_client_player_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*MainActorDestroyS2C); i {
+			switch v := v.(*ActorListDestroyS2C); i {
 			case 0:
 				return &v.state
 			case 1:

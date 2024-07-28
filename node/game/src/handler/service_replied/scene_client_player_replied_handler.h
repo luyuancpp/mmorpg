@@ -29,12 +29,12 @@ public:
 		const ::ActorDestroyS2C* request,
 		::Empty* response);
 
-	static void PushMainActorCreateS2C(entt::entity player,
-		const ::MainActorCreateS2C* request,
+	static void PushActorListCreateS2C(entt::entity player,
+		const ::ActorListCreateS2C* request,
 		::Empty* response);
 
-	static void PushMainActorDestroyS2C(entt::entity player,
-		const ::MainActorDestroyS2C* request,
+	static void PushActorListDestroyS2C(entt::entity player,
+		const ::ActorListDestroyS2C* request,
 		::Empty* response);
 
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
@@ -75,12 +75,12 @@ public:
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 6:
-			PushMainActorCreateS2C(player,
+			PushActorListCreateS2C(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 7:
-			PushMainActorDestroyS2C(player,
+			PushActorListDestroyS2C(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
