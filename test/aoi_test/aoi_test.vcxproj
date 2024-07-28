@@ -139,9 +139,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\node\game\src\system\scene\aoi.cpp" />
-    <ClCompile Include="..\..\node\game\src\system\scene\view.cpp" />
     <ClCompile Include="..\test_adapters\message_system_test.cpp" />
     <ClCompile Include="aoi_system_test.cpp" />
+    <ClCompile Include="mock_view.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

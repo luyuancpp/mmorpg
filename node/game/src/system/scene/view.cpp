@@ -19,10 +19,6 @@ void ViewSystem::Init()
 
 bool ViewSystem::CheckSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
 {
-    if (observer == entrant)
-    {
-        return false;
-    }
     const bool is_observer_npc = tls.registry.any_of<Npc>(observer);
     const bool is_entrant_npc = tls.registry.any_of<Npc>(entrant);
     if (is_observer_npc && is_entrant_npc)
@@ -39,10 +35,6 @@ bool ViewSystem::CheckSendNpcEnterMessage(entt::entity observer, entt::entity en
 
 bool ViewSystem::CheckSendPlayerEnterMessage(entt::entity observer, entt::entity entrant)
 {
-    if (observer == entrant)
-    {
-        return false;
-    }
     const bool is_observer_npc = tls.registry.any_of<Npc>(observer);
     const bool is_entrant_npc = tls.registry.any_of<Npc>(entrant);
     if (is_observer_npc && is_entrant_npc)
@@ -97,4 +89,9 @@ void ViewSystem::FillActorCreateS2CInfo(const entt::entity entrant)
     {
         actor_info.set_guid(*guid);
     }
+}
+
+void ViewSystem::HandlerPlayerLeaveMessage(entt::entity observer, entt::entity leaver)
+{
+
 }

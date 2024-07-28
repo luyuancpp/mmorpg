@@ -187,6 +187,9 @@ public:
     }
 };
 
+EntitySet entitiesToNotifyEntry;
+EntitySet entitiesToNotifyExit;
+
 // Test fixture class
 class AoiSystemTest1 : public ::testing::Test {
 protected:
@@ -196,7 +199,9 @@ protected:
     SceneEntityComp sceneEntityComp1;
     SceneEntityComp sceneEntityComp2;
 
+
     void SetUp() override {
+
         tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
         tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
 
@@ -220,14 +225,18 @@ protected:
 
 
         // Set up grid list
-        SceneGridList& gridList = tls.sceneRegistry.get_or_emplace<SceneGridList>(sceneEntityComp1.sceneEntity);
-        gridList[aoiSystem.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(0.0, 0.0))))].entity_list.emplace(entity1);
-        gridList[aoiSystem.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(100.0, 100.0))))].entity_list.emplace(entity2);
+        tls.sceneRegistry.emplace<SceneGridList>(sceneEntityComp1.sceneEntity);
     }
 
     void TearDown() override {
         tls.globalRegistry.remove<ActorCreateS2C>(global_entity());
         tls.globalRegistry.remove<ActorDestroyS2C>(global_entity());
+
+        tls.registry.clear();
+        tls.sceneRegistry.clear();
+
+        entitiesToNotifyEntry.clear();
+        entitiesToNotifyExit.clear();
     }
 };
 
@@ -236,7 +245,7 @@ TEST_F(AoiSystemTest1, TestEntityEnterView) {
     // Move entity2 to be within view range of entity1
     auto& location = *tls.registry.get<Transform>(entity2).mutable_location();
     location.set_x(20);
-    location.set_x(20);
+    location.set_y(20);
 
 
     aoiSystem.Update(0.0);
@@ -244,22 +253,27 @@ TEST_F(AoiSystemTest1, TestEntityEnterView) {
     // Check that entity1 should be notified of entity2 entering its view
     // Add your assertions here
     // For example:
-    // EXPECT_TRUE(entitiesToNotifyEntry.contains(entity2));
+    EXPECT_TRUE(entitiesToNotifyEntry.contains(entity2));
 }
 
 // Test case for leaving the view
 TEST_F(AoiSystemTest1, TestEntityLeaveView) {
     // Move entity2 out of view range of entity1
     auto& location = *tls.registry.get<Transform>(entity2).mutable_location();
-    location.set_x(500);
-    location.set_x(500);
+    location.set_x(0);
+    location.set_y(0);
+
+    aoiSystem.Update(0.0);
+
+    location.set_x(50);
+    location.set_y(50);
 
     aoiSystem.Update(0.0);
 
     // Check that entity1 should be notified of entity2 leaving its view
     // Add your assertions here
     // For example:
-    // EXPECT_TRUE(entitiesToNotifyExit.contains(entity2));
+    EXPECT_TRUE(entitiesToNotifyExit.contains(entity2));
 }
 
 int main(int argc, char** argv) {
