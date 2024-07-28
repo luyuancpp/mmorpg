@@ -5,5 +5,5 @@
 
 #include "proto/logic/client_player/scene_client_player.pb.h"
 
-#define tls_actor_create_s2c tls.globalRegistry.get<ActorCreateS2C>(global_entity())
-#define tls_actor_destroy_s2c tls.globalRegistry.get<ActorDestroyS2C>(global_entity())
+#define actorCreateMessage tls.globalRegistry.get<ActorCreateS2C>(global_entity())
+#define actorDestroyMessage tls.globalRegistry.get<ActorDestroyS2C>(global_entity())

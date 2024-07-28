@@ -54,24 +54,24 @@ void AoiSystem::Update(double deltaTime) {
             ScanCurrentAndNeighborGridIds(previousHexPosition, gridsToLeave);
             ScanCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
 
-            if (distance < 3) {
-                for (const auto& grid : gridsToEnter) {
-                    gridsToLeave.erase(grid);
-                }
-                for (const auto& grid : gridsToLeave) {
-                    gridsToEnter.erase(grid);
-                }
+            for (const auto& grid : gridsToEnter) {
+                gridsToLeave.erase(grid);
+            }
+            for (const auto& grid : gridsToLeave) {
+                gridsToEnter.erase(grid);
             }
 
             const auto previousGridId = GetGridId(previousHexPosition);
             gridList[previousGridId].entity_list.erase(entity);
+
             gridList[currentGridId].entity_list.emplace(entity);
+
             tls.registry.remove<Hex>(entity);
             tls.registry.emplace<Hex>(entity, currentHexPosition);
         }
 
         // Calculate visible entities and fill network packets
-        tls_actor_create_s2c.Clear();
+        actorCreateMessage.Clear();
 
         for (const auto& gridId : gridsToEnter) {
 
@@ -87,24 +87,29 @@ void AoiSystem::Update(double deltaTime) {
                     continue;
                 }
 
+                // 我进入别人视野
                 if (tls.registry.any_of<Npc>(entity) && ViewSystem::CheckSendNpcEnterMessage(observer, entity)) {
-                    ViewSystem::FillActorCreateS2CInfo(entity);
+                    ViewSystem::FillActorCreateS2CInfo(observer, entity, actorCreateMessage);
                     entitiesToNotifyEntry.emplace(observer);
                 }
                 else if (!tls.registry.any_of<Npc>(entity) && ViewSystem::CheckSendPlayerEnterMessage(observer, entity)) {
-                    ViewSystem::FillActorCreateS2CInfo(entity);
+                    ViewSystem::FillActorCreateS2CInfo(observer, entity, actorCreateMessage);
                     entitiesToNotifyEntry.emplace(observer);
+                }
+
+                //别人进入我的视野
+                if (tls.registry.any_of<Npc>(observer) && ViewSystem::CheckSendNpcEnterMessage(entity, observer)) {
+                    ViewSystem::FillActorCreateS2CInfo(entity, observer, actorCreateMessage);
+                }
+                else if (!tls.registry.any_of<Npc>(observer) && ViewSystem::CheckSendPlayerEnterMessage(entity, observer)) {
+                    ViewSystem::FillActorCreateS2CInfo(entity, observer, actorCreateMessage);
                 }
             }
         }
 
-        BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServicePushActorCreateS2CMsgId, tls_actor_create_s2c);
+        BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServicePushActorCreateS2CMsgId, actorCreateMessage);
         BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
     }
-}
-
-void AoiSystem::HandlePlayerMovement(entt::entity entity, const Transform& transform, SceneEntityComp& sceneComponent) {
-    // Function implementation here
 }
 
 absl::uint128 AoiSystem::GetGridId(const Location& location) {
@@ -206,8 +211,8 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& gridList, entt::e
     }
 
     EntityUnorderedSet observersToNotifyExit;
-    tls_actor_destroy_s2c.Clear();
-    tls_actor_destroy_s2c.set_entity(entt::to_integral(entity));
+    actorDestroyMessage.Clear();
+    actorDestroyMessage.set_entity(entt::to_integral(entity));
     for (const auto& gridId : gridsToLeave) {
         auto it = gridList.find(gridId);
         if (it == gridList.end()) {
@@ -218,5 +223,5 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& gridList, entt::e
             ViewSystem::HandlerPlayerLeaveMessage(observer, entity);
         }
     }
-    BroadCastToPlayer(observersToNotifyExit, ClientPlayerSceneServicePushActorDestroyS2CMsgId, tls_actor_destroy_s2c);
+    BroadCastToPlayer(observersToNotifyExit, ClientPlayerSceneServicePushActorDestroyS2CMsgId, actorDestroyMessage);
 }

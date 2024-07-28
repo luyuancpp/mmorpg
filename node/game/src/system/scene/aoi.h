@@ -21,7 +21,6 @@ public:
     static absl::uint128 GetGridId(const Hex& hex);
     static void ScanNeighborGridIds(const Hex& hex, GridSet& grid_set);
     static void ScanCurrentAndNeighborGridIds(const Hex& hex, GridSet& grid_set);
-    static void HandlePlayerMovement(entt::entity mover, const Transform& transform, SceneEntityComp& player_scene);
     static void LeaveGrid(const Hex& hex, SceneGridList& grid_list, entt::entity player);
     static void ClearEmptyGrids();
 private:

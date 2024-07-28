@@ -7,16 +7,16 @@ extern EntityUnorderedMap entitiesToNotifyEntry;
 extern EntityUnorderedMap entitiesToNotifyExit;
 
 bool ViewSystem::CheckSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
-    entitiesToNotifyEntry.emplace(observer, entity);
     return true; // Mock behavior
 }
 
 bool ViewSystem::CheckSendPlayerEnterMessage(entt::entity observer, entt::entity entity) {
-    entitiesToNotifyEntry.emplace(observer, entity);
+    
     return true; // Mock behavior
 }
 
-void ViewSystem::FillActorCreateS2CInfo(entt::entity entity) {
+void ViewSystem::FillActorCreateS2CInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage) {
+    entitiesToNotifyEntry.emplace(observer, entity);
 }
 
 void ViewSystem::HandlerPlayerLeaveMessage(entt::entity observer, entt::entity leaver)
