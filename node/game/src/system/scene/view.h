@@ -9,4 +9,5 @@ public:
     static bool CheckSendNpcEnterMessage(entt::entity observer, entt::entity entrant);
     static bool CheckSendPlayerEnterMessage(entt::entity observer, entt::entity entrant);
     static void FillActorCreateS2CInfo(const entt::entity entrant);
+    static void HandlerPlayerLeaveMessage(entt::entity observer, entt::entity leaver);
 };
