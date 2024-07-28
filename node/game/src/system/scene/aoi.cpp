@@ -221,6 +221,7 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& gridList, entt::e
         for (const auto& observer : it->second.entity_list) {
             observersToNotifyExit.emplace(observer);
             ViewSystem::HandlerPlayerLeaveMessage(observer, entity);
+            ViewSystem::HandlerPlayerLeaveMessage(entity, observer);
         }
     }
     BroadCastToPlayer(observersToNotifyExit, ClientPlayerSceneServicePushActorDestroyS2CMsgId, actorDestroyMessage);
