@@ -33,20 +33,16 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-
-	// 1 清除玩家会话，处理连续顶号进入情况
-	// 2 检查玩家是否已经在线，若在线则直接进入
-	// 3 异步加载过程中处理玩家断开连接的情况
-	// 4 玩家不在线，加入异步加载列表并尝试异步加载
-
 	LOG_INFO << "Handling EnterGs request for player: " << request->player_id()
 		<< ", centre_node_id: " << request->centre_node_id();
 
+	// 1 清除玩家会话，处理连续顶号进入情况
 	PlayerNodeSystem::RemovePlayerSession(request->player_id());
 
 	const auto& playerList = tlsCommonLogic.GetPlayerList();
 	auto playerIt = playerList.find(request->player_id());
 
+	// 2 检查玩家是否已经在线，若在线则直接进入
 	if (playerIt != playerList.end())
 	{
 		EnterGsInfo enterInfo;
@@ -59,11 +55,14 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 	enterInfo.set_centre_node_id(request->centre_node_id());
 	auto asyncPlayerIt = tlsGame.asyncPlayerList.emplace(request->player_id(), enterInfo);
 
+	// 3 异步加载过程中处理玩家断开连接的情况
 	if (!asyncPlayerIt.second)
 	{
 		LOG_ERROR << "Failed to emplace player in asyncPlayerList: " << request->player_id();
 		return;
 	}
+
+	// 4 玩家不在线，加入异步加载列表并尝试异步加载
 
 	tlsGame.playerRedis->AsyncLoad(request->player_id());
 ///<<< END WRITING YOUR CODE
