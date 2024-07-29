@@ -64,4 +64,4 @@ private:
     TimerTask world_timer_;
 };
 
-extern GameNode* g_game_node;
+extern GameNode* gGameNode;

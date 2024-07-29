@@ -8,8 +8,8 @@
 
 struct SceneNav
 {
-    dtNavMesh nav_mesh;
-    dtNavMeshQuery nav_query;
+    dtNavMesh navMesh;
+    dtNavMeshQuery navQuery;
 };
 
 using SceneNavs = std::unordered_map<uint32_t, SceneNav>;
