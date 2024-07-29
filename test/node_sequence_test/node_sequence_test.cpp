@@ -40,20 +40,19 @@ TEST(TestSnowFlakeThreadSafe, justGenerateTime)
 
 TEST(TestSnowFlakeThreadSafe, generate)
 {
-	GuidSet guidSet;
-	GuidVector firstVector;
-	emplaceToVector(firstVector);
-	putVectorIntoSet(guidSet, firstVector);
+	for (int32_t i = 0; i < 100; ++i)
+	{
+		GuidSet guidSet;
+		GuidVector firstVector;
+		emplaceToVector(firstVector);
+		putVectorIntoSet(guidSet, firstVector);
 
-	assert(guidSet.size() == firstVector.size());
+		assert(guidSet.size() == firstVector.size());
+	}
 }
 
 int main(int argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);
-	while (true)
-	{
-		RUN_ALL_TESTS();
-	}
 	return RUN_ALL_TESTS();
 }

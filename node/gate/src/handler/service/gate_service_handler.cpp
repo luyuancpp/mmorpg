@@ -12,11 +12,10 @@
 
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-
 void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,
 	const ::RegisterGameRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	// Centre server notification
@@ -49,7 +48,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,
 	const ::UnRegisterGameRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	entt::entity requestGameNodeId{ request->game_node_id() };
@@ -61,7 +60,7 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,
 	const ::RegisterSessionGameNodeRequest* request,
 	::RegisterSessionGameNodeResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sessionIt = tls_gate.sessions().find(request->session_info().session_id());
@@ -81,7 +80,7 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sessionIt = tls_gate.sessions().find(request->head().session_id());
@@ -98,7 +97,7 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* controller,
 	const ::GateNodeKickConnRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	Destroy(tls.sceneRegistry, entt::entity{ request->session_id() });
@@ -109,7 +108,7 @@ void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* con
 void GateServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
 	const ::RouteMsgStringRequest* request,
 	::RouteMsgStringResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -119,7 +118,7 @@ void GateServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* c
 void GateServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
 	::RoutePlayerMsgStringResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -129,7 +128,7 @@ void GateServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 void GateServiceHandler::BroadCast2PlayerMessage(::google::protobuf::RpcController* controller,
 	const ::BroadCast2PlayerRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sessionId : request->session_list())
@@ -145,3 +144,4 @@ void GateServiceHandler::BroadCast2PlayerMessage(::google::protobuf::RpcControll
 	}
 	///<<< END WRITING YOUR CODE
 }
+
