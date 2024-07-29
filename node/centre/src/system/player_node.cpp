@@ -166,6 +166,6 @@ void PlayerNodeSystem::HandlePlayerLeave(Guid playerUid)
 	}
 	else
 	{
-		ScenesSystem::LeaveScene({ playerEntity });
+		SceneSystem::LeaveScene({ playerEntity });
 	}
 }

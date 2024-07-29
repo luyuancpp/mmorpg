@@ -89,8 +89,8 @@ void PlayerChangeSceneSystem::ProcessSameGsChangeScene(entt::entity player, cons
 		return;
 	}
 
-	ScenesSystem::LeaveScene({ player });
-	ScenesSystem::EnterScene({ destScene , player });
+	SceneSystem::LeaveScene({ player });
+	SceneSystem::EnterScene({ destScene , player });
 	PopFrontChangeSceneQueue(player);
 	OnEnterSceneOk(player);
 }
@@ -98,15 +98,15 @@ void PlayerChangeSceneSystem::ProcessSameGsChangeScene(entt::entity player, cons
 // 处理不同游戏服务器间的场景切换
 void PlayerChangeSceneSystem::ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
 	if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eLeaveGsScene) {
-		ScenesSystem::LeaveScene({ player });
+		SceneSystem::LeaveScene({ player });
 	}
 	else if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eEnterGsSceneSucceed) {
 		const auto destScene = entt::entity{ changeInfo.guid() };
 		if (entt::null == destScene) {
-			ScenesSystem::EnterDefaultScene({ player });
+			SceneSystem::EnterDefaultScene({ player });
 		}
 		else {
-			ScenesSystem::EnterScene({ destScene, player });
+			SceneSystem::EnterScene({ destScene, player });
 		}
 	}
 	else if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eGateEnterGsSceneSucceed) {
