@@ -19,9 +19,9 @@ public:
     void set_current_session_id(const uint64_t current_session_id) { current_session_id_ = current_session_id; }
     uint64_t session_id() const { return current_session_id_; }
 
-    entt::entity get_player(Guid player_uid);
-    inline PlayerListMap& PlayerList() { return players_list_; }
-    inline const PlayerListMap& PlayerList() const { return players_list_; }
+    entt::entity GetPlayer(Guid player_uid);
+    inline PlayerListMap& GetPlayerList() { return players_list_; }
+    inline const PlayerListMap& GetPlayerList() const { return players_list_; }
 private:
     RouteNodeInfo route_data_;
     std::string route_msg_body_;

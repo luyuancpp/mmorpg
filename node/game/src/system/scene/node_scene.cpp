@@ -30,7 +30,7 @@ void GameNodeSceneSystem::LoadAllMainSceneNavBin()
     auto& config_all = mainscene_config::GetSingleton().all();
     for (auto& it : config_all.data())
     {
-        auto nav_it = tls_game.scene_nav_.emplace(it.id(), SceneNav{});
+        auto nav_it = tlsGame.sceneNav.emplace(it.id(), SceneNav{});
         if (!nav_it.second)
         {
             LOG_ERROR << "load scene nav err" << it.id();
@@ -105,7 +105,7 @@ void GameNodeSceneSystem::OnSceneCreateHandler(const OnSceneCreate& message)
     tls.sceneRegistry.emplace<SceneGridList>(scene);
 
     auto& scene_info = tls.sceneRegistry.get<SceneInfo>(scene);
-    if (tls_game.scene_nav_.contains(scene_info.scene_confid()))
+    if (tlsGame.sceneNav.contains(scene_info.scene_confid()))
     {
         //auto& dt_crowd = tls.scene_registry.emplace<dtCrowd>(scene);
         //dt_crowd.init(1000, kAgentRadius, &tls_game.scene_nav_[scene_info.scene_confid()].nav_mesh);
