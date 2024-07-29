@@ -61,6 +61,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 
 	// 异步加载过程中处理玩家断开连接的情况
 	tlsGame.playerRedis->AsyncLoad(request->player_id());
+///<<< END WRITING YOUR CODE
 }
 
 void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controller,
