@@ -67,11 +67,14 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 	auto sessionIt = tls_gate.sessions().find(request->session_info().session_id());
 	if (sessionIt == tls_gate.sessions().end())
 	{
+		LOG_ERROR << "Session ID not found for PlayerEnterGs, session ID: " << request->session_info().session_id();
 		return;
 	}
 	// Handle potential asynchronous issue if the GS sends while Gate is updating GS
 	sessionIt->second.game_node_id_ = request->game_node_id();
 	response->mutable_session_info()->set_session_id(request->session_info().session_id());
+	LOG_INFO << "Player entered GS, session ID: " << request->session_info().session_id()
+		<< ", game node ID: " << request->game_node_id();
 	///<<< END WRITING YOUR CODE
 }
 
@@ -84,10 +87,11 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	auto sessionIt = tls_gate.sessions().find(request->head().session_id());
 	if (sessionIt == tls_gate.sessions().end())
 	{
-		LOG_ERROR << "Connection ID not found for session ID: " << request->head().session_id();
+		LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->head().session_id();
 		return;
 	}
 	g_gate_node->Send(sessionIt->second.conn_, request->body());
+	LOG_INFO << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
 }
 
@@ -98,7 +102,7 @@ void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* con
 {
 	///<<< BEGIN WRITING YOUR CODE
 	Destroy(tls.sceneRegistry, entt::entity{ request->session_id() });
-	LOG_DEBUG << "Session ID to be kicked: " << request->session_id();
+	LOG_DEBUG << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }
 
@@ -133,10 +137,11 @@ void GateServiceHandler::BroadCast2PlayerMessage(::google::protobuf::RpcControll
 		auto sessionIt = tls_gate.sessions().find(sessionId);
 		if (sessionIt == tls_gate.sessions().end())
 		{
-			LOG_ERROR << "Connection ID not found for session ID: " << sessionId;
+			LOG_ERROR << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId;
 			continue;
 		}
 		g_gate_node->Send(sessionIt->second.conn_, request->body());
+		LOG_INFO << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE
 }
