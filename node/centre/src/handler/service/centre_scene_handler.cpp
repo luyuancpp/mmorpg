@@ -7,7 +7,7 @@
 void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController* controller,
 	const ::RegisterSceneRequest* request,
 	::RegisterSceneResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sceneInfo : request->scenes_info())
@@ -41,3 +41,4 @@ void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcControlle
 	SceneSystem::DestroyScene({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
 }
+
