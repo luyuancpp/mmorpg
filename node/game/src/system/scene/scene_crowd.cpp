@@ -21,7 +21,6 @@ void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 	auto dtCrowd = tls.sceneRegistry.try_get<DtCrowdPtr>(playerEntity);
 	if (dtCrowd == nullptr)
 	{
-		LOG_ERROR << "dtCrowd component not found for scene";
 		return;
 	}
 
