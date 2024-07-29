@@ -20,10 +20,10 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	//正在切换场景中，不能马上切换，gs崩溃了怎么办
-	CentreChangeSceneInfo change_scene_info;
-	PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(change_scene_info, request->scene_info());
-	if ( const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info) ; ret != kOK)
+		//正在切换场景中，不能马上切换，gs崩溃了怎么办
+	CentreChangeSceneInfo changeSceneInfo;
+	PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(changeSceneInfo, request->scene_info());
+	if (const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, changeSceneInfo); ret != kOK)
 	{
 		PlayerTipSystem::SendToPlayer(player, ret, {});
 		return;
@@ -45,37 +45,33 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	 //异步切换考虑消息队列
-	auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
-	if (nullptr == change_scene_queue)
+		//异步切换考虑消息队列
+	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
+	if (!changeSceneQueue || changeSceneQueue->changeSceneQueue.empty())
 	{
 		return;
 	}
-	if (change_scene_queue->changeSceneQueue.empty())
-	{
-		return;
-	}
-	const auto& change_scene_info = change_scene_queue->changeSceneQueue.front();
-	LOG_DEBUG << "Gs2CentreLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
-	const auto to_scene = entt::to_entity(change_scene_info.guid());
+	const auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
+	LOG_DEBUG << "Gs2CentreLeaveSceneAsyncSavePlayerComplete  change scene " << changeSceneInfo.processing();
+	const auto toScene = entt::to_entity(changeSceneInfo.guid());
 	//todo异步加载完场景已经不在了scene了
 	//todo 场景崩溃了要去新的场景
-	if (entt::null == to_scene)
+	if (entt::null == toScene)
 	{
 		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
 		return;
 	}
-	auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	if (nullptr == player_node_info)
+	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (!playerNodeInfo)
 	{
 		//todo 
 		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
 		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
 	}
-	player_node_info->set_game_node_id(kInvalidNodeId);
+	playerNodeInfo->set_game_node_id(kInvalidNodeId);
 
-	PlayerSceneSystem::ProcessPlayerEnterGameServer(player, SceneSystem::GetGameNodeId(to_scene));
+	PlayerSceneSystem::ProcessPlayerEnterGameServer(player, SceneSystem::GetGameNodeId(toScene));
 ///<<< END WRITING YOUR CODE
 }
 
@@ -84,13 +80,12 @@ void CentreScenePlayerServiceHandler::SceneInfoC2S(entt::entity player,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	//给客户端发所有场景消息
-    SceneInfoS2C message;
-    for (const auto& [e, info] : tls.sceneRegistry.view<SceneInfo>().each())
-    {
-        message.mutable_scene_info()->Add()->CopyFrom(info);
-    }
-    SendToPlayer(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
+		//给客户端发所有场景消息
+	SceneInfoS2C message;
+	for (const auto& [entity, info] : tls.sceneRegistry.view<SceneInfo>().each())
+	{
+		message.mutable_scene_info()->Add()->CopyFrom(info);
+	}
+	SendToPlayer(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
-
