@@ -158,7 +158,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	SendMessageToPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
-void SendToGate(const uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId)
+void SendToGateById(const uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId)
 {
 	entt::entity gateId{ gateNodeId };
 	if (!tls.gateNodeRegistry.valid(gateId))

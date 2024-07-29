@@ -59,7 +59,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid player_id, player_database& m
 	//todo session 啥时候删除？
 	//告诉Centre 保存完毕，可以切换场景了
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
-	SendToCentrePlayer(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId,
+	SendToCentrePlayerById(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId,
 		request,
 		player_id);
 
