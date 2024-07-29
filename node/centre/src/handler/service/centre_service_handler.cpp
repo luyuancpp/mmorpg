@@ -140,7 +140,6 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	///<<< END WRITING YOUR CODE
 }
 
-
 void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* controller,
 	const ::RegisterGateRequest* request,
 	::Empty* response,
@@ -180,7 +179,6 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
     ///<<< END WRITING YOUR CODE
 }
 
-
 void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,
 	const ::GateClientMessageRequest* request,
 	::Empty* response,
@@ -193,7 +191,7 @@ void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* 
 void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller,
 	const ::GateSessionDisconnectRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
@@ -247,7 +245,6 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 ///<<< END WRITING YOUR CODE
 }
 
-
 void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,
 	const ::LoginRequest* request,
 	::LoginResponse* response,
@@ -271,7 +268,7 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* controller,
 	const ::EnterGameL2Ctr* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	//顶号
@@ -345,9 +342,6 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	///<<< END WRITING YOUR CODE
 }
 
-
-
-
 void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,
 	const ::CtrlLsLeaveGameRequest* request,
 	::Empty* response,
@@ -374,7 +368,7 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -456,7 +450,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
 	const ::EnterGameNodeSucceedRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "EnterGsSucceed request received.";
@@ -488,11 +482,10 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE
 }
 
-
 void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
 	const ::RouteMsgStringRequest* request,
 	::RouteMsgStringResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -631,7 +624,6 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	}
 	///<<< END WRITING YOUR CODE
 }
-
 
 void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
