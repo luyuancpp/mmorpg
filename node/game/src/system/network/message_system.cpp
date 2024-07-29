@@ -94,7 +94,7 @@ void SendToCentrePlayer(uint32_t messageId, const google::protobuf::Message& mes
 	(*centreNode)->Send(CentreServiceGsPlayerServiceMsgId, request);
 }
 
-void Send2Centre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
+void SendToCentre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {
 	entt::entity centreNodeId{ nodeId };
 	if (!tls.centreNodeRegistry.valid(centreNodeId))
