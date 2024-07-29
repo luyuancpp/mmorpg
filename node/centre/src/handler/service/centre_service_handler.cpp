@@ -462,159 +462,176 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
 	const ::EnterGameNodeSucceedRequest* request,
 	::Empty* response,
-	 ::google::protobuf::Closure* done)
+	::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+
 	const auto player = tls_cl.get_player(request->player_id());
-    if (!tls.registry.valid(player))
-    {
-        LOG_ERROR << "player not found " << request->player_id();
-        return;
-    }
+	if (!tls.registry.valid(player))
+	{
+		LOG_ERROR << "Player not found: " << request->player_id();
+		return;
+	}
+
 	auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
-		LOG_ERROR << "player session not found" << request->player_id();
+		LOG_ERROR << "Player session info not found for player: " << request->player_id();
 		return;
 	}
+
 	player_node_info->set_game_node_id(request->game_node_id());
 
 	PlayerNodeSystem::RegisterPlayerToGateNode(player);
+
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(player);
-///<<< END WRITING YOUR CODE
+
+	///<<< END WRITING YOUR CODE
 }
 
 void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
 	const ::RouteMsgStringRequest* request,
 	::RouteMsgStringResponse* response,
-	 ::google::protobuf::Closure* done)
+	::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
 
-    //函数返回前一定会执行的函数
-    defer(tls_cl.set_next_route_node_type(UINT32_MAX));
-    defer(tls_cl.set_next_route_node_id(UINT32_MAX));
+	// Clean up previous routing information
+	defer(tls_cl.set_next_route_node_type(UINT32_MAX));
+	defer(tls_cl.set_next_route_node_id(UINT32_MAX));
 	defer(tls_cl.set_current_session_id(kInvalidSessionId));
 
-    tls_cl.set_current_session_id(request->session_id());
+	// Set current session ID
+	tls_cl.set_current_session_id(request->session_id());
 
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
-		LOG_ERROR << "route msg size too max:" << request->DebugString();
+		LOG_ERROR << "Route message size exceeds maximum limit: " << request->DebugString();
 		return;
 	}
+
 	if (request->route_data_list().empty())
 	{
-		LOG_ERROR << "msg list empty:" << request->DebugString();
+		LOG_ERROR << "Route data list is empty: " << request->DebugString();
 		return;
 	}
+
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
+
 	if (route_data.message_id() >= g_message_info.size())
 	{
-		LOG_ERROR << "message_id not found " << route_data.message_id();
+		LOG_ERROR << "Message ID not found: " << route_data.message_id();
 		return;
 	}
+
 	const auto& message_info = g_message_info[route_data.message_id()];
+
 	if (nullptr == message_info.service_impl_instance_)
 	{
-		LOG_ERROR << "message_id not found " << route_data.message_id();
+		LOG_ERROR << "Message service implementation not found for message ID: " << route_data.message_id();
 		return;
 	}
 
 	const auto it = g_server_service.find(message_info.service);
 	if (it == g_server_service.end())
 	{
-		LOG_ERROR << "message_id not found " << route_data.message_id();
+		LOG_ERROR << "Server service handler not found for message ID: " << route_data.message_id();
 		return;
 	}
+
 	const auto& service = it->second;
+
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found" << request->DebugString();
-		return;
-	}
-	//当前节点的请求信息
-	const std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
-	if (!current_node_request->ParsePartialFromArray(request->body().data(),
-		static_cast < int32_t > ( request -> body ( ) . size ( ) )))
-	{
-		LOG_ERROR << "invalid  body request" << request->DebugString();
+		LOG_ERROR << "Method not found: " << message_info.method;
 		return;
 	}
 
-	//当前节点的真正回复的消息
-	const std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
-	service->CallMethod(method, nullptr , get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
+	const std::unique_ptr<google::protobuf::Message> current_node_request(service->GetRequestPrototype(method).New());
+
+	if (!current_node_request->ParsePartialFromArray(request->body().data(),
+		static_cast<int32_t>(request->body().size())))
+	{
+		LOG_ERROR << "Failed to parse request body: " << request->DebugString();
+		return;
+	}
+
+	const std::unique_ptr<google::protobuf::Message> current_node_response(service->GetResponsePrototype(method).New());
+
+	service->CallMethod(method, nullptr, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 
 	auto* mutable_request = const_cast<::RouteMsgStringRequest*>(request);
-	//没有发送到下个节点就是要回复了
+
 	if (tls_cl.next_route_node_type() == UINT32_MAX)
 	{
-		const auto byte_size = static_cast < int32_t > ( current_node_response -> ByteSizeLong ( ) );
+		const auto byte_size = static_cast<int32_t>(current_node_response->ByteSizeLong());
 		response->mutable_body()->resize(byte_size);
 		current_node_response->SerializePartialToArray(response->mutable_body()->data(), byte_size);
-		for (auto& request_data_it : request->route_data_list())
+
+		// Copy route data list to response
+		for (const auto& request_data_it : request->route_data_list())
 		{
 			*response->add_route_data_list() = request_data_it;
 		}
+
 		response->set_session_id(tls_cl.session_id());
 		response->set_id(request->id());
 		return;
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
-	const auto next_route_data = mutable_request->add_route_data_list();
+	auto* next_route_data = mutable_request->add_route_data_list();
 	next_route_data->CopyFrom(tls_cl.route_data());
-	next_route_data->mutable_node_info()->CopyFrom(gCentreNode ->GetNodeInfo());
+	next_route_data->mutable_node_info()->CopyFrom(gCentreNode->GetNodeInfo());
 	mutable_request->set_body(tls_cl.route_msg_body());
-    mutable_request->set_id(request->id());
+	mutable_request->set_id(request->id());
 
-    switch (tls_cl.next_route_node_type())
-    {
-    case kGateNode:
+	switch (tls_cl.next_route_node_type())
+	{
+	case kGateNode:
 	{
 		entt::entity gate_node_id{ tls_cl.next_route_node_id() };
-        if (tls.gateNodeRegistry.valid(gate_node_id))
-        {
-            LOG_ERROR << "gate crash " << tls_cl.next_route_node_id();
-            return;
-        }
-        const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
-        if (nullptr == gate_node)
-        {
-            LOG_ERROR << "gate crash " << tls_cl.next_route_node_id();
-            return;
-        }
+		if (!tls.gateNodeRegistry.valid(gate_node_id))
+		{
+			LOG_ERROR << "Gate node not found: " << tls_cl.next_route_node_id();
+			return;
+		}
+		const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
+		if (nullptr == gate_node)
+		{
+			LOG_ERROR << "Gate node not found: " << tls_cl.next_route_node_id();
+			return;
+		}
 		(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
+		break;
 	}
-	break;
-    case kGameNode:
+	case kGameNode:
 	{
 		entt::entity game_node_id{ tls_cl.next_route_node_id() };
 		if (!tls.gameNodeRegistry.valid(game_node_id))
 		{
-            LOG_ERROR << "game not found game " << tls_cl.next_route_node_id() << request->DebugString();
-            return;
+			LOG_ERROR << "Game node not found: " << tls_cl.next_route_node_id() << ", " << request->DebugString();
+			return;
 		}
 		const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
 		if (nullptr == game_node)
 		{
-			LOG_ERROR << "game not found game " << tls_cl.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "Game node not found: " << tls_cl.next_route_node_id() << ", " << request->DebugString();
 			return;
 		}
 		(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
+		break;
 	}
-	    break;
-    default:
-	    {
-		    LOG_ERROR << "route to next node type error " << request->DebugString() << "," << tls_cl.next_route_node_type();
-	    }
-	break;
-}
+	default:
+	{
+		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tls_cl.next_route_node_type();
+		break;
+	}
+	}
 
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }
 
 void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
