@@ -11,21 +11,20 @@
 #include "comp/player.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
-
-void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
+void SendMessageToPlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
 	SendMessageToPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
-void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
+void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
 {
-	if (!tls.registry.valid(player))
+	if (!tls.registry.valid(playerEntity))
 	{
 		LOG_ERROR << "Player entity is not valid";
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "Player node info not found for player entity";
@@ -53,12 +52,12 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	(*gateNode)->Send(GateServicePlayerMessageMsgId, request);
 }
 
-void SendToCentrePlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
+void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendToCentrePlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendToCentrePlayerById(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
-void SendToCentrePlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
+void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity)
 {
 	if (!tls.registry.valid(playerEntity))
 	{
@@ -113,8 +112,7 @@ void SendToCentre(const uint32_t messageId, const google::protobuf::Message& mes
 	(*centreNode)->Send(messageId, message);
 }
 
-// Sends a message to a gate node identified by nodeId
-void SendToGate(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
+void SendToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {
 	entt::entity gateNodeId{ GetGateNodeId(nodeId) };
 	if (!tls.gateNodeRegistry.valid(gateNodeId))
@@ -133,7 +131,6 @@ void SendToGate(uint32_t messageId, const google::protobuf::Message& message, No
 	(*gateNode)->Send(GateServicePlayerMessageMsgId, message);
 }
 
-// Calls a method on a central node identified by nodeId
 void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& message, const NodeId nodeId)
 {
 	entt::entity centreNodeId{ nodeId };
@@ -153,7 +150,6 @@ void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& m
 	(*centreNode)->CallMethod(messageId, message);
 }
 
-// Broadcasts a message to all registered central nodes
 void BroadCastToCentre(uint32_t messageId, const google::protobuf::Message& message)
 {
 	for (auto&& [_, node] : tls.centreNodeRegistry.view<RpcClientPtr>().each())
@@ -162,12 +158,10 @@ void BroadCastToCentre(uint32_t messageId, const google::protobuf::Message& mess
 	}
 }
 
-// Broadcasts a message to a list of players
 void BroadCastToPlayer(const EntityUnorderedSet& playerList, const uint32_t messageId, const google::protobuf::Message& message)
 {
 	std::unordered_map<entt::entity, BroadCastSessionIdList> gateList;
 
-	// Collect player session IDs grouped by their associated gate nodes
 	for (auto& player : playerList)
 	{
 		if (!tls.registry.valid(player))
@@ -193,7 +187,6 @@ void BroadCastToPlayer(const EntityUnorderedSet& playerList, const uint32_t mess
 		gateList[gateNodeId].emplace(playerNodeInfo->gate_session_id());
 	}
 
-	// Send broadcast message to each gate node with associated player session IDs
 	BroadCast2PlayerRequest request;
 	for (auto&& [gateNodeId, sessionIdList] : gateList)
 	{

@@ -19,7 +19,7 @@ void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& mess
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, RpcSessionPtr& gate, uint64_t sessionId);
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
-void SendToGate(uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId);
+void SendToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId);
 
 void CallGamePlayerMethod(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId);
