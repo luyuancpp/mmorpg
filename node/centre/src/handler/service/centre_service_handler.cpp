@@ -50,7 +50,7 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 {
 	auto player_id = GetPlayerIdBySessionId(session_id);
 
-	LOG_DEBUG << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
+	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
 
 	const auto player_it = tlsCommonLogic.GetPlayerList().find(player_id);
 	if (player_it == tlsCommonLogic.GetPlayerList().end())
@@ -59,7 +59,7 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 		return entt::null;
 	}
 
-	LOG_DEBUG << "Player entity found for session ID: " << session_id << ", player ID: " << player_id;
+	LOG_TRACE << "Player entity found for session ID: " << session_id << ", player ID: " << player_id;
 
 	return player_it->second;
 }
@@ -310,7 +310,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	tlsSessions.emplace(sessionId, sessionInfo);
 
 	// TODO: Disconnect old connection
-
+	// todo 快速登录两次
 	if (const auto playerIt = tlsCommonLogic.GetPlayerList().find(clientMsgBody.player_id());
 		playerIt == tlsCommonLogic.GetPlayerList().end())
 	{

@@ -34,7 +34,7 @@ void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
         auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
         if (it == tls_gate.sessions().end())
         {
-            LOG_TRACE << "conn id not found  session id " << "," << call->reply.session_info().session_id();
+            LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
         g_gate_node->Send(it->second.conn_, call->reply.client_msg_body());
@@ -71,7 +71,7 @@ void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
         auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
         if (it == tls_gate.sessions().end())
         {
-            LOG_TRACE << "conn id not found  session id " << "," << call->reply.session_info().session_id();
+            LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
         g_gate_node->Send(it->second.conn_, call->reply.client_msg_body());
@@ -107,7 +107,7 @@ void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
         auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
         if (it == tls_gate.sessions().end())
         {
-            LOG_TRACE << "conn id not found  session id " << "," << call->reply.session_info().session_id();
+            LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
         g_gate_node->Send(it->second.conn_, call->reply.client_msg_body());

@@ -201,5 +201,5 @@ void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint3
 	message.set_message_id(ClientPlayerCommonServicePushTipS2CMsgId);
 	g_gate_node->Codec().send(conn, message);
 
-	LOG_INFO << "Sent tip message to session id: " << SessionId(conn) << ", tip id: " << tipId;
+	LOG_ERROR << "Sent tip message to session id: " << SessionId(conn) << ", tip id: " << tipId;
 }

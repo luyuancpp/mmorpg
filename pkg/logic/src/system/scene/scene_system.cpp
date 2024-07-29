@@ -79,7 +79,7 @@ uint32_t SceneSystem::GenSceneGuid() {
 	while (tls.sceneRegistry.valid(entt::entity{ sceneId })) {
 		sceneId = nodeSequence.Generate();
 	}
-	LOG_DEBUG << "Generated new scene ID: " << sceneId;
+	LOG_INFO << "Generated new scene ID: " << sceneId;
 	return sceneId;
 }
 
@@ -156,7 +156,7 @@ entt::entity SceneSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& p
 	createSceneEvent.set_entity(entt::to_integral(scene));
 	tls.dispatcher.trigger(createSceneEvent);
 
-	LOG_DEBUG << "Created new scene with ID: " << tls.sceneRegistry.get<SceneInfo>(scene).guid();
+	LOG_INFO << "Created new scene with ID: " << tls.sceneRegistry.get<SceneInfo>(scene).guid();
 	return scene;
 }
 
@@ -189,7 +189,7 @@ void SceneSystem::DestroyScene(const DestroySceneParam& param) {
 }
 
 // Handle server node destruction
-void SceneSystem::OnDestroyServer(entt::entity node) {
+void SceneSystem::HandleDestroyGameNode(entt::entity node) {
 	auto& nodeSceneComp = tls.gameNodeRegistry.get<NodeSceneComp>(node);
 	auto sceneLists = nodeSceneComp.GetSceneLists();
 
@@ -359,7 +359,7 @@ void SceneSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 }
 
 // Replace a crashed server node with a new node
-void SceneSystem::ReplaceCrashServer(entt::entity crashNode, entt::entity destNode) {
+void SceneSystem::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNode) {
 	auto& crashNodeScene = tls.gameNodeRegistry.get<NodeSceneComp>(crashNode);
 	auto sceneLists = crashNodeScene.GetSceneLists();
 

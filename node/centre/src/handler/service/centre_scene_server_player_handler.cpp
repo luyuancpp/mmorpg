@@ -65,7 +65,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	}
 
 	const auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
-	LOG_DEBUG << "Processing change scene info: " << changeSceneInfo.processing();
+	LOG_INFO << "Processing change scene info: " << changeSceneInfo.processing();
 
 	const auto toScene = entt::to_entity(changeSceneInfo.guid());
 	if (entt::null == toScene)

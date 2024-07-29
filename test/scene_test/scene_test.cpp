@@ -127,7 +127,7 @@ TEST(SceneSystemTests, DestroyServer)
 	EXPECT_EQ(2, sceneSystem.GetScenesSize());
 	EXPECT_EQ(sceneSystem.GetScenesSize(), sceneSystem.GetScenesSize());
 
-	sceneSystem.OnDestroyServer(node1);
+	sceneSystem.HandleDestroyGameNode(node1);
 
 	EXPECT_FALSE(tls.gameNodeRegistry.valid(node1));
 	EXPECT_FALSE(tls.sceneRegistry.valid(scene1));
@@ -139,7 +139,7 @@ TEST(SceneSystemTests, DestroyServer)
 	EXPECT_EQ(0, sceneSystem.GetScenesSize(createParams1.sceneInfo.scene_confid()));
 	EXPECT_EQ(1, sceneSystem.GetScenesSize(createParams2.sceneInfo.scene_confid()));
 
-	sceneSystem.OnDestroyServer(node2);
+	sceneSystem.HandleDestroyGameNode(node2);
 
 	EXPECT_EQ(0, sceneSystem.GetScenesSize());
 	EXPECT_FALSE(tls.gameNodeRegistry.valid(node1));
@@ -480,7 +480,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 
 	entt::entity crashNode = *nodeList.begin();
 	entt::entity replaceNode = *(++nodeList.begin());
-	sm.ReplaceCrashServer(crashNode, replaceNode);
+	sm.ReplaceCrashGameNode(crashNode, replaceNode);
 
 	EXPECT_FALSE(tls.gameNodeRegistry.valid(crashNode));
 	nodeList.erase(crashNode);

@@ -14,7 +14,7 @@ void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	LOG_DEBUG << "Handling Centre2GsLoginRequest for player: " << tls.registry.get<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
+	LOG_INFO << "Handling Centre2GsLoginRequest for player: " << tls.registry.get<Guid>(player) << ", enter_gs_type: " << request->enter_gs_type();
 
 	if (request->enter_gs_type() == LOGIN_NONE) // 登录，不是普通切换场景
 	{
