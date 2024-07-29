@@ -4,7 +4,7 @@
 
 #include "constants/frame.h"
 #include "Recast/Recast.h"
-#undef  TEXT
+#undef TEXT
 #include "system/player/player_session.h"
 #include "system/scene/aoi.h"
 #include "system/scene/movement.h"
@@ -16,46 +16,49 @@
 
 using namespace std::chrono;
 
-uint64_t GetTime(void)
+uint64_t GetTimeInMilliseconds()
 {
-    return duration_cast<std::chrono::milliseconds>(steady_clock::now().time_since_epoch()).count();
+	return duration_cast<std::chrono::milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
 void World::InitializeSystemBeforeConnect()
 {
-    tlsGame.frameTime.set_previous_time(GetTime());
+    tlsGame.frameTime.set_previous_time(GetTimeInMilliseconds());
     tlsGame.frameTime.set_target_fps(kTargetFPS);
     tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
-    
-    PlayerSessionSystem::Initialize();
-    ViewSystem::Initialize();
+
+	PlayerSessionSystem::Initialize();
+	ViewSystem::Initialize();
 }
 
 void World::InitSystemAfterConnect()
 {
+	// Initialization logic after connecting
+	// Currently empty
 }
 
 void World::Update()
 {
-    //https://github.com/recastnavigation/recastnavigation.git
-    const auto time = GetTime();
-    const double dt = (time - tlsGame.frameTime.previous_time()) / 1000.0;
-    tlsGame.frameTime.set_previous_time(time);
+	//https://github.com/recastnavigation/recastnavigation.git
+	const auto currentTime = GetTimeInMilliseconds();
+	const double deltaTime = (currentTime - tlsGame.frameTime.previous_time()) / 1000.0;
+	tlsGame.frameTime.set_previous_time(currentTime);
 
-    auto time_acc = rcClamp(tlsGame.frameTime.time_acc() + dt, -1.0f, 1.0f);
-    int sim_iter = 0;
-    const auto delta_time = tlsGame.frameTime.delta_time();
-    while (time_acc > delta_time)
-    {
-        time_acc -= delta_time;
-        if (sim_iter < 5)
-        {
-            AoiSystem::Update(delta_time);
-            MovementSystem::Update(delta_time);
-            MovementAccelerationSystem::Update(delta_time);
-        }
-        sim_iter++;
-    }
-    tlsGame.frameTime.set_time_acc(time_acc);
+	double accumulatedTime = rcClamp(tlsGame.frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
+	int simulationIterations = 0;
+	const double fixedDeltaTime = tlsGame.frameTime.delta_time();
+
+	while (accumulatedTime > fixedDeltaTime)
+	{
+		accumulatedTime -= fixedDeltaTime;
+		if (simulationIterations < 5)
+		{
+			AoiSystem::Update(fixedDeltaTime);
+			MovementSystem::Update(fixedDeltaTime);
+			MovementAccelerationSystem::Update(fixedDeltaTime);
+		}
+		simulationIterations++;
+	}
+
+	tlsGame.frameTime.set_time_accumulator(accumulatedTime);
 }
-

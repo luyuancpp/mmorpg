@@ -8,9 +8,9 @@
 using namespace muduo;
 using namespace muduo::net;
 
-void RedisSystem::Init(muduo::net::InetAddress& server_addr)
+void RedisSystem::Init(muduo::net::InetAddress& serverAddr)
 {
-    hiredis = std::make_unique<HiredisPtr::element_type>(EventLoop::getEventLoopOfCurrentThread(), server_addr);
+    hiredis = std::make_unique<HiredisPtr::element_type>(EventLoop::getEventLoopOfCurrentThread(), serverAddr);
     hiredis->connect();
 
     tlsGame.playerRedis = std::make_unique<PlayerRedis::element_type>(*hiredis);
