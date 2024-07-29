@@ -16,6 +16,7 @@ public:
 	static void HandlePlayerAsyncSaved(Guid player_id, player_database& message);
 	static void SavePlayer(entt::entity player);
 	static void EnterGs(const entt::entity player, const EnterGsInfo& enter_info);
+	static void NotifyEnterGsSucceed(entt::entity player, NodeId centre_node_id);
 	static void LeaveGs(entt::entity player);
 	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);
 	static void OnPlayerRegisteredToGateNode(entt::entity player);
