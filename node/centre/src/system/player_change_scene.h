@@ -2,19 +2,37 @@
 
 #include "comp/player_scene.h"
 
-//todo 测试换场景的时候服务器崩溃，队列首个换场景删除以后还能正常换场景
-class PlayerChangeSceneSystem
-{
+// PlayerChangeSceneSystem 类定义
+class PlayerChangeSceneSystem {
 public:
+	// 初始化场景切换队列
 	static void InitChangeSceneQueue(entt::entity player);
-	//队长拉人也得等待，不然太复杂了,队长拉进副本得等玩家继续切换次数切完了
-	static uint32_t PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& change_info);
-	static void ProcessChangeSceneQueue(entt::entity player);
+
+	// 添加切换场景信息到队列
+	static uint32_t PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& changeInfo);
+
+	// 移除队列中首个切换场景信息
 	static void PopFrontChangeSceneQueue(entt::entity player);
+
+	// 设置当前切换场景信息的切换状态
 	static void SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s);
-	static void CopySceneInfoToChangeInfo(CentreChangeSceneInfo& change_info, const SceneInfo& scene_info);
+
+	// 将场景信息复制到切换场景信息中
+	static void CopySceneInfoToChangeInfo(CentreChangeSceneInfo& changeInfo, const SceneInfo& sceneInfo);
+
+	// 处理玩家的场景切换队列
+	static void ProcessChangeSceneQueue(entt::entity player);
+
 private:
-	static void ProcessSameGsChangeScene(entt::entity player, const CentreChangeSceneInfo& change_info);
-	static void ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfo& change_info);
+	// 处理同一游戏服务器内的场景切换
+	static void ProcessSameGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo);
+
+	// 处理不同游戏服务器间的场景切换
+	static void ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo);
+
+	// 确认玩家成功进入场景后的操作
 	static void OnEnterSceneOk(entt::entity player);
+
+private:
+	// 玩家场景切换队列结构
 };

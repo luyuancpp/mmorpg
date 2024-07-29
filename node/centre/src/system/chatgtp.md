@@ -16,3 +16,34 @@
    - 在考虑边界条件时，需要在性能和稳定性之间找到平衡。过多的边界条件检查和异常处理可能会降低性能，而不足则可能导致系统不稳定或易受攻击。
 
 总体来说，虽然上面的代码片段基本覆盖了基本的操作和异常情况处理，但在实际应用中，仍然需要通过深入的测试和代码审查来确保所有的边界条件都得到了充分考虑和处理。这有助于确保系统在各种情况下的稳定性和可靠性。
+
+void PlayerChangeSceneSystem::ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo)
+{
+   //正在切换
+   //切换gs  存储完毕之后才能进入下一个场景
+   //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能
+   if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eLeaveGsScene)
+   {
+      ScenesSystem::LeaveScene({ player });
+   }
+   else if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eEnterGsSceneSucceed)
+   {
+      //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
+      const auto destScene = entt::entity{ changeInfo.guid() };
+      if (entt::null == destScene)
+      {
+         //todo 考虑直接删除了会不会有异常
+         //这时候gate已经更新了新的game node id 又进不去新场景,那我应该让他回到老场景
+         ScenesSystem::EnterDefaultScene({ player });
+      }
+      else
+      {
+         ScenesSystem::EnterScene({ destScene, player });
+      }
+   }
+   else if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eGateEnterGsSceneSucceed)
+   {
+      PopFrontChangeSceneQueue(player);
+      OnEnterSceneOk(player);
+   }
+}
