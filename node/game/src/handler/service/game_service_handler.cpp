@@ -75,7 +75,7 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 {
 ///<<< BEGIN WRITING YOUR CODE
 
-	LOG_INFO << "Handling message routing for session ID: " << request->head().session_id()
+	LOG_TRACE << "Handling message routing for session ID: " << request->head().session_id()
 		<< ", message ID: " << request->body().message_id();
 
 	const auto it = tlsSessions.find(request->head().session_id());
@@ -229,7 +229,7 @@ void GameServiceHandler::RegisterGate(::google::protobuf::RpcController* control
 		tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateNodeId, std::make_shared<RpcSessionPtr::element_type>(session.conn_));
 		assert(gateNodeId == entt::entity{ request->gate_node_id() });
 
-		LOG_DEBUG << "Registered gate node: " << MessageToJsonString(request);
+		LOG_INFO << "Registered gate node: " << MessageToJsonString(request);
 
 		break;
 	}

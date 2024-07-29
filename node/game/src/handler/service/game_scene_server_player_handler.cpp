@@ -15,7 +15,7 @@ void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_DEBUG << "Handling GsEnterSceneRequest for player: " << tls.registry.get<Guid>(player) << ", scene_id: " << request->scene_id();
+	LOG_INFO << "Handling GsEnterSceneRequest for player: " << tls.registry.get<Guid>(player) << ", scene_id: " << request->scene_id();
 
 	// 进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 	PlayerSceneSystem::EnterScene(player, request->scene_id());
@@ -27,7 +27,7 @@ void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tls.registry.get<Guid>(player);
+	LOG_INFO << "Handling GsLeaveSceneRequest for player: " << tls.registry.get<Guid>(player);
 
 	PlayerSceneSystem::LeaveScene(player);
 	if (request->change_gs()) // 存储完毕以后才能换场景，防止回档
@@ -45,7 +45,7 @@ void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,
 	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	LOG_DEBUG << "Handling EnterSceneS2CRequest for player: " << tls.registry.get<Guid>(player);
+	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tls.registry.get<Guid>(player);
 
 	const auto sceneEntity = tls.registry.try_get<SceneEntityComp>(player);
 	if (sceneEntity == nullptr)

@@ -83,7 +83,7 @@ void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
     PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeSceneInfo);
 }
 
-void PlayerSceneSystem::SendToGameServerEnterScene(entt::entity playerEntity)
+void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
 {
     if (playerEntity == entt::null)
     {

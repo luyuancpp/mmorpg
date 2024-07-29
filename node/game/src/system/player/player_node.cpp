@@ -20,7 +20,7 @@
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
 {
-	LOG_DEBUG << "Player loaded: " << playerId;
+	LOG_INFO << "Player loaded: " << playerId;
 
 	const auto asyncIt = tlsGame.asyncPlayerList.find(playerId);
 	if (asyncIt == tlsGame.asyncPlayerList.end())

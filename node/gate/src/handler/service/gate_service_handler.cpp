@@ -42,7 +42,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	gameNode->registerService(&g_gate_node->GetServiceHandler());
 	gameNode->connect();
 
-	LOG_DEBUG << "On game register: " << MessageToJsonString(request);
+	LOG_INFO << "On game register: " << MessageToJsonString(request);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -54,7 +54,7 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 	///<<< BEGIN WRITING YOUR CODE
 	entt::entity requestGameNodeId{ request->game_node_id() };
 	Destroy(tls.gameNodeRegistry, requestGameNodeId);
-	LOG_DEBUG << "On game unregister: " << MessageToJsonString(request);
+	LOG_INFO << "On game unregister: " << MessageToJsonString(request);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -102,7 +102,7 @@ void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* con
 {
 	///<<< BEGIN WRITING YOUR CODE
 	Destroy(tls.sceneRegistry, entt::entity{ request->session_id() });
-	LOG_DEBUG << "Session ID kicked by Centre: " << request->session_id();
+	LOG_INFO << "Session ID kicked by Centre: " << request->session_id();
 	///<<< END WRITING YOUR CODE
 }
 

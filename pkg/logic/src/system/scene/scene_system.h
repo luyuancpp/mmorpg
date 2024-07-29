@@ -145,7 +145,7 @@ public:
      * @brief OnDestroyServer handles actions when a server node is destroyed.
      * @param node The entity ID of the server node.
      */
-    static void OnDestroyServer(entt::entity node);
+    static void HandleDestroyGameNode(entt::entity node);
 
     /**
      * @brief CheckPlayerEnterScene checks if a player can enter a scene.
@@ -183,7 +183,7 @@ public:
      * @param crash_node The entity ID of the crashed server node.
      * @param dest_node The entity ID of the destination node.
      */
-    static void ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node);
+    static void ReplaceCrashGameNode(entt::entity crash_node, entt::entity dest_node);
 
     // Test-related methods
 
