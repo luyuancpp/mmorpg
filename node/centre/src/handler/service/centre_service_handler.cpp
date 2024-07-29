@@ -62,33 +62,40 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+	// Log that we have received a RegisterGame request
 	LOG_INFO << "Received RegisterGame request.";
 
+	// Parse client and server addresses
 	const InetAddress clientAddr(request->rpc_client().ip(), request->rpc_client().port());
 	const InetAddress serverAddr(request->rpc_server().ip(), request->rpc_server().port());
 	const entt::entity gameNodeId{ request->game_node_id() };
 
+	// Log client and server addresses along with game node ID
 	LOG_INFO << "Client address: " << clientAddr.toIpPort();
 	LOG_INFO << "Server address: " << serverAddr.toIpPort();
 	LOG_INFO << "Game node ID: " << request->game_node_id();
 
+	// Search for a matching client connection and register the game node
 	bool clientFound = false;
-
 	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
 	{
 		if (session.conn_->peerAddress().toIpPort() == clientAddr.toIpPort())
 		{
+			// Found a matching client connection
 			LOG_INFO << "Found matching client connection for registration.";
 			clientFound = true;
 
+			// Create and register the game node
 			const auto newGameNode = tls.gameNodeRegistry.create(gameNodeId);
 			if (newGameNode == entt::null)
 			{
+				// Failed to create the game node
 				LOG_ERROR << "Failed to create game node " << request->game_node_id();
 				return;
 			}
 
+			// Create game node pointer and add components
 			auto gameNodePtr = std::make_shared<RpcSessionPtr::element_type>(session.conn_);
 			AddMainSceneNodeComponent(tls.gameNodeRegistry, newGameNode);
 			tls.gameNodeRegistry.emplace<RpcSessionPtr>(newGameNode, gameNodePtr);
@@ -98,14 +105,17 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 		}
 	}
 
+	// If no matching client connection found, log a warning and return
 	if (!clientFound)
 	{
 		LOG_WARN << "Client not found for registration. Ignoring request.";
 		return;
 	}
 
+	// Log successfully registered game node information
 	LOG_INFO << "Game registered: " << MessageToJsonString(request);
 
+	// Update game node type based on server type
 	if (request->server_type() == eGameNodeType::kMainSceneCrossNode)
 	{
 		tls.gameNodeRegistry.remove<MainSceneNode>(gameNodeId);
@@ -125,13 +135,15 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 		LOG_INFO << "Game node " << request->game_node_id() << " updated to CrossRoomSceneNode.";
 	}
 
+	// Broadcast game registration to all gates
 	for (auto gate : tls.gateNodeRegistry.view<RpcSessionPtr>())
 	{
 		gCentreNode->BroadCastRegisterGameToGate(gameNodeId, gate);
 		LOG_INFO << "Broadcasted game registration for node " << request->game_node_id() << " to gate.";
 	}
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }
+
 
 void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* controller,
 	const ::RegisterGateRequest* request,
