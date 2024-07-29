@@ -16,7 +16,7 @@
 
 void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	SendToPlayer(message_id, message, tls_cl.get_player(player_id));
+	SendToPlayer(message_id, message, tlsCommonLogic.get_player(player_id));
 }
 
 void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -52,7 +52,7 @@ void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message,
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2CentrePlayer(message_id, message, tls_cl.get_player(player_id));
+	Send2CentrePlayer(message_id, message, tlsCommonLogic.get_player(player_id));
 }
 
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)

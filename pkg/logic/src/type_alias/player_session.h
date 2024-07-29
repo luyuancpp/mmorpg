@@ -7,4 +7,4 @@
 
 using SessionList = std::unordered_map<Guid, PlayerSessionInfo>;
 
-#define tls_sessions tls.globalRegistry.get<SessionList>(GlobalEntity())
+#define tlsSessions tls.globalRegistry.get<SessionList>(GlobalEntity())

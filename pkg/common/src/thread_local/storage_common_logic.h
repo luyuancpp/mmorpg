@@ -32,4 +32,4 @@ private:
     PlayerListMap players_list_;
 };
 
-extern thread_local ThreadLocalStorageCommonLogic tls_cl;
+extern thread_local ThreadLocalStorageCommonLogic tlsCommonLogic;

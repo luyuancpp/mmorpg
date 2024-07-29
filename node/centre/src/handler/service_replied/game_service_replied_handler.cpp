@@ -81,15 +81,15 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "message_id not found " << replied->body().message_id() ;
 		return;
 	}
-	const auto it = tls_sessions.find(replied->head().session_id());
-	if (it == tls_sessions.end())
+	const auto it = tlsSessions.find(replied->head().session_id());
+	if (it == tlsSessions.end())
 	{
 		LOG_ERROR << "can not find session id " << replied->head().session_id();
 		return;
 	}
 	const auto  player_id    = it->second.player_id();
 	const auto& message_info = g_message_info.at(replied->body().message_id() );
-	const auto  player = tls_cl.get_player(player_id);
+	const auto  player = tlsCommonLogic.get_player(player_id);
 	if (tls.registry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"

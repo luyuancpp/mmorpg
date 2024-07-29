@@ -17,5 +17,5 @@ void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tip_id, const S
 
 void PlayerTipSystem::SendToPlayer(Guid player_id, uint32_t tip_id, const StringVector& str_param)
 {
-	SendToPlayer(tls_cl.get_player(player_id), tip_id, str_param);
+	SendToPlayer(tlsCommonLogic.get_player(player_id), tip_id, str_param);
 }

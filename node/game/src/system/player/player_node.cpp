@@ -31,7 +31,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid player_id, const player_data
 	defer(tls_game.async_player_list_.erase(player_id));
 
 	auto player = tls.registry.create();
-	if (const auto [fst, snd] = tls_cl.PlayerList().emplace(player_id, player);
+	if (const auto [fst, snd] = tlsCommonLogic.PlayerList().emplace(player_id, player);
 		!snd)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
@@ -63,7 +63,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid player_id, player_database& m
 		request,
 		player_id);
 
-	if (tls.registry.any_of<UnregisterPlayer>(tls_cl.get_player(player_id)))
+	if (tls.registry.any_of<UnregisterPlayer>(tlsCommonLogic.get_player(player_id)))
 	{
         //存储完毕之后才删除,有没有更好办法做到先删除session 再存储
         RemovePlayerSession(player_id);
@@ -130,8 +130,8 @@ void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity player)
 //todo 检测
 void PlayerNodeSystem::RemovePlayerSession(const Guid player_id)
 {
-	auto player_it = tls_cl.PlayerList().find(player_id);
-	if (player_it == tls_cl.PlayerList().end())
+	auto player_it = tlsCommonLogic.PlayerList().find(player_id);
+	if (player_it == tlsCommonLogic.PlayerList().end())
 	{
 		return;
 	}
@@ -145,13 +145,13 @@ void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 	{
 		return;
 	}
-	defer(tls_sessions.erase(player_node_info->gate_session_id()));
+	defer(tlsSessions.erase(player_node_info->gate_session_id()));
 	player_node_info->set_gate_session_id(kInvalidSessionId);
 }
 
 void PlayerNodeSystem::DestroyPlayer(Guid player_id)
 {
-	defer(tls_cl.PlayerList().erase(player_id));
-	Destroy(tls.registry, tls_cl.get_player(player_id));
+	defer(tlsCommonLogic.PlayerList().erase(player_id));
+	Destroy(tls.registry, tlsCommonLogic.get_player(player_id));
 }
 
