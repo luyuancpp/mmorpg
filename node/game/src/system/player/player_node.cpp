@@ -18,29 +18,29 @@
 
 #include "game_node.h"
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid player_id, const player_database& message)
+void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
 {
-	LOG_DEBUG << "player load" << player_id;
-	const auto async_it = tlsGame.asyncPlayerList.find(player_id);
-	if (async_it == tlsGame.asyncPlayerList.end())
+	LOG_DEBUG << "Player loaded: " << playerId;
+
+	const auto asyncIt = tlsGame.asyncPlayerList.find(playerId);
+	if (asyncIt == tlsGame.asyncPlayerList.end())
 	{
-		LOG_ERROR << "player disconnect" << player_id;
+		LOG_ERROR << "Async player not found: " << playerId;
 		return;
 	}
 
-	defer(tlsGame.asyncPlayerList.erase(player_id));
+	defer(tlsGame.asyncPlayerList.erase(playerId));
 
 	auto player = tls.registry.create();
-	if (const auto [fst, snd] = tlsCommonLogic.GetPlayerList().emplace(player_id, player);
-		!snd)
+	if (const auto [fst, snd] = tlsCommonLogic.GetPlayerList().emplace(playerId, player); !snd)
 	{
-		LOG_ERROR << "server emplace error" << player_id;
+		LOG_ERROR << "Failed to emplace player: " << playerId;
 		return;
 	}
 
-	// on loaded db
+	// Populate player data from database message
 	tls.registry.emplace<Player>(player);
-	tls.registry.emplace<Guid>(player, player_id);
+	tls.registry.emplace<Guid>(player, playerId);
 	tls.registry.emplace<Transform>(player, message.transform());
 	Velocity v;
 	v.set_x(1);
@@ -48,28 +48,31 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid player_id, const player_data
 	v.set_z(1);
 	tls.registry.emplace<Velocity>(player, v);
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
-	tls.registry.emplace<PlayerNodeInfo>(player).set_centre_node_id(async_it->second.centre_node_id());
-	// on load db complete
+	tls.registry.emplace<PlayerNodeInfo>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
-	EnterGs(player, async_it->second);
+	// todo onload complete
+
+	// Notify game node about player entering
+	EnterGs(player, asyncIt->second);
 }
 
-void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid player_id, player_database& message)
+
+void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& message)
 {
 	//todo session 啥时候删除？
 	//告诉Centre 保存完毕，可以切换场景了
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
 	SendToCentrePlayerById(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId,
 		request,
-		player_id);
+		playerId);
 
-	if (tls.registry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(player_id)))
+	if (tls.registry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(playerId)))
 	{
         //存储完毕之后才删除,有没有更好办法做到先删除session 再存储
-        RemovePlayerSession(player_id);
+        RemovePlayerSession(playerId);
         //todo 会不会有问题
         //存储完毕从gs删除玩家
-        DestroyPlayer(player_id);
+        DestroyPlayer(playerId);
 	}  
 }
 
