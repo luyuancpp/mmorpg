@@ -1,4 +1,4 @@
-﻿#include "game_service_handler.h"
+#include "game_service_handler.h"
 #include "thread_local/storage.h"
 #include "system/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
