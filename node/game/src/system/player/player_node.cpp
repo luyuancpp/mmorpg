@@ -89,13 +89,13 @@ void PlayerNodeSystem::SavePlayer(entt::entity player)
 //考虑: 没load 完再次进入别的gs
 void PlayerNodeSystem::EnterGs(const entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	if (nullptr == player_node_info)
+	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == playerNodeInfo)
 	{
 		LOG_ERROR << "player node info  not found" << enter_info.centre_node_id();
-		player_node_info = &tls.registry.emplace<PlayerNodeInfo>(player);
+		playerNodeInfo = &tls.registry.emplace<PlayerNodeInfo>(player);
 	}
-	player_node_info->set_centre_node_id(enter_info.centre_node_id());
+	playerNodeInfo->set_centre_node_id(enter_info.centre_node_id());
 	//todo Centre 重新启动以后
 	EnterGameNodeSucceedRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
@@ -133,12 +133,12 @@ void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity player)
 //todo 检测
 void PlayerNodeSystem::RemovePlayerSession(const Guid player_id)
 {
-	auto player_it = tlsCommonLogic.GetPlayerList().find(player_id);
-	if (player_it == tlsCommonLogic.GetPlayerList().end())
+	auto playerIt = tlsCommonLogic.GetPlayerList().find(player_id);
+	if (playerIt == tlsCommonLogic.GetPlayerList().end())
 	{
 		return;
 	}
-	RemovePlayerSession(player_it->second);
+	RemovePlayerSession(playerIt->second);
 }
 
 void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
