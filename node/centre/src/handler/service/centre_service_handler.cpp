@@ -48,8 +48,8 @@ Guid GetPlayerIdBySessionId(const uint64_t session_id)
 
 entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 {
-	const auto player_it = tlsCommonLogic.PlayerList().find(GetPlayerIdBySessionId(session_id));
-	if (player_it == tlsCommonLogic.PlayerList().end())
+	const auto player_it = tlsCommonLogic.GetPlayerList().find(GetPlayerIdBySessionId(session_id));
+	if (player_it == tlsCommonLogic.GetPlayerList().end())
 	{
 		return entt::null;
 	}
@@ -252,7 +252,7 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE
     
-	if (tlsCommonLogic.PlayerList().size() >= kMaxPlayerSize)
+	if (tlsCommonLogic.GetPlayerList().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -287,8 +287,8 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 
 	// TODO: Disconnect old connection
 
-	if (const auto playerIt = tlsCommonLogic.PlayerList().find(clientMsgBody.player_id());
-		playerIt == tlsCommonLogic.PlayerList().end())
+	if (const auto playerIt = tlsCommonLogic.GetPlayerList().find(clientMsgBody.player_id());
+		playerIt == tlsCommonLogic.GetPlayerList().end())
 	{
 		LOG_INFO << "New player login: Player ID " << clientMsgBody.player_id();
 
@@ -380,7 +380,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	}
 
 	const auto playerId = it->second.player_id();
-	const auto player = tlsCommonLogic.get_player(playerId);
+	const auto player = tlsCommonLogic.GetPlayer(playerId);
 	if (!tls.registry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
@@ -456,7 +456,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 	LOG_INFO << "EnterGsSucceed request received.";
 
 	const auto playerId = request->player_id();
-	const auto player = tlsCommonLogic.get_player(playerId);
+	const auto player = tlsCommonLogic.GetPlayer(playerId);
 	if (!tls.registry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;

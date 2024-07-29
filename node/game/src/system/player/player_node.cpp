@@ -21,17 +21,17 @@
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid player_id, const player_database& message)
 {
 	LOG_DEBUG << "player load" << player_id;
-	const auto async_it = tls_game.async_player_list_.find(player_id);
-	if (async_it == tls_game.async_player_list_.end())
+	const auto async_it = tlsGame.asyncPlayerList.find(player_id);
+	if (async_it == tlsGame.asyncPlayerList.end())
 	{
 		LOG_ERROR << "player disconnect" << player_id;
 		return;
 	}
 
-	defer(tls_game.async_player_list_.erase(player_id));
+	defer(tlsGame.asyncPlayerList.erase(player_id));
 
 	auto player = tls.registry.create();
-	if (const auto [fst, snd] = tlsCommonLogic.PlayerList().emplace(player_id, player);
+	if (const auto [fst, snd] = tlsCommonLogic.GetPlayerList().emplace(player_id, player);
 		!snd)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
@@ -63,7 +63,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid player_id, player_database& m
 		request,
 		player_id);
 
-	if (tls.registry.any_of<UnregisterPlayer>(tlsCommonLogic.get_player(player_id)))
+	if (tls.registry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(player_id)))
 	{
         //存储完毕之后才删除,有没有更好办法做到先删除session 再存储
         RemovePlayerSession(player_id);
@@ -80,7 +80,7 @@ void PlayerNodeSystem::SavePlayer(entt::entity player)
 
 	pb->set_player_id(tls.registry.get<Guid>(player));
 	pb->mutable_transform()->CopyFrom(tls.registry.get<Transform>(player));
-	tls_game.player_redis_->Save(pb, tls.registry.get<Guid>(player));
+	tlsGame.playerRedis->Save(pb, tls.registry.get<Guid>(player));
 }
 
 //考虑: 没load 完再次进入别的gs
@@ -130,8 +130,8 @@ void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity player)
 //todo 检测
 void PlayerNodeSystem::RemovePlayerSession(const Guid player_id)
 {
-	auto player_it = tlsCommonLogic.PlayerList().find(player_id);
-	if (player_it == tlsCommonLogic.PlayerList().end())
+	auto player_it = tlsCommonLogic.GetPlayerList().find(player_id);
+	if (player_it == tlsCommonLogic.GetPlayerList().end())
 	{
 		return;
 	}
@@ -151,7 +151,7 @@ void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 
 void PlayerNodeSystem::DestroyPlayer(Guid player_id)
 {
-	defer(tlsCommonLogic.PlayerList().erase(player_id));
-	Destroy(tls.registry, tlsCommonLogic.get_player(player_id));
+	defer(tlsCommonLogic.GetPlayerList().erase(player_id));
+	Destroy(tls.registry, tlsCommonLogic.GetPlayer(player_id));
 }
 

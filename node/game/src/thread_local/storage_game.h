@@ -13,12 +13,12 @@ using PlayerEnterGSInfoList = std::unordered_map<Guid, EnterGsInfo>;
 class ThreadLocalStorageGame
 {
 public:
-	RedisSystem redis_;
-	PlayerRedis player_redis_;
-	PlayerEnterGSInfoList async_player_list_;
-	SceneNavs scene_nav_;
-	FrameTime frame_time_;
+	RedisSystem redis;
+	PlayerRedis playerRedis;
+	PlayerEnterGSInfoList asyncPlayerList;
+	SceneNavs sceneNav;
+	FrameTime frameTime;
 };
 
-extern thread_local ThreadLocalStorageGame tls_game;
+extern thread_local ThreadLocalStorageGame tlsGame;
 

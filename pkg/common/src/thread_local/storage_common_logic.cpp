@@ -2,7 +2,7 @@
 
 thread_local ThreadLocalStorageCommonLogic tlsCommonLogic;
 
-entt::entity ThreadLocalStorageCommonLogic::get_player(Guid player_uid)
+entt::entity ThreadLocalStorageCommonLogic::GetPlayer(Guid player_uid)
 {
     auto player_it = players_list_.find(player_uid);
     if (players_list_.end() == player_it)

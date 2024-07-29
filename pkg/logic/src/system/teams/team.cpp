@@ -13,8 +13,8 @@ void Team::OnAppointLeader(const Guid new_leader_guid)
 
 void Team::AddMember(Guid guid)
 {
-    const auto pit = tlsCommonLogic.PlayerList().find(guid);
-    if (pit == tlsCommonLogic.PlayerList().end())
+    const auto pit = tlsCommonLogic.GetPlayerList().find(guid);
+    if (pit == tlsCommonLogic.GetPlayerList().end())
     {
         return;
     }
@@ -25,8 +25,8 @@ void Team::AddMember(Guid guid)
 void Team::DelMember(Guid guid)
 {
     members_.erase(std::find(members_.begin(), members_.end(), guid));
-    const auto pit = tlsCommonLogic.PlayerList().find(guid);
-    if (pit == tlsCommonLogic.PlayerList().end())
+    const auto pit = tlsCommonLogic.GetPlayerList().find(guid);
+    if (pit == tlsCommonLogic.GetPlayerList().end())
     {
         return;
     }

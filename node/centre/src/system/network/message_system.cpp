@@ -69,12 +69,12 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
 
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendToGsPlayer(messageId, message, tlsCommonLogic.get_player(playerId));
+	SendToGsPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
 void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendToPlayerViaGs(messageId, message, tlsCommonLogic.get_player(playerId));
+	SendToPlayerViaGs(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
 void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
@@ -155,7 +155,7 @@ void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, 
 
 void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendToPlayer(messageId, message, tlsCommonLogic.get_player(playerId));
+	SendToPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
 void SendToGate(const uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId)

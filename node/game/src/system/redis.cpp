@@ -13,7 +13,7 @@ void RedisSystem::Init(muduo::net::InetAddress& server_addr)
     hiredis = std::make_unique<HiredisPtr::element_type>(EventLoop::getEventLoopOfCurrentThread(), server_addr);
     hiredis->connect();
 
-    tls_game.player_redis_ = std::make_unique<PlayerRedis::element_type>(*hiredis);
-    tls_game.player_redis_->SetLoadCallback(PlayerNodeSystem::HandlePlayerAsyncLoaded);
-    tls_game.player_redis_->SetSaveCallback(PlayerNodeSystem::HandlePlayerAsyncSaved);
+    tlsGame.playerRedis = std::make_unique<PlayerRedis::element_type>(*hiredis);
+    tlsGame.playerRedis->SetLoadCallback(PlayerNodeSystem::HandlePlayerAsyncLoaded);
+    tlsGame.playerRedis->SetSaveCallback(PlayerNodeSystem::HandlePlayerAsyncSaved);
 }

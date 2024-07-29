@@ -23,9 +23,9 @@ uint64_t GetTime(void)
 
 void World::InitializeSystemBeforeConnect()
 {
-    tls_game.frame_time_.set_previous_time(GetTime());
-    tls_game.frame_time_.set_target_fps(kTargetFPS);
-    tls_game.frame_time_.set_delta_time(1.0 / tls_game.frame_time_.target_fps());
+    tlsGame.frameTime.set_previous_time(GetTime());
+    tlsGame.frameTime.set_target_fps(kTargetFPS);
+    tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
     
     PlayerSessionSystem::Initialize();
     ViewSystem::Initialize();
@@ -39,12 +39,12 @@ void World::Update()
 {
     //https://github.com/recastnavigation/recastnavigation.git
     const auto time = GetTime();
-    const double dt = (time - tls_game.frame_time_.previous_time()) / 1000.0;
-    tls_game.frame_time_.set_previous_time(time);
+    const double dt = (time - tlsGame.frameTime.previous_time()) / 1000.0;
+    tlsGame.frameTime.set_previous_time(time);
 
-    auto time_acc = rcClamp(tls_game.frame_time_.time_acc() + dt, -1.0f, 1.0f);
+    auto time_acc = rcClamp(tlsGame.frameTime.time_acc() + dt, -1.0f, 1.0f);
     int sim_iter = 0;
-    const auto delta_time = tls_game.frame_time_.delta_time();
+    const auto delta_time = tlsGame.frameTime.delta_time();
     while (time_acc > delta_time)
     {
         time_acc -= delta_time;
@@ -56,6 +56,6 @@ void World::Update()
         }
         sim_iter++;
     }
-    tls_game.frame_time_.set_time_acc(time_acc);
+    tlsGame.frameTime.set_time_acc(time_acc);
 }
 
