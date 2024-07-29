@@ -278,31 +278,31 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
+	LOG_TRACE << "Received OnLoginEnterGame request.";
 
 	auto& clientMsgBody = request->client_msg_body();
 	auto sessionId = request->session_info().session_id();
 
-	// Store session information in tlsSessions
+	LOG_INFO << "Player login attempt: Player ID " << clientMsgBody.player_id() << ", Session ID " << sessionId;
+
 	PlayerSessionInfo sessionInfo;
 	sessionInfo.set_player_id(clientMsgBody.player_id());
 	tlsSessions.emplace(sessionId, sessionInfo);
 
 	// TODO: Disconnect old connection
 
-	// Check if player exists in PlayerList
 	if (const auto playerIt = tlsCommonLogic.PlayerList().find(clientMsgBody.player_id());
 		playerIt == tlsCommonLogic.PlayerList().end())
 	{
-		// Player does not exist in PlayerList, perform initialization
+		LOG_INFO << "New player login: Player ID " << clientMsgBody.player_id();
+
 		tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(
 			clientMsgBody.player_id(), *request);
 		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(clientMsgBody.player_id());
 	}
 	else
 	{
-		// Player exists, handle session takeover or login
 		auto player = playerIt->second;
-
 		//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
@@ -314,37 +314,38 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
 			playerNodeInfo != nullptr)
 		{
+
 			// Handle session takeover (顶号)
+
+			LOG_INFO << "Player reconnected: Player ID " << clientMsgBody.player_id();
+
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipMessage beKickTip;
 			beKickTip.mutable_tip_info()->set_id(kRetLoginBeKickByAnOtherAccount);
 			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, clientMsgBody.player_id());
 
-			// Remove old session ID from tlsSessions after player acknowledges the message
 			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
 
-			// Notify the gate to disconnect the old connection
 			GateNodeKickConnRequest message;
 			message.set_session_id(sessionId);
 			SendToGate(GateServiceKickConnByCentreMsgId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
 
-			// Update player's gate session ID
 			playerNodeInfo->set_gate_session_id(sessionId);
 		}
 		else
 		{
-			// Set gate session ID for the player
+			LOG_INFO << "Existing player login: Player ID " << clientMsgBody.player_id();
+
 			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(sessionId);
 		}
 
 		//连续顶几次,所以用emplace_or_replace
-		// Register player to the gate node and specify the login type (顶号 or LOGIN_REPLACE)
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
 		PlayerNodeSystem::RegisterPlayerToGateNode(player);
 	}
-
 	///<<< END WRITING YOUR CODE
 }
+
 
 
 
