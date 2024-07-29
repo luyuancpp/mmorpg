@@ -68,25 +68,21 @@ void SceneEventHandler::AfterEnterSceneHandler(const AfterEnterScene& event)
 
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
-///<<< BEGIN WRITING YOUR CODE
-    const auto player = entt::to_entity(event.entity());
-    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
-    if (nullptr == change_scene_queue)
-    {
-        return;
-    }
-    if (change_scene_queue->changeSceneQueue.empty())
-    {
-        return;
-    }
-    const auto& change_scene_info = change_scene_queue->changeSceneQueue.front();
-    GsLeaveSceneRequest request;
-    request.set_change_gs(
-        change_scene_info.change_gs_type() == CentreChangeSceneInfo::eDifferentGs);
-    SendToGsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, request, player);
-    LOG_DEBUG << "player leave scene " << tls.registry.get<Guid>(player) 
-        << " " << tls.sceneRegistry.get<SceneInfo>(tls.registry.get<SceneEntityComp>(player).sceneEntity).guid();
-///<<< END WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+	const auto player = entt::to_entity(event.entity());
+	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
+	if (!changeSceneQueue || changeSceneQueue->changeSceneQueue.empty())
+	{
+		return;
+	}
+	const auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
+	GsLeaveSceneRequest request;
+	request.set_change_gs(
+		changeSceneInfo.change_gs_type() == CentreChangeSceneInfo::eDifferentGs);
+	SendToGsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, request, player);
+	LOG_DEBUG << "player leave scene " << tls.registry.get<Guid>(player)
+		<< " " << tls.sceneRegistry.get<SceneInfo>(tls.registry.get<SceneEntityComp>(player).sceneEntity).guid();
+	///<<< END WRITING YOUR CODE
 }
 
 void SceneEventHandler::AfterLeaveSceneHandler(const AfterLeaveScene& event)
