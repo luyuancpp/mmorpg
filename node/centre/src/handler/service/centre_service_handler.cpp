@@ -107,7 +107,7 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 
 	for (auto gate : tls.gateNodeRegistry.view<RpcSessionPtr>())
 	{
-		g_centre_node->BroadCastRegisterGameToGate(game_node_id, gate);
+		gCentreNode ->BroadCastRegisterGameToGate(game_node_id, gate);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -138,7 +138,7 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 	LOG_INFO << "gate register " << MessageToJsonString(request);
 	for ( const auto e : tls.gameNodeRegistry.view<RpcSessionPtr>())
 	{
-		g_centre_node->BroadCastRegisterGameToGate(e, gate);
+		gCentreNode ->BroadCastRegisterGameToGate(e, gate);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -475,7 +475,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	//需要发送到下个节点
 	const auto next_route_data = mutable_request->add_route_data_list();
 	next_route_data->CopyFrom(tls_cl.route_data());
-	next_route_data->mutable_node_info()->CopyFrom(g_centre_node->GetNodeInfo());
+	next_route_data->mutable_node_info()->CopyFrom(gCentreNode ->GetNodeInfo());
 	mutable_request->set_body(tls_cl.route_msg_body());
     mutable_request->set_id(request->id());
 

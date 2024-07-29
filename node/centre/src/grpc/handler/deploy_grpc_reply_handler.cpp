@@ -28,8 +28,8 @@ void AsyncCompleteGrpcDeployService()
 	}
     if (call->status.ok())
     {
-        g_centre_node->SetNodeId(call->reply.node_id());
-        g_centre_node->StartServer(call->reply.info());
+        gCentreNode ->SetNodeId(call->reply.node_id());
+        gCentreNode ->StartServer(call->reply.info());
     }
     else
     {
