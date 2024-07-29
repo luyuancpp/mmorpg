@@ -60,6 +60,6 @@ private:
     TimerTask deploy_rpc_timer_;
 };
 
-extern CentreNode* g_centre_node;
+extern CentreNode* gCentreNode ;
 
 

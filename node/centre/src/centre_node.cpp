@@ -26,14 +26,14 @@
 using namespace muduo;
 using namespace net;
 
-CentreNode* g_centre_node = nullptr;
+CentreNode* gCentreNode  = nullptr;
 
 void InitRepliedHandler();
 void AsyncCompleteGrpcDeployService();
 
 void AsyncOutput(const char* msg, int len)
 {
-    g_centre_node->Log().append(msg, len);
+    gCentreNode ->Log().append(msg, len);
 #ifdef WIN32
     Log2Console(msg, len);
 #endif
@@ -53,7 +53,7 @@ CentreNode::~CentreNode()
 
 void CentreNode::Init()
 {
-    g_centre_node = this;
+    gCentreNode  = this;
     
     InitEventCallback();
     
