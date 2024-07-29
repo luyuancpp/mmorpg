@@ -45,8 +45,8 @@ void InitRepliedHandler();
 
 GameNode::GameNode(muduo::net::EventLoop* loop)
     :loop_(loop),
-     muduo_log_ { "logs/game", kMaxLogFileRollSize, 1},
-     redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
+     muduoLog { "logs/game", kMaxLogFileRollSize, 1},
+     redis(std::make_shared<PbSyncRedisClientPtr::element_type>())
 {
 }
 
@@ -82,12 +82,12 @@ void GameNode::InitLog ( )
 {
     InitTimeZone();
     muduo::Logger::setOutput(AsyncOutput);
-    muduo_log_.start();
+    muduoLog.start();
 }
 
 void GameNode::Exit ( )
 {
-    muduo_log_.stop();
+    muduoLog.stop();
     tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GameNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameNode::Receive2>(*this);
 }
@@ -113,38 +113,38 @@ void GameNode::InitTimeZone()
 
 void GameNode::SetNodeId( const NodeId node_id)
 {
-    node_info_.set_node_id(node_id);
+    nodeInfo.set_node_id(node_id);
 }
 
 void GameNode::StartServer(const ::nodes_info_data& info)
 {
-    node_net_info_ = info;
+    nodeServiceInfo = info;
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
     tlsGame.redis.Init(redis_addr);
 
-    node_info_.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
-    node_info_.set_node_type(eNodeType::kGameNode);
-    node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
+    nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
+    nodeInfo.set_node_type(eNodeType::kGameNode);
+    nodeInfo.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     InetAddress service_addr(GetNodeConf().ip(), GetNodeConf().port());
-    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
+    rpcServer = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&GameNode::Receive2>(*this);
-    server_->registerService(&game_service_);
+    rpcServer->registerService(&gameService);
     for ( auto & val : g_server_service | std::views::values )
     {
-        server_->registerService(val.get());
+        rpcServer->registerService(val.get());
     }
-    server_->start();
+    rpcServer->start();
 
     Connect2Centre();
     World::InitSystemAfterConnect();
 
-    deploy_rpc_timer_.Cancel();
+    deployRpcTimer.Cancel();
 
     tls.dispatcher.trigger<OnServerStart>();
 
     
-    world_timer_.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
+    worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
     LOG_INFO << "game node  start " << GetNodeConf().DebugString();
 }
 
@@ -206,7 +206,7 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
 
 const game_node_db& GameNode::GetNodeConf() const
 {
-    return node_net_info_.game_info().game_info(GetNodeConfIndex());
+    return nodeServiceInfo.game_info().game_info(GetNodeConfIndex());
 }
 
 void GameNode::InitNodeByReqInfo()
@@ -217,7 +217,7 @@ void GameNode::InitNodeByReqInfo()
     extern std::unique_ptr<DeployService::Stub> gDeployStub;
     gDeployStub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
-    deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
+    deployRpcTimer.RunEvery(0.001, AsyncCompleteGrpcDeployService);
     {
         NodeInfoRequest rq;
         rq.set_node_type(kGameNode);
@@ -229,7 +229,7 @@ void GameNode::InitNodeByReqInfo()
 
 void GameNode::Connect2Centre()
 {
-    for (auto& centre_node_info : node_net_info_.centre_info().centre_info())
+    for (auto& centre_node_info : nodeServiceInfo.centre_info().centre_info())
     {
         entt::entity id{ centre_node_info.id() };
         const auto   centre_node_id = tls.centreNodeRegistry.create(id);
@@ -241,12 +241,12 @@ void GameNode::Connect2Centre()
         InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
         const auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
             std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
-        centre_node->registerService(&game_service_);
+        centre_node->registerService(&gameService);
         centre_node->connect();
         if (centre_node_info.zone_id() ==
             ZoneConfig::GetSingleton().config_info().zone_id())
         {
-            zone_centre_node_ = centre_node;
+            myZoneCentreNode = centre_node;
         }
     }
 }

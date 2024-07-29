@@ -23,12 +23,12 @@ public:
         GameNode(muduo::net::EventLoop* loop);
     ~GameNode();
 
-    inline const NodeInfo& GetNodeInfo()const { return node_info_; }
+    inline const NodeInfo& GetNodeInfo()const { return nodeInfo; }
     const game_node_db& GetNodeConf() const;
     inline NodeId GetNodeId()const { return GetNodeInfo().node_id();  }
     uint32_t GetNodeType() const{ return GetNodeInfo().game_node_type(); }
 
-    inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduo_log_; }
+    inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduoLog; }
     
     void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);
@@ -51,17 +51,17 @@ private:
     inline NodeId GetNodeConfIndex()const { return GetNodeId() - 1; }
 
     muduo::net::EventLoop* loop_{ nullptr };
-    muduo::AsyncLogging muduo_log_;
+    muduo::AsyncLogging muduoLog;
 
 private:
-    PbSyncRedisClientPtr redis_;
-    RpcServerPtr server_;
-    nodes_info_data node_net_info_;
-    NodeInfo node_info_;
-    RpcClientPtr zone_centre_node_;
-    GameServiceHandler game_service_;
-    TimerTask deploy_rpc_timer_;
-    TimerTask world_timer_;
+    PbSyncRedisClientPtr redis;
+    RpcServerPtr rpcServer;
+    nodes_info_data nodeServiceInfo;
+    NodeInfo nodeInfo;
+    RpcClientPtr myZoneCentreNode;
+    GameServiceHandler gameService;
+    TimerTask deployRpcTimer;
+    TimerTask worldTimer;
 };
 
 extern GameNode* gGameNode;
