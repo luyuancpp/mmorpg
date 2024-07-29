@@ -63,12 +63,12 @@ void AddMainSceneNodeComponent(entt::registry& reg, entt::entity server);
 /**
  * @brief The ScenesSystem class handles operations related to scenes in the game.
  */
-class ScenesSystem
+class SceneSystem
 {
 public:
     // Constructor and Destructor
-    ScenesSystem();
-    ~ScenesSystem();
+    SceneSystem();
+    ~SceneSystem();
 
     // Clear all scenes and related data
     void Clear();

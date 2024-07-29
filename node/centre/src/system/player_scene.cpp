@@ -34,14 +34,14 @@ void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
     // Check if previous scene is valid
     if (tls.sceneRegistry.valid(entt::entity{ playerSceneInfo->scene_info().guid() }))
     {
-        if (kOK == ScenesSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfo->scene_info().guid() }, .enter = playerEntity }))
+        if (kOK == SceneSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfo->scene_info().guid() }, .enter = playerEntity }))
         {
             currentSceneId = entt::entity{ playerSceneInfo->scene_info().guid() };
         }
     }
     else if (tls.sceneRegistry.valid(entt::entity{ playerSceneInfo->scene_info_last_time().guid() }))
     {
-        if (kOK == ScenesSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfo->scene_info_last_time().guid() }, .enter = playerEntity }))
+        if (kOK == SceneSystem::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfo->scene_info_last_time().guid() }, .enter = playerEntity }))
         {
             lastVisitedSceneId = entt::entity{ playerSceneInfo->scene_info_last_time().guid() };
         }
@@ -73,7 +73,7 @@ void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
     }
 
     // Call method to handle player entering the game server
-    ProcessPlayerEnterGameServer(playerEntity, ScenesSystem::GetGameNodeId(currentSceneId));
+    ProcessPlayerEnterGameServer(playerEntity, SceneSystem::GetGameNodeId(currentSceneId));
 
     // Prepare change scene information
     CentreChangeSceneInfo changeSceneInfo;
@@ -203,8 +203,8 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 		return;
 	}
 
-	const auto fromSceneGameNode = ScenesSystem::get_game_node_eid(fromSceneInfo->guid());
-	const auto toSceneGameNode = ScenesSystem::get_game_node_eid(toSceneGuid);
+	const auto fromSceneGameNode = SceneSystem::get_game_node_eid(fromSceneInfo->guid());
+	const auto toSceneGameNode = SceneSystem::get_game_node_eid(toSceneGuid);
 	if (!tls.gameNodeRegistry.valid(fromSceneGameNode) || !tls.gameNodeRegistry.valid(toSceneGameNode))
 	{
 		LOG_ERROR << "Game nodes not valid for scene change, from: " << fromSceneInfo->guid() << ", to: " << toSceneGuid;
@@ -222,7 +222,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 
 	if (!changeSceneInfo.ignore_full())
 	{
-		if (const auto ret = ScenesSystem::CheckScenePlayerSize(toScene); ret != kOK)
+		if (const auto ret = SceneSystem::CheckScenePlayerSize(toScene); ret != kOK)
 		{
 			LOG_WARN << "Scene player size check failed for player: " << playerId << ", ret: " << ret;
 			PlayerTipSystem::SendToPlayer(playerEntity, ret, {});

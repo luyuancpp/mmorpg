@@ -22,7 +22,7 @@ entt::entity CreateMainSceneNode()
 
 TEST(SceneSystemTests, CreateMainScene)
 {
-	const ScenesSystem sceneSystem;
+	const SceneSystem sceneSystem;
 
 	CreateGameNodeSceneParam createParams;
 	const auto serverEntity1 = CreateMainSceneNode();
@@ -42,7 +42,7 @@ TEST(SceneSystemTests, CreateMainScene)
 
 TEST(SceneSystemTests, CreateScene2Server)
 {
-	ScenesSystem sceneSystem;
+	SceneSystem sceneSystem;
 	const auto node1 = CreateMainSceneNode();
 	const auto node2 = CreateMainSceneNode();
 
@@ -77,7 +77,7 @@ TEST(SceneSystemTests, CreateScene2Server)
 
 TEST(SceneSystemTests, DestroyScene)
 {
-	ScenesSystem sceneSystem;
+	SceneSystem sceneSystem;
 	const auto node1 = CreateMainSceneNode();
 
 	CreateGameNodeSceneParam createParams1;
@@ -104,7 +104,7 @@ TEST(SceneSystemTests, DestroyScene)
 
 TEST(SceneSystemTests, DestroyServer)
 {
-	ScenesSystem sceneSystem;
+	SceneSystem sceneSystem;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -154,7 +154,7 @@ TEST(SceneSystemTests, DestroyServer)
 
 TEST(SceneSystemTests, PlayerLeaveEnterScene)
 {
-	ScenesSystem sceneSystem;
+	SceneSystem sceneSystem;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -253,7 +253,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 TEST(GS, MainTainWeightRoundRobinMainScene)
 {
 	tls.gameNodeRegistry.clear();
-	ScenesSystem sm;
+	SceneSystem sm;
 	NodeSceneSystem nodeSystem;
 	EntityUnorderedSet serverEntities;
 	const uint32_t serverSize = 2;
@@ -317,7 +317,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
 TEST(GS, CompelToChangeScene)
 {
-	ScenesSystem sm;
+	SceneSystem sm;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -370,7 +370,7 @@ TEST(GS, CompelToChangeScene)
 
 TEST(GS, CrashWeightRoundRobinMainScene)
 {
-	ScenesSystem sm;
+	SceneSystem sm;
 	NodeSceneSystem nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
@@ -432,7 +432,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 //崩溃时候的消息不能处理
 TEST(GS, CrashMovePlayer2NewServer)
 {
-	ScenesSystem sm;
+	SceneSystem sm;
 	NodeSceneSystem nsSys;
 	EntityUnorderedSet nodeList;
 	EntityUnorderedSet sceneList;
@@ -495,7 +495,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 TEST(GS, WeightRoundRobinMainScene)
 {
 	tls.gameNodeRegistry.clear();
-	ScenesSystem sm;
+	SceneSystem sm;
 	NodeSceneSystem nssys;
 	EntityUnorderedSet node_list;
 	uint32_t server_size = 10;
@@ -618,7 +618,7 @@ TEST(GS, WeightRoundRobinMainScene)
 TEST(GS, ServerEnterLeavePressure)
 {
 	tls.gameNodeRegistry.clear();
-	ScenesSystem sm;
+	SceneSystem sm;
 	NodeSceneSystem nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
@@ -694,7 +694,7 @@ TEST(GS, EnterDefaultScene)
 		createGSSceneParam.sceneInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
-			ScenesSystem::CreateScene2GameNode(createGSSceneParam);
+			SceneSystem::CreateScene2GameNode(createGSSceneParam);
 		}
 	}
 
@@ -703,7 +703,7 @@ TEST(GS, EnterDefaultScene)
 
 	// Enter the default scene with the player
 	const EnterDefaultSceneParam enterParam{ player };
-	ScenesSystem::EnterDefaultScene(enterParam);
+	SceneSystem::EnterDefaultScene(enterParam);
 
 	// Verify the player is in the default scene
 	const auto [sceneEntity] = tls.registry.get<SceneEntityComp>(player);
@@ -720,7 +720,7 @@ struct TestNodeId
 TEST(GS, GetNotFullMainSceneWhenSceneFull)
 {
 	tls.gameNodeRegistry.clear();
-	ScenesSystem sm;
+	SceneSystem sm;
 	NodeSceneSystem nssys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 10;
@@ -897,7 +897,7 @@ TEST(GS, CheckEnterRoomScene)
 	{
 		sceneInfo.mutable_creators()->emplace(i, false); // Assuming creators are added with a boolean indicating creator status
 	}
-	auto scene = ScenesSystem::CreateScene2GameNode({ .node = CreateMainSceneNode(), .sceneInfo = sceneInfo });
+	auto scene = SceneSystem::CreateScene2GameNode({ .node = CreateMainSceneNode(), .sceneInfo = sceneInfo });
 
 	// Create players with different GUIDs
 	const auto player1 = tls.registry.create();
@@ -906,8 +906,8 @@ TEST(GS, CheckEnterRoomScene)
 	tls.registry.emplace<Guid>(player2, 100); // Player 2 with GUID 100
 
 	// Test cases
-	EXPECT_EQ(kOK, ScenesSystem::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));
-	EXPECT_EQ(kRetCheckEnterSceneCreator, ScenesSystem::CheckPlayerEnterScene({ .scene = scene, .enter = player2 }));
+	EXPECT_EQ(kOK, SceneSystem::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));
+	EXPECT_EQ(kRetCheckEnterSceneCreator, SceneSystem::CheckPlayerEnterScene({ .scene = scene, .enter = player2 }));
 }
 
 

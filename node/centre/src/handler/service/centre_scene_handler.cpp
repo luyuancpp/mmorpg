@@ -7,15 +7,15 @@
 void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController* controller,
 	const ::RegisterSceneRequest* request,
 	::RegisterSceneResponse* response,
-	 ::google::protobuf::Closure* done)
+	::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
-	for (auto&& scene_info : request->scenes_info())
+	///<<< BEGIN WRITING YOUR CODE
+	for (auto&& sceneInfo : request->scenes_info())
 	{
-		ScenesSystem::CreateScene2GameNode(
-			{ .node = entt::entity{request->game_node_id()}, .sceneInfo = scene_info });
+		SceneSystem::CreateScene2GameNode(
+			{ .node = entt::entity{request->game_node_id()}, .sceneInfo = sceneInfo });
 	}
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }
 
 void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcController* controller,
@@ -23,20 +23,21 @@ void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcControlle
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
-	const entt::entity scene{request->scene()};
-	if (tls.sceneRegistry.valid(scene))
+	///<<< BEGIN WRITING YOUR CODE
+	const entt::entity scene{ request->scene() };
+	if (!tls.sceneRegistry.valid(scene))
 	{
-		LOG_ERROR << "scene not found" << request->scene();
+		LOG_ERROR << "Scene not found: " << request->scene();
 		return;
 	}
-	const entt::entity game_node{request->game_node_id()};
-	if (tls.gameNodeRegistry.valid(game_node))
-	{
-		LOG_ERROR << "node not found" << request->game_node_id();
-		return;
-	}
-	ScenesSystem::DestroyScene({game_node, scene});
-///<<< END WRITING YOUR CODE
-}
 
+	const entt::entity gameNode{ request->game_node_id() };
+	if (!tls.gameNodeRegistry.valid(gameNode))
+	{
+		LOG_ERROR << "Node not found: " << request->game_node_id();
+		return;
+	}
+
+	SceneSystem::DestroyScene({ gameNode, scene });
+	///<<< END WRITING YOUR CODE
+}
