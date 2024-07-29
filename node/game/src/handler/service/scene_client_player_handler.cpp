@@ -43,7 +43,7 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 
 	CentreEnterSceneRequest rq;
 	rq.mutable_scene_info()->CopyFrom(scene_info);
-	Send2CentrePlayer(CentreScenePlayerServiceEnterSceneMsgId, rq, player);
+	SendToCentrePlayer(CentreScenePlayerServiceEnterSceneMsgId, rq, player);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -61,7 +61,7 @@ void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
     SceneInfoRequest rq;
-    Send2CentrePlayer(CentreScenePlayerServiceSceneInfoC2SMsgId, rq, player);
+    SendToCentrePlayer(CentreScenePlayerServiceSceneInfoC2SMsgId, rq, player);
 ///<<< END WRITING YOUR CODE
 }
 

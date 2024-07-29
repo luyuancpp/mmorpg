@@ -2,19 +2,19 @@
 
 #include "google/protobuf/message.h"
 
-void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
+void SendMessageToPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
 }
 
-void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
+void SendMessageToPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
 }
 
-void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
+void SendToCentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
 }
 
-void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
+void SendToCentrePlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
 {
 }
 

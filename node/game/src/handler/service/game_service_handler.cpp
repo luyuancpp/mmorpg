@@ -257,7 +257,7 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
 		return;
 	}
 
-	SendToPlayer(request->body().message_id(), request->body(), player);
+	SendMessageToPlayer(request->body().message_id(), request->body(), player);
 ///<<< END WRITING YOUR CODE
 }
 

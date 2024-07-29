@@ -112,7 +112,7 @@ void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& mess
 	(*rpcSession)->Send(messageId, request);
 }
 
-void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
+void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -139,10 +139,10 @@ void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, 
 		return;
 	}
 
-	SendToPlayer(messageId, message, *gateNode, playerNodeInfo->gate_session_id());
+	SendMessageToPlayer(messageId, message, *gateNode, playerNodeInfo->gate_session_id());
 }
 
-void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, RpcSessionPtr& gate, uint64_t sessionId)
+void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, RpcSessionPtr& gate, uint64_t sessionId)
 {
 	NodeRouteMessageRequest request;
 	const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
@@ -153,9 +153,9 @@ void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, 
 	gate->Send(GateServicePlayerMessageMsgId, request);
 }
 
-void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
+void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
 {
-	SendToPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
+	SendMessageToPlayer(messageId, message, tlsCommonLogic.GetPlayer(playerId));
 }
 
 void SendToGate(const uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId)

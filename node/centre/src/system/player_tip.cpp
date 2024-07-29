@@ -12,7 +12,7 @@ void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, co
 	{
 		*message.mutable_tip_info()->mutable_parameters()->Add() = param;
 	}
-	::SendToPlayer(ClientPlayerCommonServicePushTipS2CMsgId, message, playerEntity);
+	::SendMessageToPlayer(ClientPlayerCommonServicePushTipS2CMsgId, message, playerEntity);
 }
 
 void PlayerTipSystem::SendToPlayer(Guid playerId, uint32_t tipId, const StringVector& parameters)

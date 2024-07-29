@@ -318,7 +318,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipMessage beKickTip;
 			beKickTip.mutable_tip_info()->set_id(kRetLoginBeKickByAnOtherAccount);
-			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, clientMsgBody.player_id());
+			SendMessageToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, clientMsgBody.player_id());
 
 			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
 
