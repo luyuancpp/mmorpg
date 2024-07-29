@@ -12,7 +12,12 @@
 
 void ViewSystem::Initialize()
 {
-	// 在全局注册表中初始化角色创建和销毁的消息
+	// Initialize actor creation and destruction messages in the global registry
+	initializeActorMessages();
+}
+
+void ViewSystem::initializeActorMessages()
+{
 	tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
 	tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
 	tls.globalRegistry.emplace<ActorListCreateS2C>(global_entity());
@@ -21,56 +26,79 @@ void ViewSystem::Initialize()
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
 {
-	const bool is_observer_npc = tls.registry.any_of<Npc>(observer);
-	const bool is_entrant_npc = tls.registry.any_of<Npc>(entrant);
-
-	// 如果观察者和进入者都是 NPC，则不发送消息
-	if (is_observer_npc && is_entrant_npc) {
+	if (bothAreNpcs(observer, entrant)) {
 		return false;
 	}
 
-	// 如果进入者是 NPC，发送消息
-	if (is_entrant_npc) {
+	if (entrantIsNpc(entrant)) {
 		return true;
 	}
 
-	// TODO: 如果突然失去视野需要重新刷新视野
+	// Handle cases where sudden loss of visibility requires refreshing view
+	return shouldRefreshView();
+}
+
+bool ViewSystem::bothAreNpcs(entt::entity observer, entt::entity entrant)
+{
+	return tls.registry.any_of<Npc>(observer) && tls.registry.any_of<Npc>(entrant);
+}
+
+bool ViewSystem::entrantIsNpc(entt::entity entrant)
+{
+	return tls.registry.any_of<Npc>(entrant);
+}
+
+bool ViewSystem::shouldRefreshView()
+{
+	// TODO: Implement logic for when view needs refreshing
 	return true;
 }
 
 bool ViewSystem::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entity entrant)
 {
-	const bool is_observer_npc = tls.registry.any_of<Npc>(observer);
-	const bool is_entrant_npc = tls.registry.any_of<Npc>(entrant);
-
-	// 如果观察者和进入者都是 NPC，则不发送消息
-	if (is_observer_npc && is_entrant_npc) {
+	if (bothAreNpcs(observer, entrant)) {
 		return false;
 	}
 
-	// 如果进入者是 NPC，发送消息
-	if (is_entrant_npc) {
+	if (entrantIsNpc(entrant)) {
 		return true;
 	}
 
-	// 如果突然失去视野需要重新刷新视野
+	if (shouldRefreshView()) {
+		return false;
+	}
+
+	double view_radius = getMaxViewRadius(observer);
+
+	if (isBeyondViewRadius(observer, entrant, view_radius)) {
+		return false;
+	}
+
+	// TODO: Check priority focus list
+
+	return true;
+}
+
+double ViewSystem::getMaxViewRadius(entt::entity observer)
+{
 	double view_radius = kMaxViewRadius;
 
-	// 获取观察者的视野半径
 	if (const auto observer_view_radius = tls.registry.try_get<ViewRadius>(observer)) {
 		view_radius = observer_view_radius->radius();
 	}
 
-	// 获取观察者和进入者的位置信息
+	return view_radius;
+}
+
+bool ViewSystem::isBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
+{
 	const auto observer_transform = tls.registry.try_get<Transform>(observer);
 	const auto entrant_transform = tls.registry.try_get<Transform>(entrant);
 
-	// 如果位置信息为空，无法发送消息
 	if (!observer_transform || !entrant_transform) {
-		return false;
+		return true; // Consider beyond radius if position information is missing
 	}
 
-	// 计算观察者和进入者之间的距离
 	const dtReal observer_location[] = {
 		observer_transform->location().x(),
 		observer_transform->location().y(),
@@ -82,26 +110,17 @@ bool ViewSystem::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entit
 		entrant_transform->location().z()
 	};
 
-	// 如果距离超出视野半径，则不发送消息
-	if (dtVdist(observer_location, entrant_location) > view_radius) {
-		return false;
-	}
-
-	// TODO: 检测优先关注列表
-
-	return true;
+	return dtVdist(observer_location, entrant_location) > view_radius;
 }
 
 void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& createMessage)
 {
 	createMessage.set_entity(entt::to_integral(entity));
 
-	// 填充角色的位置信息
 	if (const auto entrant_transform = tls.registry.try_get<Transform>(entity)) {
 		createMessage.mutable_transform()->CopyFrom(*entrant_transform);
 	}
 
-	// 填充角色的 GUID
 	if (const auto guid = tls.registry.try_get<Guid>(entity)) {
 		createMessage.set_guid(*guid);
 	}
@@ -109,6 +128,6 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 
 void ViewSystem::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
 {
-	// 处理玩家离开消息，目前未实现具体逻辑
-	// 可根据具体需求补充实现
+	// Placeholder for handling player leave message
+	// Specific logic can be added based on requirements
 }
