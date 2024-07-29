@@ -36,13 +36,13 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 	LOG_INFO << "Handling EnterGs request for player: " << request->player_id()
 		<< ", centre_node_id: " << request->centre_node_id();
 
-	// 1 æ¸…é™¤ç©å®¶ä¼šè¯ï¼Œå¤„ç†è¿ç»­é¡¶å·è¿›å…¥æƒ…å†µ
+	// 1 Çå³ıÍæ¼Ò»á»°£¬´¦ÀíÁ¬Ğø¶¥ºÅ½øÈëÇé¿ö
 	PlayerNodeSystem::RemovePlayerSession(request->player_id());
 
 	const auto& playerList = tlsCommonLogic.GetPlayerList();
 	auto playerIt = playerList.find(request->player_id());
 
-	// 2 æ£€æŸ¥ç©å®¶æ˜¯å¦å·²ç»åœ¨çº¿ï¼Œè‹¥åœ¨çº¿åˆ™ç›´æ¥è¿›å…¥
+	// 2 ¼ì²éÍæ¼ÒÊÇ·ñÒÑ¾­ÔÚÏß£¬ÈôÔÚÏßÔòÖ±½Ó½øÈë
 	if (playerIt != playerList.end())
 	{
 		EnterGsInfo enterInfo;
@@ -55,14 +55,14 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 	enterInfo.set_centre_node_id(request->centre_node_id());
 	auto asyncPlayerIt = tlsGame.asyncPlayerList.emplace(request->player_id(), enterInfo);
 
-	// 3 å¼‚æ­¥åŠ è½½è¿‡ç¨‹ä¸­å¤„ç†ç©å®¶æ–­å¼€è¿æ¥çš„æƒ…å†µ
+	// 3 Òì²½¼ÓÔØ¹ı³ÌÖĞ´¦ÀíÍæ¼Ò¶Ï¿ªÁ¬½ÓµÄÇé¿ö
 	if (!asyncPlayerIt.second)
 	{
 		LOG_ERROR << "Failed to emplace player in asyncPlayerList: " << request->player_id();
 		return;
 	}
 
-	// 4 ç©å®¶ä¸åœ¨çº¿ï¼ŒåŠ å…¥å¼‚æ­¥åŠ è½½åˆ—è¡¨å¹¶å°è¯•å¼‚æ­¥åŠ è½½
+	// 4 Íæ¼Ò²»ÔÚÏß£¬¼ÓÈëÒì²½¼ÓÔØÁĞ±í²¢³¢ÊÔÒì²½¼ÓÔØ
 
 	tlsGame.playerRedis->AsyncLoad(request->player_id());
 ///<<< END WRITING YOUR CODE
@@ -93,7 +93,7 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 		return;
 	}
 
-	const auto player = playerIt->second;
+	const auto& player = playerIt->second;
 
 	if (request->body().message_id() >= g_message_info.size())
 	{
@@ -388,7 +388,7 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    //todoè¿›å…¥äº†gate ç„¶åæ‰å¯ä»¥å¼€å§‹å¯ä»¥ç»™å®¢æˆ·ç«¯å‘é€ä¿¡æ¯äº†, gsæ¶ˆæ¯é¡ºåºé—®é¢˜è¦æ³¨æ„ï¼Œè¿›å…¥a, å†è¿›å…¥b gsåˆ°è¾¾å®¢æˆ·ç«¯æ¶ˆæ¯çš„é¡ºåºä¸ä¸€æ ·
+    //todo½øÈëÁËgate È»ºó²Å¿ÉÒÔ¿ªÊ¼¿ÉÒÔ¸ø¿Í»§¶Ë·¢ËÍĞÅÏ¢ÁË, gsÏûÏ¢Ë³ĞòÎÊÌâÒª×¢Òâ£¬½øÈëa, ÔÙ½øÈëb gsµ½´ï¿Í»§¶ËÏûÏ¢µÄË³Ğò²»Ò»Ñù
     PlayerSceneSystem::EnterScene(tlsCommonLogic.GetPlayer(request->player_id()), request->scene_id());
 ///<<< END WRITING YOUR CODE
 }
