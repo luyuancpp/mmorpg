@@ -72,7 +72,7 @@ void GameNode::Init()
     InitPlayerServiceReplied();
     void InitServiceHandler();
     InitServiceHandler();
-    World::InitSystemBeforeConnect();
+    World::InitializeSystemBeforeConnect();
 
     InitNodeByReqInfo();
 }

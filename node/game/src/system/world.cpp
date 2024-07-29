@@ -21,14 +21,14 @@ uint64_t GetTime(void)
     return duration_cast<std::chrono::milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
-void World::InitSystemBeforeConnect()
+void World::InitializeSystemBeforeConnect()
 {
     tls_game.frame_time_.set_previous_time(GetTime());
     tls_game.frame_time_.set_target_fps(kTargetFPS);
     tls_game.frame_time_.set_delta_time(1.0 / tls_game.frame_time_.target_fps());
     
-    PlayerSessionSystem::Init();
-    ViewSystem::Init();
+    PlayerSessionSystem::Initialize();
+    ViewSystem::Initialize();
 }
 
 void World::InitSystemAfterConnect()
