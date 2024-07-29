@@ -27,7 +27,7 @@
 #include "util/game_registry.h"
 #include "system/world.h"
 
-GameNode* g_game_node = nullptr;
+GameNode* gGameNode = nullptr;
 
 using namespace muduo::net;
 
@@ -35,7 +35,7 @@ void AsyncCompleteGrpcDeployService();
 
 void AsyncOutput(const char* msg, int len)
 {
-    g_game_node->Log().append(msg, len);
+    gGameNode->Log().append(msg, len);
 #ifdef WIN32
     Log2Console(msg, len);
 #endif
@@ -57,7 +57,7 @@ GameNode::~GameNode()
 
 void GameNode::Init()
 {
-    g_game_node = this; 
+    gGameNode = this; 
     EventHandler::Register();
 
     InitLog();

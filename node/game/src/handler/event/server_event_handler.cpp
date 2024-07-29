@@ -29,24 +29,30 @@ void ServerEventHandler::UnRegister()
 void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity centre_id{ event.entity() };
-    auto centre_node = tls.centreNodeRegistry.try_get<RpcClientPtr>(centre_id);
-    if (centre_node == nullptr)
-    {
-        return;
-    }
-    auto& centre_local_addr = (*centre_node)->local_addr();
-    RegisterGameRequest rq;
-    rq.mutable_rpc_client()->set_ip(centre_local_addr.toIp());
-    rq.mutable_rpc_client()->set_port(centre_local_addr.port());
-    rq.mutable_rpc_server()->set_ip(g_game_node->GetNodeConf().ip());
-    rq.mutable_rpc_server()->set_port(g_game_node->GetNodeConf().port());
+	entt::entity centreId{ event.entity() };
 
-    rq.set_server_type(g_game_node->GetNodeType());
-    rq.set_game_node_id(g_game_node->GetNodeId());
-    (*centre_node)->CallMethod(CentreServiceRegisterGameMsgId, rq);
+	auto centreNode = tls.centreNodeRegistry.try_get<RpcClientPtr>(centreId);
+	if (centreNode == nullptr)
+	{
+		LOG_ERROR << "Centre node not found for entity: " << entt::to_integral(centreId);
+		return;
+	}
 
-    GameNodeSceneSystem::RegisterSceneToCentre();
+	auto& centreLocalAddr = (*centreNode)->local_addr();
+
+	RegisterGameRequest registerGameRequest;
+	registerGameRequest.mutable_rpc_client()->set_ip(centreLocalAddr.toIp());
+	registerGameRequest.mutable_rpc_client()->set_port(centreLocalAddr.port());
+	registerGameRequest.mutable_rpc_server()->set_ip(gGameNode->GetNodeConf().ip());
+	registerGameRequest.mutable_rpc_server()->set_port(gGameNode->GetNodeConf().port());
+	registerGameRequest.set_server_type(gGameNode->GetNodeType());
+	registerGameRequest.set_game_node_id(gGameNode->GetNodeId());
+
+	LOG_INFO << "Sending RegisterGameRequest to centre node: " << entt::to_integral(centreId);
+	(*centreNode)->CallMethod(CentreServiceRegisterGameMsgId, registerGameRequest);
+
+	LOG_INFO << "Registering scene to centre node...";
+	GameNodeSceneSystem::RegisterSceneToCentre();
 	
 ///<<< END WRITING YOUR CODE
 }
@@ -72,7 +78,7 @@ void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    SceneSystem::SetSequenceNodeId(g_game_node->GetNodeId());
+    SceneSystem::SetSequenceNodeId(gGameNode->GetNodeId());
     GameNodeSceneSystem::InitNodeScene();
 ///<<< END WRITING YOUR CODE
 }

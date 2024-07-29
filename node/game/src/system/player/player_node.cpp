@@ -96,7 +96,7 @@ void PlayerNodeSystem::EnterGs(const entt::entity player, const EnterGsInfo& ent
 	//todo Centre 重新启动以后
 	EnterGameNodeSucceedRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
-	request.set_game_node_id(g_game_node->GetNodeId());
+	request.set_game_node_id(gGameNode->GetNodeId());
 	CallCentreNodeMethod(CentreServiceEnterGsSucceedMsgId, request, enter_info.centre_node_id());
 	//todo gs更新了对应的gate之后 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，
 	//进入game_node a, 再进入game_node b 两个gs的消息到达客户端消息的顺序不一样,所以说game 还要通知game 还要收到gate 的处理完准备离开game的消息

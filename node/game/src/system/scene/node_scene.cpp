@@ -37,22 +37,22 @@ void GameNodeSceneSystem::LoadAllMainSceneNavBin()
             continue;
         }
         auto& nav = nav_it.first;
-        RecastSystem::LoadNavMesh(it.nav_bin_file().c_str(), &nav->second.nav_mesh);
-        nav->second.nav_query.init(&nav->second.nav_mesh, kMaxMeshQueryNodes);
+        RecastSystem::LoadNavMesh(it.nav_bin_file().c_str(), &nav->second.navMesh);
+        nav->second.navQuery.init(&nav->second.navMesh, kMaxMeshQueryNodes);
     }
 }
 
 void GameNodeSceneSystem::InitNodeScene()
 {
-    if (!(g_game_node->GetNodeType() == eGameNodeType::kMainSceneNode || 
-        g_game_node->GetNodeType() == eGameNodeType::kMainSceneCrossNode))
+    if (!(gGameNode->GetNodeType() == eGameNodeType::kMainSceneNode || 
+        gGameNode->GetNodeType() == eGameNodeType::kMainSceneCrossNode))
     {
         return;
     }
     const auto& main_scene_conf = mainscene_config::GetSingleton().all();
     for (auto& it : main_scene_conf.data())
     {
-        CreateGameNodeSceneParam p{ .node = entt::entity{g_game_node->GetNodeId()} };
+        CreateGameNodeSceneParam p{ .node = entt::entity{gGameNode->GetNodeId()} };
         p.sceneInfo.set_scene_confid(it.id());
         SceneSystem::CreateScene2GameNode(p);
     }
@@ -83,7 +83,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
         return;
     }
     RegisterSceneRequest rq;
-    rq.set_game_node_id(g_game_node->GetNodeId());
+    rq.set_game_node_id(gGameNode->GetNodeId());
     rq.mutable_scenes_info()->Add()->CopyFrom(*scene_info);
     BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, rq);
 }
@@ -91,7 +91,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
 void GameNodeSceneSystem::RegisterSceneToCentre()
 {
     RegisterSceneRequest rq;
-    rq.set_game_node_id(g_game_node->GetNodeId());
+    rq.set_game_node_id(gGameNode->GetNodeId());
     for (auto&& [e, scene_info] : tls.sceneRegistry.view<SceneInfo>().each())
     {
         rq.mutable_scenes_info()->Add()->CopyFrom(scene_info);
