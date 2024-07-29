@@ -139,95 +139,109 @@ void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity playerEntity, 
 
 void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 {
-    auto* changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(playerEntity);
-    if (!changeSceneQueue)
-    {
-        return;
-    }
+    auto playerId = tls.registry.get<Guid>(playerEntity);
 
-    const auto* fromSceneEntity = tls.registry.try_get<SceneEntityComp>(playerEntity);
-    if (!fromSceneEntity)
-    {
-        PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneYourSceneIsNull, {});
-        return;
-    }
+	LOG_INFO << "Processing change scene queue for player: " << playerId;
 
-    auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
-    if (changeSceneInfo.processing())
-    {
-        return;
-    }
+	auto* changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(playerEntity);
+	if (!changeSceneQueue)
+	{
+		LOG_ERROR << "Change scene queue not found for player: " << playerId;
+		return;
+	}
 
-    changeSceneInfo.set_processing(true);
-    auto toSceneGuid = changeSceneInfo.guid();
-    entt::entity toScene = entt::null;
+	const auto* fromSceneEntity = tls.registry.try_get<SceneEntityComp>(playerEntity);
+	if (!fromSceneEntity)
+	{
+		LOG_ERROR << "From scene entity not found for player: " << playerId;
+		PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneYourSceneIsNull, {});
+		return;
+	}
 
-    if (toSceneGuid <= 0)
-    {
-        GetSceneParams getSceneParams;
-        getSceneParams.sceneConfigurationId = changeSceneInfo.scene_confid();
-        toScene = NodeSceneSystem::FindNotFullScene(getSceneParams);
-        if (toScene == entt::null)
-        {
-            PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneSceneFull, {});
-            PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
-            return;
-        }
-        toSceneGuid = tls.registry.get<SceneInfo>(toScene).guid();
-    }
-    else
-    {
-        toScene = entt::entity{ toSceneGuid };
-        if (toScene == entt::null)
-        {
-            PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneSceneNotFound, {});
-            PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
-            return;
-        }
-    }
+	auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
+	if (changeSceneInfo.processing())
+	{
+		LOG_WARN << "Change scene info is already processing for player: " << playerId;
+		return;
+	}
 
-    const auto* fromSceneInfo = tls.sceneRegistry.try_get<SceneInfo>(fromSceneEntity->sceneEntity);
-    if (!fromSceneInfo)
-    {
-        return;
-    }
+	changeSceneInfo.set_processing(true);
+	auto toSceneGuid = changeSceneInfo.guid();
+	entt::entity toScene = entt::null;
 
-    const auto fromSceneGameNode = ScenesSystem::get_game_node_eid(fromSceneInfo->guid());
-    const auto toSceneGameNode = ScenesSystem::get_game_node_eid(toSceneGuid);
-    if (!tls.gameNodeRegistry.valid(fromSceneGameNode) || !tls.gameNodeRegistry.valid(toSceneGameNode))
-    {
-        LOG_ERROR << "Scene not found: " << fromSceneInfo->guid() << " to " << toSceneGuid;
-        PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
-        return;
-    }
+	if (toSceneGuid <= 0)
+	{
+		GetSceneParams getSceneParams;
+		getSceneParams.sceneConfigurationId = changeSceneInfo.scene_confid();
+		toScene = NodeSceneSystem::FindNotFullScene(getSceneParams);
+		if (toScene == entt::null)
+		{
+			LOG_WARN << "No available scene found for player: " << playerId;
+			PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneSceneFull, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+			return;
+		}
+		toSceneGuid = tls.registry.get<SceneInfo>(toScene).guid();
+	}
+	else
+	{
+		toScene = entt::entity{ toSceneGuid };
+		if (toScene == entt::null)
+		{
+			LOG_ERROR << "Target scene not found for player: " << playerId;
+			PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneSceneNotFound, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+			return;
+		}
+	}
 
-    if (toSceneGuid == fromSceneInfo->guid())
-    {
-        PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneYouInCurrentScene, {});
-        PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
-        return;
-    }
+	const auto* fromSceneInfo = tls.sceneRegistry.try_get<SceneInfo>(fromSceneEntity->sceneEntity);
+	if (!fromSceneInfo)
+	{
+		LOG_ERROR << "From scene info not found for player: " << playerId;
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+		return;
+	}
 
-    if (!changeSceneInfo.ignore_full())
-    {
-        if (const auto ret = ScenesSystem::CheckScenePlayerSize(toScene); ret != kOK)
-        {
-            PlayerTipSystem::SendToPlayer(playerEntity, ret, {});
-            PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
-            return;
-        }
-    }
+	const auto fromSceneGameNode = ScenesSystem::get_game_node_eid(fromSceneInfo->guid());
+	const auto toSceneGameNode = ScenesSystem::get_game_node_eid(toSceneGuid);
+	if (!tls.gameNodeRegistry.valid(fromSceneGameNode) || !tls.gameNodeRegistry.valid(toSceneGameNode))
+	{
+		LOG_ERROR << "Game nodes not valid for scene change, from: " << fromSceneInfo->guid() << ", to: " << toSceneGuid;
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+		return;
+	}
 
-    if (fromSceneGameNode == toSceneGameNode)
-    {
-        changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eSameGs);
-    }
-    else
-    {
-        changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
-    }
+	if (toSceneGuid == fromSceneInfo->guid())
+	{
+		LOG_WARN << "Player is already in the current scene: " << playerId;
+		PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneYouInCurrentScene, {});
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+		return;
+	}
 
-    PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
+	if (!changeSceneInfo.ignore_full())
+	{
+		if (const auto ret = ScenesSystem::CheckScenePlayerSize(toScene); ret != kOK)
+		{
+			LOG_WARN << "Scene player size check failed for player: " << playerId << ", ret: " << ret;
+			PlayerTipSystem::SendToPlayer(playerEntity, ret, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+			return;
+		}
+	}
+
+	if (fromSceneGameNode == toSceneGameNode)
+	{
+		changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eSameGs);
+	}
+	else
+	{
+		changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
+	}
+
+	LOG_INFO << "Change scene queue processed successfully for player: " << playerId;
+	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
 }
 
 uint32_t PlayerSceneSystem::GetDefaultSceneConfigurationId()
