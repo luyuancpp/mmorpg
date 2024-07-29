@@ -3,5 +3,5 @@
 class PlayerSessionSystem
 {
 public:
-    static void Init();
+    static void Initialize();
 };
