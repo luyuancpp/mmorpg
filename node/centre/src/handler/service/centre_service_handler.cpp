@@ -37,23 +37,23 @@ constexpr std::size_t kMaxPlayerSize{50000};
 
 Guid GetPlayerIdBySessionId(const uint64_t session_id)
 {
-	const auto it = tls_sessions.find(session_id);
-    if (it == tls_sessions.end())
-    {
-        LOG_ERROR << "can not find session id " << session_id;
-        return kInvalidGuid;
-    }
-	return  it->second.player_id();
+	const auto session_it = tls_sessions.find(session_id);
+	if (session_it == tls_sessions.end())
+	{
+		LOG_ERROR << "Cannot find session ID " << session_id;
+		return kInvalidGuid;
+	}
+	return session_it->second.player_id();
 }
 
-entt::entity GetPlayerByConnId(uint64_t session_id)
+entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 {
-	const auto it = tls_cl.PlayerList().find(GetPlayerIdBySessionId(session_id));
-	if (it == tls_cl.PlayerList().end())
+	const auto player_it = tls_cl.PlayerList().find(GetPlayerIdBySessionId(session_id));
+	if (player_it == tls_cl.PlayerList().end())
 	{
 		return entt::null;
 	}
-	return it->second;
+	return player_it->second;
 }
 
 ///<<< END WRITING YOUR CODE
@@ -63,31 +63,29 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-	const InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
-	const entt::entity game_node_id{request->game_node_id()};
-	for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())  
+	const InetAddress client_address(request->rpc_client().ip(), request->rpc_client().port());
+	const InetAddress server_address(request->rpc_server().ip(), request->rpc_server().port());
+	const entt::entity game_node_id{ request->game_node_id() };
+	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
 	{
-		if (session.conn_->peerAddress().toIpPort() !=
-			session_addr.toIpPort())
+		if (session.conn_->peerAddress().toIpPort() != client_address.toIpPort())
 		{
 			continue;
 		}
 		const auto game_node = tls.gameNodeRegistry.create(game_node_id);
-        if (game_node != game_node_id)
-        {
-            //todo
-            LOG_ERROR << "game connection not found " << request->game_node_id();
-            return;
-        }
-        auto game_node_ptr = std::make_shared<RpcSessionPtr::element_type>(session.conn_);
-        AddMainSceneNodeComponent(tls.gameNodeRegistry, game_node);
-        tls.gameNodeRegistry.emplace<RpcSessionPtr>(game_node, game_node_ptr);
-        tls.gameNodeRegistry.emplace<InetAddress>(game_node, service_addr);
+		if (game_node == entt::null)
+		{
+			LOG_ERROR << "Failed to create game node " << request->game_node_id();
+			return;
+		}
+		auto game_node_ptr = std::make_shared<RpcSessionPtr::element_type>(session.conn_);
+		AddMainSceneNodeComponent(tls.gameNodeRegistry, game_node);
+		tls.gameNodeRegistry.emplace<RpcSessionPtr>(game_node, game_node_ptr);
+		tls.gameNodeRegistry.emplace<InetAddress>(game_node, server_address);
 		break;
 	}
-	
-    LOG_INFO << " game register: " << MessageToJsonString(request);
+
+	LOG_INFO << "Game registered: " << MessageToJsonString(request);
 
 	if (request->server_type() == eGameNodeType::kMainSceneCrossNode)
 	{
@@ -96,18 +94,18 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	}
 	else if (request->server_type() == eGameNodeType::kRoomNode)
 	{
-        tls.gameNodeRegistry.remove<MainSceneNode>(game_node_id);
+		tls.gameNodeRegistry.remove<MainSceneNode>(game_node_id);
 		tls.gameNodeRegistry.emplace<RoomSceneNode>(game_node_id);
 	}
-    else if (request->server_type() == eGameNodeType::kRoomSceneCrossNode)
-    {
-        tls.gameNodeRegistry.remove<MainSceneNode>(game_node_id);
-        tls.gameNodeRegistry.emplace<CrossRoomSceneNode>(game_node_id);
-    }
+	else if (request->server_type() == eGameNodeType::kRoomSceneCrossNode)
+	{
+		tls.gameNodeRegistry.remove<MainSceneNode>(game_node_id);
+		tls.gameNodeRegistry.emplace<CrossRoomSceneNode>(game_node_id);
+	}
 
 	for (auto gate : tls.gateNodeRegistry.view<RpcSessionPtr>())
 	{
-		gCentreNode ->BroadCastRegisterGameToGate(game_node_id, gate);
+		gCentreNode->BroadCastRegisterGameToGate(game_node_id, gate);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -118,27 +116,28 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-	entt::entity gate{ request->gate_node_id() };
-	for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
+	InetAddress client_address(request->rpc_client().ip(), request->rpc_client().port());
+	entt::entity gate_id{ request->gate_node_id() };
+	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
 	{
-		if (session.conn_->peerAddress().toIpPort() != session_addr.toIpPort())
+		if (session.conn_->peerAddress().toIpPort() != client_address.toIpPort())
 		{
 			continue;
 		}
-		if ( const auto gate_node_id = tls.gateNodeRegistry.create(gate) ; gate_node_id != gate)
+		const auto gate_node_id = tls.gateNodeRegistry.create(gate_id);
+		if (gate_node_id != gate_id)
 		{
-			LOG_ERROR << "create gate error";
+			LOG_ERROR << "Failed to create gate " << request->gate_node_id();
 			return;
 		}
-		tls.gateNodeRegistry.emplace<RpcSessionPtr>(gate, 
+		tls.gateNodeRegistry.emplace<RpcSessionPtr>(gate_id,
 			std::make_shared<RpcSessionPtr::element_type>(session.conn_));
 		break;
 	}
-	LOG_INFO << "gate register " << MessageToJsonString(request);
-	for ( const auto e : tls.gameNodeRegistry.view<RpcSessionPtr>())
+	LOG_INFO << "Gate registered " << MessageToJsonString(request);
+	for (const auto& entity : tls.gameNodeRegistry.view<RpcSessionPtr>())
 	{
-		gCentreNode ->BroadCastRegisterGameToGate(e, gate);
+		gCentreNode->BroadCastRegisterGameToGate(entity, gate_id);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -161,35 +160,43 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
     defer(tls_sessions.erase(request->session_id()));
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
-	const auto player = GetPlayerByConnId(request->session_id());
-	if (entt::null == player)
-	{
-		return;
-	}
-	const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	//玩家已经断开连接了
-	if (nullptr == player_node_info)
-	{
-		return;
-	}
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
+	//玩家已经断开连接了
+
+	defer(tls_sessions.erase(request->session_id()));
+
+	const auto player_entity = GetPlayerEntityBySessionId(request->session_id());
+	if (player_entity == entt::null)
+	{
+		return;
+	}
+
+	const auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player_entity);
+	if (player_node_info == nullptr)
+	{
+		return;
+	}
+
 	if (player_node_info->gate_session_id() != request->session_id())
 	{
 		return;
 	}
+
 	const entt::entity game_node_id{ player_node_info->game_node_id() };
-    if (!tls.gameNodeRegistry.valid(game_node_id))
-    {
-        LOG_ERROR << "gs not found ";
-        return;
-    }
-	const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
-    if (nullptr == game_node)
-    {
-        LOG_ERROR << "gs not found ";
+	if (!tls.gameNodeRegistry.valid(game_node_id))
+	{
+		LOG_ERROR << "Game node not found";
 		return;
-    }
-	const auto player_id = tls.registry.get<Guid>(player);
+	}
+
+	const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
+	if (game_node == nullptr)
+	{
+		LOG_ERROR << "Game node not found";
+		return;
+	}
+
+	const auto player_id = tls.registry.get<Guid>(player_entity);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
 	(*game_node)->CallMethod(GameServiceDisconnectMsgId, rq);
