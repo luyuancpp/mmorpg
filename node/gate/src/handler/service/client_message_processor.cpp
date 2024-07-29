@@ -91,7 +91,7 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 		// Remove session from registry
 		tls_gate.sessions().erase(sessionId);
 
-		LOG_INFO << "Disconnected session id: " << sessionId;
+		LOG_TRACE << "Disconnected session id: " << sessionId;
 	}
 	else
 	{
@@ -105,7 +105,7 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 		session.conn_ = conn;
 		tls_gate.sessions().emplace(sessionId, std::move(session));
 
-		LOG_INFO << "New connection, assigned session id: " << sessionId;
+		LOG_TRACE << "New connection, assigned session id: " << sessionId;
 	}
 }
 
@@ -143,7 +143,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 		message.set_message_id(request->message_id());
 		gameNode->CallMethod(GameServiceClientSend2PlayerMsgId, message);
 
-		LOG_INFO << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
+		LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 	}
 	else
 	{
@@ -163,7 +163,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 				request->body().data(), request->body().size());
 			SendLoginC2LRequest(loginNode, message);
 
-			LOG_INFO << "Sent LoginC2LRequest, session id: " << sessionId;
+			LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 		}
 		else if (request->message_id() == LoginServiceCreatePlayerMsgId)
 		{
@@ -173,7 +173,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 				request->body().data(), request->body().size());
 			SendCreatePlayerC2LRequest(loginNode, message);
 
-			LOG_INFO << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
+			LOG_TRACE << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
 		}
 		else if (request->message_id() == LoginServiceEnterGameMsgId)
 		{
@@ -183,7 +183,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 				request->body().data(), request->body().size());
 			SendEnterGameC2LRequest(loginNode, message);
 
-			LOG_INFO << "Sent EnterGameC2LRequest, session id: " << sessionId;
+			LOG_TRACE << "Sent EnterGameC2LRequest, session id: " << sessionId;
 		}
 		else
 		{
