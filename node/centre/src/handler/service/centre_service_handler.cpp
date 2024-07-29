@@ -648,11 +648,11 @@ void CentreServiceHandler::UnRegisterGame(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	UnRegisterGameRequest message;
-    for (const auto& [e, gateNode]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
+    for (const auto& [e, gate_node]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
     {
+		UnRegisterGameRequest message;
 		message.set_game_node_id(request->game_node_id());
-		gateNode->Send(GateServiceRegisterGameMsgId, message);
+        gate_node->Send(GateServiceRegisterGameMsgId, message);
     }
 ///<<< END WRITING YOUR CODE
 }
