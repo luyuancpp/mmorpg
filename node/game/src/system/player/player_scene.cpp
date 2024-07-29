@@ -9,26 +9,26 @@
 
 #include "service/scene_client_player_service.h"
 
-void PlayerSceneSystem::EnterScene(entt::entity player, Guid scene)
+void PlayerSceneSystem::EnterScene(entt::entity player, Guid sceneId)
 {
-	GameNodeSceneSystem::EnterScene({ .scene = entt::entity{scene}, .enter = player});
+	GameNodeSceneSystem::EnterScene({ .scene = entt::entity{sceneId}, .enter = player });
 }
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
 {
-	const auto info = tls.sceneRegistry.try_get<SceneInfo>(scene);
-	if (nullptr == info)
+	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(scene);
+	if (sceneInfo == nullptr)
 	{
-		LOG_ERROR << "enter scene error" << tls.registry.get<Guid>(player);
+		LOG_ERROR << "Failed to get scene info for player: " << tls.registry.get<Guid>(player);
 		return;
 	}
-	EnterSceneS2C rq;
-	rq.mutable_scene_info()->CopyFrom(*info);
-	SendMessageToPlayer(ClientPlayerSceneServicePushEnterSceneS2CMsgId, rq, player);
+
+	EnterSceneS2C message;
+	message.mutable_scene_info()->CopyFrom(*sceneInfo);
+	SendMessageToPlayer(ClientPlayerSceneServicePushEnterSceneS2CMsgId, message, player);
 }
 
 void PlayerSceneSystem::LeaveScene(entt::entity player)
 {
-	GameNodeSceneSystem::LeaveScene({player});
+	GameNodeSceneSystem::LeaveScene({ player });
 }
-
