@@ -48,8 +48,8 @@ Guid GetPlayerIdBySessionId(const uint64_t session_id)
 
 entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 {
-	const auto player_it = tls_cl.PlayerList().find(GetPlayerIdBySessionId(session_id));
-	if (player_it == tls_cl.PlayerList().end())
+	const auto player_it = tlsCommonLogic.PlayerList().find(GetPlayerIdBySessionId(session_id));
+	if (player_it == tlsCommonLogic.PlayerList().end())
 	{
 		return entt::null;
 	}
@@ -255,7 +255,7 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE
     
-	if (tls_cl.PlayerList().size() >= kMaxPlayerSize)
+	if (tlsCommonLogic.PlayerList().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -291,8 +291,8 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	// TODO: Disconnect old connection
 
 	// Check if player exists in PlayerList
-	if (const auto player_it = tls_cl.PlayerList().find(client_msg_body.player_id());
-		player_it == tls_cl.PlayerList().end())
+	if (const auto player_it = tlsCommonLogic.PlayerList().find(client_msg_body.player_id());
+		player_it == tlsCommonLogic.PlayerList().end())
 	{
 		// Player does not exist in PlayerList, perform initialization
 		tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(
@@ -353,7 +353,7 @@ void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	PlayerNodeSystem::HandlePlayerLeave(GetPlayerIdBySessionId(tls_cl.session_id()));
+	PlayerNodeSystem::HandlePlayerLeave(GetPlayerIdBySessionId(tlsCommonLogic.session_id()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -364,8 +364,8 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	defer(Destroy(tls.registry, entt::entity{ tls_cl.session_id() }));
-	const auto player_id = GetPlayerIdBySessionId(tls_cl.session_id());
+	defer(Destroy(tls.registry, entt::entity{ tlsCommonLogic.session_id() }));
+	const auto player_id = GetPlayerIdBySessionId(tlsCommonLogic.session_id());
 	PlayerNodeSystem::HandlePlayerLeave(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -384,7 +384,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 		return;
 	}
 
-	const auto player = tls_cl.get_player(it->second.player_id());
+	const auto player = tlsCommonLogic.get_player(it->second.player_id());
 	if (!tls.registry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << it->second.player_id();
@@ -459,7 +459,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 {
 	///<<< BEGIN WRITING YOUR CODE
 
-	const auto player = tls_cl.get_player(request->player_id());
+	const auto player = tlsCommonLogic.get_player(request->player_id());
 	if (!tls.registry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << request->player_id();
@@ -491,12 +491,12 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	///<<< BEGIN WRITING YOUR CODE
 
 	// Clean up previous routing information
-	defer(tls_cl.set_next_route_node_type(UINT32_MAX));
-	defer(tls_cl.set_next_route_node_id(UINT32_MAX));
-	defer(tls_cl.set_current_session_id(kInvalidSessionId));
+	defer(tlsCommonLogic.set_next_route_node_type(UINT32_MAX));
+	defer(tlsCommonLogic.set_next_route_node_id(UINT32_MAX));
+	defer(tlsCommonLogic.set_current_session_id(kInvalidSessionId));
 
 	// Set current session ID
-	tls_cl.set_current_session_id(request->session_id());
+	tlsCommonLogic.set_current_session_id(request->session_id());
 
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
@@ -557,7 +557,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	auto* mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 
-	if (tls_cl.next_route_node_type() == UINT32_MAX)
+	if (tlsCommonLogic.next_route_node_type() == UINT32_MAX)
 	{
 		const auto byte_size = static_cast<int32_t>(current_node_response->ByteSizeLong());
 		response->mutable_body()->resize(byte_size);
@@ -569,32 +569,32 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			*response->add_route_data_list() = request_data_it;
 		}
 
-		response->set_session_id(tls_cl.session_id());
+		response->set_session_id(tlsCommonLogic.session_id());
 		response->set_id(request->id());
 		return;
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
 	auto* next_route_data = mutable_request->add_route_data_list();
-	next_route_data->CopyFrom(tls_cl.route_data());
+	next_route_data->CopyFrom(tlsCommonLogic.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(gCentreNode->GetNodeInfo());
-	mutable_request->set_body(tls_cl.route_msg_body());
+	mutable_request->set_body(tlsCommonLogic.route_msg_body());
 	mutable_request->set_id(request->id());
 
-	switch (tls_cl.next_route_node_type())
+	switch (tlsCommonLogic.next_route_node_type())
 	{
 		case kGateNode:
 		{
-			entt::entity gate_node_id{ tls_cl.next_route_node_id() };
+			entt::entity gate_node_id{ tlsCommonLogic.next_route_node_id() };
 			if (!tls.gateNodeRegistry.valid(gate_node_id))
 			{
-				LOG_ERROR << "Gate node not found: " << tls_cl.next_route_node_id();
+				LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
 				return;
 			}
 			const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
 			if (nullptr == gate_node)
 			{
-				LOG_ERROR << "Gate node not found: " << tls_cl.next_route_node_id();
+				LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
 				return;
 			}
 			(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
@@ -602,16 +602,16 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 		}
 		case kGameNode:
 		{
-			entt::entity game_node_id{ tls_cl.next_route_node_id() };
+			entt::entity game_node_id{ tlsCommonLogic.next_route_node_id() };
 			if (!tls.gameNodeRegistry.valid(game_node_id))
 			{
-				LOG_ERROR << "Game node not found: " << tls_cl.next_route_node_id() << ", " << request->DebugString();
+				LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
 				return;
 			}
 			const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
 			if (nullptr == game_node)
 			{
-				LOG_ERROR << "Game node not found: " << tls_cl.next_route_node_id() << ", " << request->DebugString();
+				LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
 				return;
 			}
 			(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
@@ -619,7 +619,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 		}
 		default:
 		{
-			LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tls_cl.next_route_node_type();
+			LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tlsCommonLogic.next_route_node_type();
 			break;
 		}
 	}

@@ -17,8 +17,8 @@ void PlayerTipSystem::SendToPlayer(entt::entity playerEntity, uint32_t tipId, co
 
 void PlayerTipSystem::SendToPlayer(Guid playerId, uint32_t tipId, const StringVector& parameters)
 {
-	const auto playerIterator = tls_cl.PlayerList().find(playerId);
-	if (playerIterator == tls_cl.PlayerList().end())
+	const auto playerIterator = tlsCommonLogic.PlayerList().find(playerId);
+	if (playerIterator == tlsCommonLogic.PlayerList().end())
 	{
 		return;
 	}
