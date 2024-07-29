@@ -278,7 +278,6 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
-	LOG_TRACE << "Received OnLoginEnterGame request.";
 
 	auto& clientMsgBody = request->client_msg_body();
 	auto sessionId = request->session_info().session_id();
@@ -386,10 +385,11 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 		return;
 	}
 
-	const auto player = tlsCommonLogic.get_player(it->second.player_id());
+	const auto playerId = it->second.player_id();
+	const auto player = tlsCommonLogic.get_player(playerId);
 	if (!tls.registry.valid(player))
 	{
-		LOG_ERROR << "Player not found: " << it->second.player_id();
+		LOG_ERROR << "Player not found: " << playerId;
 		return;
 	}
 
@@ -411,7 +411,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	const auto& service_handler = service_it->second;
 	google::protobuf::Service* service = service_handler->service();
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
-	if (nullptr == method)
+	if (!method)
 	{
 		LOG_ERROR << "Method not found: " << message_info.method;
 		// TODO: Handle client error
@@ -453,37 +453,41 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	///<<< END WRITING YOUR CODE
 }
 
-
 void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
 	const ::EnterGameNodeSucceedRequest* request,
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+	LOG_INFO << "EnterGsSucceed request received.";
 
-	const auto player = tlsCommonLogic.get_player(request->player_id());
+	const auto playerId = request->player_id();
+	const auto player = tlsCommonLogic.get_player(playerId);
 	if (!tls.registry.valid(player))
 	{
-		LOG_ERROR << "Player not found: " << request->player_id();
+		LOG_ERROR << "Player not found: " << playerId;
 		return;
 	}
 
-	auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	if (nullptr == player_node_info)
+	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (!playerNodeInfo)
 	{
-		LOG_ERROR << "Player session info not found for player: " << request->player_id();
+		LOG_ERROR << "Player session info not found for player: " << playerId;
 		return;
 	}
 
-	player_node_info->set_game_node_id(request->game_node_id());
+	playerNodeInfo->set_game_node_id(request->game_node_id());
 
 	PlayerNodeSystem::RegisterPlayerToGateNode(player);
 
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(player);
 
-	///<<< END WRITING YOUR CODE
+	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->game_node_id();
+
+///<<< END WRITING YOUR CODE
 }
+
 
 void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
 	const ::RouteMsgStringRequest* request,
@@ -522,7 +526,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	const auto& message_info = g_message_info[route_data.message_id()];
 
-	if (nullptr == message_info.service_impl_instance_)
+	if (!message_info.service_impl_instance_)
 	{
 		LOG_ERROR << "Message service implementation not found for message ID: " << route_data.message_id();
 		return;
@@ -538,7 +542,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	const auto& service = it->second;
 
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
-	if (nullptr == method)
+	if (!method)
 	{
 		LOG_ERROR << "Method not found: " << message_info.method;
 		return;
@@ -575,8 +579,8 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 		response->set_id(request->id());
 		return;
 	}
-	//处理,如果需要继续路由则拿到当前节点信息
-	//需要发送到下个节点
+
+	// Need to route to the next node
 	auto* next_route_data = mutable_request->add_route_data_list();
 	next_route_data->CopyFrom(tlsCommonLogic.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(gCentreNode->GetNodeInfo());
@@ -585,49 +589,49 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	switch (tlsCommonLogic.next_route_node_type())
 	{
-		case kGateNode:
+	case kGateNode:
+	{
+		entt::entity gate_node_id{ tlsCommonLogic.next_route_node_id() };
+		if (!tls.gateNodeRegistry.valid(gate_node_id))
 		{
-			entt::entity gate_node_id{ tlsCommonLogic.next_route_node_id() };
-			if (!tls.gateNodeRegistry.valid(gate_node_id))
-			{
-				LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
-				return;
-			}
-			const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
-			if (nullptr == gate_node)
-			{
-				LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
-				return;
-			}
-			(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
-			break;
+			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
+			return;
 		}
-		case kGameNode:
+		const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
+		if (!gate_node)
 		{
-			entt::entity game_node_id{ tlsCommonLogic.next_route_node_id() };
-			if (!tls.gameNodeRegistry.valid(game_node_id))
-			{
-				LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
-				return;
-			}
-			const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
-			if (nullptr == game_node)
-			{
-				LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
-				return;
-			}
-			(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
-			break;
+			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
+			return;
 		}
-		default:
-		{
-			LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tlsCommonLogic.next_route_node_type();
-			break;
-		}
+		(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
+		break;
 	}
-
+	case kGameNode:
+	{
+		entt::entity game_node_id{ tlsCommonLogic.next_route_node_id() };
+		if (!tls.gameNodeRegistry.valid(game_node_id))
+		{
+			LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
+			return;
+		}
+		const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
+		if (!game_node)
+		{
+			LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
+			return;
+		}
+		(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
+		break;
+	}
+	default:
+	{
+		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tlsCommonLogic.next_route_node_type();
+		break;
+	}
+	}
 	///<<< END WRITING YOUR CODE
 }
+
 
 void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
@@ -644,11 +648,11 @@ void CentreServiceHandler::UnRegisterGame(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    for (const auto& [e, gate_node]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
+	UnRegisterGameRequest message;
+    for (const auto& [e, gateNode]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
     {
-		UnRegisterGameRequest message;
 		message.set_game_node_id(request->game_node_id());
-        gate_node->Send(GateServiceRegisterGameMsgId, message);
+		gateNode->Send(GateServiceRegisterGameMsgId, message);
     }
 ///<<< END WRITING YOUR CODE
 }
