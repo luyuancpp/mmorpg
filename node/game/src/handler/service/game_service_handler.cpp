@@ -1,4 +1,4 @@
-﻿#include "game_service_handler.h"
+#include "game_service_handler.h"
 #include "thread_local/storage.h"
 #include "system/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
@@ -67,7 +67,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -196,7 +196,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
 void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controller,
 	const ::GameNodeDisconnectRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	auto player = tlsCommonLogic.GetPlayer(request->player_id());
@@ -235,7 +235,7 @@ void GameServiceHandler::RegisterGate(::google::protobuf::RpcController* control
 void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const auto it = tlsSessions.find(request->head().session_id());
@@ -260,7 +260,7 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
 void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	const auto it = tlsSessions.find(request->head().session_id());
@@ -342,7 +342,7 @@ void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* controller,
 	const ::RegisterPlayerSessionRequest* request,
 	::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerNodeSystem::RemovePlayerSession(request->player_id());
