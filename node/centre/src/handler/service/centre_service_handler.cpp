@@ -48,11 +48,19 @@ Guid GetPlayerIdBySessionId(const uint64_t session_id)
 
 entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 {
-	const auto player_it = tlsCommonLogic.GetPlayerList().find(GetPlayerIdBySessionId(session_id));
+	auto player_id = GetPlayerIdBySessionId(session_id);
+
+	LOG_DEBUG << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
+
+	const auto player_it = tlsCommonLogic.GetPlayerList().find(player_id);
 	if (player_it == tlsCommonLogic.GetPlayerList().end())
 	{
+		LOG_ERROR << "Player not found for session ID: " << session_id << ", player ID: " << player_id;
 		return entt::null;
 	}
+
+	LOG_DEBUG << "Player entity found for session ID: " << session_id << ", player ID: " << player_id;
+
 	return player_it->second;
 }
 
@@ -146,36 +154,45 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    // Extract client address and gate ID from the request
-    InetAddress clientAddress(request->rpc_client().ip(), request->rpc_client().port());
-    entt::entity gateId{ request->gate_node_id() };
+// Extract client address and gate ID from the request
+	InetAddress clientAddress(request->rpc_client().ip(), request->rpc_client().port());
+	entt::entity gateId{ request->gate_node_id() };
 
-    // Search for a matching client connection in network registry
-    for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
-    {
-        if (session.conn_->peerAddress().toIpPort() == clientAddress.toIpPort())
-        {
-            // Found matching client connection, create gate node
-            const auto createdGateId = tls.gateNodeRegistry.create(gateId);
-            if (createdGateId != gateId)
-            {
-                LOG_ERROR << "Failed to create gate " << request->gate_node_id();
-                return;
-            }
+	// Search for a matching client connection in network registry
+	bool foundMatchingClient = false;
+	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
+	{
+		if (session.conn_->peerAddress().toIpPort() == clientAddress.toIpPort())
+		{
+			// Found matching client connection, create gate node
+			const auto createdGateId = tls.gateNodeRegistry.create(gateId);
+			if (createdGateId != gateId)
+			{
+				LOG_ERROR << "Failed to create gate " << request->gate_node_id();
+				return;
+			}
 
-            // Register gate node and associate with client session
-            tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateId,
-                                                        std::make_shared<RpcSessionPtr::element_type>(session.conn_));
-            LOG_INFO << "Gate registered: " << MessageToJsonString(request);
-            break;
-        }
-    }
+			// Register gate node and associate with client session
+			tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateId,
+				std::make_shared<RpcSessionPtr::element_type>(session.conn_));
+			LOG_INFO << "Gate registered: " << MessageToJsonString(request);
+			foundMatchingClient = true;
+			break;
+		}
+	}
 
-    // Broadcast registration to all game nodes
-    for (const auto& entity : tls.gameNodeRegistry.view<RpcSessionPtr>())
-    {
-        gCentreNode->BroadCastRegisterGameToGate(entity, gateId);
-    }
+	if (!foundMatchingClient)
+	{
+		LOG_ERROR << "No matching client session found for gate registration: " << MessageToJsonString(request);
+		return;
+	}
+
+	// Broadcast registration to all game nodes
+	for (const auto& entity : tls.gameNodeRegistry.view<RpcSessionPtr>())
+	{
+		gCentreNode->BroadCastRegisterGameToGate(entity, gateId);
+		LOG_DEBUG << "Broadcasted gate registration to game node: " << entt::to_integral(entity) << ", gate ID: " << request->gate_node_id();
+	}
     ///<<< END WRITING YOUR CODE
 }
 
@@ -209,33 +226,41 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 	const auto playerEntity = GetPlayerEntityBySessionId(request->session_id());
 	if (playerEntity == entt::null)
 	{
+		LOG_ERROR << "Player entity not found for session ID: " << request->session_id();
 		return;
 	}
 
 	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
 	if (playerNodeInfo == nullptr)
 	{
+		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tls.registry.get<Guid>(playerEntity);
 		return;
 	}
 
 	if (playerNodeInfo->gate_session_id() != request->session_id())
 	{
+		LOG_ERROR << "Mismatched gate session ID for player: " << playerNodeInfo->gate_session_id()
+			<< ", expected session ID: " << request->session_id();
 		return;
 	}
 
 	const entt::entity gameNodeId{ playerNodeInfo->game_node_id() };
 	if (!tls.gameNodeRegistry.valid(gameNodeId))
 	{
+		LOG_ERROR << "Invalid game node ID found for player: " << tls.registry.get<Guid>(playerEntity);
 		return;
 	}
 
 	const auto gameNode = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeId);
 	if (gameNode == nullptr)
 	{
+		LOG_ERROR << "RpcSessionPtr not found for game node ID: " << playerNodeInfo->game_node_id();
 		return;
 	}
 
 	const auto playerId = tls.registry.get<Guid>(playerEntity);
+
+	LOG_INFO << "Handling disconnect for player: " << playerId;
 
 	GameNodeDisconnectRequest disconnectRequest;
 	disconnectRequest.set_player_id(playerId);
@@ -275,7 +300,6 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
-
 	auto& clientMsgBody = request->client_msg_body();
 	auto sessionId = request->session_info().session_id();
 
@@ -310,9 +334,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
 			playerNodeInfo != nullptr)
 		{
-
 			// Handle session takeover (顶号)
-
 			LOG_INFO << "Player reconnected: Player ID " << clientMsgBody.player_id();
 
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
@@ -336,9 +358,13 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		}
 
 		//连续顶几次,所以用emplace_or_replace
+		LOG_INFO << "Player login type: " << (tls.registry.any_of<EnterGsFlag>(player) ? "Replace" : "New");
+
+		// Register player to gate node
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
 		PlayerNodeSystem::RegisterPlayerToGateNode(player);
 	}
+
 	///<<< END WRITING YOUR CODE
 }
 
@@ -371,7 +397,6 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-
 	const auto it = tlsSessions.find(request->head().session_id());
 	if (it == tlsSessions.end())
 	{
