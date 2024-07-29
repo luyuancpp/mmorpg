@@ -42,8 +42,8 @@ void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, cons
 ///<<< BEGIN WRITING YOUR CODE
 	///gate 更新gs,相应的gs可以往那个gate上发消息了
 	///todo 中间返回是断开了
-	entt::entity GetPlayerByConnId(uint64_t session_id);
-	const auto player = GetPlayerByConnId(replied->session_info().session_id());
+	entt::entity GetPlayerEntityBySessionId(uint64_t session_id);
+	const auto player = GetPlayerEntityBySessionId(replied->session_info().session_id());
 	if (entt::null == player)
 	{
 		LOG_ERROR << "session player not found " << replied->session_info().session_id();
