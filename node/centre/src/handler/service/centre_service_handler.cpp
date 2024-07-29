@@ -239,9 +239,9 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	if ( const auto player_it = tls_cl.PlayerList().find(rq.player_id()) ;
 		player_it == tls_cl.PlayerList().end())
 	{
-        tls.globalRegistry.get<PlayerLoadingInfoList>(global_entity()).emplace(
+        tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(
             rq.player_id(), *request);
-        tls.globalRegistry.get<PlayerRedis>(global_entity())->AsyncLoad(rq.player_id());
+        tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(rq.player_id());
 	}
 	else
 	{

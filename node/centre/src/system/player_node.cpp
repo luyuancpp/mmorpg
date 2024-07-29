@@ -23,7 +23,7 @@
 
 void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
-	auto& loadingList = tls.globalRegistry.get<PlayerLoadingInfoList>(global_entity());
+	auto& loadingList = tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity());
 	defer(loadingList.erase(playerId));
 	const auto it = loadingList.find(playerId);
 	if (it == loadingList.end())

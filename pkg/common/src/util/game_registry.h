@@ -5,7 +5,7 @@
 
 entt::entity error_entity();
 entt::entity op_entity();
-entt::entity global_entity();
+entt::entity GlobalEntity();
 
 class EventOwner
 {
