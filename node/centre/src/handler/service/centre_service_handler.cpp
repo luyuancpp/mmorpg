@@ -277,64 +277,82 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* controller,
 	const ::EnterGameL2Ctr* request,
 	::Empty* response,
-	 ::google::protobuf::Closure* done)
+	::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
-
+	///<<< BEGIN WRITING YOUR CODE
 	//顶号
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
-	auto& rq = request->client_msg_body();
+
+	auto& client_msg_body = request->client_msg_body();
 	auto session_id = request->session_info().session_id();
 
+	// Store session information in tls_sessions
 	PlayerSessionInfo session_info;
-	session_info.set_player_id(rq.player_id());
+	session_info.set_player_id(client_msg_body.player_id());
 	tls_sessions.emplace(session_id, session_info);
-    //todo把旧的connection 断掉
 
-	if ( const auto player_it = tls_cl.PlayerList().find(rq.player_id()) ;
+	//todo把旧的connection 断掉
+	// TODO: Disconnect old connection
+
+	// Check if player exists in PlayerList
+	if (const auto player_it = tls_cl.PlayerList().find(client_msg_body.player_id());
 		player_it == tls_cl.PlayerList().end())
 	{
-        tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(
-            rq.player_id(), *request);
-        tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(rq.player_id());
+		// Player does not exist in PlayerList, perform initialization
+		tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(
+			client_msg_body.player_id(), *request);
+		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(client_msg_body.player_id());
 	}
 	else
 	{
+		// Player exists, handle session takeover or login
 		auto player = player_it->second;
+
 		//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
 		//告诉账号被顶
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		//区分顶号和断线重连
-		if (auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-			nullptr != player_node_info)
+		// 
+		// Handle session takeover (顶号) or reconnect scenario
+		if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+			playerNodeInfo != nullptr)
 		{
+			// Handle session takeover (顶号)
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipMessage beKickTip;
 			beKickTip.mutable_tip_info()->set_id(kRetLoginBeKickByAnOtherAccount);
-			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, rq.player_id());
-			//删除老会话,需要玩家收到消息后再删除gate连接
-			defer(tls_sessions.erase(player_node_info->gate_session_id()));
+			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, client_msg_body.player_id());
+
+			// Remove old session ID from tls_sessions after player acknowledges the message
+			defer(tls_sessions.erase(playerNodeInfo->gate_session_id()));
+
+			// Notify the gate to disconnect the old connection
 			GateNodeKickConnRequest message;
 			message.set_session_id(session_id);
-			SendToGate(GateServiceKickConnByCentreMsgId, message, 
-				GetGateNodeId(player_node_info->gate_session_id()));
-			player_node_info->set_gate_session_id(session_id);
+			SendToGate(GateServiceKickConnByCentreMsgId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
+
+			// Update player's gate session ID
+			playerNodeInfo->set_gate_session_id(session_id);
 		}
 		else
 		{
-			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(
-				session_id);
+			// Set gate session ID for the player
+			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(session_id);
 		}
+
 		//连续顶几次,所以用emplace_or_replace
+		// Register player to the gate node and specify the login type (顶号 or LOGIN_REPLACE)
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
 		PlayerNodeSystem::RegisterPlayerToGateNode(player);
 	}
-///<<< END WRITING YOUR CODE
+
+	///<<< END WRITING YOUR CODE
 }
+
 
 void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,
 	const ::CtrlLsLeaveGameRequest* request,
@@ -362,67 +380,84 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
-	 ::google::protobuf::Closure* done)
+	::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+
 	const auto it = tls_sessions.find(request->head().session_id());
 	if (it == tls_sessions.end())
 	{
-		LOG_ERROR << "session not found " << request->head().session_id();
+		LOG_ERROR << "Session not found: " << request->head().session_id();
 		return;
 	}
-	const auto player  = tls_cl.get_player(it->second.player_id());
-    if (!tls.registry.valid(player))
-    {
-        LOG_ERROR << "player not found " << it->second.player_id();
-        return;
-    }
+
+	const auto player = tls_cl.get_player(it->second.player_id());
+	if (!tls.registry.valid(player))
+	{
+		LOG_ERROR << "Player not found: " << it->second.player_id();
+		return;
+	}
+
 	if (request->body().message_id() >= g_message_info.size())
 	{
-		LOG_ERROR << "message_id not found " << request->body().message_id();
+		LOG_ERROR << "Message ID not found: " << request->body().message_id();
 		return;
 	}
+
 	const auto& message_info = g_message_info.at(request->body().message_id());
+
 	const auto service_it = g_player_service.find(message_info.service);
 	if (service_it == g_player_service.end())
 	{
-		LOG_ERROR << "player service  not found " << request->body().message_id();
+		LOG_ERROR << "Player service not found: " << message_info.service;
 		return;
 	}
+
 	const auto& service_handler = service_it->second;
 	google::protobuf::Service* service = service_handler->service();
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found " << request->body().message_id();
-		//todo client error;
+		LOG_ERROR << "Method not found: " << message_info.method;
+		// TODO: Handle client error
 		return;
 	}
+
 	const MessagePtr player_request(service->GetRequestPrototype(method).New());
 	if (!player_request->ParsePartialFromArray(request->body().body().data(),
-		static_cast < int32_t > ( request -> body ( ) . body ( ) . size ( ) )))
+		request->body().body().size()))
 	{
-        LOG_ERROR << "ParsePartialFromArray " << request->body().message_id();
-        //todo client error;
-        return;
+		LOG_ERROR << "Failed to parse request for message ID: " << request->body().message_id();
+		// TODO: Handle client error
+		return;
 	}
+
 	const MessagePtr player_response(service->GetResponsePrototype(method).New());
+
+	// Call method on player service handler
 	service_handler->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
-	if (nullptr == response)//不需要回复
+
+	// If response is nullptr, no need to send a reply
+	if (!response)
 	{
 		return;
 	}
+
 	response->mutable_head()->set_session_id(request->head().session_id());
-	const auto byte_size = static_cast < int32_t > ( response -> ByteSizeLong ( ) );
+	const int32_t byte_size = response->ByteSizeLong();
 	response->mutable_body()->mutable_body()->resize(byte_size);
-    if (response->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
-    {
-        LOG_ERROR << "message error " << response->descriptor (  )->name (  );
-        return;
-    }
+	if (!response->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
+	{
+		LOG_ERROR << "Failed to serialize response for message ID: " << request->body().message_id();
+		// TODO: Handle message serialization error
+		return;
+	}
+
 	response->mutable_body()->set_message_id(request->body().message_id());
-///<<< END WRITING YOUR CODE
+
+	///<<< END WRITING YOUR CODE
 }
+
 
 void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
 	const ::EnterGameNodeSucceedRequest* request,
