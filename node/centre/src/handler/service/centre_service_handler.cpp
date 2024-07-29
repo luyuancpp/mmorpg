@@ -82,15 +82,12 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	{
 		if (session.conn_->peerAddress().toIpPort() == clientAddr.toIpPort())
 		{
-			// Found a matching client connection
 			LOG_INFO << "Found matching client connection for registration.";
 			clientFound = true;
 
-			// Create and register the game node
 			const auto newGameNode = tls.gameNodeRegistry.create(gameNodeId);
 			if (newGameNode == entt::null)
 			{
-				// Failed to create the game node
 				LOG_ERROR << "Failed to create game node " << request->game_node_id();
 				return;
 			}
@@ -112,7 +109,6 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 		return;
 	}
 
-	// Log successfully registered game node information
 	LOG_INFO << "Game registered: " << MessageToJsonString(request);
 
 	// Update game node type based on server type
@@ -164,7 +160,6 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
             const auto createdGateId = tls.gateNodeRegistry.create(gateId);
             if (createdGateId != gateId)
             {
-                // Failed to create gate node
                 LOG_ERROR << "Failed to create gate " << request->gate_node_id();
                 return;
             }
@@ -198,16 +193,21 @@ void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* 
 void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller,
 	const ::GateSessionDisconnectRequest* request,
 	::Empty* response,
-	 ::google::protobuf::Closure* done)
+	::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
-    defer(tls_sessions.erase(request->session_id()));
+	///<<< BEGIN WRITING YOUR CODE
+	defer(tls_sessions.erase(request->session_id()));
+
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
 	//玩家已经断开连接了
 
-	defer(tls_sessions.erase(request->session_id()));
+	// Ensure disconnection is handled by the current gate to prevent async message order issues
+	// Check for scenarios where reconnect-disconnect cycles might occur in rapid succession
+	// Notice: Asynchronous process: If the gate reconnects first and then disconnects, it might
+	// inadvertently disconnect a newly arrived connection. Extreme cases need testing to see
+	// what issues arise if this code is executed.
 
 	const auto player_entity = GetPlayerEntityBySessionId(request->session_id());
 	if (player_entity == entt::null)
@@ -240,13 +240,19 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 		return;
 	}
 
+	// Retrieve player ID from registry
 	const auto player_id = tls.registry.get<Guid>(player_entity);
-	GameNodeDisconnectRequest rq;
-	rq.set_player_id(player_id);
-	(*game_node)->CallMethod(GameServiceDisconnectMsgId, rq);
+
+	// Prepare and send disconnect request to the game node
+	GameNodeDisconnectRequest disconnect_request;
+	disconnect_request.set_player_id(player_id);
+	(*game_node)->CallMethod(GameServiceDisconnectMsgId, disconnect_request);
+
+	// Handle player leave in the player node system
 	PlayerNodeSystem::HandlePlayerLeave(player_id);
-///<<< END WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
 }
+
 
 void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,
 	const ::LoginRequest* request,
