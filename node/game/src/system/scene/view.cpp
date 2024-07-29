@@ -13,42 +13,42 @@
 void ViewSystem::Initialize()
 {
 	// Initialize actor creation and destruction messages in the global registry
-	initializeActorMessages();
+	InitializeActorMessages();
 }
 
-void ViewSystem::initializeActorMessages()
+void ViewSystem::InitializeActorMessages()
 {
-	tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
-	tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
-	tls.globalRegistry.emplace<ActorListCreateS2C>(global_entity());
-	tls.globalRegistry.emplace<ActorListDestroyS2C>(global_entity());
+	tls.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
+	tls.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
+	tls.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
+	tls.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
 }
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
 {
-	if (bothAreNpcs(observer, entrant)) {
+	if (BothAreNpcs(observer, entrant)) {
 		return false;
 	}
 
-	if (entrantIsNpc(entrant)) {
+	if (EntrantIsNpc(entrant)) {
 		return true;
 	}
 
 	// Handle cases where sudden loss of visibility requires refreshing view
-	return shouldRefreshView();
+	return ShouldRefreshView();
 }
 
-bool ViewSystem::bothAreNpcs(entt::entity observer, entt::entity entrant)
+bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
 {
 	return tls.registry.any_of<Npc>(observer) && tls.registry.any_of<Npc>(entrant);
 }
 
-bool ViewSystem::entrantIsNpc(entt::entity entrant)
+bool ViewSystem::EntrantIsNpc(entt::entity entrant)
 {
 	return tls.registry.any_of<Npc>(entrant);
 }
 
-bool ViewSystem::shouldRefreshView()
+bool ViewSystem::ShouldRefreshView()
 {
 	// TODO: Implement logic for when view needs refreshing
 	return true;
@@ -56,21 +56,21 @@ bool ViewSystem::shouldRefreshView()
 
 bool ViewSystem::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entity entrant)
 {
-	if (bothAreNpcs(observer, entrant)) {
+	if (BothAreNpcs(observer, entrant)) {
 		return false;
 	}
 
-	if (entrantIsNpc(entrant)) {
+	if (EntrantIsNpc(entrant)) {
 		return true;
 	}
 
-	if (shouldRefreshView()) {
+	if (ShouldRefreshView()) {
 		return false;
 	}
 
-	double view_radius = getMaxViewRadius(observer);
+	double viewRadius = GetMaxViewRadius(observer);
 
-	if (isBeyondViewRadius(observer, entrant, view_radius)) {
+	if (IsBeyondViewRadius(observer, entrant, viewRadius)) {
 		return false;
 	}
 
@@ -79,46 +79,46 @@ bool ViewSystem::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entit
 	return true;
 }
 
-double ViewSystem::getMaxViewRadius(entt::entity observer)
+double ViewSystem::GetMaxViewRadius(entt::entity observer)
 {
-	double view_radius = kMaxViewRadius;
+	double viewRadius = kMaxViewRadius;
 
-	if (const auto observer_view_radius = tls.registry.try_get<ViewRadius>(observer)) {
-		view_radius = observer_view_radius->radius();
+	if (const auto observerViewRadius = tls.registry.try_get<ViewRadius>(observer)) {
+		viewRadius = observerViewRadius->radius();
 	}
 
-	return view_radius;
+	return viewRadius;
 }
 
-bool ViewSystem::isBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
+bool ViewSystem::IsBeyondViewRadius(entt::entity observer, entt::entity entrant, double viewRadius)
 {
-	const auto observer_transform = tls.registry.try_get<Transform>(observer);
-	const auto entrant_transform = tls.registry.try_get<Transform>(entrant);
+	const auto observerTransform = tls.registry.try_get<Transform>(observer);
+	const auto entrantTransform = tls.registry.try_get<Transform>(entrant);
 
-	if (!observer_transform || !entrant_transform) {
+	if (!observerTransform || !entrantTransform) {
 		return true; // Consider beyond radius if position information is missing
 	}
 
-	const dtReal observer_location[] = {
-		observer_transform->location().x(),
-		observer_transform->location().y(),
-		observer_transform->location().z()
+	const dtReal observerLocation[] = {
+		observerTransform->location().x(),
+		observerTransform->location().y(),
+		observerTransform->location().z()
 	};
-	const dtReal entrant_location[] = {
-		entrant_transform->location().x(),
-		entrant_transform->location().y(),
-		entrant_transform->location().z()
+	const dtReal entrantLocation[] = {
+		entrantTransform->location().x(),
+		entrantTransform->location().y(),
+		entrantTransform->location().z()
 	};
 
-	return dtVdist(observer_location, entrant_location) > view_radius;
+	return dtVdist(observerLocation, entrantLocation) > viewRadius;
 }
 
 void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& createMessage)
 {
 	createMessage.set_entity(entt::to_integral(entity));
 
-	if (const auto entrant_transform = tls.registry.try_get<Transform>(entity)) {
-		createMessage.mutable_transform()->CopyFrom(*entrant_transform);
+	if (const auto entrantTransform = tls.registry.try_get<Transform>(entity)) {
+		createMessage.mutable_transform()->CopyFrom(*entrantTransform);
 	}
 
 	if (const auto guid = tls.registry.try_get<Guid>(entity)) {

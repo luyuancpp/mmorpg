@@ -36,18 +36,18 @@ protected:
     MockAoiSystem aoi_system;
 
     void SetUp() override {
-        tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
-        tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
+        tls.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
 
-        tls.globalRegistry.emplace<ActorListCreateS2C>(global_entity());
-        tls.globalRegistry.emplace<ActorListDestroyS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
+        tls.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
     }
 
     void TearDown() override {
-        tls.globalRegistry.remove<ActorCreateS2C>(global_entity());
-        tls.globalRegistry.remove<ActorDestroyS2C>(global_entity());
-        tls.globalRegistry.remove<ActorListCreateS2C>(global_entity());
-        tls.globalRegistry.remove<ActorListDestroyS2C>(global_entity());
+        tls.globalRegistry.remove<ActorCreateS2C>(GlobalEntity());
+        tls.globalRegistry.remove<ActorDestroyS2C>(GlobalEntity());
+        tls.globalRegistry.remove<ActorListCreateS2C>(GlobalEntity());
+        tls.globalRegistry.remove<ActorListDestroyS2C>(GlobalEntity());
 
         tls.sceneRegistry.clear();
         tls.registry.clear();
@@ -208,10 +208,10 @@ protected:
 
     void SetUp() override {
 
-        tls.globalRegistry.emplace<ActorCreateS2C>(global_entity());
-        tls.globalRegistry.emplace<ActorDestroyS2C>(global_entity());
-        tls.globalRegistry.emplace<ActorListCreateS2C>(global_entity());
-        tls.globalRegistry.emplace<ActorListDestroyS2C>(global_entity());
+        tls.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
+        tls.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
+        tls.globalRegistry.emplace<ActorListCreateS2C>(GlobalEntity());
+        tls.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
         
         // Setup mock data
         entity1 = tls.registry.create();
@@ -237,10 +237,10 @@ protected:
     }
 
     void TearDown() override {
-        tls.globalRegistry.remove<ActorCreateS2C>(global_entity());
-        tls.globalRegistry.remove<ActorDestroyS2C>(global_entity());
-        tls.globalRegistry.remove<ActorListCreateS2C>(global_entity());
-        tls.globalRegistry.remove<ActorListDestroyS2C>(global_entity());
+        tls.globalRegistry.remove<ActorCreateS2C>(GlobalEntity());
+        tls.globalRegistry.remove<ActorDestroyS2C>(GlobalEntity());
+        tls.globalRegistry.remove<ActorListCreateS2C>(GlobalEntity());
+        tls.globalRegistry.remove<ActorListDestroyS2C>(GlobalEntity());
 
         tls.registry.clear();
         tls.sceneRegistry.clear();

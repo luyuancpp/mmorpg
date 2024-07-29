@@ -13,10 +13,10 @@ public:
     static void FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage);
     static void HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver);
 private:
-    static void initializeActorMessages();
-	static bool bothAreNpcs(entt::entity observer, entt::entity entrant);
-    static bool entrantIsNpc(entt::entity entrant);
-    static bool shouldRefreshView();
-    static double getMaxViewRadius(entt::entity observer);
-    static bool isBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
+    static void InitializeActorMessages();
+	static bool BothAreNpcs(entt::entity observer, entt::entity entrant);
+    static bool EntrantIsNpc(entt::entity entrant);
+    static bool ShouldRefreshView();
+    static double GetMaxViewRadius(entt::entity observer);
+    static bool IsBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
 };
