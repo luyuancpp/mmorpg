@@ -1,4 +1,4 @@
-#include "client_message_processor.h"
+﻿#include "client_message_processor.h"
 
 #include <algorithm>
 #include <functional>
@@ -43,7 +43,7 @@ entt::entity ClientMessageProcessor::GetLoginNode(uint64_t sessionId)
 		const auto loginNodeIt = tls_gate.login_consistent_node().get_by_hash(sessionId);
 		if (tls_gate.login_consistent_node().end() == loginNodeIt)
 		{
-			LOG_ERROR << "player login server not found session id : " << sessionId;
+			LOG_ERROR << "Player login server not found for session id: " << sessionId;
 			return entt::null;
 		}
 		session.login_node_id_ = entt::to_integral(loginNodeIt->second);
@@ -51,7 +51,7 @@ entt::entity ClientMessageProcessor::GetLoginNode(uint64_t sessionId)
 	const auto loginNodeIt = tls_gate.login_consistent_node().get_node_value(session.login_node_id_);
 	if (tls_gate.login_consistent_node().end() == loginNodeIt)
 	{
-		LOG_ERROR << "player found login server crash : " << session.login_node_id_;
+		LOG_ERROR << "Player found login server crash: " << session.login_node_id_;
 		session.login_node_id_ = kInvalidNodeId;
 		return entt::null;
 	}
@@ -72,8 +72,8 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 		// 重要: 比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 		// Disconnect from login server if session exists
 		{
-			if (const auto& loginNode = GetLoginNode(sessionId);
-				entt::null != loginNode)
+			const auto& loginNode = GetLoginNode(sessionId);
+			if (entt::null != loginNode)
 			{
 				LoginNodeDisconnectRequest request;
 				request.set_session_id(sessionId);
@@ -81,7 +81,7 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 			}
 		}
 
-		// Disconnect from centre server
+		// Notify centre server about disconnection
 		{
 			GateSessionDisconnectRequest request;
 			request.set_session_id(sessionId);
@@ -90,8 +90,10 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 
 		// Remove session from registry
 		tls_gate.sessions().erase(sessionId);
+
+		LOG_INFO << "Disconnected session id: " << sessionId;
 	}
-	else // Handle new connection
+	else
 	{
 		auto sessionId = tls_gate.session_id_gen().Generate();
 		while (tls_gate.sessions().contains(sessionId))
@@ -102,6 +104,8 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 		Session session;
 		session.conn_ = conn;
 		tls_gate.sessions().emplace(sessionId, std::move(session));
+
+		LOG_INFO << "New connection, assigned session id: " << sessionId;
 	}
 }
 
@@ -113,7 +117,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 	const auto sessionIt = tls_gate.sessions().find(sessionId);
 	if (sessionIt == tls_gate.sessions().end())
 	{
-		LOG_ERROR << "could not find session  " << conn.get();
+		LOG_ERROR << "Could not find session id: " << sessionId << " for RPC client message.";
 		return;
 	}
 
@@ -126,6 +130,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 		entt::entity gameNodeId{ sessionIt->second.game_node_id_ };
 		if (!tls.gameNodeRegistry.valid(gameNodeId))
 		{
+			LOG_ERROR << "Invalid game node id " << sessionIt->second.game_node_id_ << " for session id: " << sessionId;
 			Tip(conn, kRetServerCrush);
 			return;
 		}
@@ -137,12 +142,15 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 		message.set_id(request->id());
 		message.set_message_id(request->message_id());
 		gameNode->CallMethod(GameServiceClientSend2PlayerMsgId, message);
+
+		LOG_INFO << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 	}
-	else // Handle messages to login server
+	else
 	{
 		auto loginNode = GetLoginNode(sessionId);
 		if (entt::null == loginNode)
 		{
+			LOG_ERROR << "Login node not found for session id: " << sessionId << ", message id: " << request->message_id();
 			//todo close connection
 			return;
 		}
@@ -154,6 +162,8 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 			message.mutable_client_msg_body()->ParseFromArray(
 				request->body().data(), request->body().size());
 			SendLoginC2LRequest(loginNode, message);
+
+			LOG_INFO << "Sent LoginC2LRequest, session id: " << sessionId;
 		}
 		else if (request->message_id() == LoginServiceCreatePlayerMsgId)
 		{
@@ -162,6 +172,8 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 			message.mutable_client_msg_body()->ParseFromArray(
 				request->body().data(), request->body().size());
 			SendCreatePlayerC2LRequest(loginNode, message);
+
+			LOG_INFO << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
 		}
 		else if (request->message_id() == LoginServiceEnterGameMsgId)
 		{
@@ -170,6 +182,12 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 			message.mutable_client_msg_body()->ParseFromArray(
 				request->body().data(), request->body().size());
 			SendEnterGameC2LRequest(loginNode, message);
+
+			LOG_INFO << "Sent EnterGameC2LRequest, session id: " << sessionId;
+		}
+		else
+		{
+			LOG_ERROR << "Unhandled message id: " << request->message_id() << " for session id: " << sessionId;
 		}
 	}
 }
@@ -182,4 +200,6 @@ void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint3
 	message.set_body(tipMessage.SerializeAsString());
 	message.set_message_id(ClientPlayerCommonServicePushTipS2CMsgId);
 	g_gate_node->Codec().send(conn, message);
+
+	LOG_INFO << "Sent tip message to session id: " << SessionId(conn) << ", tip id: " << tipId;
 }
