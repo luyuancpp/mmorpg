@@ -37,8 +37,8 @@ constexpr std::size_t kMaxPlayerSize{50000};
 
 Guid GetPlayerIdBySessionId(const uint64_t session_id)
 {
-	const auto session_it = tls_sessions.find(session_id);
-	if (session_it == tls_sessions.end())
+	const auto session_it = tlsSessions.find(session_id);
+	if (session_it == tlsSessions.end())
 	{
 		LOG_ERROR << "Cannot find session ID " << session_id;
 		return kInvalidGuid;
@@ -195,9 +195,7 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 	::Empty* response,
 	::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE
-	defer(tls_sessions.erase(request->session_id()));
-
+///<<< BEGIN WRITING YOUR CODE
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
@@ -207,50 +205,46 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 	// Check for scenarios where reconnect-disconnect cycles might occur in rapid succession
 	// Notice: Asynchronous process: If the gate reconnects first and then disconnects, it might
 	// inadvertently disconnect a newly arrived connection. Extreme cases need testing to see
-	// what issues arise if this code is executed.
 
-	const auto player_entity = GetPlayerEntityBySessionId(request->session_id());
-	if (player_entity == entt::null)
+	defer(tlsSessions.erase(request->session_id()));
+
+	const auto playerEntity = GetPlayerEntityBySessionId(request->session_id());
+	if (playerEntity == entt::null)
 	{
 		return;
 	}
 
-	const auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player_entity);
-	if (player_node_info == nullptr)
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
+	if (playerNodeInfo == nullptr)
 	{
 		return;
 	}
 
-	if (player_node_info->gate_session_id() != request->session_id())
+	if (playerNodeInfo->gate_session_id() != request->session_id())
 	{
 		return;
 	}
 
-	const entt::entity game_node_id{ player_node_info->game_node_id() };
-	if (!tls.gameNodeRegistry.valid(game_node_id))
+	const entt::entity gameNodeId{ playerNodeInfo->game_node_id() };
+	if (!tls.gameNodeRegistry.valid(gameNodeId))
 	{
-		LOG_ERROR << "Game node not found";
 		return;
 	}
 
-	const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
-	if (game_node == nullptr)
+	const auto gameNode = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeId);
+	if (gameNode == nullptr)
 	{
-		LOG_ERROR << "Game node not found";
 		return;
 	}
 
-	// Retrieve player ID from registry
-	const auto player_id = tls.registry.get<Guid>(player_entity);
+	const auto playerId = tls.registry.get<Guid>(playerEntity);
 
-	// Prepare and send disconnect request to the game node
-	GameNodeDisconnectRequest disconnect_request;
-	disconnect_request.set_player_id(player_id);
-	(*game_node)->CallMethod(GameServiceDisconnectMsgId, disconnect_request);
+	GameNodeDisconnectRequest disconnectRequest;
+	disconnectRequest.set_player_id(playerId);
+	(*gameNode)->CallMethod(GameServiceDisconnectMsgId, disconnectRequest);
 
-	// Handle player leave in the player node system
-	PlayerNodeSystem::HandlePlayerLeave(player_id);
-	///<<< END WRITING YOUR CODE
+	PlayerNodeSystem::HandlePlayerLeave(playerId);
+///<<< END WRITING YOUR CODE
 }
 
 
@@ -291,7 +285,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	// Store session information in tls_sessions
 	PlayerSessionInfo session_info;
 	session_info.set_player_id(client_msg_body.player_id());
-	tls_sessions.emplace(session_id, session_info);
+	tlsSessions.emplace(session_id, session_info);
 
 	//todo把旧的connection 断掉
 	// TODO: Disconnect old connection
@@ -328,7 +322,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, client_msg_body.player_id());
 
 			// Remove old session ID from tls_sessions after player acknowledges the message
-			defer(tls_sessions.erase(playerNodeInfo->gate_session_id()));
+			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
 
 			// Notify the gate to disconnect the old connection
 			GateNodeKickConnRequest message;
@@ -349,7 +343,6 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
 		PlayerNodeSystem::RegisterPlayerToGateNode(player);
 	}
-
 	///<<< END WRITING YOUR CODE
 }
 
@@ -384,8 +377,8 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 {
 	///<<< BEGIN WRITING YOUR CODE
 
-	const auto it = tls_sessions.find(request->head().session_id());
-	if (it == tls_sessions.end())
+	const auto it = tlsSessions.find(request->head().session_id());
+	if (it == tlsSessions.end())
 	{
 		LOG_ERROR << "Session not found: " << request->head().session_id();
 		return;
@@ -590,45 +583,45 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	switch (tls_cl.next_route_node_type())
 	{
-	case kGateNode:
-	{
-		entt::entity gate_node_id{ tls_cl.next_route_node_id() };
-		if (!tls.gateNodeRegistry.valid(gate_node_id))
+		case kGateNode:
 		{
-			LOG_ERROR << "Gate node not found: " << tls_cl.next_route_node_id();
-			return;
+			entt::entity gate_node_id{ tls_cl.next_route_node_id() };
+			if (!tls.gateNodeRegistry.valid(gate_node_id))
+			{
+				LOG_ERROR << "Gate node not found: " << tls_cl.next_route_node_id();
+				return;
+			}
+			const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
+			if (nullptr == gate_node)
+			{
+				LOG_ERROR << "Gate node not found: " << tls_cl.next_route_node_id();
+				return;
+			}
+			(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
+			break;
 		}
-		const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
-		if (nullptr == gate_node)
+		case kGameNode:
 		{
-			LOG_ERROR << "Gate node not found: " << tls_cl.next_route_node_id();
-			return;
+			entt::entity game_node_id{ tls_cl.next_route_node_id() };
+			if (!tls.gameNodeRegistry.valid(game_node_id))
+			{
+				LOG_ERROR << "Game node not found: " << tls_cl.next_route_node_id() << ", " << request->DebugString();
+				return;
+			}
+			const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
+			if (nullptr == game_node)
+			{
+				LOG_ERROR << "Game node not found: " << tls_cl.next_route_node_id() << ", " << request->DebugString();
+				return;
+			}
+			(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
+			break;
 		}
-		(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
-		break;
-	}
-	case kGameNode:
-	{
-		entt::entity game_node_id{ tls_cl.next_route_node_id() };
-		if (!tls.gameNodeRegistry.valid(game_node_id))
+		default:
 		{
-			LOG_ERROR << "Game node not found: " << tls_cl.next_route_node_id() << ", " << request->DebugString();
-			return;
+			LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tls_cl.next_route_node_type();
+			break;
 		}
-		const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
-		if (nullptr == game_node)
-		{
-			LOG_ERROR << "Game node not found: " << tls_cl.next_route_node_id() << ", " << request->DebugString();
-			return;
-		}
-		(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
-		break;
-	}
-	default:
-	{
-		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tls_cl.next_route_node_type();
-		break;
-	}
 	}
 
 	///<<< END WRITING YOUR CODE
