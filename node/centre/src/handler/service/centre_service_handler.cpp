@@ -279,30 +279,29 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
 
-	auto& client_msg_body = request->client_msg_body();
-	auto session_id = request->session_info().session_id();
+	auto& clientMsgBody = request->client_msg_body();
+	auto sessionId = request->session_info().session_id();
 
-	// Store session information in tls_sessions
-	PlayerSessionInfo session_info;
-	session_info.set_player_id(client_msg_body.player_id());
-	tlsSessions.emplace(session_id, session_info);
+	// Store session information in tlsSessions
+	PlayerSessionInfo sessionInfo;
+	sessionInfo.set_player_id(clientMsgBody.player_id());
+	tlsSessions.emplace(sessionId, sessionInfo);
 
-	//todo把旧的connection 断掉
 	// TODO: Disconnect old connection
 
 	// Check if player exists in PlayerList
-	if (const auto player_it = tlsCommonLogic.PlayerList().find(client_msg_body.player_id());
-		player_it == tlsCommonLogic.PlayerList().end())
+	if (const auto playerIt = tlsCommonLogic.PlayerList().find(clientMsgBody.player_id());
+		playerIt == tlsCommonLogic.PlayerList().end())
 	{
 		// Player does not exist in PlayerList, perform initialization
 		tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity()).emplace(
-			client_msg_body.player_id(), *request);
-		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(client_msg_body.player_id());
+			clientMsgBody.player_id(), *request);
+		tls.globalRegistry.get<PlayerRedis>(GlobalEntity())->AsyncLoad(clientMsgBody.player_id());
 	}
 	else
 	{
 		// Player exists, handle session takeover or login
-		auto player = player_it->second;
+		auto player = playerIt->second;
 
 		//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 		//顶号的时候已经在场景里面了,不用再进入场景了
@@ -319,23 +318,23 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipMessage beKickTip;
 			beKickTip.mutable_tip_info()->set_id(kRetLoginBeKickByAnOtherAccount);
-			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, client_msg_body.player_id());
+			SendToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, clientMsgBody.player_id());
 
-			// Remove old session ID from tls_sessions after player acknowledges the message
+			// Remove old session ID from tlsSessions after player acknowledges the message
 			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
 
 			// Notify the gate to disconnect the old connection
 			GateNodeKickConnRequest message;
-			message.set_session_id(session_id);
+			message.set_session_id(sessionId);
 			SendToGate(GateServiceKickConnByCentreMsgId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
 
 			// Update player's gate session ID
-			playerNodeInfo->set_gate_session_id(session_id);
+			playerNodeInfo->set_gate_session_id(sessionId);
 		}
 		else
 		{
 			// Set gate session ID for the player
-			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(session_id);
+			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(sessionId);
 		}
 
 		//连续顶几次,所以用emplace_or_replace
@@ -343,8 +342,10 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
 		PlayerNodeSystem::RegisterPlayerToGateNode(player);
 	}
+
 	///<<< END WRITING YOUR CODE
 }
+
 
 
 void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,
