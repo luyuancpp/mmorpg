@@ -469,6 +469,9 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 
 	response->mutable_body()->set_message_id(request->body().message_id());
 
+	LOG_TRACE << "Successfully processed message ID: " << request->body().message_id()
+		<< " for player ID: " << playerId;
+
 	///<<< END WRITING YOUR CODE
 }
 
