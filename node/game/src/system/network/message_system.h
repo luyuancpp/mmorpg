@@ -6,8 +6,8 @@
 
 #include "type_define/type_define.h"
 
-void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
-void SendToPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
+void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
+void SendToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
 void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
 void Send2Controller(uint32_t message_id,  const google::protobuf::Message& messag, NodeId centre_node_id);
