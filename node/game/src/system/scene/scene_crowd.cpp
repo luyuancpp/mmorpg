@@ -1,7 +1,6 @@
 #include "scene_crowd.h"
 
-#include "DetourCrowd/DetourCrowd.h"
-#undef  TEXT
+#include "comp/scene/dtcrowd.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "comp/scene.h"
@@ -11,52 +10,56 @@
 
 void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 {
-    const auto player = entt::to_entity(message.entity());
-    if (!tls.registry.valid(player))
-    {
-        LOG_ERROR << "scene not found";
-        return;
-    }
-    const auto scene_entity = tls.registry.try_get<SceneEntityComp>(player);
-    if (nullptr == scene_entity || !tls.sceneRegistry.valid(scene_entity->sceneEntity))
-    {
-        LOG_ERROR << "scene not found";
-        return;
-    }
-    auto scene = scene_entity->sceneEntity;
-    auto dt_crowd = tls.sceneRegistry.try_get<dtCrowd>(scene);
-    if (nullptr == dt_crowd)
-    {
-        return;
-    }
-    auto transform = tls.registry.try_get<Transform>(player);
-    if (nullptr == transform)
-    {
-        LOG_ERROR << "player location not found" << tls.registry.get<Guid>(player);
-        return;
-    }
-    dtCrowdAgentParams ap;
-    memset(&ap, 0, sizeof(ap));
-    ap.radius = kAgentRadius;
-    ap.height = kAgentHeight;
-    ap.maxAcceleration = 8.0f;
-    ap.maxSpeed = 3.5f;
-    ap.collisionQueryRange = ap.radius * 12.0f;
-    ap.pathOptimizationRange = ap.radius * 30.0f;
-    ap.updateFlags = 0;
-    ap.updateFlags |= DT_CROWD_ANTICIPATE_TURNS;
-    ap.updateFlags |= DT_CROWD_OPTIMIZE_VIS;
-    ap.updateFlags |= DT_CROWD_OPTIMIZE_TOPO;
-    ap.updateFlags |= DT_CROWD_OBSTACLE_AVOIDANCE;
-    ap.updateFlags |= DT_CROWD_SEPARATION;
-    ap.obstacleAvoidanceType = kObstacleAvoidanceType;
-    ap.separationWeight = kSeparationWeight;
-    dtReal p[] = { transform->location().x(), transform->location().y(), transform->location().z() };
-    int idx = dt_crowd->addAgent(p, ap, nullptr);
-} 
+	const auto playerEntity = entt::to_entity(message.entity());
+
+	if (!tls.registry.valid(playerEntity))
+	{
+		LOG_ERROR << "Player entity not found";
+		return;
+	}
+
+	auto dtCrowd = tls.sceneRegistry.try_get<DtCrowdPtr>(playerEntity);
+	if (dtCrowd == nullptr)
+	{
+		LOG_ERROR << "dtCrowd component not found for scene";
+		return;
+	}
+
+	auto transform = tls.registry.try_get<Transform>(playerEntity);
+	if (transform == nullptr)
+	{
+		LOG_ERROR << "Transform component not found for player with GUID: " << tls.registry.get<Guid>(playerEntity);
+		return;
+	}
+
+	// Setup dtCrowd agent parameters
+	dtCrowdAgentParams agentParams;
+	memset(&agentParams, 0, sizeof(agentParams));
+	agentParams.radius = kAgentRadius;
+	agentParams.height = kAgentHeight;
+	agentParams.maxAcceleration = 8.0f;
+	agentParams.maxSpeed = 3.5f;
+	agentParams.collisionQueryRange = agentParams.radius * 12.0f;
+	agentParams.pathOptimizationRange = agentParams.radius * 30.0f;
+	agentParams.updateFlags = DT_CROWD_ANTICIPATE_TURNS |
+		DT_CROWD_OPTIMIZE_VIS |
+		DT_CROWD_OPTIMIZE_TOPO |
+		DT_CROWD_OBSTACLE_AVOIDANCE |
+		DT_CROWD_SEPARATION;
+	agentParams.obstacleAvoidanceType = kObstacleAvoidanceType;
+	agentParams.separationWeight = kSeparationWeight;
+
+	// Initialize agent position
+	dtReal position[] = { transform->mutable_location()->x(),
+						  transform->mutable_location()->y(),
+						  transform->mutable_location()->z() };
+
+	// Add agent to dtCrowd
+	int agentIndex = (*dtCrowd)->addAgent(position, agentParams, nullptr);
+}
 
 void SceneCrowdSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
-
+	// Placeholder for any necessary cleanup or handling before leaving the scene
+	// No implementation needed currently
 }
-

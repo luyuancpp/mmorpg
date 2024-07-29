@@ -293,5 +293,8 @@
     <ClInclude Include="src\type_alias\actor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\comp\scene\dtcrowd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

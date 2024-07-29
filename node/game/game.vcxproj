@@ -180,6 +180,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\actor.h" />
+    <ClInclude Include="src\comp\scene\dtcrowd.h" />
     <ClInclude Include="src\comp\scene\nav.h" />
     <ClInclude Include="src\comp\scene\grid.h" />
     <ClInclude Include="src\constants\dt_crowd.h" />
