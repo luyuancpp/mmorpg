@@ -13,7 +13,7 @@ void AsyncCompleteGrpcDeployService()
     tm.tv_sec = 0;
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (CompletionQueue::GOT_EVENT != g_deploy_cq->AsyncNext(&got_tag, &ok, tm))
+    if (CompletionQueue::GOT_EVENT != gDeployCq->AsyncNext(&got_tag, &ok, tm))
     {
         return;
     }
