@@ -19,10 +19,10 @@ public:
 	~CentreNode();
 
 	inline PbSyncRedisClientPtr& GetRedis() { return redis_; }
-	inline uint32_t GetNodeId()const { return node_info_.node_id(); }
-	inline const NodeInfo& GetNodeInfo()const { return node_info_; }
+	inline uint32_t GetNodeId()const { return nodeInfo.node_id(); }
+	inline const NodeInfo& GetNodeInfo()const { return nodeInfo; }
 
-	inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduo_log_; }
+	inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduoLog; }
 	
 	void        Init();
 	void		Exit();
@@ -50,14 +50,14 @@ private:
 	NodeId GetNodeConfIndex() const { return GetNodeId() - 1; }
 
 	muduo::net::EventLoop* loop_{ nullptr };
-	muduo::AsyncLogging muduo_log_;
+	muduo::AsyncLogging muduoLog;
 private:
 	PbSyncRedisClientPtr redis_;
 	RpcServerPtr server_;
-	CentreServiceHandler centre_service_;
-	NodeInfo node_info_;
-	nodes_info_data servers_info_;
-    TimerTask deploy_rpc_timer_;
+	CentreServiceHandler centreService;
+	NodeInfo nodeInfo;
+	nodes_info_data serversInfo;
+    TimerTask deployRpcTimer;
 };
 
 extern CentreNode* gCentreNode ;

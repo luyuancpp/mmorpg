@@ -214,9 +214,9 @@ void GameNode::InitNodeByReqInfo()
     auto& zone = ZoneConfig::GetSingleton().config_info();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
-    g_deploy_stub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-    g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
+    extern std::unique_ptr<DeployService::Stub> gDeployStub;
+    gDeployStub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+    gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
     deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
     {
         NodeInfoRequest rq;

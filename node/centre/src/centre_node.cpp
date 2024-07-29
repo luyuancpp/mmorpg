@@ -22,28 +22,29 @@
 #include "system/player_session.h"
 #include "thread_local/storage_centre.h"
 #include "util/color_console_log.h"
+#include "grpc/request/deploy_grpc_requst.h"
 
 using namespace muduo;
 using namespace net;
 
-CentreNode* gCentreNode  = nullptr;
+CentreNode* gCentreNode = nullptr;
 
 void InitRepliedHandler();
 void AsyncCompleteGrpcDeployService();
 
 void AsyncOutput(const char* msg, int len)
 {
-    gCentreNode ->Log().append(msg, len);
+	gCentreNode->Log().append(msg, len);
 #ifdef WIN32
-    Log2Console(msg, len);
+	Log2Console(msg, len);
 #endif
 }
 
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
-    : loop_(loop),
-      muduo_log_ { "logs/centre", kMaxLogFileRollSize, 1},
-      redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
-{ 
+	: loop_(loop),
+	muduoLog{ "logs/centre", kMaxLogFileRollSize, 1 },
+	redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
+{
 }
 
 CentreNode::~CentreNode()
@@ -53,194 +54,192 @@ CentreNode::~CentreNode()
 
 void CentreNode::Init()
 {
-    gCentreNode  = this;
-    
-    InitEventCallback();
-    
-    InitLog();
-    EventHandler::Register();
-    InitNodeConfig();
-  
-	node_info_.set_node_type(kCentreNode);
-	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    muduo::Logger::setLogLevel(static_cast < muduo::Logger::LogLevel > (
-        ZoneConfig::GetSingleton ( ) . config_info ( ) . loglevel ( ) ));
-    InitGameConfig();
+	gCentreNode = this;
 
-    InitPlayerService();
-    InitPlayerServiceReplied();
-    InitRepliedHandler();
-    InitMessageInfo();
-    InitSystemBeforeConnect();
-    
+	InitEventCallback();
+
+	InitLog();
+	EventHandler::Register();
+	InitNodeConfig();
+
+	nodeInfo.set_node_type(kCentreNode);
+	nodeInfo.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
+	muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
+		ZoneConfig::GetSingleton().config_info().loglevel()));
+	InitGameConfig();
+
+	InitPlayerService();
+	InitPlayerServiceReplied();
+	InitRepliedHandler();
+	InitMessageInfo();
+	InitSystemBeforeConnect();
+
 	InitNodeByReqInfo();
-    
-    void InitServiceHandler();
-    InitServiceHandler();
+
+	void InitServiceHandler();
+	InitServiceHandler();
 }
 
 void CentreNode::InitEventCallback()
 {
-    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
 }
 
 
 void CentreNode::Exit()
 {
-    muduo_log_.stop();
-    tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
+	muduoLog.stop();
+	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
 }
 
 void CentreNode::InitGameConfig()
 {
-    LoadAllConfig();
-    LoadAllConfigAsyncWhenServerLaunch();
-    //ConfigSystem::OnConfigLoadSuccessful();
+	LoadAllConfig();
+	LoadAllConfigAsyncWhenServerLaunch();
+	//ConfigSystem::OnConfigLoadSuccessful();
 }
 
 void CentreNode::InitTimeZone()
 {
-    const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
-    muduo::Logger::setTimeZone(tz);
+	const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
+	muduo::Logger::setTimeZone(tz);
 }
 
 void CentreNode::InitNodeByReqInfo()
 {
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
-    g_deploy_stub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-    g_deploy_cq = std::make_unique_for_overwrite<CompletionQueue>();
+	const auto& deployInfo = DeployConfig::GetSingleton().deploy_info();
+	const std::string targetStr = deployInfo.ip() + ":" + std::to_string(deployInfo.port());
+	extern std::unique_ptr<DeployService::Stub> gDeployStub;
+	gDeployStub = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+	gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
 
-    deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
+	deployRpcTimer.RunEvery(0.001, AsyncCompleteGrpcDeployService);
 
-    {
-        NodeInfoRequest rq;
-        rq.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
-        void SendGetNodeInfo(const NodeInfoRequest& request);
-        SendGetNodeInfo(rq);
-    }
+	{
+		NodeInfoRequest request;
+		request.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
+		SendGetNodeInfo(request);
+	}
 }
 
 void CentreNode::StartServer(const ::nodes_info_data& info)
 {
-    servers_info_ = info;
-    auto& my_node_info = servers_info_.centre_info().centre_info()[GetNodeConfIndex()];
-   
-    InetAddress service_addr(my_node_info.ip(), my_node_info.port());
-    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
-    
-    server_->registerService(&centre_service_);
-    for ( auto & val : g_server_service | std::views::values )
-    {
-        server_->registerService(val.get());
-    }
-    server_->start();
-    deploy_rpc_timer_.Cancel();
-    InitSystemAfterConnect();
-    LOG_INFO << "centre start " << my_node_info.DebugString();
+	serversInfo = info;
+	auto& myNodeInfo = serversInfo.centre_info().centre_info()[GetNodeConfIndex()];
+
+	InetAddress serviceAddr(myNodeInfo.ip(), myNodeInfo.port());
+	server_ = std::make_shared<RpcServerPtr::element_type>(loop_, serviceAddr);
+
+	server_->registerService(&centreService);
+	for (auto& value : g_server_service | std::views::values)
+	{
+		server_->registerService(value.get());
+	}
+	server_->start();
+	deployRpcTimer.Cancel();
+	InitSystemAfterConnect();
+	LOG_INFO << "centre start " << myNodeInfo.DebugString();
 }
 
 
-void CentreNode::BroadCastRegisterGameToGate(entt::entity game_node_id, entt::entity gate)
+void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::entity gate)
 {
-	auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate);
-	if (nullptr == gate_node)
+	auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate);
+	if (nullptr == gateNode)
 	{
 		LOG_ERROR << "gate not found ";
 		return;
 	}
-    auto game_node_service_addr = tls.gameNodeRegistry.try_get<InetAddress>(game_node_id);
-    if (nullptr == game_node_service_addr)
-    {
-        LOG_ERROR << "game not found ";
-        return;
-    }
-    RegisterGameRequest request;
-    request.mutable_rpc_server()->set_ip(game_node_service_addr->toIp());
-    request.mutable_rpc_server()->set_port(game_node_service_addr->port());
-    request.set_game_node_id(entt::to_integral(game_node_id));
-    (*gate_node)->Send(GateServiceRegisterGameMsgId, request);
+	auto gameNodeServiceAddr = tls.gameNodeRegistry.try_get<InetAddress>(gameNodeId);
+	if (nullptr == gameNodeServiceAddr)
+	{
+		LOG_ERROR << "game not found ";
+		return;
+	}
+	RegisterGameRequest request;
+	request.mutable_rpc_server()->set_ip(gameNodeServiceAddr->toIp());
+	request.mutable_rpc_server()->set_port(gameNodeServiceAddr->port());
+	request.set_game_node_id(entt::to_integral(gameNodeId));
+	(*gateNode)->Send(GateServiceRegisterGameMsgId, request);
 }
 
-void CentreNode::SetNodeId(NodeId node_id)
+void CentreNode::SetNodeId(NodeId nodeId)
 {
-    node_info_.set_node_id(node_id);
+	nodeInfo.set_node_id(nodeId);
 }
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)
 {
-    if (auto& conn = es.conn_; conn->connected())
-    {
-        const auto e = tls.networkRegistry.create();
+	if (auto& conn = es.conn_; conn->connected())
+	{
+		const auto e = tls.networkRegistry.create();
 		tls.networkRegistry.emplace<RpcSession>(e, RpcSession{ conn });
-    }
-    else
-    {
-		auto& current_addr = conn->peerAddress();
-        for (const auto& [e, game_node]: tls.gameNodeRegistry.view<RpcSessionPtr>().each())
-        {
-            //如果是游戏逻辑服则删除
-            if (game_node->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
-            {
-                Destroy(tls.gameNodeRegistry, e);
-                break;
-            }
-        }
-            
-        for (const auto& [e, gate_node] : tls.gateNodeRegistry.view<RpcSessionPtr>().each())
-        {
-            //如果是游戏逻辑服则删除
-            if (nullptr != gate_node &&
-                gate_node->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
-            {
-                //remove AfterChangeGsEnterScene
-                //todo 
-                Destroy(tls.gateNodeRegistry, e);
-                break;
-            }
-        }
+	}
+	else
+	{
+		auto& currentAddr = conn->peerAddress();
+		for (const auto& [e, gameNode] : tls.gameNodeRegistry.view<RpcSessionPtr>().each())
+		{
+			// 如果是游戏逻辑服则删除
+			if (gameNode->conn_->peerAddress().toIpPort() == currentAddr.toIpPort())
+			{
+				Destroy(tls.gameNodeRegistry, e);
+				break;
+			}
+		}
 
-        for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
-        {
-            if (session.conn_->peerAddress().toIpPort() != current_addr.toIpPort())
-            {
-                continue;
-            }
-            Destroy(tls.networkRegistry, e);
-            break;
-        }
-    }
+		for (const auto& [e, gateNode] : tls.gateNodeRegistry.view<RpcSessionPtr>().each())
+		{
+			// 如果是游戏逻辑服则删除
+			if (nullptr != gateNode &&
+				gateNode->conn_->peerAddress().toIpPort() == currentAddr.toIpPort())
+			{
+				// remove AfterChangeGsEnterScene
+				// todo 
+				Destroy(tls.gateNodeRegistry, e);
+				break;
+			}
+		}
+
+		for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
+		{
+			if (session.conn_->peerAddress().toIpPort() != currentAddr.toIpPort())
+			{
+				continue;
+			}
+			Destroy(tls.networkRegistry, e);
+			break;
+		}
+	}
 }
 
-void CentreNode::InitLog ( )
+void CentreNode::InitLog()
 {
-    InitTimeZone();
-    muduo::Logger::setOutput(AsyncOutput);
-    muduo_log_.start();
+	InitTimeZone();
+	muduo::Logger::setOutput(AsyncOutput);
+	muduoLog.start();
 }
 
 void CentreNode::InitConfig()
 {
- 
+
 }
 
 void CentreNode::InitNodeConfig()
 {
-    ZoneConfig::GetSingleton().Load("game.json");
-    DeployConfig::GetSingleton().Load("deploy.json");
-    LobbyConfig::GetSingleton().Load("lobby.json");
+	ZoneConfig::GetSingleton().Load("game.json");
+	DeployConfig::GetSingleton().Load("deploy.json");
+	LobbyConfig::GetSingleton().Load("lobby.json");
 }
 
 void CentreNode::InitSystemBeforeConnect()
 {
-    PlayerSessionSystem::Initialize();
+	PlayerSessionSystem::Initialize();
 }
 
 void CentreNode::InitSystemAfterConnect() const
 {
-    InetAddress redis_addr(servers_info_.redis_info().redis_info(0).ip(), 
-        servers_info_.redis_info().redis_info(0).port());
-    tls_centre.redis_system().Init(redis_addr);
+	InetAddress redisAddr(serversInfo.redis_info().redis_info(0).ip(),
+		serversInfo.redis_info().redis_info(0).port());
+	tls_centre.redis_system().Init(redisAddr);
 }
-

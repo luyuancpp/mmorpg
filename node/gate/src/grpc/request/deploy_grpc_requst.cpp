@@ -3,13 +3,13 @@
 #include "grpc/client/deploy_async_client_call.h"
 #include "grpc/deploy/deployclient.h"
 
-std::unique_ptr<DeployService::Stub> g_deploy_stub;
+std::unique_ptr<DeployService::Stub> gDeployStub;
 
 void SendGetNodeInfo( const NodeInfoRequest& request)
 {
     const auto call(new DeployAsyncClientCall);
     call->response_reader =
-        g_deploy_stub->PrepareAsyncGetNodeInfo(&call->context, request, g_deploy_cq.get());
+        gDeployStub->PrepareAsyncGetNodeInfo(&call->context, request, gDeployCq.get());
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }

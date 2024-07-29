@@ -4,5 +4,5 @@
 
 using grpc::CompletionQueue;
 
-extern std::unique_ptr<CompletionQueue> g_deploy_cq;
+extern std::unique_ptr<CompletionQueue> gDeployCq;
 
