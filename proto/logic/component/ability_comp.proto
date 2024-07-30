@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message Ability 
+{
+  // Unique identifier for the ability.
+  uint64 ability_id = 1;
+
+  // Identifier linking to a table entry for additional details.
+  uint32 table_id = 2;
+}
+
+//被动类型的技能
+message PassiveAblity
+{
+}
+
+//主动施法技能（最常见的通用主动施法类技能，如普通攻击等一次性触发效果类技能
+message GeneralAbility
+{
+}
+
+//引导类持续施法技能(ChannelAbility)，如大法师暴风雪）
+message ChannelAbility
+{
+}
+
+//开关类技能（(ToggleAbility)点击技能开启/关闭效果，类似于恶魔猎手献祭）
+message ToggleAbility
+{
+}
+
+//激活类技能（(ActivateAbility)点下右键激活/停止，一般是给普通攻击附加特殊效果）
+message ActivateAbility
+{
+}
