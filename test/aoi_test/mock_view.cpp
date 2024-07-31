@@ -1,4 +1,4 @@
-#include "system/scene/view.h"
+#include "util/scene/view.h"
 
 #include "type_define/type_define.h"
 #include "thread_local/storage.h"
@@ -6,20 +6,20 @@
 extern EntityUnorderedMap entitiesToNotifyEntry;
 extern EntityUnorderedMap entitiesToNotifyExit;
 
-bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
+bool ViewUtil::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
     return true; // Mock behavior
 }
 
-bool ViewSystem::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entity entity) {
+bool ViewUtil::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entity entity) {
     
     return true; // Mock behavior
 }
 
-void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage) {
+void ViewUtil::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage) {
     entitiesToNotifyEntry.emplace(observer, entity);
 }
 
-void ViewSystem::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
+void ViewUtil::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
 {
     entitiesToNotifyExit.emplace(observer, leaver);
 }
