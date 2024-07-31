@@ -1,6 +1,6 @@
 ﻿#include "aoi.h"
 
-#include "view.h"
+#include "util/scene/view.h"
 #include "comp/scene.h"
 #include "comp/scene/grid.h"
 #include "proto/logic/component/actor_comp.pb.h"
@@ -86,11 +86,11 @@ void AoiSystem::Update(double deltaTime) {
                 // 处理npc进入我的视野
                 if (observer == entity || 
                     !tls.registry.any_of<Npc>(observer) ||
-                    !ViewSystem::ShouldSendNpcEnterMessage(entity, observer)){
+                    !ViewUtil::ShouldSendNpcEnterMessage(entity, observer)){
                     continue;
                 }
 
-                ViewSystem::FillActorCreateMessageInfo(entity, observer, actorCreateMessage);
+                ViewUtil::FillActorCreateMessageInfo(entity, observer, actorCreateMessage);
             }
 
             for (const auto& observer : gridIt->second.entity_list) {
@@ -102,14 +102,14 @@ void AoiSystem::Update(double deltaTime) {
                 }
 
                 // 我进入别人视野
-                if (ViewSystem::ShouldSendPlayerEnterMessage(observer, entity)) {
-                    ViewSystem::FillActorCreateMessageInfo(observer, entity, actorCreateMessage);
+                if (ViewUtil::ShouldSendPlayerEnterMessage(observer, entity)) {
+                    ViewUtil::FillActorCreateMessageInfo(observer, entity, actorCreateMessage);
                     entitiesToNotifyEntry.emplace(observer);
                 }
 
                 //别人进入我的视野
-                if (ViewSystem::ShouldSendPlayerEnterMessage(entity, observer)) {
-                    ViewSystem::FillActorCreateMessageInfo(entity, observer, *actorListCreateMessage.add_actor_list());
+                if (ViewUtil::ShouldSendPlayerEnterMessage(entity, observer)) {
+                    ViewUtil::FillActorCreateMessageInfo(entity, observer, *actorListCreateMessage.add_actor_list());
                 }
             }
         }
@@ -226,8 +226,8 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridList& gridList, entt::e
             observersToNotifyExit.emplace(observer);
             actorListDestroyMessage.add_entity(entt::to_entity(observer));
 
-            ViewSystem::HandlePlayerLeaveMessage(observer, entity);
-            ViewSystem::HandlePlayerLeaveMessage(entity, observer);
+            ViewUtil::HandlePlayerLeaveMessage(observer, entity);
+            ViewUtil::HandlePlayerLeaveMessage(entity, observer);
         }
     }
     SendMessageToPlayer(ClientPlayerSceneServicePushActorListDestroyS2CMsgId, actorListDestroyMessage, entity);

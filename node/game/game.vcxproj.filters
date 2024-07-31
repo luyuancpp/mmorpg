@@ -141,7 +141,7 @@
     <ClCompile Include="src\system\scene\scene_crowd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\scene\view.cpp">
+    <ClCompile Include="src\util\scene\view.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\combat\ability\ability.cpp">
@@ -151,6 +151,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\combat\projectile\projectile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\combat\ability.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -296,7 +299,7 @@
     <ClInclude Include="src\constants\view.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\scene\view.h">
+    <ClInclude Include="src\util\scene\view.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\type_alias\actor.h">
@@ -315,6 +318,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\constants\ability.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\combat\ability.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
