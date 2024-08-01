@@ -23,7 +23,7 @@
 #include "system/config/config_system.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
-#include "util/color_console_log.h"
+#include "util/console_log_util.h"
 #include "util/game_registry.h"
 #include "system/world.h"
 

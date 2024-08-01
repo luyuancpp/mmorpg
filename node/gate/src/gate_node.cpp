@@ -14,7 +14,7 @@
 #include "service/game_service_service.h"
 #include "service/service.h"
 #include "thread_local/storage_gate.h"
-#include "util/color_console_log.h"
+#include "util/console_log_util.h"
 
 GateNode* g_gate_node = nullptr; 
 
