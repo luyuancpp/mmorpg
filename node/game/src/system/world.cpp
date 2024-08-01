@@ -7,7 +7,7 @@
 #undef TEXT
 #include "system/player/player_session.h"
 #include "game_logic/scene/system/aoi_system.h"
-#include "game_logic/scene/system/movement.h"
+#include "game_logic/scene/system/movement_system.h"
 #include "game_logic/scene/system/movement_acceleration.h"
 #include "game_logic/scene/util/view_util.h"
 #include "thread_local/storage_game.h"
