@@ -141,7 +141,7 @@
     <ClCompile Include="src\game_logic\scene\system\scene_crowd_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\util\view_util.cpp">
+    <ClCompile Include="src\game_logic\view\util\view_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\combat\ability\system\ability_system.cpp">
@@ -290,10 +290,10 @@
     <ClInclude Include="src\game_logic\scene\constants\dt_crowd_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\constants\view_constants.h">
+    <ClInclude Include="src\game_logic\view\constants\view_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\util\view_util.h">
+    <ClInclude Include="src\game_logic\view\util\view_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\type_alias\actor.h">
