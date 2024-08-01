@@ -5,8 +5,8 @@
 #include "comp/scene_comp.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "service/scene_client_player_service.h"
-#include "game_logic/player/system/player_node_util.h"
-#include "game_logic/player/system/player_util.h"
+#include "game_logic/player/util/player_node_util.h"
+#include "game_logic/player/util/player_util.h"
 
 #include "proto/logic/client_player/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
