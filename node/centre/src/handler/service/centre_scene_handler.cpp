@@ -2,7 +2,7 @@
 #include "thread_local/storage.h"
 #include "system/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "scene/scene_util.h"
+#include "scene/util/scene_util.h"
 ///<<< END WRITING YOUR CODE
 void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController* controller,
 	const ::RegisterSceneRequest* request,
