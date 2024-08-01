@@ -26,7 +26,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"
-#include "type_alias/player_session.h"
+#include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
 #include "util/pb.h"
 

@@ -127,18 +127,10 @@
       muduo::net::TimerCallback end_callback_;
  };
 
-
-
-
-
-
  class DailyTimerDuration : public TimerDuration
  {
  public:
      using TimerDuration::TimerDuration;
-
-
-
      virtual void CalcNextDuration()
      {
          begin_time_ += kSecondsPerDay ;
@@ -152,9 +144,6 @@
  {
  public:
      using TimerDuration::TimerDuration;
-
-
-
      virtual void CalcNextDuration()
      {
          begin_time_ += kSecondsPerWeek;
