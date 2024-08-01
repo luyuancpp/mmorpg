@@ -8,7 +8,7 @@
 #include "thread_local/storage.h"
 #include "thread_local/storage_common_logic.h"
 #include "comp/session.h"
-#include "comp/player.h"
+#include "comp/player_comp.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
 void SendMessageToPlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)

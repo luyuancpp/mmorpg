@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
 #include "mainscene_config.h"
-#include "comp/player.h"
+#include "comp/player_comp.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"

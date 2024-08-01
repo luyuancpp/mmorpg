@@ -159,7 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\comp\mission.cpp" />
+    <ClCompile Include="src\comp\mission_comp.cpp" />
     <ClCompile Include="src\system\bag\bag.cpp" />
     <ClCompile Include="src\system\bag\item.cpp" />
     <ClCompile Include="src\system\mission\mission_system.cpp" />
@@ -176,11 +176,11 @@
     <ClCompile Include="src\util\session.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\comp\mission.h" />
-    <ClInclude Include="src\comp\player.h" />
+    <ClInclude Include="src\comp\mission_comp.h" />
+    <ClInclude Include="src\comp\player_comp.h" />
     <ClInclude Include="src\comp\player_scene.h" />
     <ClInclude Include="src\comp\scene.h" />
-    <ClInclude Include="src\comp\node_scene.h" />
+    <ClInclude Include="src\comp\node_scene_comp.h" />
     <ClInclude Include="src\comp\session.h" />
     <ClInclude Include="src\constants\file.h" />
     <ClInclude Include="src\constants\frame.h" />
