@@ -3,7 +3,7 @@
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "comp/mission_comp.h"
-#include "system/mission/mission_system.h"
+#include "mission/mission_system.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventHandler::Register()
 {

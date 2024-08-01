@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "system/scene/scene_system.h"
+#include "scene/scene_util.h"
 #include "comp/scene_comp.h"
 #include "thread_local/storage.h"
 #include "constants/tips_id_constants.h"

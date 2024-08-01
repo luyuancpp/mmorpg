@@ -2,7 +2,7 @@
 #include "muduo/base/Logging.h"
 #include "centre_node.h"
 #include "comp/scene_comp.h"
-#include "system/scene/scene_system.h"
+#include "scene/scene_util.h"
 #include "constants/tips_id_constants.h"
 #include "comp/game_node.h"
 #include "network/message_system.h"
