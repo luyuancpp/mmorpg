@@ -1,7 +1,7 @@
 #include "player_node.h"
 #include "muduo/base/Logging.h"
 
-#include "comp/scene.h"
+#include "comp/scene_comp.h"
 #include "thread_local/storage.h"
 
 #include "network/gate_session.h"

@@ -1,7 +1,7 @@
 #include "player_scene.h"
 #include "muduo/base/Logging.h"
 #include "centre_node.h"
-#include "comp/scene.h"
+#include "comp/scene_comp.h"
 #include "system/scene/scene_system.h"
 #include "constants/tips_id.h"
 #include "comp/game_node.h"

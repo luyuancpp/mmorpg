@@ -3,7 +3,7 @@
 #include "comp/scene/dtcrowd.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
-#include "comp/scene.h"
+#include "comp/scene_comp.h"
 #include "constants/dt_crowd.h"
 
 #include "proto/logic/event/scene_event.pb.h"

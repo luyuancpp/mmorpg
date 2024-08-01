@@ -6,7 +6,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "muduo/base/Logging.h"
 
-#include "comp/scene.h"
+#include "comp/scene_comp.h"
 #include "comp/game_node.h"
 #include "system/network/message_system.h"
 #include "service/game_scene_server_player_service.h"

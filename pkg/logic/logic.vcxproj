@@ -173,15 +173,15 @@
     <ClCompile Include="src\timer_task\timer_task.cpp" />
     <ClCompile Include="src\timer_task\time_ measurement.cpp" />
     <ClCompile Include="src\util\color_console_log.cpp" />
-    <ClCompile Include="src\util\session.cpp" />
+    <ClCompile Include="src\util\session_comp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\mission_comp.h" />
     <ClInclude Include="src\comp\player_comp.h" />
     <ClInclude Include="src\comp\player_scene.h" />
-    <ClInclude Include="src\comp\scene.h" />
+    <ClInclude Include="src\comp\scene_comp.h" />
     <ClInclude Include="src\comp\node_scene_comp.h" />
-    <ClInclude Include="src\comp\session.h" />
+    <ClInclude Include="src\comp\session_comp.h" />
     <ClInclude Include="src\constants\file.h" />
     <ClInclude Include="src\constants\frame.h" />
     <ClInclude Include="src\constants\game_log.h" />
@@ -208,7 +208,7 @@
     <ClInclude Include="src\type_alias\player_session.h" />
     <ClInclude Include="src\type_alias\session_id_gen.h" />
     <ClInclude Include="src\util\color_console_log.h" />
-    <ClInclude Include="src\util\session.h" />
+    <ClInclude Include="src\util\session_comp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
