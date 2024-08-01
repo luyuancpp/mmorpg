@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 
-#include "item.h"
+#include "item_util.h"
 
 using ItemsMap = std::unordered_map<Guid, Item>;
 using PosMap = std::unordered_map<uint32_t, Guid>;

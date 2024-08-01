@@ -7,7 +7,7 @@
 #include "network/rpc_connection_event.h"
 #include "network/rpc_server.h"
 #include "redis_client/redis_client.h"
-#include "timer_task/timer_task.h"
+#include "timer_task/timer_task_comp.h"
 
 class CentreNode : muduo::noncopyable
 {
@@ -57,7 +57,7 @@ private:
 	CentreServiceHandler centreService;
 	NodeInfo nodeInfo;
 	nodes_info_data serversInfo;
-    TimerTask deployRpcTimer;
+    TimerTaskComp deployRpcTimer;
 };
 
 extern CentreNode* gCentreNode ;

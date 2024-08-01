@@ -13,7 +13,7 @@
 #include "network/rpc_connection_event.h"
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"
-#include "timer_task/timer_task.h"
+#include "timer_task/timer_task_comp.h"
 #include "type_define/type_define.h"
 
 #include "proto/common/deploy_service.pb.h"
@@ -85,7 +85,7 @@ private:
     NodeInfo node_info_;
     RpcClientPtr zone_centre_node_;
     GateServiceHandler service_handler_;
-    TimerTask deploy_rpc_timer_;
+    TimerTaskComp deploy_rpc_timer_;
 };
 
 

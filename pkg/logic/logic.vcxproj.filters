@@ -3,7 +3,7 @@
   <ItemGroup>
     <ClCompile Include="src\comp\mission_comp.cpp" />
     <ClCompile Include="src\system\bag\bag_system.cpp" />
-    <ClCompile Include="src\system\bag\item.cpp" />
+    <ClCompile Include="src\system\bag\item_util.cpp" />
     <ClCompile Include="src\system\mission\mission_system.cpp" />
     <ClCompile Include="src\system\scene\node_scene_system.cpp" />
     <ClCompile Include="src\system\scene\scene_system.cpp" />
@@ -13,7 +13,7 @@
     <ClCompile Include="src\timer_task\duration_funtion.cpp" />
     <ClCompile Include="src\timer_task\duration_manager.cpp" />
     <ClCompile Include="src\timer_task\timer_duration.cpp" />
-    <ClCompile Include="src\timer_task\timer_task.cpp" />
+    <ClCompile Include="src\timer_task\timer_task_comp.cpp" />
     <ClCompile Include="src\util\console_log_util.cpp" />
     <ClCompile Include="src\timer_task\time_ measurement.cpp" />
   </ItemGroup>
@@ -30,7 +30,7 @@
     <ClInclude Include="src\constants\time_constants.h" />
     <ClInclude Include="src\constants\tips_id_constants.h" />
     <ClInclude Include="src\system\bag\bag_system.h" />
-    <ClInclude Include="src\system\bag\item.h" />
+    <ClInclude Include="src\system\bag\item_util.h" />
     <ClInclude Include="src\system\mission\mission_system.h" />
     <ClInclude Include="src\system\mission\missions_config_template.h" />
     <ClInclude Include="src\system\scene\node_scene_system.h" />
@@ -43,8 +43,7 @@
     <ClInclude Include="src\timer_task\duration_funtion.h" />
     <ClInclude Include="src\timer_task\duration_manager.h" />
     <ClInclude Include="src\timer_task\timer_duration.h" />
-    <ClInclude Include="src\timer_task\timer_list.h" />
-    <ClInclude Include="src\timer_task\timer_task.h" />
+    <ClInclude Include="src\timer_task\timer_task_comp.h" />
     <ClInclude Include="src\constants\log_constants.h" />
     <ClInclude Include="src\constants\log_color_constants.h" />
     <ClInclude Include="src\util\console_log_util.h" />

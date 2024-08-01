@@ -1,4 +1,4 @@
-#include "item.h"
+#include "item_util.h"
 
 
 NodeBit12Sequence g_bag_node_sequence;

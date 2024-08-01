@@ -3,7 +3,7 @@
 
  #include <cstdint>
 
-#include "timer_task.h"
+#include "timer_task_comp.h"
 #include "constants/time_constants.h"
 
  static muduo::net::TimerCallback kEmptyCallBack;
@@ -121,8 +121,8 @@
  protected:
      time_t begin_time_{0};
      time_t end_time_{ 0 };
-     TimerTask begin_timer_;
-     TimerTask end_timer_;
+     TimerTaskComp begin_timer_;
+     TimerTaskComp end_timer_;
       muduo::net::TimerCallback begin_callback_;
       muduo::net::TimerCallback end_callback_;
  };
