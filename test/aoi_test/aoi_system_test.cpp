@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 #include "game_logic/scene/system/aoi_system.h"
-#include "comp/scene_comp.h"
+#include "scene/comp/scene_comp.h"
 #include "game_logic/scene/comp/grid_comp.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"

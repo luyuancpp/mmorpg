@@ -1,6 +1,6 @@
 #pragma once
 
-#include "comp/player_scene.h"
+#include "scene/comp/player_scene.h"
 
 // PlayerChangeSceneSystem 类定义
 class PlayerChangeSceneSystem {

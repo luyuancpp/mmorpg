@@ -4,7 +4,7 @@
 
 #include "all_config.h"
 #include "proto/common/deploy_service.grpc.pb.h"
-#include "constants/log_constants.h"
+#include "log/constants/log_constants.h"
 #include "proto/logic/constants/node.pb.h"
 #include "handler/event/event_handler.h"
 #include "proto/logic/event/server_event.pb.h"
@@ -23,7 +23,7 @@
 #include "game_logic/config/config_system.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
-#include "util/console_log_util.h"
+#include "log/util/console_log_util.h"
 #include "util/game_registry.h"
 #include "game_logic/world.h"
 

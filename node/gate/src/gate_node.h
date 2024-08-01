@@ -13,11 +13,11 @@
 #include "network/rpc_connection_event.h"
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"
-#include "timer_task/timer_task_comp.h"
+#include "time/comp/timer_task_comp.h"
 #include "type_define/type_define.h"
 
 #include "proto/common/deploy_service.pb.h"
-#include "constants/log_constants.h"
+#include "log/constants/log_constants.h"
 
 class GateNode : noncopyable
 {

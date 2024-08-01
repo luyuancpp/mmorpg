@@ -1,7 +1,7 @@
-#include "scene/scene_util.h"
+#include "scene_util.h"
 #include "muduo/base/Logging.h"
 
-#include "comp/scene_comp.h"
+#include "scene/comp/scene_comp.h"
 #include "constants/node_constants.h"
 #include "thread_local/storage.h"
 #include "constants/tips_id_constants.h"

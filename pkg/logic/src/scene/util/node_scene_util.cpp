@@ -1,6 +1,6 @@
 ﻿#include "node_scene_util.h"
 #include <ranges>
-#include "comp/node_scene_comp.h"
+#include "scene/comp/node_scene_comp.h"
 #include "thread_local/storage.h"
 #include "proto/logic/component/gs_node_comp.pb.h"
 #include "muduo/base/Logging.h"

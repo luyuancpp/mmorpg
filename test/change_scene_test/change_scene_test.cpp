@@ -5,7 +5,7 @@
 #include "thread_local/storage.h"
 #include "constants/tips_id_constants.h"
 #include "system/player_change_scene.h"
-#include "scene/scene_util.h"
+#include "scene/util/scene_util.h"
 
 EntityVector globalSceneList;
 

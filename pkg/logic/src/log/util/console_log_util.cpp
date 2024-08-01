@@ -5,6 +5,8 @@
 
 #include "macros/game_log.h"
 
+#include "log/constants/log_color_constants.h"
+
 //https://www.cnblogs.com/xutopia/p/15820428.html
 
 thread_local std::string console_msg;
