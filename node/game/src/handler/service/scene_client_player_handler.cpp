@@ -1,6 +1,4 @@
 #include "scene_client_player_handler.h"
-#include "thread_local/storage.h"
-#include "game_logic/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "constants/tips_id_constants.h"
