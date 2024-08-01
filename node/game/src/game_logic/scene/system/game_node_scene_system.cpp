@@ -53,13 +53,13 @@ void GameNodeSceneUtil::InitNodeScene()
 	{
 		CreateGameNodeSceneParam params{ .node = entt::entity{gGameNode->GetNodeId()} };
 		params.sceneInfo.set_scene_confid(item.id());
-		SceneSystem::CreateScene2GameNode(params);
+		SceneUtil::CreateScene2GameNode(params);
 	}
 }
 
 void GameNodeSceneUtil::EnterScene(const EnterSceneParam& param)
 {
-	SceneSystem::EnterScene(param);
+	SceneUtil::EnterScene(param);
 
 	if (tls.registry.any_of<Player>(param.enter))
 	{
@@ -69,7 +69,7 @@ void GameNodeSceneUtil::EnterScene(const EnterSceneParam& param)
 
 void GameNodeSceneUtil::LeaveScene(entt::entity leaver)
 {
-	SceneSystem::LeaveScene({ .leaver = leaver });
+	SceneUtil::LeaveScene({ .leaver = leaver });
 }
 
 void GameNodeSceneUtil::RegisterSceneToCentre(entt::entity scene)

@@ -20,7 +20,7 @@ using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 // Static function
 void SetServerSequenceNodeId(uint32_t nodeId) {
 	LOG_TRACE << "Setting server sequence node ID to: " << nodeId;
-	SceneSystem::SetSequenceNodeId(nodeId);
+	SceneUtil::SetSequenceNodeId(nodeId);
 }
 
 // Function to add main scene node components
@@ -32,29 +32,29 @@ void AddMainSceneNodeComponent(entt::registry& reg, const entt::entity node) {
 }
 
 // ScenesSystem implementation
-SceneSystem::SceneSystem() {
+SceneUtil::SceneUtil() {
 	LOG_TRACE << "ScenesSystem constructor called";
 	Clear();
 }
 
-SceneSystem::~SceneSystem() {
+SceneUtil::~SceneUtil() {
 	LOG_TRACE << "ScenesSystem destructor called";
 	Clear();
 }
 
-NodeId SceneSystem::GetGameNodeId(uint64_t scene_id)
+NodeId SceneUtil::GetGameNodeId(uint64_t scene_id)
 {
 	return nodeSequence.node_id(static_cast<NodeId>(scene_id));
 }
 
-entt::entity SceneSystem::get_game_node_eid(uint64_t scene_id)
+entt::entity SceneUtil::get_game_node_eid(uint64_t scene_id)
 {
 	return entt::entity{ nodeSequence.node_id(static_cast<NodeId>(scene_id)) };
 }
 
-void SceneSystem::SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
+void SceneUtil::SetSequenceNodeId(const uint32_t node_id) { nodeSequence.set_node_id(node_id); }
 
-void SceneSystem::Clear() {
+void SceneUtil::Clear() {
 	LOG_TRACE << "Clearing scene system data";
 	tls.sceneRegistry.clear();
 	tls.registry.clear();
@@ -62,7 +62,7 @@ void SceneSystem::Clear() {
 }
 
 // Get game node ID associated with a scene entity
-NodeId SceneSystem::GetGameNodeId(entt::entity scene) {
+NodeId SceneUtil::GetGameNodeId(entt::entity scene) {
 	auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(scene);
 	if (sceneInfo) {
 		return GetGameNodeId(sceneInfo->guid());
@@ -74,7 +74,7 @@ NodeId SceneSystem::GetGameNodeId(entt::entity scene) {
 }
 
 // Generate unique scene ID
-uint32_t SceneSystem::GenSceneGuid() {
+uint32_t SceneUtil::GenSceneGuid() {
 	uint32_t sceneId = nodeSequence.Generate();
 	while (tls.sceneRegistry.valid(entt::entity{ sceneId })) {
 		sceneId = nodeSequence.Generate();
@@ -84,7 +84,7 @@ uint32_t SceneSystem::GenSceneGuid() {
 }
 
 // Get total number of scenes associated with a specific configuration ID
-std::size_t SceneSystem::GetScenesSize(uint32_t sceneConfigId) {
+std::size_t SceneUtil::GetScenesSize(uint32_t sceneConfigId) {
 	std::size_t sceneSize = 0;
 	for (auto node : tls.gameNodeRegistry.view<NodeSceneComp>()) {
 		auto& nodeSceneComp = tls.gameNodeRegistry.get<NodeSceneComp>(node);
@@ -95,21 +95,21 @@ std::size_t SceneSystem::GetScenesSize(uint32_t sceneConfigId) {
 }
 
 // Get total number of scenes in the registry
-std::size_t SceneSystem::GetScenesSize() {
+std::size_t SceneUtil::GetScenesSize() {
 	std::size_t totalScenes = tls.sceneRegistry.storage<SceneInfo>().size();
 	LOG_TRACE << "Total scenes in the registry: " << totalScenes;
 	return totalScenes;
 }
 
 // Check if scene registry is empty
-bool SceneSystem::IsSceneEmpty() {
+bool SceneUtil::IsSceneEmpty() {
 	bool isEmpty = tls.sceneRegistry.storage<SceneInfo>().empty();
 	LOG_TRACE << "Scene registry empty: " << (isEmpty ? "true" : "false");
 	return isEmpty;
 }
 
 // Check if there are non-empty scene lists for a specific configuration
-bool SceneSystem::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
+bool SceneUtil::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
 	for (auto nodeEid : tls.gameNodeRegistry.view<NodeSceneComp>()) {
 		auto& nodeSceneComp = tls.gameNodeRegistry.get<NodeSceneComp>(nodeEid);
 		if (!nodeSceneComp.GetScenesByConfig(sceneConfigId).empty()) {
@@ -122,7 +122,7 @@ bool SceneSystem::ConfigSceneListNotEmpty(uint32_t sceneConfigId) {
 }
 
 // Create a new scene associated with a game node
-entt::entity SceneSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& param) {
+entt::entity SceneUtil::CreateScene2GameNode(const CreateGameNodeSceneParam& param) {
 	if (param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters for creating scene";
 		return entt::null;
@@ -161,7 +161,7 @@ entt::entity SceneSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& p
 }
 
 // Destroy a scene
-void SceneSystem::DestroyScene(const DestroySceneParam& param) {
+void SceneUtil::DestroyScene(const DestroySceneParam& param) {
 	if (param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters for destroying scene";
 		return;
@@ -189,7 +189,7 @@ void SceneSystem::DestroyScene(const DestroySceneParam& param) {
 }
 
 // Handle server node destruction
-void SceneSystem::HandleDestroyGameNode(entt::entity node) {
+void SceneUtil::HandleDestroyGameNode(entt::entity node) {
 	auto& nodeSceneComp = tls.gameNodeRegistry.get<NodeSceneComp>(node);
 	auto sceneLists = nodeSceneComp.GetSceneLists();
 
@@ -209,7 +209,7 @@ void SceneSystem::HandleDestroyGameNode(entt::entity node) {
 
 
 // Check if a player can enter a scene
-uint32_t SceneSystem::CheckPlayerEnterScene(const EnterSceneParam& param) {
+uint32_t SceneUtil::CheckPlayerEnterScene(const EnterSceneParam& param) {
 	if (!tls.sceneRegistry.valid(param.scene)) {
 		LOG_ERROR << "Invalid scene entity when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
 		return kRetCheckEnterSceneSceneParam;
@@ -232,7 +232,7 @@ uint32_t SceneSystem::CheckPlayerEnterScene(const EnterSceneParam& param) {
 
 
 // Check if scene player size limits are respected
-uint32_t SceneSystem::CheckScenePlayerSize(entt::entity scene) {
+uint32_t SceneUtil::CheckScenePlayerSize(entt::entity scene) {
 	auto& scenePlayers = tls.sceneRegistry.get<ScenePlayers>(scene);
 
 	if (scenePlayers.size() >= kMaxScenePlayer) {
@@ -257,7 +257,7 @@ uint32_t SceneSystem::CheckScenePlayerSize(entt::entity scene) {
 
 
 // Enter a player into a scene
-void SceneSystem::EnterScene(const EnterSceneParam& param) {
+void SceneUtil::EnterScene(const EnterSceneParam& param) {
 	if (param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters when entering scene";
 		return;
@@ -283,14 +283,14 @@ void SceneSystem::EnterScene(const EnterSceneParam& param) {
 
 
 // Enter a player into the default scene
-void SceneSystem::EnterDefaultScene(const EnterDefaultSceneParam& param) {
+void SceneUtil::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 	if (param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters when entering default scene";
 		return;
 	}
 
 	// Get a scene that is not full from the NodeSceneSystem
-	auto defaultScene = NodeSceneSystem::FindNotFullScene({});
+	auto defaultScene = NodeSceneUtil::FindNotFullScene({});
 
 	// Enter the player into the retrieved default scene
 	EnterScene({ defaultScene, param.enter });
@@ -304,7 +304,7 @@ void SceneSystem::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 
 
 // Remove a player from a scene
-void SceneSystem::LeaveScene(const LeaveSceneParam& param) {
+void SceneUtil::LeaveScene(const LeaveSceneParam& param) {
 	if (param.CheckValid()) {
 		LOG_ERROR << "Invalid parameters when leaving scene";
 		return;
@@ -339,7 +339,7 @@ void SceneSystem::LeaveScene(const LeaveSceneParam& param) {
 }
 
 // Force a player to change scenes
-void SceneSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
+void SceneUtil::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 	auto& destNodeScene = tls.gameNodeRegistry.get<NodeSceneComp>(param.destNode);
 	auto sceneEntity = destNodeScene.GetSceneWithMinPlayerCountByConfigId(param.sceneConfId);
 
@@ -359,7 +359,7 @@ void SceneSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param) {
 }
 
 // Replace a crashed server node with a new node
-void SceneSystem::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNode) {
+void SceneUtil::ReplaceCrashGameNode(entt::entity crashNode, entt::entity destNode) {
 	auto& crashNodeScene = tls.gameNodeRegistry.get<NodeSceneComp>(crashNode);
 	auto sceneLists = crashNodeScene.GetSceneLists();
 
