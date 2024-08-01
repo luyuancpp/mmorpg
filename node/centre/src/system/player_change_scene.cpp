@@ -8,12 +8,12 @@
 
 //todo 各种服务器崩溃// 初始化场景切换队列
 void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player) {
-	tls.registry.emplace<PlayerCentreChangeSceneQueue>(player);
+	tls.registry.emplace<PlayerCentreChangeSceneQueueComp>(player);
 }
 
 // 添加切换场景信息到队列
 uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
+	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
 		return kRetChangeScenePlayerQueueComponentNull;  // 玩家队列组件为空
 	}
@@ -28,7 +28,7 @@ uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const
 
 // 移除队列中首个切换场景信息
 void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player) {
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
+	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
 		return;
 	}
@@ -41,7 +41,7 @@ void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player) {
 
 // 设置当前切换场景信息的切换状态
 void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s) {
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
+	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
 		return;
 	}
@@ -62,7 +62,7 @@ void PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(CentreChangeSceneInfo& c
 
 // 处理玩家的场景切换队列
 void PlayerChangeSceneSystem::ProcessChangeSceneQueue(entt::entity player) {
-	auto* const tryChangeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
+	auto* const tryChangeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
 	if (!tryChangeSceneQueue) {
 		return;
 	}

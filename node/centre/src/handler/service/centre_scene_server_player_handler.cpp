@@ -57,7 +57,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	//todo 场景崩溃了要去新的场景
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request received for player: " << tls.registry.get<Guid>(player);
 
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
+	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
 	if (!changeSceneQueue || changeSceneQueue->changeSceneQueue.empty())
 	{
 		LOG_WARN << "Change scene queue is empty for player: " << tls.registry.get<Guid>(player);

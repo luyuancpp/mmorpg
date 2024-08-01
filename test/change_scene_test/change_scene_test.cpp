@@ -28,7 +28,7 @@ entt::entity CreatePlayerEntity()
 CentreChangeSceneInfo& GetPlayerFrontChangeSceneInfo(entt::entity playerEntity)
 {
 	// Get the front change scene info for the player
-	return tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.front();
+	return tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.front();
 }
 
 TEST(PlayerChangeScene, CreateMainScene)
@@ -71,7 +71,7 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 	changeInfo.set_change_gs_type(CentreChangeSceneInfo::eSameGs); // todo scene logic
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 }
 
 TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
@@ -88,16 +88,16 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
 
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 }
 
 TEST(PlayerChangeScene, DiffGs)
@@ -112,11 +112,11 @@ TEST(PlayerChangeScene, DiffGs)
 	changeInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(!tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 }
 
 TEST(PlayerChangeScene, SameGs)
@@ -131,7 +131,7 @@ TEST(PlayerChangeScene, SameGs)
 	changeInfo.set_change_gs_type(CentreChangeSceneInfo::eSameGs); // todo scene logic
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 }
 
 TEST(PlayerChangeScene, CrossServerDiffGs)
@@ -146,10 +146,10 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 	changeInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs); // todo scene logic
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 }
 
 // Test various states
@@ -165,19 +165,19 @@ TEST(PlayerChangeScene, ServerCrush)
 	changeInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs); // todo scene logic
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eLeaveGsScene);
 	PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity); // crash
-	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 
 	SceneSystem::EnterScene({ fromSceneEntity, playerEntity });
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eLeaveGsScene);
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_FALSE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueue>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 }
 
 int32_t main(int argc, char** argv)
