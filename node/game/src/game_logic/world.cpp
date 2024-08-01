@@ -9,7 +9,7 @@
 #include "game_logic/scene/system/aoi_system.h"
 #include "game_logic/scene/system/movement_system.h"
 #include "game_logic/scene/system/movement_acceleration_system.h"
-#include "game_logic/view/util/view_util.h"
+#include "game_logic/scene/util/view_util.h"
 #include "thread_local/storage_game.h"
 
 #include "proto/logic/component/frame_comp.pb.h"
