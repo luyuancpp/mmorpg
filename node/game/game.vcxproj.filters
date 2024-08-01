@@ -102,13 +102,13 @@
     <ClCompile Include="src\game_logic\scene\system\game_node_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\player\player_scene.cpp">
+    <ClCompile Include="src\system\player\player_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\player\player_session.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\player\player_tip.cpp">
+    <ClCompile Include="src\system\player\player_tip_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\recast.cpp">
@@ -123,7 +123,7 @@
     <ClCompile Include="src\game_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\player\player_node.cpp">
+    <ClCompile Include="src\system\player\player_node_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\scene\system\aoi_system.cpp">
@@ -135,7 +135,7 @@
     <ClCompile Include="src\game_logic\scene\system\movement_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\system\movement_acceleration.cpp">
+    <ClCompile Include="src\game_logic\scene\system\movement_acceleration_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\scene\system\scene_crowd_system.cpp">
@@ -144,16 +144,16 @@
     <ClCompile Include="src\game_logic\scene\util\view_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\combat\ability\ability.cpp">
+    <ClCompile Include="src\game_logic\combat\ability\system\ability_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\combat\buff\buff.cpp">
+    <ClCompile Include="src\game_logic\combat\buff\buff_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\combat\projectile\projectile.cpp">
+    <ClCompile Include="src\game_logic\combat\projectile\projectile_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\util\combat\ability.cpp">
+    <ClCompile Include="src\util\combat\ability_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -239,13 +239,13 @@
     <ClInclude Include="src\game_logic\scene\system\game_node_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\player\player_scene.h">
+    <ClInclude Include="src\system\player\player_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player\player_session.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\player\player_tip.h">
+    <ClInclude Include="src\system\player\player_tip_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\recast.h">
@@ -266,16 +266,16 @@
     <ClInclude Include="src\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\player\player_node.h">
+    <ClInclude Include="src\system\player\player_node_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\system\aoi_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\comp\grid.h">
+    <ClInclude Include="src\game_logic\scene\comp\grid_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\comp\nav.h">
+    <ClInclude Include="src\game_logic\scene\comp\nav_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\world.h">
@@ -284,19 +284,16 @@
     <ClInclude Include="src\game_logic\scene\system\movement_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\system\movement_acceleration.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\comp\actor.h">
+    <ClInclude Include="src\game_logic\scene\system\movement_acceleration_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\system\scene_crowd_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\constants\dt_crowd.h">
+    <ClInclude Include="src\game_logic\scene\constants\dt_crowd_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\constants\view.h">
+    <ClInclude Include="src\constants\view_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\util\view_util.h">
@@ -305,22 +302,22 @@
     <ClInclude Include="src\type_alias\actor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\comp\dtcrowd.h">
+    <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\combat\ability\ability.h">
+    <ClInclude Include="src\game_logic\combat\ability\system\ability_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\combat\buff\buff.h">
+    <ClInclude Include="src\game_logic\combat\buff\buff_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\combat\projectile\projectile.h">
+    <ClInclude Include="src\game_logic\combat\projectile\projectile_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\constants\ability.h">
+    <ClInclude Include="src\constants\ability_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util\combat\ability.h">
+    <ClInclude Include="src\util\combat\ability_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

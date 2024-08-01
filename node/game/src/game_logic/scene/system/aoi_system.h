@@ -3,7 +3,7 @@
 #include <absl/hash/hash.h>
 #include <absl/numeric/int128.h>
 
-#include "game_logic/scene/comp/grid.h"
+#include "game_logic/scene/comp/grid_comp.h"
 
 class AfterEnterScene;
 class BeforeLeaveScene;

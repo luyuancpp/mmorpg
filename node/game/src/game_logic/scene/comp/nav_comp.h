@@ -6,10 +6,10 @@
 
 #include "Detour/DetourNavMeshQuery.h"
 
-struct SceneNav
+struct NavComp
 {
     dtNavMesh navMesh;
     dtNavMeshQuery navQuery;
 };
 
-using SceneNavs = std::unordered_map<uint32_t, SceneNav>;
+using SceneNavMapComp = std::unordered_map<uint32_t, NavComp>;

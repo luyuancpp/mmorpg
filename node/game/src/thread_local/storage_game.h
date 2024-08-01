@@ -1,7 +1,7 @@
 #pragma once
 
 #include "system/redis.h"
-#include "game_logic/scene/comp/nav.h"
+#include "game_logic/scene/comp/nav_comp.h"
 
 #include "proto/common/mysql_database_table.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"
@@ -16,7 +16,7 @@ public:
 	RedisSystem redis;
 	PlayerRedis playerRedis;
 	PlayerEnterGSInfoList asyncPlayerList;
-	SceneNavs sceneNav;
+	SceneNavMapComp sceneNav;
 	FrameTime frameTime;
 };
 

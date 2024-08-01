@@ -1,6 +1,6 @@
 ﻿#include "view_util.h"
 
-#include "constants/view.h"
+#include "constants/view_constants.h"
 #include "muduo/base/Logging.h"
 #include "proto/logic/client_player/scene_client_player.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
