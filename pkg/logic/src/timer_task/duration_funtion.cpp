@@ -4,7 +4,7 @@
 #include <ctime>
 
 #include "util/utility.h"
-#include "timer_task.h"
+#include "timer_task_comp.h"
 
 void GetLocalTime(const time_t* ptime, struct tm* pTm)
 {

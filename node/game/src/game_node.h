@@ -9,7 +9,7 @@
 #include "network/rpc_connection_event.h"
 #include "network/rpc_server.h"
 #include "redis_client/redis_client.h"
-#include "timer_task/timer_task.h"
+#include "timer_task/timer_task_comp.h"
 #include "type_define/type_define.h"
 
 #include "proto/common/deploy_service.pb.h"
@@ -60,8 +60,8 @@ private:
     NodeInfo nodeInfo;
     RpcClientPtr myZoneCentreNode;
     GameServiceHandler gameService;
-    TimerTask deployRpcTimer;
-    TimerTask worldTimer;
+    TimerTaskComp deployRpcTimer;
+    TimerTaskComp worldTimer;
 };
 
 extern GameNode* gGameNode;
