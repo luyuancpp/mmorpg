@@ -17,7 +17,7 @@
 #include "type_define/type_define.h"
 
 #include "proto/common/deploy_service.pb.h"
-#include "constants/file.h"
+#include "constants/log_constants.h"
 
 class GateNode : noncopyable
 {

@@ -2,9 +2,9 @@
 #include "muduo/base/Logging.h"
 
 #include "comp/scene_comp.h"
-#include "constants/node.h"
+#include "constants/node_constants.h"
 #include "thread_local/storage.h"
-#include "constants/tips_id.h"
+#include "constants/tips_id_constants.h"
 
 #include "proto/logic/component/gs_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"

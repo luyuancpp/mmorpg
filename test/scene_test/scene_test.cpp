@@ -3,7 +3,7 @@
 #include "system/scene/scene_system.h"
 #include "comp/scene_comp.h"
 #include "thread_local/storage.h"
-#include "constants/tips_id.h"
+#include "constants/tips_id_constants.h"
 
 #include "proto/logic/component/gs_node_comp.pb.h"
 #include "proto/logic/component/scene_comp.pb.h"

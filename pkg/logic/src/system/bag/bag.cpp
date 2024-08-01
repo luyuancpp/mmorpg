@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "constants/tips_id.h"
+#include "constants/tips_id_constants.h"
 
 #include"item_config.h"
 

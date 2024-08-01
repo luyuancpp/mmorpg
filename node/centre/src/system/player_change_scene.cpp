@@ -1,6 +1,6 @@
 #include "player_change_scene.h"
 
-#include "constants/tips_id.h"
+#include "constants/tips_id_constants.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage.h"
 
