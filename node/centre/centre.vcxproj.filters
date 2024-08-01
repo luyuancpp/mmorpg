@@ -60,9 +60,6 @@
     <ClCompile Include="src\handler\service\team_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\network\message_system.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\service_replied\common_client_player_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -126,6 +123,9 @@
     <ClCompile Include="src\system\player_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\network\message_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -171,9 +171,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\game_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\system\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service_replied\common_client_player_replied_handler.h">
@@ -240,6 +237,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player_node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
