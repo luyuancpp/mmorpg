@@ -1,12 +1,12 @@
 #include "centre_scene_server_player_handler.h"
 #include "thread_local/storage.h"
-#include "system/network/message_system.h"
+#include "game_logic/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
 #include "scene/util/scene_util.h"
 #include "constants/tips_id_constants.h"
-#include "comp/game_node.h"
+
 #include "centre_node.h"
 #include "system/player_scene.h"
 #include "system/player_tip.h"
