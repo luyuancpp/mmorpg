@@ -2,7 +2,7 @@
 
 #include "item_config.h"
 
-#include "system/bag/bag_system.h"
+#include "bag/bag_system.h"
 
 #include "constants/tips_id_constants.h"
 

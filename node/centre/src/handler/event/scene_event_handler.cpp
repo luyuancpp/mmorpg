@@ -12,7 +12,7 @@
 #include "service/game_scene_server_player_service.h"
 #include "system/player_change_scene.h"
 #include "system/player_scene.h"
-#include "system/scene/scene_system.h"
+#include "scene/scene_util.h"
 #include "type_define/type_define.h"
 
 #include "proto/logic/component/scene_comp.pb.h"

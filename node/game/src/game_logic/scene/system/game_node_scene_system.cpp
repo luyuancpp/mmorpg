@@ -12,7 +12,7 @@
 #include "service/centre_scene_service.h"
 #include "game_logic/player/util/player_util.h"
 #include "game_logic/scene/util/recast_util.h"
-#include "system/scene/scene_system.h"
+#include "scene/scene_util.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "logic/event/scene_event.pb.h"

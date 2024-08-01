@@ -11,7 +11,7 @@
 #include "service/gate_service_service.h"
 #include "system/player_change_scene.h"
 #include "system/player_scene.h"
-#include "system/scene/scene_system.h"
+#include "scene/scene_util.h"
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
