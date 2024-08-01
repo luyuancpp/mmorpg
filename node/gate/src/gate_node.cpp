@@ -4,7 +4,7 @@
 
 #include "proto/common/deploy_service.grpc.pb.h"
 #include "proto/common/login_service.grpc.pb.h"
-#include "constants/log_constants.h"
+#include "log/constants/log_constants.h"
 #include "proto/logic/constants/node.pb.h"
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deployclient.h"
@@ -14,7 +14,7 @@
 #include "service/game_service_service.h"
 #include "service/service.h"
 #include "thread_local/storage_gate.h"
-#include "util/console_log_util.h"
+#include "log/util/console_log_util.h"
 
 GateNode* g_gate_node = nullptr; 
 

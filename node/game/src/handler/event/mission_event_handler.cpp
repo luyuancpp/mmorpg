@@ -2,8 +2,8 @@
 #include "logic/event/mission_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "comp/mission_comp.h"
-#include "mission/mission_system.h"
+#include "mission/comp/mission_comp.h"
+#include "mission/util/mission_util.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventHandler::Register()
 {

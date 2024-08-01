@@ -6,7 +6,7 @@
 
 #include "all_config.h"
 #include "proto/common/deploy_service.grpc.pb.h"
-#include "constants/log_constants.h"
+#include "log/constants/log_constants.h"
 #include "proto/logic/constants/node.pb.h"
 #include "handler/event/event_handler.h"
 #include "game_config/lobby_config.h"
@@ -21,7 +21,7 @@
 #include "service/service.h"
 #include "system/player_session.h"
 #include "thread_local/storage_centre.h"
-#include "util/console_log_util.h"
+#include "log/util/console_log_util.h"
 #include "grpc/request/deploy_grpc_requst.h"
 
 using namespace muduo;

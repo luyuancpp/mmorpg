@@ -6,13 +6,13 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "muduo/base/Logging.h"
 
-#include "comp/scene_comp.h"
+#include "scene/comp/scene_comp.h"
 #include "comp/game_node.h"
 #include "system/network/message_system.h"
 #include "service/game_scene_server_player_service.h"
 #include "system/player_change_scene.h"
 #include "system/player_scene.h"
-#include "scene/scene_util.h"
+#include "scene/util/scene_util.h"
 #include "type_define/type_define.h"
 
 #include "proto/logic/component/scene_comp.pb.h"
