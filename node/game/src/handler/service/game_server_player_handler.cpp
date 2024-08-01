@@ -21,7 +21,7 @@ void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,
 		return;
 	}
 
-	PlayerNodeSystem::OnPlayerLogin(player, request->enter_gs_type());
+	PlayerNodeUtil::OnPlayerLogin(player, request->enter_gs_type());
 	///<<< END WRITING YOUR CODE
 }
 

@@ -13,7 +13,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
 
-void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
+void PlayerSceneUtil::HandleLoginEnterScene(entt::entity playerEntity)
 {
     if (!tls.registry.valid(playerEntity))
     {
@@ -83,7 +83,7 @@ void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
     PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeSceneInfo);
 }
 
-void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
+void PlayerSceneUtil::SendToGameNodeEnterScene(entt::entity playerEntity)
 {
     if (playerEntity == entt::null)
     {
@@ -121,7 +121,7 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
     LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->game_node_id();
 }
 
-void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity playerEntity, NodeId nodeId)
+void PlayerSceneUtil::ProcessPlayerEnterGameServer(entt::entity playerEntity, NodeId nodeId)
 {
     const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
     if (!playerNodeInfo)
@@ -137,7 +137,7 @@ void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity playerEntity, 
     CallGameNodeMethod(GameServiceEnterGsMsgId, request, nodeId);
 }
 
-void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
+void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 {
     auto playerId = tls.registry.get<Guid>(playerEntity);
 
@@ -154,7 +154,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 	if (!fromSceneEntity)
 	{
 		LOG_ERROR << "From scene entity not found for player: " << playerId;
-		PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneYourSceneIsNull, {});
+		PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneYourSceneIsNull, {});
 		return;
 	}
 
@@ -177,7 +177,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 		if (toScene == entt::null)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;
-			PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneSceneFull, {});
+			PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneSceneFull, {});
 			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
@@ -189,7 +189,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 		if (toScene == entt::null)
 		{
 			LOG_ERROR << "Target scene not found for player: " << playerId;
-			PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneSceneNotFound, {});
+			PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneSceneNotFound, {});
 			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
@@ -215,7 +215,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 	if (toSceneGuid == fromSceneInfo->guid())
 	{
 		LOG_WARN << "Player is already in the current scene: " << playerId;
-		PlayerTipSystem::SendToPlayer(playerEntity, kRetEnterSceneYouInCurrentScene, {});
+		PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneYouInCurrentScene, {});
 		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
 		return;
 	}
@@ -225,7 +225,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 		if (const auto ret = SceneSystem::CheckScenePlayerSize(toScene); ret != kOK)
 		{
 			LOG_WARN << "Scene player size check failed for player: " << playerId << ", ret: " << ret;
-			PlayerTipSystem::SendToPlayer(playerEntity, ret, {});
+			PlayerTipUtil::SendToPlayer(playerEntity, ret, {});
 			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
@@ -244,7 +244,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
 }
 
-uint32_t PlayerSceneSystem::GetDefaultSceneConfigurationId()
+uint32_t PlayerSceneUtil::GetDefaultSceneConfigurationId()
 {
     return 1;
 }

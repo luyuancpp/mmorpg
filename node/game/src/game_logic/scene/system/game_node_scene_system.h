@@ -10,7 +10,7 @@ class OnSceneCreate;
 class AfterEnterScene;
 class BeforeLeaveScene;
 
-class GameNodeSceneSystem
+class GameNodeSceneUtil
 {
 public:
     static void LoadAllMainSceneNavBin();

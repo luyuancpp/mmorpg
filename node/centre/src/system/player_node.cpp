@@ -21,7 +21,7 @@
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
+void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
 	auto& loadingList = tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity());
 	defer(loadingList.erase(playerId));
@@ -50,16 +50,16 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	// Set flag for first login
 	tls.registry.emplace<EnterGsFlag>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
-	PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
+	PlayerSceneUtil::HandleLoginEnterScene(playerEntity);
 	// On database loaded
 }
 
-void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
+void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
 {
 	// Placeholder for handling saved player data asynchronously
 }
 
-void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
+void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
 {
 	const auto enterGameFlag = tls.registry.try_get<EnterGsFlag>(playerEntity);
 	if (!enterGameFlag)
@@ -88,7 +88,7 @@ void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 	}
 }
 
-void PlayerNodeSystem::RegisterPlayerToGateNode(entt::entity playerEntity)
+void PlayerNodeUtil::RegisterPlayerToGateNode(entt::entity playerEntity)
 {
 	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
 	if (!playerNodeInfo)
@@ -117,7 +117,7 @@ void PlayerNodeSystem::RegisterPlayerToGateNode(entt::entity playerEntity)
 	(*gateNode)->CallMethod(GateServicePlayerEnterGsMsgId, request);
 }
 
-void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
+void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
 {
 	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
 	if (!playerNodeInfo)
@@ -147,7 +147,7 @@ void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
 	}
 }
 
-void PlayerNodeSystem::HandlePlayerLeave(Guid playerUid)
+void PlayerNodeUtil::HandlePlayerLeave(Guid playerUid)
 {
 	// TODO: Handle leave during login
 	// TODO: Immediate logout on disconnect will be revisited later

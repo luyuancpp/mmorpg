@@ -5,7 +5,7 @@
 #include "service/common_client_player_service.h"
 #include "thread_local/storage_common_logic.h"
 
-void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const StringVector& strParam)
+void PlayerTipUtil::SendToPlayer(entt::entity player, uint32_t tipId, const StringVector& strParam)
 {
 	TipMessage message;
 	message.mutable_tip_info()->set_id(tipId);
@@ -17,7 +17,7 @@ void PlayerTipSystem::SendToPlayer(entt::entity player, uint32_t tipId, const St
 	SendMessageToPlayer(ClientPlayerCommonServicePushTipS2CMsgId, message, player);
 }
 
-void PlayerTipSystem::SendToPlayer(Guid playerId, uint32_t tipId, const StringVector& strParam)
+void PlayerTipUtil::SendToPlayer(Guid playerId, uint32_t tipId, const StringVector& strParam)
 {
 	entt::entity playerEntity = tlsCommonLogic.GetPlayer(playerId);
 	if (playerEntity == entt::null)

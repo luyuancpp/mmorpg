@@ -18,7 +18,7 @@
 
 #include "game_node.h"
 
-void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
+void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
 {
 	LOG_INFO << "Player loaded: " << playerId;
 
@@ -57,7 +57,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_datab
 }
 
 
-void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& message)
+void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_database& message)
 {
 	//todo session 啥时候删除？
 	//告诉Centre 保存完毕，可以切换场景了
@@ -74,7 +74,7 @@ void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_database& me
 	}
 }
 
-void PlayerNodeSystem::SavePlayer(entt::entity player)
+void PlayerNodeUtil::SavePlayer(entt::entity player)
 {
 	using SaveMessage = PlayerRedis::element_type::MessageValuePtr;
 	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
@@ -85,7 +85,7 @@ void PlayerNodeSystem::SavePlayer(entt::entity player)
 }
 
 //考虑: 没load 完再次进入别的gs
-void PlayerNodeSystem::EnterGs(const entt::entity player, const EnterGsInfo& enterInfo)
+void PlayerNodeUtil::EnterGs(const entt::entity player, const EnterGsInfo& enterInfo)
 {
 	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (playerNodeInfo == nullptr)
@@ -104,7 +104,7 @@ void PlayerNodeSystem::EnterGs(const entt::entity player, const EnterGsInfo& ent
 	//否则两个不同的gs可能离开场景的消息后于进入场景的消息到达客户端
 }
 
-void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNodeId)
+void PlayerNodeUtil::NotifyEnterGsSucceed(entt::entity player, NodeId centreNodeId)
 {
 	EnterGameNodeSucceedRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
@@ -116,11 +116,11 @@ void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNo
 	// This ensures that the message order received by clients is consistent
 }
 
-void PlayerNodeSystem::LeaveGs(entt::entity player)
+void PlayerNodeUtil::LeaveGs(entt::entity player)
 {
 }
 
-void PlayerNodeSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
+void PlayerNodeUtil::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 {
 
 	switch (enterGsType)
@@ -140,13 +140,13 @@ void PlayerNodeSystem::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 	}
 }
 
-void PlayerNodeSystem::OnPlayerRegisteredToGateNode(entt::entity player)
+void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity player)
 {
 
 }
 
 //todo 检测
-void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
+void PlayerNodeUtil::RemovePlayerSession(const Guid playerId)
 {
 	auto playerIt = tlsCommonLogic.GetPlayerList().find(playerId);
 	if (playerIt == tlsCommonLogic.GetPlayerList().end())
@@ -157,7 +157,7 @@ void PlayerNodeSystem::RemovePlayerSession(const Guid playerId)
 	RemovePlayerSession(playerIt->second);
 }
 
-void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
+void PlayerNodeUtil::RemovePlayerSession(entt::entity player)
 {
 	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (playerNodeInfo == nullptr)
@@ -170,7 +170,7 @@ void PlayerNodeSystem::RemovePlayerSession(entt::entity player)
 	playerNodeInfo->set_gate_session_id(kInvalidSessionId);
 }
 
-void PlayerNodeSystem::DestroyPlayer(Guid playerId)
+void PlayerNodeUtil::DestroyPlayer(Guid playerId)
 {
 	defer(tlsCommonLogic.GetPlayerList().erase(playerId));
 	Destroy(tls.registry, tlsCommonLogic.GetPlayer(playerId));

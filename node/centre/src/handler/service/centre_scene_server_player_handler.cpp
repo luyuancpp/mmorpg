@@ -29,11 +29,11 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 	if (const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, changeSceneInfo); ret != kOK)
 	{
 		LOG_ERROR << "Failed to push change scene info for player " << tls.registry.get<Guid>(player) << ": " << ret;
-		PlayerTipSystem::SendToPlayer(player, ret, {});
+		PlayerTipUtil::SendToPlayer(player, ret, {});
 		return;
 	}
 
-	PlayerSceneSystem::AttemptEnterNextScene(player);
+	PlayerSceneUtil::AttemptEnterNextScene(player);
 
 	LOG_INFO << "EnterScene request processed successfully for player: " << tls.registry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE
@@ -84,7 +84,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 
 	playerNodeInfo->set_game_node_id(kInvalidNodeId);
 
-	PlayerSceneSystem::ProcessPlayerEnterGameServer(player, SceneSystem::GetGameNodeId(toScene));
+	PlayerSceneUtil::ProcessPlayerEnterGameServer(player, SceneSystem::GetGameNodeId(toScene));
 
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request processed successfully for player: " << tls.registry.get<Guid>(player);
 ///<<< END WRITING YOUR CODE

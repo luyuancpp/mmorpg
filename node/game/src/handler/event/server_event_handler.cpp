@@ -51,7 +51,7 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 	LOG_INFO << "Sending RegisterGameRequest to centre node: " << entt::to_integral(centreId);
 	(*centreNode)->CallMethod(CentreServiceRegisterGameMsgId, registerGameRequest);
 
-	GameNodeSceneSystem::RegisterSceneToCentre();
+	GameNodeSceneUtil::RegisterSceneToCentre();
 	
 ///<<< END WRITING YOUR CODE
 }
@@ -78,7 +78,7 @@ void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
     SceneSystem::SetSequenceNodeId(gGameNode->GetNodeId());
-    GameNodeSceneSystem::InitNodeScene();
+    GameNodeSceneUtil::InitNodeScene();
 ///<<< END WRITING YOUR CODE
 }
 

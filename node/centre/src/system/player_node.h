@@ -5,7 +5,7 @@
 
 class player_centre_database;
 
-class PlayerNodeSystem
+class PlayerNodeUtil
 {
 public:
     static void HandlePlayerAsyncLoaded(Guid player_id, const player_centre_database& message);

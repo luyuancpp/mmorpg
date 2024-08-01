@@ -8,7 +8,7 @@ using PlayerRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 
 class EnterGsInfo;
 
-class PlayerNodeSystem
+class PlayerNodeUtil
 {
 public:
 	//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖

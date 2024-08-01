@@ -7,6 +7,7 @@
 #include "service/scene_client_player_service.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/player/util/player_util.h"
+#include "game_logic/scene/system/game_node_scene_system.h"
 
 #include "proto/logic/client_player/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -18,7 +19,7 @@ void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,
 	LOG_INFO << "Handling GsEnterSceneRequest for player: " << tls.registry.get<Guid>(player) << ", scene_id: " << request->scene_id();
 
 	// 进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-	PlayerSceneSystem::EnterScene(player, request->scene_id());
+	PlayerSceneUtil::EnterScene(player, request->scene_id());
 ///<<< END WRITING YOUR CODE
 }
 
@@ -29,11 +30,12 @@ void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling GsLeaveSceneRequest for player: " << tls.registry.get<Guid>(player);
 
-	PlayerSceneSystem::LeaveScene(player);
+	PlayerSceneUtil::LeaveScene(player);
+	GameNodeSceneUtil::LeaveScene({ player });
 	if (request->change_gs()) // 存储完毕以后才能换场景，防止回档
 	{
 		// 离开gs 清除session
-		PlayerNodeSystem::SavePlayer(player);
+		PlayerNodeUtil::SavePlayer(player);
 		tls.registry.emplace<UnregisterPlayer>(player);
 		LOG_INFO << "Player " << tls.registry.get<Guid>(player) << " session cleared after leaving scene.";
 	}
