@@ -1,6 +1,6 @@
 #pragma once
 
-#include "comp/node_scene.h"
+#include "comp/node_scene_comp.h"
 #include "system/scene/node_scene_system.h"
 #include "util/snow_flake.h"
 #include "proto/logic/component/scene_comp.pb.h"

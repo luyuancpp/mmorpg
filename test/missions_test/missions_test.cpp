@@ -3,7 +3,7 @@
 #include "condition_config.h"
 #include "mission_config.h"
 #include "constants/mission.h"
-#include "comp/mission.h"
+#include "comp/mission_comp.h"
 #include "system/mission/mission_system.h"
 #include "constants/tips_id.h"
 #include "handler/event/mission_event_handler.h"
