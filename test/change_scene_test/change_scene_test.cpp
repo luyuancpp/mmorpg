@@ -41,7 +41,7 @@ TEST(PlayerChangeScene, CreateMainScene)
 		sceneInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < 2; ++j)
 		{
-			globalSceneList.push_back(SceneSystem::CreateScene2GameNode({ .node = mainSceneNode, .sceneInfo = sceneInfo }));
+			globalSceneList.push_back(SceneUtil::CreateScene2GameNode({ .node = mainSceneNode, .sceneInfo = sceneInfo }));
 		}
 	}
 }
@@ -65,7 +65,7 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
-	SceneSystem::EnterScene({ fromSceneEntity, playerEntity });
+	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 	CentreChangeSceneInfo changeInfo;
 	changeInfo.set_guid(sceneId);
 	changeInfo.set_change_gs_type(CentreChangeSceneInfo::eSameGs); // todo scene logic
@@ -79,7 +79,7 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
-	SceneSystem::EnterScene({ fromSceneEntity, playerEntity });
+	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -105,7 +105,7 @@ TEST(PlayerChangeScene, DiffGs)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
-	SceneSystem::EnterScene({ fromSceneEntity, playerEntity });
+	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -124,7 +124,7 @@ TEST(PlayerChangeScene, SameGs)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
-	SceneSystem::EnterScene({ fromSceneEntity, playerEntity });
+	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -139,7 +139,7 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
-	SceneSystem::EnterScene({ fromSceneEntity, playerEntity });
+	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -158,7 +158,7 @@ TEST(PlayerChangeScene, ServerCrush)
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
 	const auto sceneId = tls.sceneRegistry.get<SceneInfo>(fromSceneEntity).guid();
-	SceneSystem::EnterScene({ fromSceneEntity, playerEntity });
+	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
 	CentreChangeSceneInfo changeInfo;
 	changeInfo.set_guid(sceneId);
@@ -170,7 +170,7 @@ TEST(PlayerChangeScene, ServerCrush)
 	PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity); // crash
 	EXPECT_TRUE(tls.registry.get<PlayerCentreChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
 
-	SceneSystem::EnterScene({ fromSceneEntity, playerEntity });
+	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfo::eLeaveGsScene);
 	EXPECT_EQ(kOK, PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);

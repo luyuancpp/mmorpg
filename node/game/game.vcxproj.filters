@@ -314,5 +314,11 @@
     <ClInclude Include="src\game_logic\combat\ability\constants\ability_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\game_logic\scene\constants\nav_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\common\constants\fps_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

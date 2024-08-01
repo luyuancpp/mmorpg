@@ -29,7 +29,7 @@ namespace {
 } // anonymous namespace
 
 // Function to retrieve reward for completing a mission
-uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
+uint32_t MissionUtil::GetMissionReward(const GetRewardParam& param) {
 	// Check if player exists in the registry
 	if (!tls.registry.valid(param.playerId)) {
 		LOG_ERROR << "Player not found: playerId = " << tls.registry.get<Guid>(param.playerId);
@@ -57,7 +57,7 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 }
 
 // Function to check conditions before accepting a mission
-uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp* missionComp) {
+uint32_t MissionUtil::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp* missionComp) {
 	// Check if mission is unaccepted and uncompleted
 	RET_CHECK_RETURN(missionComp->IsMissionUnaccepted(acceptEvent.mission_id()));
 	RET_CHECK_RETURN(missionComp->IsMissionUncompleted(acceptEvent.mission_id()));
@@ -79,7 +79,7 @@ uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent& acceptE
 }
 
 // Function to accept a mission
-uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
+uint32_t MissionUtil::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	// Convert entity ID to player entity
 	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
 
@@ -139,7 +139,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 }
 
 // Function to abandon a mission
-uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
+uint32_t MissionUtil::AbandonMission(const AbandonParam& param) {
 	// Retrieve mission component for the player
 	auto* const missionComp = tls.registry.try_get<MissionsComp>(param.playerId);
 	if (nullptr == missionComp) {
@@ -171,7 +171,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 }
 
 // Function to complete all missions for a player
-void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation) {
+void MissionUtil::CompleteAllMissions(entt::entity playerEntity, uint32_t operation) {
 	// Retrieve mission component for the player
 	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
 	if (nullptr == missionComp) {
@@ -200,7 +200,7 @@ bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
 
 
 // Check if all conditions of a mission are fulfilled
-bool MissionSystem::AreAllConditionsFulfilled(const MissionPbComp& mission, uint32_t missionId, MissionsComp* missionComp) {
+bool MissionUtil::AreAllConditionsFulfilled(const MissionPbComp& mission, uint32_t missionId, MissionsComp* missionComp) {
 	// Retrieve mission conditions from configuration
 	const auto& conditions = missionComp->GetMissionConfig()->GetConditionIds(missionId);
 
@@ -220,7 +220,7 @@ bool MissionSystem::AreAllConditionsFulfilled(const MissionPbComp& mission, uint
 	return true;
 }
 // Process mission condition events
-void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent) {
+void MissionUtil::HandleMissionConditionEvent(const MissionConditionEvent& conditionEvent) {
 	// Ignore if no conditions are provided
 	if (conditionEvent.condtion_ids().empty()) {
 		LOG_ERROR << "HandleMissionConditionEvent: Empty condition IDs for entity = " << conditionEvent.entity();
@@ -276,7 +276,7 @@ void MissionSystem::HandleMissionConditionEvent(const MissionConditionEvent& con
 }
 
 // Remove mission classification
-void MissionSystem::RemoveMissionClassification(MissionsComp* missionComp, uint32_t missionId) {
+void MissionUtil::RemoveMissionClassification(MissionsComp* missionComp, uint32_t missionId) {
 	// Retrieve conditions from mission configuration
 	const auto& configConditions = missionComp->GetMissionConfig()->GetConditionIds(missionId);
 
@@ -291,7 +291,7 @@ void MissionSystem::RemoveMissionClassification(MissionsComp* missionComp, uint3
 }
 
 // Delete mission classification
-void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId) {
+void MissionUtil::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId) {
 	// Retrieve mission component for the player
 	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
 	if (nullptr == missionComp) {
@@ -310,7 +310,7 @@ void MissionSystem::DeleteMissionClassification(entt::entity playerEntity, uint3
 }
 
 // Update mission progress based on event
-bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPbComp& mission) {
+bool MissionUtil::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPbComp& mission) {
 	// Ignore if no conditions are provided
 	if (conditionEvent.condtion_ids().empty()) {
 		return false;
@@ -349,7 +349,7 @@ bool MissionSystem::UpdateMissionProgress(const MissionConditionEvent& condition
 }
 
 // Update mission progress if conditions match the event
-bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPbComp& mission, int index, const condition_row* conditionRow) {
+bool MissionUtil::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPbComp& mission, int index, const condition_row* conditionRow) {
 	// Retrieve old progress value
 	const auto oldProgress = mission.progress(index);
 
@@ -404,7 +404,7 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const MissionConditionEvent
 
 
 // Update mission status based on progress
-void MissionSystem::UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
+void MissionUtil::UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
 	// Iterate through mission conditions and update progress
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
 		const auto* const conditionRow = condition_config::GetSingleton().get(missionConditions.at(i));
@@ -424,7 +424,7 @@ void MissionSystem::UpdateMissionStatus(MissionPbComp& mission, const google::pr
 }
 
 // Process completion events for completed missions
-void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t>& completedMissionsThisTime) {
+void MissionUtil::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t>& completedMissionsThisTime) {
 	// Ignore if no missions are completed
 	if (completedMissionsThisTime.empty()) {
 		return;

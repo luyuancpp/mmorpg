@@ -101,7 +101,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 	return bestScene;
 }
 
-entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParams& param) {
+entt::entity NodeSceneUtil::FindSceneWithMinPlayerCount(const GetSceneParams& param) {
 	constexpr GetSceneFilterParam filterParam;
 
 	auto bestScene = FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
@@ -114,7 +114,7 @@ entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParams& 
 	return FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
 }
 
-entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParams& param) {
+entt::entity NodeSceneUtil::FindNotFullScene(const GetSceneParams& param) {
 	GetSceneFilterParam filterParam;
 
 	auto bestScene = FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
@@ -128,7 +128,7 @@ entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParams& param) {
 	return FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
 }
 
-void NodeSceneSystem::SetNodePressure(entt::entity node) {
+void NodeSceneUtil::SetNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == nodeSceneComp) {
@@ -140,7 +140,7 @@ void NodeSceneSystem::SetNodePressure(entt::entity node) {
 	LOG_INFO << "Node entered pressure state, Node ID: " << entt::to_integral(node);
 }
 
-void NodeSceneSystem::ClearNodePressure(entt::entity node) {
+void NodeSceneUtil::ClearNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == nodeSceneComp) {
@@ -152,7 +152,7 @@ void NodeSceneSystem::ClearNodePressure(entt::entity node) {
 	LOG_INFO << "Node exited pressure state, Node ID: " << entt::to_integral(node);
 }
 
-void NodeSceneSystem::SetNodeState(entt::entity node, NodeState state) {
+void NodeSceneUtil::SetNodeState(entt::entity node, NodeState state) {
 	auto* const tryServerComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == tryServerComp) {

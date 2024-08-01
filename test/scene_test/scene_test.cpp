@@ -22,7 +22,7 @@ entt::entity CreateMainSceneNode()
 
 TEST(SceneSystemTests, CreateMainScene)
 {
-	const SceneSystem sceneSystem;
+	const SceneUtil sceneSystem;
 
 	CreateGameNodeSceneParam createParams;
 	const auto serverEntity1 = CreateMainSceneNode();
@@ -42,7 +42,7 @@ TEST(SceneSystemTests, CreateMainScene)
 
 TEST(SceneSystemTests, CreateScene2Server)
 {
-	SceneSystem sceneSystem;
+	SceneUtil sceneSystem;
 	const auto node1 = CreateMainSceneNode();
 	const auto node2 = CreateMainSceneNode();
 
@@ -77,7 +77,7 @@ TEST(SceneSystemTests, CreateScene2Server)
 
 TEST(SceneSystemTests, DestroyScene)
 {
-	SceneSystem sceneSystem;
+	SceneUtil sceneSystem;
 	const auto node1 = CreateMainSceneNode();
 
 	CreateGameNodeSceneParam createParams1;
@@ -104,7 +104,7 @@ TEST(SceneSystemTests, DestroyScene)
 
 TEST(SceneSystemTests, DestroyServer)
 {
-	SceneSystem sceneSystem;
+	SceneUtil sceneSystem;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -154,7 +154,7 @@ TEST(SceneSystemTests, DestroyServer)
 
 TEST(SceneSystemTests, PlayerLeaveEnterScene)
 {
-	SceneSystem sceneSystem;
+	SceneUtil sceneSystem;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -253,8 +253,8 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 TEST(GS, MainTainWeightRoundRobinMainScene)
 {
 	tls.gameNodeRegistry.clear();
-	SceneSystem sm;
-	NodeSceneSystem nodeSystem;
+	SceneUtil sm;
+	NodeSceneUtil nodeSystem;
 	EntityUnorderedSet serverEntities;
 	const uint32_t serverSize = 2;
 	const uint32_t perServerScene = 2;
@@ -296,7 +296,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 			sm.EnterScene(enterParam1);
 		}
 	}
-	NodeSceneSystem::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
+	NodeSceneUtil::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
 
 	GetSceneParams weightRoundRobinScene;
 	weightRoundRobinScene.sceneConfigurationId = 0;
@@ -317,7 +317,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
 TEST(GS, CompelToChangeScene)
 {
-	SceneSystem sm;
+	SceneUtil sm;
 
 	auto node1 = CreateMainSceneNode();
 	auto node2 = CreateMainSceneNode();
@@ -370,8 +370,8 @@ TEST(GS, CompelToChangeScene)
 
 TEST(GS, CrashWeightRoundRobinMainScene)
 {
-	SceneSystem sm;
-	NodeSceneSystem nsSys;
+	SceneUtil sm;
+	NodeSceneUtil nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 2;
@@ -432,8 +432,8 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 //崩溃时候的消息不能处理
 TEST(GS, CrashMovePlayer2NewServer)
 {
-	SceneSystem sm;
-	NodeSceneSystem nsSys;
+	SceneUtil sm;
+	NodeSceneUtil nsSys;
 	EntityUnorderedSet nodeList;
 	EntityUnorderedSet sceneList;
 	uint32_t nodeSize = 2;
@@ -495,8 +495,8 @@ TEST(GS, CrashMovePlayer2NewServer)
 TEST(GS, WeightRoundRobinMainScene)
 {
 	tls.gameNodeRegistry.clear();
-	SceneSystem sm;
-	NodeSceneSystem nssys;
+	SceneUtil sm;
+	NodeSceneUtil nssys;
 	EntityUnorderedSet node_list;
 	uint32_t server_size = 10;
 	uint32_t per_server_scene = 10;
@@ -618,8 +618,8 @@ TEST(GS, WeightRoundRobinMainScene)
 TEST(GS, ServerEnterLeavePressure)
 {
 	tls.gameNodeRegistry.clear();
-	SceneSystem sm;
-	NodeSceneSystem nsSys;
+	SceneUtil sm;
+	NodeSceneUtil nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 10;
@@ -694,7 +694,7 @@ TEST(GS, EnterDefaultScene)
 		createGSSceneParam.sceneInfo.set_scene_confid(i);
 		for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
 		{
-			SceneSystem::CreateScene2GameNode(createGSSceneParam);
+			SceneUtil::CreateScene2GameNode(createGSSceneParam);
 		}
 	}
 
@@ -703,7 +703,7 @@ TEST(GS, EnterDefaultScene)
 
 	// Enter the default scene with the player
 	const EnterDefaultSceneParam enterParam{ player };
-	SceneSystem::EnterDefaultScene(enterParam);
+	SceneUtil::EnterDefaultScene(enterParam);
 
 	// Verify the player is in the default scene
 	const auto [sceneEntity] = tls.registry.get<SceneEntityComp>(player);
@@ -720,8 +720,8 @@ struct TestNodeId
 TEST(GS, GetNotFullMainSceneWhenSceneFull)
 {
 	tls.gameNodeRegistry.clear();
-	SceneSystem sm;
-	NodeSceneSystem nssys;
+	SceneUtil sm;
+	NodeSceneUtil nssys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 10;
 	uint32_t perServerScene = 10;
@@ -897,7 +897,7 @@ TEST(GS, CheckEnterRoomScene)
 	{
 		sceneInfo.mutable_creators()->emplace(i, false); // Assuming creators are added with a boolean indicating creator status
 	}
-	auto scene = SceneSystem::CreateScene2GameNode({ .node = CreateMainSceneNode(), .sceneInfo = sceneInfo });
+	auto scene = SceneUtil::CreateScene2GameNode({ .node = CreateMainSceneNode(), .sceneInfo = sceneInfo });
 
 	// Create players with different GUIDs
 	const auto player1 = tls.registry.create();
@@ -906,8 +906,8 @@ TEST(GS, CheckEnterRoomScene)
 	tls.registry.emplace<Guid>(player2, 100); // Player 2 with GUID 100
 
 	// Test cases
-	EXPECT_EQ(kOK, SceneSystem::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));
-	EXPECT_EQ(kRetCheckEnterSceneCreator, SceneSystem::CheckPlayerEnterScene({ .scene = scene, .enter = player2 }));
+	EXPECT_EQ(kOK, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));
+	EXPECT_EQ(kRetCheckEnterSceneCreator, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player2 }));
 }
 
 

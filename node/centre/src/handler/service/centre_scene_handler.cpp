@@ -12,7 +12,7 @@ void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController*
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sceneInfo : request->scenes_info())
 	{
-		SceneSystem::CreateScene2GameNode(
+		SceneUtil::CreateScene2GameNode(
 			{ .node = entt::entity{request->game_node_id()}, .sceneInfo = sceneInfo });
 	}
 	///<<< END WRITING YOUR CODE
@@ -38,7 +38,7 @@ void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcControlle
 		return;
 	}
 
-	SceneSystem::DestroyScene({ gameNode, scene });
+	SceneUtil::DestroyScene({ gameNode, scene });
 	///<<< END WRITING YOUR CODE
 }
 

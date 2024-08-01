@@ -4,7 +4,7 @@
 
 #include "proto/logic/component/mission_comp.pb.h"
 #include "type_define/type_define.h"
-#include "mission/util/missions_config_template.h"
+#include "mission/comp/missions_config_comp.h"
 #include "util/game_registry.h"
 
 

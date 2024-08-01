@@ -6,7 +6,7 @@
 
 #include "proto/logic/component/mission_comp.pb.h"
 #include "type_define/type_define.h"
-#include "mission/util/missions_config_template.h"
+#include "mission/comp/missions_config_comp.h"
 #include "util/game_registry.h"
 
 
@@ -40,7 +40,7 @@ class MissionConditionEvent;
 class MissionsComp;
 class condition_row;
 
-class MissionSystem {
+class MissionUtil {
 public:
 	using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
 
