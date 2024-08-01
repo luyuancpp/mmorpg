@@ -20,12 +20,12 @@
 #include "network/rpc_session.h"
 #include "handler/service_replied/player_service_replied.h"
 #include "service/service.h"
-#include "system/config/config_system.h"
+#include "game_logic/config/config_system.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "util/console_log_util.h"
 #include "util/game_registry.h"
-#include "system/world.h"
+#include "game_logic/world.h"
 
 GameNode* gGameNode = nullptr;
 
