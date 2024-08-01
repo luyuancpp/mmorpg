@@ -102,13 +102,13 @@
     <ClCompile Include="src\game_logic\scene\system\game_node_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\system\player_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\system\player_session_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_session_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\system\player_tip_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_tip_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\recast.cpp">
@@ -123,7 +123,7 @@
     <ClCompile Include="src\game_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\system\player_node_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_node_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\scene\system\aoi_system.cpp">
@@ -236,13 +236,13 @@
     <ClInclude Include="src\game_logic\scene\system\game_node_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\system\player_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\system\player_session_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_session_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\system\player_tip_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_tip_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\recast.h">
@@ -263,7 +263,7 @@
     <ClInclude Include="src\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\system\player_node_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_node_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\system\aoi_system.h">
