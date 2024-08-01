@@ -1,9 +1,9 @@
 ﻿// test_aoi_system.cpp
 
 #include <gtest/gtest.h>
-#include "system/scene/aoi.h"
+#include "game_logic/scene/system/aoi_system.h"
 #include "comp/scene_comp.h"
-#include "comp/scene/grid.h"
+#include "game_logic/scene/comp/grid.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
