@@ -1,7 +1,7 @@
 #include "player_node.h"
 #include "muduo/base/Logging.h"
 
-#include "comp/scene_comp.h"
+#include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
 
 #include "network/gate_session.h"
@@ -11,7 +11,7 @@
 #include "service/gate_service_service.h"
 #include "system/player_change_scene.h"
 #include "system/player_scene.h"
-#include "scene/scene_util.h"
+#include "scene/util/scene_util.h"
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
