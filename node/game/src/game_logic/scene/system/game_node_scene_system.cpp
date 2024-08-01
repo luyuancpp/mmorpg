@@ -10,16 +10,15 @@
 #include "game_node.h"
 #include "system/network/message_system.h"
 #include "service/centre_scene_service.h"
-#include "system/player/player_scene.h"
+#include "system/player/player_system.h"
 #include "system/recast.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "logic/event/scene_event.pb.h"
-#include "game_logic/scene/comp/grid.h"
+#include "game_logic/scene/comp/grid_comp.h"
 #include "constants/scene_constants.h"
 #include "comp/scene_comp.h"
-#include "constants/dt_crowd.h"
 
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/constants/node.pb.h"
@@ -29,7 +28,7 @@ void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 	auto& configAll = mainscene_config::GetSingleton().all();
 	for (auto& item : configAll.data())
 	{
-		auto navIt = tlsGame.sceneNav.emplace(item.id(), SceneNav{});
+		auto navIt = tlsGame.sceneNav.emplace(item.id(), NavComp{});
 		if (!navIt.second)
 		{
 			LOG_ERROR << "Failed to load scene navigation: " << item.id();

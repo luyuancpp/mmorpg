@@ -1,10 +1,10 @@
 #include "scene_crowd_system.h"
 
-#include "game_logic/scene/comp/dtcrowd.h"
+#include "game_logic/scene/comp/dt_crowd_comp.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "comp/scene_comp.h"
-#include "constants/dt_crowd.h"
+#include "game_logic/scene/constants/dt_crowd_constants.h"
 
 #include "proto/logic/event/scene_event.pb.h"
 
