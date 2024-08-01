@@ -7,8 +7,7 @@
 #include "service/gate_service_service.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_common_logic.h"
-#include "comp/session_comp.h"
-#include "comp/player_comp.h"
+#include "game_common_logic/comp/session_comp.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
 void SendMessageToPlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)

@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "type_define/type_define.h"
 
-//¿ÉÒÔ¶ªÆúÊ±¼äµÄÅÉ·¢Æ÷£¬±ÈÈçÌáÊ¾,·şÎñÆ÷Ñ¹Á¦´óµÄÊ±ºò¿ÉÒÔ°ÑÌáÊ¾ÈÓÁË
+//å¯ä»¥ä¸¢å¼ƒæ—¶é—´çš„æ´¾å‘å™¨ï¼Œæ¯”å¦‚æç¤º,æœåŠ¡å™¨å‹åŠ›å¤§çš„æ—¶å€™å¯ä»¥æŠŠæç¤ºæ‰”äº†
 
 class PlayerSceneUtil
 {

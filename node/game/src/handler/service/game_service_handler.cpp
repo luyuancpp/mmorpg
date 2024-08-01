@@ -13,7 +13,7 @@
 #include "service/service.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/player/util/player_util.h"
-#include "scene/scene_util.h"
+#include "scene/util/scene_util.h"
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"
 #include "type_alias/player_session_type_alias.h"

@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
 #include "mainscene_config.h"
-#include "comp/player_comp.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
@@ -22,7 +21,7 @@
 #include "service/service.h"
 #include "system/player_change_scene.h"
 #include "system/player_node.h"
-#include "system/scene/scene_system.h"
+#include "scene/util/scene_util.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"
