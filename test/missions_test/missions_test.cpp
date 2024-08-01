@@ -2,10 +2,10 @@
 
 #include "condition_config.h"
 #include "mission_config.h"
-#include "constants/mission.h"
+#include "constants/mission_constants.h"
 #include "comp/mission_comp.h"
 #include "system/mission/mission_system.h"
-#include "constants/tips_id.h"
+#include "constants/tips_id_constants.h"
 #include "handler/event/mission_event_handler.h"
 #include "util/random.h"
 #include "thread_local/storage.h"

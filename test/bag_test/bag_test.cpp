@@ -4,7 +4,7 @@
 
 #include "system/bag/bag.h"
 
-#include "constants/tips_id.h"
+#include "constants/tips_id_constants.h"
 
 TEST(BagTest, NullItem)
 {

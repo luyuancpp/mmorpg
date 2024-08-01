@@ -3,7 +3,7 @@
 #include "system/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "constants/tips_id.h"
+#include "constants/tips_id_constants.h"
 #include "comp/scene_comp.h"
 #include "service/centre_scene_server_player_service.h"
 #include "proto/logic/server_player/centre_scene_server_player.pb.h"
