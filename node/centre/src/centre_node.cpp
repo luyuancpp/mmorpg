@@ -234,7 +234,7 @@ void CentreNode::InitNodeConfig()
 
 void CentreNode::InitSystemBeforeConnect()
 {
-	PlayerSessionSystem::Initialize();
+	PlayerSessionUtil::Initialize();
 }
 
 void CentreNode::InitSystemAfterConnect() const

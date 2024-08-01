@@ -4,7 +4,7 @@
 
 #include "redis_client/redis_client.h"
 
-class RedisSystem
+class RedisUtil
 {
 public:
     using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;

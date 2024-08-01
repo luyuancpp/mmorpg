@@ -10,7 +10,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-void RedisSystem::Init(muduo::net::InetAddress& server_addr)
+void RedisUtil::Init(muduo::net::InetAddress& server_addr)
 {
     hiredis = std::make_unique<HiredisPtr::element_type>(EventLoop::getEventLoopOfCurrentThread(), server_addr);
     hiredis->connect();
@@ -19,6 +19,6 @@ void RedisSystem::Init(muduo::net::InetAddress& server_addr)
 
     auto& playerRedis = tls.globalRegistry.emplace<PlayerRedis>(GlobalEntity());
     playerRedis = std::make_unique<PlayerRedis::element_type>(*hiredis);
-    playerRedis->SetLoadCallback(PlayerNodeSystem::HandlePlayerAsyncLoaded);
-    playerRedis->SetSaveCallback(PlayerNodeSystem::HandlePlayerAsyncSaved);
+    playerRedis->SetLoadCallback(PlayerNodeUtil::HandlePlayerAsyncLoaded);
+    playerRedis->SetSaveCallback(PlayerNodeUtil::HandlePlayerAsyncSaved);
 }

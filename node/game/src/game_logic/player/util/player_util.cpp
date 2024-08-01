@@ -3,18 +3,18 @@
 #include "muduo/base/Logging.h"
 
 #include "system/network/message_system.h"
-#include "game_logic/scene/system/game_node_scene_system.h"
+
 #include "system/scene/scene_system.h"
 #include "thread_local/storage_common_logic.h"
 
 #include "service/scene_client_player_service.h"
 
-void PlayerSceneSystem::EnterScene(entt::entity player, Guid sceneId)
+void PlayerSceneUtil::EnterScene(entt::entity player, Guid sceneId)
 {
-	GameNodeSceneSystem::EnterScene({ .scene = entt::entity{sceneId}, .enter = player });
+	
 }
 
-void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
+void PlayerSceneUtil::OnEnterScene(entt::entity player, entt::entity scene)
 {
 	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(scene);
 	if (sceneInfo == nullptr)
@@ -28,7 +28,7 @@ void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
 	SendMessageToPlayer(ClientPlayerSceneServicePushEnterSceneS2CMsgId, message, player);
 }
 
-void PlayerSceneSystem::LeaveScene(entt::entity player)
+void PlayerSceneUtil::LeaveScene(entt::entity player)
 {
-	GameNodeSceneSystem::LeaveScene({ player });
+
 }

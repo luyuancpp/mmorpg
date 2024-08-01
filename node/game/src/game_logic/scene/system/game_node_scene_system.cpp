@@ -23,7 +23,7 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/constants/node.pb.h"
 
-void GameNodeSceneSystem::LoadAllMainSceneNavBin()
+void GameNodeSceneUtil::LoadAllMainSceneNavBin()
 {
 	auto& configAll = mainscene_config::GetSingleton().all();
 	for (auto& item : configAll.data())
@@ -40,7 +40,7 @@ void GameNodeSceneSystem::LoadAllMainSceneNavBin()
 	}
 }
 
-void GameNodeSceneSystem::InitNodeScene()
+void GameNodeSceneUtil::InitNodeScene()
 {
 	if (!(gGameNode->GetNodeType() == eGameNodeType::kMainSceneNode ||
 		gGameNode->GetNodeType() == eGameNodeType::kMainSceneCrossNode))
@@ -57,22 +57,22 @@ void GameNodeSceneSystem::InitNodeScene()
 	}
 }
 
-void GameNodeSceneSystem::EnterScene(const EnterSceneParam& param)
+void GameNodeSceneUtil::EnterScene(const EnterSceneParam& param)
 {
 	SceneSystem::EnterScene(param);
 
 	if (tls.registry.any_of<Player>(param.enter))
 	{
-		PlayerSceneSystem::OnEnterScene(param.enter, param.scene);
+		PlayerSceneUtil::OnEnterScene(param.enter, param.scene);
 	}
 }
 
-void GameNodeSceneSystem::LeaveScene(entt::entity leaver)
+void GameNodeSceneUtil::LeaveScene(entt::entity leaver)
 {
 	SceneSystem::LeaveScene({ .leaver = leaver });
 }
 
-void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
+void GameNodeSceneUtil::RegisterSceneToCentre(entt::entity scene)
 {
 	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(scene);
 	if (!sceneInfo)
@@ -87,7 +87,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre(entt::entity scene)
 	BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, request);
 }
 
-void GameNodeSceneSystem::RegisterSceneToCentre()
+void GameNodeSceneUtil::RegisterSceneToCentre()
 {
 	RegisterSceneRequest request;
 	request.set_game_node_id(gGameNode->GetNodeId());
@@ -100,7 +100,7 @@ void GameNodeSceneSystem::RegisterSceneToCentre()
 	BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, request);
 }
 
-void GameNodeSceneSystem::OnSceneCreateHandler(const OnSceneCreate& message)
+void GameNodeSceneUtil::OnSceneCreateHandler(const OnSceneCreate& message)
 {
 	entt::entity scene = entt::to_entity(message.entity());
 	tls.sceneRegistry.emplace<SceneGridList>(scene);
@@ -114,12 +114,12 @@ void GameNodeSceneSystem::OnSceneCreateHandler(const OnSceneCreate& message)
 	}
 }
 
-void GameNodeSceneSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
+void GameNodeSceneUtil::AfterEnterSceneHandler(const AfterEnterScene& message)
 {
 	// Placeholder for future implementations
 }
 
-void GameNodeSceneSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
+void GameNodeSceneUtil::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 	// Placeholder for future implementations
 }

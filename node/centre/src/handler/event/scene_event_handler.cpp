@@ -94,7 +94,7 @@ void SceneEventHandler::AfterLeaveSceneHandler(const AfterLeaveScene& event)
 void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    PlayerSceneSystem::SendToGameNodeEnterScene(entt::to_entity(event.entity()));
+    PlayerSceneUtil::SendToGameNodeEnterScene(entt::to_entity(event.entity()));
 ///<<< END WRITING YOUR CODE
 }
 

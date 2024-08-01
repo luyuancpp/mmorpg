@@ -27,7 +27,7 @@ void World::InitializeSystemBeforeConnect()
     tlsGame.frameTime.set_target_fps(kTargetFPS);
     tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
 
-	PlayerSessionSystem::Initialize();
+	PlayerSessionUtil::Initialize();
 	ViewUtil::Initialize();
 }
 

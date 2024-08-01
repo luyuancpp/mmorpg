@@ -6,6 +6,7 @@
 #include "muduo/net/InetAddress.h"
 
 #include "game_node.h"
+#include "game_logic/scene/system/game_node_scene_system.h"
 #include "handler/service/player_service.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
@@ -37,7 +38,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 		<< ", centre_node_id: " << request->centre_node_id();
 
 	// 1 清除玩家会话，处理连续顶号进入情况
-	PlayerNodeSystem::RemovePlayerSession(request->player_id());
+	PlayerNodeUtil::RemovePlayerSession(request->player_id());
 
 	const auto& playerList = tlsCommonLogic.GetPlayerList();
 	auto playerIt = playerList.find(request->player_id());
@@ -47,7 +48,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 	{
 		EnterGsInfo enterInfo;
 		enterInfo.set_centre_node_id(request->centre_node_id());
-		PlayerNodeSystem::EnterGs(playerIt->second, enterInfo);
+		PlayerNodeUtil::EnterGs(playerIt->second, enterInfo);
 		return;
 	}
 
@@ -205,7 +206,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 ///<<< BEGIN WRITING YOUR CODE
 	auto player = tlsCommonLogic.GetPlayer(request->player_id());
 	defer(tlsCommonLogic.GetPlayerList().erase(request->player_id()));
-	PlayerNodeSystem::RemovePlayerSession(request->player_id());
+	PlayerNodeUtil::RemovePlayerSession(request->player_id());
 	Destroy(tls.registry, player);
 ///<<< END WRITING YOUR CODE
 }
@@ -349,7 +350,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	PlayerNodeSystem::RemovePlayerSession(request->player_id());
+	PlayerNodeUtil::RemovePlayerSession(request->player_id());
 
 	if (const entt::entity gateNodeId{ GetGateNodeId(request->session_id()) };
 		!tls.gateNodeRegistry.valid(gateNodeId))
@@ -378,7 +379,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
 		playerNodeInfo->set_gate_session_id(request->session_id());
 	}
 
-	PlayerNodeSystem::OnPlayerRegisteredToGateNode(player);
+	PlayerNodeUtil::OnPlayerRegisteredToGateNode(player);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -389,7 +390,19 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE
     //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-    PlayerSceneSystem::EnterScene(tlsCommonLogic.GetPlayer(request->player_id()), request->scene_id());
+	auto player = tlsCommonLogic.GetPlayer(request->player_id());
+	if (player == entt::null)
+	{
+		LOG_ERROR << "Error: Player entity not found for player_id " << request->player_id();
+		return;
+	}
+
+	LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
+
+    PlayerSceneUtil::EnterScene(player, request->scene_id());
+
+	entt::entity sceneEntity{ request->scene_id() };
+	GameNodeSceneUtil::EnterScene({ .scene = sceneEntity, .enter = player });
 ///<<< END WRITING YOUR CODE
 }
 

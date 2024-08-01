@@ -13,7 +13,7 @@ using PlayerEnterGSInfoList = std::unordered_map<Guid, EnterGsInfo>;
 class ThreadLocalStorageGame
 {
 public:
-	RedisSystem redis;
+	RedisUtil redis;
 	PlayerRedis playerRedis;
 	PlayerEnterGSInfoList asyncPlayerList;
 	SceneNavMapComp sceneNav;
