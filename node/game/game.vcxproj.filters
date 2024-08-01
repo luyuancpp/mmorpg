@@ -141,7 +141,7 @@
     <ClCompile Include="src\system\scene\scene_crowd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\util\scene\view.cpp">
+    <ClCompile Include="src\util\scene\view_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\combat\ability\ability.cpp">
@@ -299,7 +299,7 @@
     <ClInclude Include="src\constants\view.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util\scene\view.h">
+    <ClInclude Include="src\util\scene\view_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\type_alias\actor.h">

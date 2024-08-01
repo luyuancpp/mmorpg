@@ -1,6 +1,6 @@
 ﻿#include "aoi.h"
 
-#include "util/scene/view.h"
+#include "util/scene/view_util.h"
 #include "comp/scene.h"
 #include "comp/scene/grid.h"
 #include "proto/logic/component/actor_comp.pb.h"

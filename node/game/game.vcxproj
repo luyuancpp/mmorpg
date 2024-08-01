@@ -177,7 +177,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\system\redis.cpp" />
     <ClCompile Include="src\system\scene\aoi.cpp" />
     <ClCompile Include="src\system\scene\scene_crowd.cpp" />
-    <ClCompile Include="src\util\scene\view.cpp" />
+    <ClCompile Include="src\util\scene\view_util.cpp" />
     <ClCompile Include="src\system\world.cpp" />
     <ClCompile Include="src\thread_local\storage_game.cpp" />
     <ClCompile Include="src\util\combat\ability.cpp" />
@@ -231,7 +231,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\system\redis.h" />
     <ClInclude Include="src\system\scene\aoi.h" />
     <ClInclude Include="src\system\scene\scene_crowd.h" />
-    <ClInclude Include="src\util\scene\view.h" />
+    <ClInclude Include="src\util\scene\view_util.h" />
     <ClInclude Include="src\system\world.h" />
     <ClInclude Include="src\thread_local\storage_game.h" />
     <ClInclude Include="src\type_alias\actor.h" />
