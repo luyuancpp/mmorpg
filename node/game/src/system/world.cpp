@@ -5,7 +5,7 @@
 #include "constants/fps_constants.h"
 #include "Recast/Recast.h"
 #undef TEXT
-#include "system/player/player_session.h"
+#include "game_logic/player/util/player_session_util.h"
 #include "game_logic/scene/system/aoi_system.h"
 #include "game_logic/scene/system/movement_system.h"
 #include "game_logic/scene/system/movement_acceleration_system.h"
