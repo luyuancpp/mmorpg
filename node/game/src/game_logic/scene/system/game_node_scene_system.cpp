@@ -8,10 +8,10 @@
 
 #include "DetourCrowd/DetourCrowd.h"
 #include "game_node.h"
-#include "system/network/message_system.h"
+#include "game_logic/network/message_system.h"
 #include "service/centre_scene_service.h"
 #include "game_logic/player/util/player_util.h"
-#include "system/recast.h"
+#include "game_logic/scene/util/recast_util.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
@@ -35,7 +35,7 @@ void GameNodeSceneUtil::LoadAllMainSceneNavBin()
 			continue;
 		}
 		auto& nav = navIt.first->second;
-		RecastSystem::LoadNavMesh(item.nav_bin_file().c_str(), &nav.navMesh);
+		RecastUtil::LoadNavMesh(item.nav_bin_file().c_str(), &nav.navMesh);
 		nav.navQuery.init(&nav.navMesh, kMaxMeshQueryNodes);
 	}
 }

@@ -1,4 +1,4 @@
-#include "recast.h"
+#include "recast_util.h"
 
 #include "muduo/base/Logging.h"
 
@@ -28,7 +28,7 @@ public:
 
 using StdFilePtr = std::unique_ptr<std::FILE, StdFilePtrDeleter>;
 
-void RecastSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
+void RecastUtil::LoadNavMesh(const char* path, dtNavMesh* mesh)
 {
 	StdFilePtr fp(std::fopen(path, "rb"));
 	if (nullptr == fp)
