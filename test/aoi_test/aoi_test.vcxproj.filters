@@ -18,13 +18,13 @@
     <ClCompile Include="aoi_system_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\node\game\src\system\scene\aoi.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\test_adapters\message_system_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="mock_view.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\node\game\src\game_logic\scene\system\aoi_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,6 +1,6 @@
 #include "config_system.h"
 
-#include "system/scene/node_scene.h"
+#include "game_logic/scene/system/game_node_scene_system.h"
 
 void ConfigSystem::OnConfigLoadSuccessful()
 {

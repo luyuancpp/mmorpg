@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "system/network/message_system.h"
-#include "system/scene/node_scene.h"
+#include "game_logic/scene/system/game_node_scene_system.h"
 #include "system/scene/scene_system.h"
 #include "thread_local/storage_common_logic.h"
 
