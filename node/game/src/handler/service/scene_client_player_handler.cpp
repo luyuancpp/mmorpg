@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "constants/tips_id.h"
-#include "comp/scene.h"
+#include "comp/scene_comp.h"
 #include "service/centre_scene_server_player_service.h"
 #include "proto/logic/server_player/centre_scene_server_player.pb.h"
 #include "game_node.h"

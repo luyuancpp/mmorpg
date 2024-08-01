@@ -1,7 +1,7 @@
 ﻿#include "aoi.h"
 
 #include "util/scene/view_util.h"
-#include "comp/scene.h"
+#include "comp/scene_comp.h"
 #include "comp/scene/grid.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"

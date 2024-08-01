@@ -9,7 +9,7 @@
     <ClCompile Include="src\system\scene\scene_system.cpp" />
     <ClCompile Include="src\system\teams\team.cpp" />
     <ClCompile Include="src\system\teams\TeamSystem.cpp" />
-    <ClCompile Include="src\util\session.cpp" />
+    <ClCompile Include="src\util\session_comp.cpp" />
     <ClCompile Include="src\timer_task\duration_funtion.cpp" />
     <ClCompile Include="src\timer_task\duration_manager.cpp" />
     <ClCompile Include="src\timer_task\timer_duration.cpp" />
@@ -21,7 +21,7 @@
     <ClInclude Include="src\comp\mission_comp.h" />
     <ClInclude Include="src\comp\player_comp.h" />
     <ClInclude Include="src\comp\player_scene.h" />
-    <ClInclude Include="src\comp\scene.h" />
+    <ClInclude Include="src\comp\scene_comp.h" />
     <ClInclude Include="src\comp\node_scene_comp.h" />
     <ClInclude Include="src\constants\mission.h" />
     <ClInclude Include="src\constants\op_code.h" />
@@ -39,7 +39,7 @@
     <ClInclude Include="src\system\teams\TeamSystem.h" />
     <ClInclude Include="src\type_alias\player_session.h" />
     <ClInclude Include="src\type_alias\session_id_gen.h" />
-    <ClInclude Include="src\util\session.h" />
+    <ClInclude Include="src\util\session_comp.h" />
     <ClInclude Include="src\timer_task\duration_funtion.h" />
     <ClInclude Include="src\timer_task\duration_manager.h" />
     <ClInclude Include="src\timer_task\timer_duration.h" />
@@ -50,6 +50,6 @@
     <ClInclude Include="src\util\color_console_log.h" />
     <ClInclude Include="src\constants\frame.h" />
     <ClInclude Include="src\timer_task\time_ measurement.h" />
-    <ClInclude Include="src\comp\session.h" />
+    <ClInclude Include="src\comp\session_comp.h" />
   </ItemGroup>
 </Project>

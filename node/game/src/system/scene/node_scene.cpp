@@ -18,7 +18,7 @@
 #include "logic/event/scene_event.pb.h"
 #include "comp/scene/grid.h"
 #include "constants/scene.h"
-#include "comp/scene.h"
+#include "comp/scene_comp.h"
 #include "constants/dt_crowd.h"
 
 #include "proto/logic/component/player_comp.pb.h"
