@@ -169,10 +169,10 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\scene\system\movement_system.cpp" />
     <ClCompile Include="src\game_logic\scene\system\movement_acceleration_system.cpp" />
     <ClCompile Include="src\game_logic\scene\system\game_node_scene_system.cpp" />
-    <ClCompile Include="src\system\player\player_node_system.cpp" />
-    <ClCompile Include="src\system\player\player_system.cpp" />
-    <ClCompile Include="src\system\player\player_session.cpp" />
-    <ClCompile Include="src\system\player\player_tip_system.cpp" />
+    <ClCompile Include="src\game_logic\player\system\player_node_system.cpp" />
+    <ClCompile Include="src\game_logic\player\system\player_system.cpp" />
+    <ClCompile Include="src\game_logic\player\system\player_session.cpp" />
+    <ClCompile Include="src\game_logic\player\system\player_tip_system.cpp" />
     <ClCompile Include="src\system\recast.cpp" />
     <ClCompile Include="src\system\redis.cpp" />
     <ClCompile Include="src\game_logic\scene\system\aoi_system.cpp" />
@@ -180,7 +180,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\scene\util\view_util.cpp" />
     <ClCompile Include="src\system\world.cpp" />
     <ClCompile Include="src\thread_local\storage_game.cpp" />
-    <ClCompile Include="src\util\combat\ability_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h" />
@@ -222,10 +221,10 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\scene\system\movement_system.h" />
     <ClInclude Include="src\game_logic\scene\system\movement_acceleration_system.h" />
     <ClInclude Include="src\game_logic\scene\system\game_node_scene_system.h" />
-    <ClInclude Include="src\system\player\player_node_system.h" />
-    <ClInclude Include="src\system\player\player_system.h" />
-    <ClInclude Include="src\system\player\player_session.h" />
-    <ClInclude Include="src\system\player\player_tip_system.h" />
+    <ClInclude Include="src\game_logic\player\system\player_node_system.h" />
+    <ClInclude Include="src\game_logic\player\system\player_system.h" />
+    <ClInclude Include="src\game_logic\player\system\player_session.h" />
+    <ClInclude Include="src\game_logic\player\system\player_tip_system.h" />
     <ClInclude Include="src\system\recast.h" />
     <ClInclude Include="src\system\redis.h" />
     <ClInclude Include="src\game_logic\scene\system\aoi_system.h" />
@@ -236,7 +235,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\type_alias\actor.h" />
     <ClInclude Include="src\type_alias\player_loading.h" />
     <ClInclude Include="src\type_alias\player_redis.h" />
-    <ClInclude Include="src\util\combat\ability_system.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
