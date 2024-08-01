@@ -1,6 +1,6 @@
 #include "game_service_handler.h"
 #include "thread_local/storage.h"
-#include "system/network/message_system.h"
+#include "game_logic/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "muduo/net/InetAddress.h"
@@ -54,7 +54,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 
 	EnterGsInfo enterInfo;
 	enterInfo.set_centre_node_id(request->centre_node_id());
-	auto asyncPlayerIt = tlsGame.asyncPlayerList.emplace(request->player_id(), enterInfo);
+	auto asyncPlayerIt = tlsGame.playerNodeEntryInfoList.emplace(request->player_id(), enterInfo);
 
 	// 3 异步加载过程中处理玩家断开连接的情况
 	if (!asyncPlayerIt.second)

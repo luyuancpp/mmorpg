@@ -22,14 +22,14 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 {
 	LOG_INFO << "Player loaded: " << playerId;
 
-	const auto asyncIt = tlsGame.asyncPlayerList.find(playerId);
-	if (asyncIt == tlsGame.asyncPlayerList.end())
+	const auto asyncIt = tlsGame.playerNodeEntryInfoList.find(playerId);
+	if (asyncIt == tlsGame.playerNodeEntryInfoList.end())
 	{
 		LOG_ERROR << "Async player not found: " << playerId;
 		return;
 	}
 
-	defer(tlsGame.asyncPlayerList.erase(playerId));
+	defer(tlsGame.playerNodeEntryInfoList.erase(playerId));
 
 	auto player = tls.registry.create();
 	if (const auto [first, second] = tlsCommonLogic.GetPlayerList().emplace(playerId, player); !second)

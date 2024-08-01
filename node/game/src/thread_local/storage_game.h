@@ -8,14 +8,13 @@
 #include "proto/logic/component/frame_comp.pb.h"
 
 using PlayerRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
-using PlayerEnterGSInfoList = std::unordered_map<Guid, EnterGsInfo>;
 
 class ThreadLocalStorageGame
 {
 public:
 	RedisUtil redis;
 	PlayerRedis playerRedis;
-	PlayerEnterGSInfoList asyncPlayerList;
+	std::unordered_map<Guid, EnterGsInfo> playerNodeEntryInfoList;
 	SceneNavMapComp sceneNav;
 	FrameTime frameTime;
 };
