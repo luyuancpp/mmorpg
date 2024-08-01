@@ -143,7 +143,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 
 	LOG_INFO << "Processing change scene queue for player: " << playerId;
 
-	auto* changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(playerEntity);
+	auto* changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(playerEntity);
 	if (!changeSceneQueue)
 	{
 		LOG_ERROR << "Change scene queue not found for player: " << playerId;
