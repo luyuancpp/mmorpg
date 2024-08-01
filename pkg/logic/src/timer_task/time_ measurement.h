@@ -1,6 +1,6 @@
 #pragma once
 
-class TimeMeasurement
+class TimeMeasurementComp
 {
 public:
 
