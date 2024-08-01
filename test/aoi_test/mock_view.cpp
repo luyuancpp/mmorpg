@@ -1,4 +1,4 @@
-#include "game_logic/view/util/view_util.h"
+#include "game_logic/scene/util/view_util.h"
 
 #include "type_define/type_define.h"
 #include "thread_local/storage.h"
