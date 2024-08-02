@@ -85,7 +85,7 @@ void PlayerNodeUtil::SavePlayer(entt::entity player)
 }
 
 //考虑: 没load 完再次进入别的gs
-void PlayerNodeUtil::EnterGs(const entt::entity player, const EnterGsInfo& enterInfo)
+void PlayerNodeUtil::EnterGs(const entt::entity player, const PlayerNodeEnteryGameNodeInfo& enterInfo)
 {
 	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (playerNodeInfo == nullptr)
