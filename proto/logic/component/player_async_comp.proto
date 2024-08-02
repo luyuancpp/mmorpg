@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message EnterGsInfo
+message PlayerNodeEnteryGameNodeInfo
 {
   uint32 centre_node_id = 1;
 }
