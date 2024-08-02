@@ -9,7 +9,7 @@
 #include "scene/comp/scene_comp.h"
 #include "game_logic//network/message_util.h"
 #include "service/game_scene_server_player_service.h"
-#include "game_logic/scene/util/player_change_scene.h"
+#include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/scene/util/player_scene.h"
 #include "scene/util/scene_util.h"
 #include "type_define/type_define.h"
@@ -69,7 +69,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const auto player = entt::to_entity(event.entity());
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
+	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue || changeSceneQueue->changeSceneQueue.empty())
 	{
 		return;

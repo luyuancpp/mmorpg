@@ -1,4 +1,4 @@
-#include "player_change_scene.h"
+#include "player_change_scene_util.h"
 
 #include "constants/tips_id_constants.h"
 #include "scene/util/scene_util.h"
@@ -7,13 +7,13 @@
 #include "proto/logic/event/scene_event.pb.h"
 
 //todo 各种服务器崩溃// 初始化场景切换队列
-void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player) {
-	tls.registry.emplace<PlayerCentreChangeSceneQueueComp>(player);
+void PlayerChangeSceneUtil::InitChangeSceneQueue(entt::entity player) {
+	tls.registry.emplace<CentrePlayerChangeSceneQueueComp>(player);
 }
 
 // 添加切换场景信息到队列
-uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
+uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
+	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
 		return kRetChangeScenePlayerQueueComponentNull;  // 玩家队列组件为空
 	}
@@ -27,8 +27,8 @@ uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const
 }
 
 // 移除队列中首个切换场景信息
-void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player) {
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
+void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
+	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
 		return;
 	}
@@ -40,8 +40,8 @@ void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player) {
 }
 
 // 设置当前切换场景信息的切换状态
-void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s) {
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
+void PlayerChangeSceneUtil::SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s) {
+	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
 		return;
 	}
@@ -53,7 +53,7 @@ void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, CentreChang
 }
 
 // 将场景信息复制到切换场景信息中
-void PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(CentreChangeSceneInfo& changeInfo, const SceneInfo& sceneInfo) {
+void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(CentreChangeSceneInfo& changeInfo, const SceneInfo& sceneInfo) {
 	changeInfo.set_scene_confid(sceneInfo.scene_confid());
 	changeInfo.set_dungen_confid(sceneInfo.dungen_confid());
 	changeInfo.set_guid(sceneInfo.guid());
@@ -61,8 +61,8 @@ void PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(CentreChangeSceneInfo& c
 }
 
 // 处理玩家的场景切换队列
-void PlayerChangeSceneSystem::ProcessChangeSceneQueue(entt::entity player) {
-	auto* const tryChangeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
+void PlayerChangeSceneUtil::ProcessChangeSceneQueue(entt::entity player) {
+	auto* const tryChangeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!tryChangeSceneQueue) {
 		return;
 	}
@@ -81,7 +81,7 @@ void PlayerChangeSceneSystem::ProcessChangeSceneQueue(entt::entity player) {
 }
 
 // 处理同一游戏服务器内的场景切换
-void PlayerChangeSceneSystem::ProcessSameGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
+void PlayerChangeSceneUtil::ProcessSameGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
 	const auto& destScene = entt::entity{ changeInfo.guid() };
 	if (entt::null == destScene) {
 		// 场景不存在，移除消息
@@ -96,7 +96,7 @@ void PlayerChangeSceneSystem::ProcessSameGsChangeScene(entt::entity player, cons
 }
 
 // 处理不同游戏服务器间的场景切换
-void PlayerChangeSceneSystem::ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
+void PlayerChangeSceneUtil::ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
 	if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eLeaveGsScene) {
 		SceneUtil::LeaveScene({ player });
 	}
@@ -116,7 +116,7 @@ void PlayerChangeSceneSystem::ProcessDifferentGsChangeScene(entt::entity player,
 }
 
 // 确认玩家成功进入场景后的操作
-void PlayerChangeSceneSystem::OnEnterSceneOk(entt::entity player) {
+void PlayerChangeSceneUtil::OnEnterSceneOk(entt::entity player) {
 	S2CEnterScene ev;
 	ev.set_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(ev);

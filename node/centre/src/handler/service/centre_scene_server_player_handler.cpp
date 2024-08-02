@@ -8,7 +8,7 @@
 #include "centre_node.h"
 #include "game_logic/scene/util/player_scene.h"
 #include "game_logic/player/util/player_tip_util.h"
-#include "game_logic/scene/util/player_change_scene.h"
+#include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/network/message_util.h"
 #include "service/scene_client_player_service.h"
 
@@ -24,8 +24,8 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 		<< ", scene_info: " << request->scene_info().DebugString();
 
 	CentreChangeSceneInfo changeSceneInfo;
-	PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(changeSceneInfo, request->scene_info());
-	if (const auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, changeSceneInfo); ret != kOK)
+	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, request->scene_info());
+	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(player, changeSceneInfo); ret != kOK)
 	{
 		LOG_ERROR << "Failed to push change scene info for player " << tls.registry.get<Guid>(player) << ": " << ret;
 		PlayerTipUtil::SendToPlayer(player, ret, {});
@@ -56,7 +56,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	//todo 场景崩溃了要去新的场景
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request received for player: " << tls.registry.get<Guid>(player);
 
-	auto* const changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(player);
+	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue || changeSceneQueue->changeSceneQueue.empty())
 	{
 		LOG_WARN << "Change scene queue is empty for player: " << tls.registry.get<Guid>(player);
@@ -77,7 +77,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player: " << tls.registry.get<Guid>(player);
-		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(player);
 		return;
 	}
 

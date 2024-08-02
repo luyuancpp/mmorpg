@@ -17,7 +17,7 @@
 #include "service/game_service_service.h"
 #include "service/gate_service_service.h"
 #include "service/service.h"
-#include "game_logic/scene/util/player_change_scene.h"
+#include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/network/message_util.h"
 #include "scene/util/scene_util.h"
@@ -501,8 +501,8 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 
 	PlayerNodeUtil::RegisterPlayerToGateNode(player);
 
-	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eEnterGsSceneSucceed);
-	PlayerChangeSceneSystem::ProcessChangeSceneQueue(player);
+	PlayerChangeSceneUtil::SetChangeGsStatus(player, CentreChangeSceneInfo::eEnterGsSceneSucceed);
+	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->game_node_id();
 
