@@ -5,7 +5,7 @@
 #include "thread_local/storage.h"
 
 #include "network/gate_session.h"
-#include "game_logic/network/message_system.h"
+#include "game_logic/network/message_util.h"
 #include "service/game_server_player_service.h"
 #include "service/game_service_service.h"
 #include "service/gate_service_service.h"
