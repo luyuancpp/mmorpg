@@ -22,7 +22,7 @@
 #include "thread_local/storage_centre.h"
 #include "log/util/console_log_util.h"
 #include "grpc/request/deploy_grpc_requst.h"
-#include "game_logic/player/util/player_session.h"
+#include "game_logic/player/util/player_session_util.h"
 
 using namespace muduo;
 using namespace net;
