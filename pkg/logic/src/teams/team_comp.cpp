@@ -6,7 +6,4 @@
 
 #include "proto/logic/component/team_comp.pb.h"
 
-void Team::OnAppointLeader(const Guid new_leader_guid)
-{
-    leader_id_ = new_leader_guid;
-}
+

@@ -40,7 +40,8 @@ public:
     inline bool IsLeader(const Guid guid) const { return leader_id_ == guid; }
     inline bool HasMember(const Guid guid) const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
 
-    void OnAppointLeader(Guid new_leader_guid);
+	void OnAppointLeader(const Guid new_leader_guid) { leader_id_ = new_leader_guid; }
+
 
     Guid leader_id_{kInvalidGuid};
     entt::entity team_id_{entt::null};
