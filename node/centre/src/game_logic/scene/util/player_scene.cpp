@@ -8,7 +8,7 @@
 #include "game_logic/network/message_util.h"
 #include "service/game_scene_server_player_service.h"
 #include "service/game_service_service.h"
-#include "game_logic/scene/util/player_change_scene.h"
+#include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/player/util/player_tip_util.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
@@ -77,10 +77,10 @@ void PlayerSceneUtil::HandleLoginEnterScene(entt::entity playerEntity)
 
     // Prepare change scene information
     CentreChangeSceneInfo changeSceneInfo;
-    PlayerChangeSceneSystem::CopySceneInfoToChangeInfo(changeSceneInfo, tls.sceneRegistry.get<SceneInfo>(currentSceneId));
+    PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, tls.sceneRegistry.get<SceneInfo>(currentSceneId));
     changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
     changeSceneInfo.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
-    PlayerChangeSceneSystem::PushChangeSceneInfo(playerEntity, changeSceneInfo);
+    PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeSceneInfo);
 }
 
 void PlayerSceneUtil::SendToGameNodeEnterScene(entt::entity playerEntity)
@@ -143,7 +143,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 
 	LOG_INFO << "Processing change scene queue for player: " << playerId;
 
-	auto* changeSceneQueue = tls.registry.try_get<PlayerCentreChangeSceneQueueComp>(playerEntity);
+	auto* changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(playerEntity);
 	if (!changeSceneQueue)
 	{
 		LOG_ERROR << "Change scene queue not found for player: " << playerId;
@@ -178,7 +178,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;
 			PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneSceneFull, {});
-			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
 		toSceneGuid = tls.registry.get<SceneInfo>(toScene).guid();
@@ -190,7 +190,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		{
 			LOG_ERROR << "Target scene not found for player: " << playerId;
 			PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneSceneNotFound, {});
-			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
 	}
@@ -199,7 +199,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	if (!fromSceneInfo)
 	{
 		LOG_ERROR << "From scene info not found for player: " << playerId;
-		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 		return;
 	}
 
@@ -208,7 +208,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	if (!tls.gameNodeRegistry.valid(fromSceneGameNode) || !tls.gameNodeRegistry.valid(toSceneGameNode))
 	{
 		LOG_ERROR << "Game nodes not valid for scene change, from: " << fromSceneInfo->guid() << ", to: " << toSceneGuid;
-		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 		return;
 	}
 
@@ -216,7 +216,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	{
 		LOG_WARN << "Player is already in the current scene: " << playerId;
 		PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneYouInCurrentScene, {});
-		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 		return;
 	}
 
@@ -226,7 +226,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		{
 			LOG_WARN << "Scene player size check failed for player: " << playerId << ", ret: " << ret;
 			PlayerTipUtil::SendToPlayer(playerEntity, ret, {});
-			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(playerEntity);
+			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
 	}
@@ -241,7 +241,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	}
 
 	LOG_INFO << "Change scene queue processed successfully for player: " << playerId;
-	PlayerChangeSceneSystem::ProcessChangeSceneQueue(playerEntity);
+	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
 }
 
 uint32_t PlayerSceneUtil::GetDefaultSceneConfigurationId()

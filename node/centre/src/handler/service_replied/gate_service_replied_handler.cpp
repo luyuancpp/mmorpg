@@ -5,7 +5,7 @@
 #include "muduo/base/Logging.h"
 #include "type_define/type_define.h"
 #include "thread_local/storage.h"
-#include "game_logic/scene/util/player_change_scene.h"
+#include "game_logic/scene/util/player_change_scene_util.h"
 #include "util/game_registry.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "proto/logic/component/player_network_comp.pb.h"
@@ -50,8 +50,8 @@ void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, cons
 		return;
 	}
 	PlayerNodeUtil::OnPlayerRegisteredToGateNode(player);
-	PlayerChangeSceneSystem::SetChangeGsStatus(player, CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
-	PlayerChangeSceneSystem::ProcessChangeSceneQueue(player);
+	PlayerChangeSceneUtil::SetChangeGsStatus(player, CentreChangeSceneInfo::eGateEnterGsSceneSucceed);
+	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }
 

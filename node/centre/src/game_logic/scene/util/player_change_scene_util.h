@@ -3,7 +3,7 @@
 #include "scene/comp/player_scene.h"
 
 // PlayerChangeSceneSystem 类定义
-class PlayerChangeSceneSystem {
+class PlayerChangeSceneUtil {
 public:
 	// 初始化场景切换队列
 	static void InitChangeSceneQueue(entt::entity player);

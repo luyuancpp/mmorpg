@@ -9,7 +9,7 @@
 #include "service/game_server_player_service.h"
 #include "service/game_service_service.h"
 #include "service/gate_service_service.h"
-#include "game_logic/scene/util/player_change_scene.h"
+#include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/scene/util/player_scene.h"
 #include "scene/util/scene_util.h"
 #include "thread_local/storage_centre.h"
@@ -45,7 +45,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_
 	tls.registry.emplace<Guid>(playerEntity, playerId);
 	tls.registry.emplace<PlayerSceneInfoComp>(playerEntity, playerData.scene_info());
 
-	PlayerChangeSceneSystem::InitChangeSceneQueue(playerEntity);
+	PlayerChangeSceneUtil::InitChangeSceneQueue(playerEntity);
 
 	// Set flag for first login
 	tls.registry.emplace<EnterGsFlag>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
