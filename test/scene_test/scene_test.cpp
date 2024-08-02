@@ -8,7 +8,7 @@
 #include "proto/logic/component/gs_node_comp.pb.h"
 #include "proto/logic/component/scene_comp.pb.h"
 
-using GameNodeInfoPtr = std::shared_ptr<GameNodeInfo>;
+using GameNodeInfoPtr = std::shared_ptr<GameNodePlayerInfo>;
 
 const std::size_t kConfigSceneListSize = 50;
 const std::size_t kPerSceneConfigSize = 2;

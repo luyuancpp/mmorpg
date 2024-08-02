@@ -15,7 +15,7 @@
 static constexpr std::size_t kMaxScenePlayer = 1000;
 
 // Type alias
-using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
+using GameNodePlayerInfoPtr = std::shared_ptr<GameNodePlayerInfo>;
 
 // Static function
 void SetServerSequenceNodeId(uint32_t nodeId) {
@@ -28,7 +28,7 @@ void AddMainSceneNodeComponent(entt::registry& reg, const entt::entity node) {
 	LOG_TRACE << "Adding main scene node components for entity: " << entt::to_integral(node);
 	reg.emplace<MainSceneNode>(node);
 	reg.emplace<NodeSceneComp>(node);
-	reg.emplace<GameNodePlayerInfoPtr>(node, std::make_shared<GameNodeInfo>());
+	reg.emplace<GameNodePlayerInfoPtr>(node, std::make_shared<GameNodePlayerInfo>());
 }
 
 // ScenesSystem implementation

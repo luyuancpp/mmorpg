@@ -6,7 +6,7 @@
 #include "service/centre_scene_server_player_service.h"
 #include "proto/logic/server_player/centre_scene_server_player.pb.h"
 #include "game_node.h"
-#include "game_logic/network/message_system.h"
+#include "game_logic/network/message_util.h"
 
 #include "proto/logic/constants/node.pb.h"
 ///<<< END WRITING YOUR CODE

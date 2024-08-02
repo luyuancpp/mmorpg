@@ -5,7 +5,7 @@
 #include "proto/logic/component/gs_node_comp.pb.h"
 #include "muduo/base/Logging.h"
 
-using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
+using GameNodePlayerInfoPtr = std::shared_ptr<GameNodePlayerInfo>;
 
 template <typename ServerType>
 entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
