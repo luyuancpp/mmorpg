@@ -230,7 +230,7 @@
     <ClInclude Include="src\handler\service\player_service.h" />
     <ClInclude Include="src\handler\service\register_handler.h" />
     <ClInclude Include="src\handler\service\team_client_player_handler.h" />
-    <ClInclude Include="src\comp\game_node.h" />
+    <ClInclude Include="src\game_logic\node\comp\game_node.h" />
     <ClInclude Include="src\handler\service_replied\common_client_player_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\db_service_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\game_scene_replied_handler.h" />
