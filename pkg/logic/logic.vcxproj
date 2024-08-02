@@ -165,7 +165,6 @@
     <ClCompile Include="src\mission\util\mission_util.cpp" />
     <ClCompile Include="src\scene\util\node_scene_util.cpp" />
     <ClCompile Include="src\scene\util\scene_util.cpp" />
-    <ClCompile Include="src\teams\team_system.cpp" />
     <ClCompile Include="src\time\comp\duration_funtion.cpp" />
     <ClCompile Include="src\time\comp\duration_manager.cpp" />
     <ClCompile Include="src\time\comp\timer_duration.cpp" />
