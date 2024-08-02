@@ -170,7 +170,7 @@
     <ClInclude Include="src\handler\service\team_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\comp\game_node.h">
+    <ClInclude Include="src\game_logic\node\comp\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service_replied\common_client_player_replied_handler.h">

@@ -11,7 +11,7 @@
 #include "handler/service/register_handler.h"
 #include "muduo/net/Callbacks.h"
 #include "muduo/net/InetAddress.h"
-#include "comp/game_node.h"
+#include "game_logic/node/comp/game_node.h"
 #include "network/gate_session.h"
 #include "network/rpc_msg_route.h"
 #include "service/game_service_service.h"

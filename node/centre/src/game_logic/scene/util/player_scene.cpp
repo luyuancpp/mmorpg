@@ -4,7 +4,7 @@
 #include "scene/comp/scene_comp.h"
 #include "scene/util/scene_util.h"
 #include "constants/tips_id_constants.h"
-#include "comp/game_node.h"
+#include "game_logic/node/comp/game_node.h"
 #include "game_logic/network/message_system.h"
 #include "service/game_scene_server_player_service.h"
 #include "service/game_service_service.h"
