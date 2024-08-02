@@ -17,7 +17,7 @@
 #include "thread_local/storage_game.h"
 #include "logic/event/scene_event.pb.h"
 #include "game_logic/scene/comp/grid_comp.h"
-#include "constants/scene_constants.h"
+#include "game_logic/scene/constants/nav_constants.h"
 #include "scene/comp/scene_comp.h"
 
 #include "proto/logic/component/player_comp.pb.h"

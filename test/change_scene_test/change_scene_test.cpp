@@ -4,7 +4,7 @@
 #include "type_define/type_define.h"
 #include "thread_local/storage.h"
 #include "constants/tips_id_constants.h"
-#include "system/player_change_scene.h"
+#include "game_logic/scene/util/player_change_scene.h"
 #include "scene/util/scene_util.h"
 
 EntityVector globalSceneList;

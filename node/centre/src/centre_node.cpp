@@ -19,10 +19,10 @@
 #include "handler/service_replied/player_service_replied.h"
 #include "service/gate_service_service.h"
 #include "service/service.h"
-#include "system/player_session.h"
 #include "thread_local/storage_centre.h"
 #include "log/util/console_log_util.h"
 #include "grpc/request/deploy_grpc_requst.h"
+#include "game_logic/player/util/player_session.h"
 
 using namespace muduo;
 using namespace net;

@@ -2,7 +2,7 @@
 
 #include "condition_config.h"
 #include "mission_config.h"
-#include "constants/mission_constants.h"
+#include "mission/constants/mission_constants.h"
 #include "mission/comp/mission_comp.h"
 #include "mission/util/mission_util.h"
 #include "constants/tips_id_constants.h"

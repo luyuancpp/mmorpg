@@ -6,9 +6,10 @@
 #include "constants/tips_id_constants.h"
 
 #include "centre_node.h"
-#include "system/player_scene.h"
-#include "system/player_tip.h"
-#include "system/player_change_scene.h"
+#include "game_logic/scene/util/player_scene.h"
+#include "game_logic/player/util/player_tip.h"
+#include "game_logic/scene/util/player_change_scene.h"
+#include "game_logic/network/message_system.h"
 #include "service/scene_client_player_service.h"
 
 #include "proto/logic/component/player_network_comp.pb.h"

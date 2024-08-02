@@ -6,6 +6,7 @@
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/player/util/player_util.h"
 #include "game_logic/scene/system/game_node_scene_system.h"
+#include "game_logic/network/message_system.h"
 
 #include "proto/logic/client_player/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
