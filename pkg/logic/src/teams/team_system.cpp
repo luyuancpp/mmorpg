@@ -201,7 +201,7 @@ uint32_t TeamSystem::CreateTeam(const CreateTeamP& param)
 	team.team_id_ = team_entity;
 	for (const auto& member_it : param.member_list)
 	{
-		team.AddMember(member_it);
+		AddMember(entt::to_integral(team_entity), member_it);
 	}
 	last_team_id_ = entt::to_integral(team_entity);
 	return kOK;
@@ -232,7 +232,7 @@ uint32_t TeamSystem::JoinTeam(const Guid team_id, const Guid guid)
 	{
 		try_team->applicants_.erase(applicant_it);
 	}
-	try_team->AddMember(guid);
+	AddMember(team_id, guid);
 	return kOK;
 }
 
@@ -291,7 +291,7 @@ uint32_t TeamSystem::LeaveTeam(const Guid guid)
 		return kRetTeamMemberNotInTeam;
 	}
 	const bool is_leader_leave = try_team->IsLeader(guid);
-	try_team->DelMember(guid);
+	DelMember(team_id, guid);
 	if (!try_team->members_.empty() && is_leader_leave)
 	{
 		try_team->OnAppointLeader(*try_team->members_.begin());
@@ -331,7 +331,7 @@ uint32_t TeamSystem::KickMember(const Guid team_id, const Guid current_leader_id
 	{
 		return kRetTeamMemberNotInTeam;
 	}
-	try_team->DelMember(be_kick_id);
+	DelMember(team_id, be_kick_id);
 	return kOK;
 }
 
@@ -354,7 +354,7 @@ uint32_t TeamSystem::Disbanded(const Guid team_id, const Guid current_leader_id)
 	const auto temp_member = try_team->members_;
 	for (const auto& member_it : temp_member)
 	{
-		try_team->DelMember(member_it);
+		DelMember(team_id, member_it);
 	}
 	EraseTeam(team_entity);
 	return kOK;
@@ -471,3 +471,49 @@ void TeamSystem::EraseTeam(entt::entity team_id)
 	Destroy(tls.registry, team_id);
 }
 
+
+uint32_t TeamSystem::AddMember(Guid team_id, Guid guid)
+{
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
+	{
+		return kRetTeamHasNotTeamId;
+	}
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
+	if (nullptr == try_team)
+	{
+		return kRetTeamHasNotTeamId;
+	}
+
+	const auto pit = tlsCommonLogic.GetPlayerList().find(guid);
+	if (pit == tlsCommonLogic.GetPlayerList().end())
+	{
+		return kRetTeamPlayerNotFound;
+	}
+	try_team->members_.emplace_back(guid);
+	tls.registry.emplace<TeamId>(pit->second).set_team_id(entt::to_integral(team_id));
+	return kOK;
+}
+
+uint32_t TeamSystem::DelMember(Guid team_id, Guid guid)
+{
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
+	{
+		return kRetTeamHasNotTeamId;
+	}
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
+	if (nullptr == try_team)
+	{
+		return kRetTeamHasNotTeamId;
+	}
+	auto& members_ = try_team->members_;
+	members_.erase(std::find(members_.begin(), members_.end(), guid));
+	const auto pit = tlsCommonLogic.GetPlayerList().find(guid);
+	if (pit == tlsCommonLogic.GetPlayerList().end())
+	{
+		return kRetTeamPlayerNotFound;
+	}
+	tls.registry.remove<TeamId>(pit->second);
+	return kOK;
+}

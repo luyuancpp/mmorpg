@@ -93,6 +93,7 @@ enum  EnumCode : uint32_t
     kRetTeamDismissNotLeader = 5014,
     kRetTeamJoinTeamMemberListToMax = 5013,
     kRetTeamCreateTeamMaxMemberSize = 5014,
+    kRetTeamPlayerNotFound = 5015,
 
     //mission
     kMissionTypeRepeated = 6000,
