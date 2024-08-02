@@ -241,5 +241,5 @@ void CentreNode::InitSystemAfterConnect() const
 {
 	InetAddress redisAddr(serversInfo.redis_info().redis_info(0).ip(),
 		serversInfo.redis_info().redis_info(0).port());
-	tls_centre.redis_system().Init(redisAddr);
+	tls_centre.redis_system().Initialize(redisAddr);
 }

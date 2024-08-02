@@ -10,7 +10,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-void RedisUtil::Init(muduo::net::InetAddress& server_addr)
+void RedisUtil::Initialize(muduo::net::InetAddress& server_addr)
 {
     hiredis = std::make_unique<HiredisPtr::element_type>(EventLoop::getEventLoopOfCurrentThread(), server_addr);
     hiredis->connect();

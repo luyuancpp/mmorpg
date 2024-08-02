@@ -4,4 +4,4 @@
 #include "proto/common/centre_service.pb.h"
 #include "proto/common/mysql_database_table.pb.h"
 
-using PlayerLoadingInfoList = std::unordered_map<Guid, EnterGameL2Ctr>;
+using PlayerLoadingInfoList = std::unordered_map<Guid, CentrePlayerGameNodeEntryRequest>;

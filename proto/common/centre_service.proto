@@ -46,7 +46,7 @@ message EnterGameNodeSucceedRequest
   uint32 game_node_id = 2;
 }
 
-message EnterGameL2Ctr
+message CentrePlayerGameNodeEntryRequest
 {
   EnterGameRequest client_msg_body = 1;
   SessionInfo session_info = 2;
@@ -58,7 +58,7 @@ service CentreService {
   rpc GatePlayerService (GateClientMessageRequest) returns (Empty);
   rpc GateSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
   rpc LsLoginAccount (LoginRequest) returns (LoginResponse);
-  rpc OnLoginEnterGame (EnterGameL2Ctr) returns (Empty);
+  rpc OnLoginEnterGame (CentrePlayerGameNodeEntryRequest) returns (Empty);
   rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (Empty);
   rpc LsDisconnect (CtrlLsDisconnectRequest) returns (Empty); 
   rpc GsPlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
