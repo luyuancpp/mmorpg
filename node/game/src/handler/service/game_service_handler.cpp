@@ -11,6 +11,7 @@
 #include "service/service.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/player/util/player_util.h"
+#include "game_logic/network/message_system.h"
 #include "scene/util/scene_util.h"
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"

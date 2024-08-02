@@ -1,6 +1,6 @@
 #pragma once
 
-#include "constants/node_constants.h"
+#include "node/constants/node_constants.h"
 #include "type_define/type_define.h"
 
 constexpr uint32_t kDefaultSceneId = 1;

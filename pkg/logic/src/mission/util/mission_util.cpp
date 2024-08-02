@@ -2,7 +2,7 @@
 #include <ranges>
 #include "muduo/base/Logging.h"
 #include "condition_config.h"
-#include "constants/mission_constants.h"
+#include "mission/constants/mission_constants.h"
 #include "mission/comp/mission_comp.h"
 #include "thread_local/storage.h"
 #include "constants/tips_id_constants.h"

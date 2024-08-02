@@ -2,7 +2,7 @@
 
 #include <ctime>
 
-#include "constants/fps_constants.h"
+#include "game_logic/common/constants/fps_constants.h"
 #include "Recast/Recast.h"
 #undef TEXT
 #include "game_logic/player/util/player_session_util.h"
