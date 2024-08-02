@@ -7,7 +7,7 @@
 #include "thread_local/storage.h"
 #include "game_logic/scene/util/player_change_scene.h"
 #include "util/game_registry.h"
-#include "game_logic/player/util/player_node.h"
+#include "game_logic/player/util/player_node_util.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;

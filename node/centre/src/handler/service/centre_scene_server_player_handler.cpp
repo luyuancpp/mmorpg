@@ -7,7 +7,7 @@
 
 #include "centre_node.h"
 #include "game_logic/scene/util/player_scene.h"
-#include "game_logic/player/util/player_tip.h"
+#include "game_logic/player/util/player_tip_util.h"
 #include "game_logic/scene/util/player_change_scene.h"
 #include "game_logic/network/message_system.h"
 #include "service/scene_client_player_service.h"
