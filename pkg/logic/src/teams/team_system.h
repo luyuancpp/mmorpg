@@ -69,15 +69,14 @@ public:
     ~TeamSystem();
 
     static std::size_t GetTeamSize();
-    static std::size_t member_size(Guid team_id);
-    static std::size_t applicant_size_by_player_id(Guid guid);
-    static std::size_t applicant_size_by_team_id(Guid team_id);
-    static std::size_t players_size();
+    static std::size_t GetMemberSize(Guid team_id);
+    static std::size_t GetApplicantSizeByTeamId(Guid team_id);
+    static std::size_t GetPlayersSize();
     static Guid GetTeamId(Guid guid);
-    [[nodiscard]] Guid last_team_id() const;
-    static Guid get_leader_id_by_team_id(Guid team_id);
-    static Guid get_leader_id_by_player_id(Guid guid);
-    static Guid first_applicant(Guid team_id);
+    [[nodiscard]] Guid GetLastTeamId() const;
+    static Guid GetLeaderIdByTeamId(Guid team_id);
+    static Guid GetLeaderIdByPlayerId(Guid guid);
+    static Guid GetFirstApplicant(Guid team_id);
 
     [[nodiscard]] static bool IsTeamListMax();
     static bool IsTeamFull(Guid team_id);
@@ -120,7 +119,7 @@ std::size_t TeamSystem::GetTeamSize()
 	return tls.registry.storage<Team>().size();
 }
 
-Guid TeamSystem::last_team_id() const
+Guid TeamSystem::GetLastTeamId() const
 {
 	return last_team_id_;
 }
@@ -130,7 +129,7 @@ bool TeamSystem::IsTeamListMax()
 	return GetTeamSize() >= kMaxTeamSize;
 }
 
-std::size_t TeamSystem::member_size(const Guid team_id)
+std::size_t TeamSystem::GetMemberSize(const Guid team_id)
 {
 	const auto team = entt::to_entity(team_id);
 	if (!tls.registry.valid(team))
@@ -145,13 +144,7 @@ std::size_t TeamSystem::member_size(const Guid team_id)
 	return try_team->GetMemberSize();
 }
 
-std::size_t TeamSystem::applicant_size_by_player_id(const Guid guid)
-{
-	const auto team_id = GetTeamId(guid);
-	return applicant_size_by_team_id(team_id);
-}
-
-std::size_t TeamSystem::applicant_size_by_team_id(const Guid team_id)
+std::size_t TeamSystem::GetApplicantSizeByTeamId(const Guid team_id)
 {
 	const auto team_entity = entt::to_entity(team_id);
 	if (!tls.registry.valid(team_entity))
@@ -166,7 +159,7 @@ std::size_t TeamSystem::applicant_size_by_team_id(const Guid team_id)
 	return try_team->GetApplicantSize();
 }
 
-std::size_t TeamSystem::players_size()
+std::size_t TeamSystem::GetPlayersSize()
 {
 	return tls.registry.storage<TeamId>().size();
 }
@@ -186,7 +179,7 @@ Guid TeamSystem::GetTeamId(const Guid guid)
 	return try_team_id->team_id();
 }
 
-Guid TeamSystem::get_leader_id_by_team_id(const Guid team_id)
+Guid TeamSystem::GetLeaderIdByTeamId(const Guid team_id)
 {
 	const auto team_entity = entt::to_entity(team_id);
 	if (!tls.registry.valid(team_entity))
@@ -201,12 +194,12 @@ Guid TeamSystem::get_leader_id_by_team_id(const Guid team_id)
 	return try_team->GetLeaderId();
 }
 
-Guid TeamSystem::get_leader_id_by_player_id(const Guid guid)
+Guid TeamSystem::GetLeaderIdByPlayerId(const Guid guid)
 {
-	return get_leader_id_by_team_id(GetTeamId(guid));
+	return GetLeaderIdByTeamId(GetTeamId(guid));
 }
 
-Guid TeamSystem::first_applicant(const Guid team_id)
+Guid TeamSystem::GetFirstApplicant(const Guid team_id)
 {
 	const auto team_entity = entt::to_entity(team_id);
 	if (!tls.registry.valid(team_entity))
