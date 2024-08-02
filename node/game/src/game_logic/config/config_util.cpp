@@ -1,8 +1,8 @@
-#include "config_system.h"
+#include "config_util.h"
 
 #include "game_logic/scene/system/game_node_scene_system.h"
 
-void ConfigSystem::OnConfigLoadSuccessful()
+void ConfigUtil::OnConfigLoadSuccessful()
 {
 	GameNodeSceneUtil::LoadAllMainSceneNavBin();
 }

@@ -85,7 +85,7 @@ TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
 TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
     // Mock data setup
     auto scene_entity = tls.sceneRegistry.create();
-    auto& scene_grid_list = tls.sceneRegistry.emplace<SceneGridList>(scene_entity);
+    auto& scene_grid_list = tls.sceneRegistry.emplace<SceneGridListComp>(scene_entity);
 
     SceneEntityComp scene_entity_comp{ scene_entity };
 
@@ -109,7 +109,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         EXPECT_EQ(scene_grid_list[grid_id].entity_list.size(), expected_entity_count[grid_id]);
     }
 
-    for (auto&& [scene, grid_list] : tls.sceneRegistry.view<SceneGridList>().each()) {
+    for (auto&& [scene, grid_list] : tls.sceneRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [_, entity_list] : grid_list) {
             EXPECT_FALSE(entity_list.entity_list.empty());
         }
@@ -122,7 +122,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
 TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     // Mock data setup
     auto scene_entity = tls.sceneRegistry.create();
-    auto& scene_grid_list = tls.sceneRegistry.emplace<SceneGridList>(scene_entity);
+    auto& scene_grid_list = tls.sceneRegistry.emplace<SceneGridListComp>(scene_entity);
 
     auto player_entity = tls.registry.create();
 
@@ -162,7 +162,7 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     }
 
     std::size_t expected_size = 0;
-    for (auto&& [scene, grid_list] : tls.sceneRegistry.view<SceneGridList>().each()) {
+    for (auto&& [scene, grid_list] : tls.sceneRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [_, entity_list] : grid_list) {
             if (entity_list.entity_list.empty()) {
                 continue;
@@ -233,7 +233,7 @@ protected:
 
 
         // Set up grid list
-        tls.sceneRegistry.emplace<SceneGridList>(sceneEntityComp1.sceneEntity);
+        tls.sceneRegistry.emplace<SceneGridListComp>(sceneEntityComp1.sceneEntity);
     }
 
     void TearDown() override {
