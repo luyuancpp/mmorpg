@@ -290,7 +290,7 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 }
 
 void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* controller,
-	const ::EnterGameL2Ctr* request,
+	const ::CentrePlayerGameNodeEntryRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
