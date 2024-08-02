@@ -1,6 +1,6 @@
 #pragma once
 
-class ConfigSystem
+class ConfigUtil
 {
 public:
 	static void OnConfigLoadSuccessful();

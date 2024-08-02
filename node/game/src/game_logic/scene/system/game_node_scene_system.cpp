@@ -103,7 +103,7 @@ void GameNodeSceneUtil::RegisterSceneToCentre()
 void GameNodeSceneUtil::OnSceneCreateHandler(const OnSceneCreate& message)
 {
 	entt::entity scene = entt::to_entity(message.entity());
-	tls.sceneRegistry.emplace<SceneGridList>(scene);
+	tls.sceneRegistry.emplace<SceneGridListComp>(scene);
 
 	auto& sceneInfo = tls.sceneRegistry.get<SceneInfo>(scene);
 	if (tlsGame.sceneNav.contains(sceneInfo.scene_confid()))

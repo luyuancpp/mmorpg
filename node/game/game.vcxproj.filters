@@ -96,7 +96,7 @@
     <ClCompile Include="src\handler\service_replied\team_client_player_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\config\config_system.cpp">
+    <ClCompile Include="src\game_logic\config\config_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\scene\system\game_node_scene_system.cpp">
@@ -230,7 +230,7 @@
     <ClInclude Include="src\handler\service_replied\team_client_player_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\config\config_system.h">
+    <ClInclude Include="src\game_logic\config\config_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\system\game_node_scene_system.h">

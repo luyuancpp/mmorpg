@@ -20,7 +20,7 @@
 #include "network/rpc_session.h"
 #include "handler/service_replied/player_service_replied.h"
 #include "service/service.h"
-#include "game_logic/config/config_system.h"
+#include "game_logic/config/config_util.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "log/util/console_log_util.h"
@@ -102,7 +102,7 @@ void GameNode::InitGameConfig()
 {
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();
-    ConfigSystem::OnConfigLoadSuccessful();
+    ConfigUtil::OnConfigLoadSuccessful();
 }
 
 void GameNode::InitTimeZone()
