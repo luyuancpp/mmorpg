@@ -42,6 +42,9 @@ public:
     static uint32_t DelApplicant(Guid team_id, Guid apply_guid);
     static void ClearApplyList(Guid team_id);
 
+    static uint32_t AddMember(Guid team_id, Guid guid);
+    static uint32_t DelMember(Guid team_id, Guid guid);
+
 private:
     [[nodiscard]] static uint32_t CheckMemberInTeam(const UInt64Set& member_list);
     static void EraseTeam(entt::entity team_id);
