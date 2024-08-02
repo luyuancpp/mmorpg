@@ -13,7 +13,7 @@ TEST(TeamManger, CreateFullDismiss)
 	Guid player_id = 1;
 	for (int32_t i = 0; i < kMaxTeamSize; ++i)
 	{
-		const CreateTeamP p{player_id, UInt64Set{player_id}};
+		const CreateTeamParams p{player_id, UInt64Set{player_id}};
 		EXPECT_EQ(kOK, team_list.CreateTeam(p));
 		team_idl_ist.push_back(team_list.last_team_id());
 		++player_id;
@@ -23,13 +23,13 @@ TEST(TeamManger, CreateFullDismiss)
 	player_id++;
 	EXPECT_EQ(kRetTeamListMaxSize, team_list.CreateTeam({ player_id, UInt64Set{player_id}}));
 
-	EXPECT_EQ(kMaxTeamSize, team_list.team_size());
+	EXPECT_EQ(kMaxTeamSize, team_list.GetTeamSize());
 
 	for (auto it = team_idl_ist.begin(); it != team_idl_ist.end(); ++it)
 	{
 		EXPECT_EQ(kOK, team_list.Disbanded(*it, TeamSystem::get_leader_id_by_team_id(*it)));
 	}
-	EXPECT_EQ(0, team_list.team_size());
+	EXPECT_EQ(0, team_list.GetTeamSize());
 	EXPECT_EQ(0, team_list.players_size());
 }
 
@@ -91,7 +91,7 @@ TEST(TeamManger, LeaveTeam)
 		}
 		EXPECT_EQ(kFiveMemberMaxSize - i - 1 , team_list.member_size(team_list.last_team_id()));
 	}
-    EXPECT_EQ(0, team_list.team_size());
+    EXPECT_EQ(0, team_list.GetTeamSize());
     EXPECT_EQ(0, team_list.players_size());
 }
 
@@ -120,7 +120,7 @@ TEST(TeamManger, KickTeaamMember)
 	EXPECT_EQ(kOK, team_list.KickMember(team_list.last_team_id(), leader_player_id, member_id));
 	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-    EXPECT_EQ(1, team_list.team_size());
+    EXPECT_EQ(1, team_list.GetTeamSize());
     EXPECT_EQ(1, team_list.players_size());
 }
 

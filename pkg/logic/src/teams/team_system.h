@@ -28,7 +28,7 @@ static constexpr std::size_t kTenMemberMaxSize{ 10 };
 
 
 //function order get, set is, test action
-struct CreateTeamP
+struct CreateTeamParams
 {
 	Guid leader_id_{ 0 };
 	const UInt64Set member_list;
@@ -38,15 +38,15 @@ struct CreateTeamP
 class Team
 {
 public:
-	inline entt::entity to_entity_id() const { return team_id_; }
-	inline Guid leader_id() const { return leader_id_; }
-	inline std::size_t max_member_size() const { return team_type_size_; }
-	inline std::size_t member_size() const { return members_.size(); }
-	inline bool empty() const { return members_.empty(); }
-	inline std::size_t applicant_size() const { return applicants_.size(); }
+	inline entt::entity GetEntityId() const { return team_id_; }
+	inline Guid GetLeaderId() const { return leader_id_; }
+	inline std::size_t GetMaxMemberSize() const { return team_type_size_; }
+	inline std::size_t GetMemberSize() const { return members_.size(); }
+	inline bool IsEmpty() const { return members_.empty(); }
+	inline std::size_t GetApplicantSize() const { return applicants_.size(); }
 
 	inline bool IsApplicant(const Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end(); }
-	inline bool IsFull() const { return members_.size() >= max_member_size(); }
+	inline bool IsFull() const { return members_.size() >= GetMaxMemberSize(); }
 	inline bool IsLeader(const Guid guid) const { return leader_id_ == guid; }
 	inline bool HasMember(const Guid guid) const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
 
@@ -68,7 +68,7 @@ class TeamSystem final
 public:
     ~TeamSystem();
 
-    static std::size_t team_size();
+    static std::size_t GetTeamSize();
     static std::size_t member_size(Guid team_id);
     static std::size_t applicant_size_by_player_id(Guid guid);
     static std::size_t applicant_size_by_team_id(Guid team_id);
@@ -85,7 +85,7 @@ public:
     static bool HasTeam(Guid guid);
     static bool IsApplicant(Guid team_id, Guid guid);
 
-    uint32_t CreateTeam(const CreateTeamP& param);
+    uint32_t CreateTeam(const CreateTeamParams& param);
     static uint32_t JoinTeam(Guid team_id, Guid guid);
     static uint32_t JoinTeam(const UInt64Set& member_list, Guid team_id);
     static uint32_t LeaveTeam(Guid guid);
@@ -115,7 +115,7 @@ TeamSystem::~TeamSystem()
 	}
 }
 
-std::size_t TeamSystem::team_size()
+std::size_t TeamSystem::GetTeamSize()
 {
 	return tls.registry.storage<Team>().size();
 }
@@ -127,7 +127,7 @@ Guid TeamSystem::last_team_id() const
 
 bool TeamSystem::IsTeamListMax()
 {
-	return team_size() >= kMaxTeamSize;
+	return GetTeamSize() >= kMaxTeamSize;
 }
 
 std::size_t TeamSystem::member_size(const Guid team_id)
@@ -142,7 +142,7 @@ std::size_t TeamSystem::member_size(const Guid team_id)
 	{
 		return 0;
 	}
-	return try_team->member_size();
+	return try_team->GetMemberSize();
 }
 
 std::size_t TeamSystem::applicant_size_by_player_id(const Guid guid)
@@ -163,7 +163,7 @@ std::size_t TeamSystem::applicant_size_by_team_id(const Guid team_id)
 	{
 		return 0;
 	}
-	return try_team->applicant_size();
+	return try_team->GetApplicantSize();
 }
 
 std::size_t TeamSystem::players_size()
@@ -198,7 +198,7 @@ Guid TeamSystem::get_leader_id_by_team_id(const Guid team_id)
 	{
 		return kInvalidGuid;
 	}
-	return try_team->leader_id();
+	return try_team->GetLeaderId();
 }
 
 Guid TeamSystem::get_leader_id_by_player_id(const Guid guid)
@@ -280,7 +280,7 @@ bool TeamSystem::IsApplicant(const Guid team_id, const Guid guid)
 	return try_team->IsApplicant(guid);
 }
 
-uint32_t TeamSystem::CreateTeam(const CreateTeamP& param)
+uint32_t TeamSystem::CreateTeam(const CreateTeamParams& param)
 {
 	if (IsTeamListMax())
 	{
@@ -348,7 +348,7 @@ uint32_t TeamSystem::JoinTeam(const UInt64Set& member_list, const Guid team_id)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	if (try_team->max_member_size() - try_team->member_size() < member_list.size())
+	if (try_team->GetMaxMemberSize() - try_team->GetMemberSize() < member_list.size())
 	{
 		return kRetTeamJoinTeamMemberListToMax;
 	}
@@ -396,9 +396,9 @@ uint32_t TeamSystem::LeaveTeam(const Guid guid)
 	{
 		try_team->OnAppointLeader(*try_team->members_.begin());
 	}
-	if (try_team->empty())
+	if (try_team->IsEmpty())
 	{
-		EraseTeam(try_team->to_entity_id());
+		EraseTeam(try_team->GetEntityId());
 	}
 	return kOK;
 }
@@ -447,7 +447,7 @@ uint32_t TeamSystem::Disbanded(const Guid team_id, const Guid current_leader_id)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	if (try_team->leader_id() != current_leader_id)
+	if (try_team->GetLeaderId() != current_leader_id)
 	{
 		return kRetTeamDismissNotLeader;
 	}
@@ -472,7 +472,7 @@ uint32_t TeamSystem::DisbandedTeamNoLeader(const Guid team_id)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	return Disbanded(team_id, try_team->leader_id());
+	return Disbanded(team_id, try_team->GetLeaderId());
 }
 
 uint32_t TeamSystem::AppointLeader(const Guid team_id, const Guid current_leader_id, const Guid new_leader_id)
