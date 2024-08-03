@@ -8,7 +8,6 @@ import (
 )
 
 func TestPut(t *testing.T) {
-	config.LoadConfig()
 	q := NewMsgQueue(config.DBConfig.RoutineNum, config.DBConfig.ChannelBufferNum)
 
 	go func() {
