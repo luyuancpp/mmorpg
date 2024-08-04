@@ -9,25 +9,20 @@ using PosMap = std::unordered_map<uint32_t, Guid>;
 
 struct BagCapacity
 {
-	static constexpr std::size_t kDefaultCapacity{10}; //背包默认大小
-	static constexpr std::size_t kEquipmentCapacity{10}; //装备栏默认大小
+	static constexpr std::size_t kDefaultCapacity{10};
+	static constexpr std::size_t kEquipmentCapacity{10};
 	static constexpr std::size_t kBagMaxCapacity{100};
 	static constexpr std::size_t kTempBagMaxCapacity{200};
 	static constexpr std::size_t kWarehouseMaxCapacity{200};
-	std::size_t size_{kDefaultCapacity}; //当前背包容量
+	std::size_t size_{kDefaultCapacity};
 };
 
 enum EnumBagType : uint32_t
 {
-	//普通背包
 	kBag = 0,
-	//仓库
 	kWarehouse = 1,
-	//装备
 	kEquipment = 2,
-	//临时背包
 	kTemporary = 3,
-	//占位
 	kBagMax = 4,
 };
 
@@ -45,7 +40,7 @@ public:
 	using BagEntity = ItemEntity;
 	[[nodiscard]] entt::entity entity() const { return entity_.entity(); }
 	[[nodiscard]] Guid player_guid() const { return tls.itemRegistry.get<Guid>(entity()); }
-	std::size_t size() const { return tls.itemRegistry.get<BagCapacity>(entity()).size_; }
+	std::size_t size() const { return capacity_.size_; }
 	std::size_t item_size() const { return items_.size(); }
 	std::size_t pos_size() const { return pos_.size(); }
 	const PosMap& pos() const { return pos_; }
@@ -55,12 +50,12 @@ public:
 	[[nodiscard]] std::size_t GetItemStackSize(uint32_t config_id) const;
 	Item* GetItemByGuid(Guid guid);
 	Item* GetItemByBos(uint32_t pos);
-	uint32_t GetItemPos(Guid guid); //just for test
+	uint32_t GetItemPos(Guid guid);
 
 	bool HasItem(const Guid guid) const { return items_.find(guid) != items_.end(); }
 	bool IsFull() const { return items_.size() >= size(); }
-	bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }//足够空格子
-	bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//足够空格子
+	bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }
+	bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }
 	uint32_t HasEnoughSpace(const U32U32UnorderedMap& tryItems);
 	uint32_t HasSufficientItems(const U32U32UnorderedMap& adequate_items);
 
