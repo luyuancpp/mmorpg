@@ -1,10 +1,14 @@
 #pragma once
 
+#include <cstdint>
+
 //https://zhuanlan.zhihu.com/p/149704315
 
-class AbilitySystem
+class AbilityUtil
 {
 public:
+	static uint32_t CheckSkillActivationPrerequisites();
+
 	void HandleAbilityInitialize();
 	void HandleAbilityStart();
 	void HandleAbilitySpell();
