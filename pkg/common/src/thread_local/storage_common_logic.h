@@ -3,8 +3,6 @@
 #include "proto/common/node_common.pb.h"
 #include "type_define/type_define.h"
 
-
-
 class ThreadLocalStorageCommonLogic
 {
 public:
