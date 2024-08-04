@@ -127,7 +127,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 	return kOK;
 }
 
-uint32_t Bag::HhasSufficientItems(const U32U32UnorderedMap& adequate_items)
+uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 {
 	auto stack_item_list = adequate_items;
 	for (auto& it : items_)
@@ -169,7 +169,7 @@ uint32_t Bag::HhasSufficientItems(const U32U32UnorderedMap& adequate_items)
 
 uint32_t  Bag::DelItem(const U32U32UnorderedMap& try_del_items)
 {
-	RET_CHECK_RETURN(HhasSufficientItems(try_del_items));
+	RET_CHECK_RETURN(HasSufficientItems(try_del_items));
 	auto try_del_items_back = try_del_items;
 	ItemRawPtrVector real_del_item;//删除的物品
 	for (auto& it : items_)
