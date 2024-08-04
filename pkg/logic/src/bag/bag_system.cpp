@@ -52,10 +52,10 @@ uint32_t Bag::GetItemPos(Guid guid)
 	return kInvalidU32Id;
 }
 
-uint32_t Bag::HasEnoughSpace(const UInt32UInt32UnorderedMap& try_add_item_map)
+uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 {
 	auto empty_size = empty_grid_size();
-	UInt32UInt32UnorderedMap need_stack_sizes;//需要叠加的物品列表
+	U32U32UnorderedMap need_stack_sizes;//需要叠加的物品列表
 	bool has_stack_item = false;
 	//计算不可叠加商品
 	for (auto& try_item : try_add_item_map)
@@ -127,7 +127,7 @@ uint32_t Bag::HasEnoughSpace(const UInt32UInt32UnorderedMap& try_add_item_map)
 	return kOK;
 }
 
-uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
+uint32_t Bag::HhasSufficientItems(const U32U32UnorderedMap& adequate_items)
 {
 	auto stack_item_list = adequate_items;
 	for (auto& it : items_)
@@ -167,9 +167,9 @@ uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
 	return kOK;
 }
 
-uint32_t  Bag::DelItem(const UInt32UInt32UnorderedMap& try_del_items)
+uint32_t  Bag::DelItem(const U32U32UnorderedMap& try_del_items)
 {
-	RET_CHECK_RETURN(AdequateItem(try_del_items));
+	RET_CHECK_RETURN(HhasSufficientItems(try_del_items));
 	auto try_del_items_back = try_del_items;
 	ItemRawPtrVector real_del_item;//删除的物品
 	for (auto& it : items_)
