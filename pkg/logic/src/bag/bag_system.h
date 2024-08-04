@@ -1,6 +1,6 @@
 #pragma once
 
-#include <unordered_map>
+#include "type_define/type_define.h"
 
 #include "item_util.h"
 
@@ -61,10 +61,10 @@ public:
 	bool IsFull() const { return items_.size() >= size(); }
 	bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }//足够空格子
 	bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//足够空格子
-	uint32_t HasEnoughSpace(const UInt32UInt32UnorderedMap& try_items); //足够空间放物品
-	uint32_t AdequateItem(const UInt32UInt32UnorderedMap& adequate_items); //检测是否足够物品
+	uint32_t HasEnoughSpace(const U32U32UnorderedMap& try_items);
+	uint32_t HhasSufficientItems(const U32U32UnorderedMap& adequate_items);
 
-	uint32_t DelItem(const UInt32UInt32UnorderedMap& try_del_items);
+	uint32_t DelItem(const U32U32UnorderedMap& try_del_items);
 	uint32_t DelItemByPos(const DelItemByPosParam& p);
 	void Neaten();
 	uint32_t AddItem(const Item&  add_item);
