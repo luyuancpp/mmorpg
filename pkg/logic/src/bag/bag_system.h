@@ -61,8 +61,8 @@ public:
 	bool IsFull() const { return items_.size() >= size(); }
 	bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }//足够空格子
 	bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//足够空格子
-	uint32_t HasEnoughSpace(const U32U32UnorderedMap& try_items);
-	uint32_t HhasSufficientItems(const U32U32UnorderedMap& adequate_items);
+	uint32_t HasEnoughSpace(const U32U32UnorderedMap& tryItems);
+	uint32_t HasSufficientItems(const U32U32UnorderedMap& adequate_items);
 
 	uint32_t DelItem(const U32U32UnorderedMap& try_del_items);
 	uint32_t DelItemByPos(const DelItemByPosParam& p);
