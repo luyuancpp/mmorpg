@@ -1,56 +1,62 @@
 #include "ability_util.h"
 
-void AbilitySystem::HandleAbilityInitialize()
+uint32_t AbilityUtil::CheckSkillActivationPrerequisites()
+{
+
+    return 0;
+}
+
+void AbilityUtil::HandleAbilityInitialize()
 {
 
 }
 
-void AbilitySystem::HandleAbilityStart()
+void AbilityUtil::HandleAbilityStart()
 {
 
 }
 
-void AbilitySystem::HandleAbilitySpell()
+void AbilityUtil::HandleAbilitySpell()
 {
 
 }
 
-void AbilitySystem::HandleAbilityFinish()
+void AbilityUtil::HandleAbilityFinish()
 {
 
 }
 
-void AbilitySystem::HandleChannelStart()
+void AbilityUtil::HandleChannelStart()
 {
 
 }
 
-void AbilitySystem::HandleChannelThink()
+void AbilityUtil::HandleChannelThink()
 {
 
 }
 
-void AbilitySystem::HandleChannelFinish()
+void AbilityUtil::HandleChannelFinish()
 {
 
 }
 
-void AbilitySystem::HandleAbilityToggleOn()
+void AbilityUtil::HandleAbilityToggleOn()
 {
 
 }
 
-void AbilitySystem::HandleAbilityToggleOff()
+void AbilityUtil::HandleAbilityToggleOff()
 {
 
 }
 
-void AbilitySystem::HandleAbilityActivate()
+void AbilityUtil::HandleAbilityActivate()
 {
 
 }
 
-void AbilitySystem::HandleAbilityDeactivate()
+void AbilityUtil::HandleAbilityDeactivate()
 {
 
 }
