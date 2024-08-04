@@ -52,7 +52,7 @@ uint32_t Bag::GetItemPos(Guid guid)
 	return kInvalidU32Id;
 }
 
-uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_add_item_map)
+uint32_t Bag::HasEnoughSpace(const UInt32UInt32UnorderedMap& try_add_item_map)
 {
 	auto empty_size = empty_grid_size();
 	UInt32UInt32UnorderedMap need_stack_sizes;//需要叠加的物品列表
