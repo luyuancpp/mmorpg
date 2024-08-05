@@ -75,7 +75,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 			std::size_t need_grid_size = static_cast<std::size_t>(p_table_item->max_statck_size() * try_item.second);
 			if (empty_size <= 0 || empty_size < need_grid_size)
 			{
-				return kBagItemNotStackable;
+				return kBagItemNotStacked;
 			}
 			empty_size -= need_grid_size;
 		}
@@ -120,7 +120,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 		auto need_grid_size = calc_item_need_grid_size(it.second, table_item->max_statck_size());//满叠加的格子
 		if (empty_size <= 0 || empty_size < need_grid_size)
 		{
-			return kBagItemNotStackable;
+			return kBagItemNotStacked;
 		}
 		empty_size -= need_grid_size;
 	}
@@ -162,7 +162,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 	}
 	if (!stack_item_list.empty())
 	{
-		return kBagInsufficientBagItems;
+		return kBagInsufficientItems;
 	}
 	return kOK;
 }
@@ -231,7 +231,7 @@ uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
 	auto old_size = item.size();
 	if (old_size < p.size_)
 	{
-		return kItemDeletionInsufficientSize;
+		return kItemDeletionSizeMismatch;
 	}
 	item.set_size(old_size - p.size_);
 	return kOK;
