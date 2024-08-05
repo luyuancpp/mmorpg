@@ -15,7 +15,7 @@ void PlayerChangeSceneUtil::InitChangeSceneQueue(entt::entity player) {
 uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
 	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
-		return kChangeScenePlayerQueueComponentNotFound;  // 玩家队列组件为空
+		return kChangeScenePlayerQueueNotFound;  // 玩家队列组件为空
 	}
 	if (changeSceneQueue->changeSceneQueue.full()) {
 		return kEnterSceneChangingGs;  // 进入场景切换中的游戏服务器
