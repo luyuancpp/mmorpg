@@ -8,92 +8,92 @@ enum  EnumCode : uint32_t
 {
     kOK = 0,
     kTableIdInvalid = 2,
-    kRetConfigData = 3,
-    kRetEnttNull = 4,
+    kTableDataInvalid = 3,
+    kEnttNull = 4,
     //改功能暂时关闭gate 用,gate写死了
-    kRetServiceNotOpen = 5,
+    kServiceNotOpen = 5,
     //服务器关闭请重新登录 gate 用,gate写死了
-    kRetServerCrush = 6,
+    kServerCrush = 6,
     //未知参数
     kInvalidParameter = 7,
 
     //login server
     //找不到账号
-    kRetLoginCantFindAccount = 1000,
-    kRetLoginAccountPlayerFull = 1001,
-    kRetLoginCreatePlayerUnLoadAccount = 1002,
-    kRetLoginCreatePlayerConnectionHasNotAccount = 1003,
-    kRetLoginUnLogin = 1004,
-    kRetLoginIng = 1005,
-    kRetLoginPlayerGuidError = 1006,
-    kRetLoginEnteringGame = 1007,
-    kRetLoginPlaying = 1008,
-    kRetLoginCreatingPlayer = 1009,
+    kLoginCantFindAccount = 1000,
+    kLoginAccountPlayerFull = 1001,
+    kLoginCreatePlayerUnLoadAccount = 1002,
+    kLoginCreatePlayerConnectionHasNotAccount = 1003,
+    kLoginUnLogin = 1004,
+    kLoginIng = 1005,
+    kLoginPlayerGuidError = 1006,
+    kLoginEnteringGame = 1007,
+    kLoginPlaying = 1008,
+    kLoginCreatingPlayer = 1009,
     //已经登录了，等待进入游戏
-    kRetLoginWaitingEnterGame = 1010,
-    kRetLoginEnterGuid = 1011,
-    kRetLoginAccountNameEmpty = 1012,
-    kRetLoginCreateConnectionAccountEmpty = 1013,
-    kRetLoginEnterGameConnectionAccountEmpty = 1014,
-    kRetLoginUnknownError = 1015,
-    kRetLoginSessionDisconnect = 1016,
+    kLoginWaitingEnterGame = 1010,
+    kLoginEnterGuid = 1011,
+    kLoginAccountNameEmpty = 1012,
+    kLoginCreateConnectionAccountEmpty = 1013,
+    kLoginEnterGameConnectionAccountEmpty = 1014,
+    kLoginUnknownError = 1015,
+    kLoginSessionDisconnect = 1016,
     //在别的地方登录
-    kRetLoginBeKickByAnOtherAccount = 1017,
+    kLoginBeKickByAnOtherAccount = 1017,
 
     //Scene
-    kRetEnterSceneNotFound = 4000,
-    kRetEnterSceneNotFull = 4001,
+    kEnterSceneNotFound = 4000,
+    kEnterSceneNotFull = 4001,
     //所有场景已经满了
-    kRetEnterSceneWeightRoundRobinMainScene = 4002,
-    kRetNoUse = 4003,
+    kEnterSceneWeightRoundRobinMainScene = 4002,
+    kNoUse = 4003,
     //当前服务器不可进入，请重新进入
-    kRetEnterGameGsCrash = 4004,
+    kEnterGameGsCrash = 4004,
     //当前服务器不可切换场景
-    kRetEnterSceneServerType = 4005,
+    kEnterSceneServerType = 4005,
     //换场景参数错误
-    kRetEnterSceneParamError = 4006,
+    kEnterSceneParamError = 4006,
     //场景已经满了不能切换
-    kRetEnterSceneSceneFull = 4007,
+    kEnterSceneSceneFull = 4007,
     //您所要切换的场景不存在
-    kRetEnterSceneSceneNotFound = 4008,
+    kEnterSceneSceneNotFound = 4008,
     //您当前就在这个场景，无需切换
-    kRetEnterSceneYouInCurrentScene = 4009,
-    kRetEnterSceneEnterCrossRoomScene = 4010,//不能进入跨服副本
-    kRetEnterSceneGsInfoNull = 4011,//场景的数据不完整
-    kRetEnterSceneGsFull = 4012,//gs 已经满了不能切换
-    kRetEnterSceneYourSceneIsNull = 4013,//你的场景为空
-    kRetEnterSceneChangeSceneOffLine = 4014,//你已经下线
-    kRetEnterSceneChangingScene = 4015,//正在切换场景中
-    kRetEnterSceneChangingGs = 4016,//正在切换gs中
-    kRetChangeScenePlayerQueueComponentNull = 4017,//玩家切换场景队列组件未找到
-    kRetChangeScenePlayerQueueComponentFull = 4018,//玩家切换场景队列组件已满
-    kRetChangeScenePlayerQueueComponentGsNull = 4019,//找不到玩家的gs
-    kRetChangeScenePlayerQueueComponentEmpty = 4020,//玩家切换场景队列为空
-    kRetChangeSceneEnQueueNotSameGs = 4021,//不是同一个场景切换
+    kEnterSceneYouInCurrentScene = 4009,
+    kEnterSceneEnterCrossRoomScene = 4010,//不能进入跨服副本
+    kEnterSceneGsInfoNull = 4011,//场景的数据不完整
+    kEnterSceneGsFull = 4012,//gs 已经满了不能切换
+    kEnterSceneYourSceneIsNull = 4013,//你的场景为空
+    kEnterSceneChangeSceneOffLine = 4014,//你已经下线
+    kEnterSceneChangingScene = 4015,//正在切换场景中
+    kEnterSceneChangingGs = 4016,//正在切换gs中
+    kChangeScenePlayerQueueComponentNull = 4017,//玩家切换场景队列组件未找到
+    kChangeScenePlayerQueueComponentFull = 4018,//玩家切换场景队列组件已满
+    kChangeScenePlayerQueueComponentGsNull = 4019,//找不到玩家的gs
+    kChangeScenePlayerQueueComponentEmpty = 4020,//玩家切换场景队列为空
+    kChangeSceneEnQueueNotSameGs = 4021,//不是同一个场景切换
     //检测进入副本场景未找到
-    kRetCheckEnterSceneSceneParam = 4022,
+    kCheckEnterSceneSceneParam = 4022,
     //该副本您没有归属权,不能进入
-    kRetCheckEnterSceneCreator = 4023,
+    kCheckEnterSceneCreator = 4023,
     
     //Team
-    kRetTeamNotInApplicants = 5000,
-    kRetTeamPlayerId = 5001,
-    kRetTeamMembersFull = 5002,
-    kRetTeamMemberInTeam = 5003,
-    kRetTeamMemberNotInTeam = 5004,
-    kRetTeamKickSelf = 5005,
-    kRetTeamKickNotLeader = 5006,
-    kRetTeamAppointSelf = 5007,
-    KRetTeamAppointLeaderNotLeader = 5008,
-    kRetTeamFull = 5009,
-    kRetTeamInApplicantList = 5010,
-    kRetTeamNotInApplicantList = 5011,
-    kRetTeamListMaxSize = 5012,
-    kRetTeamHasNotTeamId = 5013,
-    kRetTeamDismissNotLeader = 5014,
-    kRetTeamJoinTeamMemberListToMax = 5013,
-    kRetTeamCreateTeamMaxMemberSize = 5014,
-    kRetTeamPlayerNotFound = 5015,
+    kTeamNotInApplicants = 5000,
+    kTeamPlayerId = 5001,
+    kTeamMembersFull = 5002,
+    kTeamMemberInTeam = 5003,
+    kTeamMemberNotInTeam = 5004,
+    kTeamKickSelf = 5005,
+    kTeamKickNotLeader = 5006,
+    kTeamAppointSelf = 5007,
+    kTeamAppointLeaderNotLeader = 5008,
+    kTeamFull = 5009,
+    kTeamInApplicantList = 5010,
+    kTeamNotInApplicantList = 5011,
+    kTeamListMaxSize = 5012,
+    kTeamHasNotTeamId = 5013,
+    kTeamDismissNotLeader = 5014,
+    kTeamJoinTeamMemberListToMax = 5013,
+    kTeamCreateTeamMaxMemberSize = 5014,
+    kTeamPlayerNotFound = 5015,
 
     //mission
     kMissionTypeRepeated = 6000,
@@ -105,20 +105,20 @@ enum  EnumCode : uint32_t
     kMissionNotInProgress = 6006,
 
     //bag 
-    kRetBagDeleteItemFindGuid = 7000,
-    kRetBagDeleteItemAlreadyHasGuid = 7001,
-    kRetBagAddItemHasNotBaseComponent = 7002,
-    kRetBagAddItemInvalidGuid = 7003,
-    kRetBagAddItemInvalidParam = 7004,
-    kRetBagAddItemBagFull = 7005,
-    kRetBagAdequateAddItemSize = 7006,//不可叠加
-    kRetBagAdequateItem = 7007,//不够物品
-    kRetBagDelItemPos = 7008,
-    kRetBagDelItemConfig = 7009,
-    kRetBagDelItemGuid = 7010,
-    kRetBagDelItemFindItem = 7011,
-    kRetBagDelItemSize = 7012,
-    kRetBagDelItemNotAdequateSize = 7013,
+    kBagDeleteItemFindGuid = 7000,
+    kBagDeleteItemAlreadyHasGuid = 7001,
+    kBagAddItemHasNotBaseComponent = 7002,
+    kBagAddItemInvalidGuid = 7003,
+    kBagAddItemInvalidParam = 7004,
+    kBagAddItemBagFull = 7005,
+    kBagAdequateAddItemSize = 7006,//不可叠加
+    kBagAdequateItem = 7007,//不够物品
+    kBagDelItemPos = 7008,
+    kBagDelItemConfig = 7009,
+    kBagDelItemGuid = 7010,
+    kBagDelItemFindItem = 7011,
+    kBagDelItemSize = 7012,
+    kBagDelItemNotAdequateSize = 7013,
 };
 
 
@@ -132,7 +132,7 @@ if (ret != kOK)\
 }
 
 #define  CHECK_RETURN_CLOSURE_ERROR(tip_code)\
-if ((tip_code) != kRetOK)\
+if ((tip_code) != kOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
     return;\
@@ -148,10 +148,10 @@ if (condition)\
 response->mutable_error()->set_id(f);\
 return
 
-#define RETURN_CLOSURE_OK ReturnClosureError(kRetOK);
+#define RETURN_CLOSURE_OK ReturnClosureError(kOK);
 
 #define  RETURN_AUTO_CLOSURE_ERROR(tip_code)\
-if ((tip_code) != kRetOK)\
+if ((tip_code) != kOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
     return;\

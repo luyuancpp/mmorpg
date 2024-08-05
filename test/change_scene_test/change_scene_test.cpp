@@ -56,7 +56,7 @@ TEST(PlayerChangeScene, QueueFull)
 		EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	}
 	CentreChangeSceneInfo changeInfo;
-	EXPECT_EQ(kRetEnterSceneChangingGs, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
+	EXPECT_EQ(kEnterSceneChangingGs, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 }
 
 // Test: Directly switch within the same game server, should succeed directly

@@ -21,7 +21,7 @@ TEST(TeamManger, CreateFullDismiss)
 
 	EXPECT_TRUE(team_list.IsTeamListMax());
 	player_id++;
-	EXPECT_EQ(kRetTeamListMaxSize, team_list.CreateTeam({ player_id, UInt64Set{player_id}}));
+	EXPECT_EQ(kTeamListMaxSize, team_list.CreateTeam({ player_id, UInt64Set{player_id}}));
 
 	EXPECT_EQ(kMaxTeamSize, team_list.GetTeamSize());
 
@@ -39,7 +39,7 @@ TEST(TeamManger, TeamSizeTest)
 	Guid member_id = 100;
 	EXPECT_EQ(kOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 	EXPECT_TRUE(team_list.HasMember(team_list.GetLastTeamId(), member_id));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
 	EXPECT_EQ(1, team_list.GetMemberSize(team_list.GetLastTeamId()));
 
 	for (std::size_t i = 1; i < kFiveMemberMaxSize; ++i)
@@ -49,7 +49,7 @@ TEST(TeamManger, TeamSizeTest)
 		EXPECT_EQ(1 + i, team_list.GetMemberSize(team_list.GetLastTeamId()));
 	}
 	++member_id;
-	EXPECT_EQ(kRetTeamMembersFull, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
+	EXPECT_EQ(kTeamMembersFull, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
 	EXPECT_EQ(kFiveMemberMaxSize, team_list.GetMemberSize(team_list.GetLastTeamId()));
 }
 
@@ -59,13 +59,13 @@ TEST(TeamManger, LeaveTeam)
 	constexpr Guid member_id = 100;
 	EXPECT_EQ(kOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 	EXPECT_TRUE(team_list.HasMember(team_list.GetLastTeamId(), member_id));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
 	EXPECT_EQ(1, team_list.GetMemberSize(team_list.GetLastTeamId()));
 
 	TeamSystem::LeaveTeam(member_id);
     EXPECT_FALSE(team_list.HasMember(team_list.GetLastTeamId(), member_id));
 	EXPECT_EQ(0, team_list.GetMemberSize(team_list.GetLastTeamId()));
-	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
+	EXPECT_EQ(kTeamHasNotTeamId, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
 	EXPECT_EQ(0, team_list.GetMemberSize(team_list.GetLastTeamId()));
 
 	EXPECT_EQ(kOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
@@ -104,18 +104,18 @@ TEST(TeamManger, KickTeaamMember)
 
 	EXPECT_EQ(kOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	EXPECT_EQ(kRetTeamKickSelf, team_list.KickMember(team_list.GetLastTeamId(), member_id, member_id));
-	EXPECT_EQ(kRetTeamKickNotLeader, team_list.KickMember(team_list.GetLastTeamId(),99, 99));
+	EXPECT_EQ(kTeamKickSelf, team_list.KickMember(team_list.GetLastTeamId(), member_id, member_id));
+	EXPECT_EQ(kTeamKickNotLeader, team_list.KickMember(team_list.GetLastTeamId(),99, 99));
 
 	member_id = (member_id + 1);
 	EXPECT_EQ(kOK, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
-	EXPECT_EQ(kRetTeamKickSelf, team_list.KickMember(team_list.GetLastTeamId(), leader_player_id, leader_player_id));
+	EXPECT_EQ(kTeamKickSelf, team_list.KickMember(team_list.GetLastTeamId(), leader_player_id, leader_player_id));
 	EXPECT_EQ(leader_player_id, team_list.GetLeaderIdByTeamId(team_list.GetLastTeamId()));
-	EXPECT_EQ(kRetTeamKickNotLeader, team_list.KickMember(team_list.GetLastTeamId(), member_id, leader_player_id));
+	EXPECT_EQ(kTeamKickNotLeader, team_list.KickMember(team_list.GetLastTeamId(), member_id, leader_player_id));
 	EXPECT_EQ(leader_player_id, team_list.GetLeaderIdByTeamId(team_list.GetLastTeamId()));
-	EXPECT_EQ(kRetTeamKickNotLeader, team_list.KickMember(team_list.GetLastTeamId(), member_id, member_id));
+	EXPECT_EQ(kTeamKickNotLeader, team_list.KickMember(team_list.GetLastTeamId(), member_id, member_id));
 	EXPECT_EQ(leader_player_id, team_list.GetLeaderIdByTeamId(team_list.GetLastTeamId()));
-	EXPECT_EQ(kRetTeamMemberNotInTeam, team_list.KickMember(team_list.GetLastTeamId(), leader_player_id, 88));
+	EXPECT_EQ(kTeamMemberNotInTeam, team_list.KickMember(team_list.GetLastTeamId(), leader_player_id, 88));
 	EXPECT_EQ(leader_player_id, team_list.GetLeaderIdByTeamId(team_list.GetLastTeamId()));
 	EXPECT_EQ(kOK, team_list.KickMember(team_list.GetLastTeamId(), leader_player_id, member_id));
 	EXPECT_EQ(leader_player_id, team_list.GetLeaderIdByTeamId(team_list.GetLastTeamId()));
@@ -141,11 +141,11 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
 		EXPECT_EQ(1 + i, team_list.GetMemberSize(team_list.GetLastTeamId()));
 	}
 
-	EXPECT_EQ(kRetTeamAppointSelf, team_list.AppointLeader(team_list.GetLastTeamId(), 101, 101));
+	EXPECT_EQ(kTeamAppointSelf, team_list.AppointLeader(team_list.GetLastTeamId(), 101, 101));
 	EXPECT_EQ(leader_player_id, team_list.GetLeaderIdByTeamId(team_list.GetLastTeamId()));
-	EXPECT_EQ(kRetTeamAppointSelf, team_list.AppointLeader(team_list.GetLastTeamId(), 101, 100));
+	EXPECT_EQ(kTeamAppointSelf, team_list.AppointLeader(team_list.GetLastTeamId(), 101, 100));
 	EXPECT_EQ(leader_player_id, team_list.GetLeaderIdByTeamId(team_list.GetLastTeamId()));
-	EXPECT_EQ(kRetTeamAppointSelf, team_list.AppointLeader(team_list.GetLastTeamId(), 100, 100));
+	EXPECT_EQ(kTeamAppointSelf, team_list.AppointLeader(team_list.GetLastTeamId(), 100, 100));
 	EXPECT_EQ(leader_player_id, team_list.GetLeaderIdByTeamId(team_list.GetLastTeamId()));
 
 	EXPECT_EQ(kOK, team_list.AppointLeader(team_list.GetLastTeamId(), 100, 101));
@@ -210,8 +210,8 @@ TEST(TeamManger, DismissTeam)
 	member_id = 104;
 	EXPECT_EQ(kOK, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
 
-	EXPECT_EQ(kRetTeamDismissNotLeader, team_list.Disbanded(team_list.GetLastTeamId(), 104));
-	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.Disbanded(111, 104));
+	EXPECT_EQ(kTeamDismissNotLeader, team_list.Disbanded(team_list.GetLastTeamId(), 104));
+	EXPECT_EQ(kTeamHasNotTeamId, team_list.Disbanded(111, 104));
 	EXPECT_EQ(kOK, team_list.Disbanded(team_list.GetLastTeamId(), 100));
 	EXPECT_FALSE(team_list.HasTeam(100));
 }
@@ -300,19 +300,19 @@ TEST(TeamManger, InTeamApplyForTeam)
 		}
 		else
 		{
-			EXPECT_EQ(kRetTeamMembersFull, team_list.JoinTeam(team_list.GetLastTeamId(), i));
+			EXPECT_EQ(kTeamMembersFull, team_list.JoinTeam(team_list.GetLastTeamId(), i));
 			EXPECT_TRUE(team_list.IsApplicant(team_list.GetLastTeamId(), i));
 		}
 	}
 	a = (6666);
-	EXPECT_EQ(kRetTeamMembersFull, team_list.ApplyToTeam(team_list.GetLastTeamId(), a));
+	EXPECT_EQ(kTeamMembersFull, team_list.ApplyToTeam(team_list.GetLastTeamId(), a));
 
 	EXPECT_EQ(kOK, team_list.LeaveTeam(2));
 
 	member_id = (2);
 	EXPECT_EQ(kOK, team_list.ApplyToTeam(team_list.GetLastTeamId(), member_id));
 	EXPECT_EQ(kOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.GetLastTeamId(), 2));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_list.GetLastTeamId(), 2));
 	EXPECT_FALSE(team_list.IsApplicant(team_list.GetLastTeamId(), 2));
 }
 
@@ -472,27 +472,27 @@ TEST(TeamManger, PlayerInTeam)
 	Guid member_id = (1);
 
 	EXPECT_EQ(kOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_list.GetLastTeamId(), member_id));
 	const auto team_id1 = team_list.GetLastTeamId();
 
 	member_id = (2);
 	EXPECT_EQ(kOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.ApplyToTeam(team_id1, member_id));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.ApplyToTeam(team_id1, member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
 
-	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.LeaveTeam(kInvalidGuid));
+	EXPECT_EQ(kTeamHasNotTeamId, team_list.LeaveTeam(kInvalidGuid));
 	EXPECT_EQ(kOK, team_list.LeaveTeam(member_id));
 	EXPECT_EQ(kOK, team_list.JoinTeam(team_id1, member_id));
 
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.ApplyToTeam(team_id1, member_id));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.ApplyToTeam(team_id1, member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
 
 	EXPECT_EQ(kOK, team_list.LeaveTeam( member_id));
 	EXPECT_EQ(kOK, team_list.ApplyToTeam(team_id1, member_id));
 	EXPECT_EQ(kOK, team_list.JoinTeam(team_id1, member_id));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
+	EXPECT_EQ(kTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
 
 	//invite
 	/*EXPECT_EQ(kOK, team_list.LeaveTeam(m));
@@ -510,7 +510,7 @@ TEST(TeamManger, AppointLeaderNotInTeam)
 	EXPECT_EQ(kOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 	for (Guid i = leader_player_id + 1; i < 10; i++)
 	{
-		EXPECT_EQ(kRetTeamHasNotTeamId, team_list.AppointLeader(team_list.GetLastTeamId(), leader_player_id, i));
+		EXPECT_EQ(kTeamHasNotTeamId, team_list.AppointLeader(team_list.GetLastTeamId(), leader_player_id, i));
 	}
 }
 

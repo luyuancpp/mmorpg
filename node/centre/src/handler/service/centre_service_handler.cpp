@@ -279,7 +279,7 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 	if (tlsCommonLogic.GetPlayerList().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
-		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
+		response->mutable_error()->set_id(kLoginAccountPlayerFull);
 		return;
 	}
 	//排队
@@ -338,7 +338,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipMessage beKickTip;
-			beKickTip.mutable_tip_info()->set_id(kRetLoginBeKickByAnOtherAccount);
+			beKickTip.mutable_tip_info()->set_id(kLoginBeKickByAnOtherAccount);
 			SendMessageToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, clientMsgBody.player_id());
 
 			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));

@@ -907,7 +907,7 @@ TEST(GS, CheckEnterRoomScene)
 
 	// Test cases
 	EXPECT_EQ(kOK, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));
-	EXPECT_EQ(kRetCheckEnterSceneCreator, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player2 }));
+	EXPECT_EQ(kCheckEnterSceneCreator, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player2 }));
 }
 
 
