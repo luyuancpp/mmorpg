@@ -59,8 +59,8 @@ uint32_t MissionUtil::GetMissionReward(const GetRewardParam& param) {
 // Function to check conditions before accepting a mission
 uint32_t MissionUtil::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp* missionComp) {
 	// Check if mission is unaccepted and uncompleted
-	RET_CHECK_RETURN(missionComp->IsMissionUnaccepted(acceptEvent.mission_id()));
-	RET_CHECK_RETURN(missionComp->IsMissionUncompleted(acceptEvent.mission_id()));
+	CHECK_RETURN_IF_NOT_OK(missionComp->IsMissionUnaccepted(acceptEvent.mission_id()));
+	CHECK_RETURN_IF_NOT_OK(missionComp->IsMissionUncompleted(acceptEvent.mission_id()));
 
 	// Ensure mission configuration is valid
 	CHECK_CONDITION(!missionComp->GetMissionConfig()->HasKey(acceptEvent.mission_id()), kTableIdInvalidError);

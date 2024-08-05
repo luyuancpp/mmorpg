@@ -169,7 +169,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 
 uint32_t  Bag::DelItem(const U32U32UnorderedMap& try_del_items)
 {
-	RET_CHECK_RETURN(HasSufficientItems(try_del_items));
+	CHECK_RETURN_IF_NOT_OK(HasSufficientItems(try_del_items));
 	auto try_del_items_back = try_del_items;
 	ItemRawPtrVector real_del_item;//删除的物品
 	for (auto& it : items_)
