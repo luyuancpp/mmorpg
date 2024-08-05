@@ -154,7 +154,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	if (!fromSceneEntity)
 	{
 		LOG_ERROR << "From scene entity not found for player: " << playerId;
-		PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneYourSceneIsNull, {});
+		PlayerTipUtil::SendToPlayer(playerEntity, kEnterSceneYourSceneIsNull, {});
 		return;
 	}
 
@@ -177,7 +177,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		if (toScene == entt::null)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;
-			PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneSceneFull, {});
+			PlayerTipUtil::SendToPlayer(playerEntity, kEnterSceneSceneFull, {});
 			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
@@ -189,7 +189,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		if (toScene == entt::null)
 		{
 			LOG_ERROR << "Target scene not found for player: " << playerId;
-			PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneSceneNotFound, {});
+			PlayerTipUtil::SendToPlayer(playerEntity, kEnterSceneSceneNotFound, {});
 			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
@@ -215,7 +215,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	if (toSceneGuid == fromSceneInfo->guid())
 	{
 		LOG_WARN << "Player is already in the current scene: " << playerId;
-		PlayerTipUtil::SendToPlayer(playerEntity, kRetEnterSceneYouInCurrentScene, {});
+		PlayerTipUtil::SendToPlayer(playerEntity, kEnterSceneYouInCurrentScene, {});
 		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 		return;
 	}

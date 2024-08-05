@@ -15,10 +15,10 @@ void PlayerChangeSceneUtil::InitChangeSceneQueue(entt::entity player) {
 uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
 	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
-		return kRetChangeScenePlayerQueueComponentNull;  // 玩家队列组件为空
+		return kChangeScenePlayerQueueComponentNull;  // 玩家队列组件为空
 	}
 	if (changeSceneQueue->changeSceneQueue.full()) {
-		return kRetEnterSceneChangingGs;  // 进入场景切换中的游戏服务器
+		return kEnterSceneChangingGs;  // 进入场景切换中的游戏服务器
 	}
 
 	changeSceneQueue->changeSceneQueue.push_back(changeInfo);

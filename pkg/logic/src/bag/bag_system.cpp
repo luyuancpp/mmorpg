@@ -68,14 +68,14 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 		if (p_table_item->max_statck_size() <= 0)
 		{
 			LOG_ERROR << "config error:" << try_item.first << "player:" << player_guid();
-			return kRetConfigData;
+			return kTableDataInvalid;
 		}
 		else if (p_table_item->max_statck_size() == 1)//不可叠加占用一个格子
 		{
 			std::size_t need_grid_size = static_cast<std::size_t>(p_table_item->max_statck_size() * try_item.second);
 			if (empty_size <= 0 || empty_size < need_grid_size)
 			{
-				return kRetBagAdequateAddItemSize;
+				return kBagAdequateAddItemSize;
 			}
 			empty_size -= need_grid_size;
 		}
@@ -120,7 +120,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 		auto need_grid_size = calc_item_need_grid_size(it.second, table_item->max_statck_size());//满叠加的格子
 		if (empty_size <= 0 || empty_size < need_grid_size)
 		{
-			return kRetBagAdequateAddItemSize;
+			return kBagAdequateAddItemSize;
 		}
 		empty_size -= need_grid_size;
 	}
@@ -146,7 +146,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 			if (table_item->max_statck_size() <= 0)
 			{
 				LOG_ERROR << "config error:" << it.first << "player:" << player_guid();
-				return kRetConfigData;
+				return kTableDataInvalid;
 			}
 			if (ji.second <= it.second.size())
 			{
@@ -162,7 +162,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 	}
 	if (!stack_item_list.empty())
 	{
-		return kRetBagAdequateItem;
+		return kBagAdequateItem;
 	}
 	return kOK;
 }
@@ -207,31 +207,31 @@ uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
 {
 	if (p.size_ <= 0)
 	{
-		return kRetBagDelItemSize;
+		return kBagDelItemSize;
 	}
 	auto pit = pos_.find(p.pos_);
 	if (pit == pos_.end())
 	{
-		return kRetBagDelItemPos;
+		return kBagDelItemPos;
 	}
 	if (pit->second != p.item_guid_)
 	{
-		return kRetBagDelItemGuid;
+		return kBagDelItemGuid;
 	}
 	auto item_it = items_.find(p.item_guid_);
 	if (item_it == items_.end())
 	{
-		return kRetBagDelItemFindItem;
+		return kBagDelItemFindItem;
 	}
 	auto& item = item_it->second;
 	if (item.config_id() != p.item_config_id_)
 	{
-		return kRetBagDelItemConfig;
+		return kBagDelItemConfig;
 	}
 	auto old_size = item.size();
 	if (old_size < p.size_)
 	{
-		return kRetBagDelItemNotAdequateSize;
+		return kBagDelItemNotAdequateSize;
 	}
 	item.set_size(old_size - p.size_);
 	return kOK;
@@ -327,13 +327,13 @@ uint32_t Bag::AddItem(const Item& add_item)
 	auto p_item_base = tls.itemRegistry.try_get<ItemBaseDb>(add_item.entity());
 	if (nullptr == p_item_base)
 	{
-		return kRetBagAddItemHasNotBaseComponent;
+		return kBagAddItemHasNotBaseComponent;
 	}
 	auto& item_base_db = *p_item_base;
 	if (item_base_db.config_id() <= 0 || item_base_db.size() <= 0)
 	{
 		LOG_ERROR << "bag add item player:" << player_guid();
-		return kRetBagAddItemInvalidParam;
+		return kBagAddItemInvalidParam;
 	}
 	auto table_item = GetItemTable(item_base_db.config_id());
 	if (nullptr == table_item)
@@ -343,13 +343,13 @@ uint32_t Bag::AddItem(const Item& add_item)
 	if (table_item->max_statck_size() <= 0)
 	{
 		LOG_ERROR << "config error:" << item_base_db.config_id()  << "player:" << player_guid();
-		return kRetConfigData;
+		return kTableDataInvalid;
 	}
 	if (table_item->max_statck_size() == 1)//不可以堆叠直接生成新guid
 	{
 		if (IsFull())
 		{
-			return kRetBagAddItemBagFull;
+			return kBagAddItemBagFull;
 		}
 		if (add_item.size() == 1)//只有一个
 		{
@@ -361,7 +361,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 			if (!it.second)
 			{
 				LOG_ERROR << "bag add item" << player_guid();
-				return kRetBagDeleteItemAlreadyHasGuid;
+				return kBagDeleteItemAlreadyHasGuid;
 			}
 			OnNewGrid(it.first->second);
 		}
@@ -379,7 +379,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 				if (!it.second)
 				{
 					LOG_ERROR << "bag add item" << player_guid();
-					return kRetBagDeleteItemAlreadyHasGuid;
+					return kBagDeleteItemAlreadyHasGuid;
 				}
 				OnNewGrid(it.first->second);
 			}
@@ -421,7 +421,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 			need_grid_size = calc_item_need_grid_size(check_need_stack_size, table_item->max_statck_size());//放不完的还需要多少个格子
 			if (NotAdequateSize(need_grid_size))
 			{
-				return kRetBagAddItemBagFull;
+				return kBagAddItemBagFull;
 			}
 		}
 		//检测完毕真正放叠加物品在这里
@@ -483,7 +483,7 @@ uint32_t Bag::DelItem(Guid del_guid)
 	auto it = items_.find(del_guid);
 	if (it == items_.end())
 	{
-		return kRetBagDeleteItemFindGuid;
+		return kBagDeleteItemFindGuid;
 	}
 	items_.erase(del_guid);
 	for (auto& pit : pos_)

@@ -13,6 +13,7 @@
 #include "service/game_service_service.h"
 #include "service/login_service_service.h"
 #include "thread_local/storage_gate.h"
+#include "constants/tips_id_constants.h"
 #include "util/random.h"
 #include "util/snow_flake.h"
 
@@ -131,7 +132,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 		if (!tls.gameNodeRegistry.valid(gameNodeId))
 		{
 			LOG_ERROR << "Invalid game node id " << sessionIt->second.game_node_id_ << " for session id: " << sessionId;
-			Tip(conn, kRetServerCrush);
+			Tip(conn, kServerCrush);
 			return;
 		}
 

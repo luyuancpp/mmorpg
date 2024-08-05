@@ -212,19 +212,19 @@ void SceneUtil::HandleDestroyGameNode(entt::entity node) {
 uint32_t SceneUtil::CheckPlayerEnterScene(const EnterSceneParam& param) {
 	if (!tls.sceneRegistry.valid(param.scene)) {
 		LOG_ERROR << "Invalid scene entity when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
-		return kRetCheckEnterSceneSceneParam;
+		return kCheckEnterSceneSceneParam;
 	}
 
 	auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(param.scene);
 	if (!sceneInfo) {
 		LOG_ERROR << "SceneInfo not found when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
-		return kRetCheckEnterSceneSceneParam;
+		return kCheckEnterSceneSceneParam;
 	}
 
 	auto creatorId = tls.registry.get<Guid>(param.enter);
 	if (sceneInfo->creators().find(creatorId) == sceneInfo->creators().end()) {
 		LOG_WARN << "Player cannot enter scene due to creator restriction - Scene ID: " << entt::to_integral(param.scene);
-		return kRetCheckEnterSceneCreator;
+		return kCheckEnterSceneCreator;
 	}
 
 	return kOK;
@@ -237,18 +237,18 @@ uint32_t SceneUtil::CheckScenePlayerSize(entt::entity scene) {
 
 	if (scenePlayers.size() >= kMaxScenePlayer) {
 		LOG_WARN << "Scene player size limit exceeded - Scene ID: " << entt::to_integral(scene);
-		return kRetEnterSceneNotFull;
+		return kEnterSceneNotFull;
 	}
 
 	auto* gsPlayerInfo = tls.sceneRegistry.try_get<GameNodePlayerInfoPtr>(scene);
 	if (!gsPlayerInfo) {
 		LOG_ERROR << "GameNodePlayerInfoPtr not found for scene - Scene ID: " << entt::to_integral(scene);
-		return kRetEnterSceneGsInfoNull;
+		return kEnterSceneGsInfoNull;
 	}
 
 	if ((*gsPlayerInfo)->player_size() >= kMaxServerPlayerSize) {
 		LOG_WARN << "Game node player size limit exceeded - Scene ID: " << entt::to_integral(scene);
-		return kRetEnterSceneGsFull;
+		return kEnterSceneGsFull;
 	}
 
 	return kOK;
