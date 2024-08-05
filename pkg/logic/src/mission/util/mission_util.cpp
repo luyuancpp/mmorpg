@@ -63,7 +63,7 @@ uint32_t MissionUtil::CheckMissionAcceptance(const AcceptMissionEvent& acceptEve
 	RET_CHECK_RETURN(missionComp->IsMissionUncompleted(acceptEvent.mission_id()));
 
 	// Ensure mission configuration is valid
-	CHECK_CONDITION(!missionComp->GetMissionConfig()->HasKey(acceptEvent.mission_id()), kTableIdInvalid);
+	CHECK_CONDITION(!missionComp->GetMissionConfig()->HasKey(acceptEvent.mission_id()), kTableIdInvalidError);
 
 	// Retrieve mission sub-type and type
 	auto missionSubType = missionComp->GetMissionConfig()->GetMissionSubType(acceptEvent.mission_id());
@@ -72,7 +72,7 @@ uint32_t MissionUtil::CheckMissionAcceptance(const AcceptMissionEvent& acceptEve
 	// If mission type should not repeat, check type filter
 	if (missionComp->IsMissionTypeNotRepeated()) {
 		auto missionTypeSubTypePair = std::make_pair(missionType, missionSubType);
-		CHECK_CONDITION(missionComp->GetTypeFilter().find(missionTypeSubTypePair) != missionComp->GetTypeFilter().end(), kMissionTypeRepeated);
+		CHECK_CONDITION(missionComp->GetTypeFilter().find(missionTypeSubTypePair) != missionComp->GetTypeFilter().end(), kMissionTypeAlreadyExists);
 	}
 
 	return kOK;

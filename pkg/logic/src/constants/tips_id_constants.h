@@ -7,31 +7,31 @@
 enum  EnumCode : uint32_t
 {
     kOK = 0,
-    kTableIdInvalid = 2,
-    kTableDataInvalid = 3,
-    kEnttNull = 4,
+    kTableIdInvalidError = 2,
+    kInvalidTableData = 3,
+    kEntityIsNull = 4,
     //改功能暂时关闭gate 用,gate写死了
-    kServiceNotOpen = 5,
+    kServiceNotAvailable = 5,
     //服务器关闭请重新登录 gate 用,gate写死了
-    kServerCrush = 6,
+    kServerCrashed = 6,
     //未知参数
     kInvalidParameter = 7,
 
     //login server
     //找不到账号
-    kLoginCantFindAccount = 1000,
+    kLoginAccountNotFound = 1000,
     kLoginAccountPlayerFull = 1001,
     kLoginCreatePlayerUnLoadAccount = 1002,
     kLoginCreatePlayerConnectionHasNotAccount = 1003,
     kLoginUnLogin = 1004,
-    kLoginIng = 1005,
+    kLoginInProgress = 1005,
     kLoginPlayerGuidError = 1006,
     kLoginEnteringGame = 1007,
     kLoginPlaying = 1008,
     kLoginCreatingPlayer = 1009,
     //已经登录了，等待进入游戏
     kLoginWaitingEnterGame = 1010,
-    kLoginEnterGuid = 1011,
+    kLoginEnterGameGuid = 1011,
     kLoginAccountNameEmpty = 1012,
     kLoginCreateConnectionAccountEmpty = 1013,
     kLoginEnterGameConnectionAccountEmpty = 1014,
@@ -44,10 +44,10 @@ enum  EnumCode : uint32_t
     kEnterSceneNotFound = 4000,
     kEnterSceneNotFull = 4001,
     //所有场景已经满了
-    kEnterSceneWeightRoundRobinMainScene = 4002,
+    kEnterSceneMainSceneFull = 4002,
     kNoUse = 4003,
     //当前服务器不可进入，请重新进入
-    kEnterGameGsCrash = 4004,
+    kEnterGameNodeCrash = 4004,
     //当前服务器不可切换场景
     kEnterSceneServerType = 4005,
     //换场景参数错误
@@ -65,13 +65,13 @@ enum  EnumCode : uint32_t
     kEnterSceneChangeSceneOffLine = 4014,//你已经下线
     kEnterSceneChangingScene = 4015,//正在切换场景中
     kEnterSceneChangingGs = 4016,//正在切换gs中
-    kChangeScenePlayerQueueComponentNull = 4017,//玩家切换场景队列组件未找到
-    kChangeScenePlayerQueueComponentFull = 4018,//玩家切换场景队列组件已满
+    kChangeScenePlayerQueueComponentNotFound = 4017,//玩家切换场景队列组件未找到
+    kChangeScenePlayerQueueFull = 4018,//玩家切换场景队列组件已满
     kChangeScenePlayerQueueComponentGsNull = 4019,//找不到玩家的gs
     kChangeScenePlayerQueueComponentEmpty = 4020,//玩家切换场景队列为空
     kChangeSceneEnQueueNotSameGs = 4021,//不是同一个场景切换
     //检测进入副本场景未找到
-    kCheckEnterSceneSceneParam = 4022,
+    kInvalidEnterSceneParameters = 4022,
     //该副本您没有归属权,不能进入
     kCheckEnterSceneCreator = 4023,
     
@@ -91,12 +91,12 @@ enum  EnumCode : uint32_t
     kTeamListMaxSize = 5012,
     kTeamHasNotTeamId = 5013,
     kTeamDismissNotLeader = 5014,
-    kTeamJoinTeamMemberListToMax = 5013,
+    kTeamMemberListFull = 5013,
     kTeamCreateTeamMaxMemberSize = 5014,
     kTeamPlayerNotFound = 5015,
 
     //mission
-    kMissionTypeRepeated = 6000,
+    kMissionTypeAlreadyExists = 6000,
     kMissionAlreadyCompleted = 6001,
     kMissionIdNotInRewardList = 6002,
     kPlayerMissionComponentNotFound = 6003,
@@ -111,14 +111,14 @@ enum  EnumCode : uint32_t
     kBagAddItemInvalidGuid = 7003,
     kBagAddItemInvalidParam = 7004,
     kBagAddItemBagFull = 7005,
-    kBagAdequateAddItemSize = 7006,//不可叠加
-    kBagAdequateItem = 7007,//不够物品
+    kBagItemNotStackable = 7006,//不可叠加
+    kBagInsufficientBagItems = 7007,//不够物品
     kBagDelItemPos = 7008,
     kBagDelItemConfig = 7009,
     kBagDelItemGuid = 7010,
     kBagDelItemFindItem = 7011,
     kBagDelItemSize = 7012,
-    kBagDelItemNotAdequateSize = 7013,
+    kItemDeletionInsufficientSize = 7013,
 };
 
 

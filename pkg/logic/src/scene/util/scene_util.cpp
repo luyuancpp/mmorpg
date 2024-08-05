@@ -212,13 +212,13 @@ void SceneUtil::HandleDestroyGameNode(entt::entity node) {
 uint32_t SceneUtil::CheckPlayerEnterScene(const EnterSceneParam& param) {
 	if (!tls.sceneRegistry.valid(param.scene)) {
 		LOG_ERROR << "Invalid scene entity when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
-		return kCheckEnterSceneSceneParam;
+		return kInvalidEnterSceneParameters;
 	}
 
 	auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(param.scene);
 	if (!sceneInfo) {
 		LOG_ERROR << "SceneInfo not found when checking player enter scene - Scene ID: " << entt::to_integral(param.scene);
-		return kCheckEnterSceneSceneParam;
+		return kInvalidEnterSceneParameters;
 	}
 
 	auto creatorId = tls.registry.get<Guid>(param.enter);

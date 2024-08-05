@@ -63,19 +63,19 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 		auto p_table_item = GetItemTable(try_item.first);
 		if (nullptr == p_table_item)
 		{
-			return kTableIdInvalid;
+			return kTableIdInvalidError;
 		}
 		if (p_table_item->max_statck_size() <= 0)
 		{
 			LOG_ERROR << "config error:" << try_item.first << "player:" << player_guid();
-			return kTableDataInvalid;
+			return kInvalidTableData;
 		}
 		else if (p_table_item->max_statck_size() == 1)//不可叠加占用一个格子
 		{
 			std::size_t need_grid_size = static_cast<std::size_t>(p_table_item->max_statck_size() * try_item.second);
 			if (empty_size <= 0 || empty_size < need_grid_size)
 			{
-				return kBagAdequateAddItemSize;
+				return kBagItemNotStackable;
 			}
 			empty_size -= need_grid_size;
 		}
@@ -120,7 +120,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 		auto need_grid_size = calc_item_need_grid_size(it.second, table_item->max_statck_size());//满叠加的格子
 		if (empty_size <= 0 || empty_size < need_grid_size)
 		{
-			return kBagAdequateAddItemSize;
+			return kBagItemNotStackable;
 		}
 		empty_size -= need_grid_size;
 	}
@@ -141,12 +141,12 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 			auto table_item = GetItemTable(ji.first);
 			if (nullptr == table_item)
 			{
-				return kTableIdInvalid;
+				return kTableIdInvalidError;
 			}
 			if (table_item->max_statck_size() <= 0)
 			{
 				LOG_ERROR << "config error:" << it.first << "player:" << player_guid();
-				return kTableDataInvalid;
+				return kInvalidTableData;
 			}
 			if (ji.second <= it.second.size())
 			{
@@ -162,7 +162,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 	}
 	if (!stack_item_list.empty())
 	{
-		return kBagAdequateItem;
+		return kBagInsufficientBagItems;
 	}
 	return kOK;
 }
@@ -231,7 +231,7 @@ uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
 	auto old_size = item.size();
 	if (old_size < p.size_)
 	{
-		return kBagDelItemNotAdequateSize;
+		return kItemDeletionInsufficientSize;
 	}
 	item.set_size(old_size - p.size_);
 	return kOK;
@@ -338,12 +338,12 @@ uint32_t Bag::AddItem(const Item& add_item)
 	auto table_item = GetItemTable(item_base_db.config_id());
 	if (nullptr == table_item)
 	{
-		return kTableIdInvalid;
+		return kTableIdInvalidError;
 	}
 	if (table_item->max_statck_size() <= 0)
 	{
 		LOG_ERROR << "config error:" << item_base_db.config_id()  << "player:" << player_guid();
-		return kTableDataInvalid;
+		return kInvalidTableData;
 	}
 	if (table_item->max_statck_size() == 1)//不可以堆叠直接生成新guid
 	{
