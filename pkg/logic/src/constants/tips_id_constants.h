@@ -122,7 +122,7 @@ enum  EnumCode : uint32_t
 };
 
 
-#define RET_CHECK_RETURN(f)\
+#define CHECK_RETURN_IF_NOT_OK(f)\
 {\
 uint32_t ret(f);\
 if (ret != kOK)\
@@ -131,7 +131,7 @@ if (ret != kOK)\
 }\
 }
 
-#define  CHECK_RETURN_CLOSURE_ERROR(tip_code)\
+#define  SET_ERROR_AND_RETURN_IF_NOT_OK(tip_code)\
 if ((tip_code) != kOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
@@ -144,17 +144,9 @@ if (condition)\
      return  tip_code; \
 }\
 
-#define  RETURN_CLOSURE_ERROR(f)\
+#define  SET_ERROR_AND_RETURN(f)\
 response->mutable_error()->set_id(f);\
 return
 
-#define RETURN_CLOSURE_OK ReturnClosureError(kOK);
-
-#define  RETURN_AUTO_CLOSURE_ERROR(tip_code)\
-if ((tip_code) != kOK)\
-{\
-    response->mutable_error()->set_id(tip_code);\
-    return;\
-}\
 
 #endif // !COMMON_SRC_tip_code_ERROR_CODE
