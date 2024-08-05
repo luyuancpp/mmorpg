@@ -31,7 +31,7 @@ struct MissionConfig : public IMissionConfig
 
     virtual uint32_t GetMissionType(uint32_t id) const override
     {
-        auto mrow = mission_config::GetSingleton().get(id);
+        auto mrow = GetMissionTable(id);
         if (nullptr == mrow)
         {
             return 0;
@@ -41,7 +41,7 @@ struct MissionConfig : public IMissionConfig
 
     virtual uint32_t GetMissionSubType(uint32_t id) const override
     {
-        auto mrow = mission_config::GetSingleton().get(id);
+        auto mrow = GetMissionTable(id);
         if (nullptr == mrow)
         {
             return 0;
@@ -51,7 +51,7 @@ struct MissionConfig : public IMissionConfig
 
     virtual uint32_t GetRewardId(uint32_t id)const override
     {
-        auto mrow = mission_config::GetSingleton().get(id);
+        auto mrow = GetMissionTable(id);
         if (nullptr == mrow)
         {
             return 0;
@@ -61,7 +61,7 @@ struct MissionConfig : public IMissionConfig
 
     virtual bool AutoReward(uint32_t mission_id)const override
     {
-        auto p = mission_config::GetSingleton().get(mission_id);
+        auto p = GetMissionTable(mission_id);
         if (nullptr == p)
         {
             return false;
@@ -71,7 +71,7 @@ struct MissionConfig : public IMissionConfig
 
     virtual const ::google::protobuf::RepeatedField<uint32_t>& GetConditionIds(uint32_t mission_id) const override
     {
-        auto p = mission_config::GetSingleton().get(mission_id);
+        auto p = GetMissionTable(mission_id);
         if (nullptr == p)
         {
             static ::google::protobuf::RepeatedField<uint32_t> s;
@@ -83,7 +83,7 @@ struct MissionConfig : public IMissionConfig
 
     virtual const ::google::protobuf::RepeatedField<uint32_t>& getNextMissionIds(uint32_t mission_id)const override
     {
-        auto p = mission_config::GetSingleton().get(mission_id);
+        auto p = GetMissionTable(mission_id);
         if (nullptr == p)
         {
             static ::google::protobuf::RepeatedField<uint32_t> s;
@@ -94,5 +94,5 @@ struct MissionConfig : public IMissionConfig
     }
 
     virtual bool CheckTypeRepeated() const override { return true;   }
-    virtual bool HasKey(uint32_t id) const override { return nullptr !=  mission_config::GetSingleton().get(id); }
+    virtual bool HasKey(uint32_t id) const override { return nullptr !=  GetMissionTable(id); }
 };

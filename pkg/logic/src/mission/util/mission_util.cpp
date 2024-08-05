@@ -114,13 +114,13 @@ uint32_t MissionUtil::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 
 	// Initialize mission progress based on conditions
 	for (const auto& conditionId : missionComp->GetMissionConfig()->GetConditionIds(acceptEvent.mission_id())) {
-		const auto* const conditionConfig = condition_config::GetSingleton().get(conditionId);
-		if (nullptr == conditionConfig) {
+		const auto* const conditionTable = GetConditionTable(conditionId);
+		if (nullptr == conditionTable) {
 			LOG_ERROR << "Condition config not found for conditionId = " << conditionId;
 			continue;
 		}
 		missionPb.add_progress(0);
-		missionComp->GetEventMissionsClassify()[conditionConfig->condition_type()].emplace(acceptEvent.mission_id());
+		missionComp->GetEventMissionsClassify()[conditionTable->condition_type()].emplace(acceptEvent.mission_id());
 	}
 
 	// Insert mission into missions component
@@ -189,13 +189,13 @@ void MissionUtil::CompleteAllMissions(entt::entity playerEntity, uint32_t operat
 
 // Function to check if a condition is completed
 bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
-	const auto* conditionRow = condition_config::GetSingleton().get(conditionId);
-	if (nullptr == conditionRow)
+	const auto* conditionTable = GetConditionTable(conditionId);
+	if (nullptr == conditionTable)
 
 	{
 		return false;
 	}
-	return condition_comparison_functions[static_cast<size_t>(conditionRow->comparison())](progressValue, conditionRow->amount());
+	return condition_comparison_functions[static_cast<size_t>(conditionTable->comparison())](progressValue, conditionTable->amount());
 }
 
 
@@ -206,13 +206,13 @@ bool MissionUtil::AreAllConditionsFulfilled(const MissionPbComp& mission, uint32
 
 	// Ensure progress matches condition requirements
 	for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i) {
-		const auto* const conditionRow = condition_config::GetSingleton().get(conditions.at(i));
-		if (nullptr == conditionRow) {
+		const auto* const conditionTable = GetConditionTable(conditions.at(i));
+		if (nullptr == conditionTable) {
 			continue;
 		}
 
 		// Check if condition is fulfilled
-		if (!IsConditionFulfilled(conditionRow->id(), mission.progress(i))) {
+		if (!IsConditionFulfilled(conditionTable->id(), mission.progress(i))) {
 			return false;
 		}
 	}
@@ -282,11 +282,11 @@ void MissionUtil::RemoveMissionClassification(MissionsComp* missionComp, uint32_
 
 	// Remove mission classification based on condition type
 	for (int32_t i = 0; i < configConditions.size(); ++i) {
-		const auto* conditionRow = condition_config::GetSingleton().get(configConditions.Get(i));
-		if (nullptr == conditionRow) {
+		const auto* conditionTable = GetConditionTable(configConditions.Get(i));
+		if (nullptr == conditionTable) {
 			continue;
 		}
-		missionComp->GetEventMissionsClassify()[conditionRow->condition_type()].erase(missionId);
+		missionComp->GetEventMissionsClassify()[conditionTable->condition_type()].erase(missionId);
 	}
 }
 
@@ -329,13 +329,13 @@ bool MissionUtil::UpdateMissionProgress(const MissionConditionEvent& conditionEv
 
 	// Iterate through mission conditions and update progress
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
-		const auto* const conditionRow = condition_config::GetSingleton().get(missionConditions.at(i));
-		if (nullptr == conditionRow) {
+		const auto* const conditionTable = GetConditionTable(missionConditions.at(i));
+		if (nullptr == conditionTable) {
 			continue;
 		}
 
 		// Update progress if condition matches event
-		if (UpdateProgressIfConditionMatches(conditionEvent, mission, i, conditionRow)) {
+		if (UpdateProgressIfConditionMatches(conditionEvent, mission, i, conditionTable)) {
 			missionUpdated = true;
 		}
 	}
@@ -407,19 +407,19 @@ bool MissionUtil::UpdateProgressIfConditionMatches(const MissionConditionEvent& 
 void MissionUtil::UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
 	// Iterate through mission conditions and update progress
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
-		const auto* const conditionRow = condition_config::GetSingleton().get(missionConditions.at(i));
-		if (nullptr == conditionRow) {
+		const auto* const conditionTable = GetConditionTable(missionConditions.at(i));
+		if (nullptr == conditionTable) {
 			continue;
 		}
 
 		auto newProgress = mission.progress(i);
 
 		// Clamp progress to condition amount if exceeded
-		if (!IsConditionFulfilled(conditionRow->id(), newProgress)) {
+		if (!IsConditionFulfilled(conditionTable->id(), newProgress)) {
 			continue;
 		}
 
-		mission.set_progress(i, std::min(newProgress, conditionRow->amount()));
+		mission.set_progress(i, std::min(newProgress, conditionTable->amount()));
 	}
 }
 

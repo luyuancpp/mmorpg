@@ -34,7 +34,7 @@ TEST(MissionsComp, AcceptMission)
 	AcceptMissionEvent acceptMissionEvent;
 	acceptMissionEvent.set_mission_id(testMissionId);
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
-	auto& missionConfigData = mission_config::GetSingleton().all();
+	auto& missionConfigData = GetMissionAllTable();
 	std::size_t acceptedMissionCount = 0;
 	for (int32_t i = 0; i < missionConfigData.data_size(); ++i)
 	{
@@ -615,8 +615,8 @@ class C
 
 int main(int argc, char** argv)
 {
-    condition_config::GetSingleton().load();
-    mission_config::GetSingleton().load();
+    ConditionConfigurationTable::GetSingleton().Load();
+    MissionConfigurationTable::GetSingleton().Load();
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
