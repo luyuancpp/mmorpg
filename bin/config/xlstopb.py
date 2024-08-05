@@ -84,7 +84,8 @@ def main():
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
-                                datastring =getProtoData(workbookdata[sheetname], sheetname)
-                                gencommon.mywrite(datastring, protodir + sheetname + "_config.proto")
+                                sheetnamelower = sheetname.lower()
+                                datastring =getProtoData(workbookdata[sheetname], sheetnamelower)
+                                gencommon.mywrite(datastring, protodir + sheetnamelower + "_config.proto")
                        
 main()
