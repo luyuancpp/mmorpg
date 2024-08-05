@@ -26,9 +26,10 @@ bin/config/xlwt/
 bin/config/xlrd/
 bin/config/proto
 bin/config/cpp/
+bin/config/protocpp/
+bin/config/json/
 bin/zlib*
 pkg/config/src/
-bin/config/
 tools/server/pbgen/.idea/
 tools/server/pbgen/bin/
 common/src/pb/pb2sol2/
@@ -42,3 +43,4 @@ third_party/lua/vs2022
 lib/LIST.TXT
 *.tmp
 bin/vsout/
+*md5
