@@ -55,22 +55,18 @@ def getWorkBookData(workbook):
         workbookdata[worksheet.name] = sheetdata
     return workbookdata
 
-
-def getclassname(sheetname):
-    return sheetname
-
 def getcpph(datastring, sheetname):
     sheetnamelower = sheetname.lower()
-    print(sheetname)
+
     s = "#pragma once\n"
     s += "#include <memory>\n"
     s += "#include <unordered_map>\n"
     s += '#include "%s_config.pb.h" \n' % (sheetnamelower)
-    s += 'class %sConfigurationTable\n{\npublic:\n' % (getclassname(sheetname))
+    s += 'class %sConfigurationTable\n{\npublic:\n' % (sheetname)
     s += '  using row_type = const %s_row*;\n' % (sheetnamelower)
     s += '  using kv_type = std::unordered_map<uint32_t, row_type>;\n'
     s += '  static %sConfigurationTable& GetSingleton(){static %sConfigurationTable singleton; return singleton;}\n' % (
-        getclassname(sheetname), getclassname(sheetname))
+        sheetname, sheetname)
     s += '  const %s_table& All()const{return data_;}\n' % (sheetnamelower)
     s += '  row_type GetTable(uint32_t keyid);\n'
     counter = 0
@@ -86,17 +82,18 @@ def getcpph(datastring, sheetname):
     s += pd
     s += '};\n'
     s += ' const %sConfigurationTable::row_type Get%sTable(uint32_t keyid);\n' % (
-        getclassname(sheetname), getclassname(sheetname))
+        sheetname, sheetname)
     s += ' const %s_table& Get%sAllTable();\n' % (
-        sheetname, getclassname(sheetname))
+        sheetnamelower, sheetname)
     return s;
 
 
 def getcpp(datastring, sheetname):
+    sheetnamelower = sheetname.lower()
     s = '#include "google/protobuf/util/json_util.h"\n'
     s += '#include "src/util/file2string.h"\n'
     s += '#include "%s_config.h"\n\n' % (sheetname)
-    s += 'void %sConfigurationTable::Load()\n{\n data_.Clear();\n' % (getclassname(sheetname))
+    s += 'void %sConfigurationTable::Load()\n{\n data_.Clear();\n' % (sheetname)
     s += ' const auto contents = File2String("config/json/%s.json");\n' % sheetname
     s += ' if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_);\n'
     s += '    !result.ok())\n {\n  std::cout << "%s " << result.message().data() << std::endl;\n }\n' % (sheetname)
@@ -121,21 +118,21 @@ def getcpp(datastring, sheetname):
     s += '}\n\n'
 
     s += 'const %s_row* %sConfigurationTable::GetTable(uint32_t keyid)\n{\n' % (
-        sheetname, getclassname(sheetname))
+        sheetnamelower, sheetname)
     s += '  const auto it = key_data_.find(keyid);\n  return it == key_data_.end() ? nullptr : it->second;\n}\n'
 
     counter = 0
     for d in datastring:
         for v in d.values():
             s += 'const %s_row* %sConfigurationTable::key_%s(uint32_t keyid)const\n{\n' % (
-                sheetname, getclassname(sheetname), v)
+                sheetnamelower, sheetname, v)
             s += '  const auto it = key_data_%s_.find(keyid);\n  return it == key_data_%s_.end() ? nullptr : it->second;\n}\n' % (
                 counter, counter)
             counter += 1
     s += '\nconst %sConfigurationTable::row_type Get%sTable(uint32_t keyid) { return %sConfigurationTable::GetSingleton().GetTable(keyid); }\n' % (
-        getclassname(sheetname), getclassname(sheetname), getclassname(sheetname))
+        sheetname, sheetname, sheetname)
     s += '\nconst %s_table& Get%sAllTable() { return %sConfigurationTable::GetSingleton().All(); }\n' % (
-        sheetname, getclassname(sheetname), getclassname(sheetname))
+        sheetnamelower, sheetname, sheetname)
     return s
 
 
@@ -159,10 +156,10 @@ def getallconfig():
     scpp += '#include "muduo/base/CountDownLatch.h"\n\n'
 
     for item in sheetnames:
-        scpp += '#include "%s_config.h"\n' % (getclassname(item))
+        scpp += '#include "%s_config.h"\n' % (item)
     scpp += 'void LoadAllConfig()\n{\n'
     for item in sheetnames:
-        scpp += '%sConfigurationTable::GetSingleton().Load();\n' % (getclassname(item))
+        scpp += '%sConfigurationTable::GetSingleton().Load();\n' % (item)
     scpp += '}\n'
     scpp += '\n'
     cpucount = cpu_count()
@@ -174,7 +171,7 @@ def getallconfig():
     count = 0
     realthreadcount = 0
     for item in sheetnames:
-        loadstr = '%sConfigurationTable::GetSingleton().Load();\n' % (getclassname(item))
+        loadstr = '%sConfigurationTable::GetSingleton().Load();\n' % (item)
         if count >= cpucount:
             count = 0
         cpustr[count].append(loadstr)

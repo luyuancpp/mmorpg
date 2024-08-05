@@ -25,7 +25,7 @@
 
 void GameNodeSceneUtil::LoadAllMainSceneNavBin()
 {
-	auto& configAll = GetMainsceneAllTable();
+	auto& configAll = GetMainSceneAllTable();
 	for (auto& item : configAll.data())
 	{
 		auto navIt = tlsGame.sceneNav.emplace(item.id(), NavComp{});
@@ -48,7 +48,7 @@ void GameNodeSceneUtil::InitNodeScene()
 		return;
 	}
 
-	const auto& mainSceneConf = GetMainsceneAllTable();
+	const auto& mainSceneConf = GetMainSceneAllTable();
 	for (auto& item : mainSceneConf.data())
 	{
 		CreateGameNodeSceneParam params{ .node = entt::entity{gGameNode->GetNodeId()} };
