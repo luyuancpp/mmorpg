@@ -18,17 +18,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\all_config.h" />
-    <ClInclude Include="src\condition_config.h" />
-    <ClInclude Include="src\global_variable_config.h" />
-    <ClInclude Include="src\global_variable_config_id.h" />
-    <ClInclude Include="src\item_config.h" />
-    <ClInclude Include="src\mainscene_config.h" />
-    <ClInclude Include="src\mission_config.h" />
-    <ClInclude Include="src\monster_base_config.h" />
-    <ClInclude Include="src\scene_config.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -132,7 +121,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../third_party/protobuf/src/;../common/;../../third_party/protobuf/third_party/abseil-cpp/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;../pbc/src/game_config/;../../third_party/spdlog/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third_party/protobuf/src/;../common/;../../third_party/protobuf/third_party/abseil-cpp/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;./src/game_config/;../../third_party/spdlog/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>

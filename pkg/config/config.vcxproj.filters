@@ -14,33 +14,4 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\all_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\condition_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\global_variable_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\global_variable_config_id.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\item_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\mainscene_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\mission_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\monster_base_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\scene_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-  </ItemGroup>
 </Project>
