@@ -15,6 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\aability_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\ability_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -36,7 +39,13 @@
     <ClCompile Include="src\mission_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\monsterbase_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\scene_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\aability_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\ability_config.pb.cc">
@@ -57,11 +66,17 @@
     <ClCompile Include="src\pbc\mission_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\pbc\monsterbase_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\pbc\scene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\aability_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\ability_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -83,10 +98,13 @@
     <ClInclude Include="src\mission_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\monsterbase_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\scene_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\scene_config.pb.h">
+    <ClInclude Include="src\pbc\aability_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\ability_config.pb.h">
@@ -105,6 +123,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\mission_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\monsterbase_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\scene_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
