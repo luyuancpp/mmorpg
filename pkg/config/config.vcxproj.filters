@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\aability_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\ability_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -43,9 +40,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\scene_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\aability_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\ability_config.pb.cc">
@@ -74,9 +68,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\aability_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\ability_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -102,9 +93,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\scene_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\aability_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\ability_config.pb.h">

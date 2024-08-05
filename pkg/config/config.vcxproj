@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\aability_config.cpp" />
     <ClCompile Include="src\ability_config.cpp" />
     <ClCompile Include="src\all_config.cpp" />
     <ClCompile Include="src\condition_config.cpp" />
@@ -28,7 +27,6 @@
     <ClCompile Include="src\mainscene_config.cpp" />
     <ClCompile Include="src\mission_config.cpp" />
     <ClCompile Include="src\monsterbase_config.cpp" />
-    <ClCompile Include="src\pbc\aability_config.pb.cc" />
     <ClCompile Include="src\pbc\ability_config.pb.cc" />
     <ClCompile Include="src\pbc\condition_config.pb.cc" />
     <ClCompile Include="src\pbc\globalvariable_config.pb.cc" />
@@ -40,7 +38,6 @@
     <ClCompile Include="src\scene_config.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\aability_config.h" />
     <ClInclude Include="src\ability_config.h" />
     <ClInclude Include="src\all_config.h" />
     <ClInclude Include="src\condition_config.h" />
@@ -49,7 +46,6 @@
     <ClInclude Include="src\mainscene_config.h" />
     <ClInclude Include="src\mission_config.h" />
     <ClInclude Include="src\monsterbase_config.h" />
-    <ClInclude Include="src\pbc\aability_config.pb.h" />
     <ClInclude Include="src\pbc\ability_config.pb.h" />
     <ClInclude Include="src\pbc\condition_config.pb.h" />
     <ClInclude Include="src\pbc\globalvariable_config.pb.h" />
