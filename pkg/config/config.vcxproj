@@ -18,6 +18,40 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\ability_config.cpp" />
+    <ClCompile Include="src\all_config.cpp" />
+    <ClCompile Include="src\condition_config.cpp" />
+    <ClCompile Include="src\globalvariable_config.cpp" />
+    <ClCompile Include="src\item_config.cpp" />
+    <ClCompile Include="src\mainscene_config.cpp" />
+    <ClCompile Include="src\mission_config.cpp" />
+    <ClCompile Include="src\pbc\ability_config.pb.cc" />
+    <ClCompile Include="src\pbc\condition_config.pb.cc" />
+    <ClCompile Include="src\pbc\globalvariable_config.pb.cc" />
+    <ClCompile Include="src\pbc\item_config.pb.cc" />
+    <ClCompile Include="src\pbc\mainscene_config.pb.cc" />
+    <ClCompile Include="src\pbc\mission_config.pb.cc" />
+    <ClCompile Include="src\pbc\scene_config.pb.cc" />
+    <ClCompile Include="src\scene_config.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ability_config.h" />
+    <ClInclude Include="src\all_config.h" />
+    <ClInclude Include="src\condition_config.h" />
+    <ClInclude Include="src\globalvariable_config.h" />
+    <ClInclude Include="src\item_config.h" />
+    <ClInclude Include="src\mainscene_config.h" />
+    <ClInclude Include="src\mission_config.h" />
+    <ClInclude Include="src\pbc\ability_config.pb.h" />
+    <ClInclude Include="src\pbc\condition_config.pb.h" />
+    <ClInclude Include="src\pbc\globalvariable_config.pb.h" />
+    <ClInclude Include="src\pbc\item_config.pb.h" />
+    <ClInclude Include="src\pbc\mainscene_config.pb.h" />
+    <ClInclude Include="src\pbc\mission_config.pb.h" />
+    <ClInclude Include="src\pbc\scene_config.pb.h" />
+    <ClInclude Include="src\scene_config.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -121,7 +155,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../third_party/protobuf/src/;../common/;../../third_party/protobuf/third_party/abseil-cpp/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;./src/game_config/;../../third_party/spdlog/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third_party/protobuf/src/;../common/;../../third_party/protobuf/third_party/abseil-cpp/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;./src/pbc/;../../third_party/spdlog/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
