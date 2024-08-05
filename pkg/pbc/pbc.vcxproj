@@ -19,13 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\game_config\condition_config.pb.cc" />
-    <ClCompile Include="src\game_config\global_variable_config.pb.cc" />
-    <ClCompile Include="src\game_config\item_config.pb.cc" />
-    <ClCompile Include="src\game_config\mainscene_config.pb.cc" />
-    <ClCompile Include="src\game_config\mission_config.pb.cc" />
-    <ClCompile Include="src\game_config\monster_base_config.pb.cc" />
-    <ClCompile Include="src\game_config\scene_config.pb.cc" />
     <ClCompile Include="src\proto\common\account_database.pb.cc" />
     <ClCompile Include="src\proto\common\c2gate.pb.cc" />
     <ClCompile Include="src\proto\common\centre_service.pb.cc" />
@@ -99,13 +92,6 @@
     <ClCompile Include="src\proto\service\team_client_player_service.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\game_config\condition_config.pb.h" />
-    <ClInclude Include="src\game_config\global_variable_config.pb.h" />
-    <ClInclude Include="src\game_config\item_config.pb.h" />
-    <ClInclude Include="src\game_config\mainscene_config.pb.h" />
-    <ClInclude Include="src\game_config\mission_config.pb.h" />
-    <ClInclude Include="src\game_config\monster_base_config.pb.h" />
-    <ClInclude Include="src\game_config\scene_config.pb.h" />
     <ClInclude Include="src\proto\common\account_database.pb.h" />
     <ClInclude Include="src\proto\common\c2gate.pb.h" />
     <ClInclude Include="src\proto\common\centre_service.pb.h" />

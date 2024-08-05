@@ -19,16 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\all_config.cpp" />
-    <ClCompile Include="src\condition_config.cpp" />
-    <ClCompile Include="src\global_variable_config.cpp" />
-    <ClCompile Include="src\item_config.cpp" />
-    <ClCompile Include="src\mainscene_config.cpp" />
-    <ClCompile Include="src\mission_config.cpp" />
-    <ClCompile Include="src\monster_base_config.cpp" />
-    <ClCompile Include="src\scene_config.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\all_config.h" />
     <ClInclude Include="src\condition_config.h" />
     <ClInclude Include="src\global_variable_config.h" />
