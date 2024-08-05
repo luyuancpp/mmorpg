@@ -1,5 +1,7 @@
 #include "ability_util.h"
 
+#include "constants/tips_id_constants.h"
+
 uint32_t AbilityUtil::CheckSkillActivationPrerequisites()
 {
 
