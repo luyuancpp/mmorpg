@@ -132,7 +132,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 		if (!tls.gameNodeRegistry.valid(gameNodeId))
 		{
 			LOG_ERROR << "Invalid game node id " << sessionIt->second.game_node_id_ << " for session id: " << sessionId;
-			Tip(conn, kServerCrush);
+			Tip(conn, kServerCrashed);
 			return;
 		}
 

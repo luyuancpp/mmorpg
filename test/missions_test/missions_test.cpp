@@ -91,7 +91,7 @@ TEST(MissionsComp, RepeatedMissionType)
 		EXPECT_EQ(kOK, MissionUtil::AcceptMission(acceptMissionEvent1));
 
 		// First accept for mission_id = 2 should succeed
-		EXPECT_EQ(kMissionTypeRepeated, MissionUtil::AcceptMission(acceptMissionEvent2));
+		EXPECT_EQ(kMissionTypeAlreadyExists, MissionUtil::AcceptMission(acceptMissionEvent2));
 
 		// Second accept for mission_id = 3 (same type as mission_id = 1) should fail
 		EXPECT_EQ(kMissionIdRepeated, MissionUtil::AcceptMission(acceptMissionEvent1));

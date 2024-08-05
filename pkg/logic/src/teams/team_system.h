@@ -343,7 +343,7 @@ uint32_t TeamSystem::JoinTeam(const UInt64Set& member_list, const Guid team_id)
 	}
 	if (try_team->GetMaxMemberSize() - try_team->GetMemberSize() < member_list.size())
 	{
-		return kTeamJoinTeamMemberListToMax;
+		return kTeamMemberListFull;
 	}
 
 	RET_CHECK_RETURN(CheckMemberInTeam(member_list))
