@@ -20,8 +20,8 @@ global_row_id = 1
 groups = []
 current_group = []
 
-# Flag to check if the current group has started
-group_started = False
+# Initialize group_name variable
+group_name = None
 
 # Starting from row 8 (index 7), read the data
 for row_idx in range(8, num_rows):
@@ -30,30 +30,31 @@ for row_idx in range(8, num_rows):
 
     # Check if the row starts with '//'
     if row_cells[0].value.startswith('//'):
+        # Extract group name from the row
+        group_name = row_cells[0].value.strip('/').strip()
+
         # If current group has started, add it to groups list
         if current_group:
-            groups.append((global_group_id, current_group))
+            groups.append((global_group_id, group_name, current_group))
             current_group = []
             global_group_id += 1
-        # Set group started flag to True
-        group_started = True
     else:
         # If group has started, add row to current group with unique row ID
-        if group_started:
+        if group_name:  # Ensure group_name is not None before adding rows
             current_group.append((global_row_id, [cell.value for cell in row_cells]))
             global_row_id += 1
 
 # Add the last group if not empty
 if current_group:
-    groups.append((global_group_id, current_group))
+    groups.append((global_group_id, group_name, current_group))
 
 # Close the workbook
 workbook.release_resources()
 del workbook
 
-# Print groups with global unique IDs
-for group_id, group in groups:
-    print(f"// Group {group_id}:")
+# Print groups with global unique IDs and group names
+for group_id, group_name, group in groups:
+    print(f"// Group {group_id} ({group_name}):")
     for row_id, row in group:
         print(f"// Row {row_id}: {row}")
     print("//")
