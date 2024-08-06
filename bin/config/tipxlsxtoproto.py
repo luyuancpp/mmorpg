@@ -1,6 +1,10 @@
 import os
 import xlrd
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Path to your Excel file
 excel_file_path = 'xlsx/tip/Tip.xlsx'
@@ -79,7 +83,7 @@ def generate_proto_file(group_name, group_data):
     with open(proto_file_path, 'w') as proto_file:
         proto_file.write(proto_content)
 
-    print(f"Proto enums file generated: {proto_file_path}")
+    logging.info(f"Proto enums file generated: {proto_file_path}")
 
 
 # Function to generate Proto files using ThreadPoolExecutor
@@ -93,10 +97,10 @@ def generate_proto_files():
             try:
                 future.result()
             except Exception as e:
-                print(f"Error occurred: {str(e)}")
+                logging.error(f"Error occurred: {str(e)}")
 
 
 # Call the function to generate Proto files
 generate_proto_files()
 
-print("Proto generation completed.")
+logging.info("Proto generation completed.")
