@@ -13,15 +13,11 @@ sheet = workbook.sheet_by_index(0)
 num_rows = sheet.nrows
 
 # Initialize variables for global unique IDs
-global_group_id = 1
 global_row_id = 1
 
 # Initialize list to store groups
-groups = []
-current_group = []
-
-# Initialize group_name variable
-group_name = None
+groups = {}
+current_group = None
 
 # Starting from row 8 (index 7), read the data
 for row_idx in range(8, num_rows):
@@ -33,34 +29,40 @@ for row_idx in range(8, num_rows):
         # Extract group name from the row
         group_name = row_cells[0].value.strip('/').strip()
 
-        # If current group has started, add it to groups list
+        # If current group has started, add it to groups dictionary
         if current_group:
-            groups.append((global_group_id, group_name, current_group))
-            current_group = []
-            global_group_id += 1
+            groups[current_group] = current_group_data
+            current_group = None
+
+        # Initialize current group and its data
+        current_group = group_name
+        current_group_data = []
     else:
-        # If group has started, add row to current group with unique row ID
-        if group_name:  # Ensure group_name is not None before adding rows
-            current_group.append((global_row_id, [cell.value for cell in row_cells]))
+        # If group has started, add row to current group data with unique row ID
+        if current_group:
+            current_group_data.append((row_cells[0].value, global_row_id))
             global_row_id += 1
 
 # Add the last group if not empty
 if current_group:
-    groups.append((global_group_id, group_name, current_group))
+    groups[current_group] = current_group_data
 
 # Close the workbook
 workbook.release_resources()
 del workbook
 
-# Print groups with global unique IDs and group names
-for group_id, group_name, group in groups:
-    print(f"// Group {group_id} ({group_name}):")
-    for row_id, row in group:
-        print(f"// Row {row_id}: {row}")
-    print("//")
+# Generate Proto enum files for each group
+for group_name, group_data in groups.items():
+    proto_content = f"// Proto file for {group_name}\n"
+    proto_content += f"syntax = \"proto3\";\n\n"
+    proto_content += f"enum {group_name} {{\n"
+    for enum_name, enum_id in group_data:
+        proto_content += f"  {enum_name} = {enum_id};\n"
+    proto_content += "}\n"
 
-# Clear all records and reset variables for a new process
-global_group_id = 1
-global_row_id = 1
-groups = []
-current_group = []
+    # Write Proto content to file
+    proto_file_path = f"{group_name.lower()}.proto"
+    with open(proto_file_path, 'w') as proto_file:
+        proto_file.write(proto_content)
+
+    print(f"Proto enums file generated: {proto_file_path}")
