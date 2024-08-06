@@ -69,11 +69,14 @@ def main():
     # 遍历指定目录下的所有Excel文件
     for filename in os.listdir(XLSX_DIR):
         file_path = os.path.join(XLSX_DIR, filename)
+
         # 只处理xlsx和xls文件
         if file_path.endswith('.xlsx') or file_path.endswith('.xls'):
             md5_file_path = file_path + '.md5'
+
             # 检查MD5值，确保文件没有改变
             if not os.path.exists(md5_file_path):
+                md5tool.generate_md5_file_for(file_path, md5_file_path)
                 error = md5tool.check_against_md5_file(file_path, md5_file_path)
                 if error is None:
                     continue
@@ -89,6 +92,7 @@ def main():
                 proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name_lower}_config.proto')
                 with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
                     proto_file.write(proto_content)
+                    print(f"Generated .proto file: {proto_file_path}")
 
 
 if __name__ == "__main__":
