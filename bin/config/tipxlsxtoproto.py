@@ -21,7 +21,7 @@ sheet = workbook.sheet_by_index(0)
 num_rows = sheet.nrows
 
 # Initialize variables for global unique IDs
-global_row_id = 1
+global_row_id = 0  # Start global_row_id at 0 for open enums
 
 # Initialize dictionary to store groups
 groups = {}
@@ -49,7 +49,7 @@ for row_idx in range(7, num_rows):
         # If group has started, add row to current group data with unique row ID
         if current_group:
             current_group_data.append((row_cells[0].value, global_row_id))
-            global_row_id += 1
+            global_row_id += 1  # Increment global_row_id for each enum value
 
 # Add the last group if not empty
 if current_group:
