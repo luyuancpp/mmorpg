@@ -1,89 +1,138 @@
 #!/usr/bin/env python
 # coding=utf-8
-import gencommon
+
+import os
 import xlrd
-import xlwt
 import json
 import md5tool
-import os.path
+import gencommon  # Assuming gencommon provides mywrite function
 from os import listdir
 from os.path import isfile, join
 
-beginrowidx = 7
-jsondir = "json/"
-xlsdir = "xlsx/"
-gen_type="server"
+begin_row_idx = 7
+json_dir = "json/"
+xls_dir = "xlsx/"
+gen_type = "server"
 
-def getColNames(sheet):
-        rowSize = sheet.row_len(0)
-        colValues = sheet.row_values(0, 0, rowSize )
-        columnNames = []
-        scdIndex = 0
-        for value in colValues:
-                v = sheet.cell_value(3,scdIndex)
-                if v == "design":
-                        columnNames.append("")
-                elif v != "common" and gen_type != v:
-                        columnNames.append("")
-                else:
-                        columnNames.append(value)
-                scdIndex += 1
-        return columnNames
 
-def getRowData(row, columnNames):
-        rowData = {}
-        counter = 0
-        for cell in row:
-                if columnNames[counter].strip() == "":
-                        continue
-                if cell.ctype == 2 and cell.value % 1 == 0.0:
-                        cell.value = int(cell.value)
-                rowData[columnNames[counter]] = cell.value
-                counter +=1
-        return rowData
+def get_column_names(sheet):
+    """
+        Get column names from the sheet based on specified conditions.
 
-def getSheetData(sheet, columnNames):
-        nRows = sheet.nrows
-        sheetData = []
-        counter = 1
-        for idx in range(1, nRows):
-                if idx >= beginrowidx:
-                        row = sheet.row(idx)
-                        rowData = getRowData(row, columnNames)
-                        sheetData.append(rowData)
-        return sheetData
+        Args:
+        - sheet: xlrd Sheet object representing Excel sheet data.
 
-def getWorkBookData(workbook):
-        nsheets = workbook.nsheets
-        workbookdata = {}
-        for idx in range(0, nsheets):
-                worksheet = workbook.sheet_by_index(idx)
-                if worksheet.cell_value(0, 0) != "id":
-                        print("%s firs col num must be id "%(worksheet.name))
-                columnNames = getColNames(worksheet)
-                sheetdata = getSheetData(worksheet, columnNames)
-                workbookdata[worksheet.name] = sheetdata
-        return workbookdata
+        Returns:
+        - list: List of column names.
+        """
+    row_size = sheet.row_len(0)
+    col_values = sheet.row_values(0, 0, row_size)
+    column_names = []
+    for idx, value in enumerate(col_values):
+        second_row_value = sheet.cell_value(3, idx)
+        if second_row_value == "design":
+            column_names.append("")
+        elif second_row_value != "common" and gen_type != second_row_value:
+            column_names.append("")
+        else:
+            column_names.append(value)
+    return column_names
+
+
+def get_row_data(row, column_names):
+    """
+        Get row data as dictionary based on column names.
+
+        Args:
+        - row: xlrd Row object representing Excel row data.
+        - column_names: List of column names.
+
+        Returns:
+        - dict: Dictionary containing row data.
+        """
+    row_data = {}
+    for counter, cell in enumerate(row):
+        if column_names[counter].strip() != "":
+            if cell.ctype == 2 and cell.value % 1 == 0.0:
+                cell.value = int(cell.value)
+            row_data[column_names[counter]] = cell.value
+    return row_data
+
+
+def get_sheet_data(sheet, column_names):
+    """
+        Get sheet data as list of dictionaries.
+
+        Args:
+        - sheet: xlrd Sheet object representing Excel sheet data.
+        - column_names: List of column names.
+
+        Returns:
+        - list: List of dictionaries containing sheet data.
+        """
+    n_rows = sheet.nrows
+    sheet_data = []
+    for idx in range(1, n_rows):
+        if idx >= begin_row_idx:
+            row = sheet.row(idx)
+            row_data = get_row_data(row, column_names)
+            sheet_data.append(row_data)
+    return sheet_data
+
+
+def get_workbook_data(workbook):
+    """
+        Get workbook data as dictionary of sheet names and their respective data.
+
+        Args:
+        - workbook: xlrd Workbook object representing Excel workbook.
+
+        Returns:
+        - dict: Dictionary where keys are sheet names and values are lists of dictionaries containing sheet data.
+        """
+    workbook_data = {}
+    for sheet_name in workbook.sheet_names():
+        worksheet = workbook.sheet_by_name(sheet_name)
+        if worksheet.cell_value(0, 0) != "id":
+            print(f"{sheet_name} first column must be 'id'")
+            continue
+        column_names = get_column_names(worksheet)
+        sheet_data = get_sheet_data(worksheet, column_names)
+        workbook_data[sheet_name] = sheet_data
+    return workbook_data
+
 
 def main():
-        if not os.path.exists(jsondir):
-                os.makedirs(jsondir) 
-        
-        for filename in listdir(xlsdir):
-                filename = xlsdir + filename
-                if filename.endswith('.xlsx') or filename.endswith('.xls'):
-                        filenamemd5 = filename + '.md5'
-                        if not os.path.exists(filenamemd5):
-                                md5tool.generate_md5_file_for(filename, filenamemd5)
-                                error = md5tool.check_against_md5_file(filename, filename + '.md5')
-                                if error == None:
-                                        continue
-                        workbook = xlrd.open_workbook(filename)
-                        workbookdata = getWorkBookData(workbook)
-                        for sheetname in workbookdata :
-                                datastring = '{"data":' + json.dumps(workbookdata[sheetname] , sort_keys=True, indent=4,  separators=(',', ": ")) + '}'
-                                datastring = datastring.replace('"[','[');
-                                datastring = datastring.replace("]\"","]");
-                                gencommon.mywrite(datastring, jsondir + sheetname  + ".json")
-                     
-main()
+    # Create output directory if it doesn't exist
+    if not os.path.exists(json_dir):
+        os.makedirs(json_dir)
+
+    # Process each Excel file in xls_dir
+    for filename in os.listdir(xls_dir):
+        full_path = os.path.join(xls_dir, filename)
+        if isfile(full_path) and (filename.endswith('.xlsx') or filename.endswith('.xls')):
+            # Generate MD5 file if it doesn't exist
+            md5_file_path = full_path + '.md5'
+            if not os.path.exists(md5_file_path):
+                md5tool.generate_md5_file_for(full_path, md5_file_path)
+                error = md5tool.check_against_md5_file(full_path, md5_file_path)
+                if error is None:
+                    continue
+
+            # Open workbook and process data
+            workbook = xlrd.open_workbook(full_path)
+            workbook_data = get_workbook_data(workbook)
+
+            # Write JSON files for each sheet
+            for sheet_name, data in workbook_data.items():
+                json_data = {"data": data}
+                json_string = json.dumps(json_data, sort_keys=True, indent=4, separators=(',', ': '))
+                json_string = json_string.replace('"[', '[').replace(']"',
+                                                                     ']')  # Remove unnecessary quotes around lists
+                json_file_path = os.path.join(json_dir, f"{sheet_name}.json")
+                gencommon.mywrite(json_string, json_file_path)
+                print(f"Generated JSON file: {json_file_path}")
+
+
+if __name__ == "__main__":
+    main()
