@@ -19,7 +19,6 @@ if not os.path.exists("../../pkg/config/src/"):
 commands = [
     "python xlstojson.py",
     "python xlstopb.py",
-    "python -m grpc_tools.protoc -I=./proto --python_out=./proto ./proto/*.proto",
     "python tipxlsxtoproto.py",
     "python xlstocpp.py",
     "python xlstocppid.py",

@@ -28,13 +28,25 @@
     <ClCompile Include="src\mission_config.cpp" />
     <ClCompile Include="src\monsterbase_config.cpp" />
     <ClCompile Include="src\pbc\ability_config.pb.cc" />
+    <ClCompile Include="src\pbc\bag.pb.cc" />
+    <ClCompile Include="src\pbc\bag_tip.pb.cc" />
+    <ClCompile Include="src\pbc\common.pb.cc" />
+    <ClCompile Include="src\pbc\common_tip.pb.cc" />
     <ClCompile Include="src\pbc\condition_config.pb.cc" />
     <ClCompile Include="src\pbc\globalvariable_config.pb.cc" />
     <ClCompile Include="src\pbc\item_config.pb.cc" />
+    <ClCompile Include="src\pbc\login.pb.cc" />
+    <ClCompile Include="src\pbc\login_tip.pb.cc" />
     <ClCompile Include="src\pbc\mainscene_config.pb.cc" />
+    <ClCompile Include="src\pbc\mission.pb.cc" />
     <ClCompile Include="src\pbc\mission_config.pb.cc" />
+    <ClCompile Include="src\pbc\mission_tip.pb.cc" />
     <ClCompile Include="src\pbc\monsterbase_config.pb.cc" />
+    <ClCompile Include="src\pbc\scene.pb.cc" />
     <ClCompile Include="src\pbc\scene_config.pb.cc" />
+    <ClCompile Include="src\pbc\scene_tip.pb.cc" />
+    <ClCompile Include="src\pbc\team.pb.cc" />
+    <ClCompile Include="src\pbc\team_tip.pb.cc" />
     <ClCompile Include="src\scene_config.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -47,13 +59,25 @@
     <ClInclude Include="src\mission_config.h" />
     <ClInclude Include="src\monsterbase_config.h" />
     <ClInclude Include="src\pbc\ability_config.pb.h" />
+    <ClInclude Include="src\pbc\bag.pb.h" />
+    <ClInclude Include="src\pbc\bag_tip.pb.h" />
+    <ClInclude Include="src\pbc\common.pb.h" />
+    <ClInclude Include="src\pbc\common_tip.pb.h" />
     <ClInclude Include="src\pbc\condition_config.pb.h" />
     <ClInclude Include="src\pbc\globalvariable_config.pb.h" />
     <ClInclude Include="src\pbc\item_config.pb.h" />
+    <ClInclude Include="src\pbc\login.pb.h" />
+    <ClInclude Include="src\pbc\login_tip.pb.h" />
     <ClInclude Include="src\pbc\mainscene_config.pb.h" />
+    <ClInclude Include="src\pbc\mission.pb.h" />
     <ClInclude Include="src\pbc\mission_config.pb.h" />
+    <ClInclude Include="src\pbc\mission_tip.pb.h" />
     <ClInclude Include="src\pbc\monsterbase_config.pb.h" />
+    <ClInclude Include="src\pbc\scene.pb.h" />
     <ClInclude Include="src\pbc\scene_config.pb.h" />
+    <ClInclude Include="src\pbc\scene_tip.pb.h" />
+    <ClInclude Include="src\pbc\team.pb.h" />
+    <ClInclude Include="src\pbc\team_tip.pb.h" />
     <ClInclude Include="src\scene_config.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
