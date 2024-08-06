@@ -45,13 +45,7 @@
     <ClCompile Include="src\pbc\ability_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\bag.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pbc\bag_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\common_tip.pb.cc">
@@ -66,16 +60,10 @@
     <ClCompile Include="src\pbc\item_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\login.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pbc\login_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\mainscene_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\mission.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\mission_config.pb.cc">
@@ -87,16 +75,10 @@
     <ClCompile Include="src\pbc\monsterbase_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pbc\scene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\scene_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\team.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\team_tip.pb.cc">
@@ -131,16 +113,13 @@
     <ClInclude Include="src\scene_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\pbc\team_tip.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\pbc\ability_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\bag.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pbc\bag_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\common_tip.pb.h">
@@ -155,16 +134,10 @@
     <ClInclude Include="src\pbc\item_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\login.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pbc\login_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\mainscene_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\mission.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\mission_config.pb.h">
@@ -176,19 +149,10 @@
     <ClInclude Include="src\pbc\monsterbase_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pbc\scene_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\scene_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\team.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\team_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
