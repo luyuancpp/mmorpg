@@ -63,12 +63,15 @@ for group_name, group_data in groups.items():
     proto_content = f"// Proto file for {group_name}\n"
     proto_content += f"syntax = \"proto3\";\n\n"
     proto_content += f"enum {group_name} {{\n"
-    for enum_name, enum_id in group_data:
+    for idx, (enum_name, enum_id) in enumerate(group_data):
         # Add 'k' prefix to enum_name without extra spaces
         enum_name_with_k = f"k{enum_name.strip()}"
 
         # Ensure there are no spaces between 'k' and enum_name
-        proto_content += f"  {enum_name_with_k} = {enum_id};\n"
+        proto_content += f"  {enum_name_with_k} = {enum_id}"
+        if idx < len(group_data) - 1:
+            proto_content += ","  # Add comma if not the last entry
+        proto_content += "\n"
     proto_content += "}\n"
 
     # Write Proto content to file in the output directory
