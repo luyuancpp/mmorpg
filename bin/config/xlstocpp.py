@@ -4,6 +4,7 @@
 import os
 import xlrd
 import gencommon
+import concurrent.futures
 from os import listdir
 from multiprocessing import cpu_count
 
@@ -126,6 +127,21 @@ def generate_cpp_implementation(datastring, sheetname):
     return s
 
 
+def process_workbook(filename):
+    """处理单个工作簿文件，生成对应的头文件和实现文件"""
+    workbook = xlrd.open_workbook(filename)
+    workbook_data = get_workbook_data(workbook)
+    for sheetname in workbook_data:
+        header_filename = sheetname.lower() + "_config.h"
+        cpp_filename = sheetname.lower() + "_config.cpp"
+
+        cpp_header_content = generate_cpp_header(workbook_data[sheetname], sheetname)
+        gencommon.mywrite(cpp_header_content, os.path.join(cppdir, header_filename))
+
+        cpp_implementation_content = generate_cpp_implementation(workbook_data[sheetname], sheetname)
+        gencommon.mywrite(cpp_implementation_content, os.path.join(cppdir, cpp_filename))
+
+
 def generate_all_config():
     """生成加载所有配置的头文件和实现文件内容"""
     sheetnames = []
@@ -155,34 +171,35 @@ def generate_all_config():
         cpp_content += '    %sConfigurationTable::GetSingleton().Load();\n' % item
     cpp_content += '}\n\n'
 
-    cpu_count_val = cpu_count()
+    cpucount = cpu_count()
     cpp_content += 'void LoadAllConfigAsyncWhenServerLaunch()\n{\n'
-    cpu_strings = [[] for _ in range(cpu_count_val)]
+
+    cpustr = [[] for _ in range(cpucount)]
     count = 0
-    real_thread_count = 0
+    realthreadcount = 0
 
     for item in sheetnames:
-        load_string = '    %sConfigurationTable::GetSingleton().Load();\n' % item
-        if count >= cpu_count_val:
+        loadstr = '    %sConfigurationTable::GetSingleton().Load();\n' % item
+        if count >= cpucount:
             count = 0
-        cpu_strings[count].append(load_string)
+        cpustr[count].append(loadstr)
         count += 1
-        if real_thread_count < count:
-            real_thread_count = count
+        if realthreadcount < count:
+            realthreadcount = count
 
-    cpp_content += '    static muduo::CountDownLatch latch_(' + str(real_thread_count) + ');\n'
+    cpp_content += '    static muduo::CountDownLatch latch_(' + str(realthreadcount) + ');\n'
 
-    for group in cpu_strings:
+    for group in cpustr:
         if len(group) <= 0:
             continue
         cpp_content += '\n    /// Begin\n'
         cpp_content += '    {\n'
-        cpp_content += '        std::thread t([](){\n'
-        for block_str in group:
-            cpp_content += block_str
-        cpp_content += '        latch_.countDown();\n'
-        cpp_content += '    });\n'
-        cpp_content += '    t.detach();\n'
+        cpp_content += '        std::thread t([&]() {\n\n'
+        for blockstr in group:
+            cpp_content += blockstr
+        cpp_content += '            latch_.countDown();\n'
+        cpp_content += '        });\n'
+        cpp_content += '        t.detach();\n'
         cpp_content += '    }\n'
         cpp_content += '    /// End\n'
 
@@ -197,21 +214,15 @@ def main():
     if not os.path.exists(cppdir):
         os.makedirs(cppdir)
 
-    for filename in listdir(xlsdir):
-        filename = xlsdir + filename
-        if filename.endswith('.xlsx') or filename.endswith('.xls'):
-            workbook = xlrd.open_workbook(filename)
-            workbook_data = get_workbook_data(workbook)
-            for sheetname in workbook_data:
-                header_filename = sheetname.lower() + "_config.h"
-                cpp_filename = sheetname.lower() + "_config.cpp"
+    # 获取xlsx文件列表
+    xlsx_files = [os.path.join(xlsdir, filename) for filename in listdir(xlsdir)
+                  if filename.endswith('.xlsx') or filename.endswith('.xls')]
 
-                cpp_header_content = generate_cpp_header(workbook_data[sheetname], sheetname)
-                gencommon.mywrite(cpp_header_content, os.path.join(cppdir, header_filename))
+    # 多线程处理xlsx文件
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        executor.map(process_workbook, xlsx_files)
 
-                cpp_implementation_content = generate_cpp_implementation(workbook_data[sheetname], sheetname)
-                gencommon.mywrite(cpp_implementation_content, os.path.join(cppdir, cpp_filename))
-
+    # 生成加载所有配置的头文件和实现文件
     header_content, cpp_content = generate_all_config()
     gencommon.mywrite(header_content, os.path.join(cppdir, "all_config.h"))
     gencommon.mywrite(cpp_content, os.path.join(cppdir, "all_config.cpp"))
