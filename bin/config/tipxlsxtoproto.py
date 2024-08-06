@@ -22,7 +22,7 @@ num_rows = sheet.nrows
 # Initialize variables for global unique IDs
 global_row_id = 1
 
-# Initialize list to store groups
+# Initialize dictionary to store groups
 groups = {}
 current_group = None
 
@@ -78,4 +78,4 @@ for group_name, group_data in groups.items():
 
     print(f"Proto enums file generated: {proto_file_path}")
 
-
+print("Proto generation completed.")
