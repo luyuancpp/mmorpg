@@ -13,7 +13,7 @@ sheet = workbook.sheet_by_index(0)
 num_rows = sheet.nrows
 
 # Starting from row 7 (index 6), read the data
-for row_idx in range(6, num_rows):
+for row_idx in range(8, num_rows):
     row = sheet.row_values(row_idx)
     # Process each row as needed
     print(row)  # Example: printing the row data
