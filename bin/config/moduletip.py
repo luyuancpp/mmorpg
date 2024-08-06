@@ -1,7 +1,14 @@
+import os
 import xlrd
 
 # Path to your Excel file
 excel_file_path = 'xlsx/tip/Tip.xlsx'
+
+# Output directory for Proto files
+output_dir = 'tip/enum/'
+
+# Create the output directory if it doesn't exist
+os.makedirs(output_dir, exist_ok=True)
 
 # Open the workbook
 workbook = xlrd.open_workbook(excel_file_path)
@@ -60,8 +67,8 @@ for group_name, group_data in groups.items():
         proto_content += f"  {enum_name} = {enum_id};\n"
     proto_content += "}\n"
 
-    # Write Proto content to file
-    proto_file_path = f"{group_name.lower()}.proto"
+    # Write Proto content to file in the output directory
+    proto_file_path = os.path.join(output_dir, f"{group_name.lower()}.proto")
     with open(proto_file_path, 'w') as proto_file:
         proto_file.write(proto_content)
 
