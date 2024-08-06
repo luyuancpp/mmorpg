@@ -20,8 +20,10 @@ commands = [
     "python xlstojson.py",
     "python xlstopb.py",
     "python -m grpc_tools.protoc -I=./proto --python_out=./proto ./proto/*.proto",
+    "python tipxlsxtoproto.py",
     "python xlstocpp.py",
     "python xlstocppid.py",
+    "python buildproto.py",
     "python md5tool.py md5copy ./cpp/ ../../pkg/config/src/",
     "python md5tool.py md5copy ./protocpp/ ../../pkg/config/src/pbc/",
     "python genxlsmd5.py"
