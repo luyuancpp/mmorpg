@@ -69,7 +69,9 @@ def generate_proto_file(group_name, group_data):
     proto_content = f"// Proto file for {group_name}\n"
     proto_content += f"syntax = \"proto3\";\n\n"
     proto_content += f"enum {group_name} {{\n"
-    proto_content += f"option allow_alias = true;\n\n"
+
+    if group_name == "common":
+        proto_content += f"  option allow_alias = true;\n\n"
 
     # Default first enum value to 0
     proto_content += f"  k{group_name.capitalize()}OK = 0;\n"

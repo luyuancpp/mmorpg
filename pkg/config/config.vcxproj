@@ -28,6 +28,7 @@
     <ClCompile Include="src\mission_config.cpp" />
     <ClCompile Include="src\monsterbase_config.cpp" />
     <ClCompile Include="src\pbc\ability_config.pb.cc" />
+    <ClCompile Include="src\pbc\ability_tip.pb.cc" />
     <ClCompile Include="src\pbc\bag_tip.pb.cc" />
     <ClCompile Include="src\pbc\common_tip.pb.cc" />
     <ClCompile Include="src\pbc\condition_config.pb.cc" />
@@ -53,6 +54,7 @@
     <ClInclude Include="src\mission_config.h" />
     <ClInclude Include="src\monsterbase_config.h" />
     <ClInclude Include="src\pbc\ability_config.pb.h" />
+    <ClInclude Include="src\pbc\ability_tip.pb.h" />
     <ClInclude Include="src\pbc\bag_tip.pb.h" />
     <ClInclude Include="src\pbc\common_tip.pb.h" />
     <ClInclude Include="src\pbc\condition_config.pb.h" />

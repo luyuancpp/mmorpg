@@ -84,6 +84,9 @@
     <ClCompile Include="src\pbc\team_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\pbc\ability_tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ability_config.h">
@@ -153,6 +156,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\scene_tip.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\ability_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
