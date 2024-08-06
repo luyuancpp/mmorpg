@@ -44,5 +44,6 @@
     <ClInclude Include="src\time\comp\time_ measurement.h" />
     <ClInclude Include="src\game_common_logic\comp\session_comp.h" />
     <ClInclude Include="src\time\comp\timer_list.h" />
+    <ClInclude Include="src\macros\return_define.h" />
   </ItemGroup>
 </Project>
