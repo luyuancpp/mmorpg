@@ -4,8 +4,13 @@
 import os
 import xlrd
 import gencommon  # Assuming gencommon provides beginrowidx and mywrite functions
+import logging
 from os import listdir
 from os.path import isfile, join
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 begin_row_idx = gencommon.beginrowidx
 cpp_dir = "cpp/"
@@ -46,7 +51,7 @@ def main():
             for sheet_name, data in workbook_data.items():
                 output_file_path = os.path.join(cpp_dir, f"{sheet_name}_config_id.h")
                 gencommon.mywrite(data, output_file_path)
-                print(f"Generated C++ enum file: {output_file_path}")
+                logger.info(f"Generated C++ enum file: {output_file_path}")
 
 if __name__ == "__main__":
     main()

@@ -6,8 +6,13 @@ import xlrd
 import json
 import md5tool
 import gencommon  # Assuming gencommon provides mywrite function
+import logging
 from os import listdir
 from os.path import isfile, join
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 begin_row_idx = 7
 json_dir = "json/"
@@ -17,14 +22,14 @@ gen_type = "server"
 
 def get_column_names(sheet):
     """
-        Get column names from the sheet based on specified conditions.
+    Get column names from the sheet based on specified conditions.
 
-        Args:
-        - sheet: xlrd Sheet object representing Excel sheet data.
+    Args:
+    - sheet: xlrd Sheet object representing Excel sheet data.
 
-        Returns:
-        - list: List of column names.
-        """
+    Returns:
+    - list: List of column names.
+    """
     row_size = sheet.row_len(0)
     col_values = sheet.row_values(0, 0, row_size)
     column_names = []
@@ -41,15 +46,15 @@ def get_column_names(sheet):
 
 def get_row_data(row, column_names):
     """
-        Get row data as dictionary based on column names.
+    Get row data as dictionary based on column names.
 
-        Args:
-        - row: xlrd Row object representing Excel row data.
-        - column_names: List of column names.
+    Args:
+    - row: xlrd Row object representing Excel row data.
+    - column_names: List of column names.
 
-        Returns:
-        - dict: Dictionary containing row data.
-        """
+    Returns:
+    - dict: Dictionary containing row data.
+    """
     row_data = {}
     for counter, cell in enumerate(row):
         if column_names[counter].strip() != "":
@@ -61,15 +66,15 @@ def get_row_data(row, column_names):
 
 def get_sheet_data(sheet, column_names):
     """
-        Get sheet data as list of dictionaries.
+    Get sheet data as list of dictionaries.
 
-        Args:
-        - sheet: xlrd Sheet object representing Excel sheet data.
-        - column_names: List of column names.
+    Args:
+    - sheet: xlrd Sheet object representing Excel sheet data.
+    - column_names: List of column names.
 
-        Returns:
-        - list: List of dictionaries containing sheet data.
-        """
+    Returns:
+    - list: List of dictionaries containing sheet data.
+    """
     n_rows = sheet.nrows
     sheet_data = []
     for idx in range(1, n_rows):
@@ -82,19 +87,19 @@ def get_sheet_data(sheet, column_names):
 
 def get_workbook_data(workbook):
     """
-        Get workbook data as dictionary of sheet names and their respective data.
+    Get workbook data as dictionary of sheet names and their respective data.
 
-        Args:
-        - workbook: xlrd Workbook object representing Excel workbook.
+    Args:
+    - workbook: xlrd Workbook object representing Excel workbook.
 
-        Returns:
-        - dict: Dictionary where keys are sheet names and values are lists of dictionaries containing sheet data.
-        """
+    Returns:
+    - dict: Dictionary where keys are sheet names and values are lists of dictionaries containing sheet data.
+    """
     workbook_data = {}
     for sheet_name in workbook.sheet_names():
         worksheet = workbook.sheet_by_name(sheet_name)
         if worksheet.cell_value(0, 0) != "id":
-            print(f"{sheet_name} first column must be 'id'")
+            logger.error(f"{sheet_name} first column must be 'id'")
             continue
         column_names = get_column_names(worksheet)
         sheet_data = get_sheet_data(worksheet, column_names)
@@ -127,12 +132,10 @@ def main():
             for sheet_name, data in workbook_data.items():
                 json_data = {"data": data}
                 json_string = json.dumps(json_data, sort_keys=True, indent=4, separators=(',', ': '))
-                json_string = json_string.replace('"[', '[').replace(']"',
-                                                                     ']')  # Remove unnecessary quotes around lists
+                json_string = json_string.replace('"[', '[').replace(']"', ']')  # Remove unnecessary quotes around lists
                 json_file_path = os.path.join(json_dir, f"{sheet_name}.json")
                 gencommon.mywrite(json_string, json_file_path)
-                print(f"Generated JSON file: {json_file_path}")
-
+                logger.info(f"Generated JSON file: {json_file_path}")
 
 if __name__ == "__main__":
     main()

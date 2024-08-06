@@ -4,11 +4,16 @@
 import os
 import xlrd
 import md5tool
+import logging
 
 # 全局变量
 END_ROW_INDEX = 3
 PROTO_DIR = "proto/"
 XLSX_DIR = "xlsx/"
+
+# 配置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 def get_column_names(sheet):
@@ -92,7 +97,7 @@ def main():
                 proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name_lower}_config.proto')
                 with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
                     proto_file.write(proto_content)
-                    print(f"Generated .proto file: {proto_file_path}")
+                    logger.info(f"Generated .proto file: {proto_file_path}")
 
 
 if __name__ == "__main__":
