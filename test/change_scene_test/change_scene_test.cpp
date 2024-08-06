@@ -3,7 +3,8 @@
 #include "muduo/base/Timestamp.h"
 #include "type_define/type_define.h"
 #include "thread_local/storage.h"
-#include "constants/tips_id_constants.h"
+#include "pbc/scene_tip.pb.h"
+#include "pbc/common_tip.pb.h"
 #include "game_logic/scene/util/player_change_scene_util.h"
 #include "scene/util/scene_util.h"
 
