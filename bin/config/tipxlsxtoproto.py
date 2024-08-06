@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding=utf-8
+
 import os
 import xlrd
 import logging
@@ -15,90 +18,77 @@ output_dir = 'proto/tip'
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
 
-# Open the workbook
-workbook = xlrd.open_workbook(excel_file_path)
+def read_excel_data(file_path):
+    """Read data from the provided Excel file path."""
+    try:
+        workbook = xlrd.open_workbook(file_path)
+        sheet = workbook.sheet_by_index(0)
+        num_rows = sheet.nrows
 
-# Select the sheet you want to read (assuming the first sheet for example)
-sheet = workbook.sheet_by_index(0)
+        groups = {}
+        current_group = None
+        global_row_id = 0  # Start global_row_id at 0 for open enums
 
-# Number of rows in the sheet
-num_rows = sheet.nrows
+        for row_idx in range(7, num_rows):
+            row_cells = sheet.row(row_idx)
 
-# Initialize variables for global unique IDs
-global_row_id = 0  # Start global_row_id at 0 for open enums
+            if row_cells[0].value.startswith('//'):
+                group_name = row_cells[0].value.strip('/').strip()
 
-# Initialize dictionary to store groups
-groups = {}
-current_group = None
+                if current_group:
+                    groups[current_group] = current_group_data
+                    current_group = None
 
-# Starting from row 8 (index 7), read the data
-for row_idx in range(7, num_rows):
-    # Read each cell in the row
-    row_cells = sheet.row(row_idx)
+                current_group = group_name
+                current_group_data = []
+            else:
+                if current_group:
+                    current_group_data.append((row_cells[0].value, global_row_id))
+                    global_row_id += 1
 
-    # Check if the row starts with '//'
-    if row_cells[0].value.startswith('//'):
-        # Extract group name from the row
-        group_name = row_cells[0].value.strip('/').strip()
-
-        # If current group has started, add it to groups dictionary
         if current_group:
             groups[current_group] = current_group_data
-            current_group = None
 
-        # Initialize current group and its data
-        current_group = group_name
-        current_group_data = []
-    else:
-        # If group has started, add row to current group data with unique row ID
-        if current_group:
-            current_group_data.append((row_cells[0].value, global_row_id))
-            global_row_id += 1  # Increment global_row_id for each enum value
+        workbook.release_resources()
+        del workbook
 
-# Add the last group if not empty
-if current_group:
-    groups[current_group] = current_group_data
+        return groups
 
-# Close the workbook
-workbook.release_resources()
-del workbook
+    except Exception as e:
+        logging.error(f"Error reading Excel file: {str(e)}")
+        return {}
 
-
-# Function to generate Proto file for a group
 def generate_proto_file(group_name, group_data):
-    proto_content = f"// Proto file for {group_name}\n"
-    proto_content += f"syntax = \"proto3\";\n\n"
-    proto_content += f"enum {group_name} {{\n"
+    """Generate a Proto file for a given group."""
+    try:
+        proto_content = f"// Proto file for {group_name}\n"
+        proto_content += f"syntax = \"proto3\";\n\n"
+        proto_content += f"enum {group_name} {{\n"
 
-    if group_name == "common":
-        proto_content += f"  option allow_alias = true;\n\n"
+        if group_name == "common":
+            proto_content += f"  option allow_alias = true;\n\n"
 
-    # Default first enum value to 0
-    proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
+        proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
 
-    for idx, (enum_name, enum_id) in enumerate(group_data):
-        # Add 'k' prefix to enum_name without extra spaces
-        enum_name_with_k = f"k{enum_name.strip()}"
+        for enum_name, enum_id in group_data:
+            enum_name_with_k = f"k{enum_name.strip()}"
+            proto_content += f"  {enum_name_with_k} = {enum_id};\n"
 
-        # Ensure there are no spaces between 'k' and enum_name
-        proto_content += f"  {enum_name_with_k} = {enum_id};\n"
+        proto_content += "};\n"
 
-    proto_content += "};\n"
+        proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_tip.proto")
+        with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
+            proto_file.write(proto_content)
 
-    # Write Proto content to file in the output directory
-    proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_tip.proto")
-    with open(proto_file_path, 'w') as proto_file:
-        proto_file.write(proto_content)
+        logging.info(f"Proto enums file generated: {proto_file_path}")
 
-    logging.info(f"Proto enums file generated: {proto_file_path}")
+    except Exception as e:
+        logging.error(f"Error generating Proto file for group {group_name}: {str(e)}")
 
-
-# Function to generate Proto files using ThreadPoolExecutor
-def generate_proto_files():
+def generate_proto_files(groups):
+    """Generate Proto files for all groups using ThreadPoolExecutor."""
     with ThreadPoolExecutor() as executor:
-        futures = []
-        for group_name, group_data in groups.items():
-            futures.append(executor.submit(generate_proto_file, group_name, group_data))
+        futures = [executor.submit(generate_proto_file, group_name, group_data) for group_name, group_data in groups.items()]
 
         for future in as_completed(futures):
             try:
@@ -106,8 +96,11 @@ def generate_proto_files():
             except Exception as e:
                 logging.error(f"Error occurred: {str(e)}")
 
+def main():
+    groups = read_excel_data(excel_file_path)
+    if groups:
+        generate_proto_files(groups)
+        logging.info("Proto generation completed.")
 
-# Call the function to generate Proto files
-generate_proto_files()
-
-logging.info("Proto generation completed.")
+if __name__ == "__main__":
+    main()
