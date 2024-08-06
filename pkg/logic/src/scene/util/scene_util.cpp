@@ -4,8 +4,8 @@
 #include "scene/comp/scene_comp.h"
 #include "node/constants/node_constants.h"
 #include "thread_local/storage.h"
-#include "constants/tips_id_constants.h"
-
+#include "pbc/scene_tip.pb.h"
+#include "pbc/common_tip.pb.h"
 #include "proto/logic/component/gs_node_comp.pb.h"
 #include "proto/logic/event/scene_event.pb.h"
 
