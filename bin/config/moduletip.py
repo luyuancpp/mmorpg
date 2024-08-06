@@ -5,7 +5,7 @@ import xlrd
 excel_file_path = 'xlsx/tip/Tip.xlsx'
 
 # Output directory for Proto files
-output_dir = 'tip/enum/'
+output_dir = 'proto/tip'
 
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
@@ -64,7 +64,11 @@ for group_name, group_data in groups.items():
     proto_content += f"syntax = \"proto3\";\n\n"
     proto_content += f"enum {group_name} {{\n"
     for enum_name, enum_id in group_data:
-        proto_content += f"  {enum_name} = {enum_id};\n"
+        # Add 'k' prefix to enum_name without extra spaces
+        enum_name_with_k = f"k{enum_name.strip()}"
+
+        # Ensure there are no spaces between 'k' and enum_name
+        proto_content += f"  {enum_name_with_k} = {enum_id};\n"
     proto_content += "}\n"
 
     # Write Proto content to file in the output directory
@@ -73,3 +77,5 @@ for group_name, group_data in groups.items():
         proto_file.write(proto_content)
 
     print(f"Proto enums file generated: {proto_file_path}")
+
+
