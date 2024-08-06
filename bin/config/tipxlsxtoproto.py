@@ -70,9 +70,8 @@ def generate_proto_file(group_name, group_data):
         enum_name_with_k = f"k{enum_name.strip()}"
 
         # Ensure there are no spaces between 'k' and enum_name
-        proto_content += f"  {enum_name_with_k} = {enum_id}"
-        proto_content += ";"  # Add comma if not the last entry
-        proto_content += "\n"
+        proto_content += f"  {enum_name_with_k} = {enum_id};\n"
+
     proto_content += "};\n"
 
     # Write Proto content to file in the output directory
