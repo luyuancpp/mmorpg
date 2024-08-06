@@ -13,7 +13,7 @@
 #include "service/game_service_service.h"
 #include "service/login_service_service.h"
 #include "thread_local/storage_gate.h"
-#include "constants/tips_id_constants.h"
+#include "pbc/common_tip.pb.h"
 #include "util/random.h"
 #include "util/snow_flake.h"
 

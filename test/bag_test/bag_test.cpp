@@ -6,7 +6,9 @@
 
 #include "bag/bag_system.h"
 
-#include "constants/tips_id_constants.h"
+#include "pbc/common_tip.pb.h"
+#include "pbc/bag_tip.pb.h"
+
 
 TEST(BagTest, NullItem)
 {
