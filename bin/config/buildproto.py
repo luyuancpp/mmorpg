@@ -5,6 +5,11 @@ import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def compile_protobuf_file(protobuf_file, protobuf_include_dir, output_dir):
     """
@@ -19,9 +24,9 @@ def compile_protobuf_file(protobuf_file, protobuf_include_dir, output_dir):
     command = f'protoc -I={os.path.dirname(protobuf_file)} -I={protobuf_include_dir} --cpp_out={output_dir} {protobuf_file}'
     try:
         subprocess.run(command, shell=True, check=True)
-        print(f"Compiled {filename} successfully.")
+        logger.info(f"Compiled {filename} successfully.")
     except subprocess.CalledProcessError as e:
-        print(f"Failed to compile {filename}: {e}")
+        logger.error(f"Failed to compile {filename}: {e}")
 
 def compile_protobuf_files(source_dir, protobuf_include_dir, output_dir):
     """
@@ -34,7 +39,7 @@ def compile_protobuf_files(source_dir, protobuf_include_dir, output_dir):
     """
     # Get the number of CPU cores
     num_cores = multiprocessing.cpu_count()
-    print(f"Detected {num_cores} CPU cores. Compiling .proto files with {num_cores} threads.")
+    logger.info(f"Detected {num_cores} CPU cores. Compiling .proto files with {num_cores} threads.")
 
     # Use a thread pool to handle tasks
     with ThreadPoolExecutor(max_workers=num_cores) as executor:
@@ -51,7 +56,7 @@ def compile_protobuf_files(source_dir, protobuf_include_dir, output_dir):
             try:
                 future.result()  # Get the task's return result, if any
             except Exception as e:
-                print(f"Exception occurred: {e}")
+                logger.error(f"Exception occurred: {e}")
 
 if __name__ == "__main__":
     # Adjust paths relative to the script's current directory
