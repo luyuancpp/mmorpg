@@ -25,7 +25,7 @@ sheet = workbook.sheet_by_index(0)
 num_rows = sheet.nrows
 
 # Initialize variables for global unique IDs
-global_row_id = 0  # Start global_row_id at 0 for open enums
+global_row_id = 1  # Start global_row_id at 0 for open enums
 
 # Initialize dictionary to store groups
 groups = {}
@@ -69,6 +69,10 @@ def generate_proto_file(group_name, group_data):
     proto_content = f"// Proto file for {group_name}\n"
     proto_content += f"syntax = \"proto3\";\n\n"
     proto_content += f"enum {group_name} {{\n"
+
+    # Default first enum value to 0
+    proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
+
     for idx, (enum_name, enum_id) in enumerate(group_data):
         # Add 'k' prefix to enum_name without extra spaces
         enum_name_with_k = f"k{enum_name.strip()}"
