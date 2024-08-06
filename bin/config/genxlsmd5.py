@@ -2,7 +2,12 @@
 # coding=utf-8
 
 import os
+import logging
 import md5tool
+
+# Set up logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 xls_dir = "xlsx/"
 
@@ -23,10 +28,10 @@ def generate_md5_files(directory):
             try:
                 # Generate MD5 file for the current Excel file
                 md5tool.generate_md5_file_for(full_path, md5_file_path)
-                print(f"Generated MD5 file for: {full_path}")
+                logger.info(f"Generated MD5 file for: {full_path}")
 
             except Exception as e:
-                print(f"Error generating MD5 file for {full_path}: {e}")
+                logger.error(f"Error generating MD5 file for {full_path}: {e}")
 
 
 def main():
