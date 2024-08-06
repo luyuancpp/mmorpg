@@ -83,7 +83,7 @@ def generate_proto_file(group_name, group_data):
     proto_content += "};\n"
 
     # Write Proto content to file in the output directory
-    proto_file_path = os.path.join(output_dir, f"{group_name.lower()}.proto")
+    proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_tip.proto")
     with open(proto_file_path, 'w') as proto_file:
         proto_file.write(proto_content)
 
