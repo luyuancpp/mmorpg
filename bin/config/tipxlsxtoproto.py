@@ -1,5 +1,6 @@
 import os
 import xlrd
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Path to your Excel file
 excel_file_path = 'xlsx/tip/Tip.xlsx'
@@ -58,8 +59,9 @@ if current_group:
 workbook.release_resources()
 del workbook
 
-# Generate Proto enum files for each group
-for group_name, group_data in groups.items():
+
+# Function to generate Proto file for a group
+def generate_proto_file(group_name, group_data):
     proto_content = f"// Proto file for {group_name}\n"
     proto_content += f"syntax = \"proto3\";\n\n"
     proto_content += f"enum {group_name} {{\n"
@@ -80,5 +82,23 @@ for group_name, group_data in groups.items():
         proto_file.write(proto_content)
 
     print(f"Proto enums file generated: {proto_file_path}")
+
+
+# Function to generate Proto files using ThreadPoolExecutor
+def generate_proto_files():
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for group_name, group_data in groups.items():
+            futures.append(executor.submit(generate_proto_file, group_name, group_data))
+
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"Error occurred: {str(e)}")
+
+
+# Call the function to generate Proto files
+generate_proto_files()
 
 print("Proto generation completed.")
