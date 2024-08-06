@@ -27,7 +27,7 @@ groups = {}
 current_group = None
 
 # Starting from row 8 (index 7), read the data
-for row_idx in range(8, num_rows):
+for row_idx in range(7, num_rows):
     # Read each cell in the row
     row_cells = sheet.row(row_idx)
 
