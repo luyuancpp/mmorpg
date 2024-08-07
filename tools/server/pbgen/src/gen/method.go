@@ -368,8 +368,9 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className 
 
 func writeRegisterFile(dst string, cb checkRepliedCb) {
 	defer util.Wg.Done()
-	data := ""
-	instanceData := ""
+
+	var data strings.Builder
+	var instanceData strings.Builder
 
 	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
@@ -381,21 +382,33 @@ func writeRegisterFile(dst string, cb checkRepliedCb) {
 			continue
 		}
 		firstMethodInfo := methodList[0]
-		data += firstMethodInfo.CppHandlerIncludeName()
-		instanceData += config.Tab + "g_server_service.emplace(\"" + firstMethodInfo.Service +
-			"\", std::make_unique_for_overwrite<" + firstMethodInfo.Service + config.HandlerName + ">());\n"
-	}
-	data += "\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_server_service;\n\n"
 
-	data += "void InitServiceHandler()\n{\n"
-	data += instanceData
-	data += "}"
-	util.WriteMd5Data2File(dst, data)
+		// Append C++ handler include specific to the first method
+		data.WriteString(firstMethodInfo.CppHandlerIncludeName())
+
+		// Append instance creation for the service handler
+		instanceData.WriteString(fmt.Sprintf("%sg_server_service.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());\n",
+			config.Tab, firstMethodInfo.Service, firstMethodInfo.Service, config.HandlerName))
+	}
+
+	// Finalize the data string with the unordered_map declaration and initialization function
+	data.WriteString("\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_server_service;\n\n")
+	data.WriteString("void InitServiceHandler()\n{\n")
+	data.WriteString(instanceData.String())
+	data.WriteString("}")
+
+	// Write the generated data to the destination file using util.WriteMd5Data2File
+	util.WriteMd5Data2File(dst, data.String())
 }
 
 func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 	defer util.Wg.Done()
-	data := "void InitRepliedHandler()\n{\n"
+
+	var data strings.Builder
+
+	// Start the function definition for initializing replied handlers
+	data.WriteString("void InitRepliedHandler()\n{\n")
+
 	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
 		methodList, ok := ServiceMethodMap[key]
@@ -406,122 +419,190 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 			continue
 		}
 		firstMethodInfo := methodList[0]
-		data += config.Tab + "void Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + "();\n"
-		data += config.Tab + "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + "();\n\n"
+
+		// Append the initialization function declaration
+		initFunctionName := "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName
+		data.WriteString(config.Tab + "void " + initFunctionName + "();\n")
+
+		// Call the initialization function
+		data.WriteString(config.Tab + initFunctionName + "();\n\n")
 	}
-	data += "}\n"
-	util.WriteMd5Data2File(dst, data)
+
+	// End the function definition
+	data.WriteString("}\n")
+
+	// Write the generated data to the destination file using util.WriteMd5Data2File
+	util.WriteMd5Data2File(dst, data.String())
 }
 
 // / game server
-func isGsMethodHandler(methodList *RPCMethods) (isGsFile bool) {
+func isGsMethodHandler(methodList *RPCMethods) bool {
 	if len(*methodList) <= 0 {
-		return
-	}
-	firstMethodList := (*methodList)[0]
-	if !(strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
 	}
-	return strings.Contains(firstMethodList.FileBaseName(), config.GsPrefixName)
+
+	firstMethod := (*methodList)[0]
+
+	// Check if the method's path contains common or logic proto directory names
+	isCommonOrLogicProto := strings.Contains(firstMethod.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethod.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+
+	// Check if the method's file base name starts with the GsPrefixName
+	hasGsPrefix := strings.HasPrefix(firstMethod.FileBaseName(), config.GsPrefixName)
+
+	// Return true if both conditions are satisfied
+	return isCommonOrLogicProto && hasGsPrefix
 }
 
-func isGsPlayerHandler(methodList *RPCMethods) (result bool) {
+func isGsPlayerHandler(methodList *RPCMethods) bool {
 	if len(*methodList) <= 0 {
 		return false
 	}
+
 	firstMethodInfo := (*methodList)[0]
+
+	// Check if the method belongs to a player service
 	if !firstMethodInfo.IsPlayerService() {
 		return false
 	}
-	if !strings.Contains(firstMethodInfo.FileBaseName(), config.PlayerName) {
-		return false
-	} else if strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) {
+
+	// Check if the file base name contains player name and does not contain centre prefix
+	fileBaseName := firstMethodInfo.FileBaseName()
+	if !strings.Contains(fileBaseName, config.PlayerName) {
 		return false
 	}
+	if strings.Contains(fileBaseName, config.CentrePrefixName) {
+		return false
+	}
+
 	return true
 }
 
 func writeGsMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
+	// Check if the method list qualifies as a game server method handler
 	if !isGsMethodHandler(&methodList) {
 		return
 	}
+
+	// Generate the file name based on the first method's base name and configuration
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+
+	// Write the generated data to the destination file using util.WriteMd5Data2File
 	util.WriteMd5Data2File(config.GsMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
 func writeGsMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
+	// Check if the method list qualifies as a game server method handler
 	if !isGsMethodHandler(&methodList) {
 		return
 	}
+
+	// Generate the file name based on the first method's base name and configuration
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.GsMethodHandleDir + fileName
+
+	// Generate the C++ handler file content
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
+
+	// Write the generated data to the destination file using util.WriteMd5Data2File
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
 func writeGsPlayerMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
+	// Check if the method list qualifies as a game server player method handler
 	if !isGsPlayerHandler(&methodList) {
 		return
 	}
+
+	// Generate the file name based on the first method's base name and configuration
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+
+	// Write the generated data to the destination file using util.WriteMd5Data2File
 	util.WriteMd5Data2File(config.GsMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
 func writeGsPlayerMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
-	if len(methodList) <= 0 {
+
+	// Check if methodList is empty or does not qualify as a game server player method handler
+	if len(methodList) <= 0 || !isGsPlayerHandler(&methodList) {
 		return
 	}
-	if !isGsPlayerHandler(&methodList) {
-		return
-	}
+
 	firstMethodInfo := methodList[0]
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+
+	// Generate the file name based on the first method's base name and configuration
+	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.GsMethodHandleDir + fileName
+
+	// Generate the C++ handler file content
 	data := getMethodPlayerHandlerCppStr(dstFileName,
 		&methodList,
 		firstMethodInfo.CppHandlerClassName(),
 		firstMethodInfo.CppHandlerIncludeName())
+
+	// Write the generated data to the destination file using util.WriteMd5Data2File
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
-func isGsPlayerRepliedHandler(methodList *RPCMethods) (result bool) {
+func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 	if len(*methodList) <= 0 {
-		return
+		return false
 	}
+
 	firstMethodInfo := (*methodList)[0]
+
+	// Check if the method belongs to a player service
 	if !firstMethodInfo.IsPlayerService() {
 		return false
 	}
+
+	// Check if the file base name does not contain the GsPrefixName
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName)
 }
 
 func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
+	// Check if the method list qualifies as a game server player replied handler
 	if !isGsPlayerRepliedHandler(&methodList) {
 		return
 	}
+
+	// Generate the file name based on the first method's base name and configuration
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
+
+	// Write the generated data to the destination file using util.WriteMd5Data2File
 	util.WriteMd5Data2File(config.GsMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
 func writeGsPlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
-	if !isGsPlayerRepliedHandler(&methodList) {
+
+	// Check if methodList is empty or does not qualify as a game server player replied handler
+	if len(methodList) <= 0 || !isGsPlayerRepliedHandler(&methodList) {
 		return
 	}
+
 	firstMethodInfo := methodList[0]
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
+
+	// Generate the file name based on the first method's base name and configuration
+	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
+
+	// Generate the C++ replied handler file content
 	data := getMethodPlayerHandlerCppStr(dstFileName,
 		&methodList,
 		firstMethodInfo.CppRepliedHandlerClassName(),
 		firstMethodInfo.CppRepliedHandlerIncludeName())
+
+	// Write the generated data to the destination file using util.WriteMd5Data2File
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
