@@ -1,4 +1,4 @@
-package gen
+package util
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"pbgen/config"
-	"pbgen/util"
 	"strings"
 )
 
@@ -59,7 +58,7 @@ func CopyFileByMd5(dstFilePath string, srcFilePath string) (copy bool, err error
 	if same {
 		return false, err
 	}
-	_, err = util.Copy(dstFilePath, srcFilePath)
+	_, err = Copy(dstFilePath, srcFilePath)
 	return true, err
 }
 
@@ -105,7 +104,7 @@ func Md5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err erro
 	if !same {
 		return false, err
 	}
-	_, err = util.Copy(srcFilePath, dstFilePath)
+	_, err = Copy(srcFilePath, dstFilePath)
 	return true, err
 }
 

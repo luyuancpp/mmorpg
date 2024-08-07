@@ -48,7 +48,7 @@ func WriteLoadClientLuaFile() {
 			data += config.Tab + "}\n"
 		}
 		data += "\n}\n"
-		WriteMd5Data2File(config.ClientLuaServiceFile, data)
+		util.WriteMd5Data2File(config.ClientLuaServiceFile, data)
 	}()
 }
 
@@ -235,7 +235,7 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 		data += ");\n"
 	}
 	data += "}\n"
-	WriteMd5Data2File(config.PbcLuaDirName+fileBaseName+config.CppSol2Ex, data)
+	util.WriteMd5Data2File(config.PbcLuaDirName+fileBaseName+config.CppSol2Ex, data)
 }
 
 func WriteSol2LuaFile() {
@@ -280,7 +280,7 @@ func WriteSol2LuaFile() {
 		data += "tls_lua_state.new_usertype<::google::protobuf::Message>(\"Message\");\n"
 		data += callData + "\n"
 		data += "}\n"
-		WriteMd5Data2File(config.PbcLuaDirName+"pb"+config.CppSol2Ex, data)
+		util.WriteMd5Data2File(config.PbcLuaDirName+"pb"+config.CppSol2Ex, data)
 	}()
 
 }
@@ -309,7 +309,7 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 	}
 	data += "}\n"
 	fileName := methodList[0].FileBaseName() + "_service" + config.LuaCppEx
-	WriteMd5Data2File(config.PbcLuaDirName+fileName, data)
+	util.WriteMd5Data2File(config.PbcLuaDirName+fileName, data)
 }
 
 func writeInitLuaServiceFile() {
@@ -329,7 +329,7 @@ func writeInitLuaServiceFile() {
 		data += config.Tab + "Init" + firstMethodInfo.Service + "Lua();\n\n"
 	}
 	data += "}\n"
-	WriteMd5Data2File(config.LuaServiceFileName, data)
+	util.WriteMd5Data2File(config.LuaServiceFileName, data)
 }
 
 func WriteLuaServiceHeadHandlerFile() {
