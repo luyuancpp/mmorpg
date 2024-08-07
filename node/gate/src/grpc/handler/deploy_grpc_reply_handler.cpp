@@ -2,7 +2,7 @@
 
 #include "gate_node.h"
 #include "grpc/client/deploy_async_client_call.h"
-#include "grpc/deploy/deployclient.h"
+#include "grpc/deploy/deploy_client.h"
 
 void AsyncCompleteGrpcDeployService()
 {
