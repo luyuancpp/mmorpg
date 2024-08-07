@@ -147,7 +147,7 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) (data string) {
 
 func getMethodHandlerCppStr(dst string, methodList *RPCMethods) (data string) {
 	methodLen := len(*methodList)
-	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
+	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
 	data = firstMethodInfo.CppHandlerIncludeName()
 
@@ -172,7 +172,7 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) (data string) {
 
 func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) (data string) {
 	methodLen := len(*methodList)
-	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
+	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
 	data = firstMethodInfo.CppRepliedHandlerIncludeName() +
 		"#include \"network/codec/dispatcher.h\"\n\n"
@@ -224,7 +224,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) (data str
 
 func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className string, includeName string) (data string) {
 	methodLen := len(*methodList)
-	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
+	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, methodLen+1)
 	data = includeName
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
