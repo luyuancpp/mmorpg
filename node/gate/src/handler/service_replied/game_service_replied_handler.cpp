@@ -1,6 +1,8 @@
 #include "game_service_replied_handler.h"
 #include "network/codec/dispatcher.h"
 
+extern ProtobufDispatcher g_response_dispatcher;
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "gate_node.h"
 #include "network/gate_session.h"
@@ -21,8 +23,6 @@ void MessageStatistics(const MessageBody& message)
 }
 
 ///<<< END WRITING YOUR CODE
-extern ProtobufDispatcher g_response_dispatcher;
-
 
 void InitGameServiceEnterGsRepliedHandler()
 {

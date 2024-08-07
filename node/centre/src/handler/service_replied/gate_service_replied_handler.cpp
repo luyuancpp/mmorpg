@@ -1,6 +1,8 @@
 #include "gate_service_replied_handler.h"
 #include "network/codec/dispatcher.h"
 
+extern ProtobufDispatcher g_response_dispatcher;
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "type_define/type_define.h"
@@ -10,8 +12,6 @@
 #include "game_logic/player/util/player_node_util.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-extern ProtobufDispatcher g_response_dispatcher;
-
 
 void InitGateServiceRegisterGameRepliedHandler()
 {
