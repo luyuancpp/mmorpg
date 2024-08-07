@@ -5,38 +5,49 @@ import os
 import xlrd
 import logging
 import json
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Path to your Excel file
+# Path configurations
 excel_file_path = 'xlsx/operator/Operator.xlsx'
-
-# Output directory for Proto files
 output_dir = 'generated/proto/operator'
-
-# Temporary file for storing existing ID mappings
 temp_file_path = 'generated/proto/operator/temp_id_mapping.json'
 
-# Create the output directory if it doesn't exist
+# Ensure output directory exists
 os.makedirs(output_dir, exist_ok=True)
+
+# Use a lock for thread-safe file access
+file_lock = threading.Lock()
+
 
 def read_temp_id_mapping():
     """Reads existing ID mappings from temp file."""
-    if os.path.exists(temp_file_path):
-        with open(temp_file_path, 'r') as f:
-            return json.load(f)
-    else:
+    try:
+        if os.path.exists(temp_file_path):
+            with open(temp_file_path, 'r') as f:
+                return json.load(f)
+        else:
+            return {}
+    except Exception as e:
+        logging.error(f"Error reading ID mapping file: {str(e)}")
         return {}
+
 
 def write_temp_id_mapping(mapping):
     """Writes ID mappings to temp file."""
-    with open(temp_file_path, 'w') as f:
-        json.dump(mapping, f, indent=2)
+    try:
+        with file_lock:
+            with open(temp_file_path, 'w') as f:
+                json.dump(mapping, f, indent=2)
+    except Exception as e:
+        logging.error(f"Error writing ID mapping file: {str(e)}")
+
 
 def read_excel_data(file_path):
-    """Read data from the provided Excel file path."""
+    """Reads data from the provided Excel file."""
     try:
         workbook = xlrd.open_workbook(file_path)
         sheet = workbook.sheet_by_index(0)
@@ -44,7 +55,7 @@ def read_excel_data(file_path):
 
         groups = {}
         current_group = None
-        global_row_id = 0  # Start global_row_id at 0 for open enums
+        global_row_id = 0
 
         for row_idx in range(7, num_rows):
             row_cells = sheet.row(row_idx)
@@ -75,8 +86,9 @@ def read_excel_data(file_path):
         logging.error(f"Error reading Excel file: {str(e)}")
         return {}
 
+
 def generate_proto_file(group_name, group_data, existing_id_mapping):
-    """Generate a Proto file for a given group."""
+    """Generates Proto file for a given group."""
     try:
         proto_content = f"// Proto file for {group_name}\n"
         proto_content += f"syntax = \"proto3\";\n\n"
@@ -100,8 +112,10 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
         proto_content += "};\n"
 
         proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_operator.proto")
-        with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
-            proto_file.write(proto_content)
+
+        with file_lock:
+            with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
+                proto_file.write(proto_content)
 
         logging.info(f"Proto enums file generated: {proto_file_path}")
 
@@ -111,8 +125,9 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
     except Exception as e:
         logging.error(f"Error generating Proto file for group {group_name}: {str(e)}")
 
+
 def generate_proto_files(groups):
-    """Generate Proto files for all groups using ThreadPoolExecutor."""
+    """Generates Proto files for all groups using ThreadPoolExecutor."""
     existing_id_mapping = read_temp_id_mapping()
 
     with ThreadPoolExecutor() as executor:
@@ -125,11 +140,13 @@ def generate_proto_files(groups):
             except Exception as e:
                 logging.error(f"Error occurred: {str(e)}")
 
+
 def main():
     groups = read_excel_data(excel_file_path)
     if groups:
         generate_proto_files(groups)
         logging.info("Proto generation completed.")
+
 
 if __name__ == "__main__":
     main()
