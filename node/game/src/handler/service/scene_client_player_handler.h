@@ -37,51 +37,51 @@ public:
 		const ::ActorListDestroyS2C* request,
 		::Empty* response);
 
- void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-   entt::entity player,
-    const ::google::protobuf::Message* request,
-    ::google::protobuf::Message* response)override 
- 		{
-        switch(method->index())
+	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+		entt::entity player,
+		const ::google::protobuf::Message* request,
+		::google::protobuf::Message* response)override 
+		{
+		switch(method->index())
 		{
 		case 0:
 			EnterSceneC2S(player,
-			::google::protobuf::internal::DownCast<const EnterSceneC2SRequest*>( request),
+			::google::protobuf::internal::DownCast<const EnterSceneC2SRequest*>(request),
 			::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
 		break;
 		case 1:
 			PushEnterSceneS2C(player,
-			::google::protobuf::internal::DownCast<const EnterSceneS2C*>( request),
+			::google::protobuf::internal::DownCast<const EnterSceneS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 2:
 			SceneInfoC2S(player,
-			::google::protobuf::internal::DownCast<const SceneInfoRequest*>( request),
+			::google::protobuf::internal::DownCast<const SceneInfoRequest*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 3:
 			PushSceneInfoS2C(player,
-			::google::protobuf::internal::DownCast<const SceneInfoS2C*>( request),
+			::google::protobuf::internal::DownCast<const SceneInfoS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 4:
 			PushActorCreateS2C(player,
-			::google::protobuf::internal::DownCast<const ActorCreateS2C*>( request),
+			::google::protobuf::internal::DownCast<const ActorCreateS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 5:
 			PushActorDestroyS2C(player,
-			::google::protobuf::internal::DownCast<const ActorDestroyS2C*>( request),
+			::google::protobuf::internal::DownCast<const ActorDestroyS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 6:
 			PushActorListCreateS2C(player,
-			::google::protobuf::internal::DownCast<const ActorListCreateS2C*>( request),
+			::google::protobuf::internal::DownCast<const ActorListCreateS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 7:
 			PushActorListDestroyS2C(player,
-			::google::protobuf::internal::DownCast<const ActorListDestroyS2C*>( request),
+			::google::protobuf::internal::DownCast<const ActorListDestroyS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		default:

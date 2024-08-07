@@ -37,12 +37,12 @@ public:
 		const ::ActorListDestroyS2C* request,
 		::Empty* response);
 
- void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-   entt::entity player,
-    const ::google::protobuf::Message* request,
-    ::google::protobuf::Message* response)override 
- 		{
-        switch(method->index())
+	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+		entt::entity player,
+		const ::google::protobuf::Message* request,
+		::google::protobuf::Message* response)override 
+		{
+		switch(method->index())
 		{
 		case 0:
 			EnterSceneC2S(player,

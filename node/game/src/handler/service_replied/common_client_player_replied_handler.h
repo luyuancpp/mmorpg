@@ -13,12 +13,12 @@ public:
 		const ::TipMessage* request,
 		::TipMessage* response);
 
- void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-   entt::entity player,
-    const ::google::protobuf::Message* request,
-    ::google::protobuf::Message* response)override 
- 		{
-        switch(method->index())
+	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+		entt::entity player,
+		const ::google::protobuf::Message* request,
+		::google::protobuf::Message* response)override 
+		{
+		switch(method->index())
 		{
 		case 0:
 			PushTipS2C(player,

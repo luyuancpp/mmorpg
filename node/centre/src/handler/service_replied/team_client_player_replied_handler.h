@@ -9,12 +9,12 @@ public:
 		const ::TeamInfoS2CRequest* request,
 		::TeamInfoS2CResponse* response);
 
- void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-   entt::entity player,
-    const ::google::protobuf::Message* request,
-    ::google::protobuf::Message* response)override 
- 		{
-        switch(method->index())
+	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+		entt::entity player,
+		const ::google::protobuf::Message* request,
+		::google::protobuf::Message* response)override 
+		{
+		switch(method->index())
 		{
 		case 0:
 			TeamInfoNotify(player,
