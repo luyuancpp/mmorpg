@@ -10,10 +10,9 @@
 
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,
-	const ::RegisterGameRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,(const ::RegisterGameRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	// Centre server notification
@@ -43,10 +42,9 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,
-	const ::UnRegisterGameRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,(const ::UnRegisterGameRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	entt::entity requestGameNodeId{ request->game_node_id() };
@@ -55,10 +53,9 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,
-	const ::RegisterSessionGameNodeRequest* request,
-	::RegisterSessionGameNodeResponse* response,
-	 ::google::protobuf::Closure* done)
+void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,(const ::RegisterSessionGameNodeRequest* request,
+	     RegisterSessionGameNodeResponse* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sessionIt = tls_gate.sessions().find(request->session_info().session_id());
@@ -75,10 +72,9 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* controller,
-	const ::NodeRouteMessageRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* controller,(const ::NodeRouteMessageRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sessionIt = tls_gate.sessions().find(request->head().session_id());
@@ -92,10 +88,9 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* controller,
-	const ::GateNodeKickConnRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* controller,(const ::GateNodeKickConnRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	Destroy(tls.sceneRegistry, entt::entity{ request->session_id() });
@@ -103,30 +98,27 @@ void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* con
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-	const ::RouteMsgStringRequest* request,
-	::RouteMsgStringResponse* response,
-	 ::google::protobuf::Closure* done)
+void GateServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,(const ::RouteMsgStringRequest* request,
+	     RouteMsgStringResponse* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-	const ::RoutePlayerMsgStringRequest* request,
-	::RoutePlayerMsgStringResponse* response,
-	 ::google::protobuf::Closure* done)
+void GateServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,(const ::RoutePlayerMsgStringRequest* request,
+	     RoutePlayerMsgStringResponse* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::BroadCast2PlayerMessage(::google::protobuf::RpcController* controller,
-	const ::BroadCast2PlayerRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void GateServiceHandler::BroadCast2PlayerMessage(::google::protobuf::RpcController* controller,(const ::BroadCast2PlayerRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto&& sessionId : request->session_list())
