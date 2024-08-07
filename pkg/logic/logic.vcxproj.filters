@@ -21,7 +21,6 @@
     <ClInclude Include="src\scene\comp\scene_comp.h" />
     <ClInclude Include="src\scene\comp\node_scene_comp.h" />
     <ClInclude Include="src\mission\constants\mission_constants.h" />
-    <ClInclude Include="src\game_operator\constants\game_operator_code_constants.h" />
     <ClInclude Include="src\node\constants\node_constants.h" />
     <ClInclude Include="src\time\constants\time_constants.h" />
     <ClInclude Include="src\bag\bag_system.h" />
@@ -45,5 +44,6 @@
     <ClInclude Include="src\game_common_logic\comp\session_comp.h" />
     <ClInclude Include="src\time\comp\timer_list.h" />
     <ClInclude Include="src\macros\return_define.h" />
+    <ClInclude Include="src\log\macros\game_log.h" />
   </ItemGroup>
 </Project>
