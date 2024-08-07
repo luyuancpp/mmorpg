@@ -6,8 +6,8 @@
 
 #include "bag/bag_system.h"
 
-#include "pbc/common_tip.pb.h"
-#include "pbc/bag_tip.pb.h"
+#include "pbc/common_error_tip.pb.h"
+#include "pbc/bag_error_tip.pb.h"
 
 
 TEST(BagTest, NullItem)

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "pbc/common_tip.pb.h"
-#include "pbc/team_tip.pb.h"
+#include "pbc/common_error_tip.pb.h"
+#include "pbc/team_error_tip.pb.h"
 #include "teams/team_system.h"
 #include "thread_local/storage_common_logic.h"
 

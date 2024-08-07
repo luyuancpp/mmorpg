@@ -3,8 +3,8 @@
 #include "muduo/base/Logging.h"
 
 #include "scene/util/scene_util.h"
-#include "pbc/scene_tip.pb.h"
-#include "pbc/common_tip.pb.h"
+#include "pbc/scene_error_tip.pb.h"
+#include "pbc/common_error_tip.pb.h"
 #include "centre_node.h"
 #include "game_logic/scene/util/player_scene.h"
 #include "game_logic/player/util/player_tip_util.h"

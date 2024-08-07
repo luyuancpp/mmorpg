@@ -24,10 +24,7 @@ x64/
 common/src/game_config/proto/*
 bin/config/xlwt/
 bin/config/xlrd/
-bin/config/proto
-bin/config/cpp/
-bin/config/protocpp/
-bin/config/json/
+bin/config/generated/
 bin/zlib*
 pkg/config/src/
 tools/server/pbgen/.idea/

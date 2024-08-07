@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 begin_row_idx = gencommon.beginrowidx
-cpp_dir = "cpp/"
+cpp_dir = "generated/cpp/"
 xls_dir = "xlsx/"
 gen_file_list = ["global_variable"]
 

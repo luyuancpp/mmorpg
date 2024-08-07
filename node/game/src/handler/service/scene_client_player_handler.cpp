@@ -1,7 +1,7 @@
 #include "scene_client_player_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "pbc/scene_tip.pb.h"
+#include "pbc/scene_error_tip.pb.h"
 #include "scene/comp/scene_comp.h"
 #include "service/centre_scene_server_player_service.h"
 #include "proto/logic/server_player/centre_scene_server_player.pb.h"

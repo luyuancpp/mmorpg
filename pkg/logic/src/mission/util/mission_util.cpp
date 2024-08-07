@@ -6,8 +6,8 @@
 #include "mission/comp/mission_comp.h"
 #include "thread_local/storage.h"
 #include "macros/return_define.h"
-#include "pbc/mission_tip.pb.h"
-#include "pbc/common_tip.pb.h"
+#include "pbc/mission_error_tip.pb.h"
+#include "pbc/common_error_tip.pb.h"
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
 

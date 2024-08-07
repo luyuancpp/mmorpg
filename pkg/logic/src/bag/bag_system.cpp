@@ -3,8 +3,8 @@
 #include <vector>
 
 #include "macros/return_define.h"
-#include "pbc/common_tip.pb.h"
-#include "pbc/bag_tip.pb.h"
+#include "pbc/common_error_tip.pb.h"
+#include "pbc/bag_error_tip.pb.h"
 
 #include"item_config.h"
 
