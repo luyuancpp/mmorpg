@@ -223,29 +223,48 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 	return data.String()
 }
 
-func getMethodHandlerCppStr(dst string, methodList *RPCMethods) (data string) {
-	methodLen := len(*methodList)
-	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, methodLen+1)
-	firstMethodInfo := (*methodList)[0]
-	data = firstMethodInfo.CppHandlerIncludeName()
+func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
+	// Ensure there are methods in the list
+	if len(*methodList) == 0 {
+		return ""
+	}
 
+	// Read code sections from file
+	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+
+	var data strings.Builder
+	firstMethodInfo := (*methodList)[0]
+
+	// Start with the C++ handler include specific to the first method
+	data.WriteString(firstMethodInfo.CppHandlerIncludeName())
+
+	// Determine class name based on the first method's service and handler name configuration
 	className := firstMethodInfo.Service + config.HandlerName
-	for i := 0; i < len(yourCodes); i++ {
-		j := i - 1
-		isMessage := j >= 0 && j < methodLen
-		if isMessage {
-			methodInfo := (*methodList)[j]
-			data += "void " + className + "::" + methodInfo.Method + config.GoogleMethodController + "\n" +
-				config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
-				config.Tab + "::" + methodInfo.Response + "* response,\n" +
-				config.Tab + " ::google::protobuf::Closure* done)\n{\n"
-		}
-		data += yourCodes[i]
-		if isMessage {
-			data += "}\n\n"
+
+	// Iterate through yourCodes and methodList simultaneously
+	for i, code := range yourCodes {
+		// Calculate the corresponding method index in methodList
+		methodIndex := i - 1
+
+		if methodIndex >= 0 && methodIndex < len(*methodList) {
+			// Retrieve method information
+			methodInfo := (*methodList)[methodIndex]
+
+			// Append method handler function definition
+			data.WriteString(fmt.Sprintf("void %s::%s%s(const ::%s* request,\n",
+				className, methodInfo.Method, config.GoogleMethodController, methodInfo.Request))
+			data.WriteString(config.Tab + "     " + methodInfo.Response + "* response,\n")
+			data.WriteString(config.Tab + "     ::google::protobuf::Closure* done)\n")
+			data.WriteString("{\n")
+			data.WriteString(code) // Append existing code section
+			data.WriteString("}\n\n")
+		} else {
+			// Append non-method related code directly
+			data.WriteString(code)
 		}
 	}
-	return data
+
+	return data.String()
 }
 
 func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) (data string) {

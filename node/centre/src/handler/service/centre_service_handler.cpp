@@ -65,10 +65,9 @@ entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 }
 
 ///<<< END WRITING YOUR CODE
-void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,
-	const ::RegisterGameRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,(const ::RegisterGameRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	// Log that we have received a RegisterGame request
@@ -148,10 +147,9 @@ void CentreServiceHandler::RegisterGame(::google::protobuf::RpcController* contr
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* controller,
-	const ::RegisterGateRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* controller,(const ::RegisterGateRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 // Extract client address and gate ID from the request
@@ -196,19 +194,17 @@ void CentreServiceHandler::RegisterGate(::google::protobuf::RpcController* contr
     ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,
-	const ::GateClientMessageRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,(const ::GateClientMessageRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller,
-	const ::GateSessionDisconnectRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcController* controller,(const ::GateSessionDisconnectRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
@@ -270,10 +266,9 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,
-	const ::LoginRequest* request,
-	::LoginResponse* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,(const ::LoginRequest* request,
+	     LoginResponse* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     
@@ -290,10 +285,9 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* controller,
-	const ::CentrePlayerGameNodeEntryRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* controller,(const ::CentrePlayerGameNodeEntryRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	//顶号
@@ -368,10 +362,9 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,
-	const ::CtrlLsLeaveGameRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,(const ::CtrlLsLeaveGameRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerNodeUtil::HandlePlayerLeave(GetPlayerIdBySessionId(tlsCommonLogic.session_id()));
@@ -379,10 +372,9 @@ void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* contro
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* controller,
-	const ::CtrlLsDisconnectRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* controller,(const ::CtrlLsDisconnectRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	defer(Destroy(tls.registry, entt::entity{ tlsCommonLogic.session_id() }));
@@ -391,10 +383,9 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,
-	const ::NodeRouteMessageRequest* request,
-	::NodeRouteMessageResponse* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,(const ::NodeRouteMessageRequest* request,
+	     NodeRouteMessageResponse* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const auto it = tlsSessions.find(request->head().session_id());
@@ -475,10 +466,9 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
-	const ::EnterGameNodeSucceedRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,(const ::EnterGameNodeSucceedRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "EnterGsSucceed request received.";
@@ -510,10 +500,9 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-	const ::RouteMsgStringRequest* request,
-	::RouteMsgStringResponse* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,(const ::RouteMsgStringRequest* request,
+	     RouteMsgStringResponse* response,
+	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -653,19 +642,17 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-	const ::RoutePlayerMsgStringRequest* request,
-	::RoutePlayerMsgStringResponse* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,(const ::RoutePlayerMsgStringRequest* request,
+	     RoutePlayerMsgStringResponse* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,
-	const ::UnRegisterGameRequest* request,
-	::Empty* response,
-	 ::google::protobuf::Closure* done)
+void CentreServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,(const ::UnRegisterGameRequest* request,
+	     Empty* response,
+	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     for (const auto& [e, gate_node]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
