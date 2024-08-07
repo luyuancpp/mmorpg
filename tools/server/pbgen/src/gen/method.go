@@ -983,24 +983,35 @@ func writeGateMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 
 func writeGateMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
+	// Check if methodList qualifies as a gate method replied handler
 	if !isGateMethodRepliedHandler(&methodList) {
 		return
 	}
+
+	// Retrieve the first method information from methodList
 	firstMethodInfo := methodList[0]
+
+	// Construct the file name for the C++ replied handler file
 	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.GateMethodRepliedHandleDir + fileName
+
+	// Generate the C++ replied handler code as a string
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
+
+	// Write the generated C++ replied handler code to file
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
+		// Start concurrent operations for each service method
 		util.Wg.Add(1)
 		go writeServiceIdHeadFile(v)
 		util.Wg.Add(1)
 		go writeServiceIdCppFile(v)
 
-		//gs
+		// gs methods
 		util.Wg.Add(1)
 		go writeGsMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
@@ -1018,7 +1029,7 @@ func WriteMethodFile() {
 		util.Wg.Add(1)
 		go writeGsPlayerMethodRepliedHandlerCppFile(v)
 
-		//centre
+		// centre methods
 		util.Wg.Add(1)
 		go writeCentreMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
@@ -1036,7 +1047,7 @@ func WriteMethodFile() {
 		util.Wg.Add(1)
 		go writeCentrePlayerMethodRepliedHandlerCppFile(v)
 
-		//gate
+		// gate methods
 		util.Wg.Add(1)
 		go writeGateMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
@@ -1045,21 +1056,19 @@ func WriteMethodFile() {
 		go writeGateMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeGateMethodRepliedHandlerCppFile(v)
-
 	}
-	//game
+
+	// Concurrent operations for game, centre, and gate registers
 	util.Wg.Add(1)
 	go writeRegisterFile(config.GsMethodHandleDir+config.RegisterHandlerCppEx, isGsMethodHandler)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GsMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isGsMethodRepliedHandler)
 
-	//centre
 	util.Wg.Add(1)
 	go writeRegisterFile(config.CentreMethodHandleDir+config.RegisterHandlerCppEx, isCentreMethodHandler)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isCentreMethodRepliedHandler)
 
-	//gate
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GateMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isGateMethodRepliedHandler)
 }
