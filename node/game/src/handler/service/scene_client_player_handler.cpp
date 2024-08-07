@@ -10,9 +10,8 @@
 
 #include "proto/logic/constants/node.pb.h"
 ///<<< END WRITING YOUR CODE
-void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
-	const ::EnterSceneC2SRequest* request,
-	::EnterSceneC2SResponse* response)
+void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,const ::EnterSceneC2SRequest* request,
+	     EnterSceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_TRACE << "EnterSceneC2S request received for player: " << tls.registry.get<Guid>(player)
@@ -54,17 +53,15 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,
-	const ::EnterSceneS2C* request,
-	::Empty* response)
+void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,const ::EnterSceneS2C* request,
+	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,
-	const ::SceneInfoRequest* request,
-	::Empty* response)
+void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,const ::SceneInfoRequest* request,
+	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     SceneInfoRequest rq;
@@ -72,41 +69,36 @@ void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,
-	const ::SceneInfoS2C* request,
-	::Empty* response)
+void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,const ::SceneInfoS2C* request,
+	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushActorCreateS2C(entt::entity player,
-	const ::ActorCreateS2C* request,
-	::Empty* response)
+void ClientPlayerSceneServiceHandler::PushActorCreateS2C(entt::entity player,const ::ActorCreateS2C* request,
+	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushActorDestroyS2C(entt::entity player,
-	const ::ActorDestroyS2C* request,
-	::Empty* response)
+void ClientPlayerSceneServiceHandler::PushActorDestroyS2C(entt::entity player,const ::ActorDestroyS2C* request,
+	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushActorListCreateS2C(entt::entity player,
-	const ::ActorListCreateS2C* request,
-	::Empty* response)
+void ClientPlayerSceneServiceHandler::PushActorListCreateS2C(entt::entity player,const ::ActorListCreateS2C* request,
+	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushActorListDestroyS2C(entt::entity player,
-	const ::ActorListDestroyS2C* request,
-	::Empty* response)
+void ClientPlayerSceneServiceHandler::PushActorListDestroyS2C(entt::entity player,const ::ActorListDestroyS2C* request,
+	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

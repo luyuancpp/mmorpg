@@ -10,9 +10,8 @@
 
 #include "proto/logic/client_player/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
-void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,
-	const ::GsEnterSceneRequest* request,
-	::google::protobuf::Empty* response)
+void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,
+	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling GsEnterSceneRequest for player: " << tls.registry.get<Guid>(player) << ", scene_id: " << request->scene_id();
@@ -22,9 +21,8 @@ void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,
-	const ::GsLeaveSceneRequest* request,
-	::google::protobuf::Empty* response)
+void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,const ::GsLeaveSceneRequest* request,
+	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling GsLeaveSceneRequest for player: " << tls.registry.get<Guid>(player);
@@ -41,9 +39,8 @@ void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,
-	const ::EnterSceneS2CRequest* request,
-	::EnterScenerS2CResponse* response)
+void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,const ::EnterSceneS2CRequest* request,
+	     EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tls.registry.get<Guid>(player);
