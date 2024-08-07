@@ -17,7 +17,7 @@ excel_file_path = 'xlsx/operator/Operator.xlsx'
 output_dir = 'generated/proto/operator'
 
 # Temporary file for storing existing ID mappings
-temp_file_path = 'generated/proto/operatortemp_id_mapping.json'
+temp_file_path = 'generated/proto/operator/temp_id_mapping.json'
 
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
@@ -99,7 +99,7 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
 
         proto_content += "};\n"
 
-        proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_tip.proto")
+        proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_operator.proto")
         with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
             proto_file.write(proto_content)
 

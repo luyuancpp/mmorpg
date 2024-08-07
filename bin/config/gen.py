@@ -20,6 +20,7 @@ commands = [
     "python xlstojson.py",
     "python xlstopb.py",
     "python tipxlsxtoproto.py",
+    "python operatorxlsxtoproto.py",
     "python xlstocpp.py",
     "python xlstocppid.py",
     "python buildproto.py",
