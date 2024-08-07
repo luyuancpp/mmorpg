@@ -76,28 +76,25 @@ func ReadCodeSectionsFromFile(cppFileName string, codeCount int) ([]string, erro
 		return yourCodes, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
 	}
 	defer fd.Close()
-
 	scanner := bufio.NewScanner(fd)
-	var currentSection strings.Builder
+	var line string
+	yourCodeIndex := 0
 	for scanner.Scan() {
-		line := scanner.Text() + "\n"
+		line = scanner.Text() + "\n"
 		if strings.Contains(line, config.YourCodeBegin) {
-			currentSection.WriteString(line)
+			yourCodes = append(yourCodes, line)
 		} else if strings.Contains(line, config.YourCodeEnd) {
-			currentSection.WriteString(line)
-			yourCodes = append(yourCodes, currentSection.String())
-			currentSection.Reset()
-		} else if len(yourCodes) > 0 {
-			currentSection.WriteString(line)
+			yourCodes[yourCodeIndex] += line
+			yourCodeIndex += 1
+		} else if yourCodeIndex < len(yourCodes) {
+			yourCodes[yourCodeIndex] += line
 		}
 	}
-
 	if len(yourCodes) < codeCount {
 		addCount := codeCount - len(yourCodes)
 		for i := 0; i < addCount; i++ {
 			yourCodes = append(yourCodes, config.YourCodePair)
 		}
 	}
-
-	return yourCodes, nil
+	return yourCodes, err
 }
