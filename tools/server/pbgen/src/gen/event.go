@@ -2,8 +2,7 @@ package gen
 
 import (
 	"bufio"
-	"fmt"
-	"golang.org/x/text/cases"
+	cases "golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"log"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"strings"
 )
 
-// getClassName generates the event handler class name based on the file name.
 func getClassName(fd os.DirEntry) string {
 	className := strings.Split(fd.Name(), "_")[0]
 	caString := cases.Title(language.English)
@@ -21,95 +19,74 @@ func getClassName(fd os.DirEntry) string {
 	return className
 }
 
-// writeEventHandlerCpp generates the C++ header and implementation files for event handling.
 func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 	util.Wg.Done()
 
-	// Read the proto file to extract event messages.
-	eventList, err := extractEventList(fd)
-	if err != nil {
-		log.Printf("Error extracting event list from %s: %v\n", fd.Name(), err)
-		return
-	}
-
-	// Generate the header content.
-	className := getClassName(fd)
-	headerContent := generateHeaderContent(fd, className, eventList)
-
-	// Write header file.
-	headerFileName := generateFileName(fd, dstDir, config.HeadHandlerEx)
-	util.WriteMd5Data2File(headerFileName, headerContent)
-
-	// Generate and write C++ implementation content.
-	cppContent := generateCppContent(fd, className, eventList, headerFileName)
-	cppFileName := generateFileName(fd, dstDir, config.CppHandlerEx)
-	util.WriteMd5Data2File(cppFileName, cppContent)
-}
-
-// extractEventList reads the proto file and extracts the event messages.
-func extractEventList(fd os.DirEntry) ([]string, error) {
 	var eventList []string
-	f, err := os.Open(config.ProtoDirs[config.EventProtoDirIndex] + fd.Name())
-	if err != nil {
-		return eventList, fmt.Errorf("failed to open file %s: %v", fd.Name(), err)
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "message") {
+	{
+		f, err := os.Open(config.ProtoDirs[config.EventProtoDirIndex] + fd.Name())
+		if err != nil {
+			return
+		}
+		defer f.Close()
+		scanner := bufio.NewScanner(f)
+		var line string
+		for scanner.Scan() {
+			line = scanner.Text()
+			if !strings.Contains(line, "message") {
+				continue
+			}
 			eventMessage := strings.Split(line, " ")[1]
 			eventMessage = strings.Replace(eventMessage, "\n", "", -1)
 			eventList = append(eventList, eventMessage)
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return eventList, fmt.Errorf("error scanning file %s: %v", fd.Name(), err)
-	}
 
-	return eventList, nil
-}
-
-// generateHeaderContent generates the header file content.
-func generateHeaderContent(fd os.DirEntry, className string, eventList []string) string {
 	dataHead := "#pragma once\n\n"
 
-	var classDeclareHeader strings.Builder
-	var handlerFunction strings.Builder
-	for _, s := range eventList {
-		classDeclareHeader.WriteString("class " + s + ";\n")
-		handlerFunction.WriteString(config.Tab + "static void " + s + "Handler(const " + s + "& event);\n")
-	}
+	className := getClassName(fd)
 
-	dataHead += classDeclareHeader.String() + "\n"
+	var classDeclareHeader string
+	var registerFunctionBody string
+	var unregisterFunctionBody string
+	var handlerFunction string
+	for _, s := range eventList {
+		classDeclareHeader += "class " + s + ";\n"
+		handlerFunction += config.Tab + "static void " + s + "Handler(const " + s + "& event);\n"
+		registerFunctionBody += config.Tab2 + "tls.dispatcher.sink<" + s + ">().connect<&" +
+			className + "::" + s + "Handler>();\n"
+		unregisterFunctionBody += config.Tab2 + "tls.dispatcher.sink<" + s + ">().disconnect<&" +
+			className + "::" + s + "Handler>();\n"
+	}
+	dataHead += classDeclareHeader + "\n"
 	dataHead += "class " + className + "\n"
 	dataHead += "{\npublic:\n"
 	dataHead += config.Tab + "static void Register();\n"
 	dataHead += config.Tab + "static void UnRegister();\n\n"
-	dataHead += handlerFunction.String()
+	dataHead += handlerFunction
 	dataHead += "};\n"
 
-	return dataHead
-}
+	baseName := filepath.Base(strings.ToLower(fd.Name()))
+	fileName := strings.Replace(dstDir+strings.ToLower(fd.Name()), config.ProtoEx, "", -1)
+	headerFileName := fileName + config.HeadHandlerEx
+	cppFileName := fileName + config.CppHandlerEx
+	util.WriteMd5Data2File(headerFileName, dataHead)
 
-// generateCppContent generates the C++ implementation content.
-func generateCppContent(fd os.DirEntry, className string, eventList []string, headerFileName string) string {
 	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
 		config.IncludeBegin + config.ProtoDirNames[config.EventProtoDirIndex] +
-		strings.Replace(fd.Name(), config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
+		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
 		"#include \"thread_local/storage.h\"\n"
 
-	yourCodes, _ := util.ReadCodeSectionsFromFile(generateFileName(fd, "", config.CppHandlerEx), len(eventList)+1)
+	yourCodes, _ := util.ReadCodeSectionsFromFile(cppFileName, len(eventList)+1)
 
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isEventIndex := j >= 0 && j < len(eventList)
 		if j == 0 {
 			dataCpp += "void " + className + "::Register()\n" +
-				"{\n" + generateRegisterUnregisterBody(eventList, className, true) + "}\n\n"
+				"{\n" + registerFunctionBody + "}\n\n"
 			dataCpp += "void " + className + "::UnRegister()\n" +
-				"{\n" + generateRegisterUnregisterBody(eventList, className, false) + "}\n\n"
+				"{\n" + unregisterFunctionBody + "}\n\n"
 		}
 		if isEventIndex {
 			dataCpp += "void " + className + "::" + eventList[j] + "Handler(const " + eventList[j] + "& event)\n{\n"
@@ -119,34 +96,9 @@ func generateCppContent(fd os.DirEntry, className string, eventList []string, he
 			dataCpp += "}\n\n"
 		}
 	}
-	return dataCpp
+	util.WriteMd5Data2File(cppFileName, dataCpp)
 }
 
-// generateRegisterUnregisterBody generates the body for Register and Unregister functions.
-func generateRegisterUnregisterBody(eventList []string, className string, isRegister bool) string {
-	var functionBody strings.Builder
-	action := "connect" // Default to connect for Register
-
-	if !isRegister {
-		action = "disconnect"
-	}
-
-	for _, s := range eventList {
-		functionBody.WriteString(config.Tab2 + "tls.dispatcher.sink<" + s + ">()." + action + "<&" +
-			className + "::" + s + "Handler>();\n")
-	}
-
-	return functionBody.String()
-}
-
-// generateFileName generates the full file name based on the directory, file name, and extension.
-func generateFileName(fd os.DirEntry, dstDir string, extension string) string {
-	baseName := filepath.Base(strings.ToLower(fd.Name()))
-	fileName := strings.Replace(dstDir+strings.ToLower(fd.Name()), config.ProtoEx, "", -1)
-	return fileName + extension
-}
-
-// WriteEventHandlerFile iterates over event proto files and writes corresponding C++ header and implementation files.
 func WriteEventHandlerFile() {
 	fds, err := os.ReadDir(config.ProtoDirs[config.EventProtoDirIndex])
 	if err != nil {

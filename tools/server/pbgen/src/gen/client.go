@@ -64,7 +64,7 @@ func writeClientMethodHandlerHeadFile(methodList RPCMethods) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.ClientMethodHandleDir+fileName, getClientMethodHandlerHeadStr(methodList))
+	util.WriteMd5Data2File(config.ClientMethodHandleDir+fileName, getClientMethodHandlerHeadStr(methodList))
 }
 
 // writeClientHandlerDefaultInstanceFile 写入客户端处理器默认实例文件
@@ -90,7 +90,7 @@ func writeClientHandlerDefaultInstanceFile() {
 	data.WriteString("void InitPlayerService() {\n")
 	data.WriteString(instanceData.String())
 	data.WriteString("}\n")
-	WriteMd5Data2File(config.ClientServiceInstanceFile, data.String())
+	util.WriteMd5Data2File(config.ClientServiceInstanceFile, data.String())
 }
 
 // WriteClientServiceHeadHandlerFile 写入客户端服务头处理器文件

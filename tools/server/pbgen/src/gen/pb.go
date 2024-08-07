@@ -26,7 +26,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			defer util.Wg.Done()
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
-			fileSame, err := IsSameMD5(fileName, md5FileName)
+			fileSame, err := util.IsSameMD5(fileName, md5FileName)
 			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcOutDir, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 			if fileSame &&
@@ -67,7 +67,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
 			}
-			err = WriteToMd5ExFile(fileName, md5FileName)
+			err = util.WriteToMd5ExFile(fileName, md5FileName)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -94,7 +94,7 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 			defer util.Wg.Done()
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.GrpcEx + config.Md5Ex
-			fileSame, err := IsSameMD5(fileName, md5FileName)
+			fileSame, err := util.IsSameMD5(fileName, md5FileName)
 			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcOutDir, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
 			if fileSame &&
@@ -136,7 +136,7 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
 			}
-			err = WriteToMd5ExFile(fileName, md5FileName)
+			err = util.WriteToMd5ExFile(fileName, md5FileName)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -167,7 +167,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 			defer util.Wg.Done()
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.LoginGoMd5Ex + config.Md5Ex
-			fileSame, err := IsSameMD5(fileName, md5FileName)
+			fileSame, err := util.IsSameMD5(fileName, md5FileName)
 			dstFileName := config.LoginGoDir + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 			if fileSame &&
@@ -207,7 +207,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
 			}
-			err = WriteToMd5ExFile(fileName, md5FileName)
+			err = util.WriteToMd5ExFile(fileName, md5FileName)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -238,7 +238,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 			defer util.Wg.Done()
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.DBGoMd5Ex + config.Md5Ex
-			fileSame, err := IsSameMD5(fileName, md5FileName)
+			fileSame, err := util.IsSameMD5(fileName, md5FileName)
 			dstFileName := config.DbGoDir + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 			if fileSame &&
@@ -278,7 +278,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
 			}
-			err = WriteToMd5ExFile(fileName, md5FileName)
+			err = util.WriteToMd5ExFile(fileName, md5FileName)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -306,7 +306,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			defer util.Wg.Done()
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.ClientGoMd5Ex + config.Md5Ex
-			fileSame, err := IsSameMD5(fileName, md5FileName)
+			fileSame, err := util.IsSameMD5(fileName, md5FileName)
 			dstFileName := config.ClientGoPbDir + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 			if fileSame &&
@@ -346,7 +346,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
 			}
-			err = WriteToMd5ExFile(fileName, md5FileName)
+			err = util.WriteToMd5ExFile(fileName, md5FileName)
 			if err != nil {
 				log.Fatal(err)
 			}
