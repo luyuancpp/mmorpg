@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "macros/game_log.h"
+#include "log/macros/game_log.h"
 
 #include "log/constants/log_color_constants.h"
 

@@ -17,7 +17,6 @@
 #include "util/random.h"
 #include "util/snow_flake.h"
 
-#include "proto/logic/tip_code/common_tip_code.pb.h"
 
 extern std::unordered_set<uint32_t> g_c2s_service_id;
 
