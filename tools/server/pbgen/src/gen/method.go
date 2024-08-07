@@ -93,7 +93,7 @@ func getServiceHandlerHeadStr(methodList RPCMethods) string {
 func getServiceHandlerMethodStr(method *RPCMethod) string {
 	var data strings.Builder
 
-	data.WriteString(config.Tab + "void " + method.Method + config.GoogleMethodController + "\n")
+	data.WriteString(config.Tab + "void " + method.Method + "(" + config.GoogleMethodController + "\n")
 	data.WriteString(config.Tab2 + "const ::" + method.Request + "* request,\n")
 	data.WriteString(config.Tab2 + "::" + method.Response + "* response,\n")
 	data.WriteString(config.Tab2 + "::google::protobuf::Closure* done)override;\n\n")
@@ -122,7 +122,7 @@ func getPlayerMethodHandlerFunctions(methodList RPCMethods) string {
 	var callFunctionList strings.Builder
 
 	for i, method := range methodList {
-		data.WriteString(config.Tab + "static void " + method.Method + config.PlayerMethodController + "\n")
+		data.WriteString(config.Tab + "static void " + method.Method + "(" + config.PlayerMethodController + "\n")
 		data.WriteString(config.Tab2 + "const ::" + method.Request + "* request,\n")
 		data.WriteString(config.Tab2 + "::" + method.Response + "* response);\n\n")
 
@@ -170,7 +170,7 @@ func getPlayerMethodRepliedHandlerFunctions(methodList RPCMethods) string {
 	var callFunctionList strings.Builder
 
 	for i, method := range methodList {
-		data.WriteString(config.Tab + "static void " + method.Method + config.PlayerMethodController + "\n")
+		data.WriteString(config.Tab + "static void " + method.Method + "(" + config.PlayerMethodController + "\n")
 		data.WriteString(config.Tab2 + "const ::" + method.Request + "* request,\n")
 		data.WriteString(config.Tab2 + "::" + method.Response + "* response);\n\n")
 
@@ -251,7 +251,7 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 			methodInfo := (*methodList)[methodIndex]
 
 			// Append method handler function definition
-			data.WriteString(fmt.Sprintf("void %s::%s%s(const ::%s* request,\n",
+			data.WriteString(fmt.Sprintf("void %s::%s(%sconst ::%s* request,\n",
 				className, methodInfo.Method, config.GoogleMethodController, methodInfo.Request))
 			data.WriteString(config.Tab + "     " + methodInfo.Response + "* response,\n")
 			data.WriteString(config.Tab + "     ::google::protobuf::Closure* done)\n")
@@ -327,25 +327,43 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	return data.String()
 }
 
-func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className string, includeName string) (data string) {
-	methodLen := len(*methodList)
-	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, methodLen+1)
-	data = includeName
-	for i := 0; i < len(yourCodes); i++ {
-		j := i - 1
-		isMessage := j >= 0 && j < methodLen
-		if isMessage {
-			methodInfo := (*methodList)[j]
-			data += "void " + className + "::" + methodInfo.Method + config.PlayerMethodController + "\n" +
-				config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
-				config.Tab + "::" + methodInfo.Response + "* response)\n{\n"
-		}
-		data += yourCodes[i]
-		if isMessage {
-			data += "}\n\n"
+func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className string, includeName string) string {
+	// Ensure there are methods in the list
+	if len(*methodList) == 0 {
+		return includeName // Return the includeName if no methods are provided
+	}
+
+	// Read code sections from file
+	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+
+	var data strings.Builder
+
+	// Append the provided includeName
+	data.WriteString(includeName)
+
+	// Iterate through yourCodes and methodList simultaneously
+	for i, code := range yourCodes {
+		// Calculate the corresponding method index in methodList
+		methodIndex := i - 1
+
+		if methodIndex >= 0 && methodIndex < len(*methodList) {
+			// Retrieve method information
+			methodInfo := (*methodList)[methodIndex]
+
+			// Append method handler function definition
+			data.WriteString(fmt.Sprintf("void %s::%s(%sconst ::%s* request,\n",
+				className, methodInfo.Method, config.PlayerMethodController, methodInfo.Request))
+			data.WriteString(config.Tab + "     " + methodInfo.Response + "* response)\n")
+			data.WriteString("{\n")
+			data.WriteString(code) // Append existing code section
+			data.WriteString("}\n\n")
+		} else {
+			// Append non-method related code directly
+			data.WriteString(code)
 		}
 	}
-	return data
+
+	return data.String()
 }
 
 func writeRegisterFile(dst string, cb checkRepliedCb) {

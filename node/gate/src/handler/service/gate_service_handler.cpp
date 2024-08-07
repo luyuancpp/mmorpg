@@ -10,7 +10,7 @@
 
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,(const ::RegisterGameRequest* request,
+void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,const ::RegisterGameRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -42,7 +42,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,(const ::UnRegisterGameRequest* request,
+void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,const ::UnRegisterGameRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -53,7 +53,7 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,(const ::RegisterSessionGameNodeRequest* request,
+void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,const ::RegisterSessionGameNodeRequest* request,
 	     RegisterSessionGameNodeResponse* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -72,7 +72,7 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* controller,(const ::NodeRouteMessageRequest* request,
+void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -88,7 +88,7 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* controller,(const ::GateNodeKickConnRequest* request,
+void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* controller,const ::GateNodeKickConnRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -98,7 +98,7 @@ void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* con
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,(const ::RouteMsgStringRequest* request,
+void GateServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMsgStringRequest* request,
 	     RouteMsgStringResponse* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -107,7 +107,7 @@ void GateServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* c
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,(const ::RoutePlayerMsgStringRequest* request,
+void GateServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMsgStringRequest* request,
 	     RoutePlayerMsgStringResponse* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -116,7 +116,7 @@ void GateServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::BroadCast2PlayerMessage(::google::protobuf::RpcController* controller,(const ::BroadCast2PlayerRequest* request,
+void GateServiceHandler::BroadCast2PlayerMessage(::google::protobuf::RpcController* controller,const ::BroadCast2PlayerRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {

@@ -14,9 +14,8 @@
 
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
-	const ::CentreEnterSceneRequest* request,
-	::google::protobuf::Empty* response)
+void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
+	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//正在切换场景中，不能马上切换，gs崩溃了怎么办
@@ -38,17 +37,15 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreScenePlayerServiceHandler::LeaveScene(entt::entity player,
-	const ::CentreLeaveSceneRequest* request,
-	::google::protobuf::Empty* response)
+void CentreScenePlayerServiceHandler::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
+	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,
-	const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
-	::google::protobuf::Empty* response)
+void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
+	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//异步切换考虑消息队列
@@ -89,9 +86,8 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreScenePlayerServiceHandler::SceneInfoC2S(entt::entity player,
-	const ::SceneInfoRequest* request,
-	::google::protobuf::Empty* response)
+void CentreScenePlayerServiceHandler::SceneInfoC2S(entt::entity player,const ::SceneInfoRequest* request,
+	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//给客户端发所有场景消息
