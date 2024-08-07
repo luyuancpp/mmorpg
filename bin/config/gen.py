@@ -4,12 +4,12 @@ import os
 import subprocess
 
 # Create directories if they don't exist
-if not os.path.exists("cpp"):
-    os.makedirs("cpp")
-if not os.path.exists("protocpp"):
-    os.makedirs("protocpp")
-if not os.path.exists("json"):
-    os.makedirs("json")
+if not os.path.exists("generated/cpp"):
+    os.makedirs("generated/cpp")
+if not os.path.exists("generated/protocpp"):
+    os.makedirs("generated/protocpp")
+if not os.path.exists("generated/json"):
+    os.makedirs("generated/json")
 if not os.path.exists("../../pkg/config/src/pbc/"):
     os.makedirs("../../pkg/config/src/pbc/")
 if not os.path.exists("../../pkg/config/src/"):
@@ -24,7 +24,7 @@ commands = [
     "python xlstocppid.py",
     "python buildproto.py",
     "python md5tool.py md5copy ./cpp/ ../../pkg/config/src/",
-    "python md5tool.py md5copy ./protocpp/ ../../pkg/config/src/pbc/",
+    "python md5tool.py md5copy ./generated/protocpp/ ../../pkg/config/src/pbc/",
     "python genxlsmd5.py"
 ]
 

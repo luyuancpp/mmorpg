@@ -6,7 +6,7 @@
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
-#include "pbc/login_tip.pb.h"
+#include "pbc/login_error_tip.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "handler/service/player_service.h"
 #include "handler/service/register_handler.h"

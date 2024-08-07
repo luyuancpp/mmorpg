@@ -8,7 +8,7 @@ import logging
 
 # 全局变量
 END_ROW_INDEX = 3
-PROTO_DIR = "proto/"
+PROTO_DIR = "generated/proto/"
 XLSX_DIR = "xlsx/"
 
 # 配置日志

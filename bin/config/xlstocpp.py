@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 
 # 全局变量
 keyrowidx = 4
-cppdir = "cpp/"
+cppdir = "generated/cpp/"
 xlsdir = "xlsx/"
 
 

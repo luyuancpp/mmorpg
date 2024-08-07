@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 excel_file_path = 'xlsx/tip/Tip.xlsx'
 
 # Output directory for Proto files
-output_dir = 'proto/tip'
+output_dir = 'generated/proto/tip'
 
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
@@ -65,7 +65,7 @@ def generate_proto_file(group_name, group_data):
         proto_content += f"syntax = \"proto3\";\n\n"
         proto_content += f"enum {group_name} {{\n"
 
-        if group_name == "common":
+        if group_name == "common_error":
             proto_content += f"  option allow_alias = true;\n\n"
 
         proto_content += f"  k{group_name.capitalize()}OK = 0;\n"

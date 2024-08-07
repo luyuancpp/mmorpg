@@ -3,8 +3,8 @@
 #include "scene/util/scene_util.h"
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
-#include "pbc/scene_tip.pb.h"
-#include "pbc/common_tip.pb.h"
+#include "pbc/scene_error_tip.pb.h"
+#include "pbc/common_error_tip.pb.h"
 
 #include "proto/logic/component/gs_node_comp.pb.h"
 #include "proto/logic/component/scene_comp.pb.h"

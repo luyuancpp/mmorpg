@@ -17,7 +17,7 @@
 
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage.h"
-#include "pbc/team_tip.pb.h"
+#include "pbc/team_error_tip.pb.h"
 #include "util/game_registry.h"
 
 #include "proto/logic/component/team_comp.pb.h"
