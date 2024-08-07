@@ -285,7 +285,7 @@ func WriteSol2LuaFile() {
 
 }
 
-func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
+func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {

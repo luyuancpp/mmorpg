@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-type checkRepliedCb func(methodList *RpcMethodInfos) bool
+type checkRepliedCb func(methodList *RPCMethods) bool
 
-func writeServiceIdHeadFile(methodList RpcMethodInfos) {
+func writeServiceIdHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -28,7 +28,7 @@ func writeServiceIdHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.ServiceDirName+fileName, data)
 }
 
-func writeServiceIdCppFile(methodList RpcMethodInfos) {
+func writeServiceIdCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -44,7 +44,7 @@ func writeServiceIdCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.ServiceDirName+fileName, data)
 }
 
-func getServiceHandlerHeadStr(methodList RpcMethodInfos) string {
+func getServiceHandlerHeadStr(methodList RPCMethods) string {
 	var data = "#pragma once\n"
 	data += methodList[0].IncludeName()
 	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
@@ -58,7 +58,7 @@ func getServiceHandlerHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
-func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
+func getPlayerMethodHeadStr(methodList RPCMethods) string {
 	var data = "#pragma once\n"
 	data += methodList[0].IncludeName()
 	data += config.PlayerServiceIncludeName
@@ -93,7 +93,7 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
-func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
+func getPlayerMethodRepliedHeadStr(methodList RPCMethods) string {
 	var data = "#pragma once\n"
 	data += methodList[0].IncludeName()
 	data += config.PlayerServiceRepliedIncludeName
@@ -128,7 +128,7 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
-func getMethodRepliedHandlerHeadStr(methodList *RpcMethodInfos) (data string) {
+func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) (data string) {
 	methodLen := len(*methodList)
 	firstMethodInfo := (*methodList)[0]
 	data = "#pragma once\n" + firstMethodInfo.IncludeName() +
@@ -145,7 +145,7 @@ func getMethodRepliedHandlerHeadStr(methodList *RpcMethodInfos) (data string) {
 	return data
 }
 
-func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
+func getMethodHandlerCppStr(dst string, methodList *RPCMethods) (data string) {
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
@@ -170,7 +170,7 @@ func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string
 	return data
 }
 
-func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
+func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) (data string) {
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
@@ -222,7 +222,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 	return data
 }
 
-func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos, className string, includeName string) (data string) {
+func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className string, includeName string) (data string) {
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	data = includeName
@@ -291,7 +291,7 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 }
 
 // / game server
-func isGsMethodHandler(methodList *RpcMethodInfos) (isGsFile bool) {
+func isGsMethodHandler(methodList *RPCMethods) (isGsFile bool) {
 	if len(*methodList) <= 0 {
 		return
 	}
@@ -303,7 +303,7 @@ func isGsMethodHandler(methodList *RpcMethodInfos) (isGsFile bool) {
 	return strings.Contains(firstMethodList.FileBaseName(), config.GsPrefixName)
 }
 
-func isGsPlayerHandler(methodList *RpcMethodInfos) (result bool) {
+func isGsPlayerHandler(methodList *RPCMethods) (result bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -319,7 +319,7 @@ func isGsPlayerHandler(methodList *RpcMethodInfos) (result bool) {
 	return true
 }
 
-func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeGsMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	if !isGsMethodHandler(&methodList) {
@@ -329,7 +329,7 @@ func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.GsMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
-func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
+func writeGsMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isGsMethodHandler(&methodList) {
 		return
@@ -340,7 +340,7 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeGsPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeGsPlayerMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isGsPlayerHandler(&methodList) {
 		return
@@ -349,7 +349,7 @@ func writeGsPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.GsMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
-func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
+func writeGsPlayerMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
 		return
@@ -367,7 +367,7 @@ func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func isGsPlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) {
+func isGsPlayerRepliedHandler(methodList *RPCMethods) (result bool) {
 	if len(*methodList) <= 0 {
 		return
 	}
@@ -378,7 +378,7 @@ func isGsPlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) {
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName)
 }
 
-func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isGsPlayerRepliedHandler(&methodList) {
 		return
@@ -387,7 +387,7 @@ func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.GsMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
-func writeGsPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+func writeGsPlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isGsPlayerRepliedHandler(&methodList) {
 		return
@@ -402,7 +402,7 @@ func writeGsPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func isGsMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
+func isGsMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -419,7 +419,7 @@ func isGsMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 		strings.Contains(firstMethodInfo.FileBaseName(), "lobby")
 }
 
-func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
 		return
@@ -435,7 +435,7 @@ func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+func writeGsMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
 		return
@@ -453,7 +453,7 @@ func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 
 // centre server
 
-func isCentreMethodHandler(methodList *RpcMethodInfos) (isGsFile bool) {
+func isCentreMethodHandler(methodList *RPCMethods) (isGsFile bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -465,7 +465,7 @@ func isCentreMethodHandler(methodList *RpcMethodInfos) (isGsFile bool) {
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
-func writeCentreMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeCentreMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isCentreMethodHandler(&methodList) {
 		return
@@ -474,7 +474,7 @@ func writeCentreMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
-func isCentrePlayerHandler(methodList *RpcMethodInfos) (result bool) {
+func isCentrePlayerHandler(methodList *RPCMethods) (result bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -488,7 +488,7 @@ func isCentrePlayerHandler(methodList *RpcMethodInfos) (result bool) {
 	return true
 }
 
-func writeCentrePlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeCentrePlayerMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isCentrePlayerHandler(&methodList) {
 		return
@@ -497,7 +497,7 @@ func writeCentrePlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
-func writeCentrePlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
+func writeCentrePlayerMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isCentrePlayerHandler(&methodList) {
 		return
@@ -512,7 +512,7 @@ func writeCentrePlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeCentreMethodHandlerCppFile(methodList RpcMethodInfos) {
+func writeCentreMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isCentreMethodHandler(&methodList) {
 		return
@@ -524,7 +524,7 @@ func writeCentreMethodHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func isCentreMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
+func isCentreMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -539,7 +539,7 @@ func isCentreMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
-func writeCentreMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+func writeCentreMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	if !isCentreMethodRepliedHandler(&methodList) {
@@ -551,7 +551,7 @@ func writeCentreMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeCentreMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+func writeCentreMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isCentreMethodRepliedHandler(&methodList) {
 		return
@@ -563,7 +563,7 @@ func writeCentreMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func isCentrePlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) {
+func isCentrePlayerRepliedHandler(methodList *RPCMethods) (result bool) {
 	if len(*methodList) <= 0 {
 		return
 	}
@@ -574,7 +574,7 @@ func isCentrePlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) {
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
-func writeCentrePlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+func writeCentrePlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isCentrePlayerRepliedHandler(&methodList) {
 		return
@@ -583,7 +583,7 @@ func writeCentrePlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.CentreMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
-func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isCentrePlayerRepliedHandler(&methodList) {
 		return
@@ -599,7 +599,7 @@ func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 }
 
 // /gate
-func isGateMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
+func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -617,7 +617,7 @@ func isGateMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 		strings.Contains(firstMethodInfo.FileBaseName(), config.LoginPrefixName)
 }
 
-func isGateServiceHandler(methodList *RpcMethodInfos) (check bool) {
+func isGateServiceHandler(methodList *RPCMethods) (check bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -628,7 +628,7 @@ func isGateServiceHandler(methodList *RpcMethodInfos) (check bool) {
 	return strings.Contains(firstMethodInfo.FileBaseName(), "gate")
 }
 
-func writeGateMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeGateMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -641,7 +641,7 @@ func writeGateMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.GateMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
-func writeGateMethodHandlerCppFile(methodList RpcMethodInfos) {
+func writeGateMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
 		return
@@ -655,7 +655,7 @@ func writeGateMethodHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeGateMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+func writeGateMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
 		return
@@ -669,7 +669,7 @@ func writeGateMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeGateMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+func writeGateMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if !isGateMethodRepliedHandler(&methodList) {
 		return

@@ -8,7 +8,7 @@ import (
 
 type EmptyStruct struct{}
 
-type RpcMethodInfo struct {
+type RPCMethod struct {
 	Service           string
 	Method            string
 	Request           string
@@ -20,26 +20,26 @@ type RpcMethodInfo struct {
 	CcGenericServices bool
 }
 
-type RpcMethodInfos []*RpcMethodInfo
+type RPCMethods []*RPCMethod
 
 type RpcServiceInfo struct {
 	FileName   string
 	Path       string
-	MethodInfo RpcMethodInfos
+	MethodInfo RPCMethods
 }
 
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
 var RpcServiceMap sync.Map
 var GrpcServiceFileMap sync.Map
-var RpcIdMethodMap = map[uint64]*RpcMethodInfo{}
+var RpcIdMethodMap = map[uint64]*RPCMethod{}
 var ServiceIdMap = map[string]uint64{}
-var ServiceMethodMap = map[string]RpcMethodInfos{}
+var ServiceMethodMap = map[string]RPCMethods{}
 var MaxMessageId = uint64(0)
 var MessageIdFileMaxId = uint64(0)
 var FileMaxMessageId = uint64(0)
 
-func (info *RpcMethodInfo) KeyName() (idName string) {
+func (info *RPCMethod) KeyName() (idName string) {
 	return info.Service + info.Method
 }
 
@@ -64,51 +64,51 @@ func (info *RpcServiceInfo) IsPlayerService() (isPlayerService bool) {
 		strings.Contains(info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])
 }
 
-func (info *RpcMethodInfo) FileBaseName() (fileBaseName string) {
+func (info *RPCMethod) FileBaseName() (fileBaseName string) {
 	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
 }
 
-func (info *RpcMethodInfo) PbcHeadName() (pbcHeadName string) {
+func (info *RPCMethod) PbcHeadName() (pbcHeadName string) {
 	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
 }
 
-func (info *RpcMethodInfo) IncludeName() (includeName string) {
+func (info *RPCMethod) IncludeName() (includeName string) {
 	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
 }
 
-func (info *RpcMethodInfo) CppHandlerIncludeName() (includeName string) {
+func (info *RPCMethod) CppHandlerIncludeName() (includeName string) {
 	return config.IncludeBegin + info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
 }
 
-func (info *RpcMethodInfo) CppRepliedHandlerIncludeName() (includeName string) {
+func (info *RPCMethod) CppRepliedHandlerIncludeName() (includeName string) {
 	return config.IncludeBegin + info.FileBaseName() + config.HeadRepliedHandlerEx + config.IncludeEndLine
 }
 
-func (info *RpcMethodInfo) CppHandlerClassName() (includeName string) {
+func (info *RPCMethod) CppHandlerClassName() (includeName string) {
 	return info.Service + config.HandlerName
 }
 
-func (info *RpcMethodInfo) CppRepliedHandlerClassName() (includeName string) {
+func (info *RPCMethod) CppRepliedHandlerClassName() (includeName string) {
 	return info.Service + config.RepliedHandlerName
 }
 
-func (info *RpcMethodInfo) IsPlayerService() (isPlayerService bool) {
+func (info *RPCMethod) IsPlayerService() (isPlayerService bool) {
 	return strings.Contains(info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
 		strings.Contains(info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])
 }
 
-func (s RpcMethodInfos) Len() int {
+func (s RPCMethods) Len() int {
 	return len(s)
 }
 
-func (s RpcMethodInfos) Less(i, j int) bool {
+func (s RPCMethods) Less(i, j int) bool {
 	if s[i].Service < s[j].Service {
 		return true
 	}
 	return s[i].Index < s[j].Index
 }
 
-func (s RpcMethodInfos) Swap(i, j int) {
+func (s RPCMethods) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
