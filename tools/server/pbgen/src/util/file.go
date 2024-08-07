@@ -33,7 +33,7 @@ func IsLuaFile(fd os.DirEntry) bool {
 	return true
 }
 
-func IncludeName(path string, protoName string) (includeName string) {
+func IncludeName(path string, protoName string) string {
 	pbcHeadName := strings.Replace(protoName, config.ProtoEx, config.ProtoPbhEx, 1)
 	return config.IncludeBegin + strings.Replace(path, config.ProtoDir, "", 1) + pbcHeadName + "\"\n"
 }
@@ -41,55 +41,63 @@ func IncludeName(path string, protoName string) (includeName string) {
 func Copy(dst string, src string) (written int64, err error) {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to get file info for %s: %v", src, err)
 	}
 	if !sourceFileStat.Mode().IsRegular() {
 		return 0, fmt.Errorf("%s is not a regular file", src)
 	}
 	source, err := os.Open(src)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to open source file %s: %v", src, err)
 	}
 	defer source.Close()
+
 	destination, err := os.Create(dst)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to create destination file %s: %v", dst, err)
 	}
 	defer destination.Close()
+
 	nBytes, err := io.Copy(destination, source)
-	log.Default().Println(src, " -> ", dst)
-	return nBytes, err
+	if err != nil {
+		return nBytes, fmt.Errorf("failed to copy data from %s to %s: %v", src, dst, err)
+	}
+	log.Printf("Copied %s -> %s\n", src, dst)
+	return nBytes, nil
 }
 
-func ReadCodeSectionsFromFile(cppFileName string, codeCount int) (data []string, err error) {
+func ReadCodeSectionsFromFile(cppFileName string, codeCount int) ([]string, error) {
 	var yourCodes []string
 	fd, err := os.Open(cppFileName)
 	if err != nil {
 		for i := 0; i < codeCount; i++ {
 			yourCodes = append(yourCodes, config.YourCodePair)
 		}
-		return yourCodes, err
+		return yourCodes, fmt.Errorf("failed to open file %s: %v", cppFileName, err)
 	}
 	defer fd.Close()
+
 	scanner := bufio.NewScanner(fd)
-	var line string
-	yourCodeIndex := 0
+	var currentSection strings.Builder
 	for scanner.Scan() {
-		line = scanner.Text() + "\n"
+		line := scanner.Text() + "\n"
 		if strings.Contains(line, config.YourCodeBegin) {
-			yourCodes = append(yourCodes, line)
+			currentSection.WriteString(line)
 		} else if strings.Contains(line, config.YourCodeEnd) {
-			yourCodes[yourCodeIndex] += line
-			yourCodeIndex += 1
-		} else if yourCodeIndex < len(yourCodes) {
-			yourCodes[yourCodeIndex] += line
+			currentSection.WriteString(line)
+			yourCodes = append(yourCodes, currentSection.String())
+			currentSection.Reset()
+		} else if len(yourCodes) > 0 {
+			currentSection.WriteString(line)
 		}
 	}
+
 	if len(yourCodes) < codeCount {
 		addCount := codeCount - len(yourCodes)
 		for i := 0; i < addCount; i++ {
 			yourCodes = append(yourCodes, config.YourCodePair)
 		}
 	}
-	return yourCodes, err
+
+	return yourCodes, nil
 }
