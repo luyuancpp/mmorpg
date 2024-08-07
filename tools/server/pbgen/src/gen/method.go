@@ -7,125 +7,193 @@ import (
 	"strings"
 )
 
+// Type definitions for callback functions
 type checkRepliedCb func(methodList *RPCMethods) bool
 
+// Function to write the header file for service ID
 func writeServiceIdHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
 		return
 	}
-	var data = "#pragma once\n#include <cstdint>\n\n"
-	data += methodList[0].IncludeName() + "\n"
-	for i := 0; i < len(methodList); i++ {
-		data += "extern const uint32_t " + methodList[i].KeyName() + config.MessageIdName + ";\n"
-		data += "extern const uint32_t " + methodList[i].KeyName() + "Index;\n"
-		data += "#define " + methodList[i].KeyName() + "Method  ::" + methodList[i].Service + "_Stub::descriptor()->method(" +
-			strconv.FormatUint(methodList[i].Index, 10) + ")\n"
-		data += "\n"
+
+	var data strings.Builder
+	data.WriteString("#pragma once\n#include <cstdint>\n\n")
+	data.WriteString(methodList[0].IncludeName() + "\n")
+
+	for _, method := range methodList {
+		data.WriteString(getServiceIdDefinitions(method))
+		data.WriteString("\n")
 	}
+
 	fileName := methodList[0].FileBaseName() + "_service" + config.HeadEx
-	util.WriteMd5Data2File(config.ServiceDirName+fileName, data)
+	util.WriteMd5Data2File(config.ServiceDirName+fileName, data.String())
 }
 
+// Helper function to generate service ID definitions
+func getServiceIdDefinitions(method *RPCMethod) string {
+	var data strings.Builder
+
+	data.WriteString("extern const uint32_t " + method.KeyName() + config.MessageIdName + ";\n")
+	data.WriteString("extern const uint32_t " + method.KeyName() + "Index;\n")
+	data.WriteString("#define " + method.KeyName() + "Method  ::" + method.Service + "_Stub::descriptor()->method(" +
+		strconv.FormatUint(method.Index, 10) + ")\n")
+
+	return data.String()
+}
+
+// Function to write the C++ file for service ID
 func writeServiceIdCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
 		return
 	}
-	var data = config.IncludeBegin + methodList[0].FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine
 
-	for i := 0; i < len(methodList); i++ {
-		data += "const uint32_t " + methodList[i].KeyName() + config.MessageIdName + " = " + strconv.FormatUint(methodList[i].Id, 10) + ";\n"
-		data += "const uint32_t " + methodList[i].KeyName() + "Index = " + strconv.FormatUint(methodList[i].Index, 10) + ";\n"
+	var data strings.Builder
+	data.WriteString(config.IncludeBegin + methodList[0].FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine)
+
+	for _, method := range methodList {
+		data.WriteString(getServiceIdCppDefinitions(method))
 	}
+
 	fileName := methodList[0].FileBaseName() + "_service" + config.CppEx
-	util.WriteMd5Data2File(config.ServiceDirName+fileName, data)
+	util.WriteMd5Data2File(config.ServiceDirName+fileName, data.String())
 }
 
+// Helper function to generate C++ definitions for service IDs
+func getServiceIdCppDefinitions(method *RPCMethod) string {
+	var data strings.Builder
+
+	data.WriteString("const uint32_t " + method.KeyName() + config.MessageIdName + " = " + strconv.FormatUint(method.Id, 10) + ";\n")
+	data.WriteString("const uint32_t " + method.KeyName() + "Index = " + strconv.FormatUint(method.Index, 10) + ";\n")
+
+	return data.String()
+}
+
+// Function to get the header string for service handlers
 func getServiceHandlerHeadStr(methodList RPCMethods) string {
-	var data = "#pragma once\n"
-	data += methodList[0].IncludeName()
-	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
-	for i := 0; i < len(methodList); i++ {
-		data += config.Tab + "void " + methodList[i].Method + config.GoogleMethodController + "\n" +
-			config.Tab2 + "const ::" + methodList[i].Request + "* request,\n" +
-			config.Tab2 + "::" + methodList[i].Response + "* response,\n" +
-			config.Tab2 + " ::google::protobuf::Closure* done)override;\n\n"
+	var data strings.Builder
+	data.WriteString("#pragma once\n")
+	data.WriteString(methodList[0].IncludeName())
+	data.WriteString("class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n")
+
+	for _, method := range methodList {
+		data.WriteString(getServiceHandlerMethodStr(method))
+		data.WriteString("\n")
 	}
-	data += "};\n\n"
-	return data
+
+	data.WriteString("};\n\n")
+	return data.String()
 }
 
+// Helper function to generate method strings for service handlers
+func getServiceHandlerMethodStr(method *RPCMethod) string {
+	var data strings.Builder
+
+	data.WriteString(config.Tab + "void " + method.Method + config.GoogleMethodController + "\n")
+	data.WriteString(config.Tab2 + "const ::" + method.Request + "* request,\n")
+	data.WriteString(config.Tab2 + "::" + method.Response + "* response,\n")
+	data.WriteString(config.Tab2 + "::google::protobuf::Closure* done)override;\n\n")
+
+	return data.String()
+}
+
+// Function to get the header string for player method handlers
 func getPlayerMethodHeadStr(methodList RPCMethods) string {
-	var data = "#pragma once\n"
-	data += methodList[0].IncludeName()
-	data += config.PlayerServiceIncludeName
-	data += "\nclass " + methodList[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n"
-	data += config.Tab + "using PlayerService::PlayerService;\n"
-	var functionNameList string
-	var callFunctionList = " void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n   " +
-		"entt::entity player,\n    " +
-		"const ::google::protobuf::Message* request,\n    " +
-		"::google::protobuf::Message* response)override \n " +
-		config.Tab2 + "{\n        switch(method->index())\n" +
-		config.Tab2 + "{\n"
+	var data strings.Builder
+	data.WriteString("#pragma once\n")
+	data.WriteString(methodList[0].IncludeName())
+	data.WriteString(config.PlayerServiceIncludeName)
+	data.WriteString("\nclass " + methodList[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n")
+	data.WriteString(config.Tab + "using PlayerService::PlayerService;\n")
 
-	for i := 0; i < len(methodList); i++ {
-		rq := methodList[i].Request
-		rsp := methodList[i].Response
-		functionNameList += config.Tab + "static void " + methodList[i].Method + config.PlayerMethodController + "\n" +
-			config.Tab2 + "const ::" + rq + "* request,\n" +
-			config.Tab2 + "::" + rsp + "* response);\n\n"
-		callFunctionList += config.Tab2 + "case " + strconv.Itoa(i) + ":\n"
-		callFunctionList += config.Tab3 + methodList[i].Method + "(player,\n"
-		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<const " + rq + "*>( request),\n"
-		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<" + rsp + "*>(response));\n"
-		callFunctionList += config.Tab2 + "break;\n"
-	}
-	callFunctionList += config.Tab2 + "default:\n" +
-		//config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n" +
-		config.Tab2 + "break;\n" + config.Tab2 + "}\n" + config.Tab + "}\n"
-	data += functionNameList
-	data += callFunctionList
-	data += "\n};\n"
-	return data
+	data.WriteString(getPlayerMethodHandlerFunctions(methodList))
+	data.WriteString("\n};\n")
+
+	return data.String()
 }
 
-func getPlayerMethodRepliedHeadStr(methodList RPCMethods) string {
-	var data = "#pragma once\n"
-	data += methodList[0].IncludeName()
-	data += config.PlayerServiceRepliedIncludeName
-	data += "\nclass " + methodList[0].Service + config.RepliedHandlerName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n"
-	data += config.Tab + "using PlayerServiceReplied::PlayerServiceReplied;\n"
-	var functionNameList string
-	var callFunctionList = " void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n   " +
-		"entt::entity player,\n    " +
-		"const ::google::protobuf::Message* request,\n    " +
-		"::google::protobuf::Message* response)override \n " +
-		config.Tab2 + "{\n        switch(method->index())\n" +
-		config.Tab2 + "{\n"
+// Helper function to generate method handler functions for player methods
+func getPlayerMethodHandlerFunctions(methodList RPCMethods) string {
+	var data strings.Builder
+	var callFunctionList strings.Builder
 
-	for i := 0; i < len(methodList); i++ {
-		rq := methodList[i].Request
-		rsp := methodList[i].Response
-		functionNameList += config.Tab + "static void " + methodList[i].Method + config.PlayerMethodController + "\n" +
-			config.Tab2 + "const ::" + rq + "* request,\n" +
-			config.Tab2 + "::" + rsp + "* response);\n\n"
-		callFunctionList += config.Tab2 + "case " + strconv.Itoa(i) + ":\n"
-		callFunctionList += config.Tab3 + methodList[i].Method + "(player,\n"
-		callFunctionList += config.Tab3 + "nullptr,\n"
-		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<" + rsp + "*>(response));\n"
-		callFunctionList += config.Tab2 + "break;\n"
+	for i, method := range methodList {
+		data.WriteString(config.Tab + "static void " + method.Method + config.PlayerMethodController + "\n")
+		data.WriteString(config.Tab2 + "const ::" + method.Request + "* request,\n")
+		data.WriteString(config.Tab2 + "::" + method.Response + "* response);\n\n")
+
+		callFunctionList.WriteString(config.Tab2 + "case " + strconv.Itoa(i) + ":\n")
+		callFunctionList.WriteString(config.Tab3 + method.Method + "(player,\n")
+		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<const " + method.Request + "*>(request),\n")
+		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
+		callFunctionList.WriteString(config.Tab2 + "break;\n")
 	}
-	callFunctionList += config.Tab2 + "default:\n" +
-		//config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n" +
-		config.Tab2 + "break;\n" + config.Tab2 + "}\n" + config.Tab + "}\n"
-	data += functionNameList
-	data += callFunctionList
-	data += "\n};\n"
-	return data
+
+	data.WriteString(config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n")
+	data.WriteString(config.Tab2 + "entt::entity player,\n")
+	data.WriteString(config.Tab2 + "const ::google::protobuf::Message* request,\n")
+	data.WriteString(config.Tab2 + "::google::protobuf::Message* response)override \n")
+	data.WriteString(config.Tab2 + "{\n")
+	data.WriteString(config.Tab2 + "switch(method->index())\n")
+	data.WriteString(config.Tab2 + "{\n")
+	data.WriteString(callFunctionList.String())
+	data.WriteString(config.Tab2 + "default:\n")
+	data.WriteString(config.Tab2 + "break;\n")
+	data.WriteString(config.Tab2 + "}\n")
+	data.WriteString(config.Tab + "}\n")
+
+	return data.String()
+}
+
+// Function to get the header string for player method replied handlers
+func getPlayerMethodRepliedHeadStr(methodList RPCMethods) string {
+	var data strings.Builder
+	data.WriteString("#pragma once\n")
+	data.WriteString(methodList[0].IncludeName())
+	data.WriteString(config.PlayerServiceRepliedIncludeName)
+	data.WriteString("\nclass " + methodList[0].Service + config.RepliedHandlerName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n")
+	data.WriteString(config.Tab + "using PlayerServiceReplied::PlayerServiceReplied;\n")
+
+	data.WriteString(getPlayerMethodRepliedHandlerFunctions(methodList))
+	data.WriteString("\n};\n")
+
+	return data.String()
+}
+
+// Helper function to generate method replied handler functions for player methods
+func getPlayerMethodRepliedHandlerFunctions(methodList RPCMethods) string {
+	var data strings.Builder
+	var callFunctionList strings.Builder
+
+	for i, method := range methodList {
+		data.WriteString(config.Tab + "static void " + method.Method + config.PlayerMethodController + "\n")
+		data.WriteString(config.Tab2 + "const ::" + method.Request + "* request,\n")
+		data.WriteString(config.Tab2 + "::" + method.Response + "* response);\n\n")
+
+		callFunctionList.WriteString(config.Tab2 + "case " + strconv.Itoa(i) + ":\n")
+		callFunctionList.WriteString(config.Tab3 + method.Method + "(player,\n")
+		callFunctionList.WriteString(config.Tab3 + "nullptr,\n")
+		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
+		callFunctionList.WriteString(config.Tab2 + "break;\n")
+	}
+
+	data.WriteString(config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n")
+	data.WriteString(config.Tab2 + "entt::entity player,\n")
+	data.WriteString(config.Tab2 + "const ::google::protobuf::Message* request,\n")
+	data.WriteString(config.Tab2 + "::google::protobuf::Message* response)override \n")
+	data.WriteString(config.Tab2 + "{\n")
+	data.WriteString(config.Tab2 + "switch(method->index())\n")
+	data.WriteString(config.Tab2 + "{\n")
+	data.WriteString(callFunctionList.String())
+	data.WriteString(config.Tab2 + "default:\n")
+	data.WriteString(config.Tab2 + "break;\n")
+	data.WriteString(config.Tab2 + "}\n")
+	data.WriteString(config.Tab + "}\n")
+
+	return data.String()
 }
 
 func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) (data string) {

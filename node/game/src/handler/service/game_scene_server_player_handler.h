@@ -17,26 +17,26 @@ public:
 		const ::EnterSceneS2CRequest* request,
 		::EnterScenerS2CResponse* response);
 
- void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-   entt::entity player,
-    const ::google::protobuf::Message* request,
-    ::google::protobuf::Message* response)override 
- 		{
-        switch(method->index())
+	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+		entt::entity player,
+		const ::google::protobuf::Message* request,
+		::google::protobuf::Message* response)override 
+		{
+		switch(method->index())
 		{
 		case 0:
 			EnterScene(player,
-			::google::protobuf::internal::DownCast<const GsEnterSceneRequest*>( request),
+			::google::protobuf::internal::DownCast<const GsEnterSceneRequest*>(request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
 			LeaveScene(player,
-			::google::protobuf::internal::DownCast<const GsLeaveSceneRequest*>( request),
+			::google::protobuf::internal::DownCast<const GsLeaveSceneRequest*>(request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		case 2:
 			EnterSceneS2C(player,
-			::google::protobuf::internal::DownCast<const EnterSceneS2CRequest*>( request),
+			::google::protobuf::internal::DownCast<const EnterSceneS2CRequest*>(request),
 			::google::protobuf::internal::DownCast<EnterScenerS2CResponse*>(response));
 		break;
 		default:

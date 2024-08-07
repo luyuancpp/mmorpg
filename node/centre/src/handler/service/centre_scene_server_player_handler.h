@@ -21,31 +21,31 @@ public:
 		const ::SceneInfoRequest* request,
 		::google::protobuf::Empty* response);
 
- void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-   entt::entity player,
-    const ::google::protobuf::Message* request,
-    ::google::protobuf::Message* response)override 
- 		{
-        switch(method->index())
+	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+		entt::entity player,
+		const ::google::protobuf::Message* request,
+		::google::protobuf::Message* response)override 
+		{
+		switch(method->index())
 		{
 		case 0:
 			EnterScene(player,
-			::google::protobuf::internal::DownCast<const CentreEnterSceneRequest*>( request),
+			::google::protobuf::internal::DownCast<const CentreEnterSceneRequest*>(request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
 			LeaveScene(player,
-			::google::protobuf::internal::DownCast<const CentreLeaveSceneRequest*>( request),
+			::google::protobuf::internal::DownCast<const CentreLeaveSceneRequest*>(request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		case 2:
 			LeaveSceneAsyncSavePlayerComplete(player,
-			::google::protobuf::internal::DownCast<const CentreLeaveSceneAsyncSavePlayerCompleteRequest*>( request),
+			::google::protobuf::internal::DownCast<const CentreLeaveSceneAsyncSavePlayerCompleteRequest*>(request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		case 3:
 			SceneInfoC2S(player,
-			::google::protobuf::internal::DownCast<const SceneInfoRequest*>( request),
+			::google::protobuf::internal::DownCast<const SceneInfoRequest*>(request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		default:
