@@ -6,18 +6,23 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 func BuildProto(protoPath string, protoMd5Path string) (err error) {
 	// Read directory entries
-	var fds []os.DirEntry
-	if fds, err = os.ReadDir(protoPath); err != nil {
+	fds, err := os.ReadDir(protoPath)
+	if err != nil {
 		return err
 	}
+
+	// Wait group for synchronization
+	var wg sync.WaitGroup
 
 	// Process each protobuf file in the directory
 	for _, fd := range fds {
@@ -25,66 +30,77 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			continue
 		}
 
-		// Concurrent execution for each file
-		util.Wg.Add(1)
+		// Execute processing in a goroutine
+		wg.Add(1)
 		go func(fd os.DirEntry) {
-			defer util.Wg.Done()
+			defer wg.Done()
 
 			// Construct file paths
-			fileName := protoPath + fd.Name()
-			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
+			fileName := filepath.Join(protoPath, fd.Name())
+			md5FileName := filepath.Join(protoMd5Path, fd.Name()+config.Md5Ex)
 			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcOutDir, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
-			fileSame, err := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			if fileSame, err := util.IsSameMD5(fileName, md5FileName); err != nil {
+				log.Fatal(err)
+			} else if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
 				return
 			}
 
-			// Determine the operating system type
-			sysType := runtime.GOOS
-			var cmd *exec.Cmd
-			if sysType == `linux` {
-				// Command for Linux
-				cmd = exec.Command("protoc",
-					"--cpp_out="+config.PbcOutDir,
-					fileName,
-					"-I="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
-					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
-			} else {
-				// Command for other systems (presumably Windows)
-				cmd = exec.Command("./protoc.exe",
-					"--cpp_out="+config.PbcOutDir,
-					fileName,
-					"-I="+config.ProtoDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
-					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
-			}
-
-			// Execute the command and handle errors
-			var out bytes.Buffer
-			var stderr bytes.Buffer
-			cmd.Stdout = &out
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-			fmt.Println(cmd.String())
-			if err != nil {
-				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+			// Generate C++ files
+			if err := generateCppFiles(fileName, config.PbcOutDir); err != nil {
 				log.Fatal(err)
 			}
 
 			// Write MD5 data to file
-			err = util.WriteToMd5ExFile(fileName, md5FileName)
-			if err != nil {
+			if err := util.WriteToMd5ExFile(fileName, md5FileName); err != nil {
 				log.Fatal(err)
 			}
 		}(fd)
 	}
-	return err
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+	return nil
+}
+
+// Function to generate C++ files using protoc
+func generateCppFiles(fileName, outputDir string) error {
+	sysType := runtime.GOOS
+	var cmd *exec.Cmd
+
+	if sysType == "linux" {
+		cmd = exec.Command("protoc",
+			"--cpp_out="+outputDir,
+			fileName,
+			"-I="+config.ProtoDir,
+			"-I="+config.ProtoDir+"common/",
+			"-I="+config.ProtoDir+"logic/",
+			"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+	} else {
+		cmd = exec.Command("./protoc.exe",
+			"--cpp_out="+outputDir,
+			fileName,
+			"-I="+config.ProtoDir,
+			"-I="+config.ProtoDir+"common/",
+			"-I="+config.ProtoDir+"logic/",
+			"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+	}
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+		return err
+	}
+
+	fmt.Println(cmd.String()) // Print the command for debugging purposes
+	return nil
 }
 
 func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
