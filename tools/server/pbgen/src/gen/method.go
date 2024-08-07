@@ -605,12 +605,14 @@ func writeGsPlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	// Write the generated data to the destination file using util.WriteMd5Data2File
 	util.WriteMd5Data2File(dstFileName, data)
 }
-
-func isGsMethodRepliedHandler(methodList *RPCMethods) (check bool) {
-	if len(*methodList) <= 0 {
+func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
+	if len(*methodList) == 0 {
 		return false
 	}
+
 	firstMethodInfo := (*methodList)[0]
+
+	// Check if the method is from a valid path and has generic services enabled
 	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
 		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
@@ -618,6 +620,8 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	if !firstMethodInfo.CcGenericServices {
 		return false
 	}
+
+	// Check if the file base name contains specific keywords
 	return strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), "lobby")
@@ -625,14 +629,12 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 
 func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	fileBaseName := methodList[0].FileBaseName()
+
 	if !isGsMethodRepliedHandler(&methodList) {
 		return
 	}
 
+	fileBaseName := methodList[0].FileBaseName()
 	fileName := strings.ToLower(fileBaseName) + config.HeadRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
 	data := getMethodRepliedHandlerHeadStr(&methodList)
@@ -641,14 +643,12 @@ func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 
 func writeGsMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	fileBaseName := methodList[0].FileBaseName()
+
 	if !isGsMethodRepliedHandler(&methodList) {
 		return
 	}
 
+	fileBaseName := methodList[0].FileBaseName()
 	fileName := strings.ToLower(fileBaseName) + config.CppRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
