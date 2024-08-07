@@ -9,7 +9,7 @@ import (
 )
 
 // getClientMethodHandlerHeadStr 生成客户端方法处理器头文件字符串
-func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
+func getClientMethodHandlerHeadStr(methodList RPCMethods) string {
 	var data strings.Builder
 	data.WriteString("#pragma once\n")
 	data.WriteString("#include <sol/sol.hpp>\n")
@@ -43,7 +43,7 @@ func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 }
 
 // isClientMethodRepliedHandler 检查是否为客户端方法已响应处理器
-func isClientMethodRepliedHandler(methodList *RpcMethodInfos) bool {
+func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -58,7 +58,7 @@ func isClientMethodRepliedHandler(methodList *RpcMethodInfos) bool {
 }
 
 // writeClientMethodHandlerHeadFile 写入客户端方法处理器头文件
-func writeClientMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeClientMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 || !isClientMethodRepliedHandler(&methodList) {
 		return
@@ -98,7 +98,7 @@ func WriteClientServiceHeadHandlerFile() {
 	var wg sync.WaitGroup
 	for _, v := range ServiceMethodMap {
 		wg.Add(1)
-		go func(methodList RpcMethodInfos) {
+		go func(methodList RPCMethods) {
 			defer wg.Done()
 			writeClientMethodHandlerHeadFile(methodList)
 		}(v)

@@ -52,7 +52,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 		} else if strings.Contains(line, "rpc ") {
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
 			splitList := strings.Split(line, " ")
-			var rpcMethodInfo RpcMethodInfo
+			var rpcMethodInfo RPCMethod
 			rpcMethodInfo.Service = service
 			rpcMethodInfo.Method = splitList[1]
 			rpcMethodInfo.Request = strings.Replace(splitList[2], ".", "::", -1)
