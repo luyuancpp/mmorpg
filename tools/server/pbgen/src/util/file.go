@@ -61,7 +61,7 @@ func Copy(dst string, src string) (written int64, err error) {
 	return nBytes, err
 }
 
-func GetDstCodeData(cppFileName string, codeCount int) (data []string, err error) {
+func ReadCodeSectionsFromFile(cppFileName string, codeCount int) (data []string, err error) {
 	var yourCodes []string
 	fd, err := os.Open(cppFileName)
 	if err != nil {
