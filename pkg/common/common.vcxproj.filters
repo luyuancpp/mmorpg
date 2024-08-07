@@ -4,8 +4,7 @@
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\exprtk\exprtk.hpp" />
     <ClInclude Include="src\game_config\deploy_json.h" />
-    <ClInclude Include="src\game_config\lobby_config.h" />
-    <ClInclude Include="src\grpc\deploy\deployclient.h" />
+    <ClInclude Include="src\grpc\deploy\deploy_client.h" />
     <ClInclude Include="src\jsoncpp\json.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
@@ -42,8 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />
-    <ClCompile Include="src\game_config\lobby_config.cpp" />
-    <ClCompile Include="src\grpc\deploy\deployclient.cpp" />
+    <ClCompile Include="src\grpc\deploy\deploy_client.cpp" />
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\gate_session.cpp" />

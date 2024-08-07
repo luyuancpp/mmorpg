@@ -4,7 +4,7 @@
 
 #include "centre_node.h"
 #include "grpc/async_client_call.h"
-#include "grpc/deploy/deployclient.h"
+#include "grpc/deploy/deploy_client.h"
 
 void AsyncCompleteGrpcDeployService()
 {

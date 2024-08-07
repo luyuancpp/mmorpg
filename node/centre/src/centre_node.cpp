@@ -9,8 +9,7 @@
 #include "log/constants/log_constants.h"
 #include "proto/logic/constants/node.pb.h"
 #include "handler/event/event_handler.h"
-#include "game_config/lobby_config.h"
-#include "grpc/deploy/deployclient.h"
+#include "grpc/deploy/deploy_client.h"
 #include "handler/service/player_service.h"
 #include "handler/service/register_handler.h"
 #include "muduo/base/TimeZone.h"
@@ -229,7 +228,6 @@ void CentreNode::InitNodeConfig()
 {
 	ZoneConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
-	LobbyConfig::GetSingleton().Load("lobby.json");
 }
 
 void CentreNode::InitSystemBeforeConnect()
