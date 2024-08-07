@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"fmt"
 	"pbgen/config"
 	"pbgen/util"
 	"strconv"
@@ -196,21 +197,30 @@ func getPlayerMethodRepliedHandlerFunctions(methodList RPCMethods) string {
 	return data.String()
 }
 
-func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) (data string) {
-	methodLen := len(*methodList)
-	firstMethodInfo := (*methodList)[0]
-	data = "#pragma once\n" + firstMethodInfo.IncludeName() +
-		"#include \"muduo/net/TcpConnection.h\"\n" +
-		"using namespace muduo;\n" +
-		"using namespace muduo::net;\n\n"
-
-	for i := 0; i < methodLen; i++ {
-		methodInfo := (*methodList)[i]
-
-		data += "void On" + methodInfo.KeyName() + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
-			"std::shared_ptr<" + methodInfo.Response + ">& replied, Timestamp timestamp);\n\n"
+func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
+	// Ensure there are methods in the list
+	if len(*methodList) == 0 {
+		return ""
 	}
-	return data
+
+	var data strings.Builder
+	firstMethodInfo := (*methodList)[0]
+
+	// Start with pragma once and include the first method's specific include if available
+	data.WriteString("#pragma once\n")
+	data.WriteString(firstMethodInfo.IncludeName())
+	data.WriteString("#include \"muduo/net/TcpConnection.h\"\n\n")
+	data.WriteString("using namespace muduo;\n")
+	data.WriteString("using namespace muduo::net;\n\n")
+
+	// Generate handler function declarations for each method
+	for _, methodInfo := range *methodList {
+		handlerDeclaration := fmt.Sprintf("void On%s%s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp);\n\n",
+			methodInfo.KeyName(), config.RepliedHandlerName, methodInfo.Response)
+		data.WriteString(handlerDeclaration)
+	}
+
+	return data.String()
 }
 
 func getMethodHandlerCppStr(dst string, methodList *RPCMethods) (data string) {
