@@ -660,30 +660,51 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 	if len(*methodList) == 0 {
 		return false
 	}
-	firstMethodInfo := (*methodList)[0]
-	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+
+	firstMethod := (*methodList)[0]
+
+	// Check if the method path indicates it's in common or logic proto directories
+	isInCommonProtoDir := strings.Contains(firstMethod.Path, config.ProtoDirNames[config.CommonProtoDirIndex])
+	isInLogicProtoDir := strings.Contains(firstMethod.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+
+	// Ensure it's in either common or logic proto directories
+	if !isInCommonProtoDir && !isInLogicProtoDir {
 		return false
 	}
-	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
+
+	// Check if the file base name contains the Centre prefix name
+	isCentreMethod := strings.Contains(firstMethod.FileBaseName(), config.CentrePrefixName)
+
+	return isCentreMethod
 }
 
 func writeCentreMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
 	if !isCentreMethodHandler(&methodList) {
 		return
 	}
-	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	util.WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
+
+	firstMethodInfo := methodList[0]
+	fileName := firstMethodInfo.FileBaseName() + config.HeadHandlerEx
+	dstFileName := config.CentreMethodHandleDir + fileName
+
+	data := getServiceHandlerHeadStr(methodList)
+	util.WriteMd5Data2File(dstFileName, data)
 }
 
 func writeCentreMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
 	if !isCentreMethodHandler(&methodList) {
 		return
 	}
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.CentreMethodHandleDir + fileName
+
+	firstMethodInfo := methodList[0]
+	fileBaseName := firstMethodInfo.FileBaseName()
+	lowerFileName := strings.ToLower(fileBaseName) + config.CppHandlerEx
+	dstFileName := config.CentreMethodHandleDir + lowerFileName
+
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
 	util.WriteMd5Data2File(dstFileName, data)
 }
@@ -692,34 +713,48 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 	if len(*methodList) == 0 {
 		return false
 	}
+
 	firstMethodInfo := (*methodList)[0]
 	if !firstMethodInfo.IsPlayerService() {
 		return false
 	}
+
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeCentrePlayerMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
 	if !isCentrePlayerHandler(&methodList) {
 		return
 	}
-	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	util.WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
+
+	firstMethodInfo := methodList[0]
+	fileName := firstMethodInfo.FileBaseName() + config.HeadHandlerEx
+	outputFilePath := config.CentreMethodHandleDir + fileName
+
+	data := getPlayerMethodHeadStr(methodList)
+	util.WriteMd5Data2File(outputFilePath, data)
 }
 
 func writeCentrePlayerMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
 	if !isCentrePlayerHandler(&methodList) {
 		return
 	}
+
 	firstMethodInfo := methodList[0]
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.CentreMethodHandleDir + fileName
-	data := getMethodPlayerHandlerCppStr(dstFileName,
+
+	data := getMethodPlayerHandlerCppStr(
+		dstFileName,
 		&methodList,
 		firstMethodInfo.CppHandlerClassName(),
-		firstMethodInfo.CppHandlerIncludeName())
+		firstMethodInfo.CppHandlerIncludeName(),
+	)
+
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
@@ -727,36 +762,52 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 	if len(*methodList) == 0 {
 		return false
 	}
+
 	firstMethodInfo := (*methodList)[0]
-	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+
+	// Check if the method file path contains common or logic proto directory names
+	isInCommonOrLogicProto := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+
+	if !isInCommonOrLogicProto {
 		return false
 	}
+
+	// Check if CcGenericServices is enabled
 	if !firstMethodInfo.CcGenericServices {
 		return false
 	}
+
+	// Ensure the file base name does not contain CentrePrefixName
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeCentreMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
 	if !isCentreMethodRepliedHandler(&methodList) {
 		return
 	}
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
+
+	firstMethodInfo := methodList[0]
+	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.HeadRepliedHandlerEx
 	dstFileName := config.CentreMethodRepliedHandleDir + fileName
+
 	data := getMethodRepliedHandlerHeadStr(&methodList)
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
 func writeCentreMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
 	if !isCentreMethodRepliedHandler(&methodList) {
 		return
 	}
+
 	firstMethodInfo := methodList[0]
 	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.CentreMethodRepliedHandleDir + fileName
+
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
 	util.WriteMd5Data2File(dstFileName, data)
 }
@@ -765,49 +816,78 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 	if len(*methodList) == 0 {
 		return false
 	}
+
 	firstMethodInfo := (*methodList)[0]
-	if !firstMethodInfo.IsPlayerService() {
-		return false
-	}
-	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
+
+	// Check if it's a player service and not containing CentrePrefixName in FileBaseName
+	return firstMethodInfo.IsPlayerService() && !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeCentrePlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
-	defer util.Wg.Done()
+	defer util.Wg.Done() // defer execution of util.Wg.Done() to mark completion
+
+	// Check if the CentrePlayer has replied handler for the methodList
 	if !isCentrePlayerRepliedHandler(&methodList) {
-		return
+		return // If not, return early
 	}
+
+	// Construct the file name using the base name of the first method in methodList
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
+
+	// Write the MD5 data to a file located in CentreMethodRepliedHandleDir
 	util.WriteMd5Data2File(config.CentreMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
 func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
-	defer util.Wg.Done()
+	defer util.Wg.Done() // defer execution of util.Wg.Done() to mark completion
+
+	// Check if the CentrePlayer has a replied handler for the methodList
 	if !isCentrePlayerRepliedHandler(&methodList) {
-		return
+		return // If not, return early
 	}
+
+	// Get the first method info from the methodList
 	firstMethodInfo := methodList[0]
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
+
+	// Construct the file name for the C++ handler file
+	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
+
+	// Construct the destination file name including the directory path
 	dstFileName := config.CentreMethodRepliedHandleDir + fileName
-	data := getMethodPlayerHandlerCppStr(dstFileName,
+
+	// Generate the C++ handler code as a string
+	data := getMethodPlayerHandlerCppStr(
+		dstFileName,
 		&methodList,
 		firstMethodInfo.CppRepliedHandlerClassName(),
-		firstMethodInfo.CppRepliedHandlerIncludeName())
+		firstMethodInfo.CppRepliedHandlerIncludeName(),
+	)
+
+	// Write the generated C++ handler code to file
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
 // /gate
 func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
+	// Check if the methodList is empty
 	if len(*methodList) <= 0 {
 		return false
 	}
+
+	// Retrieve the first method information from methodList
 	firstMethodInfo := (*methodList)[0]
+
+	// Check if the method's path contains the common ProtoDirNames
 	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		return false
 	}
+
+	// Check if the method has CcGenericServices enabled
 	if !firstMethodInfo.CcGenericServices {
 		return false
 	}
+
+	// Check if the FileBaseName of the method contains any of the specified prefixes
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.DeployPrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.LobbyPrefixName) ||
@@ -816,54 +896,88 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 }
 
 func isGateServiceHandler(methodList *RPCMethods) (check bool) {
+	// Check if the methodList is empty
 	if len(*methodList) <= 0 {
 		return false
 	}
+
+	// Retrieve the first method information from methodList
 	firstMethodInfo := (*methodList)[0]
+
+	// Check if the method's path contains the common ProtoDirNames
 	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		return false
 	}
+
+	// Check if the FileBaseName of the method contains the substring "gate"
 	return strings.Contains(firstMethodInfo.FileBaseName(), "gate")
 }
 
 func writeGateMethodHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
 
+	// Check if methodList is empty
 	if len(methodList) <= 0 {
 		return
 	}
+
+	// Check if methodList qualifies as a gate service handler
 	if !isGateServiceHandler(&methodList) {
 		return
 	}
+
+	// Construct the file name for the header handler file
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+
+	// Write the MD5 data to the header handler file
 	util.WriteMd5Data2File(config.GateMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
 func writeGateMethodHandlerCppFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
+	// Check if methodList is empty
 	if len(methodList) <= 0 {
 		return
 	}
+
+	// Check if methodList qualifies as a gate service handler
 	if !isGateServiceHandler(&methodList) {
 		return
 	}
+
+	// Construct the file name for the C++ handler file
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.GateMethodHandleDir + fileName
+
+	// Generate the C++ handler code as a string
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
+
+	// Write the generated C++ handler code to file
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
 func writeGateMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
+
+	// Check if methodList is empty
 	if len(methodList) <= 0 {
 		return
 	}
+
+	// Check if methodList qualifies as a gate method replied handler
 	if !isGateMethodRepliedHandler(&methodList) {
 		return
 	}
+
+	// Construct the file name for the replied handler header file
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
 	dstFileName := config.GateMethodRepliedHandleDir + fileName
+
+	// Generate the header handler code as a string
 	data := getMethodRepliedHandlerHeadStr(&methodList)
+
+	// Write the generated header handler code to file
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
