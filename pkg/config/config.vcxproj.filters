@@ -48,7 +48,13 @@
     <ClCompile Include="src\pbc\ability_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\pbc\ability_operator.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\pbc\bag_error_tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\bag_operator.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\common_error_tip.pb.cc">
@@ -122,7 +128,13 @@
     <ClInclude Include="src\pbc\ability_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\pbc\ability_operator.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\pbc\bag_error_tip.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\bag_operator.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\common_error_tip.pb.h">

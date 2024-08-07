@@ -24,7 +24,7 @@ commands = [
     "python xlstocpp.py",
     "python xlstocppid.py",
     "python buildproto.py",
-    "python md5tool.py md5copy ./cpp/ ../../pkg/config/src/",
+    "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
     "python md5tool.py md5copy ./generated/protocpp/ ../../pkg/config/src/pbc/",
     "python genxlsmd5.py"
 ]
