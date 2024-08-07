@@ -4,6 +4,7 @@
 import os
 import xlrd
 import logging
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Configure logging
@@ -15,8 +16,24 @@ excel_file_path = 'xlsx/operator/Operator.xlsx'
 # Output directory for Proto files
 output_dir = 'generated/proto/operator'
 
+# Temporary file for storing existing ID mappings
+temp_file_path = 'generated/proto/operatortemp_id_mapping.json'
+
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
+
+def read_temp_id_mapping():
+    """Reads existing ID mappings from temp file."""
+    if os.path.exists(temp_file_path):
+        with open(temp_file_path, 'r') as f:
+            return json.load(f)
+    else:
+        return {}
+
+def write_temp_id_mapping(mapping):
+    """Writes ID mappings to temp file."""
+    with open(temp_file_path, 'w') as f:
+        json.dump(mapping, f, indent=2)
 
 def read_excel_data(file_path):
     """Read data from the provided Excel file path."""
@@ -58,7 +75,7 @@ def read_excel_data(file_path):
         logging.error(f"Error reading Excel file: {str(e)}")
         return {}
 
-def generate_proto_file(group_name, group_data):
+def generate_proto_file(group_name, group_data, existing_id_mapping):
     """Generate a Proto file for a given group."""
     try:
         proto_content = f"// Proto file for {group_name}\n"
@@ -71,6 +88,12 @@ def generate_proto_file(group_name, group_data):
         proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
 
         for enum_name, enum_id in group_data:
+            if enum_name in existing_id_mapping:
+                enum_id = existing_id_mapping[enum_name]
+            else:
+                enum_id = max(existing_id_mapping.values(), default=-1) + 1
+                existing_id_mapping[enum_name] = enum_id
+
             enum_name_with_k = f"k{enum_name.strip()}"
             proto_content += f"  {enum_name_with_k} = {enum_id};\n"
 
@@ -82,13 +105,19 @@ def generate_proto_file(group_name, group_data):
 
         logging.info(f"Proto enums file generated: {proto_file_path}")
 
+        # Write updated ID mapping to temp file
+        write_temp_id_mapping(existing_id_mapping)
+
     except Exception as e:
         logging.error(f"Error generating Proto file for group {group_name}: {str(e)}")
 
 def generate_proto_files(groups):
     """Generate Proto files for all groups using ThreadPoolExecutor."""
+    existing_id_mapping = read_temp_id_mapping()
+
     with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(generate_proto_file, group_name, group_data) for group_name, group_data in groups.items()]
+        futures = [executor.submit(generate_proto_file, group_name, group_data, existing_id_mapping)
+                   for group_name, group_data in groups.items()]
 
         for future in as_completed(futures):
             try:
