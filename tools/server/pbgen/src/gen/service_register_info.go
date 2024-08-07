@@ -35,7 +35,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	var line string
 	var service string
 	var methodIndex uint64
-	var rpcServiceInfo RpcServiceInfo
+	var rpcServiceInfo RPCServiceInfo
 	ccGenericServices := false
 	for scanner.Scan() {
 		line = scanner.Text()
@@ -192,7 +192,7 @@ func InitServiceId() {
 
 	RpcServiceMap.Range(func(k, v interface{}) bool {
 		key := k.(string)
-		methodInfo := v.(*RpcServiceInfo).MethodInfo
+		methodInfo := v.(*RPCServiceInfo).MethodInfo
 		ServiceMethodMap[key] = methodInfo
 		return true
 	})
