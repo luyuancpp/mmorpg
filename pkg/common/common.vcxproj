@@ -25,7 +25,6 @@
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\grpc\deploy\deploy_client.h" />
     <ClInclude Include="src\jsoncpp\json.h" />
-    <ClInclude Include="src\macros\game_log.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
