@@ -267,56 +267,64 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	return data.String()
 }
 
-func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) (data string) {
-	methodLen := len(*methodList)
-	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, methodLen+1)
+func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
+	// Ensure there are methods in the list
+	if len(*methodList) == 0 {
+		return ""
+	}
+
+	// Read code sections from file
+	yourCodes, _ := util.ReadCodeSectionsFromFile(dst, len(*methodList)+1)
+
+	var data strings.Builder
 	firstMethodInfo := (*methodList)[0]
-	data = firstMethodInfo.CppRepliedHandlerIncludeName() +
-		"#include \"network/codec/dispatcher.h\"\n\n"
 
-	implData := ""
-	declarationData := ""
+	// Start with the C++ replied handler include specific to the first method
+	data.WriteString(firstMethodInfo.CppRepliedHandlerIncludeName())
+	data.WriteString("#include \"network/codec/dispatcher.h\"\n\n")
 
-	for i := 0; i < len(yourCodes); i++ {
-		j := i - 1
-		isMessage := j >= 0 && j < methodLen
-		if isMessage {
-			break
-		}
-		data += yourCodes[i]
-	}
-	data += "extern ProtobufDispatcher g_response_dispatcher;\n\n"
-	for i := 0; i < len(yourCodes); i++ {
-		j := i - 1
-		isMessage := j >= 0 && j < methodLen
-		if isMessage {
-			methodInfo := (*methodList)[j]
+	// External declaration for the dispatcher
+	data.WriteString("extern ProtobufDispatcher g_response_dispatcher;\n\n")
 
+	var declarationData, implData strings.Builder
+
+	// Iterate through yourCodes and methodList simultaneously
+	for i, code := range yourCodes {
+		// Calculate the corresponding method index in methodList
+		methodIndex := i - 1
+
+		if methodIndex >= 0 && methodIndex < len(*methodList) {
+			// Retrieve method information
+			methodInfo := (*methodList)[methodIndex]
+
+			// Construct function name for the handler
 			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerName
-			declarationData += config.Tab + "g_response_dispatcher.registerMessageCallback<" +
-				methodInfo.Response + ">(std::bind(&" + funcName +
-				", std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));\n"
-			implData += "void " + funcName + "(const TcpConnectionPtr& conn, const " +
-				"std::shared_ptr<" + methodInfo.Response + ">& replied, Timestamp timestamp)\n{\n"
-			implData += yourCodes[i]
-			implData += "}\n\n"
+
+			// Register message callback in declaration data
+			declarationData.WriteString(fmt.Sprintf("%s%s", config.Tab,
+				"g_response_dispatcher.registerMessageCallback<"+methodInfo.Response+
+					">(std::bind(&"+funcName+", std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));\n"))
+
+			// Implementation of the handler function
+			implData.WriteString(fmt.Sprintf("void %s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp)\n{\n",
+				funcName, methodInfo.Response))
+			implData.WriteString(code) // Append existing code section
+			implData.WriteString("}\n\n")
+		} else {
+			// Append non-method related code directly
+			data.WriteString(code)
 		}
 	}
-	data += "\nvoid Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + "()\n{\n"
-	data += declarationData
-	data += "}\n\n"
 
-	data += implData
+	// Initialize function for registering replied handler callbacks
+	data.WriteString(fmt.Sprintf("\nvoid Init%s%s()\n{\n", firstMethodInfo.KeyName(), config.RepliedHandlerName))
+	data.WriteString(declarationData.String())
+	data.WriteString("}\n\n")
 
-	for i := 0; i < len(yourCodes); i++ {
-		j := i - 1
-		if j < methodLen {
-			continue
-		}
-		data += yourCodes[i]
-	}
+	// Append the implementation data for replied handler functions
+	data.WriteString(implData.String())
 
-	return data
+	return data.String()
 }
 
 func getMethodPlayerHandlerCppStr(dst string, methodList *RPCMethods, className string, includeName string) (data string) {

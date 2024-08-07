@@ -1,10 +1,10 @@
 #include "centre_service_replied_handler.h"
 #include "network/codec/dispatcher.h"
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 
 void InitCentreServiceRegisterGameRepliedHandler()
 {

@@ -1,6 +1,8 @@
 #include "game_service_replied_handler.h"
 #include "network/codec/dispatcher.h"
 
+extern ProtobufDispatcher g_response_dispatcher;
+
 ///<<< BEGIN WRITING YOUR CODE
 
 #include <boost/get_pointer.hpp>
@@ -16,8 +18,6 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 
 ///<<< END WRITING YOUR CODE
-extern ProtobufDispatcher g_response_dispatcher;
-
 
 void InitGameServiceEnterGsRepliedHandler()
 {
