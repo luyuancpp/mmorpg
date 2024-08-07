@@ -656,9 +656,8 @@ func writeGsMethodRepliedHandlerCppFile(methodList RPCMethods) {
 }
 
 // centre server
-
-func isCentreMethodHandler(methodList *RPCMethods) (isGsFile bool) {
-	if len(*methodList) <= 0 {
+func isCentreMethodHandler(methodList *RPCMethods) bool {
+	if len(*methodList) == 0 {
 		return false
 	}
 	firstMethodInfo := (*methodList)[0]
@@ -678,18 +677,26 @@ func writeCentreMethodHandlerHeadFile(methodList RPCMethods) {
 	util.WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
-func isCentrePlayerHandler(methodList *RPCMethods) (result bool) {
-	if len(*methodList) <= 0 {
+func writeCentreMethodHandlerCppFile(methodList RPCMethods) {
+	defer util.Wg.Done()
+	if !isCentreMethodHandler(&methodList) {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+	dstFileName := config.CentreMethodHandleDir + fileName
+	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	util.WriteMd5Data2File(dstFileName, data)
+}
+
+func isCentrePlayerHandler(methodList *RPCMethods) bool {
+	if len(*methodList) == 0 {
 		return false
 	}
 	firstMethodInfo := (*methodList)[0]
 	if !firstMethodInfo.IsPlayerService() {
 		return false
 	}
-	if !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) {
-		return false
-	}
-	return true
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeCentrePlayerMethodHandlerHeadFile(methodList RPCMethods) {
@@ -716,20 +723,8 @@ func writeCentrePlayerMethodHandlerCppFile(methodList RPCMethods) {
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
-func writeCentreMethodHandlerCppFile(methodList RPCMethods) {
-	defer util.Wg.Done()
-	if !isCentreMethodHandler(&methodList) {
-		return
-	}
-
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.CentreMethodHandleDir + fileName
-	data := getMethodHandlerCppStr(dstFileName, &methodList)
-	util.WriteMd5Data2File(dstFileName, data)
-}
-
-func isCentreMethodRepliedHandler(methodList *RPCMethods) (check bool) {
-	if len(*methodList) <= 0 {
+func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
+	if len(*methodList) == 0 {
 		return false
 	}
 	firstMethodInfo := (*methodList)[0]
@@ -745,7 +740,6 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 
 func writeCentreMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	defer util.Wg.Done()
-
 	if !isCentreMethodRepliedHandler(&methodList) {
 		return
 	}
@@ -767,9 +761,9 @@ func writeCentreMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
-func isCentrePlayerRepliedHandler(methodList *RPCMethods) (result bool) {
-	if len(*methodList) <= 0 {
-		return
+func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
+	if len(*methodList) == 0 {
+		return false
 	}
 	firstMethodInfo := (*methodList)[0]
 	if !firstMethodInfo.IsPlayerService() {
