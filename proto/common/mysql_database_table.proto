@@ -3,13 +3,13 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "common/db_base.proto";
-import "common/account_database.proto";
+import "common/user_accounts.proto";
 import "common/comp.proto";
 import "logic/component/player_scene_comp.proto";
 import "logic/component/actor_comp.proto";
 
 /////////////         game
-message account_database
+message user_accounts
 {
   option(OptionPrimaryKey) = "account";
   string account = 1;

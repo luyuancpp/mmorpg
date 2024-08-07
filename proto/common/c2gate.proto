@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "common/tip.proto";
-import "common/account_database.proto";
+import "common/user_accounts.proto";
 
 message c_account_simple_player
 {

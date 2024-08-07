@@ -87,7 +87,6 @@ var ProtoDirNames = [...]string{
 	"logic/server/",
 	"logic/client_player/",
 	"logic/server_player/",
-	"logic/tip_code/",
 	"logic/constants/",
 }
 var ProtoDirs []string
