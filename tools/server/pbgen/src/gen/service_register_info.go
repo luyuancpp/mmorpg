@@ -3,6 +3,7 @@ package gen
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"path/filepath"
@@ -139,8 +140,6 @@ func ReadAllProtoFileServices() {
 
 // readServiceIdFile reads service IDs from a file and populates the ServiceIdMap.
 func readServiceIdFile() error {
-	defer util.Wg.Done()
-
 	f, err := os.Open(config.ServiceIdsFileName)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", config.ServiceIdsFileName, err)
@@ -165,9 +164,15 @@ func readServiceIdFile() error {
 	return nil
 }
 
+// ReadServiceIdFile reads service IDs from a file asynchronously.
 func ReadServiceIdFile() {
 	util.Wg.Add(1)
-	go readServiceIdFile()
+	go func() {
+		defer util.Wg.Done()
+		if err := readServiceIdFile(); err != nil {
+			log.Fatalf("error reading service ID file: %v", err)
+		}
+	}()
 }
 
 func writeServiceIdFile() {
@@ -194,9 +199,10 @@ func WriteServiceIdFile() {
 	go writeServiceIdFile()
 }
 
+// InitServiceId initializes service IDs based on the loaded service methods and ID mappings.
 func InitServiceId() {
-	var unUseServiceId = map[uint64]EmptyStruct{}
-	var useServiceId = map[uint64]EmptyStruct{}
+	var unUseServiceId = make(map[uint64]EmptyStruct)
+	var useServiceId = make(map[uint64]EmptyStruct)
 
 	RpcServiceMap.Range(func(k, v interface{}) bool {
 		key := k.(string)
@@ -209,7 +215,7 @@ func InitServiceId() {
 		for _, mv := range methodList {
 			id, ok := ServiceIdMap[mv.KeyName()]
 			if !ok {
-				//Idæ–‡ä»¶æœªæ‰¾åˆ°åˆ™æ˜¯æ–°æ¶ˆæ¯,æˆ–è€…å·²ç»æ”¹åï¼Œæ–°æ¶ˆæ¯åé¢å¤„ç†ï¼Œè¿™é‡Œä¸å¤„ç†
+				//IdÎÄ¼şÎ´ÕÒµ½ÔòÊÇĞÂÏûÏ¢,»òÕßÒÑ¾­¸ÄÃû£¬ĞÂÏûÏ¢ºóÃæ´¦Àí£¬ÕâÀï²»´¦Àí
 				continue
 			}
 			if MessageIdFileMaxId < id {
@@ -229,7 +235,7 @@ func InitServiceId() {
 	for _, methodList := range ServiceMethodMap {
 		for _, mv := range methodList {
 			if len(unUseServiceId) > 0 && mv.Id == math.MaxUint64 {
-				for uk, _ := range unUseServiceId {
+				for uk := range unUseServiceId {
 					mv.Id = uk
 					RpcIdMethodMap[mv.Id] = mv
 					delete(unUseServiceId, uk)
@@ -238,7 +244,7 @@ func InitServiceId() {
 				continue
 			}
 			if mv.Id == math.MaxUint64 {
-				MessageIdFileMaxId += 1
+				MessageIdFileMaxId++
 				mv.Id = MessageIdFileMaxId
 			}
 			RpcIdMethodMap[mv.Id] = mv
@@ -248,7 +254,6 @@ func InitServiceId() {
 		}
 	}
 }
-
 func GetSortServiceList() (ServiceList []string) {
 	for k, v := range ServiceMethodMap {
 		if len(v) > 0 && !v[0].CcGenericServices {
