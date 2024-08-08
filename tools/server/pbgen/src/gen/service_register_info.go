@@ -317,141 +317,106 @@ func writeServiceInfoHeadFile() {
 	util.WriteMd5Data2File(config.ServiceHeadFileName, data.String())
 }
 
+// Helper function to generate instance data for player services.
+func generateInstanceData(ServiceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
+	fileNameWithoutExt := serviceName[:len(serviceName)-len(filepath.Ext(serviceName))]
+
+	var data strings.Builder
+	includeData := "#include <memory>\n#include <unordered_map>\n#include \"" + fileNameWithoutExt + ".h\"\n\n"
+	instanceData := ""
+	classData := ""
+
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok || !isPlayerHandlerFunc(&methodList) {
+			continue
+		}
+
+		method1Info := methodList[0]
+		className := method1Info.Service + "Impl"
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + "\"\n"
+
+		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
+		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
+			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
+			className + "));\n"
+	}
+
+	data.WriteString(includeData)
+	data.WriteString("std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;\n\n")
+	data.WriteString(classData)
+	data.WriteString("void InitPlayerService()\n{\n")
+	data.WriteString(instanceData)
+	data.WriteString("}")
+
+	util.WriteMd5Data2File(handlerDir+serviceName, data.String())
+
+	return data.String()
+}
+
+// Helper function to generate instance data for player services.
+func generateRepliedInstanceData(ServiceList []string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir string, serviceName string) string {
+	fileNameWithoutExt := serviceName[:len(serviceName)-len(filepath.Ext(serviceName))]
+
+	var data strings.Builder
+	includeData := "#include <memory>\n#include <unordered_map>\n#include \"" + fileNameWithoutExt + ".h\"\n\n"
+	instanceData := ""
+	classData := ""
+
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok || !isPlayerHandlerFunc(&methodList) {
+			continue
+		}
+
+		method1Info := methodList[0]
+		className := method1Info.Service + "Impl"
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadRepliedHandlerEx + "\"\n"
+
+		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
+		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +
+			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerName + ">(new " +
+			className + "));\n"
+	}
+
+	data.WriteString(includeData)
+	data.WriteString("std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;\n\n")
+	data.WriteString(classData)
+	data.WriteString("void InitPlayerServiceReplied()\n{\n")
+	data.WriteString(instanceData)
+	data.WriteString("}")
+
+	util.WriteMd5Data2File(handlerDir+serviceName, data.String())
+
+	return data.String()
+}
+
+// Function to write gRPC global player service instance information.
 func writeGsGlobalPlayerServiceInstanceFile() {
 	defer util.Wg.Done()
-	data := ""
-	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service.h\"\n\n"
-	instanceData := ""
-	classData := ""
 	ServiceList := GetSortServiceList()
-	for _, key := range ServiceList {
-		methodList, ok := ServiceMethodMap[key]
-		if !ok {
-			continue
-		}
-
-		if !isGsPlayerHandler(&methodList) {
-			continue
-		}
-		method1Info := methodList[0]
-		className := method1Info.Service + "Impl"
-		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
-		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
-			className + "));\n"
-	}
-	data += includeData
-	data += "std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;\n\n"
-	data += classData
-	data += "void InitPlayerService()\n{\n"
-	data += instanceData
-	data += "}"
-	util.WriteMd5Data2File(config.GsMethodHandleDir+config.PlayerServiceName, data)
+	generateInstanceData(ServiceList, isGsPlayerHandler, config.GsMethodHandleDir, config.PlayerServiceName)
 }
 
+// Function to write Centre global player service instance information.
 func writeCentreGlobalPlayerServiceInstanceFile() {
 	defer util.Wg.Done()
-	data := ""
-	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service.h\"\n\n"
-	instanceData := ""
-	classData := ""
 	ServiceList := GetSortServiceList()
-	for _, key := range ServiceList {
-		methodList, ok := ServiceMethodMap[key]
-		if !ok {
-			continue
-		}
-		if !isCentrePlayerHandler(&methodList) {
-			continue
-		}
-		method1Info := methodList[0]
-
-		className := method1Info.Service + "Impl"
-		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
-		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
-			className + "));\n"
-	}
-	data += includeData
-	data += "std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;\n\n"
-	data += classData
-	data += "void InitPlayerService()\n{\n"
-	data += instanceData
-	data += "}"
-	util.WriteMd5Data2File(config.CentreMethodHandleDir+config.PlayerServiceName, data)
+	generateInstanceData(ServiceList, isCentrePlayerHandler, config.CentreMethodHandleDir, config.PlayerServiceName)
 }
 
+// Function to write gRPC global player service replied instance information.
 func writeGsGlobalPlayerServiceRepliedInstanceFile() {
 	defer util.Wg.Done()
-	data := ""
-	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service_replied.h\"\n\n"
-	instanceData := ""
-	classData := ""
 	ServiceList := GetSortServiceList()
-	for _, key := range ServiceList {
-		methodList, ok := ServiceMethodMap[key]
-		if !ok {
-			continue
-		}
-		if len(methodList) <= 0 {
-			continue
-
-		}
-		method1Info := methodList[0]
-		if !isGsPlayerRepliedHandler(&methodList) {
-			continue
-		}
-		className := method1Info.Service + "Impl"
-		includeData += method1Info.CppRepliedHandlerIncludeName()
-		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerName + ">(new " +
-			className + "));\n"
-	}
-	data += includeData
-	data += "std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;\n\n"
-	data += classData
-	data += "void InitPlayerServiceReplied()\n{\n"
-	data += instanceData
-	data += "}"
-	util.WriteMd5Data2File(config.GsMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
+	generateRepliedInstanceData(ServiceList, isGsPlayerRepliedHandler, config.GsMethodRepliedHandleDir, config.PlayerRepliedServiceName)
 }
 
+// Function to write Centre global player service replied instance information.
 func writeCentreGlobalPlayerServiceRepliedInstanceFile() {
 	defer util.Wg.Done()
-	data := ""
-	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service_replied.h\"\n\n"
-	instanceData := ""
-	classData := ""
 	ServiceList := GetSortServiceList()
-	for _, key := range ServiceList {
-		methodList, ok := ServiceMethodMap[key]
-		if !ok {
-			continue
-		}
-		if len(methodList) <= 0 {
-			continue
-		}
-		method1Info := methodList[0]
-		if !isCentrePlayerRepliedHandler(&methodList) {
-			continue
-		}
-		className := method1Info.Service + "Impl"
-		includeData += method1Info.CppRepliedHandlerIncludeName()
-		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerName + ">(new " +
-			className + "));\n"
-	}
-	data += includeData
-	data += "std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;\n\n"
-	data += classData
-	data += "void InitPlayerServiceReplied()\n{\n"
-	data += instanceData
-	data += "}"
-	util.WriteMd5Data2File(config.CentreMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
+	generateRepliedInstanceData(ServiceList, isCentrePlayerRepliedHandler, config.CentreMethodRepliedHandleDir, config.PlayerRepliedServiceName)
 }
 
 func WriteServiceRegisterInfoFile() {
