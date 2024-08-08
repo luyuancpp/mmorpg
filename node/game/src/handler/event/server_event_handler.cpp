@@ -78,7 +78,7 @@ void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
     SceneUtil::SetSequenceNodeId(gGameNode->GetNodeId());
-    GameNodeSceneUtil::InitNodeScene();
+    GameNodeSceneUtil::InitializeNodeScenes();
 ///<<< END WRITING YOUR CODE
 }
 
