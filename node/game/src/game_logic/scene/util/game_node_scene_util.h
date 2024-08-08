@@ -13,7 +13,6 @@ class BeforeLeaveScene;
 class GameNodeSceneUtil
 {
 public:
-
     static void InitializeNodeScenes();
     static void RegisterSceneToCentre();
     static void RegisterSceneToCentre(entt::entity scene);

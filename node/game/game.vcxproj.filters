@@ -99,7 +99,7 @@
     <ClCompile Include="src\game_logic\config\config_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\system\game_node_scene_system.cpp">
+    <ClCompile Include="src\game_logic\scene\util\game_node_scene_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\player\util\player_util.cpp">
@@ -236,7 +236,7 @@
     <ClInclude Include="src\game_logic\config\config_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\system\game_node_scene_system.h">
+    <ClInclude Include="src\game_logic\scene\util\game_node_scene_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\player\util\player_util.h">
