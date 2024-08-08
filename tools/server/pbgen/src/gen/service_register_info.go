@@ -391,32 +391,20 @@ func generateRepliedInstanceData(ServiceList []string, isPlayerHandlerFunc func(
 	return data.String()
 }
 
-// Function to write gRPC global player service instance information.
-func writeGsGlobalPlayerServiceInstanceFile() {
+func writePlayerServiceInstanceFiles(serviceType string, isPlayerHandlerFunc func(*RPCMethods) bool, handlerDir, serviceName string) {
 	defer util.Wg.Done()
 	ServiceList := GetSortServiceList()
-	generateInstanceData(ServiceList, isGsPlayerHandler, config.GsMethodHandleDir, config.PlayerServiceName)
-}
+	var generatorFunc func([]string, func(*RPCMethods) bool, string, string) string
 
-// Function to write Centre global player service instance information.
-func writeCentreGlobalPlayerServiceInstanceFile() {
-	defer util.Wg.Done()
-	ServiceList := GetSortServiceList()
-	generateInstanceData(ServiceList, isCentrePlayerHandler, config.CentreMethodHandleDir, config.PlayerServiceName)
-}
+	if serviceType == "instance" {
+		generatorFunc = generateInstanceData
+	} else if serviceType == "repliedInstance" {
+		generatorFunc = generateRepliedInstanceData
+	} else {
+		return // Handle error or unknown type
+	}
 
-// Function to write gRPC global player service replied instance information.
-func writeGsGlobalPlayerServiceRepliedInstanceFile() {
-	defer util.Wg.Done()
-	ServiceList := GetSortServiceList()
-	generateRepliedInstanceData(ServiceList, isGsPlayerRepliedHandler, config.GsMethodRepliedHandleDir, config.PlayerRepliedServiceName)
-}
-
-// Function to write Centre global player service replied instance information.
-func writeCentreGlobalPlayerServiceRepliedInstanceFile() {
-	defer util.Wg.Done()
-	ServiceList := GetSortServiceList()
-	generateRepliedInstanceData(ServiceList, isCentrePlayerRepliedHandler, config.CentreMethodRepliedHandleDir, config.PlayerRepliedServiceName)
+	generatorFunc(ServiceList, isPlayerHandlerFunc, handlerDir, serviceName)
 }
 
 func WriteServiceRegisterInfoFile() {
@@ -425,11 +413,11 @@ func WriteServiceRegisterInfoFile() {
 	util.Wg.Add(1)
 	go writeServiceInfoHeadFile()
 	util.Wg.Add(1)
-	writeGsGlobalPlayerServiceInstanceFile()
+	go writePlayerServiceInstanceFiles("instance", isGsPlayerHandler, config.GsMethodHandleDir, config.PlayerServiceName)
 	util.Wg.Add(1)
-	writeCentreGlobalPlayerServiceInstanceFile()
+	go writePlayerServiceInstanceFiles("instance", isCentrePlayerHandler, config.CentreMethodHandleDir, config.PlayerServiceName)
 	util.Wg.Add(1)
-	writeGsGlobalPlayerServiceRepliedInstanceFile()
+	go writePlayerServiceInstanceFiles("repliedInstance", isGsPlayerRepliedHandler, config.GsMethodRepliedHandleDir, config.PlayerRepliedServiceName)
 	util.Wg.Add(1)
-	writeCentreGlobalPlayerServiceRepliedInstanceFile()
+	go writePlayerServiceInstanceFiles("repliedInstance", isCentrePlayerRepliedHandler, config.CentreMethodRepliedHandleDir, config.PlayerRepliedServiceName)
 }
