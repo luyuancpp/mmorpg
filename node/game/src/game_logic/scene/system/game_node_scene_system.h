@@ -13,10 +13,8 @@ class BeforeLeaveScene;
 class GameNodeSceneUtil
 {
 public:
-    static void LoadAllMainSceneNavBin();
+
     static void InitializeNodeScenes();
-    static void EnterScene(const EnterSceneParam& param);
-    static void LeaveScene(entt::entity ent);
     static void RegisterSceneToCentre();
     static void RegisterSceneToCentre(entt::entity scene);
     static void HandleSceneCreation(const OnSceneCreate& message);
