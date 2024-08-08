@@ -191,7 +191,7 @@ func writeServiceIdFile() {
 		}
 		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
 	}
-	os.WriteFile(config.ServiceIdsFileName, []byte(data), 0666)
+	util.WriteMd5Data2File(config.ServiceIdsFileName, data)
 }
 
 func WriteServiceIdFile() {
@@ -215,7 +215,7 @@ func InitServiceId() {
 		for _, mv := range methodList {
 			id, ok := ServiceIdMap[mv.KeyName()]
 			if !ok {
-				//IdÎÄ¼şÎ´ÕÒµ½ÔòÊÇĞÂÏûÏ¢,»òÕßÒÑ¾­¸ÄÃû£¬ĞÂÏûÏ¢ºóÃæ´¦Àí£¬ÕâÀï²»´¦Àí
+				//Idæ–‡ä»¶æœªæ‰¾åˆ°åˆ™æ˜¯æ–°æ¶ˆæ¯,æˆ–è€…å·²ç»æ”¹åï¼Œæ–°æ¶ˆæ¯åé¢å¤„ç†ï¼Œè¿™é‡Œä¸å¤„ç†
 				continue
 			}
 			if MessageIdFileMaxId < id {
@@ -254,7 +254,10 @@ func InitServiceId() {
 		}
 	}
 }
-func GetSortServiceList() (ServiceList []string) {
+
+// GetSortServiceList returns a sorted list of service names.
+func GetSortServiceList() []string {
+	var ServiceList []string
 	for k, v := range ServiceMethodMap {
 		if len(v) > 0 && !v[0].CcGenericServices {
 			continue
@@ -265,74 +268,53 @@ func GetSortServiceList() (ServiceList []string) {
 	return ServiceList
 }
 
+// writeServiceInfoCppFile writes service information to a C++ file.
 func writeServiceInfoCppFile() {
 	defer util.Wg.Done()
-	var includeData = "#include <array>\n"
-	includeData += "#include \"service.h\"\n"
-	var classHandlerData = ""
-	var initFuncData = "std::unordered_set<uint32_t> g_c2s_service_id;\n" +
-		"std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> g_message_info;\n\n"
+	var data strings.Builder
+	var idList []uint64
 
-	initFuncData += "void InitMessageInfo()\n{\n"
-	ServiceList := GetSortServiceList()
-	for _, key := range ServiceList {
-		methodList := ServiceMethodMap[key]
-		if len(methodList) <= 0 {
+	for k := range RpcIdMethodMap {
+		idList = append(idList, k)
+	}
+	sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
+
+	for i, id := range idList {
+		rpcMethodInfo := RpcIdMethodMap[id]
+		if rpcMethodInfo == nil {
+			fmt.Println("msg id=", strconv.Itoa(i), " not used")
 			continue
 		}
-		includeData += methodList[0].IncludeName()
-		serviceHandlerName := key + "Impl"
-		classHandlerData += "class " + serviceHandlerName + " final : public " + key + "{};\n"
+		data.WriteString(fmt.Sprintf("%d=%s\n", rpcMethodInfo.Id, rpcMethodInfo.KeyName()))
 	}
-	initFuncData += "\n"
-	for _, key := range ServiceList {
-		v := ServiceMethodMap[key]
-		for i := 0; i < len(v); i++ {
-			rpcMethodInfo := v[i]
-			rpcId := rpcMethodInfo.KeyName() + config.MessageIdName
-			initFuncData += "extern const uint32_t " + rpcId + ";\n"
-			serviceHandlerName := key + "Impl"
-			cppValue := "g_message_info[" + rpcId
-			initFuncData += cppValue + "] = RpcService{" +
-				"\"" + rpcMethodInfo.Service + "\"," +
-				"\"" + rpcMethodInfo.Method + "\"," +
-				"\"" + rpcMethodInfo.Request + "\"," +
-				"\"" + rpcMethodInfo.Response + "\"," +
-				"std::make_unique_for_overwrite<" + serviceHandlerName + ">()};\n"
-			if strings.Contains(rpcId, config.C2SMethodContainsName) {
-				initFuncData += "g_c2s_service_id.emplace(" + rpcId + ");\n"
-			}
-		}
-		initFuncData += "\n"
-	}
-	includeData += "\n"
-	classHandlerData += "\n"
-	initFuncData += "}\n"
-	var data = includeData + classHandlerData + initFuncData
 
-	util.WriteMd5Data2File(config.ServiceCppFileName, data)
+	util.WriteMd5Data2File(config.ServiceIdsFileName, data.String())
 }
 
+// writeServiceInfoHeadFile writes service information to a header file.
 func writeServiceInfoHeadFile() {
 	defer util.Wg.Done()
-	var data = "#pragma once\n#include <memory>\n" +
-		"#include <string>\n" +
-		"#include <array>\n" +
-		"#include <google/protobuf/message.h>\n" +
-		"#include <google/protobuf/service.h>\n\n" +
-		"struct RpcService\n{\n" +
-		config.Tab + "const char* service{nullptr};\n" +
-		config.Tab + "const char* method{nullptr};\n    " +
-		config.Tab + "const char* request{nullptr};\n    " +
-		config.Tab + "const char* response{nullptr};\n   " +
-		" std::unique_ptr<::google::protobuf::Service> service_impl_instance_;\n};\n\n" +
-		"using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n" +
-		"void InitMessageInfo();\n\n" +
-		"constexpr uint32_t kMaxMessageLen = " + strconv.FormatUint(MessageIdLen(), 10) + ";\n\n" +
-		"extern std::array<RpcService, kMaxMessageLen > g_message_info;\n\n" +
-		"extern std::unordered_set<uint32_t> g_c2s_service_id;\n"
+	var data strings.Builder
 
-	util.WriteMd5Data2File(config.ServiceHeadFileName, data)
+	data.WriteString("#pragma once\n")
+	data.WriteString("#include <memory>\n")
+	data.WriteString("#include <string>\n")
+	data.WriteString("#include <array>\n")
+	data.WriteString("#include <google/protobuf/message.h>\n")
+	data.WriteString("#include <google/protobuf/service.h>\n\n")
+	data.WriteString("struct RpcService\n{\n")
+	data.WriteString(config.Tab + "const char* service{nullptr};\n")
+	data.WriteString(config.Tab + "const char* method{nullptr};\n")
+	data.WriteString(config.Tab + "const char* request{nullptr};\n")
+	data.WriteString(config.Tab + "const char* response{nullptr};\n")
+	data.WriteString(config.Tab + "std::unique_ptr<::google::protobuf::Service> service_impl_instance_;\n};\n\n")
+	data.WriteString("using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n")
+	data.WriteString("void InitMessageInfo();\n\n")
+	data.WriteString(fmt.Sprintf("constexpr uint32_t kMaxMessageLen = %d;\n\n", MessageIdLen()))
+	data.WriteString(fmt.Sprintf("extern std::array<RpcService, kMaxMessageLen> g_message_info;\n\n"))
+	data.WriteString("extern std::unordered_set<uint32_t> g_c2s_service_id;\n")
+
+	util.WriteMd5Data2File(config.ServiceHeadFileName, data.String())
 }
 
 func writeGsGlobalPlayerServiceInstanceFile() {
