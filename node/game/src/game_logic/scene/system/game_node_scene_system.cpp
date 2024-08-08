@@ -23,60 +23,24 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/constants/node.pb.h"
 
-void GameNodeSceneUtil::LoadMainSceneNavBins()
-{
-	auto& configAll = GetMainSceneAllTable();
-	for (auto& item : configAll.data())
-	{
-		auto navIt = tlsGame.sceneNav.emplace(item.id(), NavComp{});
-		if (!navIt.second)
-		{
-			LOG_ERROR << "Failed to load scene navigation: " << item.id();
-			continue;
-		}
-		auto& nav = navIt.first->second;
-		RecastUtil::LoadNavMesh(item.nav_bin_file().c_str(), &nav.navMesh);
-		nav.navQuery.init(&nav.navMesh, kMaxMeshQueryNodes);
-	}
-}
 
-void GameNodeSceneUtil::InitializeNodeScenes()
-{
+void GameNodeSceneUtil::InitializeNodeScenes() {
 	if (!(gGameNode->GetNodeType() == eGameNodeType::kMainSceneNode ||
-		gGameNode->GetNodeType() == eGameNodeType::kMainSceneCrossNode))
-	{
+		gGameNode->GetNodeType() == eGameNodeType::kMainSceneCrossNode)) {
 		return;
 	}
 
 	const auto& mainSceneConf = GetMainSceneAllTable();
-	for (auto& item : mainSceneConf.data())
-	{
+	for (auto& item : mainSceneConf.data()) {
 		CreateGameNodeSceneParam params{ .node = entt::entity{gGameNode->GetNodeId()} };
 		params.sceneInfo.set_scene_confid(item.id());
 		SceneUtil::CreateScene2GameNode(params);
 	}
 }
 
-void GameNodeSceneUtil::EnterScene(const EnterSceneParam& param)
-{
-	SceneUtil::EnterScene(param);
-
-	if (tls.registry.any_of<Player>(param.enter))
-	{
-		PlayerSceneUtil::OnEnterScene(param.enter, param.scene);
-	}
-}
-
-void GameNodeSceneUtil::LeaveScene(entt::entity leaver)
-{
-	SceneUtil::LeaveScene({ .leaver = leaver });
-}
-
-void GameNodeSceneUtil::RegisterSceneToCentre(entt::entity scene)
-{
+void GameNodeSceneUtil::RegisterSceneToCentre(entt::entity scene) {
 	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(scene);
-	if (!sceneInfo)
-	{
+	if (!sceneInfo) {
 		return;
 	}
 
@@ -87,39 +51,33 @@ void GameNodeSceneUtil::RegisterSceneToCentre(entt::entity scene)
 	BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, request);
 }
 
-void GameNodeSceneUtil::RegisterSceneToCentre()
-{
+void GameNodeSceneUtil::RegisterSceneToCentre() {
 	RegisterSceneRequest request;
 	request.set_game_node_id(gGameNode->GetNodeId());
 
-	for (auto&& [entity, sceneInfo] : tls.sceneRegistry.view<SceneInfo>().each())
-	{
+	for (auto&& [entity, sceneInfo] : tls.sceneRegistry.view<SceneInfo>().each()) {
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
 	BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, request);
 }
 
-void GameNodeSceneUtil::HandleSceneCreation(const OnSceneCreate& message)
-{
+void GameNodeSceneUtil::HandleSceneCreation(const OnSceneCreate& message) {
 	entt::entity scene = entt::to_entity(message.entity());
 	tls.sceneRegistry.emplace<SceneGridListComp>(scene);
 
 	auto& sceneInfo = tls.sceneRegistry.get<SceneInfo>(scene);
-	if (tlsGame.sceneNav.contains(sceneInfo.scene_confid()))
-	{
+	if (tlsGame.sceneNav.contains(sceneInfo.scene_confid())) {
 		// Auto-generated crowd handling
 		// auto& dtCrowd = tls.sceneRegistry.emplace<dtCrowd>(scene);
 		// dtCrowd.init(1000, kAgentRadius, &tls_game.sceneNav_[sceneInfo.sceneConfid()].navMesh);
 	}
 }
 
-void GameNodeSceneUtil::HandleAfterEnterSceneEvent(const AfterEnterScene& message)
-{
+void GameNodeSceneUtil::HandleAfterEnterSceneEvent(const AfterEnterScene& message) {
 	// Placeholder for future implementations
 }
 
-void GameNodeSceneUtil::HandleBeforeLeaveSceneEvent(const BeforeLeaveScene& message)
-{
+void GameNodeSceneUtil::HandleBeforeLeaveSceneEvent(const BeforeLeaveScene& message) {
 	// Placeholder for future implementations
 }

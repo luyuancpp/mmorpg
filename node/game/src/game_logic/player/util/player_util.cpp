@@ -9,10 +9,6 @@
 
 #include "service/scene_client_player_service.h"
 
-void PlayerSceneUtil::EnterScene(entt::entity player, Guid sceneId)
-{
-	
-}
 
 void PlayerSceneUtil::OnEnterScene(entt::entity player, entt::entity scene)
 {

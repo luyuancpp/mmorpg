@@ -18,7 +18,7 @@
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
 #include "util/pb.h"
-
+#include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
@@ -387,10 +387,11 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 
 	LOG_INFO << "Player with ID " << request->player_id() << " entering scene " << request->scene_id();
 
-    PlayerSceneUtil::EnterScene(player, request->scene_id());
-
 	entt::entity sceneEntity{ request->scene_id() };
-	GameNodeSceneUtil::EnterScene({ .scene = sceneEntity, .enter = player });
+	SceneUtil::EnterScene({ .scene = sceneEntity, .enter = player });
+	
+	PlayerSceneUtil::OnEnterScene(player, sceneEntity);
+
 ///<<< END WRITING YOUR CODE
 }
 

@@ -153,6 +153,9 @@
     <ClCompile Include="src\game_logic\combat\projectile\system\projectile_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -318,6 +321,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\common\constants\fps_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\scene\util\navigation_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
