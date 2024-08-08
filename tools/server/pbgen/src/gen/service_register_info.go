@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
 	"sort"
@@ -14,37 +15,35 @@ import (
 	"sync/atomic"
 )
 
-func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
+// ReadProtoFileService reads service information from a protobuf file.
+func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 	defer util.Wg.Done()
+
 	if !util.IsProtoFile(fd) {
-		return fmt.Errorf("not a proto file: %s", filePath)
+		return fmt.Errorf("not a proto file: %s", fd.Name())
 	}
-	f, err := os.Open(filePath + fd.Name())
+
+	f, err := os.Open(filepath.Join(filePath, fd.Name()))
 	if err != nil {
-		log.Fatal(err)
-		return err
+		return fmt.Errorf("failed to open file %s: %w", fd.Name(), err)
 	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(f)
+	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	var line string
 	var service string
 	var methodIndex uint64
 	var rpcServiceInfo RPCServiceInfo
 	ccGenericServices := false
+
 	for scanner.Scan() {
-		line = scanner.Text()
+		line := scanner.Text()
+
 		if strings.Contains(line, config.CcGenericServices) {
 			ccGenericServices = true
 		}
+
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
-			service = strings.ReplaceAll(line, "{", "")
-			service = strings.Split(service, " ")[1]
+			service = strings.ReplaceAll(strings.Split(line, " ")[1], "{", "")
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
 			RpcServiceMap.Store(service, &rpcServiceInfo)
@@ -52,28 +51,31 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 		} else if strings.Contains(line, "rpc ") {
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
 			splitList := strings.Split(line, " ")
-			var rpcMethodInfo RPCMethod
-			rpcMethodInfo.Service = service
-			rpcMethodInfo.Method = splitList[1]
-			rpcMethodInfo.Request = strings.Replace(splitList[2], ".", "::", -1)
-			rpcMethodInfo.Response = strings.Replace(splitList[4], ".", "::", -1)
-			rpcMethodInfo.Id = math.MaxUint64
-			rpcMethodInfo.Index = methodIndex
-			rpcMethodInfo.FileName = fd.Name()
-			rpcMethodInfo.Path = filePath
-			rpcMethodInfo.CcGenericServices = ccGenericServices
+			rpcMethodInfo := RPCMethod{
+				Service:           service,
+				Method:            splitList[1],
+				Request:           strings.Replace(splitList[2], ".", "::", -1),
+				Response:          strings.Replace(splitList[4], ".", "::", -1),
+				Id:                math.MaxUint64,
+				Index:             methodIndex,
+				FileName:          fd.Name(),
+				Path:              filePath,
+				CcGenericServices: ccGenericServices,
+			}
 			rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
-			MaxMessageId = atomic.AddUint64(&MaxMessageId, 1)
-			methodIndex += 1
+			atomic.AddUint64(&MaxMessageId, 1)
+			methodIndex++
 			continue
 		} else if len(service) > 0 && strings.Contains(line, "}") {
 			break
 		}
 	}
+
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error reading file %s: %w", fd.Name(), err)
 	}
-	return err
+
+	return nil
 }
 
 func ReadProtoFileGrpcService(fd os.DirEntry, filePath string) (err error) {
