@@ -14,13 +14,13 @@ class GameNodeSceneUtil
 {
 public:
     static void LoadAllMainSceneNavBin();
-    static void InitNodeScene();
+    static void InitializeNodeScenes();
     static void EnterScene(const EnterSceneParam& param);
     static void LeaveScene(entt::entity ent);
     static void RegisterSceneToCentre();
     static void RegisterSceneToCentre(entt::entity scene);
-    static void OnSceneCreateHandler(const OnSceneCreate& message);
-    static void AfterEnterSceneHandler(const AfterEnterScene& message);
-    static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
+    static void HandleSceneCreation(const OnSceneCreate& message);
+    static void HandleAfterEnterSceneEvent(const AfterEnterScene& message);
+    static void HandleBeforeLeaveSceneEvent(const BeforeLeaveScene& message);
 private:
 };

@@ -40,7 +40,7 @@ void GameNodeSceneUtil::LoadAllMainSceneNavBin()
 	}
 }
 
-void GameNodeSceneUtil::InitNodeScene()
+void GameNodeSceneUtil::InitializeNodeScenes()
 {
 	if (!(gGameNode->GetNodeType() == eGameNodeType::kMainSceneNode ||
 		gGameNode->GetNodeType() == eGameNodeType::kMainSceneCrossNode))
@@ -100,7 +100,7 @@ void GameNodeSceneUtil::RegisterSceneToCentre()
 	BroadCastToCentre(CentreSceneServiceRegisterSceneMsgId, request);
 }
 
-void GameNodeSceneUtil::OnSceneCreateHandler(const OnSceneCreate& message)
+void GameNodeSceneUtil::HandleSceneCreation(const OnSceneCreate& message)
 {
 	entt::entity scene = entt::to_entity(message.entity());
 	tls.sceneRegistry.emplace<SceneGridListComp>(scene);
@@ -114,12 +114,12 @@ void GameNodeSceneUtil::OnSceneCreateHandler(const OnSceneCreate& message)
 	}
 }
 
-void GameNodeSceneUtil::AfterEnterSceneHandler(const AfterEnterScene& message)
+void GameNodeSceneUtil::HandleAfterEnterSceneEvent(const AfterEnterScene& message)
 {
 	// Placeholder for future implementations
 }
 
-void GameNodeSceneUtil::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
+void GameNodeSceneUtil::HandleBeforeLeaveSceneEvent(const BeforeLeaveScene& message)
 {
 	// Placeholder for future implementations
 }
