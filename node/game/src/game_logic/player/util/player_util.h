@@ -9,6 +9,6 @@
 class PlayerSceneUtil
 {
 public:
-	static void OnEnterScene(entt::entity player, entt::entity scene);
-	static void LeaveScene(entt::entity player);
+	static void HandleEnterScene(entt::entity player, entt::entity scene);
+	static void HandleLeaveScene(entt::entity player);
 };

@@ -169,7 +169,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\config\config_util.cpp" />
     <ClCompile Include="src\game_logic\scene\system\movement_system.cpp" />
     <ClCompile Include="src\game_logic\scene\system\movement_acceleration_system.cpp" />
-    <ClCompile Include="src\game_logic\scene\system\game_node_scene_system.cpp" />
+    <ClCompile Include="src\game_logic\scene\util\game_node_scene_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_node_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_session_util.cpp" />
@@ -224,7 +224,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\config\config_util.h" />
     <ClInclude Include="src\game_logic\scene\system\movement_system.h" />
     <ClInclude Include="src\game_logic\scene\system\movement_acceleration_system.h" />
-    <ClInclude Include="src\game_logic\scene\system\game_node_scene_system.h" />
+    <ClInclude Include="src\game_logic\scene\util\game_node_scene_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_node_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_session_util.h" />

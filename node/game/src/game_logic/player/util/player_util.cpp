@@ -10,7 +10,7 @@
 #include "service/scene_client_player_service.h"
 
 
-void PlayerSceneUtil::OnEnterScene(entt::entity player, entt::entity scene)
+void PlayerSceneUtil::HandleEnterScene(entt::entity player, entt::entity scene)
 {
 	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(scene);
 	if (sceneInfo == nullptr)
@@ -24,7 +24,7 @@ void PlayerSceneUtil::OnEnterScene(entt::entity player, entt::entity scene)
 	SendMessageToPlayer(ClientPlayerSceneServicePushEnterSceneS2CMsgId, message, player);
 }
 
-void PlayerSceneUtil::LeaveScene(entt::entity player)
+void PlayerSceneUtil::HandleLeaveScene(entt::entity player)
 {
 
 }
