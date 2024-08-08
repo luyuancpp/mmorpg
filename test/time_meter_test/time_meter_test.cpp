@@ -8,7 +8,7 @@
 TEST(TimeMeter, IsExpired)
 {
 	TimeMeter timeMeter;
-	timeMeter.SetDuration(std::chrono::seconds(5)); // 设置时间测量器持续时间为5秒
+	timeMeter.SetDuration(5); // 设置时间测量器持续时间为5秒
 
 	// 开始计时
 	timeMeter.Reset();
@@ -24,7 +24,7 @@ TEST(TimeMeter, IsExpired)
 	}
 
 	// 调整时间测量器的持续时间为10秒
-	timeMeter.SetDuration(std::chrono::seconds(10));
+	timeMeter.SetDuration(10);
 
 	// 重新开始计时
 	timeMeter.Reset();
