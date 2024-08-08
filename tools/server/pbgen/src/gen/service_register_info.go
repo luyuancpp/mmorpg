@@ -3,7 +3,6 @@ package gen
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"math"
 	"os"
 	"path/filepath"
@@ -78,34 +77,34 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 	return nil
 }
 
-func ReadProtoFileGrpcService(fd os.DirEntry, filePath string) (err error) {
+// ReadProtoFileGrpcService reads gRPC service information from a protobuf file.
+func ReadProtoFileGrpcService(fd os.DirEntry, filePath string) error {
 	defer util.Wg.Done()
+
 	if !util.IsProtoFile(fd) {
-		return fmt.Errorf("not a proto file: %s", filePath)
+		return fmt.Errorf("not a proto file: %s", fd.Name())
 	}
-	f, err := os.Open(filePath + fd.Name())
+
+	f, err := os.Open(filepath.Join(filePath, fd.Name()))
 	if err != nil {
-		log.Fatal(err)
-		return err
+		return fmt.Errorf("failed to open file %s: %w", fd.Name(), err)
 	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(f)
+	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	var line string
 	ccGenericServices := false
+
 	for scanner.Scan() {
-		line = scanner.Text()
+		line := scanner.Text()
+
 		if strings.Contains(line, config.CcGenericServices) {
 			ccGenericServices = true
 		}
+
 		if ccGenericServices {
 			continue
 		}
+
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			GrpcServiceFileMap.Store(fd.Name(), "")
 			break
@@ -113,11 +112,13 @@ func ReadProtoFileGrpcService(fd os.DirEntry, filePath string) (err error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error reading file %s: %w", fd.Name(), err)
 	}
-	return err
+
+	return nil
 }
 
+// ReadAllProtoFileServices reads all service information from protobuf files in configured directories.
 func ReadAllProtoFileServices() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		fds, _ := os.ReadDir(config.ProtoDirs[i])
@@ -125,38 +126,43 @@ func ReadAllProtoFileServices() {
 			util.Wg.Add(1)
 			fd := v
 			go func(i int, fd os.DirEntry) {
-				ReadProtoFileService(fd, config.ProtoDirs[i])
+				_ = ReadProtoFileService(fd, config.ProtoDirs[i])
 			}(i, fd)
 
 			util.Wg.Add(1)
 			go func(i int, fd os.DirEntry) {
-				ReadProtoFileGrpcService(fd, config.ProtoDirs[i])
+				_ = ReadProtoFileGrpcService(fd, config.ProtoDirs[i])
 			}(i, fd)
 		}
 	}
 }
 
-func readServiceIdFile() {
+// readServiceIdFile reads service IDs from a file and populates the ServiceIdMap.
+func readServiceIdFile() error {
 	defer util.Wg.Done()
+
 	f, err := os.Open(config.ServiceIdsFileName)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return fmt.Errorf("failed to open file %s: %w", config.ServiceIdsFileName, err)
 	}
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	var line string
 	for scanner.Scan() {
-		line = scanner.Text()
+		line := scanner.Text()
 		splitList := strings.Split(line, "=")
-		id, _ := strconv.ParseUint(splitList[0], 10, 64)
-		ServiceIdMap[splitList[1]] = id
-
+		id, err := strconv.ParseUint(splitList[0], 10, 64)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("failed to parse ID from line %s: %w", line, err)
 		}
+		ServiceIdMap[splitList[1]] = id
 	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading file %s: %w", config.ServiceIdsFileName, err)
+	}
+
+	return nil
 }
 
 func ReadServiceIdFile() {
