@@ -25,10 +25,8 @@ type Ability struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier for the ability.
 	AbilityId uint64 `protobuf:"varint,1,opt,name=ability_id,json=abilityId,proto3" json:"ability_id,omitempty"`
-	// Identifier linking to a table entry for additional details.
-	TableId uint32 `protobuf:"varint,2,opt,name=table_id,json=tableId,proto3" json:"table_id,omitempty"`
+	TableId   uint32 `protobuf:"varint,2,opt,name=table_id,json=tableId,proto3" json:"table_id,omitempty"`
 }
 
 func (x *Ability) Reset() {
