@@ -10,92 +10,93 @@ import (
 
 // getClientMethodHandlerHeadStr 生成客户端方法处理器头文件字符串
 func getClientMethodHandlerHeadStr(methodList RPCMethods) string {
-	var data strings.Builder
-	data.WriteString("#pragma once\n")
-	data.WriteString("#include <sol/sol.hpp>\n")
-	data.WriteString("#include \"thread_local/storage_lua.h\"\n")
-	data.WriteString(methodList[0].IncludeName() + "\n")
-	data.WriteString("class " + methodList[0].Service + config.HandlerName + " : public ::" + methodList[0].Service + " {\n")
-	data.WriteString("public:\n")
-	data.WriteString(config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n")
-	data.WriteString(config.Tab + "                 ::google::protobuf::RpcController* controller,\n")
-	data.WriteString(config.Tab + "                 const ::google::protobuf::Message* request,\n")
-	data.WriteString(config.Tab + "                 ::google::protobuf::Message* response,\n")
-	data.WriteString(config.Tab + "                 ::google::protobuf::Closure* done) override {\n")
-	data.WriteString(config.Tab2 + "switch(method->index()) {\n")
+	var builder strings.Builder
+
+	builder.WriteString("#pragma once\n")
+	builder.WriteString("#include <sol/sol.hpp>\n")
+	builder.WriteString("#include \"thread_local/storage_lua.h\"\n")
+	builder.WriteString(methodList[0].IncludeName() + "\n")
+	builder.WriteString("class " + methodList[0].Service + config.HandlerName + " : public ::" + methodList[0].Service + " {\n")
+	builder.WriteString("public:\n")
+	builder.WriteString(config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n")
+	builder.WriteString(config.Tab + "                 ::google::protobuf::RpcController* controller,\n")
+	builder.WriteString(config.Tab + "                 const ::google::protobuf::Message* request,\n")
+	builder.WriteString(config.Tab + "                 ::google::protobuf::Message* response,\n")
+	builder.WriteString(config.Tab + "                 ::google::protobuf::Closure* done) override {\n")
+	builder.WriteString(config.Tab2 + "switch(method->index()) {\n")
 
 	for i, method := range methodList {
-		data.WriteString(config.Tab3 + "case " + strconv.Itoa(i) + ":\n")
-		data.WriteString(config.Tab3 + "{\n")
-		data.WriteString(config.Tab4 + "tls_lua_state[\"" + method.KeyName() + config.HandlerName + "\"](\n")
-		data.WriteString(config.Tab4 + "    ::google::protobuf::internal::DownCast<const ::" + method.Request + "*>(request),\n")
-		data.WriteString(config.Tab4 + "    ::google::protobuf::internal::DownCast<::" + method.Response + "*>(response));\n")
-		data.WriteString(config.Tab3 + "}\n")
-		data.WriteString(config.Tab3 + "break;\n")
+		builder.WriteString(config.Tab3 + "case " + strconv.Itoa(i) + ":\n")
+		builder.WriteString(config.Tab3 + "{\n")
+		builder.WriteString(config.Tab4 + "tls_lua_state[\"" + method.KeyName() + config.HandlerName + "\"](\n")
+		builder.WriteString(config.Tab4 + "    ::google::protobuf::internal::DownCast<const ::" + method.Request + "*>(request),\n")
+		builder.WriteString(config.Tab4 + "    ::google::protobuf::internal::DownCast<::" + method.Response + "*>(response));\n")
+		builder.WriteString(config.Tab3 + "}\n")
+		builder.WriteString(config.Tab3 + "break;\n")
 	}
-	data.WriteString(config.Tab3 + "default:\n")
-	data.WriteString(config.Tab4 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\"\n")
-	data.WriteString(config.Tab3 + "break;\n")
-	data.WriteString(config.Tab2 + "}\n")
-	data.WriteString(config.Tab + "}\n")
-	data.WriteString("};\n")
-	return data.String()
+	builder.WriteString(config.Tab3 + "default:\n")
+	builder.WriteString(config.Tab4 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\"\n")
+	builder.WriteString(config.Tab3 + "break;\n")
+	builder.WriteString(config.Tab2 + "}\n")
+	builder.WriteString(config.Tab + "}\n")
+	builder.WriteString("};\n")
+	return builder.String()
 }
 
 // isClientMethodRepliedHandler 检查是否为客户端方法已响应处理器
 func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
-	if len(*methodList) <= 0 {
+	if len(*methodList) == 0 {
 		return false
 	}
-	firstMethodInfo := (*methodList)[0]
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
-		return true
-	}
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		return strings.Contains(firstMethodInfo.FileBaseName(), config.LoginPrefixName)
-	}
-	return false
+	firstMethod := (*methodList)[0]
+	return strings.Contains(firstMethod.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
+		(strings.Contains(firstMethod.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) &&
+			strings.HasPrefix(firstMethod.FileBaseName(), config.LoginPrefixName))
 }
 
 // writeClientMethodHandlerHeadFile 写入客户端方法处理器头文件
 func writeClientMethodHandlerHeadFile(methodList RPCMethods) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 || !isClientMethodRepliedHandler(&methodList) {
+	if len(methodList) == 0 || !isClientMethodRepliedHandler(&methodList) {
 		return
 	}
+
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
 	util.WriteMd5Data2File(config.ClientMethodHandleDir+fileName, getClientMethodHandlerHeadStr(methodList))
 }
 
 // writeClientHandlerDefaultInstanceFile 写入客户端处理器默认实例文件
 func writeClientHandlerDefaultInstanceFile() {
-	defer util.Wg.Done()
-	var data strings.Builder
-	var includeData strings.Builder
-	var instanceData strings.Builder
+
+	var builder strings.Builder
+	var includeBuilder strings.Builder
+	var instanceBuilder strings.Builder
 
 	ServiceList := GetSortServiceList()
+
 	for _, key := range ServiceList {
 		methodList, ok := ServiceMethodMap[key]
-		if !ok || len(methodList) <= 0 || !isClientMethodRepliedHandler(&methodList) {
+		if !ok || len(methodList) == 0 || !isClientMethodRepliedHandler(&methodList) {
 			continue
 		}
 		method1Info := methodList[0]
-		includeData.WriteString(config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine)
-		instanceData.WriteString(config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
+		includeBuilder.WriteString(config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine)
+		instanceBuilder.WriteString(config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
 			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">());\n")
 	}
-	data.WriteString(includeData.String())
-	data.WriteString("std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_service;\n")
-	data.WriteString("void InitPlayerService() {\n")
-	data.WriteString(instanceData.String())
-	data.WriteString("}\n")
-	util.WriteMd5Data2File(config.ClientServiceInstanceFile, data.String())
+
+	builder.WriteString(includeBuilder.String())
+	builder.WriteString("std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_service;\n")
+	builder.WriteString("void InitPlayerService() {\n")
+	builder.WriteString(instanceBuilder.String())
+	builder.WriteString("}\n")
+
+	util.WriteMd5Data2File(config.ClientServiceInstanceFile, builder.String())
 }
 
 // WriteClientServiceHeadHandlerFile 写入客户端服务头处理器文件
 func WriteClientServiceHeadHandlerFile() {
 	var wg sync.WaitGroup
+
 	for _, v := range ServiceMethodMap {
 		wg.Add(1)
 		go func(methodList RPCMethods) {
@@ -103,10 +104,12 @@ func WriteClientServiceHeadHandlerFile() {
 			writeClientMethodHandlerHeadFile(methodList)
 		}(v)
 	}
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		writeClientHandlerDefaultInstanceFile()
 	}()
+
 	wg.Wait()
 }
