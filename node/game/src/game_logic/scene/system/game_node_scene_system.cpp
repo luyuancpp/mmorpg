@@ -23,7 +23,7 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/constants/node.pb.h"
 
-void GameNodeSceneUtil::LoadAllMainSceneNavBin()
+void GameNodeSceneUtil::LoadMainSceneNavBins()
 {
 	auto& configAll = GetMainSceneAllTable();
 	for (auto& item : configAll.data())
