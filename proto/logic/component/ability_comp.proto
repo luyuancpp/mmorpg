@@ -4,10 +4,7 @@ option go_package = "pb/game";
 
 message Ability 
 {
-  // Unique identifier for the ability.
   uint64 ability_id = 1;
-
-  // Identifier linking to a table entry for additional details.
   uint32 table_id = 2;
 }
 
