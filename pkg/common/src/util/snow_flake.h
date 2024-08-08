@@ -32,12 +32,12 @@ public:
     SnowFlake& operator=(const SnowFlake&) = delete;
     SnowFlake() {}
 
-    inline void set_node_id(uint16_t node_id)
-    {
-        node_id_ = node_id;
-        node_ = node_id;
-        node_ = (node_ << kTimeByte) << kStepBits;
-    }
+	inline void set_node_id(uint16_t node_id)
+	{
+		node_id_ = node_id;
+		node_ = (static_cast<uint64_t>(node_id) << kStepBits) & ((1 << kNodeBits) - 1);
+	}
+
     inline uint64_t node_id()const { return node_id_; }
 
     inline void set_epoch(uint64_t epoch) { epoch_ = epoch; }
