@@ -1,6 +1,6 @@
-#include <iostream>
+#pragma once
+
 #include <chrono>
-#include <thread>
 
 class TimeMeter {
 public:
