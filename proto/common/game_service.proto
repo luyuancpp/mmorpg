@@ -10,7 +10,7 @@ import "logic/component/scene_comp.proto";
 option cc_generic_services = true;
 
 
-message GameNodeEnterGsRequest
+message PlayerEnterGameNodeRequest
 {
   uint64 player_id = 1;
   uint64 session_id = 2;
@@ -67,7 +67,7 @@ message CreateSceneResponse
 }
 
 service GameService {
-  rpc EnterGs (GameNodeEnterGsRequest) returns (Empty);
+  rpc PlayerEnterGameNode (PlayerEnterGameNodeRequest) returns (Empty);
   rpc Send2Player (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc ClientSend2Player (PlayerClientRequest) returns (PlayerClientResponse);
   rpc Disconnect (GameNodeDisconnectRequest) returns (Empty); 

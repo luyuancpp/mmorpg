@@ -3,7 +3,7 @@ void InitRepliedHandler()
 	void InitCentreServiceRegisterGameNodeRepliedHandler();
 	InitCentreServiceRegisterGameNodeRepliedHandler();
 
-	void InitGameServiceEnterGsRepliedHandler();
-	InitGameServiceEnterGsRepliedHandler();
+	void InitGameServicePlayerEnterGameNodeRepliedHandler();
+	InitGameServicePlayerEnterGameNodeRepliedHandler();
 
 }
