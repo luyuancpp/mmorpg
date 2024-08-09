@@ -7,7 +7,7 @@ message AccountSimplePlayer
   uint64 player_id = 1;
 }
 
-message account_simple_players
+message AccountSimplePlayerList
 {
   repeated AccountSimplePlayer players = 1;
 }

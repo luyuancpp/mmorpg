@@ -14,7 +14,7 @@ message user_accounts
   option(OptionPrimaryKey) = "account";
   string account = 1;
   string password = 2;
-  account_simple_players simple_players = 3;
+  AccountSimplePlayerList simple_players = 3;
 }
 
 message account_share_database
