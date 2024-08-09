@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "common/common.proto";
+import "common/session.proto";
 
 message RouteNodeInfo
 {
@@ -105,4 +106,9 @@ message PlayerMessageRespone
 message NodeRouteMessageBody
 {
    NodeInfo node_info = 2;
+}
+
+message GateSessionDisconnectRequest
+{
+  SessionInfo session_info = 1;
 }

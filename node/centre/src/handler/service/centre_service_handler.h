@@ -46,7 +46,7 @@ public:
 
 
 	void LsDisconnect(::google::protobuf::RpcController* controller,
-		const ::CtrlLsDisconnectRequest* request,
+		const ::GateSessionDisconnectRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
