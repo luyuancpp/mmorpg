@@ -10,7 +10,7 @@
 
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,const ::RegisterGameRequest* request,
+void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,const ::RegisterGameNodeRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -42,7 +42,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,const ::UnRegisterGameRequest* request,
+void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,const ::UnRegisterGameNodeRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {

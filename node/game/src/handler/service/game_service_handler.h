@@ -27,8 +27,8 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void RegisterGate(::google::protobuf::RpcController* controller,
-		const ::RegisterGateRequest* request,
+	void RegisterGateNode(::google::protobuf::RpcController* controller,
+		const ::RegisterGateNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 

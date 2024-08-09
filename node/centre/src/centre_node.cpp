@@ -155,7 +155,7 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::enti
 		LOG_ERROR << "game not found ";
 		return;
 	}
-	RegisterGameRequest request;
+	RegisterGameNodeRequest request;
 	request.mutable_rpc_server()->set_ip(gameNodeServiceAddr->toIp());
 	request.mutable_rpc_server()->set_port(gameNodeServiceAddr->port());
 	request.set_game_node_id(entt::to_integral(gameNodeId));

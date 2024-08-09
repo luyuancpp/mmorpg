@@ -206,7 +206,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::RegisterGate(::google::protobuf::RpcController* controller,const ::RegisterGateRequest* request,
+void GameServiceHandler::RegisterGateNode(::google::protobuf::RpcController* controller,const ::RegisterGateNodeRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
