@@ -70,7 +70,7 @@ service GameService {
   rpc PlayerEnterGameNode (PlayerEnterGameNodeRequest) returns (Empty);
   rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc ClientSendMessageToPlayer (PlayerClientRequest) returns (PlayerClientResponse);
-  rpc Disconnect (GameNodeDisconnectRequest) returns (Empty); 
+  rpc SessionDisconnect (GameNodeDisconnectRequest) returns (Empty); 
   rpc RegisterGateNode (RegisterGateNodeRequest) returns (Empty);
   rpc CentreSendToPlayerViaGameNode (NodeRouteMessageRequest) returns (Empty);
   rpc InvokePlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
