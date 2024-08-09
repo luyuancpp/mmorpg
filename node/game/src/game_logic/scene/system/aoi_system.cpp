@@ -113,9 +113,9 @@ void AoiSystem::Update(double deltaTime) {
                 }
             }
         }
-        SendMessageToPlayer(ClientPlayerSceneServicePushActorListCreateS2CMsgId, actorListCreateMessage, entity);
+        SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListCreateMsgId, actorListCreateMessage, entity);
 
-        BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServicePushActorCreateS2CMsgId, actorCreateMessage);
+        BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServiceNotifyActorCreateMsgId, actorCreateMessage);
         BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
     }
 }
@@ -230,6 +230,6 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridListComp& gridList, ent
             ViewUtil::HandlePlayerLeaveMessage(entity, observer);
         }
     }
-    SendMessageToPlayer(ClientPlayerSceneServicePushActorListDestroyS2CMsgId, actorListDestroyMessage, entity);
-    BroadCastToPlayer(observersToNotifyExit, ClientPlayerSceneServicePushActorDestroyS2CMsgId, actorDestroyMessage);
+    SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListDestroyMsgId, actorListDestroyMessage, entity);
+    BroadCastToPlayer(observersToNotifyExit, ClientPlayerSceneServiceNotifyActorDestroyMsgId, actorDestroyMessage);
 }

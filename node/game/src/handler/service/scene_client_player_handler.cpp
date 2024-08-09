@@ -10,7 +10,7 @@
 
 #include "proto/logic/constants/node.pb.h"
 ///<<< END WRITING YOUR CODE
-void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,const ::EnterSceneC2SRequest* request,
+void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,
 	     EnterSceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -53,7 +53,7 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,const ::
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,const ::EnterSceneS2C* request,
+void ClientPlayerSceneServiceHandler::NotifyEnterScene(entt::entity player,const ::EnterSceneS2C* request,
 	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -69,35 +69,35 @@ void ClientPlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,const ::S
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,const ::SceneInfoS2C* request,
+void ClientPlayerSceneServiceHandler::NotifySceneInfo(entt::entity player,const ::SceneInfoS2C* request,
 	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushActorCreateS2C(entt::entity player,const ::ActorCreateS2C* request,
+void ClientPlayerSceneServiceHandler::NotifyActorCreate(entt::entity player,const ::ActorCreateS2C* request,
 	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushActorDestroyS2C(entt::entity player,const ::ActorDestroyS2C* request,
+void ClientPlayerSceneServiceHandler::NotifyActorDestroy(entt::entity player,const ::ActorDestroyS2C* request,
 	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushActorListCreateS2C(entt::entity player,const ::ActorListCreateS2C* request,
+void ClientPlayerSceneServiceHandler::NotifyActorListCreate(entt::entity player,const ::ActorListCreateS2C* request,
 	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceHandler::PushActorListDestroyS2C(entt::entity player,const ::ActorListDestroyS2C* request,
+void ClientPlayerSceneServiceHandler::NotifyActorListDestroy(entt::entity player,const ::ActorListDestroyS2C* request,
 	     Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
