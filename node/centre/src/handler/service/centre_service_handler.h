@@ -3,14 +3,14 @@
 class CentreServiceHandler : public ::CentreService
 {
 public:
-	void RegisterGame(::google::protobuf::RpcController* controller,
-		const ::RegisterGameRequest* request,
+	void RegisterGameNode(::google::protobuf::RpcController* controller,
+		const ::RegisterGameNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void RegisterGate(::google::protobuf::RpcController* controller,
-		const ::RegisterGateRequest* request,
+	void RegisterGateNode(::google::protobuf::RpcController* controller,
+		const ::RegisterGateNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
@@ -27,13 +27,13 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void LsLoginAccount(::google::protobuf::RpcController* controller,
+	void LoginNodeLoginAccount(::google::protobuf::RpcController* controller,
 		const ::LoginRequest* request,
 		::LoginResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void OnLoginEnterGame(::google::protobuf::RpcController* controller,
+	void LoginNodeEnterGame(::google::protobuf::RpcController* controller,
 		const ::CentrePlayerGameNodeEntryRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
@@ -45,7 +45,7 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void LsDisconnect(::google::protobuf::RpcController* controller,
+	void LoginNodeDisconnect(::google::protobuf::RpcController* controller,
 		const ::GateSessionDisconnectRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
@@ -75,8 +75,8 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void UnRegisterGame(::google::protobuf::RpcController* controller,
-		const ::UnRegisterGameRequest* request,
+	void UnRegisterGameNode(::google::protobuf::RpcController* controller,
+		const ::UnRegisterGameNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 

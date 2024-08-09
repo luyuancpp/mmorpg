@@ -4,13 +4,13 @@ class GateServiceHandler : public ::GateService
 {
 public:
 	void RegisterGame(::google::protobuf::RpcController* controller,
-		const ::RegisterGameRequest* request,
+		const ::RegisterGameNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
 
 	void UnRegisterGame(::google::protobuf::RpcController* controller,
-		const ::UnRegisterGameRequest* request,
+		const ::UnRegisterGameNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 

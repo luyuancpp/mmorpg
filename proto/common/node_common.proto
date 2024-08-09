@@ -43,7 +43,7 @@ message RoutePlayerMsgStringResponse
   PlayerMessageExtern player_ex = 3;
 }
 
-message RegisterGameRequest
+message RegisterGameNodeRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
@@ -51,13 +51,13 @@ message RegisterGameRequest
   uint32 server_type = 4;
 }
 
-message RegisterGateRequest
+message RegisterGateNodeRequest
 {
   IpPort rpc_client = 1;
   uint32 gate_node_id = 2;
 }
 
-message UnRegisterGameRequest
+message UnRegisterGameNodeRequest
 {
   uint32 game_node_id = 1;
 }
