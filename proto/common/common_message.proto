@@ -57,37 +57,36 @@ message NodeRouteMessageBody
    NodeInfo node_info = 2;
 }
 
-
 message RegisterGameNodeSessionRequest
 {
-  SessionInfo session_info = 1;
+  SessionDetails session_info = 1;
   uint32 game_node_id = 2;
 }
 
 message RegisterGameNodeSessionResponse
 {
-  SessionInfo session_info = 1;
+  SessionDetails session_info = 1;
 }
 
 message RegisterSessionGateNodeResponse
 {
-  SessionInfo session_info = 1;
+  SessionDetails session_info = 1;
 }
 
 message RegisterCentreSessionNodeRequest
 {
-  SessionInfo session_info = 1;
+  SessionDetails session_info = 1;
   uint32 centre_node_id = 2;
 }
 
 message RegisterSessionCentreNodeResponse
 {
-  SessionInfo session_info = 1;
+  SessionDetails session_info = 1;
 }
 
 message GateSessionDisconnectRequest
 {
-  SessionInfo session_info = 1;
+  SessionDetails session_info = 1;
 }
 
 message RouteMsgStringRequest
