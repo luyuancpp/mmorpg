@@ -53,8 +53,8 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,const ::RegisterSessionGameNodeRequest* request,
-	     RegisterSessionGameNodeResponse* response,
+void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,const ::RegisterGameNodeSessionRequest* request,
+	     RegisterGameNodeSessionResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
