@@ -136,7 +136,7 @@ void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(playerNodeInfo->gate_session_id());
 	request.set_player_id(*playerId);
-	SendToGs(GameServiceUpdateSessionMsgId, request, playerNodeInfo->game_node_id());
+	SendToGs(GameServiceUpdateSessionDetailMsgId, request, playerNodeInfo->game_node_id());
 
 	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGsFlag>(playerEntity))
 	{

@@ -135,7 +135,7 @@ void PlayerSceneUtil::ProcessPlayerEnterGameServer(entt::entity playerEntity, No
     request.set_player_id(tls.registry.get<Guid>(playerEntity));
     request.set_session_id(playerNodeInfo->gate_session_id());
     request.set_centre_node_id(gCentreNode ->GetNodeId());
-    CallGameNodeMethod(GameServiceEnterGsMsgId, request, nodeId);
+    CallGameNodeMethod(GameServicePlayerEnterGameNodeMsgId, request, nodeId);
 }
 
 void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)

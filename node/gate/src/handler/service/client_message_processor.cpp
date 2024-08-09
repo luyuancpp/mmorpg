@@ -141,7 +141,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 		message.set_session_id(sessionId);
 		message.set_id(request->id());
 		message.set_message_id(request->message_id());
-		gameNode->CallMethod(GameServiceClientSend2PlayerMsgId, message);
+		gameNode->CallMethod(GameServiceClientSendMessageToPlayerMsgId, message);
 
 		LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 	}
