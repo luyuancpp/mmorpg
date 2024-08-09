@@ -218,12 +218,14 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 	// Notice: Asynchronous process: If the gate reconnects first and then disconnects, it might
 	// inadvertently disconnect a newly arrived connection. Extreme cases need testing to see
 
-	defer(tlsSessions.erase(request->session_id()));
+	defer(tlsSessions.erase(request->session_info().session_id()));
 
-	const auto playerEntity = GetPlayerEntityBySessionId(request->session_id());
+	auto session_id = request->session_info().session_id();
+
+	const auto playerEntity = GetPlayerEntityBySessionId(session_id);
 	if (playerEntity == entt::null)
 	{
-		LOG_ERROR << "Player entity not found for session ID: " << request->session_id();
+		LOG_ERROR << "Player entity not found for session ID: " << session_id;
 		return;
 	}
 
@@ -234,10 +236,10 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 		return;
 	}
 
-	if (playerNodeInfo->gate_session_id() != request->session_id())
+	if (playerNodeInfo->gate_session_id() != session_id)
 	{
 		LOG_ERROR << "Mismatched gate session ID for player: " << playerNodeInfo->gate_session_id()
-			<< ", expected session ID: " << request->session_id();
+			<< ", expected session ID: " << session_id;
 		return;
 	}
 
@@ -372,7 +374,7 @@ void CentreServiceHandler::LoginNodeLeaveGame(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LoginNodeDisconnect(::google::protobuf::RpcController* controller,const ::LoginNodeDisconnectRequest* request,
+void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* controller,const ::GateSessionDisconnectRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {

@@ -84,7 +84,7 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 		// Notify centre server about disconnection
 		{
 			GateSessionDisconnectRequest request;
-			request.set_session_id(sessionId);
+			request.mutable_session_info()->set_session_id(sessionId);
 			g_gate_node->GetZoneCentreNode()->CallMethod(CentreServiceGateSessionDisconnectMsgId, request);
 		}
 
