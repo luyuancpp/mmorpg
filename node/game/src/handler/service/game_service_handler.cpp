@@ -138,8 +138,8 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
     ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* controller,const ::GameNodeRpcClientRequest* request,
-	     GameNodeRpcClientResponse* response,
+void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* controller,const ::PlayerClientRequest* request,
+	     PlayerClientResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE

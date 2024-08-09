@@ -21,13 +21,7 @@ private:
 class DeployConfig
 {
 public:
-    enum ConnectionDeployEnum
-    {
-        SERVER_DATABASE = 0,
-        SERVER_DEPLOY = 1,
-    };
-    const ConnetionParam& database_param() { return connetion_param_.data(SERVER_DATABASE); }
-    const ConnetionParam& deploy_info() { return connetion_param_.data(SERVER_DEPLOY); }
+    const ConnetionParam& deploy_info() { return connetion_param_; }
 
     static DeployConfig& GetSingleton() {
         static DeployConfig singleton;
@@ -37,7 +31,7 @@ public:
     void Load(const std::string& filename);
 
 private:
-    ConnetionParamJsonFormat connetion_param_;
+    ConnetionParam connetion_param_;
 };
 
 

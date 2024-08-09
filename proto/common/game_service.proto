@@ -17,7 +17,7 @@ message GameNodeEnterGsRequest
   uint32 centre_node_id = 3;
 }
 
-message GameNodeRpcClientRequest
+message PlayerClientRequest
 {
   bytes body = 1;
   uint64 session_id = 2;
@@ -25,7 +25,7 @@ message GameNodeRpcClientRequest
   uint64 id = 4;
 }
 
-message GameNodeRpcClientResponse
+message PlayerClientResponse
 {
   bytes response = 1;
   uint64 session_id = 2;
@@ -69,7 +69,7 @@ message CreateSceneResponse
 service GameService {
   rpc EnterGs (GameNodeEnterGsRequest) returns (Empty);
   rpc Send2Player (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
-  rpc ClientSend2Player (GameNodeRpcClientRequest) returns (GameNodeRpcClientResponse);
+  rpc ClientSend2Player (PlayerClientRequest) returns (PlayerClientResponse);
   rpc Disconnect (GameNodeDisconnectRequest) returns (Empty); 
   rpc RegisterGateNode (RegisterGateNodeRequest) returns (Empty);
   rpc CentreSend2PlayerViaGs (NodeRouteMessageRequest) returns (Empty);

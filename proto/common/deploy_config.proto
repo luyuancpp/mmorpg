@@ -13,11 +13,6 @@ message ConnetionParam
   string db_dbname = 7;
 }
 
-message ConnetionParamJsonFormat
-{
-  repeated ConnetionParam data = 1;
-}
-
 message GameConfigInfo
 {
   uint32 zone_id = 1;
@@ -32,8 +27,4 @@ message GameConfigInfo
   string access_secret = 10;
 }
 
-message LobbyConfigInfo
-{
-  uint32 lobby_id = 1;
-  uint32 loglevel = 3;
-}
+
