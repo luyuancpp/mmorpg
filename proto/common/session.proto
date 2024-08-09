@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message SessionInfo
+message SessionDetails
 {
   uint64 session_id = 1;
 }
