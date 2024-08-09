@@ -201,7 +201,6 @@
     <ClCompile Include="src\handler\service_replied\player_service_replied.cpp" />
     <ClCompile Include="src\handler\service_replied\register_replied_handler.cpp" />
     <ClCompile Include="src\handler\service_replied\scene_player_replied_handler.cpp" />
-    <ClCompile Include="src\handler\service_replied\team_client_player_replied_handler.cpp" />
     <ClCompile Include="src\game_logic\scene\util\player_change_scene_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_node_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\player_scene.cpp" />
@@ -237,7 +236,6 @@
     <ClInclude Include="src\handler\service_replied\login_service_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\player_service_replied.h" />
     <ClInclude Include="src\handler\service_replied\scene_player_replied_handler.h" />
-    <ClInclude Include="src\handler\service_replied\team_client_player_replied_handler.h" />
     <ClInclude Include="src\game_logic\scene\util\player_change_scene_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_node_util.h" />
     <ClInclude Include="src\game_logic\scene\util\player_scene.h" />
