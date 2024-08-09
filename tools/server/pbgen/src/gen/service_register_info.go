@@ -271,24 +271,66 @@ func GetSortServiceList() []string {
 // writeServiceInfoCppFile writes service information to a C++ file.
 func writeServiceInfoCppFile() {
 	defer util.Wg.Done()
-	var data strings.Builder
-	var idList []uint64
 
-	for k := range RpcIdMethodMap {
-		idList = append(idList, k)
-	}
-	sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
+	var includeBuilder strings.Builder
+	includeBuilder.WriteString("#include <array>\n")
+	includeBuilder.WriteString("#include \"service.h\"\n")
 
-	for i, id := range idList {
-		rpcMethodInfo := RpcIdMethodMap[id]
-		if rpcMethodInfo == nil {
-			fmt.Println("msg id=", strconv.Itoa(i), " not used")
+	var classHandlerBuilder strings.Builder
+	var initFuncBuilder strings.Builder
+
+	initFuncBuilder.WriteString("std::unordered_set<uint32_t> g_c2s_service_id;\n")
+	initFuncBuilder.WriteString("std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> g_message_info;\n\n")
+	initFuncBuilder.WriteString("void InitMessageInfo()\n{\n")
+
+	// Collect all service list and generate include statements and class handlers
+	serviceList := GetSortServiceList()
+	for _, serviceName := range serviceList {
+		methods := ServiceMethodMap[serviceName]
+		if len(methods) == 0 {
 			continue
 		}
-		data.WriteString(fmt.Sprintf("%d=%s\n", rpcMethodInfo.Id, rpcMethodInfo.KeyName()))
+
+		includeBuilder.WriteString(methods[0].IncludeName())
+		handlerClassName := serviceName + "Impl"
+		classHandlerBuilder.WriteString("class " + handlerClassName + " final : public " + serviceName + "{};\n")
 	}
 
-	util.WriteMd5Data2File(config.ServiceIdsFileName, data.String())
+	// Generate initialization functions
+	for _, serviceName := range serviceList {
+		methods := ServiceMethodMap[serviceName]
+		for _, method := range methods {
+			rpcId := method.KeyName() + config.MessageIdName
+			initFuncBuilder.WriteString("extern const uint32_t " + rpcId + ";\n")
+			handlerClassName := serviceName + "Impl"
+			initFuncBuilder.WriteString(fmt.Sprintf(
+				"g_message_info[%s] = RpcService{"+
+					"\"%s\","+
+					"\"%s\","+
+					"\"%s\","+
+					"\"%s\","+
+					"std::make_unique_for_overwrite<%s>()};\n",
+				rpcId,
+				method.Service,
+				method.Method,
+				method.Request,
+				method.Response,
+				handlerClassName,
+			))
+			if strings.Contains(rpcId, config.C2SMethodContainsName) {
+				initFuncBuilder.WriteString("g_c2s_service_id.emplace(" + rpcId + ");\n")
+			}
+		}
+		initFuncBuilder.WriteString("\n")
+	}
+
+	includeBuilder.WriteString("\n")
+	classHandlerBuilder.WriteString("\n")
+	initFuncBuilder.WriteString("}\n")
+
+	// Write to file
+	data := includeBuilder.String() + classHandlerBuilder.String() + initFuncBuilder.String()
+	util.WriteMd5Data2File(config.ServiceCppFileName, data)
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
