@@ -213,9 +213,6 @@
     <ClCompile Include="src\proto\common\mysql_database_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\common\node_common.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\common\session.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -426,9 +423,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\common\mysql_database_table.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\common\node_common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\common\session.pb.h">

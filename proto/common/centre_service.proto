@@ -6,7 +6,7 @@ import "common/common.proto";
 import "common/empty.proto";
 import "common/session.proto";
 import "common/c2gate.proto";
-import "common/node_common.proto";
+import "common/common_message.proto";
 
 option cc_generic_services = true;
 
@@ -14,7 +14,6 @@ message GateClientMessageRequest
 {
   NetworkAddress rpc_client = 1;
 }
-
 
 message LoginNodeLeaveGameRequest
 {
