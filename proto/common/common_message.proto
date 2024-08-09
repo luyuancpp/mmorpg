@@ -7,7 +7,7 @@ import "common/session.proto";
 
 message RouteNodeInfo
 {
-  NodeInfo node_info = 1;//当前节点信息
+  NodeInfo node_info = 1;
   uint32 message_id = 2;
 }
 
