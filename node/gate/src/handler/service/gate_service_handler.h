@@ -16,8 +16,8 @@ public:
 
 
 	void PlayerEnterGs(::google::protobuf::RpcController* controller,
-		const ::RegisterSessionGameNodeRequest* request,
-		::RegisterSessionGameNodeResponse* response,
+		const ::RegisterGameNodeSessionRequest* request,
+		::RegisterGameNodeSessionResponse* response,
 		::google::protobuf::Closure* done)override;
 
 

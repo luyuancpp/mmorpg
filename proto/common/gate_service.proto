@@ -29,7 +29,7 @@ message BroadCast2PlayerRequest
 service GateService {
   rpc RegisterGame (RegisterGameNodeRequest) returns (Empty);
   rpc UnRegisterGame (UnRegisterGameNodeRequest) returns (Empty);
-  rpc PlayerEnterGs (RegisterSessionGameNodeRequest) returns (RegisterSessionGameNodeResponse);
+  rpc PlayerEnterGs (RegisterGameNodeSessionRequest) returns (RegisterGameNodeSessionResponse);
   rpc PlayerMessage (NodeRouteMessageRequest) returns (Empty);
   rpc KickConnByCentre (GateNodeKickConnRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);

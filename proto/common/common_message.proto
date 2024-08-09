@@ -46,7 +46,7 @@ message PlayerNodeServiceRequest
   PlayerMessageExtern head = 2;
 }
 
-message PlayerMessageRespone
+message PlayerMessageResponse
 {
   MessageBody body = 1;
   PlayerMessageExtern head = 2;
@@ -58,21 +58,15 @@ message NodeRouteMessageBody
 }
 
 
-message RegisterSessionGameNodeRequest
+message RegisterGameNodeSessionRequest
 {
   SessionInfo session_info = 1;
   uint32 game_node_id = 2;
 }
 
-message RegisterSessionGameNodeResponse
+message RegisterGameNodeSessionResponse
 {
   SessionInfo session_info = 1;
-}
-
-message RegisterSessionGateNodeRequest
-{
-  SessionInfo session_info = 1;
-  uint32 gate_node_id = 2;
 }
 
 message RegisterSessionGateNodeResponse
@@ -80,7 +74,7 @@ message RegisterSessionGateNodeResponse
   SessionInfo session_info = 1;
 }
 
-message RegisterSessionCentreNodeRequest
+message RegisterCentreSessionNodeRequest
 {
   SessionInfo session_info = 1;
   uint32 centre_node_id = 2;
