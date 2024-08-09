@@ -3,36 +3,29 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "common/empty.proto";
-
 import "common/common.proto";
-
 import "common/common_message.proto";
 
 option cc_generic_services = true;
 
-message GsMessageExtern
+message KickSessionRequest
 {
   uint64 session_id = 1;
 }
 
-message GateNodeKickConnRequest
+message BroadcastToPlayersRequest
 {
-  uint64 session_id = 1;
-}
-
-message BroadCast2PlayerRequest
-{
- repeated uint64 session_list = 1;
- MessageBody body = 2;
+  repeated uint64 session_list = 1;
+  MessageBody body = 2;
 }
 
 service GateService {
   rpc RegisterGame (RegisterGameNodeRequest) returns (Empty);
   rpc UnRegisterGame (UnRegisterGameNodeRequest) returns (Empty);
-  rpc PlayerEnterGs (RegisterGameNodeSessionRequest) returns (RegisterGameNodeSessionResponse);
-  rpc PlayerMessage (NodeRouteMessageRequest) returns (Empty);
-  rpc KickConnByCentre (GateNodeKickConnRequest) returns (Empty);
-  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
-  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
-  rpc BroadCast2PlayerMessage (BroadCast2PlayerRequest) returns (Empty);
+  rpc PlayerEnterGameNode (RegisterGameNodeSessionRequest) returns (RegisterGameNodeSessionResponse);
+  rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (Empty);
+  rpc KickSessionByCentre (KickSessionRequest) returns (Empty);
+  rpc RouteNodeMessage (RouteMsgStringRequest) returns (RouteMsgStringResponse);
+  rpc RoutePlayerMessage (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
 }

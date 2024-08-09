@@ -150,7 +150,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
 	request.mutable_head()->set_session_id(sessionId);
 	request.mutable_body()->set_message_id(messageId);
-	gate->Send(GateServicePlayerMessageMsgId, request);
+	gate->Send(GateServiceSendMessageToPlayerMsgId, request);
 }
 
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
