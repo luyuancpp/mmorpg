@@ -27,7 +27,7 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void LoginNodeLoginAccount(::google::protobuf::RpcController* controller,
+	void LoginNodeAccountLogin(::google::protobuf::RpcController* controller,
 		const ::LoginRequest* request,
 		::LoginResponse* response,
 		::google::protobuf::Closure* done)override;
@@ -45,13 +45,13 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void LoginNodeDisconnect(::google::protobuf::RpcController* controller,
+	void LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,
 		const ::GateSessionDisconnectRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void GsPlayerService(::google::protobuf::RpcController* controller,
+	void PlayerService(::google::protobuf::RpcController* controller,
 		const ::NodeRouteMessageRequest* request,
 		::NodeRouteMessageResponse* response,
 		::google::protobuf::Closure* done)override;

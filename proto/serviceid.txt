@@ -16,14 +16,15 @@
 16=ClientPlayerSceneServiceEnterSceneC2S
 17=ClientPlayerSceneServicePushEnterSceneS2C
 18=ClientPlayerSceneServicePushSceneInfoS2C
-19=CentreServiceLoginNodeDisconnect
+19=CentreServiceLoginNodeAccountLogin
 20=GamePlayerServiceCentre2GsLogin
 21=GateServiceKickConnByCentre
 22=AccountDBServiceLoad2Redis
 23=ClientPlayerSceneServiceSceneInfoC2S
+24=CentreServiceLoginNodeSessionDisconnect
 25=GameServiceCentreSend2PlayerViaGs
-26=CentreServiceGsPlayerService
 27=CentreSceneServiceUnRegisterScene
+28=CentreServicePlayerService
 29=CentreSceneServiceRegisterScene
 30=GateServiceBroadCast2PlayerMessage
 31=CentreServiceUnRegisterGameNode
@@ -33,7 +34,6 @@
 36=CentreServiceGatePlayerService
 37=ClientPlayerCommonServiceKickPlayer
 38=CentreServiceEnterGsSucceed
-39=CentreServiceLoginNodeLoginAccount
 40=GateServiceUnRegisterGame
 41=CentreServiceLoginNodeLeaveGame
 42=CentreServiceRouteNodeStringMsg
