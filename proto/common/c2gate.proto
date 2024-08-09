@@ -5,7 +5,7 @@ option go_package = "pb/game";
 import "common/tip.proto";
 import "common/user_accounts.proto";
 
-message c_account_simple_player
+message AccountSimplePlayerWrapper
 {
   AccountSimplePlayer player = 1;
 }
@@ -19,13 +19,13 @@ message LoginRequest
 message LoginResponse
 {
   Tip error = 1;
-  repeated c_account_simple_player players = 2;
+  repeated AccountSimplePlayerWrapper players = 2;
 }
 
 message TestResponse
 {
   Tip error = 1;
-  repeated c_account_simple_player players = 2;
+  repeated AccountSimplePlayerWrapper players = 2;
   repeated string teststring = 3;
   repeated int32 testint = 4;
 }
@@ -38,7 +38,7 @@ message CreatePlayerRequest
 message CreatePlayerResponse
 {
 	Tip error = 1;
-	repeated c_account_simple_player players = 2;
+	repeated AccountSimplePlayerWrapper players = 2;
 }
 
 message EnterGameRequest

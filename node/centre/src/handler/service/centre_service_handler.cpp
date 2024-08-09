@@ -362,7 +362,7 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,const ::CtrlLsLeaveGameRequest* request,
+void CentreServiceHandler::LoginNodeLeaveGame(::google::protobuf::RpcController* controller,const ::LoginNodeLeaveGameRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -372,7 +372,7 @@ void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* contro
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* controller,const ::CtrlLsDisconnectRequest* request,
+void CentreServiceHandler::LoginNodeDisconnect(::google::protobuf::RpcController* controller,const ::LoginNodeDisconnectRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -466,7 +466,7 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,const ::EnterGameNodeSucceedRequest* request,
+void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,const ::EnterGameNodeSuccessRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {

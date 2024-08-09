@@ -17,7 +17,6 @@
 16=ClientPlayerSceneServiceEnterSceneC2S
 17=ClientPlayerSceneServicePushEnterSceneS2C
 18=ClientPlayerSceneServicePushSceneInfoS2C
-19=CentreServiceLsLeaveGame
 20=GamePlayerServiceCentre2GsLogin
 21=GateServiceKickConnByCentre
 22=AccountDBServiceLoad2Redis
@@ -38,6 +37,7 @@
 38=CentreServiceEnterGsSucceed
 39=CentreServiceLsDisconnect
 40=GateServiceUnRegisterGame
+41=CentreServiceLoginNodeLeaveGame
 42=CentreServiceRouteNodeStringMsg
 43=GamePlayerSceneServiceEnterSceneS2C
 44=GameServiceCreateScene

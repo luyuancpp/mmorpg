@@ -10,18 +10,7 @@ import "common/node_common.proto";
 
 option cc_generic_services = true;
 
-message CtrlStartGsResponse
-{
-  uint32 centre_node_id = 1;
-  uint32 gate_node_id = 3;
-}
-
 message GateClientMessageRequest
-{
-  IpPort rpc_client = 1;
-}
-
-message CtrlConnectedGameRequest
 {
   IpPort rpc_client = 1;
 }
@@ -31,16 +20,16 @@ message GateSessionDisconnectRequest
   uint64 session_id = 1;
 }
 
-message CtrlLsLeaveGameRequest
+message LoginNodeLeaveGameRequest
 {
 }
 
-message CtrlLsDisconnectRequest
+message LoginNodeDisconnectRequest
 {
 }
 
 
-message EnterGameNodeSucceedRequest
+message EnterGameNodeSuccessRequest
 {
   uint64 player_id = 1;
   uint32 game_node_id = 2;
@@ -59,10 +48,10 @@ service CentreService {
   rpc GateSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
   rpc LsLoginAccount (LoginRequest) returns (LoginResponse);
   rpc OnLoginEnterGame (CentrePlayerGameNodeEntryRequest) returns (Empty);
-  rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (Empty);
-  rpc LsDisconnect (CtrlLsDisconnectRequest) returns (Empty); 
+  rpc LoginNodeLeaveGame (LoginNodeLeaveGameRequest) returns (Empty);
+  rpc LsDisconnect (LoginNodeDisconnectRequest) returns (Empty); 
   rpc GsPlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
-  rpc EnterGsSucceed (EnterGameNodeSucceedRequest) returns (Empty);
+  rpc EnterGsSucceed (EnterGameNodeSuccessRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
   rpc UnRegisterGame (UnRegisterGameRequest) returns (Empty);
