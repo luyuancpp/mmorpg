@@ -106,7 +106,7 @@ void PlayerNodeUtil::EnterGs(const entt::entity player, const PlayerGameNodeEnte
 
 void PlayerNodeUtil::NotifyEnterGsSucceed(entt::entity player, NodeId centreNodeId)
 {
-	EnterGameNodeSucceedRequest request;
+	EnterGameNodeSuccessRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
 	request.set_game_node_id(gGameNode->GetNodeId());
 	CallCentreNodeMethod(CentreServiceEnterGsSucceedMsgId, request, centreNodeId);

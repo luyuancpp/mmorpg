@@ -39,8 +39,8 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void LsLeaveGame(::google::protobuf::RpcController* controller,
-		const ::CtrlLsLeaveGameRequest* request,
+	void LoginNodeLeaveGame(::google::protobuf::RpcController* controller,
+		const ::LoginNodeLeaveGameRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
@@ -58,7 +58,7 @@ public:
 
 
 	void EnterGsSucceed(::google::protobuf::RpcController* controller,
-		const ::EnterGameNodeSucceedRequest* request,
+		const ::EnterGameNodeSuccessRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
