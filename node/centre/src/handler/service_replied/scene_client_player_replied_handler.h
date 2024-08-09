@@ -5,11 +5,11 @@ class ClientPlayerSceneServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
-	static void EnterSceneC2S(entt::entity player,
+	static void EnterScene(entt::entity player,
 		const ::EnterSceneC2SRequest* request,
 		::EnterSceneC2SResponse* response);
 
-	static void PushEnterSceneS2C(entt::entity player,
+	static void NotifyEnterScene(entt::entity player,
 		const ::EnterSceneS2C* request,
 		::Empty* response);
 
@@ -17,23 +17,23 @@ public:
 		const ::SceneInfoRequest* request,
 		::Empty* response);
 
-	static void PushSceneInfoS2C(entt::entity player,
+	static void NotifySceneInfo(entt::entity player,
 		const ::SceneInfoS2C* request,
 		::Empty* response);
 
-	static void PushActorCreateS2C(entt::entity player,
+	static void NotifyActorCreate(entt::entity player,
 		const ::ActorCreateS2C* request,
 		::Empty* response);
 
-	static void PushActorDestroyS2C(entt::entity player,
+	static void NotifyActorDestroy(entt::entity player,
 		const ::ActorDestroyS2C* request,
 		::Empty* response);
 
-	static void PushActorListCreateS2C(entt::entity player,
+	static void NotifyActorListCreate(entt::entity player,
 		const ::ActorListCreateS2C* request,
 		::Empty* response);
 
-	static void PushActorListDestroyS2C(entt::entity player,
+	static void NotifyActorListDestroy(entt::entity player,
 		const ::ActorListDestroyS2C* request,
 		::Empty* response);
 
@@ -45,12 +45,12 @@ public:
 		switch(method->index())
 		{
 		case 0:
-			EnterSceneC2S(player,
+			EnterScene(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
 		break;
 		case 1:
-			PushEnterSceneS2C(player,
+			NotifyEnterScene(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
@@ -60,27 +60,27 @@ public:
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 3:
-			PushSceneInfoS2C(player,
+			NotifySceneInfo(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 4:
-			PushActorCreateS2C(player,
+			NotifyActorCreate(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 5:
-			PushActorDestroyS2C(player,
+			NotifyActorDestroy(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 6:
-			PushActorListCreateS2C(player,
+			NotifyActorListCreate(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 7:
-			PushActorListDestroyS2C(player,
+			NotifyActorListDestroy(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;

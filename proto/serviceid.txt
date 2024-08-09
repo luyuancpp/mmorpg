@@ -14,11 +14,11 @@
 13=GateServiceRegisterGame
 14=GateServiceBroadcastToPlayers
 15=GateServiceRoutePlayerMessage
-16=ClientPlayerSceneServiceEnterSceneC2S
-17=ClientPlayerSceneServicePushEnterSceneS2C
-18=ClientPlayerSceneServicePushSceneInfoS2C
+16=ClientPlayerSceneServiceNotifyActorListCreate
+17=ClientPlayerSceneServiceNotifySceneInfo
 19=CentreServiceLoginNodeAccountLogin
 20=GamePlayerServiceCentre2GsLogin
+21=ClientPlayerSceneServiceNotifyActorDestroy
 22=AccountDBServiceLoad2Redis
 23=ClientPlayerSceneServiceSceneInfoC2S
 24=CentreServiceLoginNodeSessionDisconnect
@@ -29,7 +29,7 @@
 29=CentreSceneServiceRegisterScene
 30=GateServiceKickSessionByCentre
 31=CentreServiceUnRegisterGameNode
-32=ClientPlayerSceneServicePushActorListDestroyS2C
+32=ClientPlayerSceneServiceEnterScene
 33=LoginServiceCreatePlayer
 34=LoginServiceLogin
 35=GameServiceSendMessageToPlayer
@@ -44,10 +44,10 @@
 44=GameServiceCreateScene
 45=CentreServiceRoutePlayerStringMsg
 46=GamePlayerSceneServiceEnterScene
-47=ClientPlayerSceneServicePushActorCreateS2C
+47=ClientPlayerSceneServiceNotifyActorListDestroy
 48=GameSceneServiceTest
 49=ClientPlayerTeamServiceTeamInfoNotify
-50=ClientPlayerSceneServicePushActorDestroyS2C
+50=ClientPlayerSceneServiceNotifyActorCreate
 51=LoginServiceLeaveGame
 52=LoginServiceEnterGame
 53=CentreServiceLoginNodeEnterGame
@@ -56,8 +56,8 @@
 56=GamePlayerSceneServiceLeaveScene
 57=GameServiceSessionDisconnect
 59=GameServiceInvokePlayerService
+60=ClientPlayerSceneServiceNotifyEnterScene
 61=GameServiceRegisterGateNode
-62=ClientPlayerSceneServicePushActorListCreateS2C
 63=GateServiceSendMessageToPlayer
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg

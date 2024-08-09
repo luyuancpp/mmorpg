@@ -64,12 +64,12 @@ message ActorListDestroyS2C
 
 service ClientPlayerSceneService 
 {
-  rpc EnterSceneC2S (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
-  rpc PushEnterSceneS2C (EnterSceneS2C) returns (Empty);
+  rpc EnterScene (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
+  rpc NotifyEnterScene (EnterSceneS2C) returns (Empty);
   rpc SceneInfoC2S (SceneInfoRequest) returns (Empty);
-  rpc PushSceneInfoS2C (SceneInfoS2C) returns (Empty);
-  rpc PushActorCreateS2C (ActorCreateS2C) returns (Empty);
-  rpc PushActorDestroyS2C (ActorDestroyS2C) returns (Empty);
-  rpc PushActorListCreateS2C (ActorListCreateS2C) returns (Empty);
-  rpc PushActorListDestroyS2C (ActorListDestroyS2C) returns (Empty);
+  rpc NotifySceneInfo (SceneInfoS2C) returns (Empty);
+  rpc NotifyActorCreate (ActorCreateS2C) returns (Empty);
+  rpc NotifyActorDestroy (ActorDestroyS2C) returns (Empty);
+  rpc NotifyActorListCreate (ActorListCreateS2C) returns (Empty);
+  rpc NotifyActorListDestroy (ActorListDestroyS2C) returns (Empty);
 }
