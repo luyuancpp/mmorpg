@@ -54,9 +54,6 @@
     <ClCompile Include="src\proto\service\service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\service\team_client_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\logic\component\ability_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -261,9 +258,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service\service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\team_client_player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\ability_comp.pb.h">

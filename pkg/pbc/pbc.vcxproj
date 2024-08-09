@@ -87,7 +87,6 @@
     <ClCompile Include="src\proto\service\login_service_service.cpp" />
     <ClCompile Include="src\proto\service\scene_player_service.cpp" />
     <ClCompile Include="src\proto\service\service.cpp" />
-    <ClCompile Include="src\proto\service\team_client_player_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\c2gate.pb.h" />
@@ -158,7 +157,6 @@
     <ClInclude Include="src\proto\service\login_service_service.h" />
     <ClInclude Include="src\proto\service\scene_player_service.h" />
     <ClInclude Include="src\proto\service\service.h" />
-    <ClInclude Include="src\proto\service\team_client_player_service.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

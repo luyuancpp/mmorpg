@@ -1,7 +1,7 @@
 #include "player_tip_util.h"
 
 #include "game_logic/network//message_util.h"
-#include "service/common_client_player_service.h"
+#include "service/common_player_service.h"
 #include "thread_local/storage_common_logic.h"
 
 void PlayerTipUtil::SendToPlayer(entt::entity playerEntity, uint32_t tipId, const StringVector& parameters)
