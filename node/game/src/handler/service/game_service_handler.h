@@ -16,13 +16,13 @@ public:
 
 
 	void ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,
-		const ::PlayerClientRequest* request,
-		::PlayerClientResponse* response,
+		const ::ClientSendMessageToPlayerRequest* request,
+		::ClientSendMessageToPlayerResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void Disconnect(::google::protobuf::RpcController* controller,
-		const ::GameNodeDisconnectRequest* request,
+	void SessionDisconnect(::google::protobuf::RpcController* controller,
+		const ::SessionDisconnectRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
