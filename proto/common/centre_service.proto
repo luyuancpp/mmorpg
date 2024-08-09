@@ -37,11 +37,11 @@ service CentreService {
   rpc RegisterGateNode (RegisterGateNodeRequest) returns (Empty);
   rpc GatePlayerService (GateClientMessageRequest) returns (Empty);
   rpc GateSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
-  rpc LoginNodeLoginAccount (LoginRequest) returns (LoginResponse);
+  rpc LoginNodeAccountLogin (LoginRequest) returns (LoginResponse);
   rpc LoginNodeEnterGame (CentrePlayerGameNodeEntryRequest) returns (Empty);
   rpc LoginNodeLeaveGame (LoginNodeLeaveGameRequest) returns (Empty);
-  rpc LoginNodeDisconnect (GateSessionDisconnectRequest) returns (Empty); 
-  rpc GsPlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
+  rpc LoginNodeSessionDisconnect (GateSessionDisconnectRequest) returns (Empty); 
+  rpc PlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc EnterGsSucceed (EnterGameNodeSuccessRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);

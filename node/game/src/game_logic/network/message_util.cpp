@@ -89,7 +89,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_body()->set_body(message.SerializeAsString());
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*centreNode)->Send(CentreServiceGsPlayerServiceMsgId, request);
+	(*centreNode)->Send(CentreServicePlayerServiceMsgId, request);
 }
 
 void SendToCentre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)

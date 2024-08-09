@@ -269,7 +269,7 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LoginNodeLoginAccount(::google::protobuf::RpcController* controller,const ::LoginRequest* request,
+void CentreServiceHandler::LoginNodeAccountLogin(::google::protobuf::RpcController* controller,const ::LoginRequest* request,
 	     LoginResponse* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -374,7 +374,7 @@ void CentreServiceHandler::LoginNodeLeaveGame(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::LoginNodeDisconnect(::google::protobuf::RpcController* controller,const ::GateSessionDisconnectRequest* request,
+void CentreServiceHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcController* controller,const ::GateSessionDisconnectRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -385,7 +385,7 @@ void CentreServiceHandler::LoginNodeDisconnect(::google::protobuf::RpcController
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
+void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
 	     NodeRouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
