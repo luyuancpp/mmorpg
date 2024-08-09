@@ -40,7 +40,7 @@ message GameNodeDisconnectRequest
 
 message GameNodeConnectRequest
 {
-  IpPort rpc_client = 1;
+  NetworkAddress rpc_client = 1;
   uint32 gate_node_id = 2;
 }
 

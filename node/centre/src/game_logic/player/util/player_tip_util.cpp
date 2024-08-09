@@ -6,7 +6,7 @@
 
 void PlayerTipUtil::SendToPlayer(entt::entity playerEntity, uint32_t tipId, const StringVector& parameters)
 {
-	TipMessage message;
+	TipInfoMessage message;
 	message.mutable_tip_info()->set_id(tipId);
 	for (auto& param : parameters)
 	{
