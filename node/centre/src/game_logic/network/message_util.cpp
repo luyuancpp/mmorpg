@@ -64,7 +64,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*rpcSession)->Send(GameServiceSend2PlayerMsgId, request);
+	(*rpcSession)->Send(GameServiceClientSendMessageToPlayerMsgId, request);
 }
 
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -209,7 +209,7 @@ void CallGamePlayerMethod(uint32_t messageId, const google::protobuf::Message& m
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*gateNode)->CallMethod(GameServiceCallPlayerMsgId, request);
+	(*gateNode)->CallMethod(GameServiceInvokePlayerServiceMsgId, request);
 }
 
 void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)

@@ -68,15 +68,15 @@ message CreateSceneResponse
 
 service GameService {
   rpc PlayerEnterGameNode (PlayerEnterGameNodeRequest) returns (Empty);
-  rpc Send2Player (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
-  rpc ClientSend2Player (PlayerClientRequest) returns (PlayerClientResponse);
+  rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
+  rpc ClientSendMessageToPlayer (PlayerClientRequest) returns (PlayerClientResponse);
   rpc Disconnect (GameNodeDisconnectRequest) returns (Empty); 
   rpc RegisterGateNode (RegisterGateNodeRequest) returns (Empty);
-  rpc CentreSend2PlayerViaGs (NodeRouteMessageRequest) returns (Empty);
-  rpc CallPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
+  rpc CentreSendToPlayerViaGameNode (NodeRouteMessageRequest) returns (Empty);
+  rpc InvokePlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
-  rpc UpdateSession (RegisterPlayerSessionRequest) returns (Empty);
+  rpc UpdateSessionDetail (RegisterPlayerSessionRequest) returns (Empty);
   rpc EnterScene (Centre2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
 }

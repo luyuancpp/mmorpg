@@ -9,13 +9,13 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void Send2Player(::google::protobuf::RpcController* controller,
+	void SendMessageToPlayer(::google::protobuf::RpcController* controller,
 		const ::NodeRouteMessageRequest* request,
 		::NodeRouteMessageResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void ClientSend2Player(::google::protobuf::RpcController* controller,
+	void ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,
 		const ::PlayerClientRequest* request,
 		::PlayerClientResponse* response,
 		::google::protobuf::Closure* done)override;
@@ -33,13 +33,13 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void CentreSend2PlayerViaGs(::google::protobuf::RpcController* controller,
+	void CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller,
 		const ::NodeRouteMessageRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void CallPlayer(::google::protobuf::RpcController* controller,
+	void InvokePlayerService(::google::protobuf::RpcController* controller,
 		const ::NodeRouteMessageRequest* request,
 		::NodeRouteMessageResponse* response,
 		::google::protobuf::Closure* done)override;
@@ -57,7 +57,7 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void UpdateSession(::google::protobuf::RpcController* controller,
+	void UpdateSessionDetail(::google::protobuf::RpcController* controller,
 		const ::RegisterPlayerSessionRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;

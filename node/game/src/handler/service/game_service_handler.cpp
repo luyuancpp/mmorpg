@@ -67,7 +67,7 @@ void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
+void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
 	     NodeRouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -138,7 +138,7 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
     ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* controller,const ::PlayerClientRequest* request,
+void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,const ::PlayerClientRequest* request,
 	     PlayerClientResponse* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -231,7 +231,7 @@ void GameServiceHandler::RegisterGateNode(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
+void GameServiceHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -251,11 +251,11 @@ void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcControlle
 		return;
 	}
 
-	SendMessageToPlayer(request->body().message_id(), request->body(), player);
+	::SendMessageToPlayer(request->body().message_id(), request->body(), player);
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
+void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* controller,const ::NodeRouteMessageRequest* request,
 	     NodeRouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -334,7 +334,7 @@ void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* controller,const ::RegisterPlayerSessionRequest* request,
+void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* controller,const ::RegisterPlayerSessionRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
