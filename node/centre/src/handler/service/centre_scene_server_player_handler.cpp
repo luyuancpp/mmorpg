@@ -10,7 +10,7 @@
 #include "game_logic/player/util/player_tip_util.h"
 #include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/network/message_util.h"
-#include "service/scene_client_player_service.h"
+#include "service/scene_player_service.h"
 
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE

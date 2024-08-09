@@ -7,7 +7,7 @@
 #include "scene/util/scene_util.h"
 #include "thread_local/storage_common_logic.h"
 
-#include "service/scene_client_player_service.h"
+#include "service/scene_player_service.h"
 
 
 void PlayerSceneUtil::HandleEnterScene(entt::entity player, entt::entity scene)

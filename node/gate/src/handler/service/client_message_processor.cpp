@@ -9,7 +9,7 @@
 #include "grpc/request/login_grpc_request.h"
 #include "network/gate_session.h"
 #include "service/centre_service_service.h"
-#include "service/common_client_player_service.h"
+#include "service/common_player_service.h"
 #include "service/game_service_service.h"
 #include "service/login_service_service.h"
 #include "thread_local/storage_gate.h"
