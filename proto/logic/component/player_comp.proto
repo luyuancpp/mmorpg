@@ -24,3 +24,23 @@ message Account
 message UnregisterPlayer
 {
 }
+
+message PlayerInt32Array
+{
+	repeated int32 int32_valuse = 1;
+}
+
+message PlayerUInt32Array
+{
+	repeated uint32 uint32_valuse = 2;
+}
+
+message PlayerInt64Array
+{
+	
+}
+
+message PlayerUInt64Array
+{
+	
+}
