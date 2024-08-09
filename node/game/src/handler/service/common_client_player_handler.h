@@ -5,11 +5,11 @@ class ClientPlayerCommonServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
-	static void PushTipS2C(entt::entity player,
+	static void SendTipToClient(entt::entity player,
 		const ::TipMessage* request,
 		::TipMessage* response);
 
-	static void BeKick(entt::entity player,
+	static void KickPlayer(entt::entity player,
 		const ::TipMessage* request,
 		::TipMessage* response);
 
@@ -21,12 +21,12 @@ public:
 		switch(method->index())
 		{
 		case 0:
-			PushTipS2C(player,
+			SendTipToClient(player,
 			::google::protobuf::internal::DownCast<const TipMessage*>(request),
 			::google::protobuf::internal::DownCast<TipMessage*>(response));
 		break;
 		case 1:
-			BeKick(player,
+			KickPlayer(player,
 			::google::protobuf::internal::DownCast<const TipMessage*>(request),
 			::google::protobuf::internal::DownCast<TipMessage*>(response));
 		break;

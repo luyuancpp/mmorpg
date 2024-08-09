@@ -8,6 +8,6 @@ option cc_generic_services = true;
 
 service ClientPlayerCommonService 
 {
-  rpc PushTipS2C (TipMessage) returns (TipMessage);
-  rpc BeKick (TipMessage) returns (TipMessage);
+  rpc SendTipToClient (TipMessage) returns (TipMessage);
+  rpc KickPlayer (TipMessage) returns (TipMessage);
 }

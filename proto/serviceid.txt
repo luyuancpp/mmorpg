@@ -1,4 +1,4 @@
-0=ClientPlayerCommonServicePushTipS2C
+0=ClientPlayerCommonServiceSendTipToClient
 1=CentreScenePlayerServiceSceneInfoC2S
 2=CentreServiceUnRegisterGame
 3=CentreScenePlayerServiceLeaveScene
@@ -34,7 +34,7 @@
 33=LoginServiceCreatePlayer
 34=LoginServiceLogin
 36=CentreServiceGatePlayerService
-37=ClientPlayerCommonServiceBeKick
+37=ClientPlayerCommonServiceKickPlayer
 38=CentreServiceEnterGsSucceed
 39=CentreServiceLsDisconnect
 40=GateServiceUnRegisterGame
