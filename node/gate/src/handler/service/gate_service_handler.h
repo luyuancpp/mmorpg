@@ -15,38 +15,38 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void PlayerEnterGs(::google::protobuf::RpcController* controller,
+	void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
 		const ::RegisterGameNodeSessionRequest* request,
 		::RegisterGameNodeSessionResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void PlayerMessage(::google::protobuf::RpcController* controller,
+	void SendMessageToPlayer(::google::protobuf::RpcController* controller,
 		const ::NodeRouteMessageRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void KickConnByCentre(::google::protobuf::RpcController* controller,
-		const ::GateNodeKickConnRequest* request,
+	void KickSessionByCentre(::google::protobuf::RpcController* controller,
+		const ::KickSessionRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+	void RouteNodeMessage(::google::protobuf::RpcController* controller,
 		const ::RouteMsgStringRequest* request,
 		::RouteMsgStringResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+	void RoutePlayerMessage(::google::protobuf::RpcController* controller,
 		const ::RoutePlayerMsgStringRequest* request,
 		::RoutePlayerMsgStringResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
-	void BroadCast2PlayerMessage(::google::protobuf::RpcController* controller,
-		const ::BroadCast2PlayerRequest* request,
+	void BroadcastToPlayers(::google::protobuf::RpcController* controller,
+		const ::BroadcastToPlayersRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 

@@ -340,9 +340,9 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
 
-			GateNodeKickConnRequest message;
+			KickSessionRequest message;
 			message.set_session_id(sessionId);
-			SendToGateById(GateServiceKickConnByCentreMsgId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
+			SendToGateById(GateServiceKickSessionByCentreMsgId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
 
 			playerNodeInfo->set_gate_session_id(sessionId);
 		}
@@ -615,7 +615,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
 			return;
 		}
-		(*gate_node)->Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
+		(*gate_node)->Route2Node(GateServiceRouteNodeMessageMsgId, *mutable_request);
 		break;
 	}
 	case kGameNode:

@@ -114,7 +114,7 @@ void PlayerNodeUtil::RegisterPlayerToGateNode(entt::entity playerEntity)
 	RegisterGameNodeSessionRequest request;
 	request.mutable_session_info()->set_session_id(playerNodeInfo->gate_session_id());
 	request.set_game_node_id(playerNodeInfo->game_node_id());
-	(*gateNode)->CallMethod(GateServicePlayerEnterGsMsgId, request);
+	(*gateNode)->CallMethod(GateServicePlayerEnterGameNodeMsgId, request);
 }
 
 void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
