@@ -4,7 +4,7 @@ option go_package = "pb/game";
 
 import "google/protobuf/empty.proto";
 import "logic/component/scene_comp.proto";
-import "logic/client_player/scene_client_player.proto";
+import "logic/client_player/scene_player.proto";
 option cc_generic_services = true;
 
 message CentreEnterSceneRequest
