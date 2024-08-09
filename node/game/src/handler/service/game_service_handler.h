@@ -16,8 +16,8 @@ public:
 
 
 	void ClientSend2Player(::google::protobuf::RpcController* controller,
-		const ::GameNodeRpcClientRequest* request,
-		::GameNodeRpcClientResponse* response,
+		const ::PlayerClientRequest* request,
+		::PlayerClientResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
