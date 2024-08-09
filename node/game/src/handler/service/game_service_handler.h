@@ -3,8 +3,8 @@
 class GameServiceHandler : public ::GameService
 {
 public:
-	void EnterGs(::google::protobuf::RpcController* controller,
-		const ::GameNodeEnterGsRequest* request,
+	void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
+		const ::PlayerEnterGameNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 

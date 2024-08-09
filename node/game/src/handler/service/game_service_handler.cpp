@@ -27,7 +27,7 @@ using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 using namespace muduo::net;
 
 ///<<< END WRITING YOUR CODE
-void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,const ::GameNodeEnterGsRequest* request,
+void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller,const ::PlayerEnterGameNodeRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {

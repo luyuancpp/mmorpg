@@ -5,6 +5,7 @@
 4=CentreScenePlayerServiceEnterScene
 5=CentreScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
 6=CentrePlayerServiceTest
+7=GameServicePlayerEnterGameNode
 8=AccountDBServiceSave2Redis
 9=CentreServiceGateSessionDisconnect
 10=DeployServiceGetNodeInfo
@@ -51,7 +52,6 @@
 54=CentreServiceRegisterGameNode
 55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene
-57=GameServiceEnterGs
 58=GameServiceSend2Player
 59=GameServiceClientSend2Player
 60=GameServiceDisconnect
