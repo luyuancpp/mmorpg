@@ -36,7 +36,6 @@
     <ClCompile Include="src\proto\common\login_service.grpc.pb.cc" />
     <ClCompile Include="src\proto\common\login_service.pb.cc" />
     <ClCompile Include="src\proto\common\mysql_database_table.pb.cc" />
-    <ClCompile Include="src\proto\common\node_common.pb.cc" />
     <ClCompile Include="src\proto\common\session.pb.cc" />
     <ClCompile Include="src\proto\common\statistics.pb.cc" />
     <ClCompile Include="src\proto\common\tip.pb.cc" />
@@ -109,7 +108,6 @@
     <ClInclude Include="src\proto\common\login_service.grpc.pb.h" />
     <ClInclude Include="src\proto\common\login_service.pb.h" />
     <ClInclude Include="src\proto\common\mysql_database_table.pb.h" />
-    <ClInclude Include="src\proto\common\node_common.pb.h" />
     <ClInclude Include="src\proto\common\session.pb.h" />
     <ClInclude Include="src\proto\common\statistics.pb.h" />
     <ClInclude Include="src\proto\common\tip.pb.h" />

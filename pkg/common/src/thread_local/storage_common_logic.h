@@ -1,6 +1,6 @@
 #pragma once
 
-#include "proto/common/node_common.pb.h"
+#include "proto/common/common_message.pb.h"
 #include "type_define/type_define.h"
 
 class ThreadLocalStorageCommonLogic

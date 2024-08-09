@@ -4,7 +4,7 @@ option go_package = "pb/game";
 
 import "common/empty.proto";
 import "common/common.proto";
-import "common/node_common.proto";
+import "common/common_message.proto";
 import "logic/component/scene_comp.proto";
 
 option cc_generic_services = true;
