@@ -2,8 +2,8 @@
 #include <unordered_map>
 #include "player_service_replied.h"
 
-#include "common_client_player_replied_handler.h"
-#include "scene_client_player_replied_handler.h"
+#include "common_player_replied_handler.h"
+#include "scene_player_replied_handler.h"
 #include "game_scene_server_player_replied_handler.h"
 #include "game_server_player_replied_handler.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;

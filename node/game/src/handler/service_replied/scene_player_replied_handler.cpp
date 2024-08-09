@@ -1,4 +1,4 @@
-#include "scene_client_player_replied_handler.h"
+#include "scene_player_replied_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 void ClientPlayerSceneServiceRepliedHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,

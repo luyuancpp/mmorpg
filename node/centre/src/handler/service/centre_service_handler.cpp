@@ -26,7 +26,7 @@
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"
 #include "type_alias/player_session_type_alias.h"
-#include "service/common_client_player_service.h"
+#include "service/common_player_service.h"
 #include "network/rpc_session.h"
 #include "util/defer.h"
 #include "util/pb.h"

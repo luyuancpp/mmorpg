@@ -27,9 +27,6 @@
     <ClCompile Include="src\proto\service\centre_service_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\service\common_client_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\service\db_service_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -54,22 +51,10 @@
     <ClCompile Include="src\proto\service\login_service_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\service\scene_client_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\service\service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\service\team_client_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\common_client_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\scene_client_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\team_client_player.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\ability_comp.pb.cc">
@@ -225,6 +210,18 @@
     <ClCompile Include="src\proto\common\user_accounts.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\client_player\common_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\client_player\scene_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\service\common_player_service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\service\scene_player_service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\service\centre_common_server_player_service.h">
@@ -237,9 +234,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service\centre_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\common_client_player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service\db_service_service.h">
@@ -266,22 +260,10 @@
     <ClInclude Include="src\proto\service\login_service_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service\scene_client_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\service\service.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service\team_client_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\common_client_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\scene_client_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\team_client_player.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\ability_comp.pb.h">
@@ -435,6 +417,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\common\user_accounts.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\common_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\scene_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\common_player_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\scene_player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
