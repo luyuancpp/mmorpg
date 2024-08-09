@@ -28,8 +28,8 @@ void InitGameServicePlayerEnterGameNodeRepliedHandler()
 {
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<NodeRouteMessageResponse>(std::bind(&OnGameServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<PlayerClientResponse>(std::bind(&OnGameServiceClientSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<ClientSendMessageToPlayerResponse>(std::bind(&OnGameServiceClientSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceSessionDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceRegisterGateNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<NodeRouteMessageResponse>(std::bind(&OnGameServiceInvokePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -52,7 +52,7 @@ void OnGameServiceSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn
 ///<<< END WRITING YOUR CODE
 }
 
-void OnGameServiceClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<PlayerClientResponse>& replied, Timestamp timestamp)
+void OnGameServiceClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<ClientSendMessageToPlayerResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
     MessageBody msg;
@@ -68,7 +68,7 @@ void OnGameServiceClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr
 ///<<< END WRITING YOUR CODE
 }
 
-void OnGameServiceDisconnectRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp)
+void OnGameServiceSessionDisconnectRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

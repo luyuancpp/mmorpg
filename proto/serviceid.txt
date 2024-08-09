@@ -55,8 +55,8 @@
 54=CentreServiceRegisterGameNode
 55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene
+57=GameServiceSessionDisconnect
 59=GameServiceInvokePlayerService
-60=GameServiceDisconnect
 61=GameServiceRegisterGateNode
 62=ClientPlayerSceneServicePushActorListCreateS2C
 64=GameServiceRouteNodeStringMsg

@@ -136,7 +136,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 		}
 
 		auto gameNode = tls.gameNodeRegistry.get<RpcClientPtr>(gameNodeId);
-		PlayerClientRequest message;
+		ClientSendMessageToPlayerRequest message;
 		message.set_body(request->body());
 		message.set_session_id(sessionId);
 		message.set_id(request->id());

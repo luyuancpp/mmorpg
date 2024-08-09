@@ -138,8 +138,8 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
     ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,const ::PlayerClientRequest* request,
-	     PlayerClientResponse* response,
+void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,const ::ClientSendMessageToPlayerRequest* request,
+	     ClientSendMessageToPlayerResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -194,7 +194,7 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controller,const ::GameNodeDisconnectRequest* request,
+void GameServiceHandler::SessionDisconnect(::google::protobuf::RpcController* controller,const ::SessionDisconnectRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
