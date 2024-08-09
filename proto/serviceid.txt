@@ -46,7 +46,6 @@
 46=GamePlayerSceneServiceEnterScene
 47=ClientPlayerSceneServiceNotifyActorListDestroy
 48=GameSceneServiceTest
-49=ClientPlayerTeamServiceTeamInfoNotify
 50=ClientPlayerSceneServiceNotifyActorCreate
 51=LoginServiceLeaveGame
 52=LoginServiceEnterGame
