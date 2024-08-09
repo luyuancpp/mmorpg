@@ -42,9 +42,8 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
-			if fileSame, err := util.IsSameMD5(fileName, md5FileName); err != nil {
-				log.Fatal(err)
-			} else if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			fileSame, _ := util.IsSameMD5(fileName, md5FileName)
+			if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
 				return
 			}
 
