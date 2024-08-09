@@ -12,7 +12,7 @@ option cc_generic_services = true;
 
 message GateClientMessageRequest
 {
-  IpPort rpc_client = 1;
+  NetworkAddress rpc_client = 1;
 }
 
 

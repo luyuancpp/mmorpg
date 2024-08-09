@@ -6,8 +6,8 @@ class ClientPlayerCommonServiceHandler : public ::PlayerService
 public:
 	using PlayerService::PlayerService;
 	static void PushTipsS2C(entt::entity player,
-		const ::TipMessage* request,
-		::TipMessage* response);
+		const ::TipInfoMessage* request,
+		::TipInfoMessage* response);
 
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
    entt::entity player,
@@ -18,8 +18,8 @@ public:
 		{
 		case 0:
 			PushTipsS2C(player,
-			::google::protobuf::internal::DownCast<const TipMessage*>( request),
-			::google::protobuf::internal::DownCast<TipMessage*>(response));
+			::google::protobuf::internal::DownCast<const TipInfoMessage*>( request),
+			::google::protobuf::internal::DownCast<TipInfoMessage*>(response));
 		break;
 		default:
 		break;

@@ -12,13 +12,13 @@ message NodeInfo
   uint32 game_node_type = 4;
 }
 
-message IpPort
+message NetworkAddress
 {
   string ip = 1;
   uint32 port = 2;
 }
 
-message TipMessage
+message TipInfoMessage
 {
   Tip tip_info = 1;
 }

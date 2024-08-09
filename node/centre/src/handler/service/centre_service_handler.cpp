@@ -334,7 +334,7 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 			// Handle session takeover (顶号)
 			LOG_INFO << "Player reconnected: Player ID " << clientMsgBody.player_id();
 
-			TipMessage beKickTip;
+			TipInfoMessage beKickTip;
 			beKickTip.mutable_tip_info()->set_id(kLoginBeKickByAnOtherAccount);
 			SendMessageToPlayer(ClientPlayerCommonServiceKickPlayerMsgId, beKickTip, clientMsgBody.player_id());
 

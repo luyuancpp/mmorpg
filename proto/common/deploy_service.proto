@@ -148,7 +148,7 @@ message GetGameNodeInfoRequest
 message GetGameNodeInfoResponse
 {
   uint32 node_id = 1;
-  IpPort service_addr = 2;
+  NetworkAddress service_addr = 2;
 }
 
 service DeployService {

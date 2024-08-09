@@ -4,10 +4,12 @@ option go_package = "pb/game";
 
 import "common/tip.proto";
 import "common/common.proto";
+import "common/empty.proto";
+
 option cc_generic_services = true;
 
 service ClientPlayerCommonService 
 {
-  rpc SendTipToClient (TipMessage) returns (TipMessage);
-  rpc KickPlayer (TipMessage) returns (TipMessage);
+  rpc SendTipToClient (TipInfoMessage) returns (Empty);
+  rpc KickPlayer (TipInfoMessage) returns (Empty);
 }
