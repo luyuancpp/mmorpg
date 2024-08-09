@@ -26,6 +26,7 @@
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"
 #include "type_alias/player_session_type_alias.h"
+#include "service/common_client_player_service.h"
 #include "network/rpc_session.h"
 #include "util/defer.h"
 #include "util/pb.h"
@@ -331,10 +332,9 @@ void CentreServiceHandler::OnLoginEnterGame(::google::protobuf::RpcController* c
 			// Handle session takeover (顶号)
 			LOG_INFO << "Player reconnected: Player ID " << clientMsgBody.player_id();
 
-			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipMessage beKickTip;
 			beKickTip.mutable_tip_info()->set_id(kLoginBeKickByAnOtherAccount);
-			SendMessageToPlayer(ClientPlayerCommonServiceBeKickMsgId, beKickTip, clientMsgBody.player_id());
+			SendMessageToPlayer(ClientPlayerCommonServiceKickPlayerMsgId, beKickTip, clientMsgBody.player_id());
 
 			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
 
