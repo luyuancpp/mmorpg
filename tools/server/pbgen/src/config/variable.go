@@ -36,14 +36,16 @@ const GameDirName = "node/game/"
 const CentreDirName = "node/centre/"
 const GateName = "node/gate/"
 const ClientDirName = "client/"
-const PlayerServiceIncludeName = "#include \"player_service.h\""
-const PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\""
+const PlayerServiceIncludeName = "#include \"player_service.h\"\n"
+const PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\"\n"
+const MacroReturnIncludeName = "#include \"macros/return_define.h\""
 const HandlerName = "Handler"
 const RepliedHandlerName = "RepliedHandler"
 const YourCodeBegin = "///<<< BEGIN WRITING YOUR CODE"
 const YourCodeEnd = "///<<< END WRITING YOUR CODE"
 const YourCodePair = YourCodeBegin + "\n" + YourCodeEnd + "\n"
 const CcGenericServices = "cc_generic_services"
+const EmptyResponseName = "Empty"
 
 var SourceDirs = [...]string{
 	"common/",

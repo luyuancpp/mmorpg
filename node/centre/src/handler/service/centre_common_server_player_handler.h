@@ -1,6 +1,7 @@
 #pragma once
 #include "logic/server_player/centre_common_server_player.pb.h"
 #include "player_service.h"
+#include "macros/return_define.h"
 class CentrePlayerServiceHandler : public ::PlayerService
 {
 public:

@@ -107,6 +107,7 @@ func getPlayerMethodHeadStr(methodList RPCMethods) string {
 	data.WriteString("#pragma once\n")
 	data.WriteString(methodList[0].IncludeName())
 	data.WriteString(config.PlayerServiceIncludeName)
+	data.WriteString(config.MacroReturnIncludeName)
 	data.WriteString("\nclass " + methodList[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n")
 	data.WriteString(config.Tab + "using PlayerService::PlayerService;\n")
 
@@ -130,6 +131,11 @@ func getPlayerMethodHandlerFunctions(methodList RPCMethods) string {
 		callFunctionList.WriteString(config.Tab3 + method.Method + "(player,\n")
 		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<const " + method.Request + "*>(request),\n")
 		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
+
+		if !strings.Contains(method.Response, config.EmptyResponseName) {
+			callFunctionList.WriteString(config.Tab3 + "HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
+		}
+
 		callFunctionList.WriteString(config.Tab2 + "break;\n")
 	}
 

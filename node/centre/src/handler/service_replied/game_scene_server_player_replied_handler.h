@@ -1,6 +1,7 @@
 #pragma once
 #include "logic/server_player/game_scene_server_player.pb.h"
 #include "player_service_replied.h"
+
 class GamePlayerSceneServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
