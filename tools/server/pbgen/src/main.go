@@ -74,6 +74,8 @@ func main() {
 	gen.ReadServiceIdFile()
 	gen.ReadAllProtoFileServices()
 	gen.BuildAllProtoc()
+	util.Wg.Wait()
+
 	//gen.WriteLoadClientLuaFile()
 	gen.WriteEventHandlerFile()
 	gen.WriteSol2LuaFile()
