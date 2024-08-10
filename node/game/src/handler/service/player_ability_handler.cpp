@@ -9,9 +9,9 @@ void PlayerAbilityServiceHandler::UseAbility(entt::entity player,const ::UseAbil
 {
 ///<<< BEGIN WRITING YOUR CODE
 	AbilityUtil::CheckSkillActivationPrerequisites(request);
-	if (tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity()))
-	{
-	}
+
+	HANDLE_ERROR_MESSAGE(response);
+
 ///<<< END WRITING YOUR CODE
 }
 

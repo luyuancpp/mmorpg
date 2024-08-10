@@ -288,8 +288,8 @@ uint32_t TeamSystem::CreateTeam(const CreateTeamParams& param)
 	{
 		return kTeamCreateTeamMaxMemberSize;
 	}
-	CHECK_RETURN_IF_NOT_OK(CheckMemberInTeam(param.member_list))
-		const auto team_entity = tls.registry.create();
+	CHECK_RETURN_IF_NOT_OK(CheckMemberInTeam(param.member_list));
+	const auto team_entity = tls.registry.create();
 	auto& team = tls.registry.emplace<Team>(team_entity);
 	team.leader_id_ = param.leader_id_;
 	team.team_id_ = team_entity;
@@ -347,11 +347,11 @@ uint32_t TeamSystem::JoinTeam(const UInt64Set& member_list, const Guid team_id)
 		return kTeamMemberListFull;
 	}
 
-	CHECK_RETURN_IF_NOT_OK(CheckMemberInTeam(member_list))
-		for (const auto& member_it : member_list)
-		{
-			CHECK_RETURN_IF_NOT_OK(JoinTeam(team_id, member_it))
-		}
+	CHECK_RETURN_IF_NOT_OK(CheckMemberInTeam(member_list));
+	for (const auto& member_it : member_list)
+	{
+		CHECK_RETURN_IF_NOT_OK(JoinTeam(team_id, member_it));
+	}
 	return kOK;
 }
 
