@@ -1,11 +1,11 @@
 #include "ability_util.h"
 
-
+#include "pbc/ability_error_tip.pb.h"
+#include "pbc/common_error_tip.pb.h"
 
 uint32_t AbilityUtil::CheckSkillActivationPrerequisites()
 {
-
-    return 0;
+    return kOK;
 }
 
 void AbilityUtil::HandleAbilityInitialize()
