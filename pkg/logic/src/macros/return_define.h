@@ -11,7 +11,7 @@
             return ret;\
         }\
     }\
- } while (0)
+ } while (false)
 
 #define SET_ERROR_AND_RETURN_IF_NOT_OK(tip_code)\
  do { \
@@ -20,7 +20,7 @@
         response->mutable_error()->set_id(tip_code);\
         return;\
     }\
- } while (0)
+ } while (false)
 
 #define CHECK_CONDITION(condition, tip_code)\
  do { \
@@ -28,7 +28,7 @@
     {\
         return tip_code; \
     }\
- } while (0)
+ } while (false)
 
 
 #define HANDLE_ERROR_MESSAGE(response) \
@@ -38,6 +38,16 @@
             *(response)->mutable_error_message() = std::move(*tipInfoMessage); \
             tls.globalRegistry.remove<TipInfoMessage>(GlobalEntity()); \
         } \
-    } while (0)
+    } while (false)
 
+// 定义宏以检查技能激活前提条件
+#define CHECK_REQUEST(request, fn) \
+do { \
+auto err = fn(request); \
+if (err != kOK) \
+{ \
+tls.globalRegistry.emplace_or_replace<TipInfoMessage>(GlobalEntity()).set_id(err); \
+return;\
+} \
+} while (false)
 

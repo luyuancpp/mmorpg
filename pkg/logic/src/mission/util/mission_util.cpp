@@ -65,7 +65,7 @@ uint32_t MissionUtil::CheckMissionAcceptance(const AcceptMissionEvent& acceptEve
 	CHECK_RETURN_IF_NOT_OK(missionComp->IsMissionUncompleted(acceptEvent.mission_id()));
 
 	// Ensure mission configuration is valid
-	CHECK_CONDITION(!missionComp->GetMissionConfig()->HasKey(acceptEvent.mission_id()), kTableIdInvalidError);
+	CHECK_CONDITION(!missionComp->GetMissionConfig()->HasKey(acceptEvent.mission_id()), kInvalidTableId);
 
 	// Retrieve mission sub-type and type
 	auto missionSubType = missionComp->GetMissionConfig()->GetMissionSubType(acceptEvent.mission_id());
