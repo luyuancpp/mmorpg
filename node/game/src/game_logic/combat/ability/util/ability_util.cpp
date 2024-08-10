@@ -1,10 +1,35 @@
 #include "ability_util.h"
 
+#include <entt/src/entt/entity/entity.hpp>
+
+#include "ability_config.h"
 #include "pbc/ability_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
+#include "thread_local/storage.h"
 
 uint32_t AbilityUtil::CheckSkillActivationPrerequisites(const ::UseAbilityRequest* request)
 {
+    auto tableAbility = GetAbilityTable(request->ability_id());
+
+    if (tableAbility == nullptr) {
+        return kInvalidTableId;
+    }
+
+    bool hasValidTargetType = !tableAbility->target_type().empty();
+    int targetId = request->target_id();
+
+    if (hasValidTargetType) {
+        if (targetId <= 0) {
+            return kAbilityInvalidTargetId;
+        } else {
+            // 创建目标实体并检查其有效性
+            entt::entity target{targetId};
+            if (tls.registry.valid(target)) {
+                return kAbilityInvalidTarget;
+            }
+        }
+    }
+
     return kOK;
 }
 

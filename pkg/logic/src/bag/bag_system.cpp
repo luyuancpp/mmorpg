@@ -65,7 +65,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 		auto p_table_item = GetItemTable(try_item.first);
 		if (nullptr == p_table_item)
 		{
-			return kTableIdInvalidError;
+			return kInvalidTableId;
 		}
 		if (p_table_item->max_statck_size() <= 0)
 		{
@@ -143,7 +143,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 			auto table_item = GetItemTable(ji.first);
 			if (nullptr == table_item)
 			{
-				return kTableIdInvalidError;
+				return kInvalidTableId;
 			}
 			if (table_item->max_statck_size() <= 0)
 			{
@@ -340,7 +340,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 	auto table_item = GetItemTable(item_base_db.config_id());
 	if (nullptr == table_item)
 	{
-		return kTableIdInvalidError;
+		return kInvalidTableId;
 	}
 	if (table_item->max_statck_size() <= 0)
 	{
