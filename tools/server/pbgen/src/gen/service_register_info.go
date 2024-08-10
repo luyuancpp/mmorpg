@@ -23,7 +23,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 		return fmt.Errorf("not a proto file: %s", fd.Name())
 	}
 
-	f, err := os.Open(filepath.Join(filePath, fd.Name()))
+	f, err := os.Open(filePath + fd.Name())
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", fd.Name(), err)
 	}
@@ -86,7 +86,7 @@ func ReadProtoFileGrpcService(fd os.DirEntry, filePath string) error {
 		return fmt.Errorf("not a proto file: %s", fd.Name())
 	}
 
-	f, err := os.Open(filepath.Join(filePath, fd.Name()))
+	f, err := os.Open(filePath + fd.Name())
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", fd.Name(), err)
 	}
