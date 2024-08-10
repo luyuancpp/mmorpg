@@ -8,10 +8,10 @@
 void PlayerTipUtil::SendToPlayer(entt::entity player, uint32_t tipId, const StringVector& strParam)
 {
 	TipInfoMessage message;
-	message.mutable_tip_info()->set_id(tipId);
+	message.set_id(tipId);
 	for (const auto& param : strParam)
 	{
-		*message.mutable_tip_info()->mutable_parameters()->Add() = param;
+		*message.mutable_parameters()->Add() = param;
 	}
 
 	SendMessageToPlayer(ClientPlayerCommonServiceSendTipToClientMsgId, message, player);

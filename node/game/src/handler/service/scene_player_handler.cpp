@@ -22,7 +22,7 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 		game_node_type == eGameNodeType::kRoomSceneCrossNode)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to server type: " << game_node_type;
-		response->mutable_error()->set_id(kEnterSceneServerType);
+		response->mutable_error_message()->set_id(kEnterSceneServerType);
 		return;
 	}
 
@@ -30,7 +30,7 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 	if (scene_info.scene_confid() <= 0 && scene_info.guid() <= 0)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to invalid scene_info: " << scene_info.DebugString();
-		response->mutable_error()->set_id(kEnterSceneParamError);
+		response->mutable_error_message()->set_id(kEnterSceneParamError);
 		return;
 	}
 
@@ -40,7 +40,7 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 		if (current_scene_info && current_scene_info->guid() == scene_info.guid() && scene_info.guid() > 0)
 		{
 			LOG_WARN << "Player " << tls.registry.get<Guid>(player) << " is already in the requested scene: " << scene_info.guid();
-			response->mutable_error()->set_id(kEnterSceneYouInCurrentScene);
+			response->mutable_error_message()->set_id(kEnterSceneYouInCurrentScene);
 			return;
 		}
 	}

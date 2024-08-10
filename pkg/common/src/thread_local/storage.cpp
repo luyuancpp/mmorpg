@@ -12,9 +12,9 @@ void ThreadLocalStorage::ClearForTest()
     itemRegistry.clear();
     networkRegistry.clear();
 
-	op_entity = entt::null;
-	error_entity = entt::null;
-	global_entity = entt::null;
+	operatorEntity = entt::null;
+	errorEntity = entt::null;
+	globalEntity = entt::null;
 }
 
 

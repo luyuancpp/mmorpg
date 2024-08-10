@@ -1,13 +1,13 @@
 #pragma once
 
 #include <cstdint>
-
+#include "logic/client_player/player_ability.pb.h"
 //https://zhuanlan.zhihu.com/p/149704315
 
 class AbilityUtil
 {
 public:
-	static uint32_t CheckSkillActivationPrerequisites();
+	static uint32_t CheckSkillActivationPrerequisites(const ::UseAbilityRequest* request);
 
 	void HandleAbilityInitialize();
 	void HandleAbilityStart();

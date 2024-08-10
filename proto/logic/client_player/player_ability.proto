@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+import "common/tip.proto";
+import "common/comp.proto";
+import "common/empty.proto";
+option cc_generic_services = true;
+
+message UseAbilityRequest {
+  uint32 ability_id = 1;
+  uint64 target_id = 2;
+  Vector3 position = 3;  
+}
+
+message UseAbilityResponse {
+  TipInfoMessage error_message = 1;  
+}
+
+service PlayerAbilityService {  
+  rpc UseAbility (UseAbilityRequest) returns (UseAbilityResponse);
+}
