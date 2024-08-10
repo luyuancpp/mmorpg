@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Tip struct {
+type TipInfoMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -29,8 +29,8 @@ type Tip struct {
 	Parameters []string `protobuf:"bytes,2,rep,name=parameters,proto3" json:"parameters,omitempty"`
 }
 
-func (x *Tip) Reset() {
-	*x = Tip{}
+func (x *TipInfoMessage) Reset() {
+	*x = TipInfoMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_common_tip_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -38,13 +38,13 @@ func (x *Tip) Reset() {
 	}
 }
 
-func (x *Tip) String() string {
+func (x *TipInfoMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Tip) ProtoMessage() {}
+func (*TipInfoMessage) ProtoMessage() {}
 
-func (x *Tip) ProtoReflect() protoreflect.Message {
+func (x *TipInfoMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_common_tip_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,19 +56,19 @@ func (x *Tip) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Tip.ProtoReflect.Descriptor instead.
-func (*Tip) Descriptor() ([]byte, []int) {
+// Deprecated: Use TipInfoMessage.ProtoReflect.Descriptor instead.
+func (*TipInfoMessage) Descriptor() ([]byte, []int) {
 	return file_common_tip_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Tip) GetId() uint32 {
+func (x *TipInfoMessage) GetId() uint32 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *Tip) GetParameters() []string {
+func (x *TipInfoMessage) GetParameters() []string {
 	if x != nil {
 		return x.Parameters
 	}
@@ -79,11 +79,12 @@ var File_common_tip_proto protoreflect.FileDescriptor
 
 var file_common_tip_proto_rawDesc = []byte{
 	0x0a, 0x10, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x74, 0x69, 0x70, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x22, 0x35, 0x0a, 0x03, 0x54, 0x69, 0x70, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1e, 0x0a, 0x0a, 0x70, 0x61, 0x72,
-	0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0a, 0x70,
-	0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f,
-	0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x6f, 0x22, 0x40, 0x0a, 0x0e, 0x54, 0x69, 0x70, 0x49, 0x6e, 0x66, 0x6f, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d,
+	0x52, 0x02, 0x69, 0x64, 0x12, 0x1e, 0x0a, 0x0a, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65,
+	0x72, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0a, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x65,
+	0x74, 0x65, 0x72, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -100,7 +101,7 @@ func file_common_tip_proto_rawDescGZIP() []byte {
 
 var file_common_tip_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_common_tip_proto_goTypes = []any{
-	(*Tip)(nil), // 0: Tip
+	(*TipInfoMessage)(nil), // 0: TipInfoMessage
 }
 var file_common_tip_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -117,7 +118,7 @@ func file_common_tip_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_common_tip_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*Tip); i {
+			switch v := v.(*TipInfoMessage); i {
 			case 0:
 				return &v.state
 			case 1:

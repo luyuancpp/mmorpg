@@ -3,7 +3,7 @@
 #include "pbc/ability_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
 
-uint32_t AbilityUtil::CheckSkillActivationPrerequisites()
+uint32_t AbilityUtil::CheckSkillActivationPrerequisites(const ::UseAbilityRequest* request)
 {
     return kOK;
 }

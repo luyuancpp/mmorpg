@@ -219,6 +219,12 @@
     <ClCompile Include="src\proto\service\scene_player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\client_player\player_ability.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\service\player_ability_service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\service\centre_common_server_player_service.h">
@@ -423,6 +429,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service\scene_player_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\player_ability.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\player_ability_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

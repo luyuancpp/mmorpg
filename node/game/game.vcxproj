@@ -149,6 +149,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\handler\service\game_scene_server_player_handler.cpp" />
     <ClCompile Include="src\handler\service\game_server_player_handler.cpp" />
     <ClCompile Include="src\handler\service\game_service_handler.cpp" />
+    <ClCompile Include="src\handler\service\player_ability_handler.cpp" />
     <ClCompile Include="src\handler\service\player_service.cpp" />
     <ClCompile Include="src\handler\service\register_handler.cpp" />
     <ClCompile Include="src\handler\service\scene_player_handler.cpp" />
@@ -161,6 +162,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\handler\service_replied\centre_scene_server_player_replied_handler.cpp" />
     <ClCompile Include="src\handler\service_replied\centre_service_replied_handler.cpp" />
     <ClCompile Include="src\handler\service_replied\common_player_replied_handler.cpp" />
+    <ClCompile Include="src\handler\service_replied\player_ability_replied_handler.cpp" />
     <ClCompile Include="src\handler\service_replied\player_service_replied.cpp" />
     <ClCompile Include="src\handler\service_replied\register_replied_handler.cpp" />
     <ClCompile Include="src\game_logic\config\config_util.cpp" />
@@ -203,6 +205,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\handler\service\game_scene_server_player_handler.h" />
     <ClInclude Include="src\handler\service\game_server_player_handler.h" />
     <ClInclude Include="src\handler\service\game_service_handler.h" />
+    <ClInclude Include="src\handler\service\player_ability_handler.h" />
     <ClInclude Include="src\handler\service\player_service.h" />
     <ClInclude Include="src\handler\service\register_handler.h" />
     <ClInclude Include="src\handler\service\scene_player_handler.h" />
@@ -215,6 +218,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\handler\service_replied\centre_scene_server_player_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\centre_service_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\common_player_replied_handler.h" />
+    <ClInclude Include="src\handler\service_replied\player_ability_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\player_service_replied.h" />
     <ClInclude Include="src\game_logic\config\config_util.h" />
     <ClInclude Include="src\game_logic\scene\system\movement_system.h" />

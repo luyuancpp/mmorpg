@@ -7,29 +7,29 @@ static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == siz
 //todo init local thread
 
 //todo 注意这里如果调用的registry的话，这个全局变量应该也要跟着清空
-entt::entity error_entity()
+entt::entity ErrorEntity()
 {
-    if (tls.error_entity == entt::null)
+    if (tls.errorEntity == entt::null)
     {
-        tls.error_entity = tls.globalRegistry.create();
+        tls.errorEntity = tls.globalRegistry.create();
     }
-    return tls.error_entity;
+    return tls.errorEntity;
 }
 
-entt::entity op_entity()
+entt::entity OperatorEntity()
 {
-    if (tls.op_entity == entt::null)
+    if (tls.operatorEntity == entt::null)
     {
-        tls.op_entity = tls.globalRegistry.create();
+        tls.operatorEntity = tls.globalRegistry.create();
     }
-    return tls.op_entity;
+    return tls.operatorEntity;
 }
 
 entt::entity GlobalEntity()
 {
-    if (tls.global_entity == entt::null)
+    if (tls.globalEntity == entt::null)
     {
-        tls.global_entity = tls.globalRegistry.create();
+        tls.globalEntity = tls.globalRegistry.create();
     }
-    return tls.global_entity;
+    return tls.globalEntity;
 }

@@ -57,6 +57,7 @@
 59=GameServiceInvokePlayerService
 60=ClientPlayerSceneServiceNotifyEnterScene
 61=GameServiceRegisterGateNode
+62=PlayerAbilityServiceUseAbility
 63=GateServiceSendMessageToPlayer
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg

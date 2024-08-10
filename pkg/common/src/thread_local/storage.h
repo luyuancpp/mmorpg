@@ -16,9 +16,9 @@ public:
 
 	entt::dispatcher dispatcher;
 
-	entt::entity op_entity{entt::null};
-	entt::entity error_entity{entt::null};
-	entt::entity global_entity{entt::null};
+	entt::entity operatorEntity{entt::null};
+	entt::entity errorEntity{entt::null};
+	entt::entity globalEntity{entt::null};
 
 	void ClearForTest();
 };

@@ -18,13 +18,13 @@ message LoginRequest
 
 message LoginResponse
 {
-  Tip error = 1;
+  TipInfoMessage error_message = 1;
   repeated AccountSimplePlayerWrapper players = 2;
 }
 
 message TestResponse
 {
-  Tip error = 1;
+  TipInfoMessage error_message = 1;
   repeated AccountSimplePlayerWrapper players = 2;
   repeated string teststring = 3;
   repeated int32 testint = 4;
@@ -37,7 +37,7 @@ message CreatePlayerRequest
 
 message CreatePlayerResponse
 {
-	Tip error = 1;
+	TipInfoMessage error_message = 1;
 	repeated AccountSimplePlayerWrapper players = 2;
 }
 
@@ -48,7 +48,7 @@ message EnterGameRequest
 
 message EnterGameResponse
 {
-	Tip error = 1;
+	TipInfoMessage error_message = 1;
 }
 
 message LeaveGameRequest
