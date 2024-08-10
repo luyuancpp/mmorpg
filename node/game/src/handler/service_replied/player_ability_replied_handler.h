@@ -10,6 +10,14 @@ public:
 		const ::UseAbilityRequest* request,
 		::UseAbilityResponse* response);
 
+	static void NotifyAbilityUsed(entt::entity player,
+		const ::AbilityUsedS2C* request,
+		::Empty* response);
+
+	static void NotifyAbilityInterrupted(entt::entity player,
+		const ::AbilityInterruptedS2C* request,
+		::Empty* response);
+
 	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
 		entt::entity player,
 		const ::google::protobuf::Message* request,
@@ -21,6 +29,16 @@ public:
 			UseAbility(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<UseAbilityResponse*>(response));
+		break;
+		case 1:
+			NotifyAbilityUsed(player,
+			nullptr,
+			::google::protobuf::internal::DownCast<Empty*>(response));
+		break;
+		case 2:
+			NotifyAbilityInterrupted(player,
+			nullptr,
+			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		default:
 		break;

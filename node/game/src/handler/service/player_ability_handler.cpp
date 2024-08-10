@@ -13,3 +13,17 @@ void PlayerAbilityServiceHandler::UseAbility(entt::entity player,const ::UseAbil
 ///<<< END WRITING YOUR CODE
 }
 
+void PlayerAbilityServiceHandler::NotifyAbilityUsed(entt::entity player,const ::AbilityUsedS2C* request,
+	     Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void PlayerAbilityServiceHandler::NotifyAbilityInterrupted(entt::entity player,const ::AbilityInterruptedS2C* request,
+	     Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+

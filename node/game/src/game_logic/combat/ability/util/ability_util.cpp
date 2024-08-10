@@ -15,8 +15,8 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(const ::UseAbilityReques
         return kInvalidTableId;
     }
 
-    bool hasValidTargetType = !tableAbility->target_type().empty();
-    int targetId = request->target_id();
+    const bool hasValidTargetType = !tableAbility->target_type().empty();
+    const auto targetId = request->target_id();
 
     if (hasValidTargetType) {
         if (targetId <= 0) {

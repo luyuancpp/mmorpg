@@ -5,18 +5,40 @@ option go_package = "pb/game";
 import "common/tip.proto";
 import "common/comp.proto";
 import "common/empty.proto";
+import "component/ability_comp.proto";
+import "component/actor_comp.proto";
+
 option cc_generic_services = true;
 
 message UseAbilityRequest {
   uint32 ability_id = 1;
   uint64 target_id = 2;
   Vector3 position = 3;  
+  Rotation rotation = 4;
 }
 
 message UseAbilityResponse {
   TipInfoMessage error_message = 1;  
 }
 
-service PlayerAbilityService {  
+message AbilityInterruptedS2C
+{
+  uint64 target_entity = 1;
+  uint32 ability_id = 2;
+  uint32 reason_code = 3;
+}
+
+message AbilityUsedS2C
+{
+  uint64 entity = 1;
+  repeated uint64 target_entity = 2;
+  uint32 ability_id = 3;
+  Vector3 position = 4;
+  uint64 time_stamp = 5;
+}
+
+service PlayerAbilityService { 
   rpc UseAbility (UseAbilityRequest) returns (UseAbilityResponse);
+  rpc NotifyAbilityUsed (AbilityUsedS2C) returns (Empty);
+  rpc NotifyAbilityInterrupted (AbilityInterruptedS2C) returns (Empty);
 }
