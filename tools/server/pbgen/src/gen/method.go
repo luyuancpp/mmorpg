@@ -569,6 +569,10 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
+	if strings.Contains(firstMethodInfo.FileBaseName(), config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		return false
+	}
+
 	// Check if the file base name does not contain the GsPrefixName
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName)
 }
