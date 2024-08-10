@@ -39,7 +39,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 	resp := &game.LoginC2LResponse{ClientMsgBody: &game.LoginResponse{}}
 	resp.SessionInfo = in.SessionInfo
 	if ok {
-		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1005}
 		return resp, nil
 	}
 	data.SessionList.Set(sessionId, &data.Player{Account: in.ClientMsgBody.Account})
@@ -50,7 +50,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 		service := accountdbservice.NewAccountDBService(*l.svcCtx.DBClient)
 		_, err := service.Load2Redis(l.ctx, &game.LoadAccountRequest{Account: in.ClientMsgBody.Account})
 		if err != nil {
-			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
+			resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1005}
 			return resp, err
 		}
 	}
@@ -61,7 +61,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 		return nil, err
 	}
 
-	accountDatabase := &game.AccountDatabase{}
+	accountDatabase := &game.UserAccounts{}
 	err = proto.Unmarshal(valueBytes, accountDatabase)
 	if err != nil {
 		logx.Error(err)
@@ -69,7 +69,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 	}
 	if nil != accountDatabase.SimplePlayers {
 		for _, v := range accountDatabase.SimplePlayers.Players {
-			cPlayer := &game.CAccountSimplePlayer{Player: v}
+			cPlayer := &game.AccountSimplePlayerWrapper{Player: v}
 			resp.ClientMsgBody.Players = append(resp.ClientMsgBody.Players, cPlayer)
 		}
 	}
