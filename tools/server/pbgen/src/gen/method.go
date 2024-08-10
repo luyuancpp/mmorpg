@@ -569,7 +569,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.FileBaseName(), config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
 		return false
 	}
 
@@ -671,19 +671,20 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	firstMethod := (*methodList)[0]
+	firstMethodInfo := (*methodList)[0]
 
 	// Check if the method path indicates it's in common or logic proto directories
-	isInCommonProtoDir := strings.Contains(firstMethod.Path, config.ProtoDirNames[config.CommonProtoDirIndex])
-	isInLogicProtoDir := strings.Contains(firstMethod.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+	isInCommonProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex])
+	isInLogicProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+	isInClientProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex])
 
 	// Ensure it's in either common or logic proto directories
-	if !isInCommonProtoDir && !isInLogicProtoDir {
+	if !isInCommonProtoDir && !isInLogicProtoDir && isInClientProtoDir {
 		return false
 	}
 
 	// Check if the file base name contains the Centre prefix name
-	isCentreMethod := strings.Contains(firstMethod.FileBaseName(), config.CentrePrefixName)
+	isCentreMethod := strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 
 	return isCentreMethod
 }
