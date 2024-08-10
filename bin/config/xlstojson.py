@@ -14,7 +14,7 @@ from os.path import isfile, join
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-begin_row_idx = 7
+begin_row_idx = 9
 json_dir = "generated/json/"
 xls_dir = "xlsx/"
 gen_type = "server"
