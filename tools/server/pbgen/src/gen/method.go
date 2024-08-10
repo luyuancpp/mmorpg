@@ -726,10 +726,18 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 	}
 
 	firstMethodInfo := (*methodList)[0]
+
+	// 检查方法是否属于 PlayerService
 	if !firstMethodInfo.IsPlayerService() {
 		return false
 	}
 
+	// 检查方法路径是否位于 ClientPlayer 目录中
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		return false
+	}
+
+	// 检查文件名是否包含 Centre 前缀名
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
