@@ -114,6 +114,6 @@ func WriteMd5Data2File(dstFilePath string, data string) {
 	}
 	os.WriteFile(GetMd5FileName(dstFilePath), []byte(data), 0666)
 	os.WriteFile(dstFilePath, []byte(data), 0666)
-	log.Default().Println(GetMd5FileName(dstFilePath), " -> ", dstFilePath)
+	log.Default().Println("Copied", GetMd5FileName(dstFilePath), " -> ", dstFilePath)
 	return
 }
