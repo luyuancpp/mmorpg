@@ -63,7 +63,7 @@ const PbcDirName = "pkg/pbc/src/proto/"
 
 const PbcOutDir = ProjectDir + PbcDirName
 const GrpcOutDir = ProjectDir + PbcDirName
-const ClientGoOutDir = ProjectDir + ClientDirName + "client/"
+const ClientGoOutDir = ProjectDir + ClientDirName
 const ClientGoPbDir = ClientGoOutDir + "pb/game/"
 const LoginDir = ProjectDir + "node/login/"
 const LoginGoDir = ProjectDir + "node/login/pb/game/"

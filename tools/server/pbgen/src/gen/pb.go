@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
 	"runtime"
@@ -36,14 +35,14 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			defer wg.Done()
 
 			// Construct file paths
-			fileName := filepath.Join(protoPath, fd.Name())
-			md5FileName := filepath.Join(protoMd5Path, fd.Name()+config.Md5Ex)
+			fileName := protoPath + fd.Name()
+			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
 			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcOutDir, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
 			fileSame, _ := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			if fileSame && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
 				return
 			}
 
@@ -132,7 +131,7 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 
 			// Check if files with same MD5 and destinations exist
 			fileSame, err := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			if fileSame && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
 				return
 			}
 
@@ -217,7 +216,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 
 			// Check if files with same MD5 and destinations exist
 			fileSame, err := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			if fileSame && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
 				return
 			}
 
@@ -304,7 +303,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 
 			// Check if files with same MD5 and destinations exist
 			fileSame, err := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			if fileSame && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
 				return
 			}
 
@@ -386,7 +385,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 
 			// Check if files with same MD5 and destinations exist
 			fileSame, err := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(fileName) && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
+			if fileSame && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
 				return
 			}
 
