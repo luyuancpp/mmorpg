@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
+import "common/tip.proto";
 import "google/protobuf/empty.proto";
 import "logic/component/scene_comp.proto";
 option cc_generic_services = true;
@@ -26,6 +27,7 @@ message EnterSceneS2CRequest
 
 message EnterScenerS2CResponse
 {
+  TipInfoMessage error_message = 1;
 }
 
 service GamePlayerSceneService 

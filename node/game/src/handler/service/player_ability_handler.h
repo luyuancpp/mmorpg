@@ -1,6 +1,7 @@
 #pragma once
 #include "logic/client_player/player_ability.pb.h"
 #include "player_service.h"
+#include "macros/return_define.h"
 class PlayerAbilityServiceHandler : public ::PlayerService
 {
 public:
@@ -20,6 +21,7 @@ public:
 			UseAbility(player,
 			::google::protobuf::internal::DownCast<const UseAbilityRequest*>(request),
 			::google::protobuf::internal::DownCast<UseAbilityResponse*>(response));
+			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<UseAbilityResponse*>(response));
 		break;
 		default:
 		break;

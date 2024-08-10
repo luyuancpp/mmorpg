@@ -34,7 +34,7 @@
 #define HANDLE_ERROR_MESSAGE(response) \
     do { \
         auto* tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity()); \
-        if (tipInfoMessage != nullptr) { \
+        if (tipInfoMessage != nullptr && response != nullptr) { \
             *(response)->mutable_error_message() = std::move(*tipInfoMessage); \
             tls.globalRegistry.remove<TipInfoMessage>(GlobalEntity()); \
         } \

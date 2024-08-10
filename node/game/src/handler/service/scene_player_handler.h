@@ -1,6 +1,7 @@
 #pragma once
 #include "logic/client_player/scene_player.pb.h"
 #include "player_service.h"
+#include "macros/return_define.h"
 class ClientPlayerSceneServiceHandler : public ::PlayerService
 {
 public:
@@ -48,6 +49,7 @@ public:
 			EnterScene(player,
 			::google::protobuf::internal::DownCast<const EnterSceneC2SRequest*>(request),
 			::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
+			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
 		break;
 		case 1:
 			NotifyEnterScene(player,
