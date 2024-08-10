@@ -48,13 +48,12 @@ const CcGenericServices = "cc_generic_services"
 const EmptyResponseName = "Empty"
 
 var SourceDirs = [...]string{
-	"common/",
-	"centre/",
-	"game/",
-	"gate/",
-	"client/",
-	"db/",
-	"login/"}
+	"pkg/common/",
+	"pkg/pbc/",
+	"node/centre/",
+	"node/game/",
+	"node/gate/",
+	"client/"}
 
 var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string

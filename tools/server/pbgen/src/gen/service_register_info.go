@@ -17,7 +17,6 @@ import (
 
 // ReadProtoFileService reads service information from a protobuf file.
 func ReadProtoFileService(fd os.DirEntry, filePath string) error {
-	defer util.Wg.Done()
 
 	if !util.IsProtoFile(fd) {
 		return fmt.Errorf("not a proto file: %s", fd.Name())
@@ -80,7 +79,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 
 // ReadProtoFileGrpcService reads gRPC service information from a protobuf file.
 func ReadProtoFileGrpcService(fd os.DirEntry, filePath string) error {
-	defer util.Wg.Done()
 
 	if !util.IsProtoFile(fd) {
 		return fmt.Errorf("not a proto file: %s", fd.Name())
@@ -127,41 +125,17 @@ func ReadAllProtoFileServices() {
 			util.Wg.Add(1)
 			fd := v
 			go func(i int, fd os.DirEntry) {
+				defer util.Wg.Done()
 				_ = ReadProtoFileService(fd, config.ProtoDirs[i])
 			}(i, fd)
 
 			util.Wg.Add(1)
 			go func(i int, fd os.DirEntry) {
+				defer util.Wg.Done()
 				_ = ReadProtoFileGrpcService(fd, config.ProtoDirs[i])
 			}(i, fd)
 		}
 	}
-}
-
-// readServiceIdFile reads service IDs from a file and populates the ServiceIdMap.
-func readServiceIdFile() error {
-	f, err := os.Open(config.ServiceIdsFileName)
-	if err != nil {
-		return fmt.Errorf("failed to open file %s: %w", config.ServiceIdsFileName, err)
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
-		splitList := strings.Split(line, "=")
-		id, err := strconv.ParseUint(splitList[0], 10, 64)
-		if err != nil {
-			return fmt.Errorf("failed to parse ID from line %s: %w", line, err)
-		}
-		ServiceIdMap[splitList[1]] = id
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading file %s: %w", config.ServiceIdsFileName, err)
-	}
-
-	return nil
 }
 
 // ReadServiceIdFile reads service IDs from a file asynchronously.
@@ -169,34 +143,55 @@ func ReadServiceIdFile() {
 	util.Wg.Add(1)
 	go func() {
 		defer util.Wg.Done()
-		if err := readServiceIdFile(); err != nil {
+
+		f, err := os.Open(config.ServiceIdsFileName)
+		if err != nil {
+			fmt.Errorf("failed to open file %s: %w", config.ServiceIdsFileName, err)
 			log.Fatalf("error reading service ID file: %v", err)
 		}
-	}()
-}
+		defer f.Close()
 
-func writeServiceIdFile() {
-	defer util.Wg.Done()
-	var data string
-	var idList []uint64
-	for k, _ := range RpcIdMethodMap {
-		idList = append(idList, k)
-	}
-	sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
-	for i := 0; i < len(idList); i++ {
-		rpcMethodInfo, ok := RpcIdMethodMap[idList[i]]
-		if !ok {
-			fmt.Println("msg id=", strconv.Itoa(i), " not use ")
-			continue
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			line := scanner.Text()
+			splitList := strings.Split(line, "=")
+			id, err := strconv.ParseUint(splitList[0], 10, 64)
+			if err != nil {
+				fmt.Errorf("failed to parse ID from line %s: %w", line, err)
+				log.Fatalf("error reading service ID file: %v", err)
+			}
+			ServiceIdMap[splitList[1]] = id
 		}
-		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
-	}
-	util.WriteMd5Data2File(config.ServiceIdsFileName, data)
+
+		if err := scanner.Err(); err != nil {
+			fmt.Errorf("error reading file %s: %w", config.ServiceIdsFileName, err)
+			log.Fatalf("error reading service ID file: %v", err)
+		}
+
+	}()
 }
 
 func WriteServiceIdFile() {
 	util.Wg.Add(1)
-	go writeServiceIdFile()
+	go func() {
+		defer util.Wg.Done()
+
+		var data string
+		var idList []uint64
+		for k, _ := range RpcIdMethodMap {
+			idList = append(idList, k)
+		}
+		sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
+		for i := 0; i < len(idList); i++ {
+			rpcMethodInfo, ok := RpcIdMethodMap[idList[i]]
+			if !ok {
+				fmt.Println("msg id=", strconv.Itoa(i), " not use ")
+				continue
+			}
+			data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
+		}
+		util.WriteMd5Data2File(config.ServiceIdsFileName, data)
+	}()
 }
 
 // InitServiceId initializes service IDs based on the loaded service methods and ID mappings.
