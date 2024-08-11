@@ -135,6 +135,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\game_logic\scene\util\grid_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp" />
     <ClCompile Include="src\handler\event\event_handler.cpp" />
     <ClCompile Include="src\handler\event\mission_event_handler.cpp" />
@@ -191,6 +192,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\scene\constants\dt_crowd_constants.h" />
     <ClInclude Include="src\game_logic\scene\constants\nav_constants.h" />
     <ClInclude Include="src\game_logic\scene\constants\view_constants.h" />
+    <ClInclude Include="src\game_logic\scene\util\grid_util.h" />
     <ClInclude Include="src\game_logic\scene\util\navigation_util.h" />
     <ClInclude Include="src\handler\event\event_handler.h" />
     <ClInclude Include="src\handler\event\mission_event_handler.h" />

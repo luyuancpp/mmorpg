@@ -5,8 +5,8 @@ option go_package = "pb/game";
 import "common/tip.proto";
 import "common/comp.proto";
 import "common/empty.proto";
-import "component/ability_comp.proto";
-import "component/actor_comp.proto";
+import "logic/component/ability_comp.proto";
+import "logic/component/actor_comp.proto";
 
 option cc_generic_services = true;
 

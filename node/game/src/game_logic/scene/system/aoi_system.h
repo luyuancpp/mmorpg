@@ -1,13 +1,10 @@
 ﻿#pragma once
 
-#include <absl/hash/hash.h>
-#include <absl/numeric/int128.h>
-
 #include "game_logic/scene/comp/grid_comp.h"
 
 class AfterEnterScene;
 class BeforeLeaveScene;
-class Location;
+
 struct Hex;
 struct SceneEntityComp;
 class Transform;
@@ -17,13 +14,8 @@ public:
     static void Update(double delta);
     static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
     static void UpdateLogGridSize(double delta);
-    static absl::uint128 GetGridId(const Location& l);
-    static absl::uint128 GetGridId(const Hex& hex);
-    static void ScanNeighborGridIds(const Hex& hex, GridSet& grid_set);
-    static void ScanCurrentAndNeighborGridIds(const Hex& hex, GridSet& grid_set);
-    static void LeaveGrid(const Hex& hex, SceneGridListComp& grid_list, entt::entity player);
     static void ClearEmptyGrids();
 private:
+    static void LeaveGrid(const Hex& hex, SceneGridListComp& grid_list, entt::entity player);
     static void BroadCastLeaveGridMessage(const SceneGridListComp& grid_list, entt::entity player, const GridSet& leave_grid_set);
-    static Hex CalculateHexPosition(const Transform& transform);
 };

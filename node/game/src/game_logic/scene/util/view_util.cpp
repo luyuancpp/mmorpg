@@ -54,7 +54,7 @@ bool ViewUtil::ShouldRefreshView()
 	return true;
 }
 
-bool ViewUtil::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entity entrant)
+bool ViewUtil::ShouldUpdateView(entt::entity observer, entt::entity entrant)
 {
 	if (BothAreNpcs(observer, entrant)) {
 		return false;
@@ -64,6 +64,7 @@ bool ViewUtil::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entity 
 		return true;
 	}
 
+	// 如果需要刷新视图，返回false
 	if (ShouldRefreshView()) {
 		return false;
 	}
@@ -130,4 +131,10 @@ void ViewUtil::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leav
 {
 	// Placeholder for handling player leave message
 	// Specific logic can be added based on requirements
+}
+
+void ViewUtil::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
+	const google::protobuf::Message& message)
+{
+	
 }
