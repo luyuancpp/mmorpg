@@ -11,6 +11,8 @@ class AbilityUtil
 public:
 	static uint32_t CheckSkillActivationPrerequisites(entt::entity caster, const ::UseAbilityRequest* request);
 
+	static bool IsAbilityOfType(uint32_t abilityId, uint32_t abilityType);
+
 	static void HandleAbilityInitialize();
 	static void HandleAbilityStart(entt::entity caster);
 	static void HandleAbilitySpell();

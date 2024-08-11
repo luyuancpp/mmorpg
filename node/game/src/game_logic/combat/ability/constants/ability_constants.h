@@ -1,22 +1,22 @@
 #pragma once
 #include <cstdint>
 
-//¼¼ÄÜÊÍ·ÅÊ±²»ÐèÒªÄ¿±ê¼´¿ÉÊÍ·Å£¨ÈçÈºÁÆ£¬²ÈµØ°å¼¼ÄÜ£© -> 1 << 1
-//¼¼ÄÜÊÍ·ÅÊ±ÐèÒªÑ¡¶¨Ä¿±ê£¨µ¥ÌåÖ¸ÏòÐÔ¼¼ÄÜ£© -> 1 << 2
-//¼¼ÄÜÊÍ·ÅÊ±ÐèÒªÒÔÖ¸¶¨µØµãÎªÄ¿±ê£¨³£ÓÃÓÚAOE¼¼ÄÜ£© -> 1 << 3
+//æŠ€èƒ½é‡Šæ”¾æ—¶ä¸éœ€è¦ç›®æ ‡å³å¯é‡Šæ”¾ï¼ˆå¦‚ç¾¤ç–—ï¼Œè¸©åœ°æ¿æŠ€èƒ½ï¼‰ -> 1 << 1
+//æŠ€èƒ½é‡Šæ”¾æ—¶éœ€è¦é€‰å®šç›®æ ‡ï¼ˆå•ä½“æŒ‡å‘æ€§æŠ€èƒ½ï¼‰ -> 1 << 2
+//æŠ€èƒ½é‡Šæ”¾æ—¶éœ€è¦ä»¥æŒ‡å®šåœ°ç‚¹ä¸ºç›®æ ‡ï¼ˆå¸¸ç”¨äºŽAOEæŠ€èƒ½ï¼‰ -> 1 << 3
 // Enum for target requirements
-enum eTargetRequirement {
-	kNoTargetRequired = 1 << 0,   // ²»ÐèÒªÄ¿±ê
-	kTargetedAbility = 1 << 1,    // Ñ¡¶¨Ä¿±ê
-	kAreaOfEffect = 1 << 2        // ÒÔÖ¸¶¨µØµãÎªÄ¿±ê
+enum eTargetRequirement : uint32_t {
+	kNoTargetRequired = 1 << 0,   // ä¸éœ€è¦ç›®æ ‡
+	kTargetedAbility = 1 << 1,    // é€‰å®šç›®æ ‡
+	kAreaOfEffect = 1 << 2        // ä»¥æŒ‡å®šåœ°ç‚¹ä¸ºç›®æ ‡
 };
 
 
 // Enum for ability types
-enum eAbilityType {
-	kPassiveAbility = 1 << 0,    // ±»¶¯¼¼ÄÜ
-	kGeneralAbility = 1 << 1,    // ÆÕÍ¨Ê©·¨¼¼ÄÜ
-	kChannelAbility = 1 << 2,    // ³ÖÐøÊ©·¨¼¼ÄÜ
-	kToggleAbility = 1 << 3,     // ¿ª¹ØÀà¼¼ÄÜ
-	kActivateAbility = 1 << 4    // ¼¤»îÀà¼¼ÄÜ
+enum eAbilityType : uint32_t {
+	kPassiveAbility = 1 << 0,    // è¢«åŠ¨æŠ€èƒ½
+	kGeneralAbility = 1 << 1,    // æ™®é€šæ–½æ³•æŠ€èƒ½
+	kChannelAbility = 1 << 2,    // æŒç»­æ–½æ³•æŠ€èƒ½
+	kToggleAbility = 1 << 3,     // å¼€å…³ç±»æŠ€èƒ½
+	kActivateAbility = 1 << 4    // æ¿€æ´»ç±»æŠ€èƒ½
 };

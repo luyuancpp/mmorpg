@@ -51,7 +51,7 @@ void TimerTaskComp::Cancel()
     assert(nullptr == id_.GetTimer());
 }
 
-bool TimerTaskComp::IsActive()
+bool TimerTaskComp::IsActive() const
 {
     return !(endTime.invalid() == endTime);
 }
