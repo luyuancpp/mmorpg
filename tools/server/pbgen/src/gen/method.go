@@ -443,20 +443,22 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 
 // / game server
 func isGsMethodHandler(methodList *RPCMethods) bool {
-	if len(*methodList) <= 0 {
+	if len(*methodList) == 0 {
 		return false
 	}
 
-	firstMethod := (*methodList)[0]
+	firstMethodInfo := (*methodList)[0]
 
-	// Check if the method's path contains common or logic proto directory names
-	isCommonOrLogicProto := strings.Contains(firstMethod.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethod.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
 
-	// Check if the method's file base name starts with the GsPrefixName
-	hasGsPrefix := strings.HasPrefix(firstMethod.FileBaseName(), config.GsPrefixName)
+	if strings.Contains(firstMethodInfo.Path, config.PlayerName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.PlayerName) {
+		return false
+	}
 
-	// Return true if both conditions are satisfied
+	hasGsPrefix := strings.HasPrefix(firstMethodInfo.FileBaseName(), config.GsPrefixName)
+
 	return isCommonOrLogicProto && hasGsPrefix
 }
 
@@ -665,7 +667,6 @@ func writeGsMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	util.WriteMd5Data2File(dstFileName, data)
 }
 
-// centre server
 func isCentreMethodHandler(methodList *RPCMethods) bool {
 	if len(*methodList) == 0 {
 		return false
@@ -673,20 +674,23 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	// Check if the method path indicates it's in common or logic proto directories
-	isInCommonProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex])
-	isInLogicProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
-	isInClientProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex])
+	// 检查是否在 common 或 logic proto 目录中
+	isInCommonOrLogicProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
 
-	// Ensure it's in either common or logic proto directories
-	if !isInCommonProtoDir && !isInLogicProtoDir && isInClientProtoDir {
+	// 如果不在 common 或 logic proto 目录中，直接返回 false
+	if !isInCommonOrLogicProtoDir {
 		return false
 	}
 
-	// Check if the file base name contains the Centre prefix name
-	isCentreMethod := strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
+	// 如果路径或文件名包含 PlayerName，直接返回 false
+	if strings.Contains(firstMethodInfo.Path, config.PlayerName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.PlayerName) {
+		return false
+	}
 
-	return isCentreMethod
+	// 检查文件名是否包含 Centre 前缀
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeCentreMethodHandlerHeadFile(methodList RPCMethods) {
