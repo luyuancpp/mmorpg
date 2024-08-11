@@ -24,7 +24,7 @@ void ViewUtil::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leav
     entitiesToNotifyExit.emplace(observer, leaver);
 }
 
-bool ViewUtil::IsBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
+bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
 {
     return true;
 }

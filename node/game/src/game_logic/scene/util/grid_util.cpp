@@ -60,11 +60,11 @@ void GridUtil::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnordere
     auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
     
     // 存储要扫描的网格 ID
-    GridSet scanGrid;
-    GetCurrentAndNeighborGridIds(*hexPosition, scanGrid);
+    GridSet grids;
+    GetCurrentAndNeighborGridIds(*hexPosition, grids);
 
     // 遍历扫描到的网格 ID
-    for (const auto& gridId : scanGrid)
+    for (const auto& gridId : grids)
     {
         // 检查网格 ID 是否在网格列表中
         auto gridIt = gridList.find(gridId);
@@ -110,11 +110,11 @@ void GridUtil::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSe
     auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
     
     // 存储要扫描的网格 ID
-    GridSet scanGrid;
-    GetCurrentAndNeighborGridIds(*hexPosition, scanGrid);
+    GridSet inViewGrids;
+    GetCurrentAndNeighborGridIds(*hexPosition, inViewGrids);
 
     // 遍历扫描到的网格 ID
-    for (const auto& gridId : scanGrid)
+    for (const auto& gridId : inViewGrids)
     {
         // 检查网格 ID 是否在网格列表中
         auto gridIt = gridList.find(gridId);
@@ -133,7 +133,7 @@ void GridUtil::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSe
 
             double viewRadius = ViewUtil::GetMaxViewRadius(gridEntity);
             
-            if (!ViewUtil::IsBeyondViewRadius(gridEntity, entity, viewRadius))
+            if (!ViewUtil::IsWithinViewRadius(gridEntity, entity, viewRadius))
             {
                 continue;
             }
