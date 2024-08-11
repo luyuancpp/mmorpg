@@ -25,7 +25,7 @@ public:
 
 	void Cancel();
 
-    bool Actived();
+    bool IsActive();
 
     int32_t GetEndTime();
     void UpdateEndStamp();
@@ -36,7 +36,7 @@ private:
 
     TimerId  id_;
     TimerCallback callback_;
-    Timestamp end_time_;
+    Timestamp endTime;
 };
 
 

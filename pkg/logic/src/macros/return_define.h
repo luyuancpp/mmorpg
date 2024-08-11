@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 
@@ -51,3 +51,13 @@ return;\
 } \
 } while (false)
 
+// 定义宏以检查技能激活前提条件
+#define CHECK_PLAYER_REQUEST(request, fn) \
+do { \
+auto err = fn(player, request); \
+if (err != kOK) \
+{ \
+tls.globalRegistry.emplace_or_replace<TipInfoMessage>(GlobalEntity()).set_id(err); \
+return;\
+} \
+} while (false)

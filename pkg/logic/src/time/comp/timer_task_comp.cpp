@@ -47,18 +47,18 @@ void TimerTaskComp::Cancel()
 {
     gs_thread_even_loop->cancel(id_);
     id_ = TimerId();
-    end_time_ = Timestamp();
+    endTime = Timestamp();
     assert(nullptr == id_.GetTimer());
 }
 
-bool TimerTaskComp::Actived()
+bool TimerTaskComp::IsActive()
 {
-    return !(end_time_.invalid() == end_time_);
+    return !(endTime.invalid() == endTime);
 }
 
 int32_t TimerTaskComp::GetEndTime()
 {
-    if (end_time_ < Timestamp::now() )
+    if (endTime < Timestamp::now() )
     {
         return 0;
     }
@@ -71,7 +71,7 @@ void TimerTaskComp::UpdateEndStamp()
     {
         return;
     }
-    end_time_ = id_.GetTimer()->expiration();
+    endTime = id_.GetTimer()->expiration();
 }
 
 void TimerTaskComp::SetCallBack(const TimerCallback& cb)
@@ -87,5 +87,5 @@ void TimerTaskComp::OnTimer()
     }
     TimerCallback copycb = callback_;
     copycb();
-    end_time_ = Timestamp();
+    endTime = Timestamp();
 }
