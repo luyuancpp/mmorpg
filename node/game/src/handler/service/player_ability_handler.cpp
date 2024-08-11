@@ -9,7 +9,7 @@ void PlayerAbilityServiceHandler::UseAbility(entt::entity player,const ::UseAbil
 	     UseAbilityResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CHECK_REQUEST(request, AbilityUtil::CheckSkillActivationPrerequisites);
+	CHECK_PLAYER_REQUEST(request, AbilityUtil::CheckSkillActivationPrerequisites);
 ///<<< END WRITING YOUR CODE
 }
 
