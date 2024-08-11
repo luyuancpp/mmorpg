@@ -10,7 +10,7 @@ bool ViewUtil::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity ent
     return true; // Mock behavior
 }
 
-bool ViewUtil::ShouldSendPlayerEnterMessage(entt::entity observer, entt::entity entity) {
+bool ViewUtil::ShouldUpdateView(entt::entity observer, entt::entity entity) {
     
     return true; // Mock behavior
 }

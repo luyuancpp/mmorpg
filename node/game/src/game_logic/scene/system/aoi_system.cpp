@@ -10,12 +10,9 @@
 #include "game_logic/network/message_util.h"
 #include "service/scene_player_service.h"
 #include "hexagons_grid.h"
+#include "game_logic/scene/util/grid_util.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
-
-const Point kDefaultSize(20.0, 20.0);
-const Point kOrigin(0.0, 0.0);
-const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
 void AoiSystem::Update(double deltaTime) {
     GridSet gridsToEnter, gridsToLeave;
@@ -34,15 +31,15 @@ void AoiSystem::Update(double deltaTime) {
         entitiesToNotifyExit.clear();
 
         auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent.sceneEntity);
-        const auto currentHexPosition = CalculateHexPosition(transform);
-        const auto currentGridId = GetGridId(currentHexPosition);
+        const auto currentHexPosition = GridUtil::CalculateHexPosition(transform);
+        const auto currentGridId = GridUtil::GetGridId(currentHexPosition);
 
         // Calculate grid changes
         if (!tls.registry.any_of<Hex>(entity)) {
             gridList[currentGridId].entity_list.emplace(entity);
             tls.registry.emplace<Hex>(entity, currentHexPosition);
 
-            ScanCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
+            GridUtil::ScanCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
         }
         else {
             const auto previousHexPosition = tls.registry.get<Hex>(entity);
@@ -51,8 +48,8 @@ void AoiSystem::Update(double deltaTime) {
                 continue;
             }
 
-            ScanCurrentAndNeighborGridIds(previousHexPosition, gridsToLeave);
-            ScanCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
+            GridUtil::ScanCurrentAndNeighborGridIds(previousHexPosition, gridsToLeave);
+            GridUtil::ScanCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
 
             for (const auto& grid : gridsToEnter) {
                 gridsToLeave.erase(grid);
@@ -61,7 +58,7 @@ void AoiSystem::Update(double deltaTime) {
                 gridsToEnter.erase(grid);
             }
 
-            const auto previousGridId = GetGridId(previousHexPosition);
+            const auto previousGridId = GridUtil::GetGridId(previousHexPosition);
             gridList[previousGridId].entity_list.erase(entity);
 
             gridList[currentGridId].entity_list.emplace(entity);
@@ -102,13 +99,13 @@ void AoiSystem::Update(double deltaTime) {
                 }
 
                 // 我进入别人视野
-                if (ViewUtil::ShouldSendPlayerEnterMessage(observer, entity)) {
+                if (ViewUtil::ShouldUpdateView(observer, entity)) {
                     ViewUtil::FillActorCreateMessageInfo(observer, entity, actorCreateMessage);
                     entitiesToNotifyEntry.emplace(observer);
                 }
 
                 //别人进入我的视野
-                if (ViewUtil::ShouldSendPlayerEnterMessage(entity, observer)) {
+                if (ViewUtil::ShouldUpdateView(entity, observer)) {
                     ViewUtil::FillActorCreateMessageInfo(entity, observer, *actorListCreateMessage.add_actor_list());
                 }
             }
@@ -118,30 +115,6 @@ void AoiSystem::Update(double deltaTime) {
         BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServiceNotifyActorCreateMsgId, actorCreateMessage);
         BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
     }
-}
-
-Hex AoiSystem::CalculateHexPosition(const Transform& transform) {
-    return hex_round(pixel_to_hex(kHexLayout, Point(transform.location().x(), transform.location().y())));
-}
-
-absl::uint128 AoiSystem::GetGridId(const Location& location) {
-    return GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(location.x(), location.y()))));
-}
-
-absl::uint128 AoiSystem::GetGridId(const Hex& hex) {
-    return static_cast<absl::uint128>(hex.q) << 64 | static_cast<uint64_t>(hex.r);
-}
-
-void AoiSystem::ScanNeighborGridIds(const Hex& hex, GridSet& gridSet) {
-    for (int i = 0; i < 6; ++i) {
-        gridSet.emplace(GetGridId(hex_neighbor(hex, i)));
-    }
-}
-
-void AoiSystem::ScanCurrentAndNeighborGridIds(const Hex& hex, GridSet& grid_set) {
-    auto currentGridId = GetGridId(hex);
-    grid_set.emplace(currentGridId);
-    ScanNeighborGridIds(hex, grid_set);
 }
 
 void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
@@ -163,7 +136,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
 
     auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
     GridSet gridsToLeave;
-    ScanCurrentAndNeighborGridIds(*hexPosition, gridsToLeave);
+    GridUtil::ScanCurrentAndNeighborGridIds(*hexPosition, gridsToLeave);
 
     LeaveGrid(*hexPosition, gridList, entity);
     BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
@@ -180,7 +153,7 @@ void AoiSystem::UpdateLogGridSize(double deltaTime) {
 }
 
 void AoiSystem::LeaveGrid(const Hex& hex, SceneGridListComp& gridList, entt::entity entity) {
-    const auto previousGridId = GetGridId(hex);
+    const auto previousGridId = GridUtil::GetGridId(hex);
     auto previousGridIt = gridList.find(previousGridId);
     if (previousGridIt == gridList.end()) {
         return;
