@@ -39,7 +39,7 @@ void AoiSystem::Update(double deltaTime) {
             gridList[currentGridId].entity_list.emplace(entity);
             tls.registry.emplace<Hex>(entity, currentHexPosition);
 
-            GridUtil::ScanCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
+            GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
         }
         else {
             const auto previousHexPosition = tls.registry.get<Hex>(entity);
@@ -48,8 +48,8 @@ void AoiSystem::Update(double deltaTime) {
                 continue;
             }
 
-            GridUtil::ScanCurrentAndNeighborGridIds(previousHexPosition, gridsToLeave);
-            GridUtil::ScanCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
+            GridUtil::GetCurrentAndNeighborGridIds(previousHexPosition, gridsToLeave);
+            GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
 
             for (const auto& grid : gridsToEnter) {
                 gridsToLeave.erase(grid);
@@ -136,20 +136,10 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
 
     auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
     GridSet gridsToLeave;
-    GridUtil::ScanCurrentAndNeighborGridIds(*hexPosition, gridsToLeave);
+    GridUtil::GetCurrentAndNeighborGridIds(*hexPosition, gridsToLeave);
 
     LeaveGrid(*hexPosition, gridList, entity);
     BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
-}
-
-void AoiSystem::UpdateLogGridSize(double deltaTime) {
-    for (auto&& [sceneEntity, gridList] : tls.sceneRegistry.view<SceneGridListComp>().each()) {
-        for (const auto& [gridId, entityList] : gridList) {
-            if (entityList.entity_list.empty()) {
-                LOG_ERROR << "Grid is empty but not removed";
-            }
-        }
-    }
 }
 
 void AoiSystem::LeaveGrid(const Hex& hex, SceneGridListComp& gridList, entt::entity entity) {
@@ -162,22 +152,6 @@ void AoiSystem::LeaveGrid(const Hex& hex, SceneGridListComp& gridList, entt::ent
     previousGrid.entity_list.erase(entity);
     if (previousGrid.entity_list.empty()) {
         gridList.erase(previousGridIt);
-    }
-}
-
-void AoiSystem::ClearEmptyGrids() {
-    std::vector<absl::uint128> destroyEntities;
-    for (auto&& [_, gridList] : tls.registry.view<SceneGridListComp>().each()) {
-        destroyEntities.clear();
-        for (auto& it : gridList) {
-            if (it.second.entity_list.empty()) {
-                destroyEntities.emplace_back(it.first);
-            }
-        }
-
-        for (auto&& it : destroyEntities) {
-            gridList.erase(it);
-        }
     }
 }
 

@@ -15,7 +15,10 @@ public:
     static absl::uint128 GetGridId(const Location& l);
     static absl::uint128 GetGridId(const Hex& hex);
     static Hex CalculateHexPosition(const Transform& transform);
-    static void ScanNeighborGridIds(const Hex& hex, GridSet& gridSet);
-    static void ScanCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet);
-    static void ScanCurrentAndNeighborGridEntities(entt::entity entity, EntityUnorderedSet& entites);
+    static void GetNeighborGridIds(const Hex& hex, GridSet& gridSet);
+    static void GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet);
+    static void GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSelf);
+    static void GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites);
+    static void UpdateLogGridSize(double delta);
+    static void ClearEmptyGrids();
 };

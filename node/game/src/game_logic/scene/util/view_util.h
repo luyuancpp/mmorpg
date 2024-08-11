@@ -25,10 +25,19 @@ public:
 
     // 处理玩家离开消息
     static void HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver);
-
+    
+    static void BroadcastToNearbyEntities(entt::entity entity, const uint32_t message_id,
+    const google::protobuf::Message& message, bool excludingSel);
+    
     //给能看见我的玩家包括我广播消息
     static void BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
     const google::protobuf::Message& message);
+
+    // 检查参与者是否超出视野半径
+    static bool IsBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
+    
+    // 获取观察者的最大视野半径
+    static double GetMaxViewRadius(entt::entity observer);
 private:
     // 初始化Actor消息
     static void InitializeActorMessages();
@@ -41,11 +50,5 @@ private:
 
     // 如果需要刷新视图，返回false
     static bool ShouldRefreshView();
-
-    // 获取观察者的最大视野半径
-    static double GetMaxViewRadius(entt::entity observer);
-
-    // 检查参与者是否超出视野半径
-    static bool IsBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
 };
 
