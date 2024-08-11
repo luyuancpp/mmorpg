@@ -2,10 +2,15 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message Ability 
+message AbilityComp
 {
   uint64 ability_id = 1;
   uint32 table_id = 2;
+}
+
+message AbilityListComp
+{
+  
 }
 
 //被动类型的技能

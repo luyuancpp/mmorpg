@@ -25,7 +25,7 @@ public:
 
 	void Cancel();
 
-    bool IsActive();
+    bool IsActive() const;
 
     int32_t GetEndTime();
     void UpdateEndStamp();
