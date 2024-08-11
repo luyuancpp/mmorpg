@@ -5,3 +5,8 @@ struct CastingTimer
 {
     TimerTaskComp timer;
 };
+
+struct RecoveryTimeTimer
+{
+    TimerTaskComp timer;
+};
