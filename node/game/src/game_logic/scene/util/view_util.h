@@ -34,7 +34,7 @@ public:
     const google::protobuf::Message& message);
 
     // 检查参与者是否超出视野半径
-    static bool IsBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
+    static bool IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
     
     // 获取观察者的最大视野半径
     static double GetMaxViewRadius(entt::entity observer);

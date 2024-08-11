@@ -71,7 +71,7 @@ bool ViewUtil::ShouldUpdateView(entt::entity observer, entt::entity entrant)
 
 	double viewRadius = GetMaxViewRadius(observer);
 
-	if (IsBeyondViewRadius(observer, entrant, viewRadius)) {
+	if (IsWithinViewRadius(observer, entrant, viewRadius)) {
 		return false;
 	}
 
@@ -91,7 +91,7 @@ double ViewUtil::GetMaxViewRadius(entt::entity observer)
 	return viewRadius;
 }
 
-bool ViewUtil::IsBeyondViewRadius(entt::entity observer, entt::entity entrant, double viewRadius)
+bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant, double viewRadius)
 {
 	const auto observerTransform = tls.registry.try_get<Transform>(observer);
 	const auto entrantTransform = tls.registry.try_get<Transform>(entrant);
