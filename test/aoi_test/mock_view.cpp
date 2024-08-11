@@ -23,3 +23,13 @@ void ViewUtil::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leav
 {
     entitiesToNotifyExit.emplace(observer, leaver);
 }
+
+bool ViewUtil::IsBeyondViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
+{
+    return true;
+}
+
+double ViewUtil::GetMaxViewRadius(entt::entity observer)
+{
+    return 0;
+}

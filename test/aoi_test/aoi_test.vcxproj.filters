@@ -27,5 +27,8 @@
     <ClCompile Include="..\..\node\game\src\game_logic\scene\system\aoi_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\node\game\src\game_logic\scene\util\grid_util.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

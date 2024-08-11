@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\node\game\src\game_logic\scene\system\aoi_system.cpp" />
+    <ClCompile Include="..\..\node\game\src\game_logic\scene\util\grid_util.cpp" />
     <ClCompile Include="..\test_adapters\message_system_test.cpp" />
     <ClCompile Include="aoi_system_test.cpp" />
     <ClCompile Include="mock_view.cpp" />

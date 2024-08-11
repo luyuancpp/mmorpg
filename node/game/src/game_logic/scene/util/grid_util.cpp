@@ -2,8 +2,9 @@
 
 #include <muduo/base/Logging.h>
 
-#include "proto/logic/component/actor_comp.pb.h"
 #include "hexagons_grid.h"
+#include "view_util.h"
+#include "proto/logic/component/actor_comp.pb.h"
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
 
@@ -23,19 +24,19 @@ Hex GridUtil::CalculateHexPosition(const Transform& transform) {
     return hex_round(pixel_to_hex(kHexLayout, Point(transform.location().x(), transform.location().y())));
 }
 
-void GridUtil::ScanNeighborGridIds(const Hex& hex, GridSet& gridSet) {
+void GridUtil::GetNeighborGridIds(const Hex& hex, GridSet& gridSet) {
     for (int i = 0; i < 6; ++i) {
         gridSet.emplace(GridUtil::GetGridId(hex_neighbor(hex, i)));
     }
 }
 
-void GridUtil::ScanCurrentAndNeighborGridIds(const Hex& hex, GridSet& grid_set) {
+void GridUtil::GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet) {
     auto currentGridId = GridUtil::GetGridId(hex);
-    grid_set.emplace(currentGridId);
-    ScanNeighborGridIds(hex, grid_set);
+    gridSet.emplace(currentGridId);
+    GetNeighborGridIds(hex, gridSet);
 }
 
-void GridUtil::ScanCurrentAndNeighborGridEntities(entt::entity entity, EntityUnorderedSet& entities)
+void GridUtil::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSel)
 {
     // 检查实体是否有效
     if (!tls.registry.valid(entity)) {
@@ -60,7 +61,7 @@ void GridUtil::ScanCurrentAndNeighborGridEntities(entt::entity entity, EntityUno
     
     // 存储要扫描的网格 ID
     GridSet scanGrid;
-    ScanCurrentAndNeighborGridIds(*hexPosition, scanGrid);
+    GetCurrentAndNeighborGridIds(*hexPosition, scanGrid);
 
     // 遍历扫描到的网格 ID
     for (const auto& gridId : scanGrid)
@@ -75,7 +76,95 @@ void GridUtil::ScanCurrentAndNeighborGridEntities(entt::entity entity, EntityUno
         // 遍历网格中的所有实体并将其添加到集合中
         for (const auto& gridEntity : gridIt->second.entity_list)
         {
-            entities.emplace(gridEntity);
+            entites.emplace(gridEntity);
+        }
+    }
+
+    if (excludingSel)
+    {
+        entites.erase(entity);
+    }
+}
+
+void GridUtil::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites)
+{
+    // 检查实体是否有效
+    if (!tls.registry.valid(entity)) {
+        LOG_ERROR << "Entity not found in scene";
+        return;
+    }
+  
+    // 获取实体所在的 Hex 位置
+    const auto hexPosition = tls.registry.try_get<Hex>(entity);
+    if (!hexPosition) {
+        return;
+    }
+
+    // 获取实体的场景组件
+    const auto sceneComponent = tls.registry.try_get<SceneEntityComp>(entity);
+    if (!sceneComponent) {
+        return;
+    }
+
+    // 获取场景中的网格列表
+    auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent->sceneEntity);
+    
+    // 存储要扫描的网格 ID
+    GridSet scanGrid;
+    GetCurrentAndNeighborGridIds(*hexPosition, scanGrid);
+
+    // 遍历扫描到的网格 ID
+    for (const auto& gridId : scanGrid)
+    {
+        // 检查网格 ID 是否在网格列表中
+        auto gridIt = gridList.find(gridId);
+        if (gridIt == gridList.end())
+        {
+            continue;
+        }
+
+        // 遍历网格中的所有实体并将其添加到集合中
+        for (const auto& gridEntity : gridIt->second.entity_list)
+        {
+            if (gridEntity == entity)
+            {
+                continue;
+            }
+
+            double viewRadius = ViewUtil::GetMaxViewRadius(gridEntity);
+            
+            if (!ViewUtil::IsBeyondViewRadius(gridEntity, entity, viewRadius))
+            {
+                continue;
+            }
+            
+            entites.emplace(gridEntity);
+        }
+    }
+}
+
+void GridUtil::UpdateLogGridSize(double deltaTime) {
+    for (auto&& [sceneEntity, gridList] : tls.sceneRegistry.view<SceneGridListComp>().each()) {
+        for (const auto& [gridId, entityList] : gridList) {
+            if (entityList.entity_list.empty()) {
+                LOG_ERROR << "Grid is empty but not removed";
+            }
+        }
+    }
+}
+
+void GridUtil::ClearEmptyGrids() {
+    std::vector<absl::uint128> destroyEntities;
+    for (auto&& [_, gridList] : tls.registry.view<SceneGridListComp>().each()) {
+        destroyEntities.clear();
+        for (auto& it : gridList) {
+            if (it.second.entity_list.empty()) {
+                destroyEntities.emplace_back(it.first);
+            }
+        }
+
+        for (auto&& it : destroyEntities) {
+            gridList.erase(it);
         }
     }
 }

@@ -1,14 +1,14 @@
 ﻿#include "view_util.h"
 
+#include "grid_util.h"
 #include "game_logic/scene/constants/view_constants.h"
-#include "muduo/base/Logging.h"
 #include "proto/logic/client_player/scene_player.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 #include "Detour/DetourCommon.h"
 #include "thread_local/storage.h"
-#include "type_alias/actor.h"
 #include "type_define/type_define.h"
+#include "game_logic/network/message_util.h"
 
 void ViewUtil::Initialize()
 {
@@ -133,8 +133,18 @@ void ViewUtil::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leav
 	// Specific logic can be added based on requirements
 }
 
+void ViewUtil::BroadcastToNearbyEntities(entt::entity entity, const uint32_t message_id,
+const google::protobuf::Message& message, bool excludingSel)
+{
+	EntityUnorderedSet entites;
+	GridUtil::GetEntitiesInGridAndNeighbors(entity, entites, excludingSel);
+	BroadCastToPlayer(entites, message_id, message);
+}
+
 void ViewUtil::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
 	const google::protobuf::Message& message)
 {
-	
+	EntityUnorderedSet entites;
+	GridUtil::GetEntitiesInViewAndNearby(entity, entites);
+	BroadCastToPlayer(entites, message_id, message);
 }

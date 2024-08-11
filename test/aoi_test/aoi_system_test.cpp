@@ -25,7 +25,6 @@ class MockAoiSystem : public AoiSystem  {
 public:
     using AoiSystem::Update;
     using AoiSystem::BeforeLeaveSceneHandler;
-    using AoiSystem::UpdateLogGridSize;
 };
 
 // Test fixture for AoiSystem
@@ -57,10 +56,10 @@ TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
     Location location;
     location.set_x(10);
     location.set_y(20);
-    auto grid_id = aoi_system.GetGridId(location);
+    auto grid_id = GridUtil::GetGridId(location);
 
     // Expected value should be calculated based on your logic
-    absl::uint128 expected_grid_id = aoi_system.GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(10, 20))));
+    absl::uint128 expected_grid_id = GridUtil::GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(10, 20))));
     EXPECT_EQ(grid_id, expected_grid_id);
 }
 
@@ -68,14 +67,14 @@ TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
 TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
     Hex hex{ 0, 0, 0 };
     GridSet neighbor_grid_set;
-    GridUtil::ScanNeighborGridIds(hex, neighbor_grid_set);
+    GridUtil::GetNeighborGridIds(hex, neighbor_grid_set);
 
     // Check the number of neighbors
     EXPECT_EQ(neighbor_grid_set.size(), 6);
 
     // Check if specific neighbors are present
     for (int i = 0; i < 6; ++i) {
-        EXPECT_NE(neighbor_grid_set.find(aoi_system.GetGridId(hex_neighbor(hex, i))), neighbor_grid_set.end());
+        EXPECT_NE(neighbor_grid_set.find(GridUtil::GetGridId(hex_neighbor(hex, i))), neighbor_grid_set.end());
     }
 }
 
@@ -113,7 +112,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         }
     }
 
-    aoi_system.UpdateLogGridSize(0.1);
+    GridUtil::UpdateLogGridSize(0.1);
 }
 
 // Test player movement across six neighboring hexes

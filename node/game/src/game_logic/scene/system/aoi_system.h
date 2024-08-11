@@ -13,8 +13,6 @@ class AoiSystem {
 public:
     static void Update(double delta);
     static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
-    static void UpdateLogGridSize(double delta);
-    static void ClearEmptyGrids();
 private:
     static void LeaveGrid(const Hex& hex, SceneGridListComp& grid_list, entt::entity player);
     static void BroadCastLeaveGridMessage(const SceneGridListComp& grid_list, entt::entity player, const GridSet& leave_grid_set);
