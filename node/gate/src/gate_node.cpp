@@ -12,7 +12,7 @@
 #include "network/rpc_session.h"
 #include "service/centre_service_service.h"
 #include "service/game_service_service.h"
-#include "service/service.h"
+#include "service/service_info.h"
 #include "thread_local/storage_gate.h"
 #include "log/util/console_log_util.h"
 

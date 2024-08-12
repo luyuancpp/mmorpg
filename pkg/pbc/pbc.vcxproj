@@ -74,7 +74,7 @@
     <ClCompile Include="src\proto\logic\server_player\centre_scene_server_player.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_scene_server_player.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_server_player.pb.cc" />
-    <ClCompile Include="src\proto\service\service.cpp" />
+    <ClCompile Include="src\proto\service\service_info.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\c2gate.pb.h" />
@@ -147,7 +147,7 @@
     <ClInclude Include="src\proto\service\login_service_service.h" />
     <ClInclude Include="src\proto\service\player_ability_service.h" />
     <ClInclude Include="src\proto\service\scene_player_service.h" />
-    <ClInclude Include="src\proto\service\service.h" />
+    <ClInclude Include="src\proto\service\service_info.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

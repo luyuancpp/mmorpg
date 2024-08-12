@@ -17,7 +17,7 @@
 #include "network/rpc_msg_route.h"
 #include "service/game_service_service.h"
 #include "service/gate_service_service.h"
-#include "service/service.h"
+#include "service/service_info.h"
 #include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/network/message_util.h"

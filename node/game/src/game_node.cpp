@@ -18,7 +18,7 @@
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "handler/service_replied/player_service_replied.h"
-#include "service/service.h"
+#include "service/service_info.h"
 #include "game_logic/config/config_util.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"

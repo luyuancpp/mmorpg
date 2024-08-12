@@ -1,6 +1,6 @@
 #pragma once
 
-#include "service/service.h"
+#include "service/service_info.h"
 
 #include "proto/common/statistics.pb.h"
 

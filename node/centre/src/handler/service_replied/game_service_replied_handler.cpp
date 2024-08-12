@@ -9,7 +9,7 @@ extern ProtobufDispatcher g_response_dispatcher;
 #include <muduo/base/Logging.h>
 
 #include "thread_local/storage.h"
-#include "service/service.h"
+#include "service/service_info.h"
 #include "handler/service_replied/player_service_replied.h"
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"

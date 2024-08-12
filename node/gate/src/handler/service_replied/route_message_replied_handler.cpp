@@ -5,7 +5,7 @@
 #include "network/codec/dispatcher.h"
 #include "thread_local/storage_gate.h"
 #include "util/defer.h"
-#include "service/service.h"
+#include "service/service_info.h"
 #include "network/gate_session.h"
 
 #include "service/gate_service_service.h"
