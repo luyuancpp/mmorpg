@@ -15,45 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\proto\service\centre_common_server_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\centre_scene_server_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\centre_scene_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\centre_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\db_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\deploy_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\game_scene_server_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\game_scene_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\game_server_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\game_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\gate_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\login_service_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\logic\component\ability_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -213,62 +174,17 @@
     <ClCompile Include="src\proto\logic\client_player\scene_player.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\service\common_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\scene_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\logic\client_player\player_ability.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\service\player_ability_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\time_meter_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\service\service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\proto\service\centre_common_server_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\centre_scene_server_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\centre_scene_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\centre_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\db_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\deploy_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\game_scene_server_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\game_scene_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\game_server_player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\game_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\gate_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\login_service_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service\service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\logic\component\ability_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -428,19 +344,58 @@
     <ClInclude Include="src\proto\logic\client_player\scene_player.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\player_ability.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\component\time_meter_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\centre_common_server_player_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\centre_scene_server_player_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\centre_scene_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\centre_service_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\proto\service\common_player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service\scene_player_service.h">
+    <ClInclude Include="src\proto\service\db_service_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\player_ability.pb.h">
+    <ClInclude Include="src\proto\service\deploy_service_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\game_scene_server_player_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\game_scene_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\game_server_player_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\game_service_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\gate_service_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\login_service_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service\player_ability_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\logic\component\time_meter_comp.pb.h">
+    <ClInclude Include="src\proto\service\scene_player_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service\service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

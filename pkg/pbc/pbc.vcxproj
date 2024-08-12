@@ -74,21 +74,6 @@
     <ClCompile Include="src\proto\logic\server_player\centre_scene_server_player.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_scene_server_player.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_server_player.pb.cc" />
-    <ClCompile Include="src\proto\service\centre_common_server_player_service.cpp" />
-    <ClCompile Include="src\proto\service\centre_scene_server_player_service.cpp" />
-    <ClCompile Include="src\proto\service\centre_scene_service.cpp" />
-    <ClCompile Include="src\proto\service\centre_service_service.cpp" />
-    <ClCompile Include="src\proto\service\common_player_service.cpp" />
-    <ClCompile Include="src\proto\service\db_service_service.cpp" />
-    <ClCompile Include="src\proto\service\deploy_service_service.cpp" />
-    <ClCompile Include="src\proto\service\game_scene_server_player_service.cpp" />
-    <ClCompile Include="src\proto\service\game_scene_service.cpp" />
-    <ClCompile Include="src\proto\service\game_server_player_service.cpp" />
-    <ClCompile Include="src\proto\service\game_service_service.cpp" />
-    <ClCompile Include="src\proto\service\gate_service_service.cpp" />
-    <ClCompile Include="src\proto\service\login_service_service.cpp" />
-    <ClCompile Include="src\proto\service\player_ability_service.cpp" />
-    <ClCompile Include="src\proto\service\scene_player_service.cpp" />
     <ClCompile Include="src\proto\service\service.cpp" />
   </ItemGroup>
   <ItemGroup>
