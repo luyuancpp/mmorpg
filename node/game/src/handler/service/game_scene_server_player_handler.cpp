@@ -2,7 +2,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "scene/comp/scene_comp.h"
 #include "proto/logic/component/player_comp.pb.h"
-#include "service/scene_player_service.h"
+#include "service_info/scene_player_service_info.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/player/util/player_util.h"
 #include "game_logic/scene/util/game_node_scene_util.h"

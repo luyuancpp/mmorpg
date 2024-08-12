@@ -74,7 +74,7 @@
     <ClCompile Include="src\proto\logic\server_player\centre_scene_server_player.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_scene_server_player.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_server_player.pb.cc" />
-    <ClCompile Include="src\proto\service\service_info.cpp" />
+    <ClCompile Include="src\proto\service_info\service_info.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\c2gate.pb.h" />
@@ -132,22 +132,22 @@
     <ClInclude Include="src\proto\logic\server_player\centre_scene_server_player.pb.h" />
     <ClInclude Include="src\proto\logic\server_player\game_scene_server_player.pb.h" />
     <ClInclude Include="src\proto\logic\server_player\game_server_player.pb.h" />
-    <ClInclude Include="src\proto\service\centre_common_server_player_service.h" />
-    <ClInclude Include="src\proto\service\centre_scene_server_player_service.h" />
-    <ClInclude Include="src\proto\service\centre_scene_service.h" />
-    <ClInclude Include="src\proto\service\centre_service_service.h" />
-    <ClInclude Include="src\proto\service\common_player_service.h" />
-    <ClInclude Include="src\proto\service\db_service_service.h" />
-    <ClInclude Include="src\proto\service\deploy_service_service.h" />
-    <ClInclude Include="src\proto\service\game_scene_server_player_service.h" />
-    <ClInclude Include="src\proto\service\game_scene_service.h" />
-    <ClInclude Include="src\proto\service\game_server_player_service.h" />
-    <ClInclude Include="src\proto\service\game_service_service.h" />
-    <ClInclude Include="src\proto\service\gate_service_service.h" />
-    <ClInclude Include="src\proto\service\login_service_service.h" />
-    <ClInclude Include="src\proto\service\player_ability_service.h" />
-    <ClInclude Include="src\proto\service\scene_player_service.h" />
-    <ClInclude Include="src\proto\service\service_info.h" />
+    <ClInclude Include="src\proto\service_info\centre_common_server_player_service_info.h" />
+    <ClInclude Include="src\proto\service_info\centre_scene_server_player_service_info.h" />
+    <ClInclude Include="src\proto\service_info\centre_scene_service_info.h" />
+    <ClInclude Include="src\proto\service_info\centre_service_service_info.h" />
+    <ClInclude Include="src\proto\service_info\common_player_service_info.h" />
+    <ClInclude Include="src\proto\service_info\db_service_service_info.h" />
+    <ClInclude Include="src\proto\service_info\deploy_service_service_info.h" />
+    <ClInclude Include="src\proto\service_info\game_scene_server_player_service_info.h" />
+    <ClInclude Include="src\proto\service_info\game_scene_service_info.h" />
+    <ClInclude Include="src\proto\service_info\game_server_player_service_info.h" />
+    <ClInclude Include="src\proto\service_info\game_service_service_info.h" />
+    <ClInclude Include="src\proto\service_info\gate_service_service_info.h" />
+    <ClInclude Include="src\proto\service_info\login_service_service_info.h" />
+    <ClInclude Include="src\proto\service_info\player_ability_service_info.h" />
+    <ClInclude Include="src\proto\service_info\scene_player_service_info.h" />
+    <ClInclude Include="src\proto\service_info\service_info.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

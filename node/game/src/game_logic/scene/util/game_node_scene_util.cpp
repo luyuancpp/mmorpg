@@ -3,7 +3,7 @@
 #include "mainscene_config.h"
 #include "game_node.h"
 #include "game_logic/network/message_util.h"
-#include "service/centre_scene_service.h"
+#include "service_info/centre_scene_service_info.h"
 #include "game_logic/player/util/player_util.h"
 #include "scene/util/scene_util.h"
 #include "thread_local/storage.h"

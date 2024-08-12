@@ -2,8 +2,8 @@
 
 #include "network/gate_session.h"
 #include "game_logic/network/message_util.h"
-#include "service/centre_scene_server_player_service.h"
-#include "service/centre_service_service.h"
+#include "service_info/centre_scene_server_player_service_info.h"
+#include "service_info/centre_service_service_info.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"
