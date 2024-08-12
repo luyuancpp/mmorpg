@@ -69,9 +69,10 @@ const LoginDir = ProjectDir + "node/login/"
 const LoginGoGameDir = LoginDir + GoPbGameDir
 const DbGoDir = ProjectDir + "node/db/"
 const DBGoGameDir = DbGoDir + GoPbGameDir
-const ServiceDirName = PbcOutDir + "service/"
-const ServiceCppFileName = ServiceDirName + "service_info.cpp"
-const ServiceHeadFileName = ServiceDirName + "service_info.h"
+const ServiceInfoDirName = PbcOutDir + "service/"
+const ServiceInfoExtName = "_service"
+const ServiceCppFileName = ServiceInfoDirName + "service_info.cpp"
+const ServiceHeadFileName = ServiceInfoDirName + "service_info.h"
 const LuaServiceFileName = PbcLuaDirName + "lua_service.cpp"
 const PbcLuaDirName = PbcOutDir + "lua/"
 

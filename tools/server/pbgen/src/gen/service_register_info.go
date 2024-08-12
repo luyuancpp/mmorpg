@@ -269,7 +269,9 @@ func writeServiceInfoCppFile() {
 
 	var includeBuilder strings.Builder
 	includeBuilder.WriteString("#include <array>\n")
-	includeBuilder.WriteString("#include \"service.h\"\n")
+	includeBuilder.WriteString("#include \"service_info.h\"\n")
+
+	var servcieInfoIncludeBuilder strings.Builder
 
 	var classHandlerBuilder strings.Builder
 	var initFuncBuilder strings.Builder
@@ -288,6 +290,7 @@ func writeServiceInfoCppFile() {
 		}
 
 		includeBuilder.WriteString(methods[0].IncludeName())
+		servcieInfoIncludeBuilder.WriteString(methods[0].ServiceInfoIncludeName())
 		handlerClassName := serviceName + "Impl"
 		classHandlerBuilder.WriteString("class " + handlerClassName + " final : public " + serviceName + "{};\n")
 	}
@@ -297,7 +300,6 @@ func writeServiceInfoCppFile() {
 		methods := ServiceMethodMap[serviceName]
 		for _, method := range methods {
 			rpcId := method.KeyName() + config.MessageIdName
-			messageIdHandlerBuilder.WriteString(getServiceIdCppDefinitions(method))
 			handlerClassName := serviceName + "Impl"
 			initFuncBuilder.WriteString(fmt.Sprintf(
 				"g_message_info[%s] = RpcService{"+
@@ -324,9 +326,11 @@ func writeServiceInfoCppFile() {
 	classHandlerBuilder.WriteString("\n")
 	messageIdHandlerBuilder.WriteString("\n")
 	initFuncBuilder.WriteString("}\n")
+	servcieInfoIncludeBuilder.WriteString("\n")
 
 	// Write to file
-	data := includeBuilder.String() + classHandlerBuilder.String() + messageIdHandlerBuilder.String() + initFuncBuilder.String()
+	data := includeBuilder.String() + servcieInfoIncludeBuilder.String() + classHandlerBuilder.String() +
+		messageIdHandlerBuilder.String() + initFuncBuilder.String()
 	util.WriteMd5Data2File(config.ServiceCppFileName, data)
 }
 

@@ -28,28 +28,19 @@ func writeServiceIdHeadFile(methodList RPCMethods) {
 		data.WriteString("\n")
 	}
 
-	fileName := methodList[0].FileBaseName() + "_service" + config.HeadEx
-	util.WriteMd5Data2File(config.ServiceDirName+fileName, data.String())
+	fileName := methodList[0].FileBaseName() + config.ServiceInfoExtName + config.HeadEx
+	util.WriteMd5Data2File(config.ServiceInfoDirName+fileName, data.String())
 }
 
 // Helper function to generate service ID definitions
 func getServiceIdDefinitions(method *RPCMethod) string {
 	var data strings.Builder
 
-	data.WriteString("extern const uint32_t " + method.KeyName() + config.MessageIdName + ";\n")
-	data.WriteString("extern const uint32_t " + method.KeyName() + "Index;\n")
+	data.WriteString("constexpr uint32_t " + method.KeyName() + config.MessageIdName + " = " + strconv.FormatUint(method.Id, 10) + ";\n")
+	data.WriteString("constexpr uint32_t " + method.KeyName() + "Index = " + strconv.FormatUint(method.Index, 10) + ";\n")
+
 	data.WriteString("#define " + method.KeyName() + "Method  ::" + method.Service + "_Stub::descriptor()->method(" +
 		strconv.FormatUint(method.Index, 10) + ")\n")
-
-	return data.String()
-}
-
-// Helper function to generate C++ definitions for service IDs
-func getServiceIdCppDefinitions(method *RPCMethod) string {
-	var data strings.Builder
-
-	data.WriteString("const uint32_t " + method.KeyName() + config.MessageIdName + " = " + strconv.FormatUint(method.Id, 10) + ";\n")
-	data.WriteString("const uint32_t " + method.KeyName() + "Index = " + strconv.FormatUint(method.Index, 10) + ";\n")
 
 	return data.String()
 }
