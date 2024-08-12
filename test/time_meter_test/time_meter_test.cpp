@@ -7,33 +7,33 @@
 
 TEST(TimeMeterUtil, IsExpired)
 {
-	TimeMeterUtil timeMeter;
-	timeMeter.SetDuration(5); // 设置时间测量器持续时间为5秒
+	TimeMeterComp timeMeter;
+	timeMeter.set_duration(5); // 设置时间测量器持续时间为5秒
 
 	// 开始计时
-	timeMeter.Reset();
+	TimeMeterUtil::Reset(timeMeter);
 
 	// 模拟一些耗时的操作，持续时间不超过5秒
 	for (int i = 0; i < 10; ++i) {
 		std::this_thread::sleep_for(std::chrono::seconds(1)); // 模拟耗时1秒的操作
-		std::cout << "Time remaining: " << timeMeter.Remaining() << " seconds\n";
-		if (timeMeter.IsExpired()) {
+		std::cout << "Time remaining: " << TimeMeterUtil::Remaining(timeMeter) << " seconds\n";
+		if (TimeMeterUtil::IsExpired(timeMeter)) {
 			std::cout << "TimeMeter expired!\n";
 			break;
 		}
 	}
 
 	// 调整时间测量器的持续时间为10秒
-	timeMeter.SetDuration(10);
+	timeMeter.set_duration(10);
 
 	// 重新开始计时
-	timeMeter.Reset();
+	TimeMeterUtil::Reset(timeMeter);
 
 	// 再次模拟一些耗时的操作，持续时间不超过10秒
 	for (int i = 0; i < 20; ++i) {
 		std::this_thread::sleep_for(std::chrono::seconds(1)); // 模拟耗时1秒的操作
-		std::cout << "Time remaining: " << timeMeter.Remaining() << " seconds\n";
-		if (timeMeter.IsExpired()) {
+		std::cout << "Time remaining: " << TimeMeterUtil::Remaining(timeMeter) << " seconds\n";
+		if (TimeMeterUtil::IsExpired(timeMeter)) {
 			std::cout << "TimeMeter expired!\n";
 			break;
 		}
