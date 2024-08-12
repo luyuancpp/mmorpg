@@ -104,6 +104,10 @@ func (info *RPCMethod) IncludeName() string {
 	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
 }
 
+func (info *RPCMethod) ServiceInfoIncludeName() string {
+	return config.IncludeBegin + info.FileBaseName() + config.ServiceInfoExtName + config.HeadEx + "\"\n"
+}
+
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
 func (info *RPCMethod) CppHandlerIncludeName() string {
 	return config.IncludeBegin + info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
