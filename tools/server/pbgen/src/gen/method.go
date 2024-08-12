@@ -44,25 +44,6 @@ func getServiceIdDefinitions(method *RPCMethod) string {
 	return data.String()
 }
 
-// Function to write the C++ file for service ID
-func writeServiceIdCppFile(methodList RPCMethods) {
-	defer util.Wg.Done()
-
-	if len(methodList) <= 0 {
-		return
-	}
-
-	var data strings.Builder
-	data.WriteString(config.IncludeBegin + methodList[0].FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine)
-
-	for _, method := range methodList {
-		data.WriteString(getServiceIdCppDefinitions(method))
-	}
-
-	fileName := methodList[0].FileBaseName() + "_service" + config.CppEx
-	util.WriteMd5Data2File(config.ServiceDirName+fileName, data.String())
-}
-
 // Helper function to generate C++ definitions for service IDs
 func getServiceIdCppDefinitions(method *RPCMethod) string {
 	var data strings.Builder
@@ -1042,8 +1023,6 @@ func WriteMethodFile() {
 		// Start concurrent operations for each service method
 		util.Wg.Add(1)
 		go writeServiceIdHeadFile(v)
-		util.Wg.Add(1)
-		go writeServiceIdCppFile(v)
 
 		// gs methods
 		util.Wg.Add(1)

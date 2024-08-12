@@ -273,6 +273,7 @@ func writeServiceInfoCppFile() {
 
 	var classHandlerBuilder strings.Builder
 	var initFuncBuilder strings.Builder
+	var messageIdHandlerBuilder strings.Builder
 
 	initFuncBuilder.WriteString("std::unordered_set<uint32_t> g_c2s_service_id;\n")
 	initFuncBuilder.WriteString("std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> g_message_info;\n\n")
@@ -296,7 +297,7 @@ func writeServiceInfoCppFile() {
 		methods := ServiceMethodMap[serviceName]
 		for _, method := range methods {
 			rpcId := method.KeyName() + config.MessageIdName
-			initFuncBuilder.WriteString("extern const uint32_t " + rpcId + ";\n")
+			messageIdHandlerBuilder.WriteString(getServiceIdCppDefinitions(method))
 			handlerClassName := serviceName + "Impl"
 			initFuncBuilder.WriteString(fmt.Sprintf(
 				"g_message_info[%s] = RpcService{"+
@@ -321,10 +322,11 @@ func writeServiceInfoCppFile() {
 
 	includeBuilder.WriteString("\n")
 	classHandlerBuilder.WriteString("\n")
+	messageIdHandlerBuilder.WriteString("\n")
 	initFuncBuilder.WriteString("}\n")
 
 	// Write to file
-	data := includeBuilder.String() + classHandlerBuilder.String() + initFuncBuilder.String()
+	data := includeBuilder.String() + classHandlerBuilder.String() + messageIdHandlerBuilder.String() + initFuncBuilder.String()
 	util.WriteMd5Data2File(config.ServiceCppFileName, data)
 }
 
