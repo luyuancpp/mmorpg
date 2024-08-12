@@ -1,48 +1,53 @@
-#include <iostream>
-#include <chrono>
-#include <thread> // 为了演示，引入线程库来模拟时间流逝
 #include <gtest/gtest.h>
+#include <chrono>
+#include <thread>
 
 #include "time/comp/time_meter_util.h"
 
-TEST(TimeMeterUtil, IsExpired)
-{
+class TimeMeterUtilTest : public ::testing::Test {
+protected:
 	TimeMeterComp timeMeter;
+
+	void SetUp() override {
+		// 初始化代码（如果需要）
+	}
+
+	void TearDown() override {
+		// 清理代码（如果需要）
+	}
+};
+
+TEST_F(TimeMeterUtilTest, InitialExpiration) {
 	timeMeter.set_duration(5); // 设置时间测量器持续时间为5秒
 
-	// 开始计时
 	TimeMeterUtil::Reset(timeMeter);
 
-	// 模拟一些耗时的操作，持续时间不超过5秒
-	for (int i = 0; i < 10; ++i) {
-		std::this_thread::sleep_for(std::chrono::seconds(1)); // 模拟耗时1秒的操作
-		std::cout << "Time remaining: " << TimeMeterUtil::Remaining(timeMeter) << " seconds\n";
-		if (TimeMeterUtil::IsExpired(timeMeter)) {
-			std::cout << "TimeMeter expired!\n";
-			break;
-		}
-	}
+	std::this_thread::sleep_for(std::chrono::seconds(6)); // 等待6秒
+
+	EXPECT_TRUE(TimeMeterUtil::IsExpired(timeMeter));
+}
+
+TEST_F(TimeMeterUtilTest, ExtendedDuration) {
+	timeMeter.set_duration(5); // 设置时间测量器持续时间为5秒
+
+	TimeMeterUtil::Reset(timeMeter);
+
+	std::this_thread::sleep_for(std::chrono::seconds(3)); // 等待3秒
+
+	EXPECT_FALSE(TimeMeterUtil::IsExpired(timeMeter));
 
 	// 调整时间测量器的持续时间为10秒
 	timeMeter.set_duration(10);
 
-	// 重新开始计时
 	TimeMeterUtil::Reset(timeMeter);
 
-	// 再次模拟一些耗时的操作，持续时间不超过10秒
-	for (int i = 0; i < 20; ++i) {
-		std::this_thread::sleep_for(std::chrono::seconds(1)); // 模拟耗时1秒的操作
-		std::cout << "Time remaining: " << TimeMeterUtil::Remaining(timeMeter) << " seconds\n";
-		if (TimeMeterUtil::IsExpired(timeMeter)) {
-			std::cout << "TimeMeter expired!\n";
-			break;
-		}
-	}
+	std::this_thread::sleep_for(std::chrono::seconds(6)); // 等待6秒
+
+	EXPECT_FALSE(TimeMeterUtil::IsExpired(timeMeter));
+	EXPECT_EQ(TimeMeterUtil::Remaining(timeMeter), 4); // 10秒持续时间减去6秒，剩余4秒
 }
 
-int main(int argc, char** argv)
-{
-	testing::InitGoogleTest(&argc, argv);
+int main(int argc, char** argv) {
+	::testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }
-
