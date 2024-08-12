@@ -36,6 +36,7 @@ public:
 		timeMeterComp.set_start(GetCurrentTimeInSeconds());
 	}
 
+private:
 	static uint64_t GetCurrentTimeInSeconds() {
 		return std::chrono::duration_cast<std::chrono::seconds>(
 			std::chrono::high_resolution_clock::now().time_since_epoch()

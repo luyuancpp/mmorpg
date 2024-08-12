@@ -629,14 +629,17 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
 	}
+
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		return false
+	}
+
 	if !firstMethodInfo.CcGenericServices {
 		return false
 	}
 
 	// Check if the file base name contains specific keywords
-	return strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
-		strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
-		strings.Contains(firstMethodInfo.FileBaseName(), "lobby")
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
