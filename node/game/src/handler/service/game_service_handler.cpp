@@ -8,7 +8,7 @@
 #include "handler/service/player_service.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
-#include "service/service_info.h"
+#include "service_info/service_info.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/player/util/player_util.h"
 #include "game_logic/network/message_util.h"

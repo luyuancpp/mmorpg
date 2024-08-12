@@ -8,7 +8,7 @@
 
 #include "scene/comp/scene_comp.h"
 #include "game_logic//network/message_util.h"
-#include "service/game_scene_server_player_service.h"
+#include "service_info/game_scene_server_player_service_info.h"
 #include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/scene/util/player_scene.h"
 #include "scene/util/scene_util.h"

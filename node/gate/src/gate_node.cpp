@@ -10,9 +10,9 @@
 #include "grpc/deploy/deploy_client.h"
 #include "muduo/base/TimeZone.h"
 #include "network/rpc_session.h"
-#include "service/centre_service_service.h"
-#include "service/game_service_service.h"
-#include "service/service_info.h"
+#include "service_info/centre_service_service_info.h"
+#include "service_info/game_service_service_info.h"
+#include "service_info/service_info.h"
 #include "thread_local/storage_gate.h"
 #include "log/util/console_log_util.h"
 

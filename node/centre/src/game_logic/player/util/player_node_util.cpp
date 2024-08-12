@@ -6,9 +6,9 @@
 
 #include "network/gate_session.h"
 #include "game_logic/network/message_util.h"
-#include "service/game_server_player_service.h"
-#include "service/game_service_service.h"
-#include "service/gate_service_service.h"
+#include "service_info/game_server_player_service_info.h"
+#include "service_info/game_service_service_info.h"
+#include "service_info/gate_service_service_info.h"
 #include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/scene/util/player_scene.h"
 #include "scene/util/scene_util.h"

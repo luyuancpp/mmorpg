@@ -6,7 +6,7 @@
 #include "game_logic/scene/util/view_util.h"
 #include "pbc/ability_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
-#include "service/player_ability_service.h"
+#include "service_info/player_ability_service_info.h"
 #include "thread_local/storage.h"
 #include "time/comp/timer_task_comp.h"
 
