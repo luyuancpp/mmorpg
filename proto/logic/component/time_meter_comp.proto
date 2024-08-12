@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message TimeMeterComp
+{
+  uint64 start = 1;
+  uint64 duration = 2;
+}
+
