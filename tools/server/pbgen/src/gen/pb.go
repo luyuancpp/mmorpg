@@ -211,7 +211,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.LoginGoMd5Ex + config.Md5Ex
-			dstFileName := config.LoginGoDir + fd.Name()
+			dstFileName := config.LoginGoGameDir + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -298,7 +298,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.DBGoMd5Ex + config.Md5Ex
-			dstFileName := config.DbGoDir + fd.Name()
+			dstFileName := config.DBGoGameDir + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -380,7 +380,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.ClientGoMd5Ex + config.Md5Ex
-			dstFileName := config.ClientGoPbDir + fd.Name()
+			dstFileName := config.ClientGoGamePbDir + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Check if files with same MD5 and destinations exist
