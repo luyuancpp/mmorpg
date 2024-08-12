@@ -180,7 +180,7 @@
     <ClCompile Include="src\proto\logic\component\time_meter_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\service\service.cpp">
+    <ClCompile Include="src\proto\service\service_info.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -395,7 +395,7 @@
     <ClInclude Include="src\proto\service\scene_player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service\service.h">
+    <ClInclude Include="src\proto\service\service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

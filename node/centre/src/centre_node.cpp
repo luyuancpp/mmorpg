@@ -17,7 +17,7 @@
 #include "network/rpc_session.h"
 #include "handler/service_replied/player_service_replied.h"
 #include "service/gate_service_service.h"
-#include "service/service.h"
+#include "service/service_info.h"
 #include "thread_local/storage_centre.h"
 #include "log/util/console_log_util.h"
 #include "grpc/request/deploy_grpc_requst.h"

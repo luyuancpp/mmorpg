@@ -15,7 +15,7 @@
 #include <google/protobuf/descriptor.h>
 
 #include "network/message_statistics.h"
-#include "service/service.h"
+#include "service/service_info.h"
 #include "test/test.h"
 
 #include "proto/common/empty.pb.h"

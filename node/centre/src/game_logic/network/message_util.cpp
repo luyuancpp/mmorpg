@@ -6,7 +6,7 @@
 #include "network/rpc_session.h"
 #include "service/game_service_service.h"
 #include "service/gate_service_service.h"
-#include "service/service.h"
+#include "service/service_info.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
