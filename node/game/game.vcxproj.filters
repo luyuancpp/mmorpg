@@ -147,6 +147,9 @@
     <ClCompile Include="src\game_logic\scene\util\grid_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\service\common_player_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -309,6 +312,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\util\grid_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\service\common_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
