@@ -686,6 +686,10 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		return false
+	}
+
 	// 如果路径或文件名包含 PlayerName，直接返回 false
 	if strings.Contains(firstMethodInfo.Path, config.PlayerName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.PlayerName) {
