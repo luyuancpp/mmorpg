@@ -849,6 +849,10 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		return false
+	}
+
 	// Check if it's a player service and not containing CentrePrefixName in FileBaseName
 	return firstMethodInfo.IsPlayerService() && !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
