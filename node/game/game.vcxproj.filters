@@ -39,9 +39,6 @@
     <ClCompile Include="src\grpc\async_client_call.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\common_player_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\service\game_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -144,16 +141,10 @@
     <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\scene_player_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\service_replied\common_player_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\service\player_ability_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\player_ability_replied_handler.cpp">
+    <ClCompile Include="src\game_logic\scene\util\grid_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -177,9 +168,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\async_client_call.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\service\common_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\game_scene_handler.h">
@@ -314,16 +302,13 @@
     <ClInclude Include="src\game_logic\scene\util\navigation_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service_replied\scene_player_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\service_replied\common_player_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\handler\service\player_ability_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service_replied\player_ability_replied_handler.h">
+    <ClInclude Include="src\game_logic\combat\ability\comp\ability_comp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\scene\util\grid_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
