@@ -5,9 +5,9 @@
 
 #include "time/comp/time_meter.h"
 
-TEST(TimeMeter, IsExpired)
+TEST(TimeMeterUtil, IsExpired)
 {
-	TimeMeter timeMeter;
+	TimeMeterUtil timeMeter;
 	timeMeter.SetDuration(5); // 设置时间测量器持续时间为5秒
 
 	// 开始计时

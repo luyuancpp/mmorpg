@@ -225,6 +225,9 @@
     <ClCompile Include="src\proto\service\player_ability_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\component\time_meter_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\service\centre_common_server_player_service.h">
@@ -435,6 +438,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service\player_ability_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\component\time_meter_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

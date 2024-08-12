@@ -46,5 +46,6 @@
     <ClInclude Include="src\macros\return_define.h" />
     <ClInclude Include="src\log\macros\game_log.h" />
     <ClInclude Include="src\time\comp\time_meter.h" />
+    <ClInclude Include="src\cooldown\util\cooldown_util.h" />
   </ItemGroup>
 </Project>
