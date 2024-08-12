@@ -3,7 +3,7 @@
 #include <thread> // 为了演示，引入线程库来模拟时间流逝
 #include <gtest/gtest.h>
 
-#include "time/comp/time_meter.h"
+#include "time/comp/time_meter_util.h"
 
 TEST(TimeMeterUtil, IsExpired)
 {
