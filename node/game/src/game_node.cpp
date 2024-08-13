@@ -17,7 +17,7 @@
 #include "muduo/net/InetAddress.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
-#include "handler/service_replied/player_service_replied.h"
+#include "handler/service_replied/player/player_service_replied.h"
 #include "service_info/service_info.h"
 #include "game_logic/config/config_util.h"
 #include "thread_local/storage.h"
