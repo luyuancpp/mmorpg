@@ -38,6 +38,7 @@ public:
     }
 
 private:
+    // 获取当前时间（秒）
     inline static uint64_t GetCurrentTimeInSeconds() {
         return muduo::Timestamp::now().secondsSinceEpoch();
     }
