@@ -53,9 +53,9 @@ func MakeMd5Dir() {
 		config.ProjectSourceMd5Dirs = append(config.ProjectSourceMd5Dirs, config.Md5Dir+config.SourceDirectories[i])
 	}
 
-	for i := 0; i < len(config.ProtoDirNames); i++ {
-		config.ProtoDirs = append(config.ProtoDirs, config.ProtoDir+config.ProtoDirNames[i])
-		config.ProtoMd5Dirs = append(config.ProtoMd5Dirs, config.Md5Dir+config.ProtoDirNames[i])
+	for i := 0; i < len(config.ProtoDirectoryNames); i++ {
+		config.ProtoDirs = append(config.ProtoDirs, config.ProtoDir+config.ProtoDirectoryNames[i])
+		config.ProtoMd5Dirs = append(config.ProtoMd5Dirs, config.Md5Dir+config.ProtoDirectoryNames[i])
 	}
 
 	for i := 0; i < len(config.SourceDirectories); i++ {

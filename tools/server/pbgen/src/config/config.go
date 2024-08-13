@@ -113,7 +113,7 @@ var (
 		"client/",
 	}
 
-	ProtoDirNames = [...]string{
+	ProtoDirectoryNames = [...]string{
 		"common/",
 		"logic/component/",
 		"logic/event/",

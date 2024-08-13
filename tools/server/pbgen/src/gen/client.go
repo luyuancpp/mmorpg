@@ -48,8 +48,8 @@ func isClientMethodRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 	firstMethod := (*methodList)[0]
-	return strings.Contains(firstMethod.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		(strings.Contains(firstMethod.Path, config.ProtoDirNames[config.CommonProtoDirIndex]))
+	return strings.Contains(firstMethod.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
+		(strings.Contains(firstMethod.Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]))
 }
 
 // writeClientMethodHandlerHeadFile 写入客户端方法处理器头文件
