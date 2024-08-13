@@ -36,7 +36,7 @@
     <ClCompile Include="src\grpc\async_client_call.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\player\centre_common_server_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\centre_server_player_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\centre_scene_handler.cpp">
@@ -60,7 +60,7 @@
     <ClCompile Include="src\handler\service_replied\game_scene_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service_replied\player\game_scene_server_player_replied_handler.cpp">
+    <ClCompile Include="src\handler\service_replied\player\game_server_player_scene_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service_replied\player\game_server_player_replied_handler.cpp">
@@ -131,7 +131,7 @@
     <ClInclude Include="src\grpc\async_client_call.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\player\centre_common_server_player_handler.h">
+    <ClInclude Include="src\handler\service\player\centre_server_player_scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\centre_scene_handler.h">
@@ -158,7 +158,7 @@
     <ClInclude Include="src\handler\service_replied\game_scene_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service_replied\player\game_scene_server_player_replied_handler.h">
+    <ClInclude Include="src\handler\service_replied\player\game_server_player_scene_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service_replied\player\game_server_player_replied_handler.h">
