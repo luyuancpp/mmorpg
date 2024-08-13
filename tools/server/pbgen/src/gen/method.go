@@ -870,7 +870,6 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	// Check if the FileBaseName of the method contains any of the specified prefixes
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.DeployPrefixName) ||
-		strings.Contains(firstMethodInfo.FileBaseName(), config.LobbyPrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.LoginPrefixName)
 }
