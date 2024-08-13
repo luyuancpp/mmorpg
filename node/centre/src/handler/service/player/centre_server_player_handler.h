@@ -1,11 +1,11 @@
 #pragma once
 #include "logic/server_player/centre_server_player.pb.h"
-#include "player_service_replied.h"
-
-class CentrePlayerServiceRepliedHandler : public ::PlayerServiceReplied
+#include "player_service.h"
+#include "macros/return_define.h"
+class CentrePlayerServiceHandler : public ::PlayerService
 {
 public:
-	using PlayerServiceReplied::PlayerServiceReplied;
+	using PlayerService::PlayerService;
 	static void Test(entt::entity player,
 		const ::google::protobuf::Empty* request,
 		::google::protobuf::Empty* response);
@@ -19,7 +19,7 @@ public:
 		{
 		case 0:
 			Test(player,
-			nullptr,
+			::google::protobuf::internal::DownCast<const google::protobuf::Empty*>(request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		default:

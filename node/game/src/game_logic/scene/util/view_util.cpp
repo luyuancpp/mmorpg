@@ -2,7 +2,7 @@
 
 #include "grid_util.h"
 #include "game_logic/scene/constants/view_constants.h"
-#include "proto/logic/client_player/scene_player.pb.h"
+#include "proto/logic/client_player/player_scene.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 #include "Detour/DetourCommon.h"
