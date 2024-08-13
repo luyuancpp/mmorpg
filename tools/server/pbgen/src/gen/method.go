@@ -449,7 +449,7 @@ func isGsPlayerHandler(methodList *RPCMethods) bool {
 	// Check if the file base name contains player name and does not contain centre prefix
 	fileBaseName := firstMethodInfo.FileBaseName()
 
-	if strings.Contains(fileBaseName, config.GsPlayerPrefixName) {
+	if !strings.Contains(fileBaseName, config.GsPlayerPrefixName) {
 		return false
 	}
 
@@ -704,7 +704,7 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	// 检查文件名是否包含 Centre 前缀名
-	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePlayerPrefixName)
 }
 
 func writeCentrePlayerMethodHandlerHeadFile(methodList RPCMethods) {
