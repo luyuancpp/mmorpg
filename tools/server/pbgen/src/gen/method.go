@@ -421,8 +421,8 @@ func isGsMethodHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+	isCommonOrLogicProto := strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.LogicProtoDirIndex])
 
 	if strings.Contains(firstMethodInfo.Path, config.PlayerName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.PlayerName) {
@@ -442,7 +442,7 @@ func isGsPlayerHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	// Check if the method belongs to a player service
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
 		return true
 	}
 
@@ -536,7 +536,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
 		return false
 	}
 
@@ -590,12 +590,12 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	// Check if the method is from a valid path and has generic services enabled
-	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.LogicProtoDirIndex])) {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
 		return false
 	}
 
@@ -643,15 +643,15 @@ func isCentreMethodHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	// 检查是否在 common 或 logic proto 目录中
-	isInCommonOrLogicProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+	isInCommonOrLogicProtoDir := strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.LogicProtoDirIndex])
 
 	// 如果不在 common 或 logic proto 目录中，直接返回 false
 	if !isInCommonOrLogicProtoDir {
 		return false
 	}
 
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
 		return false
 	}
 
@@ -795,7 +795,7 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
 		return false
 	}
 
@@ -858,7 +858,7 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	firstMethodInfo := (*methodList)[0]
 
 	// Check if the method's path contains the common ProtoDirNames
-	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
 		return false
 	}
 
@@ -884,7 +884,7 @@ func isGateServiceHandler(methodList *RPCMethods) (check bool) {
 	firstMethodInfo := (*methodList)[0]
 
 	// Check if the method's path contains the common ProtoDirNames
-	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
 		return false
 	}
 

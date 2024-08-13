@@ -85,8 +85,8 @@ func (info *RPCServiceInfo) FileBaseName() string {
 
 // IsPlayerService 检查是否为玩家服务
 func (info *RPCServiceInfo) IsPlayerService() bool {
-	return strings.Contains(info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])
+	return strings.Contains(info.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
+		strings.Contains(info.Path, config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
 }
 
 // FileBaseName 返回文件基本名
@@ -130,8 +130,8 @@ func (info *RPCMethod) CppRepliedHandlerClassName() string {
 
 // IsPlayerService 检查是否为玩家服务
 func (info *RPCMethod) IsPlayerService() bool {
-	return strings.Contains(info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])
+	return strings.Contains(info.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
+		strings.Contains(info.Path, config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
 }
 
 // Len 返回RPCMethods的长度
