@@ -538,17 +538,12 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	// Check if the method belongs to a player service
-	if !firstMethodInfo.IsPlayerService() {
-		return false
-	}
-
 	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
 		return false
 	}
 
 	// Check if the file base name does not contain the GsPrefixName
-	return !strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName)
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePlayerPrefixName)
 }
 
 func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
