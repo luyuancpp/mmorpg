@@ -114,9 +114,9 @@ func WriteEventHandlerFile() {
 			continue
 		}
 		util.Wg.Add(1)
-		writeEventHandlerCpp(fd, config.GsEventHandleDir)
+		writeEventHandlerCpp(fd, config.GameNodeEventHandlerDirectory)
 		util.Wg.Add(1)
-		writeEventHandlerCpp(fd, config.CentreEventHandleDir)
+		writeEventHandlerCpp(fd, config.CentreNodeEventHandlerDirectory)
 		cppIncludeData += config.IncludeBegin +
 			strings.Replace(filepath.Base(strings.ToLower(fd.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) +
 			config.IncludeEndLine
@@ -128,8 +128,8 @@ func WriteEventHandlerFile() {
 	eventHeadData += "static void Register();\n"
 	eventHeadData += "static void UnRegister();\n"
 	eventHeadData += "};\n"
-	util.WriteMd5Data2File(config.GsEventHandleDir+config.EventHandlerHeaderFileName, eventHeadData)
-	util.WriteMd5Data2File(config.CentreEventHandleDir+config.EventHandlerHeaderFileName, eventHeadData)
+	util.WriteMd5Data2File(config.GameNodeEventHandlerDirectory+config.EventHandlerHeaderFileName, eventHeadData)
+	util.WriteMd5Data2File(config.CentreNodeEventHandlerDirectory+config.EventHandlerHeaderFileName, eventHeadData)
 
 	eventCppData := config.IncludeBegin + config.EventHandlerHeaderFileName + config.IncludeEndLine
 	eventCppData += cppIncludeData
@@ -139,6 +139,6 @@ func WriteEventHandlerFile() {
 	eventCppData += "void EventHandler::UnRegister()\n{\n"
 	eventCppData += unRegisterData
 	eventCppData += "}\n"
-	util.WriteMd5Data2File(config.GsEventHandleDir+config.EventHandlerCppFileName, eventCppData)
-	util.WriteMd5Data2File(config.CentreEventHandleDir+config.EventHandlerCppFileName, eventCppData)
+	util.WriteMd5Data2File(config.GameNodeEventHandlerDirectory+config.EventHandlerCppFileName, eventCppData)
+	util.WriteMd5Data2File(config.CentreNodeEventHandlerDirectory+config.EventHandlerCppFileName, eventCppData)
 }
