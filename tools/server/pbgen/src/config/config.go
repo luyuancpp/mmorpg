@@ -67,9 +67,6 @@ const (
 	ClientLuaDir              = ProjectDir + "bin/script/lua/service/"
 	ClientLuaServiceFile      = ProjectDir + "client/src/handler/service_lua.cpp"
 	ClientServiceInstanceFile = ProjectDir + "client/src/handler/player_service.cpp"
-	GsEventHandleDir          = ProjectDir + GameDirName + EventHandlerDirName
-	CentreEventHandleDir      = ProjectDir + CentreDirName + EventHandlerDirName
-	ClientLuaProjectRelative  = "script/lua/service/"
 )
 
 // 常量：文件名
@@ -139,28 +136,10 @@ var (
 	ServerPlayerDirIndex   = 5
 )
 
+// 常量：方法处理目录
 const (
 	ClientMethodHandleDir = ProjectDir + ClientDirName + HandlerDirName
-)
 
-const (
-	LoginPrefixName        = "login"
-	DeployPrefixName       = "deploy"
-	DatabasePrefixName     = "db"
-	GsPrefixName           = "game"
-	GsPlayerPrefixName     = "game_player"
-	CentrePrefixName       = "centre"
-	CentrePlayerPrefixName = "centre_player"
-	PlayerName             = "player"
-)
-
-const (
-	PlayerServiceIncludeName        = "#include \"player_service.h\"\n"
-	PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\"\n"
-	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
-)
-
-const (
 	GsMethodHandleDir                  = ProjectDir + GameDirName + HandlerDirName
 	GsPlayerMethodHandleDir            = ProjectDir + GameDirName + HandlerDirName + PlayerName + "/"
 	GsMethodRepliedHandleDir           = ProjectDir + GameDirName + RepliedHandlerDirName
@@ -171,4 +150,25 @@ const (
 	CentrePlayerMethodRepliedHandleDir = ProjectDir + CentreDirName + RepliedHandlerDirName + PlayerName + "/"
 	GateMethodHandleDir                = ProjectDir + GateName + HandlerDirName
 	GateMethodRepliedHandleDir         = ProjectDir + GateName + RepliedHandlerDirName
+)
+
+// 常量：其他常量
+const (
+	LoginPrefixName                 = "login"
+	DeployPrefixName                = "deploy"
+	DatabasePrefixName              = "db"
+	GsPrefixName                    = "game"
+	GsPlayerPrefixName              = "game_player"
+	CentrePrefixName                = "centre"
+	CentrePlayerPrefixName          = "centre_player"
+	PlayerName                      = "player"
+	PlayerServiceIncludeName        = "#include \"player_service.h\"\n"
+	PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\"\n"
+	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
+	ClientLuaProjectRelative        = "script/lua/service/"
+)
+
+const (
+	GsEventHandleDir     = ProjectDir + GameDirName + EventHandlerDirName
+	CentreEventHandleDir = ProjectDir + CentreDirName + EventHandlerDirName
 )
