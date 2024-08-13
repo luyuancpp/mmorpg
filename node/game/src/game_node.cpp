@@ -10,7 +10,7 @@
 #include "proto/logic/event/server_event.pb.h"
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
-#include "handler/service/player_service.h"
+#include "handler/service/player/player_service.h"
 #include "handler/service/register_handler.h"
 #include "muduo/base/Logging.h"
 #include "muduo/base/TimeZone.h"
