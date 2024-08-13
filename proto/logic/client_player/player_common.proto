@@ -8,7 +8,7 @@ import "common/empty.proto";
 
 option cc_generic_services = true;
 
-service ClientPlayerCommonService 
+service PlayerClientCommonService 
 {
   rpc SendTipToClient (TipInfoMessage) returns (Empty);
   rpc KickPlayer (TipInfoMessage) returns (Empty);
