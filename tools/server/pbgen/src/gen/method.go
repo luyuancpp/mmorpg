@@ -750,8 +750,12 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
+	if firstMethodInfo.IsPlayerService() {
+		return false
+	}
+
 	// Ensure the file base name does not contain CentrePrefixName
-	return strings.Contains(firstMethodInfo.FileBaseName(), config.GsPlayerPrefixName)
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName)
 }
 
 func writeCentreMethodRepliedHandlerHeadFile(methodList RPCMethods) {
