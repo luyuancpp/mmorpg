@@ -27,7 +27,7 @@ const (
 	RepliedHandlerHeaderExtension = "_replied_handler.h"
 	CppRepliedHandlerEx           = "_replied_handler.cpp"
 	CppSol2Extension              = "_sol2.cpp"
-	MessageIdName                 = "MsgId"
+	MessageIdName                 = "MessageId"
 	MethodIndexName               = "Index"
 )
 

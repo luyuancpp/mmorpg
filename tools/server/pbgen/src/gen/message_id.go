@@ -41,7 +41,7 @@ func (cg *ConstantsGenerator) Generate() ([]string, error) {
 		name := strings.TrimSpace(parts[1])
 
 		constName := convertToValidIdentifier(name)
-		consts = append(consts, fmt.Sprintf("const %sMsgId = %s", constName, number))
+		consts = append(consts, fmt.Sprintf("const %s%s = %s", constName, config.MessageIdName, number))
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -86,7 +86,7 @@ func (cw *ConstantsWriter) Write() error {
 
 	writer := bufio.NewWriter(file)
 
-	_, err = writer.WriteString("package main\n\n")
+	_, err = writer.WriteString("package game\n\n")
 	if err != nil {
 		return fmt.Errorf("error writing to file: %w", err)
 	}

@@ -350,7 +350,10 @@
     <ClInclude Include="src\proto\logic\server_player\game_server_player_scene.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\service_info.h">
+    <ClInclude Include="src\proto\service_info\centre_player_scene_service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service_info\centre_player_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service_info\centre_scene_service_info.h">
@@ -369,6 +372,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service_info\deploy_service_service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service_info\game_player_scene_service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service_info\game_player_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service_info\game_scene_service_info.h">
@@ -396,6 +405,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service_info\player_scene_service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\service_info\service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

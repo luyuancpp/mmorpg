@@ -263,7 +263,7 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 
 	SessionDisconnectRequest disconnectRequest;
 	disconnectRequest.set_player_id(playerId);
-	(*gameNode)->CallMethod(GameServiceSessionDisconnectMsgId, disconnectRequest);
+	(*gameNode)->CallMethod(GameServiceSessionDisconnectMessageId, disconnectRequest);
 
 	PlayerNodeUtil::HandlePlayerLeave(playerId);
 ///<<< END WRITING YOUR CODE
@@ -336,13 +336,13 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 			TipInfoMessage beKickTip;
 			beKickTip.set_id(kLoginBeKickByAnOtherAccount);
-			SendMessageToPlayer(PlayerClientCommonServiceKickPlayerMsgId, beKickTip, clientMsgBody.player_id());
+			SendMessageToPlayer(PlayerClientCommonServiceKickPlayerMessageId, beKickTip, clientMsgBody.player_id());
 
 			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
 
 			KickSessionRequest message;
 			message.set_session_id(sessionId);
-			SendToGateById(GateServiceKickSessionByCentreMsgId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
+			SendToGateById(GateServiceKickSessionByCentreMessageId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
 
 			playerNodeInfo->set_gate_session_id(sessionId);
 		}
@@ -615,7 +615,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
 			return;
 		}
-		(*gate_node)->Route2Node(GateServiceRouteNodeMessageMsgId, *mutable_request);
+		(*gate_node)->Route2Node(GateServiceRouteNodeMessageMessageId, *mutable_request);
 		break;
 	}
 	case kGameNode:
@@ -632,7 +632,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
 			return;
 		}
-		(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
+		(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMessageId, *mutable_request);
 		break;
 	}
 	default:
@@ -661,7 +661,7 @@ void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController*
     {
 		UnRegisterGameNodeRequest message;
 		message.set_game_node_id(request->game_node_id());
-        gate_node->Send(GateServiceRegisterGameMsgId, message);
+        gate_node->Send(GateServiceRegisterGameMessageId, message);
     }
 ///<<< END WRITING YOUR CODE
 }

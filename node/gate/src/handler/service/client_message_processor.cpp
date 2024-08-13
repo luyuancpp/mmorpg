@@ -85,7 +85,7 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 		{
 			GateSessionDisconnectRequest request;
 			request.mutable_session_info()->set_session_id(sessionId);
-			g_gate_node->GetZoneCentreNode()->CallMethod(CentreServiceGateSessionDisconnectMsgId, request);
+			g_gate_node->GetZoneCentreNode()->CallMethod(CentreServiceGateSessionDisconnectMessageId, request);
 		}
 
 		// Remove session from registry
@@ -141,7 +141,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 		message.set_session_id(sessionId);
 		message.set_id(request->id());
 		message.set_message_id(request->message_id());
-		gameNode->CallMethod(GameServiceClientSendMessageToPlayerMsgId, message);
+		gameNode->CallMethod(GameServiceClientSendMessageToPlayerMessageId, message);
 
 		LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 	}
@@ -155,7 +155,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 			return;
 		}
 
-		if (request->message_id() == LoginServiceLoginMsgId)
+		if (request->message_id() == LoginServiceLoginMessageId)
 		{
 			LoginC2LRequest message;
 			message.mutable_session_info()->set_session_id(sessionId);
@@ -165,7 +165,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 
 			LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 		}
-		else if (request->message_id() == LoginServiceCreatePlayerMsgId)
+		else if (request->message_id() == LoginServiceCreatePlayerMessageId)
 		{
 			CreatePlayerC2LRequest message;
 			message.mutable_session_info()->set_session_id(sessionId);
@@ -175,7 +175,7 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 
 			LOG_TRACE << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
 		}
-		else if (request->message_id() == LoginServiceEnterGameMsgId)
+		else if (request->message_id() == LoginServiceEnterGameMessageId)
 		{
 			EnterGameC2LRequest message;
 			message.mutable_session_info()->set_session_id(sessionId);
@@ -198,7 +198,7 @@ void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint3
 	tipMessage.set_id(tipId);
 	MessageBody message;
 	message.set_body(tipMessage.SerializeAsString());
-	message.set_message_id(PlayerClientCommonServiceSendTipToClientMsgId);
+	message.set_message_id(PlayerClientCommonServiceSendTipToClientMessageId);
 	g_gate_node->Codec().send(conn, message);
 
 	LOG_ERROR << "Sent tip message to session id: " << SessionId(conn) << ", tip id: " << tipId;
