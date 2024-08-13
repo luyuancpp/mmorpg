@@ -28,8 +28,8 @@ func writeServiceIdHeadFile(methodList RPCMethods) {
 		data.WriteString("\n")
 	}
 
-	fileName := methodList[0].FileBaseName() + config.ServiceInfoExtName + config.HeaderExtension
-	util.WriteMd5Data2File(config.ServiceInfoDirName+fileName, data.String())
+	fileName := methodList[0].FileBaseName() + config.ServiceInfoExtension + config.HeaderExtension
+	util.WriteMd5Data2File(config.ServiceInfoDirectory+fileName, data.String())
 }
 
 // Helper function to generate service ID definitions
@@ -80,7 +80,7 @@ func getPlayerMethodHeadStr(methodList RPCMethods) string {
 	data.WriteString(methodList[0].IncludeName())
 	data.WriteString(config.PlayerServiceIncludeName)
 	data.WriteString(config.MacroReturnIncludeName)
-	data.WriteString("\nclass " + methodList[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n")
+	data.WriteString("\nclass " + methodList[0].Service + config.HandlerFileName + " : public ::PlayerService" + "\n{\npublic:\n")
 	data.WriteString(config.Tab + "using PlayerService::PlayerService;\n")
 
 	data.WriteString(getPlayerMethodHandlerFunctions(methodList))
@@ -133,7 +133,7 @@ func getPlayerMethodRepliedHeadStr(methodList RPCMethods) string {
 	data.WriteString("#pragma once\n")
 	data.WriteString(methodList[0].IncludeName())
 	data.WriteString(config.PlayerServiceRepliedIncludeName)
-	data.WriteString("\nclass " + methodList[0].Service + config.RepliedHandlerName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n")
+	data.WriteString("\nclass " + methodList[0].Service + config.RepliedHandlerFileName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n")
 	data.WriteString(config.Tab + "using PlayerServiceReplied::PlayerServiceReplied;\n")
 
 	data.WriteString(getPlayerMethodRepliedHandlerFunctions(methodList))
@@ -194,7 +194,7 @@ func getMethodRepliedHandlerHeadStr(methodList *RPCMethods) string {
 	// Generate handler function declarations for each method
 	for _, methodInfo := range *methodList {
 		handlerDeclaration := fmt.Sprintf("void On%s%s(const TcpConnectionPtr& conn, const std::shared_ptr<%s>& replied, Timestamp timestamp);\n\n",
-			methodInfo.KeyName(), config.RepliedHandlerName, methodInfo.Response)
+			methodInfo.KeyName(), config.RepliedHandlerFileName, methodInfo.Response)
 		data.WriteString(handlerDeclaration)
 	}
 
@@ -217,7 +217,7 @@ func getMethodHandlerCppStr(dst string, methodList *RPCMethods) string {
 	data.WriteString(firstMethodInfo.CppHandlerIncludeName())
 
 	// Determine class name based on the first method's service and handler name configuration
-	className := firstMethodInfo.Service + config.HandlerName
+	className := firstMethodInfo.Service + config.HandlerFileName
 
 	// Iterate through yourCodes and methodList simultaneously
 	for i, code := range yourCodes {
@@ -276,7 +276,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 			methodInfo := (*methodList)[methodIndex]
 
 			// Construct function name for the handler
-			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerName
+			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerFileName
 
 			// Register message callback in declaration data
 			declarationData.WriteString(fmt.Sprintf("%s%s", config.Tab,
@@ -295,7 +295,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	}
 
 	// Initialize function for registering replied handler callbacks
-	data.WriteString(fmt.Sprintf("\nvoid Init%s%s()\n{\n", firstMethodInfo.KeyName(), config.RepliedHandlerName))
+	data.WriteString(fmt.Sprintf("\nvoid Init%s%s()\n{\n", firstMethodInfo.KeyName(), config.RepliedHandlerFileName))
 	data.WriteString(declarationData.String())
 	data.WriteString("}\n\n")
 
@@ -366,7 +366,7 @@ func writeRegisterFile(dst string, cb checkRepliedCb) {
 
 		// Append instance creation for the service handler
 		instanceData.WriteString(fmt.Sprintf("%sg_server_service.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());\n",
-			config.Tab, firstMethodInfo.Service, firstMethodInfo.Service, config.HandlerName))
+			config.Tab, firstMethodInfo.Service, firstMethodInfo.Service, config.HandlerFileName))
 	}
 
 	// Finalize the data string with the unordered_map declaration and initialization function
@@ -399,7 +399,7 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 		firstMethodInfo := methodList[0]
 
 		// Append the initialization function declaration
-		initFunctionName := "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName
+		initFunctionName := "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerFileName
 		data.WriteString(config.Tab + "void " + initFunctionName + "();\n")
 
 		// Call the initialization function
@@ -1037,15 +1037,15 @@ func WriteMethodFile() {
 
 	// Concurrent operations for game, centre, and gate registers
 	util.Wg.Add(1)
-	go writeRegisterFile(config.GsMethodHandleDir+config.RegisterHandlerCppEx, isGsMethodHandler)
+	go writeRegisterFile(config.GsMethodHandleDir+config.RegisterHandlerCppExtension, isGsMethodHandler)
 	util.Wg.Add(1)
-	go writeRepliedRegisterFile(config.GsMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isGsMethodRepliedHandler)
+	go writeRepliedRegisterFile(config.GsMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, isGsMethodRepliedHandler)
 
 	util.Wg.Add(1)
-	go writeRegisterFile(config.CentreMethodHandleDir+config.RegisterHandlerCppEx, isCentreMethodHandler)
+	go writeRegisterFile(config.CentreMethodHandleDir+config.RegisterHandlerCppExtension, isCentreMethodHandler)
 	util.Wg.Add(1)
-	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isCentreMethodRepliedHandler)
+	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, isCentreMethodRepliedHandler)
 
 	util.Wg.Add(1)
-	go writeRepliedRegisterFile(config.GateMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isGateMethodRepliedHandler)
+	go writeRepliedRegisterFile(config.GateMethodRepliedHandleDir+config.RegisterRepliedHandlerCppExtension, isGateMethodRepliedHandler)
 }

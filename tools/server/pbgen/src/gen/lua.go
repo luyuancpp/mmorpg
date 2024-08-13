@@ -24,7 +24,7 @@ func WriteLoadClientLuaFile() {
 		defer util.Wg.Done()
 		var fds []os.DirEntry
 		var err error
-		if fds, err = os.ReadDir(config.ClientLuaDir); err != nil {
+		if fds, err = os.ReadDir(config.ClientLuaDirectory); err != nil {
 			return
 		}
 		data := "#include <sol/sol.hpp>\n" +
@@ -48,7 +48,7 @@ func WriteLoadClientLuaFile() {
 			data += config.Tab + "}\n"
 		}
 		data += "\n}\n"
-		util.WriteMd5Data2File(config.ClientLuaServiceFile, data)
+		util.WriteMd5Data2File(config.ClientLuaServiceFilePath, data)
 	}()
 }
 
@@ -329,7 +329,7 @@ func writeInitLuaServiceFile() {
 		data += config.Tab + "Init" + firstMethodInfo.Service + "Lua();\n\n"
 	}
 	data += "}\n"
-	util.WriteMd5Data2File(config.LuaServiceFileName, data)
+	util.WriteMd5Data2File(config.LuaServiceFilePath, data)
 }
 
 func WriteLuaServiceHeadHandlerFile() {

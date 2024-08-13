@@ -128,10 +128,10 @@ func WriteEventHandlerFile() {
 	eventHeadData += "static void Register();\n"
 	eventHeadData += "static void UnRegister();\n"
 	eventHeadData += "};\n"
-	util.WriteMd5Data2File(config.GsEventHandleDir+config.EventHandlerFileNameHead, eventHeadData)
-	util.WriteMd5Data2File(config.CentreEventHandleDir+config.EventHandlerFileNameHead, eventHeadData)
+	util.WriteMd5Data2File(config.GsEventHandleDir+config.EventHandlerHeaderFileName, eventHeadData)
+	util.WriteMd5Data2File(config.CentreEventHandleDir+config.EventHandlerHeaderFileName, eventHeadData)
 
-	eventCppData := config.IncludeBegin + config.EventHandlerFileNameHead + config.IncludeEndLine
+	eventCppData := config.IncludeBegin + config.EventHandlerHeaderFileName + config.IncludeEndLine
 	eventCppData += cppIncludeData
 	eventCppData += "void EventHandler::Register()\n{\n"
 	eventCppData += registerData
@@ -139,6 +139,6 @@ func WriteEventHandlerFile() {
 	eventCppData += "void EventHandler::UnRegister()\n{\n"
 	eventCppData += unRegisterData
 	eventCppData += "}\n"
-	util.WriteMd5Data2File(config.GsEventHandleDir+config.EventHandlerFileNameCpp, eventCppData)
-	util.WriteMd5Data2File(config.CentreEventHandleDir+config.EventHandlerFileNameCpp, eventCppData)
+	util.WriteMd5Data2File(config.GsEventHandleDir+config.EventHandlerCppFileName, eventCppData)
+	util.WriteMd5Data2File(config.CentreEventHandleDir+config.EventHandlerCppFileName, eventCppData)
 }

@@ -42,15 +42,15 @@ func MakeProjectDir() {
 	os.MkdirAll(config.PbcOutputDirectory, os.FileMode(0777))
 	os.MkdirAll(config.GrpcOutputDirectory, os.FileMode(0777))
 	os.MkdirAll(config.PbcLuaDirectory, os.FileMode(0777))
-	os.MkdirAll(config.ServiceInfoDirName, os.FileMode(0777))
+	os.MkdirAll(config.ServiceInfoDirectory, os.FileMode(0777))
 }
 
 func MakeMd5Dir() {
 	os.MkdirAll(config.Md5Dir, os.FileMode(0777))
 
-	for i := 0; i < len(config.SourceDirs); i++ {
-		config.ProjectSourceDirs = append(config.ProjectSourceDirs, config.ProjectDir+config.SourceDirs[i])
-		config.ProjectSourceMd5Dirs = append(config.ProjectSourceMd5Dirs, config.Md5Dir+config.SourceDirs[i])
+	for i := 0; i < len(config.SourceDirectories); i++ {
+		config.ProtoDirectories = append(config.ProtoDirectories, config.ProjectDir+config.SourceDirectories[i])
+		config.ProjectSourceMd5Dirs = append(config.ProjectSourceMd5Dirs, config.Md5Dir+config.SourceDirectories[i])
 	}
 
 	for i := 0; i < len(config.ProtoDirNames); i++ {
@@ -58,8 +58,8 @@ func MakeMd5Dir() {
 		config.ProtoMd5Dirs = append(config.ProtoMd5Dirs, config.Md5Dir+config.ProtoDirNames[i])
 	}
 
-	for i := 0; i < len(config.SourceDirs); i++ {
-		MakeProjectMd5Dir(config.ProjectSourceDirs[i], config.ProjectSourceMd5Dirs[i])
+	for i := 0; i < len(config.SourceDirectories); i++ {
+		MakeProjectMd5Dir(config.ProtoDirectories[i], config.ProjectSourceMd5Dirs[i])
 	}
 
 	for i := 0; i < len(config.ProtoMd5Dirs); i++ {

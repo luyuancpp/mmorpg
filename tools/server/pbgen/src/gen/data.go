@@ -105,7 +105,7 @@ func (info *RPCMethod) IncludeName() string {
 }
 
 func (info *RPCMethod) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + info.FileBaseName() + config.ServiceInfoExtName + config.HeaderExtension + "\"\n"
+	return config.IncludeBegin + info.FileBaseName() + config.ServiceInfoExtension + config.HeaderExtension + "\"\n"
 }
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
@@ -120,12 +120,12 @@ func (info *RPCMethod) CppRepliedHandlerIncludeName() string {
 
 // CppHandlerClassName 返回Cpp处理器类名
 func (info *RPCMethod) CppHandlerClassName() string {
-	return info.Service + config.HandlerName
+	return info.Service + config.HandlerFileName
 }
 
 // CppRepliedHandlerClassName 返回Cpp已响应处理器类名
 func (info *RPCMethod) CppRepliedHandlerClassName() string {
-	return info.Service + config.RepliedHandlerName
+	return info.Service + config.RepliedHandlerFileName
 }
 
 // IsPlayerService 检查是否为玩家服务

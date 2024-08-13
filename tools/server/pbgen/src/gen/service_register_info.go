@@ -331,7 +331,7 @@ func writeServiceInfoCppFile() {
 	// Write to file
 	data := includeBuilder.String() + servcieInfoIncludeBuilder.String() + classHandlerBuilder.String() +
 		messageIdHandlerBuilder.String() + initFuncBuilder.String()
-	util.WriteMd5Data2File(config.ServiceCppFileName, data)
+	util.WriteMd5Data2File(config.ServiceCppFilePath, data)
 }
 
 // writeServiceInfoHeadFile writes service information to a header file.
@@ -357,7 +357,7 @@ func writeServiceInfoHeadFile() {
 	data.WriteString(fmt.Sprintf("extern std::array<RpcService, kMaxMessageLen> g_message_info;\n\n"))
 	data.WriteString("extern std::unordered_set<uint32_t> g_c2s_service_id;\n")
 
-	util.WriteMd5Data2File(config.ServiceHeadFileName, data.String())
+	util.WriteMd5Data2File(config.ServiceHeaderFilePath, data.String())
 }
 
 // Helper function to generate instance data for player services.
@@ -381,7 +381,7 @@ func generateInstanceData(ServiceList []string, isPlayerHandlerFunc func(*RPCMet
 
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
 		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
+			"\", std::make_unique<" + method1Info.Service + config.HandlerFileName + ">(new " +
 			className + "));\n"
 	}
 
@@ -418,7 +418,7 @@ func generateRepliedInstanceData(ServiceList []string, isPlayerHandlerFunc func(
 
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
 		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerName + ">(new " +
+			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerFileName + ">(new " +
 			className + "));\n"
 	}
 

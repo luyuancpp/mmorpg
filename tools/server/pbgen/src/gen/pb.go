@@ -195,7 +195,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 			continue
 		}
 		// Skip the DbProtoName and check for specific directories
-		if fd.Name() == config.DbProtoName {
+		if fd.Name() == config.DbProtoFileName {
 			continue
 		}
 		if !(strings.Contains(protoPath, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
@@ -211,7 +211,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.LoginGoMd5Ex + config.Md5Ex
-			dstFileName := config.LoginGoGameDir + fd.Name()
+			dstFileName := config.LoginGoGameDirectory + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -226,7 +226,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 			if sysType == `linux` {
 				// Command for Linux
 				cmd = exec.Command("protoc",
-					"--go_out="+config.LoginDir,
+					"--go_out="+config.LoginDirectory,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common/",
@@ -235,7 +235,7 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 			} else {
 				// Command for other systems (presumably Windows)
 				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.LoginDir,
+					"--go_out="+config.LoginDirectory,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common/",
@@ -280,7 +280,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 		}
 
 		// Skip the file if it matches the DBProtoName configuration
-		if fd.Name() == config.DbProtoName {
+		if fd.Name() == config.DbProtoFileName {
 			continue
 		}
 
@@ -298,7 +298,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.DBGoMd5Ex + config.Md5Ex
-			dstFileName := config.DBGoGameDir + fd.Name()
+			dstFileName := config.DbGoGameDirectory + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -313,7 +313,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 			if sysType == `linux` {
 				// Command for Linux
 				cmd = exec.Command("protoc",
-					"--go_out="+config.DbGoDir,
+					"--go_out="+config.DbGoDirectory,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common/",
@@ -322,7 +322,7 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 			} else {
 				// Command for other systems (presumably Windows)
 				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.DbGoDir,
+					"--go_out="+config.DbGoDirectory,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common/",
@@ -368,7 +368,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 		}
 
 		// Skip the file if it matches the DbProtoName configuration
-		if fd.Name() == config.DbProtoName {
+		if fd.Name() == config.DbProtoFileName {
 			continue
 		}
 
@@ -380,7 +380,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.ClientGoMd5Ex + config.Md5Ex
-			dstFileName := config.ClientGoGamePbDir + fd.Name()
+			dstFileName := config.ClientGoGamePbDirectory + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -395,7 +395,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			if sysType == `linux` {
 				// Command for Linux
 				cmd = exec.Command("protoc",
-					"--go_out="+config.ClientGoOutDir,
+					"--go_out="+config.ClientGoOutputDirectory,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common/",
@@ -404,7 +404,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			} else {
 				// Command for other systems (presumably Windows)
 				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.ClientGoOutDir,
+					"--go_out="+config.ClientGoOutputDirectory,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common/",

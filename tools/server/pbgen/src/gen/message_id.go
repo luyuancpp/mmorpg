@@ -134,8 +134,8 @@ func WriteGoMessageId() {
 
 	// Define file paths where constants will be written
 	filePaths := []string{
-		config.ClientMessageIdFile,
-		config.LoginMessageIdGo,
+		config.ClientMessageIdFilePath,
+		config.LoginMessageIdGoFile,
 	}
 
 	// Write constants to files concurrently
