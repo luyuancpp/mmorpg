@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <chrono>
+#include <muduo/base/Timestamp.h>
 #include "logic/component/time_meter_comp.pb.h"
 
 class TimeMeterUtil {
@@ -37,9 +38,13 @@ public:
 	}
 
 private:
-	static uint64_t GetCurrentTimeInSeconds() {
-		return std::chrono::duration_cast<std::chrono::seconds>(
-			std::chrono::high_resolution_clock::now().time_since_epoch()
-		).count();
+	inline static uint64_t GetCurrentTimeInSeconds() {
+		return muduo::Timestamp::now().secondsSinceEpoch();
 	}
+
+	//inline static uint64_t GetCurrentTimeInSeconds() {
+	//	return std::chrono::duration_cast<std::chrono::seconds>(
+	//		std::chrono::high_resolution_clock::now().time_since_epoch()
+	//	).count();
+	//}
 };
