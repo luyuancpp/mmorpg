@@ -5,7 +5,6 @@ import (
 	"pbgen/util"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 // getClientMethodHandlerHeadStr 生成客户端方法处理器头文件字符串
@@ -95,21 +94,19 @@ func writeClientHandlerDefaultInstanceFile() {
 
 // WriteClientServiceHeadHandlerFile 写入客户端服务头处理器文件
 func WriteClientServiceHeadHandlerFile() {
-	var wg sync.WaitGroup
-
 	for _, v := range ServiceMethodMap {
-		wg.Add(1)
+		util.Wg.Add(1)
 		go func(methodList RPCMethods) {
-			defer wg.Done()
+			defer util.Wg.Done()
 			writeClientMethodHandlerHeadFile(methodList)
 		}(v)
 	}
 
-	wg.Add(1)
+	util.Wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer util.Wg.Done()
 		writeClientHandlerDefaultInstanceFile()
 	}()
 
-	wg.Wait()
+	util.Wg.Wait()
 }
