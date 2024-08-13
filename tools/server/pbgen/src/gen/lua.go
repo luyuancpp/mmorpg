@@ -235,7 +235,7 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 		data += ");\n"
 	}
 	data += "}\n"
-	util.WriteMd5Data2File(config.PbcLuaDirName+fileBaseName+config.CppSol2Ex, data)
+	util.WriteMd5Data2File(config.PbcLuaDirectory+fileBaseName+config.CppSol2Extension, data)
 }
 
 func WriteSol2LuaFile() {
@@ -280,7 +280,7 @@ func WriteSol2LuaFile() {
 		data += "tls_lua_state.new_usertype<::google::protobuf::Message>(\"Message\");\n"
 		data += callData + "\n"
 		data += "}\n"
-		util.WriteMd5Data2File(config.PbcLuaDirName+"pb"+config.CppSol2Ex, data)
+		util.WriteMd5Data2File(config.PbcLuaDirectory+"pb"+config.CppSol2Extension, data)
 	}()
 
 }
@@ -308,8 +308,8 @@ func writeLuaServiceMethodCppFile(methodList RPCMethods) {
 			config.Tab + "};\n\n"
 	}
 	data += "}\n"
-	fileName := methodList[0].FileBaseName() + "_service" + config.LuaCppEx
-	util.WriteMd5Data2File(config.PbcLuaDirName+fileName, data)
+	fileName := methodList[0].FileBaseName() + "_service" + config.LuaCppExtension
+	util.WriteMd5Data2File(config.PbcLuaDirectory+fileName, data)
 }
 
 func writeInitLuaServiceFile() {

@@ -37,7 +37,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
-			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcOutDir, 1)
+			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcOutputDirectory, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -47,7 +47,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			}
 
 			// Generate C++ files
-			if err := generateCppFiles(fileName, config.PbcOutDir); err != nil {
+			if err := generateCppFiles(fileName, config.PbcOutputDirectory); err != nil {
 				log.Fatal(err)
 			}
 
@@ -126,7 +126,7 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.GrpcEx + config.Md5Ex
-			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcOutDir, 1)
+			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcOutputDirectory, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -141,7 +141,7 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 			if sysType == `linux` {
 				// Command for Linux
 				cmd = exec.Command("protoc",
-					"--grpc_out="+config.GrpcOutDir,
+					"--grpc_out="+config.GrpcOutputDirectory,
 					"--plugin=protoc-gen-grpc=grpc_cpp_plugin",
 					fileName,
 					"--proto_path="+config.ProtoDir,
@@ -151,7 +151,7 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 			} else {
 				// Command for other systems (presumably Windows)
 				cmd = exec.Command("./protoc.exe",
-					"--grpc_out="+config.GrpcOutDir,
+					"--grpc_out="+config.GrpcOutputDirectory,
 					"--plugin=protoc-gen-grpc=grpc_cpp_plugin.exe",
 					fileName,
 					"--proto_path="+config.ProtoDir,

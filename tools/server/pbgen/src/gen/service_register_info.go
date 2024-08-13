@@ -144,9 +144,9 @@ func ReadServiceIdFile() {
 	go func() {
 		defer util.Wg.Done()
 
-		f, err := os.Open(config.ServiceIdsFileName)
+		f, err := os.Open(config.ServiceIdFilePath)
 		if err != nil {
-			fmt.Errorf("failed to open file %s: %w", config.ServiceIdsFileName, err)
+			fmt.Errorf("failed to open file %s: %w", config.ServiceIdFilePath, err)
 			log.Fatalf("error reading service ID file: %v", err)
 		}
 		defer f.Close()
@@ -164,7 +164,7 @@ func ReadServiceIdFile() {
 		}
 
 		if err := scanner.Err(); err != nil {
-			fmt.Errorf("error reading file %s: %w", config.ServiceIdsFileName, err)
+			fmt.Errorf("error reading file %s: %w", config.ServiceIdFilePath, err)
 			log.Fatalf("error reading service ID file: %v", err)
 		}
 
@@ -190,7 +190,7 @@ func WriteServiceIdFile() {
 			}
 			data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
 		}
-		util.WriteMd5Data2File(config.ServiceIdsFileName, data)
+		util.WriteMd5Data2File(config.ServiceIdFilePath, data)
 	}()
 }
 
@@ -377,7 +377,7 @@ func generateInstanceData(ServiceList []string, isPlayerHandlerFunc func(*RPCMet
 
 		method1Info := methodList[0]
 		className := method1Info.Service + "Impl"
-		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + "\"\n"
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HandlerHeaderExtension + "\"\n"
 
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
 		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
@@ -414,7 +414,7 @@ func generateRepliedInstanceData(ServiceList []string, isPlayerHandlerFunc func(
 
 		method1Info := methodList[0]
 		className := method1Info.Service + "Impl"
-		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadRepliedHandlerEx + "\"\n"
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.RepliedHandlerHeaderExtension + "\"\n"
 
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
 		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +

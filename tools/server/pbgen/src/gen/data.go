@@ -75,7 +75,7 @@ func (info *RPCServiceInfo) PbcHeadName() string {
 
 // HeadName 返回头文件名
 func (info *RPCServiceInfo) HeadName() string {
-	return strings.Replace(info.FileName, config.ProtoEx, config.HeadEx, 1)
+	return strings.Replace(info.FileName, config.ProtoEx, config.HeaderExtension, 1)
 }
 
 // FileBaseName 返回文件基本名
@@ -105,17 +105,17 @@ func (info *RPCMethod) IncludeName() string {
 }
 
 func (info *RPCMethod) ServiceInfoIncludeName() string {
-	return config.IncludeBegin + info.FileBaseName() + config.ServiceInfoExtName + config.HeadEx + "\"\n"
+	return config.IncludeBegin + info.FileBaseName() + config.ServiceInfoExtName + config.HeaderExtension + "\"\n"
 }
 
 // CppHandlerIncludeName 返回Cpp处理器包含文件名
 func (info *RPCMethod) CppHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
+	return config.IncludeBegin + info.FileBaseName() + config.HandlerHeaderExtension + config.IncludeEndLine
 }
 
 // CppRepliedHandlerIncludeName 返回Cpp已响应处理器包含文件名
 func (info *RPCMethod) CppRepliedHandlerIncludeName() string {
-	return config.IncludeBegin + info.FileBaseName() + config.HeadRepliedHandlerEx + config.IncludeEndLine
+	return config.IncludeBegin + info.FileBaseName() + config.RepliedHandlerHeaderExtension + config.IncludeEndLine
 }
 
 // CppHandlerClassName 返回Cpp处理器类名
