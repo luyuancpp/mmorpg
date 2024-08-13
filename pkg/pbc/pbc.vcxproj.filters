@@ -93,18 +93,6 @@
     <ClCompile Include="src\proto\logic\server\game_team.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\logic\server_player\centre_common_server_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\server_player\centre_scene_server_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\server_player\game_scene_server_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\server_player\game_server_player.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\common\c2gate.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -168,19 +156,31 @@
     <ClCompile Include="src\proto\common\user_accounts.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\common_player.pb.cc">
+    <ClCompile Include="src\proto\logic\component\time_meter_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\scene_player.pb.cc">
+    <ClCompile Include="src\proto\service_info\service_info.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\client_player\player_ability.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\logic\component\time_meter_comp.pb.cc">
+    <ClCompile Include="src\proto\logic\client_player\player_common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\service_info\service_info.cpp">
+    <ClCompile Include="src\proto\logic\client_player\player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\server_player\centre_server_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\server_player\centre_server_player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\server_player\game_server_player.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\server_player\game_server_player_scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -263,18 +263,6 @@
     <ClInclude Include="src\proto\logic\server\game_team.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\logic\server_player\centre_common_server_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\server_player\centre_scene_server_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\server_player\game_scene_server_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\server_player\game_server_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\common\c2gate.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -338,15 +326,6 @@
     <ClInclude Include="src\proto\common\user_accounts.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\common_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\scene_player.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\player_ability.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\logic\component\time_meter_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -396,6 +375,27 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\service_info\service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\player_ability.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\player_common.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\server_player\centre_server_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\server_player\centre_server_player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\server_player\game_server_player.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\server_player\game_server_player_scene.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

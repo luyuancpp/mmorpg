@@ -40,9 +40,9 @@
     <ClCompile Include="src\proto\common\statistics.pb.cc" />
     <ClCompile Include="src\proto\common\tip.pb.cc" />
     <ClCompile Include="src\proto\common\user_accounts.pb.cc" />
-    <ClCompile Include="src\proto\logic\client_player\common_player.pb.cc" />
     <ClCompile Include="src\proto\logic\client_player\player_ability.pb.cc" />
-    <ClCompile Include="src\proto\logic\client_player\scene_player.pb.cc" />
+    <ClCompile Include="src\proto\logic\client_player\player_common.pb.cc" />
+    <ClCompile Include="src\proto\logic\client_player\player_scene.pb.cc" />
     <ClCompile Include="src\proto\logic\component\ability_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\actor_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\buff_comp.pb.cc" />
@@ -70,10 +70,10 @@
     <ClCompile Include="src\proto\logic\server\centre_scene.pb.cc" />
     <ClCompile Include="src\proto\logic\server\game_scene.pb.cc" />
     <ClCompile Include="src\proto\logic\server\game_team.pb.cc" />
-    <ClCompile Include="src\proto\logic\server_player\centre_common_server_player.pb.cc" />
-    <ClCompile Include="src\proto\logic\server_player\centre_scene_server_player.pb.cc" />
-    <ClCompile Include="src\proto\logic\server_player\game_scene_server_player.pb.cc" />
+    <ClCompile Include="src\proto\logic\server_player\centre_server_player.pb.cc" />
+    <ClCompile Include="src\proto\logic\server_player\centre_server_player_scene.pb.cc" />
     <ClCompile Include="src\proto\logic\server_player\game_server_player.pb.cc" />
+    <ClCompile Include="src\proto\logic\server_player\game_server_player_scene.pb.cc" />
     <ClCompile Include="src\proto\service_info\service_info.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -98,9 +98,9 @@
     <ClInclude Include="src\proto\common\statistics.pb.h" />
     <ClInclude Include="src\proto\common\tip.pb.h" />
     <ClInclude Include="src\proto\common\user_accounts.pb.h" />
-    <ClInclude Include="src\proto\logic\client_player\common_player.pb.h" />
     <ClInclude Include="src\proto\logic\client_player\player_ability.pb.h" />
-    <ClInclude Include="src\proto\logic\client_player\scene_player.pb.h" />
+    <ClInclude Include="src\proto\logic\client_player\player_common.pb.h" />
+    <ClInclude Include="src\proto\logic\client_player\player_scene.pb.h" />
     <ClInclude Include="src\proto\logic\component\ability_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\actor_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\buff_comp.pb.h" />
@@ -128,10 +128,10 @@
     <ClInclude Include="src\proto\logic\server\centre_scene.pb.h" />
     <ClInclude Include="src\proto\logic\server\game_scene.pb.h" />
     <ClInclude Include="src\proto\logic\server\game_team.pb.h" />
-    <ClInclude Include="src\proto\logic\server_player\centre_common_server_player.pb.h" />
-    <ClInclude Include="src\proto\logic\server_player\centre_scene_server_player.pb.h" />
-    <ClInclude Include="src\proto\logic\server_player\game_scene_server_player.pb.h" />
+    <ClInclude Include="src\proto\logic\server_player\centre_server_player.pb.h" />
+    <ClInclude Include="src\proto\logic\server_player\centre_server_player_scene.pb.h" />
     <ClInclude Include="src\proto\logic\server_player\game_server_player.pb.h" />
+    <ClInclude Include="src\proto\logic\server_player\game_server_player_scene.pb.h" />
     <ClInclude Include="src\proto\service_info\centre_common_server_player_service_info.h" />
     <ClInclude Include="src\proto\service_info\centre_scene_server_player_service_info.h" />
     <ClInclude Include="src\proto\service_info\centre_scene_service_info.h" />
