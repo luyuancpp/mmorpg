@@ -2,7 +2,7 @@
 #include <chrono>
 #include <thread>
 
-#include "time/comp/time_meter_util.h"
+#include "time/util/time_meter_util.h"
 
 class TimeMeterUtilTest : public ::testing::Test {
 protected:
