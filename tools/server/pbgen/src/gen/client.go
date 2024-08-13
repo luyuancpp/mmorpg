@@ -15,7 +15,7 @@ func getClientMethodHandlerHeadStr(methodList RPCMethods) string {
 	builder.WriteString("#include <sol/sol.hpp>\n")
 	builder.WriteString("#include \"thread_local/storage_lua.h\"\n")
 	builder.WriteString(methodList[0].IncludeName() + "\n")
-	builder.WriteString("class " + methodList[0].Service + config.HandlerName + " : public ::" + methodList[0].Service + " {\n")
+	builder.WriteString("class " + methodList[0].Service + config.HandlerFileName + " : public ::" + methodList[0].Service + " {\n")
 	builder.WriteString("public:\n")
 	builder.WriteString(config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n")
 	builder.WriteString(config.Tab + "                 ::google::protobuf::RpcController* controller,\n")
@@ -27,7 +27,7 @@ func getClientMethodHandlerHeadStr(methodList RPCMethods) string {
 	for i, method := range methodList {
 		builder.WriteString(config.Tab3 + "case " + strconv.Itoa(i) + ":\n")
 		builder.WriteString(config.Tab3 + "{\n")
-		builder.WriteString(config.Tab4 + "tls_lua_state[\"" + method.KeyName() + config.HandlerName + "\"](\n")
+		builder.WriteString(config.Tab4 + "tls_lua_state[\"" + method.KeyName() + config.HandlerFileName + "\"](\n")
 		builder.WriteString(config.Tab4 + "    ::google::protobuf::internal::DownCast<const ::" + method.Request + "*>(request),\n")
 		builder.WriteString(config.Tab4 + "    ::google::protobuf::internal::DownCast<::" + method.Response + "*>(response));\n")
 		builder.WriteString(config.Tab3 + "}\n")
@@ -79,7 +79,7 @@ func writeClientHandlerDefaultInstanceFile() {
 		method1Info := methodList[0]
 		includeBuilder.WriteString(config.IncludeBegin + method1Info.FileBaseName() + config.HandlerHeaderExtension + config.IncludeEndLine)
 		instanceBuilder.WriteString(config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">());\n")
+			"\", std::make_unique<" + method1Info.Service + config.HandlerFileName + ">());\n")
 	}
 
 	builder.WriteString(includeBuilder.String())
@@ -88,7 +88,7 @@ func writeClientHandlerDefaultInstanceFile() {
 	builder.WriteString(instanceBuilder.String())
 	builder.WriteString("}\n")
 
-	util.WriteMd5Data2File(config.ClientServiceInstanceFile, builder.String())
+	util.WriteMd5Data2File(config.ClientServiceInstanceFilePath, builder.String())
 }
 
 // WriteClientServiceHeadHandlerFile 写入客户端服务头处理器文件

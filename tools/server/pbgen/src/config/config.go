@@ -47,38 +47,38 @@ const (
 
 // 常量：输出目录
 const (
-	PbcOutputDirectory        = ProjectDir + PbcProtoDirectory
-	GrpcOutputDirectory       = ProjectDir + PbcProtoDirectory
-	ClientGoOutDir            = ProjectDir + ClientDirectory
-	GoPbGameDir               = "pb/game/"
-	ClientGoGamePbDir         = ClientGoOutDir + GoPbGameDir
-	MessageIdGo               = "message_id.go"
-	ClientMessageIdFile       = ClientGoGamePbDir + MessageIdGo
-	LoginDir                  = ProjectDir + "node/login/"
-	LoginGoGameDir            = LoginDir + GoPbGameDir
-	LoginMessageIdGo          = LoginGoGameDir + MessageIdGo
-	DbGoDir                   = ProjectDir + "node/db/"
-	DBGoGameDir               = DbGoDir + GoPbGameDir
-	ServiceInfoDirName        = PbcOutputDirectory + "service_info/"
-	ServiceInfoExtName        = "_service_info"
-	ServiceCppFileName        = ServiceInfoDirName + "service_info.cpp"
-	ServiceHeadFileName       = ServiceInfoDirName + "service_info.h"
-	LuaServiceFileName        = PbcLuaDirectory + "lua_service.cpp"
-	ClientLuaDir              = ProjectDir + "bin/script/lua/service/"
-	ClientLuaServiceFile      = ProjectDir + "client/src/handler/service_lua.cpp"
-	ClientServiceInstanceFile = ProjectDir + "client/src/handler/player_service.cpp"
+	PbcOutputDirectory            = ProjectDir + PbcProtoDirectory
+	GrpcOutputDirectory           = ProjectDir + PbcProtoDirectory
+	ClientGoOutputDirectory       = ProjectDir + ClientDirectory
+	GoPbGameDirectory             = "pb/game/"
+	ClientGoGamePbDirectory       = ClientGoOutputDirectory + GoPbGameDirectory
+	MessageIdGoFile               = "message_id.go"
+	ClientMessageIdFilePath       = ClientGoGamePbDirectory + MessageIdGoFile
+	LoginDirectory                = ProjectDir + "node/login/"
+	LoginGoGameDirectory          = LoginDirectory + GoPbGameDirectory
+	LoginMessageIdGoFile          = LoginGoGameDirectory + MessageIdGoFile
+	DbGoDirectory                 = ProjectDir + "node/db/"
+	DbGoGameDirectory             = DbGoDirectory + GoPbGameDirectory
+	ServiceInfoDirectory          = PbcOutputDirectory + "service_info/"
+	ServiceInfoExtension          = "_service_info"
+	ServiceCppFilePath            = ServiceInfoDirectory + "service_info.cpp"
+	ServiceHeaderFilePath         = ServiceInfoDirectory + "service_info.h"
+	LuaServiceFilePath            = PbcLuaDirectory + "lua_service.cpp"
+	ClientLuaDirectory            = ProjectDir + "bin/script/lua/service/"
+	ClientLuaServiceFilePath      = ProjectDir + "client/src/handler/service_lua.cpp"
+	ClientServiceInstanceFilePath = ProjectDir + "client/src/handler/player_service.cpp"
 )
 
 // 常量：文件名
 const (
-	HandlerName                 = "Handler"
-	RepliedHandlerName          = "RepliedHandler"
-	EventHandlerFileName        = "event_handler"
-	EventHandlerFileNameHead    = EventHandlerFileName + HeaderExtension
-	EventHandlerFileNameCpp     = EventHandlerFileName + CppExtension
-	RegisterRepliedHandlerCppEx = "register" + CppRepliedHandlerEx
-	RegisterHandlerCppEx        = "register" + HandlerCppExtension
-	DbProtoName                 = "db_base.proto"
+	HandlerFileName                    = "Handler"
+	RepliedHandlerFileName             = "RepliedHandler"
+	EventHandlerFileNameBase           = "event_handler"
+	EventHandlerHeaderFileName         = EventHandlerFileNameBase + HeaderExtension
+	EventHandlerCppFileName            = EventHandlerFileNameBase + CppExtension
+	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
+	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
+	DbProtoFileName                    = "db_base.proto"
 )
 
 // 常量：代码相关
@@ -104,7 +104,7 @@ const (
 
 // 常量：项目源目录
 var (
-	SourceDirs = [...]string{
+	SourceDirectories = [...]string{
 		"pkg/common/",
 		"pkg/pbc/",
 		"node/centre/",
@@ -123,7 +123,7 @@ var (
 		"logic/constants/",
 	}
 
-	ProjectSourceDirs    []string
+	ProtoDirectories     []string
 	ProjectSourceMd5Dirs []string
 	ProtoDirs            []string
 	ProtoMd5Dirs         []string
