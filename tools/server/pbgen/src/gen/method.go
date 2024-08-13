@@ -504,7 +504,7 @@ func writeGsPlayerMethodHandlerHeadFile(methodList RPCMethods) {
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
 
 	// Write the generated data to the destination file using util.WriteMd5Data2File
-	util.WriteMd5Data2File(config.GsMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
+	util.WriteMd5Data2File(config.GsPlayerMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
 func writeGsPlayerMethodHandlerCppFile(methodList RPCMethods) {
@@ -519,7 +519,7 @@ func writeGsPlayerMethodHandlerCppFile(methodList RPCMethods) {
 
 	// Generate the file name based on the first method's base name and configuration
 	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.GsMethodHandleDir + fileName
+	dstFileName := config.GsPlayerMethodHandleDir + fileName
 
 	// Generate the C++ handler file content
 	data := getMethodPlayerHandlerCppStr(dstFileName,
@@ -733,7 +733,7 @@ func writeCentrePlayerMethodHandlerHeadFile(methodList RPCMethods) {
 
 	firstMethodInfo := methodList[0]
 	fileName := firstMethodInfo.FileBaseName() + config.HeadHandlerEx
-	outputFilePath := config.CentreMethodHandleDir + fileName
+	outputFilePath := config.CentrePlayerMethodHandleDir + fileName
 
 	data := getPlayerMethodHeadStr(methodList)
 	util.WriteMd5Data2File(outputFilePath, data)
@@ -748,7 +748,7 @@ func writeCentrePlayerMethodHandlerCppFile(methodList RPCMethods) {
 
 	firstMethodInfo := methodList[0]
 	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.CentreMethodHandleDir + fileName
+	dstFileName := config.CentrePlayerMethodHandleDir + fileName
 
 	data := getMethodPlayerHandlerCppStr(
 		dstFileName,

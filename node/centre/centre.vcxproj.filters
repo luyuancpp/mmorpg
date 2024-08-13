@@ -36,19 +36,19 @@
     <ClCompile Include="src\grpc\async_client_call.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\centre_common_server_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\centre_common_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\centre_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\centre_scene_server_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\centre_scene_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\centre_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\player_service.cpp">
+    <ClCompile Include="src\handler\service\player\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\register_handler.cpp">
@@ -131,19 +131,19 @@
     <ClInclude Include="src\grpc\async_client_call.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\centre_common_server_player_handler.h">
+    <ClInclude Include="src\handler\service\player\centre_common_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\centre_scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\centre_scene_server_player_handler.h">
+    <ClInclude Include="src\handler\service\player\centre_scene_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\centre_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\player_service.h">
+    <ClInclude Include="src\handler\service\player\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\register_handler.h">

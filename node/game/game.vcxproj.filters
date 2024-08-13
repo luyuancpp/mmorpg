@@ -42,22 +42,22 @@
     <ClCompile Include="src\handler\service\game_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\game_scene_server_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\game_scene_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\game_server_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\game_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\game_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\player_service.cpp">
+    <ClCompile Include="src\handler\service\player\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\register_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\scene_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\scene_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\network\message_util.cpp">
@@ -141,13 +141,13 @@
     <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\player_ability_handler.cpp">
+    <ClCompile Include="src\handler\service\player\player_ability_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\scene\util\grid_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\common_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\common_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -176,22 +176,22 @@
     <ClInclude Include="src\handler\service\game_scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\game_scene_server_player_handler.h">
+    <ClInclude Include="src\handler\service\player\game_scene_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\game_server_player_handler.h">
+    <ClInclude Include="src\handler\service\player\game_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\game_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\player_service.h">
+    <ClInclude Include="src\handler\service\player\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\register_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\scene_player_handler.h">
+    <ClInclude Include="src\handler\service\player\scene_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\network\message_util.h">
@@ -305,7 +305,7 @@
     <ClInclude Include="src\game_logic\scene\util\navigation_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\player_ability_handler.h">
+    <ClInclude Include="src\handler\service\player\player_ability_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\combat\ability\comp\ability_comp.h">
@@ -314,7 +314,7 @@
     <ClInclude Include="src\game_logic\scene\util\grid_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\common_player_handler.h">
+    <ClInclude Include="src\handler\service\player\common_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

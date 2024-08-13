@@ -5,7 +5,7 @@
 
 #include "game_node.h"
 #include "game_logic/scene/util/game_node_scene_util.h"
-#include "handler/service/player_service.h"
+#include "handler/service/player/player_service.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "service_info/service_info.h"
