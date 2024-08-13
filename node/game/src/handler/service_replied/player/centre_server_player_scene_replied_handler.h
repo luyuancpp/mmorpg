@@ -2,7 +2,7 @@
 #include "logic/server_player/centre_server_player_scene.pb.h"
 #include "player_service_replied.h"
 
-class CentreScenePlayerServiceRepliedHandler : public ::PlayerServiceReplied
+class CentrePlayerSceneServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;

@@ -14,7 +14,7 @@
 
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
+void CentrePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::CentreEnterSceneRequest* request,
 	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -37,14 +37,14 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,const ::Cen
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreScenePlayerServiceHandler::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
+void CentrePlayerSceneServiceHandler::LeaveScene(entt::entity player,const ::CentreLeaveSceneRequest* request,
 	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
+void CentrePlayerSceneServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -86,7 +86,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreScenePlayerServiceHandler::SceneInfoC2S(entt::entity player,const ::SceneInfoRequest* request,
+void CentrePlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,const ::SceneInfoRequest* request,
 	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
