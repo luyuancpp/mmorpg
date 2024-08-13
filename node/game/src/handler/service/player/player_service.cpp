@@ -3,8 +3,8 @@
 #include "player_service.h"
 
 #include "player_scene_handler.h"
-#include "game_server_player_scene_handler.h"
-#include "game_server_player_handler.h"
+#include "game_player_scene_handler.h"
+#include "game_player_handler.h"
 #include "player_ability_handler.h"
 #include "player_common_handler.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;

@@ -442,16 +442,14 @@ func isGsPlayerHandler(methodList *RPCMethods) bool {
 	firstMethodInfo := (*methodList)[0]
 
 	// Check if the method belongs to a player service
-	if !firstMethodInfo.IsPlayerService() {
-		return false
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		return true
 	}
 
 	// Check if the file base name contains player name and does not contain centre prefix
 	fileBaseName := firstMethodInfo.FileBaseName()
-	if !strings.Contains(fileBaseName, config.PlayerName) {
-		return false
-	}
-	if strings.Contains(fileBaseName, config.CentrePrefixName) {
+
+	if strings.Contains(fileBaseName, config.GsPlayerPrefixName) {
 		return false
 	}
 
@@ -705,16 +703,6 @@ func isCentrePlayerHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	// 检查方法是否属于 PlayerService
-	if !firstMethodInfo.IsPlayerService() {
-		return false
-	}
-
-	// 检查方法路径是否位于 ClientPlayer 目录中
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
-		return false
-	}
-
 	// 检查文件名是否包含 Centre 前缀名
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
@@ -762,21 +750,8 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 
 	firstMethodInfo := (*methodList)[0]
 
-	// Check if the method file path contains common or logic proto directory names
-	isInCommonOrLogicProto := strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
-
-	if !isInCommonOrLogicProto {
-		return false
-	}
-
-	// Check if CcGenericServices is enabled
-	if !firstMethodInfo.CcGenericServices {
-		return false
-	}
-
 	// Ensure the file base name does not contain CentrePrefixName
-	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.GsPlayerPrefixName)
 }
 
 func writeCentreMethodRepliedHandlerHeadFile(methodList RPCMethods) {

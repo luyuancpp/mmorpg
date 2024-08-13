@@ -1,4 +1,4 @@
-#include "game_server_player_scene_handler.h"
+#include "game_player_scene_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "scene/comp/scene_comp.h"
 #include "proto/logic/component/player_comp.pb.h"
