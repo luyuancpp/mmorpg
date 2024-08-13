@@ -2,8 +2,8 @@
 #include <unordered_map>
 #include "player_service.h"
 
-#include "common_player_handler.h"
-#include "scene_player_handler.h"
+#include "player_common_handler.h"
+#include "player_scene_handler.h"
 #include "game_scene_server_player_handler.h"
 #include "game_server_player_handler.h"
 #include "player_ability_handler.h"

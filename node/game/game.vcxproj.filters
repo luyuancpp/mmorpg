@@ -57,7 +57,7 @@
     <ClCompile Include="src\handler\service\register_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\player\scene_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\player_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\network\message_util.cpp">
@@ -147,7 +147,7 @@
     <ClCompile Include="src\game_logic\scene\util\grid_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\player\common_player_handler.cpp">
+    <ClCompile Include="src\handler\service\player\player_common_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -191,7 +191,7 @@
     <ClInclude Include="src\handler\service\register_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\player\scene_player_handler.h">
+    <ClInclude Include="src\handler\service\player\player_scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\network\message_util.h">
@@ -314,7 +314,7 @@
     <ClInclude Include="src\game_logic\scene\util\grid_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\service\player\common_player_handler.h">
+    <ClInclude Include="src\handler\service\player\player_common_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
