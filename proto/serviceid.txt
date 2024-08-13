@@ -1,4 +1,4 @@
-0=ClientPlayerCommonServiceSendTipToClient
+0=PlayerClientCommonServiceSendTipToClient
 1=CentreScenePlayerServiceSceneInfoC2S
 2=CentreServiceRegisterGateNode
 3=CentreScenePlayerServiceLeaveScene
@@ -35,7 +35,7 @@
 34=LoginServiceLogin
 35=GameServiceSendMessageToPlayer
 36=CentreServiceGatePlayerService
-37=ClientPlayerCommonServiceKickPlayer
+37=PlayerClientCommonServiceKickPlayer
 38=CentreServiceEnterGsSucceed
 39=GameServiceUpdateSessionDetail
 40=GateServiceUnRegisterGame
