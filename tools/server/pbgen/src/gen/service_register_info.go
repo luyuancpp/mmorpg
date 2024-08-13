@@ -460,7 +460,7 @@ func WriteServiceRegisterInfoFile() {
 	util.Wg.Add(1)
 	go writePlayerServiceInstanceFiles("instance", isCentrePlayerHandler, config.CentreMethodHandleDir, config.PlayerServiceName)
 	util.Wg.Add(1)
-	go writePlayerServiceInstanceFiles("repliedInstance", isGsPlayerRepliedHandler, config.GsMethodRepliedHandleDir, config.PlayerRepliedServiceName)
+	go writePlayerServiceInstanceFiles("repliedInstance", isGsPlayerRepliedHandler, config.GsPlayerMethodRepliedHandleDir, config.PlayerRepliedServiceName)
 	util.Wg.Add(1)
-	go writePlayerServiceInstanceFiles("repliedInstance", isCentrePlayerRepliedHandler, config.CentreMethodRepliedHandleDir, config.PlayerRepliedServiceName)
+	go writePlayerServiceInstanceFiles("repliedInstance", isCentrePlayerRepliedHandler, config.CentrePlayerMethodRepliedHandleDir, config.PlayerRepliedServiceName)
 }

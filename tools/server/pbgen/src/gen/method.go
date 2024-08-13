@@ -563,7 +563,7 @@ func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
 
 	// Write the generated data to the destination file using util.WriteMd5Data2File
-	util.WriteMd5Data2File(config.GsMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
+	util.WriteMd5Data2File(config.GsPlayerMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
 func writeGsPlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
@@ -578,7 +578,7 @@ func writeGsPlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 
 	// Generate the file name based on the first method's base name and configuration
 	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
-	dstFileName := config.GsMethodRepliedHandleDir + fileName
+	dstFileName := config.GsPlayerMethodRepliedHandleDir + fileName
 
 	// Generate the C++ replied handler file content
 	data := getMethodPlayerHandlerCppStr(dstFileName,
@@ -841,7 +841,7 @@ func writeCentrePlayerMethodRepliedHandlerHeadFile(methodList RPCMethods) {
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
 
 	// Write the MD5 data to a file located in CentreMethodRepliedHandleDir
-	util.WriteMd5Data2File(config.CentreMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
+	util.WriteMd5Data2File(config.CentrePlayerMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
 func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
@@ -859,7 +859,7 @@ func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RPCMethods) {
 	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
 
 	// Construct the destination file name including the directory path
-	dstFileName := config.CentreMethodRepliedHandleDir + fileName
+	dstFileName := config.CentrePlayerMethodRepliedHandleDir + fileName
 
 	// Generate the C++ handler code as a string
 	data := getMethodPlayerHandlerCppStr(

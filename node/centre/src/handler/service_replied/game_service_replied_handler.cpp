@@ -10,7 +10,7 @@ extern ProtobufDispatcher g_response_dispatcher;
 
 #include "thread_local/storage.h"
 #include "service_info/service_info.h"
-#include "handler/service_replied/player_service_replied.h"
+#include "handler/service_replied/player/player_service_replied.h"
 #include "thread_local/storage_centre.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_session_type_alias.h"
