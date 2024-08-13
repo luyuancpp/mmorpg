@@ -2,7 +2,7 @@
 
 #include "network/gate_session.h"
 #include "game_logic/network/message_util.h"
-#include "service_info/centre_scene_server_player_service_info.h"
+#include "service_info/centre_server_player_scene_service_info.h"
 #include "service_info/centre_service_service_info.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_common_logic.h"
@@ -62,7 +62,7 @@ void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_database& mess
 	//todo session 啥时候删除？
 	//告诉Centre 保存完毕，可以切换场景了
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
-	SendToCentrePlayerById(CentreScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId, request, playerId);
+	SendToCentrePlayerById(CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerCompleteMsgId, request, playerId);
 
 	if (tls.registry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(playerId)))
 	{

@@ -2,7 +2,7 @@
 #include "logic/server_player/centre_server_player_scene.pb.h"
 #include "player_service.h"
 #include "macros/return_define.h"
-class CentreScenePlayerServiceHandler : public ::PlayerService
+class CentrePlayerSceneServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
