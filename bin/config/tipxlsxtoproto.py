@@ -63,6 +63,7 @@ def generate_proto_file(group_name, group_data):
     try:
         proto_content = f"// Proto file for {group_name}\n"
         proto_content += f"syntax = \"proto3\";\n\n"
+        proto_content += f"option go_package = \"pb/game\";\n\n"
         proto_content += f"enum {group_name} {{\n"
 
         if group_name == "common_error":

@@ -51,6 +51,7 @@ def get_workbook_data(workbook):
 def generate_proto_file(data, sheet_name):
     """根据数据生成.proto文件内容"""
     proto_content = f'syntax = "proto3";\n\n'
+    proto_content += f"option go_package = \"pb/game\";\n\n"
     proto_content += f'message {sheet_name}_row' + ' {\n'
     for index, key in enumerate(data[0], start=1):
         if data[2][key].strip() in ('client', 'design'):
