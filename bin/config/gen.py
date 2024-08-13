@@ -32,7 +32,7 @@ commands = [
     "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
     "python md5tool.py md5copy ./generated/proto/cpp/ ../../pkg/config/src/pbc/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/login/pb/game/",
-    "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/client/pb/game/",
+    "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/db/pb/game/",
     "python genxlsmd5.py"
 ]
 

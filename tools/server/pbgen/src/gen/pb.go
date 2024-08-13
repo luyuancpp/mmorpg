@@ -380,7 +380,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.ClientGoMd5Ex + config.Md5Ex
-			dstFileName := config.ClientGoGamePbDirectory + fd.Name()
+			dstFileName := config.RobotGoGamePbDirectory + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -395,7 +395,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			if sysType == `linux` {
 				// Command for Linux
 				cmd = exec.Command("protoc",
-					"--go_out="+config.ClientGoOutputDirectory,
+					"--go_out="+config.RobotGoOutputDirectory,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common/",
@@ -404,7 +404,7 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			} else {
 				// Command for other systems (presumably Windows)
 				cmd = exec.Command("./protoc.exe",
-					"--go_out="+config.ClientGoOutputDirectory,
+					"--go_out="+config.RobotGoOutputDirectory,
 					fileName,
 					"--proto_path="+config.ProtoDir,
 					"-I="+config.ProtoDir+"common/",

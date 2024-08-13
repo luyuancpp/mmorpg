@@ -32,41 +32,41 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 	session, ok := data.SessionList.Get(sessionId)
 	resp := &game.CreatePlayerC2LResponse{
 		ClientMsgBody: &game.CreatePlayerResponse{
-			Error:   &game.Tip{},
-			Players: make([]*game.CAccountSimplePlayer, 0)},
+			ErrorMessage: &game.TipInfoMessage{},
+			Players:      make([]*game.AccountSimplePlayerWrapper, 0)},
 	}
 	resp.SessionInfo = in.SessionInfo
 	if !ok {
-		resp.ClientMsgBody.Error = &game.Tip{Id: 1}
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1}
 		return resp, nil
 	}
 
 	key := "account" + session.Account
 	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	if cmd == nil {
-		resp.ClientMsgBody.Error = &game.Tip{Id: 1}
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1}
 		return resp, nil
 	}
 
-	accountData := &game.AccountDatabase{}
+	accountData := &game.UserAccounts{}
 	err := proto.Unmarshal([]byte(cmd.Val()), accountData)
 	if err != nil {
 		return resp, nil
 	}
 	if len(resp.ClientMsgBody.Players) >= 3 {
-		resp.ClientMsgBody.Error = &game.Tip{Id: 1001}
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1001}
 		return resp, nil
 	}
 	if nil == accountData.SimplePlayers {
 		accountData.SimplePlayers =
-			&game.AccountSimplePlayers{Players: make([]*game.AccountSimplePlayer, 0)}
+			&game.AccountSimplePlayerList{Players: make([]*game.AccountSimplePlayer, 0)}
 	}
 
 	playerDb := &game.AccountSimplePlayer{}
 	playerDb.PlayerId = uint64(l.svcCtx.SnowFlake.Generate())
 	accountData.SimplePlayers.Players = append(accountData.SimplePlayers.Players, playerDb)
 	for _, player := range accountData.SimplePlayers.Players {
-		resp.ClientMsgBody.Players = append(resp.ClientMsgBody.Players, &game.CAccountSimplePlayer{Player: player})
+		resp.ClientMsgBody.Players = append(resp.ClientMsgBody.Players, &game.AccountSimplePlayerWrapper{Player: player})
 	}
 
 	dataMessage, err := proto.Marshal(accountData)

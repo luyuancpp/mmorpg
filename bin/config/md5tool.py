@@ -7,7 +7,11 @@ import os
 import os.path
 import sys
 import shutil
+import logging
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def read_hash_from_md5_file(md5_filename):
     """This function reads a hash out of a .md5 file."""
@@ -59,8 +63,8 @@ def check_against_md5_file(filename, md5_filename):
 
     # If we couldn't read the expected hash, return an error
     if expected_hash is None:
-        #print("ERROR     {0}".format(filename))
-        print("Could not read a valid md5 hash from {0}".format(md5_filename))
+        #logger.info("ERROR     {0}".format(filename))
+        logger.info("Could not read a valid md5 hash from {0}".format(md5_filename))
         return (filename, 'could not read from .md5 file', 'not generated')
 
     # Generate the actual hash for the file being protected
@@ -73,8 +77,8 @@ def check_against_md5_file(filename, md5_filename):
     else:
         #sys.stdout.write("\rERROR     {0}\n".format(filename))
         #sys.stdout.flush()
-        #print("  expected hash  {0}".format(expected_hash))
-        #print("  actual hash is {0}".format(actual_hash))
+        #logger.info("  expected hash  {0}".format(expected_hash))
+        #logger.info("  actual hash is {0}".format(actual_hash))
         error = (filename, expected_hash, actual_hash)
 
     return error
@@ -127,15 +131,15 @@ def get_file_info_dictionaries(dirs, options):
         elif d['file']:
             files_found += 1
             if options.verbose:
-                print('File "{0}" has no matching .md5 file.'.format(file_name))
+                logger.info('File "{0}" has no matching .md5 file.'.format(file_name))
         elif d['md5']:
             md5_found += 1
             if options.verbose:
-                print('MD5 File "{0}.md5" has no matching file.'.format(file_name))
+                logger.info('MD5 File "{0}.md5" has no matching file.'.format(file_name))
 
-    print("Found {0} files with matching .md5 files.".format(both_found))
-    print("Found {0} .md5 files with no matching file.".format(md5_found))
-    print("Found {0} files with no matching .md5 file.".format(files_found))
+    logger.info("Found {0} files with matching .md5 files.".format(both_found))
+    logger.info("Found {0} .md5 files with no matching file.".format(md5_found))
+    logger.info("Found {0} files with no matching .md5 file.".format(files_found))
 
     return file_info_dicts
 
@@ -169,7 +173,7 @@ def parse_args():
     dirs = args[1:]
     for dir in dirs:
         if not os.path.isdir(dir):
-            print("ERROR: {0} is not a valid directory.".format(dir))
+            logger.info("ERROR: {0} is not a valid directory.".format(dir))
             sys.exit(1)
     return operation, dirs, options
 
@@ -178,7 +182,7 @@ def main():
     """Main procedure."""
     operation,dirs,options = parse_args()
     file_info_dicts = get_file_info_dictionaries(dirs, options)
-    print("===============================================================")
+    logger.info("===============================================================")
 
     if operation == 'check':
         # Check each pair of matching files
@@ -190,22 +194,22 @@ def main():
                 if error:
                     errors.append(error)
                 num_checked += 1
-        print("===============================================================")
-        print("SUMMARY")
-        print("{0} files checked.".format(num_checked))
-        print("{0} had errors.".format(len(errors)))
+        logger.info("===============================================================")
+        logger.info("SUMMARY")
+        logger.info("{0} files checked.".format(num_checked))
+        logger.info("{0} had errors.".format(len(errors)))
         for (filename, expected_hash, actual_hash) in errors:
-            print(filename)
-            print("  expected hash  {0}".format(expected_hash))
-            print("  actual hash is {0}".format(actual_hash))
-        print("===============================================================")
+            logger.info(filename)
+            logger.info("  expected hash  {0}".format(expected_hash))
+            logger.info("  actual hash is {0}".format(actual_hash))
+        logger.info("===============================================================")
 
     elif operation == 'generate':
         # Generate an .md5 file for files which don't have one
         for filename, d in sorted(iter(file_info_dicts.items())):
             if d['file'] and not d['md5']:
                 generate_md5_file_for(filename, filename + '.md5')
-        print("===============================================================")
+        logger.info("===============================================================")
     elif operation == 'md5copy':
         destination = dirs[1]
         for filename in os.listdir(dirs[0]):
@@ -221,7 +225,7 @@ def main():
             destinationdmd5 = generate_md5_hash(destinationfilename)
             if destinationdmd5 != filemd5:
                 shutil.copyfile(filename, destinationfilename)
-                print("copy %s->%s" % (filename, destinationfilename))
+                logger.info("copy %s->%s" % (filename, destinationfilename))
 
 if __name__ == "__main__":
     main()

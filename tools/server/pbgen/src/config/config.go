@@ -36,7 +36,7 @@ const (
 	GameNodeDirectory             = "node/game/"
 	CentreNodeDirectory           = "node/centre/"
 	GateNodeDirectory             = "node/gate/"
-	ClientDirectory               = "client/"
+	RobotDirectory                = "robot/"
 	PbcProtoDirectory             = "pkg/pbc/src/proto/"
 	ServiceIdFilePath             = ProtoDir + "serviceid.txt"
 	HandlerSourceDirectory        = "src/handler/service/"
@@ -49,11 +49,11 @@ const (
 const (
 	PbcOutputDirectory            = ProjectDir + PbcProtoDirectory
 	GrpcOutputDirectory           = ProjectDir + PbcProtoDirectory
-	ClientGoOutputDirectory       = ProjectDir + ClientDirectory
+	RobotGoOutputDirectory        = ProjectDir + RobotDirectory
 	GoPbGameDirectory             = "pb/game/"
-	ClientGoGamePbDirectory       = ClientGoOutputDirectory + GoPbGameDirectory
+	RobotGoGamePbDirectory        = RobotGoOutputDirectory + GoPbGameDirectory
 	MessageIdGoFile               = "message_id.go"
-	ClientMessageIdFilePath       = ClientGoGamePbDirectory + MessageIdGoFile
+	RobotMessageIdFilePath        = RobotGoGamePbDirectory + MessageIdGoFile
 	LoginDirectory                = ProjectDir + "node/login/"
 	LoginGoGameDirectory          = LoginDirectory + GoPbGameDirectory
 	LoginMessageIdGoFile          = LoginGoGameDirectory + MessageIdGoFile
@@ -138,7 +138,7 @@ var (
 
 // 常量：方法处理目录
 const (
-	ClientMethodHandlerDirectory                = ProjectDir + ClientDirectory + HandlerSourceDirectory
+	ClientMethodHandlerDirectory                = ProjectDir + RobotDirectory + HandlerSourceDirectory
 	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
 	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
 	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
