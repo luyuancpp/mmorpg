@@ -4,10 +4,14 @@ import os
 import subprocess
 
 # Create directories if they don't exist
-if not os.path.exists("generated/cpp"):
-    os.makedirs("generated/cpp")
-if not os.path.exists("generated/protocpp"):
-    os.makedirs("generated/protocpp")
+if not os.path.exists("generated/cpp/"):
+    os.makedirs("generated/cpp/")
+if not os.path.exists("generated/proto/"):
+    os.makedirs("generated/proto/")
+if not os.path.exists("generated/proto/cpp/"):
+    os.makedirs("generated/proto/cpp")
+if not os.path.exists("generated/proto/go/"):
+        os.makedirs("generated/proto/go/")
 if not os.path.exists("generated/json"):
     os.makedirs("generated/json")
 if not os.path.exists("../../pkg/config/src/pbc/"):
@@ -23,9 +27,12 @@ commands = [
     "python operatorxlsxtoproto.py",
     "python xlstocpp.py",
     "python xlstocppid.py",
-    "python buildproto.py",
+    "python buildprotocpp.py",
+    "python buildprotogo.py",
     "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
-    "python md5tool.py md5copy ./generated/protocpp/ ../../pkg/config/src/pbc/",
+    "python md5tool.py md5copy ./generated/proto/cpp/ ../../pkg/config/src/pbc/",
+    "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/login/pb/game/",
+    "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/client/pb/game/",
     "python genxlsmd5.py"
 ]
 

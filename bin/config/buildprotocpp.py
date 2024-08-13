@@ -62,6 +62,6 @@ if __name__ == "__main__":
     # Adjust paths relative to the script's current directory
     source_dir = 'generated/proto'  # Source directory containing .proto files
     protobuf_include_dir = '../../third_party/protobuf/src'  # Protobuf headers directory
-    output_dir = 'generated/protocpp'  # Output directory for generated C++ files
+    output_dir = 'generated/proto/cpp'  # Output directory for generated C++ files
 
     compile_protobuf_files(source_dir, protobuf_include_dir, output_dir)
