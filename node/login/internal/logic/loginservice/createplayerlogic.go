@@ -37,14 +37,14 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 	}
 	resp.SessionInfo = in.SessionInfo
 	if !ok {
-		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1}
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
 	key := "account" + session.Account
 	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	if cmd == nil {
-		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1}
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginAccountNotFound)}
 		return resp, nil
 	}
 
@@ -53,8 +53,8 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 	if err != nil {
 		return resp, nil
 	}
-	if len(resp.ClientMsgBody.Players) >= 3 {
-		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1001}
+	if len(resp.ClientMsgBody.Players) >= 5 {
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginAccountPlayerFull)}
 		return resp, nil
 	}
 	if nil == accountData.SimplePlayers {

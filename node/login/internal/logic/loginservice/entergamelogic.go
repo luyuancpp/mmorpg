@@ -33,10 +33,10 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	playerIdStr := strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
 	_, ok := data.SessionList.Get(sessionId)
 	resp := &game.EnterGameC2LResponse{
-		ClientMsgBody: &game.EnterGameResponse{Error: &game.Tip{}},
+		ClientMsgBody: &game.EnterGameResponse{ErrorMessage: &game.TipInfoMessage{}},
 		SessionInfo:   in.SessionInfo}
 	if !ok {
-		resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
@@ -47,12 +47,12 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 		service := playerdbservice.NewPlayerDBService(*l.svcCtx.DBClient)
 		_, err := service.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
 		if err != nil {
-			resp.ClientMsgBody.Error = &game.Tip{Id: 1005}
+			resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginPlayerGuidError)}
 			return resp, err
 		}
 	}
 
-	centreEnterGame := &game.EnterGameL2Ctr{ClientMsgBody: in.ClientMsgBody, SessionInfo: in.SessionInfo}
+	centreEnterGame := &game.CentrePlayerGameNodeEntryRequest{ClientMsgBody: in.ClientMsgBody, SessionInfo: in.SessionInfo}
 	l.svcCtx.CentreClient.Send(centreEnterGame, 54)
 	return resp, nil
 }
