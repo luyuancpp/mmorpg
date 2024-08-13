@@ -127,7 +127,6 @@ const ClientMethodHandleDir = ProjectDir + ClientDirName + HandlerDirName
 
 const GateMethodHandleDir = ProjectDir + GateName + HandlerDirName
 const GateMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
-const GatePrefixName = "gate"
 
 const LoginPrefixName = "login"
 
