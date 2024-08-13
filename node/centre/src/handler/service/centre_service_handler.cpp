@@ -26,7 +26,7 @@
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"
 #include "type_alias/player_session_type_alias.h"
-#include "service_info/common_player_service_info.h"
+#include "service_info/player_common_service_info.h"
 #include "network/rpc_session.h"
 #include "util/defer.h"
 #include "util/pb.h"
@@ -336,7 +336,7 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 			TipInfoMessage beKickTip;
 			beKickTip.set_id(kLoginBeKickByAnOtherAccount);
-			SendMessageToPlayer(ClientPlayerCommonServiceKickPlayerMsgId, beKickTip, clientMsgBody.player_id());
+			SendMessageToPlayer(PlayerClientCommonServiceKickPlayerMsgId, beKickTip, clientMsgBody.player_id());
 
 			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
 

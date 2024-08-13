@@ -9,7 +9,7 @@
 #include "proto/logic/event/scene_event.pb.h"
 #include "muduo/base/Logging.h"
 #include "game_logic/network/message_util.h"
-#include "service_info/scene_player_service_info.h"
+#include "service_info/player_scene_service_info.h"
 #include "hexagons_grid.h"
 #include "game_logic/scene/util/grid_util.h"
 #include "thread_local/storage.h"
