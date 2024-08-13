@@ -132,21 +132,21 @@
     <ClInclude Include="src\proto\logic\server_player\centre_server_player_scene.pb.h" />
     <ClInclude Include="src\proto\logic\server_player\game_server_player.pb.h" />
     <ClInclude Include="src\proto\logic\server_player\game_server_player_scene.pb.h" />
-    <ClInclude Include="src\proto\service_info\centre_common_server_player_service_info.h" />
-    <ClInclude Include="src\proto\service_info\centre_scene_server_player_service_info.h" />
     <ClInclude Include="src\proto\service_info\centre_scene_service_info.h" />
+    <ClInclude Include="src\proto\service_info\centre_server_player_scene_service_info.h" />
+    <ClInclude Include="src\proto\service_info\centre_server_player_service_info.h" />
     <ClInclude Include="src\proto\service_info\centre_service_service_info.h" />
-    <ClInclude Include="src\proto\service_info\common_player_service_info.h" />
     <ClInclude Include="src\proto\service_info\db_service_service_info.h" />
     <ClInclude Include="src\proto\service_info\deploy_service_service_info.h" />
-    <ClInclude Include="src\proto\service_info\game_scene_server_player_service_info.h" />
     <ClInclude Include="src\proto\service_info\game_scene_service_info.h" />
+    <ClInclude Include="src\proto\service_info\game_server_player_scene_service_info.h" />
     <ClInclude Include="src\proto\service_info\game_server_player_service_info.h" />
     <ClInclude Include="src\proto\service_info\game_service_service_info.h" />
     <ClInclude Include="src\proto\service_info\gate_service_service_info.h" />
     <ClInclude Include="src\proto\service_info\login_service_service_info.h" />
     <ClInclude Include="src\proto\service_info\player_ability_service_info.h" />
-    <ClInclude Include="src\proto\service_info\scene_player_service_info.h" />
+    <ClInclude Include="src\proto\service_info\player_common_service_info.h" />
+    <ClInclude Include="src\proto\service_info\player_scene_service_info.h" />
     <ClInclude Include="src\proto\service_info\service_info.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
