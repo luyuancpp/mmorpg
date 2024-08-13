@@ -9,7 +9,7 @@
 #include "grpc/request/login_grpc_request.h"
 #include "network/gate_session.h"
 #include "service_info/centre_service_service_info.h"
-#include "service_info/common_player_service_info.h"
+#include "service_info/player_common_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/login_service_service_info.h"
 #include "thread_local/storage_gate.h"
@@ -198,7 +198,7 @@ void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint3
 	tipMessage.set_id(tipId);
 	MessageBody message;
 	message.set_body(tipMessage.SerializeAsString());
-	message.set_message_id(ClientPlayerCommonServiceSendTipToClientMsgId);
+	message.set_message_id(PlayerClientCommonServiceSendTipToClientMsgId);
 	g_gate_node->Codec().send(conn, message);
 
 	LOG_ERROR << "Sent tip message to session id: " << SessionId(conn) << ", tip id: " << tipId;

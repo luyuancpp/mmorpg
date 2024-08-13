@@ -3,7 +3,7 @@
 
 #include "type_define/type_define.h"
 
-#include "proto/logic/client_player/scene_player.pb.h"
+#include "proto/logic/client_player/player_scene.pb.h"
 
 #define actorCreateMessage tls.globalRegistry.get<ActorCreateS2C>(GlobalEntity())
 #define actorDestroyMessage tls.globalRegistry.get<ActorDestroyS2C>(GlobalEntity())
