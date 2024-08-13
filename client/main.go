@@ -34,7 +34,7 @@ func main() {
 
 			{
 				rq := &game.LoginRequest{Account: "luhailong" + strconv.Itoa(i), Password: "luhailong"}
-				gameClient.Send(rq, 34)
+				gameClient.Send(rq, game.LoginServiceLoginMessageId)
 			}
 			for {
 				msg := <-gameClient.Client.Conn.InMsgList

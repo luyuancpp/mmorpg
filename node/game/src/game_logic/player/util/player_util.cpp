@@ -21,7 +21,7 @@ void PlayerSceneUtil::HandleEnterScene(entt::entity player, entt::entity scene)
 
 	EnterSceneS2C message;
 	message.mutable_scene_info()->CopyFrom(*sceneInfo);
-	SendMessageToPlayer(ClientPlayerSceneServiceNotifyEnterSceneMsgId, message, player);
+	SendMessageToPlayer(ClientPlayerSceneServiceNotifyEnterSceneMessageId, message, player);
 }
 
 void PlayerSceneUtil::HandleLeaveScene(entt::entity player)

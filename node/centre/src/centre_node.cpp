@@ -159,7 +159,7 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::enti
 	request.mutable_rpc_server()->set_ip(gameNodeServiceAddr->toIp());
 	request.mutable_rpc_server()->set_port(gameNodeServiceAddr->port());
 	request.set_game_node_id(entt::to_integral(gameNodeId));
-	(*gateNode)->Send(GateServiceRegisterGameMsgId, request);
+	(*gateNode)->Send(GateServiceRegisterGameMessageId, request);
 }
 
 void CentreNode::SetNodeId(NodeId nodeId)

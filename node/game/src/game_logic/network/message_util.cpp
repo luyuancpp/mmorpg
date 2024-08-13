@@ -48,7 +48,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_body()->set_body(message.SerializeAsString());
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*gateNode)->Send(GateServiceSendMessageToPlayerMsgId, request);
+	(*gateNode)->Send(GateServiceSendMessageToPlayerMessageId, request);
 }
 
 void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -89,7 +89,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_body()->set_body(message.SerializeAsString());
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*centreNode)->Send(CentreServicePlayerServiceMsgId, request);
+	(*centreNode)->Send(CentreServicePlayerServiceMessageId, request);
 }
 
 void SendToCentre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
@@ -127,7 +127,7 @@ void SendToGateById(uint32_t messageId, const google::protobuf::Message& message
 		return;
 	}
 
-	(*gateNode)->Send(GateServiceSendMessageToPlayerMsgId, message);
+	(*gateNode)->Send(GateServiceSendMessageToPlayerMessageId, message);
 }
 
 void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& message, const NodeId nodeId)
@@ -203,6 +203,6 @@ void BroadCastToPlayer(const EntityUnorderedSet& playerList, const uint32_t mess
 			request.mutable_session_list()->Add(sessionId);
 		}
 
-		(*gateNode)->Send(GateServiceBroadcastToPlayersMsgId, request);
+		(*gateNode)->Send(GateServiceBroadcastToPlayersMessageId, request);
 	}
 }

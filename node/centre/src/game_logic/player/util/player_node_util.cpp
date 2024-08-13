@@ -84,7 +84,7 @@ void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
 		Centre2GsLoginRequest message;
 		message.set_enter_gs_type(enterGameFlag->enter_gs_type());
 		tls.registry.remove<EnterGsFlag>(playerEntity);
-		SendToGsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, playerEntity);
+		SendToGsPlayer(GamePlayerServiceCentre2GsLoginMessageId, message, playerEntity);
 	}
 }
 
@@ -114,7 +114,7 @@ void PlayerNodeUtil::RegisterPlayerToGateNode(entt::entity playerEntity)
 	RegisterGameNodeSessionRequest request;
 	request.mutable_session_info()->set_session_id(playerNodeInfo->gate_session_id());
 	request.set_game_node_id(playerNodeInfo->game_node_id());
-	(*gateNode)->CallMethod(GateServicePlayerEnterGameNodeMsgId, request);
+	(*gateNode)->CallMethod(GateServicePlayerEnterGameNodeMessageId, request);
 }
 
 void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
@@ -136,7 +136,7 @@ void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(playerNodeInfo->gate_session_id());
 	request.set_player_id(*playerId);
-	SendToGs(GameServiceUpdateSessionDetailMsgId, request, playerNodeInfo->game_node_id());
+	SendToGs(GameServiceUpdateSessionDetailMessageId, request, playerNodeInfo->game_node_id());
 
 	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGsFlag>(playerEntity))
 	{

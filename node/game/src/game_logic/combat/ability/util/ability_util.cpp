@@ -40,7 +40,7 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, con
             
             ViewUtil::BroadcastMessageToVisiblePlayers(
                 caster,
-                PlayerAbilityServiceNotifyAbilityInterruptedMsgId,
+                PlayerAbilityServiceNotifyAbilityInterruptedMessageId,
                 abilityInterruptedS2C
             );
         } else if (!tableAbility->immediately() && castTimer->timer.IsActive()) {
@@ -60,7 +60,7 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, con
 
     ViewUtil::BroadcastMessageToVisiblePlayers(
         caster,
-        PlayerAbilityServiceNotifyAbilityUsedMsgId,
+        PlayerAbilityServiceNotifyAbilityUsedMessageId,
         abilityUsedS2C
     );
 

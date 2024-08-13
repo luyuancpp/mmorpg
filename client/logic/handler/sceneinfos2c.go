@@ -16,5 +16,5 @@ func SceneInfoS2CHandler(player *logic.Player, response *game.SceneInfoS2C) {
 		rq.SceneInfo = response.SceneInfo[randomIndex]
 	}
 	zap.L().Debug("enter scene ", zap.String("request", rq.String()))
-	player.Client.Send(rq, 16)
+	player.Client.Send(rq, game.ClientPlayerSceneServiceEnterSceneMessageId)
 }

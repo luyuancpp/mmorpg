@@ -62,7 +62,7 @@ void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_database& mess
 	//todo session 啥时候删除？
 	//告诉Centre 保存完毕，可以切换场景了
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
-	SendToCentrePlayerById(CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerCompleteMsgId, request, playerId);
+	SendToCentrePlayerById(CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
 
 	if (tls.registry.any_of<UnregisterPlayer>(tlsCommonLogic.GetPlayer(playerId)))
 	{
@@ -109,7 +109,7 @@ void PlayerNodeUtil::NotifyEnterGsSucceed(entt::entity player, NodeId centreNode
 	EnterGameNodeSuccessRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
 	request.set_game_node_id(gGameNode->GetNodeId());
-	CallCentreNodeMethod(CentreServiceEnterGsSucceedMsgId, request, centreNodeId);
+	CallCentreNodeMethod(CentreServiceEnterGsSucceedMessageId, request, centreNodeId);
 
 	// TODO: Handle game node update corresponding to gate before sending client messages
 	// Example: Ensure gate updates are done before client messages can be sent
