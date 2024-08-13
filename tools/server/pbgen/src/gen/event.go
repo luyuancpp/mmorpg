@@ -68,8 +68,8 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 
 	baseName := filepath.Base(strings.ToLower(fd.Name()))
 	fileName := strings.Replace(dstDir+strings.ToLower(fd.Name()), config.ProtoEx, "", -1)
-	headerFileName := fileName + config.HeadHandlerEx
-	cppFileName := fileName + config.CppHandlerEx
+	headerFileName := fileName + config.HandlerHeaderExtension
+	cppFileName := fileName + config.HandlerCppExtension
 	util.WriteMd5Data2File(headerFileName, dataHead)
 
 	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
@@ -118,7 +118,7 @@ func WriteEventHandlerFile() {
 		util.Wg.Add(1)
 		writeEventHandlerCpp(fd, config.CentreEventHandleDir)
 		cppIncludeData += config.IncludeBegin +
-			strings.Replace(filepath.Base(strings.ToLower(fd.Name())), config.ProtoEx, config.HeadHandlerEx, 1) +
+			strings.Replace(filepath.Base(strings.ToLower(fd.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) +
 			config.IncludeEndLine
 		registerData += getClassName(fd) + "::Register();\n"
 		unRegisterData += getClassName(fd) + "::UnRegister();\n"

@@ -19,37 +19,37 @@ const (
 
 // 常量：文件扩展名
 const (
-	HeadEx               = ".h"
-	CppEx                = ".cpp"
-	LuaCppEx             = "_lua.cpp"
-	HeadHandlerEx        = "_handler.h"
-	CppHandlerEx         = "_handler.cpp"
-	HeadRepliedHandlerEx = "_replied_handler.h"
-	CppRepliedHandlerEx  = "_replied_handler.cpp"
-	CppSol2Ex            = "_sol2.cpp"
-	MessageIdName        = "MsgId"
-	MethodIndexName      = "Index"
+	HeaderExtension               = ".h"
+	CppExtension                  = ".cpp"
+	LuaCppExtension               = "_lua.cpp"
+	HandlerHeaderExtension        = "_handler.h"
+	HandlerCppExtension           = "_handler.cpp"
+	RepliedHandlerHeaderExtension = "_replied_handler.h"
+	CppRepliedHandlerEx           = "_replied_handler.cpp"
+	CppSol2Extension              = "_sol2.cpp"
+	MessageIdName                 = "MsgId"
+	MethodIndexName               = "Index"
 )
 
 // 常量：目录路径
 const (
-	GameDirName           = "node/game/"
-	CentreDirName         = "node/centre/"
-	GateName              = "node/gate/"
-	ClientDirName         = "client/"
-	PbcDirName            = "pkg/pbc/src/proto/"
-	ServiceIdsFileName    = ProtoDir + "serviceid.txt"
-	HandlerDirName        = "src/handler/service/"
-	RepliedHandlerDirName = "src/handler/service_replied/"
-	EventHandlerDirName   = "src/handler/event/"
-	PbcLuaDirName         = PbcOutDir + "lua/"
+	GameNodeDirectory             = "node/game/"
+	CentreNodeDirectory           = "node/centre/"
+	GateNodeDirectory             = "node/gate/"
+	ClientDirectory               = "client/"
+	PbcProtoDirectory             = "pkg/pbc/src/proto/"
+	ServiceIdFilePath             = ProtoDir + "serviceid.txt"
+	HandlerSourceDirectory        = "src/handler/service/"
+	RepliedHandlerSourceDirectory = "src/handler/service_replied/"
+	EventHandlerSourceDirectory   = "src/handler/event/"
+	PbcLuaDirectory               = PbcOutputDirectory + "lua/"
 )
 
 // 常量：输出目录
 const (
-	PbcOutDir                 = ProjectDir + PbcDirName
-	GrpcOutDir                = ProjectDir + PbcDirName
-	ClientGoOutDir            = ProjectDir + ClientDirName
+	PbcOutputDirectory        = ProjectDir + PbcProtoDirectory
+	GrpcOutputDirectory       = ProjectDir + PbcProtoDirectory
+	ClientGoOutDir            = ProjectDir + ClientDirectory
 	GoPbGameDir               = "pb/game/"
 	ClientGoGamePbDir         = ClientGoOutDir + GoPbGameDir
 	MessageIdGo               = "message_id.go"
@@ -59,11 +59,11 @@ const (
 	LoginMessageIdGo          = LoginGoGameDir + MessageIdGo
 	DbGoDir                   = ProjectDir + "node/db/"
 	DBGoGameDir               = DbGoDir + GoPbGameDir
-	ServiceInfoDirName        = PbcOutDir + "service_info/"
+	ServiceInfoDirName        = PbcOutputDirectory + "service_info/"
 	ServiceInfoExtName        = "_service_info"
 	ServiceCppFileName        = ServiceInfoDirName + "service_info.cpp"
 	ServiceHeadFileName       = ServiceInfoDirName + "service_info.h"
-	LuaServiceFileName        = PbcLuaDirName + "lua_service.cpp"
+	LuaServiceFileName        = PbcLuaDirectory + "lua_service.cpp"
 	ClientLuaDir              = ProjectDir + "bin/script/lua/service/"
 	ClientLuaServiceFile      = ProjectDir + "client/src/handler/service_lua.cpp"
 	ClientServiceInstanceFile = ProjectDir + "client/src/handler/player_service.cpp"
@@ -74,10 +74,10 @@ const (
 	HandlerName                 = "Handler"
 	RepliedHandlerName          = "RepliedHandler"
 	EventHandlerFileName        = "event_handler"
-	EventHandlerFileNameHead    = EventHandlerFileName + HeadEx
-	EventHandlerFileNameCpp     = EventHandlerFileName + CppEx
+	EventHandlerFileNameHead    = EventHandlerFileName + HeaderExtension
+	EventHandlerFileNameCpp     = EventHandlerFileName + CppExtension
 	RegisterRepliedHandlerCppEx = "register" + CppRepliedHandlerEx
-	RegisterHandlerCppEx        = "register" + CppHandlerEx
+	RegisterHandlerCppEx        = "register" + HandlerCppExtension
 	DbProtoName                 = "db_base.proto"
 )
 
@@ -138,18 +138,18 @@ var (
 
 // 常量：方法处理目录
 const (
-	ClientMethodHandleDir = ProjectDir + ClientDirName + HandlerDirName
+	ClientMethodHandleDir = ProjectDir + ClientDirectory + HandlerSourceDirectory
 
-	GsMethodHandleDir                  = ProjectDir + GameDirName + HandlerDirName
-	GsPlayerMethodHandleDir            = ProjectDir + GameDirName + HandlerDirName + PlayerName + "/"
-	GsMethodRepliedHandleDir           = ProjectDir + GameDirName + RepliedHandlerDirName
-	GsPlayerMethodRepliedHandleDir     = ProjectDir + GameDirName + RepliedHandlerDirName + PlayerName + "/"
-	CentreMethodHandleDir              = ProjectDir + CentreDirName + HandlerDirName
-	CentrePlayerMethodHandleDir        = ProjectDir + CentreDirName + HandlerDirName + PlayerName + "/"
-	CentreMethodRepliedHandleDir       = ProjectDir + CentreDirName + RepliedHandlerDirName
-	CentrePlayerMethodRepliedHandleDir = ProjectDir + CentreDirName + RepliedHandlerDirName + PlayerName + "/"
-	GateMethodHandleDir                = ProjectDir + GateName + HandlerDirName
-	GateMethodRepliedHandleDir         = ProjectDir + GateName + RepliedHandlerDirName
+	GsMethodHandleDir                  = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
+	GsPlayerMethodHandleDir            = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	GsMethodRepliedHandleDir           = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
+	GsPlayerMethodRepliedHandleDir     = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	CentreMethodHandleDir              = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory
+	CentrePlayerMethodHandleDir        = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	CentreMethodRepliedHandleDir       = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory
+	CentrePlayerMethodRepliedHandleDir = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	GateMethodHandleDir                = ProjectDir + GateNodeDirectory + HandlerSourceDirectory
+	GateMethodRepliedHandleDir         = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory
 )
 
 // 常量：其他常量
@@ -169,6 +169,6 @@ const (
 )
 
 const (
-	GsEventHandleDir     = ProjectDir + GameDirName + EventHandlerDirName
-	CentreEventHandleDir = ProjectDir + CentreDirName + EventHandlerDirName
+	GsEventHandleDir     = ProjectDir + GameNodeDirectory + EventHandlerSourceDirectory
+	CentreEventHandleDir = ProjectDir + CentreNodeDirectory + EventHandlerSourceDirectory
 )

@@ -126,7 +126,7 @@ func WriteToFiles(constants []string, filePaths []string) {
 
 func WriteGoMessageId() {
 	// Initialize the ConstantsGenerator
-	g := NewConstantsGenerator(config.ServiceIdsFileName)
+	g := NewConstantsGenerator(config.ServiceIdFilePath)
 	consts, err := g.Generate()
 	if err != nil {
 		log.Fatal(err)
