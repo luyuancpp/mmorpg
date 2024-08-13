@@ -134,7 +134,7 @@ func WriteGoMessageId() {
 
 	// Define file paths where constants will be written
 	filePaths := []string{
-		config.ClientMessageIdFilePath,
+		config.RobotMessageIdFilePath,
 		config.LoginMessageIdGoFile,
 	}
 
