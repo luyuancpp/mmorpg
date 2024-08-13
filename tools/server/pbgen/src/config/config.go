@@ -138,18 +138,17 @@ var (
 
 // 常量：方法处理目录
 const (
-	ClientMethodHandleDir = ProjectDir + ClientDirectory + HandlerSourceDirectory
-
-	GsMethodHandleDir                  = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
-	GsPlayerMethodHandleDir            = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
-	GsMethodRepliedHandleDir           = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
-	GsPlayerMethodRepliedHandleDir     = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
-	CentreMethodHandleDir              = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory
-	CentrePlayerMethodHandleDir        = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
-	CentreMethodRepliedHandleDir       = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory
-	CentrePlayerMethodRepliedHandleDir = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
-	GateMethodHandleDir                = ProjectDir + GateNodeDirectory + HandlerSourceDirectory
-	GateMethodRepliedHandleDir         = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory
+	ClientMethodHandlerDirectory                = ProjectDir + ClientDirectory + HandlerSourceDirectory
+	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
+	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
+	GameNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	CentreNodeMethodHandlerDirectory            = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory
+	CentreNodePlayerMethodHandlerDirectory      = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	CentreMethodRepliedHandleDir                = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory
+	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	GateMethodHandlerDirectory                  = ProjectDir + GateNodeDirectory + HandlerSourceDirectory
+	GateMethodRepliedHandlerDirectory           = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory
 )
 
 // 常量：其他常量
@@ -169,6 +168,6 @@ const (
 )
 
 const (
-	GsEventHandleDir     = ProjectDir + GameNodeDirectory + EventHandlerSourceDirectory
-	CentreEventHandleDir = ProjectDir + CentreNodeDirectory + EventHandlerSourceDirectory
+	GameNodeEventHandlerDirectory   = ProjectDir + GameNodeDirectory + EventHandlerSourceDirectory
+	CentreNodeEventHandlerDirectory = ProjectDir + CentreNodeDirectory + EventHandlerSourceDirectory
 )
