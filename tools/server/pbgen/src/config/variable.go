@@ -110,6 +110,7 @@ const GsEventHandleDir = ProjectDir + GameDirName + EventHandlerDirName
 const GsMethodRepliedHandleDir = ProjectDir + GameDirName + RepliedHandlerDirName
 const GsPlayerMethodRepliedHandleDir = ProjectDir + GameDirName + RepliedHandlerDirName + PlayerName + "/"
 const GsPrefixName = "game"
+const GsPlayerPrefixName = "game_player"
 
 const CentreMethodHandleDir = ProjectDir + CentreDirName + HandlerDirName
 const CentrePlayerMethodHandleDir = ProjectDir + CentreDirName + HandlerDirName + PlayerName + "/"
@@ -117,6 +118,7 @@ const CentreMethodRepliedHandleDir = ProjectDir + CentreDirName + RepliedHandler
 const CentrePlayerMethodRepliedHandleDir = ProjectDir + CentreDirName + RepliedHandlerDirName + PlayerName + "/"
 const CentreEventHandleDir = ProjectDir + CentreDirName + EventHandlerDirName
 const CentrePrefixName = "centre"
+const CentrePlayerPrefixName = "centre_player"
 
 const ClientMethodHandleDir = ProjectDir + ClientDirName + HandlerDirName
 
