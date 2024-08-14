@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <chrono>
 #include <muduo/base/Timestamp.h>
@@ -7,17 +7,17 @@
 
 class CoolDownTimeMillisecondUtil {
 public:
-	// ·µ»ØÊ£ÓàÊ±¼ä£¨ºÁÃë£©
+	// è¿”å›å‰©ä½™æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰
 	inline static  uint64_t Remaining(const CooldownTimeComp& cooldownTimeComp) {
 		uint64_t currentMilliseconds = GetCurrentTimeInMilliseconds();
 		uint64_t elapsed = (currentMilliseconds > cooldownTimeComp.start())
 			? currentMilliseconds - cooldownTimeComp.start()
 			: 0;
 
-		// »ñÈ¡ÀäÈ´±í²¢´¦ÀíÆäÎª nullptr µÄÇé¿ö
+		// è·å–å†·å´è¡¨å¹¶å¤„ç†å…¶ä¸º nullptr çš„æƒ…å†µ
 		auto table = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
 		if (table == nullptr) {
-			// ¼ÇÂ¼ÈÕÖ¾»òÆäËû´¦Àí·½Ê½
+			// è®°å½•æ—¥å¿—æˆ–å…¶ä»–å¤„ç†æ–¹å¼
 			return 0;
 		}
 
@@ -26,49 +26,49 @@ public:
 			: 0;
 	}
 
-	// ¼ì²éÀäÈ´Ê±¼äÊÇ·ñ³¬Ê±
+	// æ£€æŸ¥å†·å´æ—¶é—´æ˜¯å¦è¶…æ—¶
 	inline static  bool IsExpired(const CooldownTimeComp& cooldownTimeComp) {
 		return Remaining(cooldownTimeComp) == 0;
 	}
 
-	// ¼ì²éµ±Ç°Ê±¼äÊÇ·ñÔÚ¿ªÊ¼Ê±¼äÖ®Ç°
+	// æ£€æŸ¥å½“å‰æ—¶é—´æ˜¯å¦åœ¨å¼€å§‹æ—¶é—´ä¹‹å‰
 	inline static  bool IsBeforeStart(const CooldownTimeComp& cooldownTimeComp) {
 		return GetCurrentTimeInMilliseconds() < cooldownTimeComp.start();
 	}
 
-	// ¼ì²éÀäÈ´Ê±¼äÊÇ·ñÎ´¿ªÊ¼£¨¼´ÊÇ·ñÔÚ¿ªÊ¼Ê±¼äÖ®Ç°£©
+	// æ£€æŸ¥å†·å´æ—¶é—´æ˜¯å¦æœªå¼€å§‹ï¼ˆå³æ˜¯å¦åœ¨å¼€å§‹æ—¶é—´ä¹‹å‰ï¼‰
 	inline static  bool IsNotStarted(const CooldownTimeComp& cooldownTimeComp) {
 		return IsBeforeStart(cooldownTimeComp);
 	}
 
-	// ÖØÖÃÀäÈ´Ê±¼ä
+	// é‡ç½®å†·å´æ—¶é—´
 	inline static  void Reset(CooldownTimeComp& cooldownTimeComp) {
 		cooldownTimeComp.set_start(GetCurrentTimeInMilliseconds());
 	}
 
-	// »ñÈ¡ÀäÈ´Ê±¼äµÄ³ÖĞøÊ±¼ä£¨ºÁÃë£©
+	// è·å–å†·å´æ—¶é—´çš„æŒç»­æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰
 	inline static  uint64_t GetDuration(const CooldownTimeComp& cooldownTimeComp) {
 
 		auto table = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
 		if (table == nullptr) {
-			// ¼ÇÂ¼ÈÕÖ¾»òÆäËû´¦Àí·½Ê½
+			// è®°å½•æ—¥å¿—æˆ–å…¶ä»–å¤„ç†æ–¹å¼
 			return 0;
 		}
 
 		return table->duration();
 	}
 
-	// ÉèÖÃÀäÈ´Ê±¼äµÄ¿ªÊ¼Ê±¼ä£¨ºÁÃë£©
+	// è®¾ç½®å†·å´æ—¶é—´çš„å¼€å§‹æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰
 	inline static  void SetStartTime(CooldownTimeComp& cooldownTimeComp, uint64_t startTimeMilliseconds) {
 		cooldownTimeComp.set_start(startTimeMilliseconds);
 	}
 
-	// »ñÈ¡ÀäÈ´Ê±¼äµÄ¿ªÊ¼Ê±¼ä£¨ºÁÃë£©
+	// è·å–å†·å´æ—¶é—´çš„å¼€å§‹æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰
 	inline static  uint64_t GetStartTime(const CooldownTimeComp& cooldownTimeComp) {
 		return cooldownTimeComp.start();
 	}
 
-	// »ñÈ¡µ±Ç°Ê±¼ä£¨ÒÔºÁÃëÎªµ¥Î»£©
+	// è·å–å½“å‰æ—¶é—´ï¼ˆä»¥æ¯«ç§’ä¸ºå•ä½ï¼‰
 	inline static uint64_t GetCurrentTimeInMilliseconds() {
 		return std::chrono::duration_cast<std::chrono::milliseconds>(
 			std::chrono::high_resolution_clock::now().time_since_epoch()
