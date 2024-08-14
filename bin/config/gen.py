@@ -1,28 +1,30 @@
 #!/usr/bin/env python
 # coding=utf-8
+
 import os
 import subprocess
-
 import logging
+
 # Set up logging configuration
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# List of directories to create
+directories = [
+    "generated/cpp/",
+    "generated/proto/",
+    "generated/proto/cpp/",
+    "generated/proto/go/",
+    "generated/json",
+    "../../pkg/config/src/pbc/",
+    "../../pkg/config/src/"
+]
+
 # Create directories if they don't exist
-if not os.path.exists("generated/cpp/"):
-    os.makedirs("generated/cpp/")
-if not os.path.exists("generated/proto/"):
-    os.makedirs("generated/proto/")
-if not os.path.exists("generated/proto/cpp/"):
-    os.makedirs("generated/proto/cpp")
-if not os.path.exists("generated/proto/go/"):
-        os.makedirs("generated/proto/go/")
-if not os.path.exists("generated/json"):
-    os.makedirs("generated/json")
-if not os.path.exists("../../pkg/config/src/pbc/"):
-    os.makedirs("../../pkg/config/src/pbc/")
-if not os.path.exists("../../pkg/config/src/"):
-    os.makedirs("../../pkg/config/src/")
+for directory in directories:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        logger.info(f"Created directory: {directory}")
 
 # Define commands to execute
 commands = [
@@ -44,7 +46,15 @@ commands = [
 # Execute commands and capture return codes
 for command in commands:
     try:
+        logger.info(f"Running command: {command}")
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        logger.info(result.stdout)
+        if result.stdout:
+            logger.info(result.stdout.strip())
+        if result.stderr:
+            logger.error(result.stderr.strip())
     except subprocess.CalledProcessError as e:
         logger.error(f"Error running command '{command}': {e}")
+        if e.output:
+            logger.error(f"Error output: {e.output.decode()}")
+        if e.stderr:
+            logger.error(f"Standard error: {e.stderr.decode()}")
