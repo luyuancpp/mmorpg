@@ -10,7 +10,7 @@ message TimeMeterComp
 
 message CooldownTimeComp
 {
-  uint32 start = 1;
+  uint64 start = 1;
   uint32 cooldown_table_id = 2;
 }
 

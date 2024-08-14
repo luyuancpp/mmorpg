@@ -2,7 +2,7 @@
 
 #include <chrono>
 #include <muduo/base/Timestamp.h>
-#include "logic/component/time_meter_comp.pb.h"
+#include "logic/component/time_comp.pb.h"
 
 class TimeMeterSecondUtil {
 public:
