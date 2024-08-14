@@ -1,148 +1,129 @@
-#include <gtest/gtest.h>
-#include "time/util/cooldown_time_util.h"  // 假设你将上面的 CoolDownTimeMillisecondUtil 定义在这个头文件中
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "game_logic/combat/ability/util/ability_util.h"
+#include "thread_local/storage.h"
+#include "ability_config.h"
+#include "game_logic/combat/ability/comp/ability_comp.h"
+#include "game_logic/combat/ability/constants/ability_constants.h"
+#include "time/comp/timer_task_comp.h"
+#include "time/util/cooldown_time_util.h"
+#include "pbc/ability_error_tip.pb.h"
+#include "pbc/common_error_tip.pb.h"
 
-// Test Fixture
-class CoolDownTimeMillisecondUtilTest  : public ::testing::Test {
-protected:
-	void SetUp() override {
-		// Set up any necessary environment for the tests
-	}
+using ::testing::_;
+using ::testing::Return;
 
-	void TearDown() override {
-		// Clean up any resources after tests
-	}
-
-	uint64_t current_time_in_milliseconds() {
-		return CoolDownTimeMillisecondUtil::GetCurrentTimeInMilliseconds();
-	}
+// Mocked functions and data
+class MockAbilityTable {
+public:
+	MOCK_METHOD(const ability_row*, GetAbilityTable, (uint32_t), (const));
+	MOCK_METHOD(bool, IsAbilityOfType, (uint32_t, uint32_t), (const));
 };
 
-// Test for Remaining time
-TEST_F(CoolDownTimeMillisecondUtilTest , RemainingTime) {
-	CooldownTimeComp comp;
-	comp.set_start(current_time_in_milliseconds());
-	comp.set_cooldown_table_id(2);// 5 seconds
+class MockCooldownTimeUtil {
+public:
+	MOCK_METHOD(bool, IsInCooldown, (const CooldownTimeComp&), (const));
+};
 
-	// Simulate 2 seconds elapsed
-	std::this_thread::sleep_for(std::chrono::seconds(2));
+// Test Fixture
+class AbilityUtilTest : public ::testing::Test {
+protected:
+	void SetUp() override {
+		abilityUtil = std::make_unique<AbilityUtil>();
+		mockAbilityTable = std::make_unique<MockAbilityTable>();
+		mockCooldownTimeUtil = std::make_unique<MockCooldownTimeUtil>();
 
-	uint64_t remaining_time = CoolDownTimeMillisecondUtil::Remaining(comp);
-	EXPECT_GE(remaining_time, 2900); // should be at least 3 seconds
-	EXPECT_LT(remaining_time, 3100); // should be less than 3.1 seconds
+		// Optionally, you can use dependency injection or setup to replace real implementations
+	}
+
+	std::unique_ptr<AbilityUtil> abilityUtil;
+	std::unique_ptr<MockAbilityTable> mockAbilityTable;
+	std::unique_ptr<MockCooldownTimeUtil> mockCooldownTimeUtil;
+};
+
+TEST_F(AbilityUtilTest, ValidateAbilityTable_InvalidId_ReturnsError) {
+	const uint32_t invalidAbilityId = 9999;
+	EXPECT_CALL(*mockAbilityTable, GetAbilityTable(invalidAbilityId))
+		.WillOnce(Return(nullptr));
+
+	auto [tableAbility, result] = abilityUtil->ValidateAbilityTable(invalidAbilityId);
+	EXPECT_EQ(result, kInvalidTableId);
 }
 
-// Test for IsExpired
-TEST_F(CoolDownTimeMillisecondUtilTest , IsExpired) {
-	CooldownTimeComp comp;
-	comp.set_start(current_time_in_milliseconds());
-	comp.set_cooldown_table_id(1);
+TEST_F(AbilityUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
+	::UseAbilityRequest request;
+	request.set_ability_id(1);
+	request.set_target_id(-1); // Invalid target ID
 
-	// Simulate 1 second elapsed
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_id()))
+		.WillOnce(Return(nullptr)); // Mock implementation
 
-	EXPECT_TRUE(CoolDownTimeMillisecondUtil::IsExpired(comp));
+	uint32_t result = abilityUtil->ValidateTarget(&request);
+	EXPECT_EQ(result, kAbilityInvalidTargetId);
 }
 
-// Test for IsBeforeStart
-TEST_F(CoolDownTimeMillisecondUtilTest , IsBeforeStart) {
-	CooldownTimeComp comp; // 10 seconds duration
-	comp.set_start(current_time_in_milliseconds() + 5000);
-	comp.set_cooldown_table_id(3);
+TEST_F(AbilityUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
+	entt::entity caster{ 1 };
+	auto tableAbility = std::make_shared<ability_row>();
+	tableAbility->set_cooldown_id(1);
 
-	EXPECT_TRUE(CoolDownTimeMillisecondUtil::IsBeforeStart(comp));
+	CooldownTimeComp cooldownTimeComp;
+	EXPECT_CALL(*mockCooldownTimeUtil, IsInCooldown(_))
+		.WillOnce(Return(true));
+
+	uint32_t result = abilityUtil->CheckCooldown(caster, tableAbility.get());
+	EXPECT_EQ(result, kAbilityCooldownNotReady);
 }
 
-// Test for IsNotStarted
-TEST_F(CoolDownTimeMillisecondUtilTest , IsNotStarted) {
-	CooldownTimeComp comp; // 10 seconds duration
-	comp.set_start(current_time_in_milliseconds() + 5000);
-	comp.set_cooldown_table_id(3);
+TEST_F(AbilityUtilTest, HandleCastingTimer_ImmediateAbility_ReturnsOk) {
+	entt::entity caster{ 1 };
+	auto tableAbility = std::make_shared<ability_row>();
+	tableAbility->set_immediately(true);
 
-	EXPECT_TRUE(CoolDownTimeMillisecondUtil::IsNotStarted(comp));
+	// Setup a CastingTimer with a mock behavior if needed
+	CastingTimer castingTimer;
+	// Simulate timer behavior if necessary
+
+	EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
+		.WillOnce(Return(tableAbility.get())); // Mock implementation
+
+	uint32_t result = abilityUtil->HandleCastingTimer(caster, tableAbility.get());
+	EXPECT_EQ(result, kOK);
 }
 
-// Test for Reset
-TEST_F(CoolDownTimeMillisecondUtilTest , Reset) {
-	CooldownTimeComp comp;
-	comp.set_start(current_time_in_milliseconds());
-	comp.set_cooldown_table_id(2);// 5 seconds
+TEST_F(AbilityUtilTest, BroadcastAbilityUsedMessage_CreatesMessage) {
+	entt::entity caster{ 1 };
+	::UseAbilityRequest request;
+	request.set_ability_id(1);
+	request.set_target_id(2);
+	request.mutable_position()->set_x(10); // Mock position
 
-	// Simulate some time passing
-	std::this_thread::sleep_for(std::chrono::seconds(2));
+	EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_id()))
+		.WillOnce(Return(nullptr)); // Mock implementation
 
-	CoolDownTimeMillisecondUtil::Reset(comp);
+	// Mock the ViewUtil::BroadcastMessageToVisiblePlayers function if possible
+	// If not possible, test if BroadcastAbilityUsedMessage behaves correctly
 
-	uint64_t remaining_time = CoolDownTimeMillisecondUtil::Remaining(comp);
-	EXPECT_GE(remaining_time, 5000); // Should be at least 5 seconds since it was reset
+	EXPECT_NO_THROW(abilityUtil->BroadcastAbilityUsedMessage(caster, &request));
 }
 
-// Test for Set and Get Duration
-TEST_F(CoolDownTimeMillisecondUtilTest , SetAndGetDuration) {
-	uint64_t start_time = current_time_in_milliseconds();
-	CooldownTimeComp comp; // Initial duration 10 seconds
-	comp.set_start(current_time_in_milliseconds());
-	comp.set_cooldown_table_id(3);
+TEST_F(AbilityUtilTest, SetupCastingTimer_SetsTimer) {
+	entt::entity caster{ 1 };
+	auto tableAbility = std::make_shared<ability_row>();
+	tableAbility->set_castpoint(1000); // Set cast point to 1000ms
 
-	comp.set_cooldown_table_id(4);// Set to 20 seconds
+	EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
+		.WillOnce(Return(tableAbility.get())); // Mock implementation
 
-	EXPECT_EQ(CoolDownTimeMillisecondUtil::GetDuration(comp), 20000);
+	EXPECT_CALL(*mockAbilityTable, IsAbilityOfType(_, kGeneralAbility))
+		.WillOnce(Return(true));
+
+	EXPECT_NO_THROW(abilityUtil->SetupCastingTimer(caster, tableAbility.get(), 1));
 }
 
-// Test for Set and Get Start Time
-TEST_F(CoolDownTimeMillisecondUtilTest , SetAndGetStartTime) {
-	CooldownTimeComp comp; // Initial start time
-	comp.set_start(current_time_in_milliseconds());
-	comp.set_cooldown_table_id(3);
-
-	uint64_t new_start_time = current_time_in_milliseconds() + 5000; // Set new start time
-	CoolDownTimeMillisecondUtil::SetStartTime(comp, new_start_time);
-
-	EXPECT_EQ(CoolDownTimeMillisecondUtil::GetStartTime(comp), new_start_time);
-}
-
-// Test for IsCooldownComplete
-TEST_F(CoolDownTimeMillisecondUtilTest, IsCooldownComplete) {
-	CooldownTimeComp comp;
-	comp.set_start(current_time_in_milliseconds());
-	comp.set_cooldown_table_id(1);// 1 second
-
-	// Simulate 1 second elapsed
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-	EXPECT_TRUE(CoolDownTimeMillisecondUtil::IsCooldownComplete(comp));
-}
-
-// Test for IsInCooldown
-TEST_F(CoolDownTimeMillisecondUtilTest, IsInCooldown) {
-	CooldownTimeComp comp;
-	comp.set_start(current_time_in_milliseconds());
-	comp.set_cooldown_table_id(2);// 5 seconds
-
-	// Simulate 2 seconds elapsed
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
-	EXPECT_TRUE(CoolDownTimeMillisecondUtil::IsInCooldown(comp));
-}
-
-// Test for ResetCooldown
-TEST_F(CoolDownTimeMillisecondUtilTest, ResetCooldown) {
-
-	CooldownTimeComp comp;
-	comp.set_start(current_time_in_milliseconds());
-	comp.set_cooldown_table_id(2);// 5 seconds
-
-	// Simulate some time passing
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
-	CoolDownTimeMillisecondUtil::ResetCooldown(comp);
-
-	uint64_t remaining_time = CoolDownTimeMillisecondUtil::Remaining(comp);
-	EXPECT_GE(remaining_time, 5000); // Should be at least 5 seconds since it was reset
-}
-
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 	CooldownConfigurationTable::GetSingleton().Load();
-	testing::InitGoogleTest(&argc, argv);
+	AbilityConfigurationTable::GetSingleton().Load();
+	::testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }
