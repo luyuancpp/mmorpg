@@ -8,7 +8,7 @@
 class CoolDownTimeMillisecondUtil {
 public:
 	// 返回剩余时间（毫秒）
-	static uint64_t Remaining(const CooldownTimeComp& cooldownTimeComp) {
+	inline static  uint64_t Remaining(const CooldownTimeComp& cooldownTimeComp) {
 		uint64_t currentMilliseconds = GetCurrentTimeInMilliseconds();
 		uint64_t elapsed = (currentMilliseconds > cooldownTimeComp.start())
 			? currentMilliseconds - cooldownTimeComp.start()
@@ -27,27 +27,27 @@ public:
 	}
 
 	// 检查冷却时间是否超时
-	static bool IsExpired(const CooldownTimeComp& cooldownTimeComp) {
+	inline static  bool IsExpired(const CooldownTimeComp& cooldownTimeComp) {
 		return Remaining(cooldownTimeComp) == 0;
 	}
 
 	// 检查当前时间是否在开始时间之前
-	static bool IsBeforeStart(const CooldownTimeComp& cooldownTimeComp) {
+	inline static  bool IsBeforeStart(const CooldownTimeComp& cooldownTimeComp) {
 		return GetCurrentTimeInMilliseconds() < cooldownTimeComp.start();
 	}
 
 	// 检查冷却时间是否未开始（即是否在开始时间之前）
-	static bool IsNotStarted(const CooldownTimeComp& cooldownTimeComp) {
+	inline static  bool IsNotStarted(const CooldownTimeComp& cooldownTimeComp) {
 		return IsBeforeStart(cooldownTimeComp);
 	}
 
 	// 重置冷却时间
-	static void Reset(CooldownTimeComp& cooldownTimeComp) {
+	inline static  void Reset(CooldownTimeComp& cooldownTimeComp) {
 		cooldownTimeComp.set_start(GetCurrentTimeInMilliseconds());
 	}
 
 	// 获取冷却时间的持续时间（毫秒）
-	static uint64_t GetDuration(const CooldownTimeComp& cooldownTimeComp) {
+	inline static  uint64_t GetDuration(const CooldownTimeComp& cooldownTimeComp) {
 
 		auto table = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
 		if (table == nullptr) {
@@ -59,12 +59,12 @@ public:
 	}
 
 	// 设置冷却时间的开始时间（毫秒）
-	static void SetStartTime(CooldownTimeComp& cooldownTimeComp, uint64_t startTimeMilliseconds) {
+	inline static  void SetStartTime(CooldownTimeComp& cooldownTimeComp, uint64_t startTimeMilliseconds) {
 		cooldownTimeComp.set_start(startTimeMilliseconds);
 	}
 
 	// 获取冷却时间的开始时间（毫秒）
-	static uint64_t GetStartTime(const CooldownTimeComp& cooldownTimeComp) {
+	inline static  uint64_t GetStartTime(const CooldownTimeComp& cooldownTimeComp) {
 		return cooldownTimeComp.start();
 	}
 
@@ -74,11 +74,18 @@ public:
 			std::chrono::high_resolution_clock::now().time_since_epoch()
 		).count();
 	}
+
+	inline static bool IsCooldownComplete(const CooldownTimeComp& cooldownTimeComp) {
+		return Remaining(cooldownTimeComp) == 0;
+	}
+
+	inline static bool IsInCooldown(const CooldownTimeComp& cooldownTimeComp) {
+		return GetStartTime(cooldownTimeComp) != 0 && !IsCooldownComplete(cooldownTimeComp);
+	}
+
+	inline static void ResetCooldown(CooldownTimeComp& cooldownTimeComp) {
+		SetStartTime(cooldownTimeComp, GetCurrentTimeInMilliseconds());
+	}
 };
 
-int main(int argc, char** argv)
-{
-	CooldownConfigurationTable::GetSingleton().Load();
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
-}
+
