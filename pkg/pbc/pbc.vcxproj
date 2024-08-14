@@ -59,7 +59,7 @@
     <ClCompile Include="src\proto\logic\component\player_scene_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\scene_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\team_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\time_meter_comp.pb.cc" />
+    <ClCompile Include="src\proto\logic\component\time_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\function_switch.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\node.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\scene.pb.cc" />
@@ -117,7 +117,7 @@
     <ClInclude Include="src\proto\logic\component\player_scene_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\scene_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\team_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\time_meter_comp.pb.h" />
+    <ClInclude Include="src\proto\logic\component\time_comp.pb.h" />
     <ClInclude Include="src\proto\logic\constants\function_switch.pb.h" />
     <ClInclude Include="src\proto\logic\constants\node.pb.h" />
     <ClInclude Include="src\proto\logic\constants\scene.pb.h" />

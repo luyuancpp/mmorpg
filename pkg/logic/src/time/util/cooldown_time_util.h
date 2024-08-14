@@ -2,93 +2,83 @@
 
 #include <chrono>
 #include <muduo/base/Timestamp.h>
-#include "logic/component/time_meter_comp.pb.h"
-
-class CoolDownTimeSecondUtil {
-public:
-    // 返回剩余时间（秒）
-    static uint64_t Remaining(const TimeMeterComp& timeMeterComp) {
-        uint64_t currentSeconds = GetCurrentTimeInSeconds();
-        uint64_t elapsed = (currentSeconds > timeMeterComp.start())
-            ? currentSeconds - timeMeterComp.start()
-            : 0;
-        return (timeMeterComp.duration() > elapsed)
-            ? timeMeterComp.duration() - elapsed
-            : 0;
-    }
-
-    // 检查时间测量器是否超时
-    static bool IsExpired(const TimeMeterComp& timeMeterComp) {
-        return Remaining(timeMeterComp) == 0;
-    }
-
-    // 检查当前时间是否在开始时间之前
-    static bool IsBeforeStart(const TimeMeterComp& timeMeterComp) {
-        return GetCurrentTimeInSeconds() < timeMeterComp.start();
-    }
-
-    // 检查当前时间是否未开始（即是否在开始时间之前）
-    static bool IsNotStarted(const TimeMeterComp& timeMeterComp) {
-        return IsBeforeStart(timeMeterComp);
-    }
-
-    // 重置时间测量器
-    static void Reset(TimeMeterComp& timeMeterComp) {
-        timeMeterComp.set_start(GetCurrentTimeInSeconds());
-    }
-
-    // 获取当前时间（秒）
-    inline static uint64_t GetCurrentTimeInSeconds() {
-        return muduo::Timestamp::now().secondsSinceEpoch();
-    }
-
-    // 备用时间获取实现
-    /*
-    inline static uint64_t GetCurrentTimeInSeconds() {
-        return std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::high_resolution_clock::now().time_since_epoch()
-        ).count();
-    }
-    */
-};
-
+#include "logic/component/time_comp.pb.h"
+#include "cooldown_config.h"
 
 class CoolDownTimeMillisecondUtil {
 public:
-    // 返回剩余时间（毫秒）
-    static uint64_t Remaining(const TimeMeterComp& timeMeterComp) {
-        uint64_t currentMilliseconds = GetCurrentTimeInMilliseconds();
-        uint64_t elapsed = (currentMilliseconds > timeMeterComp.start())
-            ? currentMilliseconds - timeMeterComp.start()
-            : 0;
-        return (timeMeterComp.duration() > elapsed)
-            ? timeMeterComp.duration() - elapsed
-            : 0;
-    }
+	// 返回剩余时间（毫秒）
+	static uint64_t Remaining(const CooldownTimeComp& cooldownTimeComp) {
+		uint64_t currentMilliseconds = GetCurrentTimeInMilliseconds();
+		uint64_t elapsed = (currentMilliseconds > cooldownTimeComp.start())
+			? currentMilliseconds - cooldownTimeComp.start()
+			: 0;
 
-    // 检查时间测量器是否超时
-    static bool IsExpired(const TimeMeterComp& timeMeterComp) {
-        return Remaining(timeMeterComp) == 0;
-    }
+		// 获取冷却表并处理其为 nullptr 的情况
+		auto table = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
+		if (table == nullptr) {
+			// 记录日志或其他处理方式
+			return 0;
+		}
 
-    // 检查当前时间是否在开始时间之前
-    static bool IsBeforeStart(const TimeMeterComp& timeMeterComp) {
-        return GetCurrentTimeInMilliseconds() < timeMeterComp.start();
-    }
+		return (table->duration() > elapsed)
+			? table->duration() - elapsed
+			: 0;
+	}
 
-    // 检查当前时间是否未开始（即是否在开始时间之前）
-    static bool IsNotStarted(const TimeMeterComp& timeMeterComp) {
-        return IsBeforeStart(timeMeterComp);
-    }
+	// 检查冷却时间是否超时
+	static bool IsExpired(const CooldownTimeComp& cooldownTimeComp) {
+		return Remaining(cooldownTimeComp) == 0;
+	}
 
-    // 重置时间测量器
-    static void Reset(TimeMeterComp& timeMeterComp) {
-        timeMeterComp.set_start(GetCurrentTimeInMilliseconds());
-    }
+	// 检查当前时间是否在开始时间之前
+	static bool IsBeforeStart(const CooldownTimeComp& cooldownTimeComp) {
+		return GetCurrentTimeInMilliseconds() < cooldownTimeComp.start();
+	}
 
-    inline static uint64_t GetCurrentTimeInMilliseconds() {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::high_resolution_clock::now().time_since_epoch()
-        ).count();
-    }
+	// 检查冷却时间是否未开始（即是否在开始时间之前）
+	static bool IsNotStarted(const CooldownTimeComp& cooldownTimeComp) {
+		return IsBeforeStart(cooldownTimeComp);
+	}
+
+	// 重置冷却时间
+	static void Reset(CooldownTimeComp& cooldownTimeComp) {
+		cooldownTimeComp.set_start(GetCurrentTimeInMilliseconds());
+	}
+
+	// 获取冷却时间的持续时间（毫秒）
+	static uint64_t GetDuration(const CooldownTimeComp& cooldownTimeComp) {
+
+		auto table = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
+		if (table == nullptr) {
+			// 记录日志或其他处理方式
+			return 0;
+		}
+
+		return table->duration();
+	}
+
+	// 设置冷却时间的开始时间（毫秒）
+	static void SetStartTime(CooldownTimeComp& cooldownTimeComp, uint64_t startTimeMilliseconds) {
+		cooldownTimeComp.set_start(startTimeMilliseconds);
+	}
+
+	// 获取冷却时间的开始时间（毫秒）
+	static uint64_t GetStartTime(const CooldownTimeComp& cooldownTimeComp) {
+		return cooldownTimeComp.start();
+	}
+
+	// 获取当前时间（以毫秒为单位）
+	inline static uint64_t GetCurrentTimeInMilliseconds() {
+		return std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::high_resolution_clock::now().time_since_epoch()
+		).count();
+	}
 };
+
+int main(int argc, char** argv)
+{
+	CooldownConfigurationTable::GetSingleton().Load();
+	testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
+}
