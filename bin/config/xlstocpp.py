@@ -3,7 +3,6 @@
 
 import os
 import openpyxl
-import xlrd
 import gencommon
 import concurrent.futures
 from os import listdir

@@ -2,11 +2,11 @@
 # coding=utf-8
 
 import os
-import xlrd
 import logging
 import json
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from openpyxl import load_workbook  # Use openpyxl for better support of .xlsx files
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -49,18 +49,18 @@ def write_temp_id_mapping(mapping):
 def read_excel_data(file_path):
     """Reads data from the provided Excel file."""
     try:
-        workbook = xlrd.open_workbook(file_path)
-        sheet = workbook.sheet_by_index(0)
-        num_rows = sheet.nrows
+        workbook = load_workbook(file_path, read_only=True)
+        sheet = workbook.active
+        num_rows = sheet.max_row
 
         groups = {}
         current_group = None
         global_row_id = 0
 
-        for row_idx in range(7, num_rows):
-            row_cells = sheet.row(row_idx)
+        for row_idx in range(8, num_rows + 1):  # Adjust for zero-based index and header rows
+            row_cells = sheet[row_idx]
 
-            if row_cells[0].value.startswith('//'):
+            if row_cells[0].value and row_cells[0].value.startswith('//'):
                 group_name = row_cells[0].value.strip('/').strip()
 
                 if current_group:
@@ -71,14 +71,13 @@ def read_excel_data(file_path):
                 current_group_data = []
             else:
                 if current_group:
-                    current_group_data.append((row_cells[0].value, global_row_id))
-                    global_row_id += 1
+                    enum_name = row_cells[0].value
+                    if enum_name:
+                        current_group_data.append((enum_name, global_row_id))
+                        global_row_id += 1
 
         if current_group:
             groups[current_group] = current_group_data
-
-        workbook.release_resources()
-        del workbook
 
         return groups
 

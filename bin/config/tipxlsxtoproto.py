@@ -2,9 +2,9 @@
 # coding=utf-8
 
 import os
-import xlrd
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from openpyxl import load_workbook  # Use openpyxl for .xlsx files
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -21,19 +21,19 @@ os.makedirs(output_dir, exist_ok=True)
 def read_excel_data(file_path):
     """Read data from the provided Excel file path."""
     try:
-        workbook = xlrd.open_workbook(file_path)
-        sheet = workbook.sheet_by_index(0)
-        num_rows = sheet.nrows
+        workbook = load_workbook(file_path, read_only=True)
+        sheet = workbook.active
+        num_rows = sheet.max_row
 
         groups = {}
         current_group = None
         global_row_id = 0  # Start global_row_id at 0 for open enums
 
-        for row_idx in range(7, num_rows):
-            row_cells = sheet.row(row_idx)
+        for row_idx in range(8, num_rows + 1):  # Adjust for zero-based index
+            row_cells = sheet[row_idx]
 
-            if row_cells[0].value.startswith('//'):
-                group_name = row_cells[0].value.strip('/').strip()
+            if row_cells[1].value and row_cells[1].value.startswith('//'):
+                group_name = row_cells[1].value.strip('/').strip()
 
                 if current_group:
                     groups[current_group] = current_group_data
@@ -43,14 +43,13 @@ def read_excel_data(file_path):
                 current_group_data = []
             else:
                 if current_group:
-                    current_group_data.append((row_cells[0].value, global_row_id))
-                    global_row_id += 1
+                    enum_name = row_cells[1].value
+                    if enum_name:
+                        current_group_data.append((enum_name, global_row_id))
+                        global_row_id += 1
 
         if current_group:
             groups[current_group] = current_group_data
-
-        workbook.release_resources()
-        del workbook
 
         return groups
 
