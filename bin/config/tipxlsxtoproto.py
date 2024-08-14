@@ -32,8 +32,8 @@ def read_excel_data(file_path):
         for row_idx in range(8, num_rows + 1):  # Adjust for zero-based index
             row_cells = sheet[row_idx]
 
-            if row_cells[1].value and row_cells[1].value.startswith('//'):
-                group_name = row_cells[1].value.strip('/').strip()
+            if row_cells[0].value and row_cells[0].value.startswith('//'):
+                group_name = row_cells[0].value.strip('/').strip()
 
                 if current_group:
                     groups[current_group] = current_group_data
@@ -43,7 +43,7 @@ def read_excel_data(file_path):
                 current_group_data = []
             else:
                 if current_group:
-                    enum_name = row_cells[1].value
+                    enum_name = row_cells[0].value
                     if enum_name:
                         current_group_data.append((enum_name, global_row_id))
                         global_row_id += 1
