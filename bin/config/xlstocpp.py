@@ -2,6 +2,7 @@
 # coding=utf-8
 
 import os
+import openpyxl
 import xlrd
 import gencommon
 import concurrent.futures
@@ -14,9 +15,12 @@ cppdir = "generated/cpp/"
 xlsdir = "xlsx/"
 
 
-def get_column_names(sheet):
+def get_column_names(sheet, is_xlsx):
     """获取Excel表格的列名"""
-    return sheet.row_values(keyrowidx, 0, sheet.row_len(keyrowidx))
+    if is_xlsx:
+        return [cell.value for cell in sheet[keyrowidx]]
+    else:
+        return sheet.row_values(keyrowidx, 0, sheet.ncols)
 
 
 def get_key_row_data(row, column_names):
@@ -28,20 +32,24 @@ def get_key_row_data(row, column_names):
     return row_data
 
 
-def get_sheet_key_data(sheet, column_names):
+def get_sheet_key_data(sheet, column_names, is_xlsx):
     """获取表格的关键数据"""
-    row = sheet.row(0)
+    if is_xlsx:
+        row = sheet[1]  # 获取第一行
+    else:
+        row = sheet.row(0)  # 获取第一行
     key_row_data = get_key_row_data(row, column_names)
     return [key_row_data]
 
 
-def get_workbook_data(workbook):
+def get_workbook_data(workbook, is_xlsx):
     """获取整个工作簿（Workbook）的数据"""
     workbook_data = {}
-    for sheet_name in workbook.sheet_names():
-        sheet = workbook.sheet_by_name(sheet_name)
-        column_names = get_column_names(sheet)
-        sheet_key_data = get_sheet_key_data(sheet, column_names)
+    sheet_names = workbook.sheetnames if is_xlsx else workbook.sheet_names()
+    for sheet_name in sheet_names:
+        sheet = workbook[sheet_name] if is_xlsx else workbook.sheet_by_name(sheet_name)
+        column_names = get_column_names(sheet, is_xlsx)
+        sheet_key_data = get_sheet_key_data(sheet, column_names, is_xlsx)
         workbook_data[sheet_name] = sheet_key_data
     return workbook_data
 
@@ -56,7 +64,8 @@ def generate_cpp_header(datastring, sheetname):
     s += 'class %sConfigurationTable\n{\npublic:\n' % sheetname
     s += '    using row_type = const %s_row*;\n' % sheet_name_lower
     s += '    using kv_type = std::unordered_map<uint32_t, row_type>;\n'
-    s += '    static %sConfigurationTable& GetSingleton() { static %sConfigurationTable singleton; return singleton; }\n' % (sheetname, sheetname)
+    s += '    static %sConfigurationTable& GetSingleton() { static %sConfigurationTable singleton; return singleton; }\n' % (
+    sheetname, sheetname)
     s += '    const %s_table& All() const { return data_; }\n' % sheet_name_lower
     s += '    row_type GetTable(uint32_t keyid);\n'
     counter = 0
@@ -130,8 +139,13 @@ def generate_cpp_implementation(datastring, sheetname):
 
 def process_workbook(filename):
     """处理单个工作簿文件，生成对应的头文件和实现文件"""
-    workbook = xlrd.open_workbook(filename)
-    workbook_data = get_workbook_data(workbook)
+    is_xlsx = filename.endswith('.xlsx')
+    if is_xlsx:
+        workbook = openpyxl.load_workbook(filename)
+    else:
+        workbook = xlrd.open_workbook(filename)
+
+    workbook_data = get_workbook_data(workbook, is_xlsx)
     for sheetname in workbook_data:
         header_filename = sheetname.lower() + "_config.h"
         cpp_filename = sheetname.lower() + "_config.cpp"
@@ -147,12 +161,14 @@ def generate_all_config():
     """生成加载所有配置的头文件和实现文件内容"""
     sheetnames = []
     dirfiles = listdir(xlsdir)
-    files = sorted(dirfiles, key=lambda file: os.path.getsize(xlsdir + file), reverse=True)
+    files = sorted(dirfiles, key=lambda file: os.path.getsize(os.path.join(xlsdir, file)), reverse=True)
+
     for filename in files:
-        filename = xlsdir + filename
-        if filename.endswith('.xlsx') or filename.endswith('.xls'):
-            workbook = xlrd.open_workbook(filename)
-            workbook_data = get_workbook_data(workbook)
+        filepath = os.path.join(xlsdir, filename)
+        if filepath.endswith('.xlsx') or filepath.endswith('.xls'):
+            is_xlsx = filepath.endswith('.xlsx')
+            workbook = openpyxl.load_workbook(filepath) if is_xlsx else xlrd.open_workbook(filepath)
+            workbook_data = get_workbook_data(workbook, is_xlsx)
             for sheetname in workbook_data:
                 sheetnames.append(sheetname)
 
