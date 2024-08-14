@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-import xlrd
-import xlwt
-import json
-import md5tool
-import os.path
-from os import listdir
-from os.path import isfile, join
 
 beginrowidx = 7
 
