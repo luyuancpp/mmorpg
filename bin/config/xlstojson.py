@@ -2,7 +2,7 @@
 # coding=utf-8
 
 import os
-import xlrd
+import openpyxl
 import json
 import md5tool
 import gencommon  # Assuming gencommon provides mywrite function
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 begin_row_idx = 9
 json_dir = "generated/json/"
-xls_dir = "xlsx/"
+xlsx_dir = "xlsx/"
 gen_type = "server"
 
 
@@ -26,22 +26,20 @@ def get_column_names(sheet):
     Get column names from the sheet based on specified conditions.
 
     Args:
-    - sheet: xlrd Sheet object representing Excel sheet data.
+    - sheet: openpyxl Worksheet object representing Excel sheet data.
 
     Returns:
     - list: List of column names.
     """
-    row_size = sheet.row_len(0)
-    col_values = sheet.row_values(0, 0, row_size)
     column_names = []
-    for idx, value in enumerate(col_values):
-        second_row_value = sheet.cell_value(3, idx)
+    for col_idx, cell in enumerate(sheet[1]):
+        second_row_value = sheet.cell(row=4, column=col_idx + 1).value
         if second_row_value == "design":
             column_names.append("")
         elif second_row_value != "common" and gen_type != second_row_value:
             column_names.append("")
         else:
-            column_names.append(value)
+            column_names.append(cell.value)
     return column_names
 
 
@@ -50,7 +48,7 @@ def get_row_data(row, column_names):
     Get row data as dictionary based on column names and validate cell formats.
 
     Args:
-    - row: xlrd Row object representing Excel row data.
+    - row: openpyxl Row object representing Excel row data.
     - column_names: List of column names.
 
     Returns:
@@ -59,15 +57,14 @@ def get_row_data(row, column_names):
     row_data = {}
     for counter, cell in enumerate(row):
         col_name = column_names[counter]
-        if col_name.strip() != "":
-            if cell.ctype == xlrd.XL_CELL_NUMBER and cell.value % 1 == 0.0:
-                cell_value = int(cell.value)
-            else:
-                cell_value = cell.value
+        if col_name and col_name.strip():
+            cell_value = cell.value
+            if isinstance(cell_value, float) and cell_value.is_integer():
+                cell_value = int(cell_value)
 
             # Check for empty or invalid data
             if cell_value in (None, ''):
-                logger.warning(f"Cell at row {row.rownum + 1}, column '{col_name}' is empty or contains invalid data.")
+                logger.warning(f"Cell at row {cell.row}, column '{col_name}' is empty or contains invalid data.")
             row_data[col_name] = cell_value
     return row_data
 
@@ -77,16 +74,14 @@ def get_sheet_data(sheet, column_names):
     Get sheet data as list of dictionaries.
 
     Args:
-    - sheet: xlrd Sheet object representing Excel sheet data.
+    - sheet: openpyxl Worksheet object representing Excel sheet data.
     - column_names: List of column names.
 
     Returns:
     - list: List of dictionaries containing sheet data.
     """
-    n_rows = sheet.nrows
     sheet_data = []
-    for idx in range(begin_row_idx, n_rows):
-        row = sheet.row(idx)
+    for row in sheet.iter_rows(min_row=begin_row_idx + 1, values_only=False):
         row_data = get_row_data(row, column_names)
         sheet_data.append(row_data)
     return sheet_data
@@ -97,19 +92,19 @@ def get_workbook_data(workbook):
     Get workbook data as dictionary of sheet names and their respective data.
 
     Args:
-    - workbook: xlrd Workbook object representing Excel workbook.
+    - workbook: openpyxl Workbook object representing Excel workbook.
 
     Returns:
     - dict: Dictionary where keys are sheet names and values are lists of dictionaries containing sheet data.
     """
     workbook_data = {}
-    for sheet_name in workbook.sheet_names():
-        worksheet = workbook.sheet_by_name(sheet_name)
-        if worksheet.cell_value(0, 0) != "id":
+    for sheet_name in workbook.sheetnames:
+        sheet = workbook[sheet_name]
+        if sheet.cell(row=1, column=1).value != "id":
             logger.error(f"{sheet_name} first column must be 'id'")
             continue
-        column_names = get_column_names(worksheet)
-        sheet_data = get_sheet_data(worksheet, column_names)
+        column_names = get_column_names(sheet)
+        sheet_data = get_sheet_data(sheet, column_names)
         workbook_data[sheet_name] = sheet_data
     return workbook_data
 
@@ -133,7 +128,7 @@ def process_excel_file(file_path):
 
     # Open workbook and process data
     try:
-        workbook = xlrd.open_workbook(file_path)
+        workbook = openpyxl.load_workbook(file_path)
         workbook_data = get_workbook_data(workbook)
 
         # Write JSON files for each sheet
@@ -157,7 +152,7 @@ def main():
     os.makedirs(json_dir, exist_ok=True)
 
     # Gather all Excel files
-    files = [join(xls_dir, filename) for filename in listdir(xls_dir) if isfile(join(xls_dir, filename)) and (filename.endswith('.xlsx') or filename.endswith('.xls'))]
+    files = [join(xlsx_dir, filename) for filename in listdir(xlsx_dir) if isfile(join(xlsx_dir, filename)) and filename.endswith('.xlsx')]
 
     # Use a ThreadPoolExecutor to process files in parallel
     num_threads = os.cpu_count()  # Number of threads is equal to the number of CPU cores
