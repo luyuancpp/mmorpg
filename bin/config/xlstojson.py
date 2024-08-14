@@ -9,6 +9,7 @@ import gencommon  # Assuming gencommon provides mywrite function
 import logging
 from os import listdir
 from os.path import isfile, join
+import concurrent.futures  # For parallel processing
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -155,11 +156,14 @@ def main():
     # Create output directory if it doesn't exist
     os.makedirs(json_dir, exist_ok=True)
 
-    # Process each Excel file in xls_dir
-    for filename in listdir(xls_dir):
-        full_path = join(xls_dir, filename)
-        if isfile(full_path) and (filename.endswith('.xlsx') or filename.endswith('.xls')):
-            process_excel_file(full_path)
+    # Gather all Excel files
+    files = [join(xls_dir, filename) for filename in listdir(xls_dir) if isfile(join(xls_dir, filename)) and (filename.endswith('.xlsx') or filename.endswith('.xls'))]
+
+    # Use a ThreadPoolExecutor to process files in parallel
+    num_threads = os.cpu_count()  # Number of threads is equal to the number of CPU cores
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+        # Process files concurrently
+        executor.map(process_excel_file, files)
 
 
 if __name__ == "__main__":
