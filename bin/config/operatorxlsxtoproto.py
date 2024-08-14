@@ -94,7 +94,7 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
         proto_content += f"option go_package = \"pb/game\";\n\n"
         proto_content += f"enum {group_name} {{\n"
 
-        if group_name == "common_error":
+        if group_name == "scene":
             proto_content += f"  option allow_alias = true;\n\n"
 
         proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
