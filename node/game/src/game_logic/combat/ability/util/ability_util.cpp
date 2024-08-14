@@ -9,6 +9,7 @@
 #include "service_info/player_ability_service_info.h"
 #include "thread_local/storage.h"
 #include "time/comp/timer_task_comp.h"
+#include "time/util/cooldown_time_util.h"
 
 uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, const ::UseAbilityRequest* request) {
     // 获取技能表信息
@@ -29,10 +30,23 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, con
         }
     }
 
+    const auto coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster);
+    if (nullptr != coolDownTimeListComp)
+    {
+        auto coolDownTimeCompIt = coolDownTimeListComp->cooldown_list().find(tableAbility->cooldown_id());
+        if (coolDownTimeCompIt != coolDownTimeListComp->cooldown_list().end())
+        {
+            if (!CoolDownTimeMillisecondUtil::IsExpired(coolDownTimeCompIt->second))
+            {
+                
+            }
+        }
+    }
+
     // 检查施法者是否有正在进行的施法计时器
-    const auto* castTimer = tls.registry.try_get<CastingTimer>(caster);
-    if (castTimer != nullptr) {
-        if (tableAbility->immediately() && castTimer->timer.IsActive()) {
+    const auto* castTimerComp = tls.registry.try_get<CastingTimer>(caster);
+    if (castTimerComp != nullptr) {
+        if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
             // 处理立即技能的中断情况
             AbilityInterruptedS2C abilityInterruptedS2C;
             abilityInterruptedS2C.set_entity(to_integral(caster));
@@ -43,7 +57,7 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, con
                 PlayerAbilityServiceNotifyAbilityInterruptedMessageId,
                 abilityInterruptedS2C
             );
-        } else if (!tableAbility->immediately() && castTimer->timer.IsActive()) {
+        } else if (!tableAbility->immediately() && castTimerComp->timer.IsActive()) {
             // 处理非立即技能的不可中断情况
             return kAbilityUnInterruptible;
         }

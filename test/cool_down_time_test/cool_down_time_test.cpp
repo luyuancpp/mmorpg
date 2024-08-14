@@ -2,7 +2,7 @@
 #include "time/util/cooldown_time_util.h"  // 假设你将上面的 CoolDownTimeMillisecondUtil 定义在这个头文件中
 
 // Test Fixture
-class CoolDownTimeUtilTest : public ::testing::Test {
+class CoolDownTimeMillisecondUtilTest  : public ::testing::Test {
 protected:
 	void SetUp() override {
 		// Set up any necessary environment for the tests
@@ -18,7 +18,7 @@ protected:
 };
 
 // Test for Remaining time
-TEST_F(CoolDownTimeUtilTest, RemainingTime) {
+TEST_F(CoolDownTimeMillisecondUtilTest , RemainingTime) {
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(2);// 5 seconds
@@ -32,7 +32,7 @@ TEST_F(CoolDownTimeUtilTest, RemainingTime) {
 }
 
 // Test for IsExpired
-TEST_F(CoolDownTimeUtilTest, IsExpired) {
+TEST_F(CoolDownTimeMillisecondUtilTest , IsExpired) {
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(1);
@@ -44,7 +44,7 @@ TEST_F(CoolDownTimeUtilTest, IsExpired) {
 }
 
 // Test for IsBeforeStart
-TEST_F(CoolDownTimeUtilTest, IsBeforeStart) {
+TEST_F(CoolDownTimeMillisecondUtilTest , IsBeforeStart) {
 	CooldownTimeComp comp; // 10 seconds duration
 	comp.set_start(current_time_in_milliseconds() + 5000);
 	comp.set_cooldown_table_id(3);
@@ -53,7 +53,7 @@ TEST_F(CoolDownTimeUtilTest, IsBeforeStart) {
 }
 
 // Test for IsNotStarted
-TEST_F(CoolDownTimeUtilTest, IsNotStarted) {
+TEST_F(CoolDownTimeMillisecondUtilTest , IsNotStarted) {
 	CooldownTimeComp comp; // 10 seconds duration
 	comp.set_start(current_time_in_milliseconds() + 5000);
 	comp.set_cooldown_table_id(3);
@@ -62,7 +62,7 @@ TEST_F(CoolDownTimeUtilTest, IsNotStarted) {
 }
 
 // Test for Reset
-TEST_F(CoolDownTimeUtilTest, Reset) {
+TEST_F(CoolDownTimeMillisecondUtilTest , Reset) {
 	CooldownTimeComp comp;
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(2);// 5 seconds
@@ -77,7 +77,7 @@ TEST_F(CoolDownTimeUtilTest, Reset) {
 }
 
 // Test for Set and Get Duration
-TEST_F(CoolDownTimeUtilTest, SetAndGetDuration) {
+TEST_F(CoolDownTimeMillisecondUtilTest , SetAndGetDuration) {
 	uint64_t start_time = current_time_in_milliseconds();
 	CooldownTimeComp comp; // Initial duration 10 seconds
 	comp.set_start(current_time_in_milliseconds());
@@ -89,7 +89,7 @@ TEST_F(CoolDownTimeUtilTest, SetAndGetDuration) {
 }
 
 // Test for Set and Get Start Time
-TEST_F(CoolDownTimeUtilTest, SetAndGetStartTime) {
+TEST_F(CoolDownTimeMillisecondUtilTest , SetAndGetStartTime) {
 	CooldownTimeComp comp; // Initial start time
 	comp.set_start(current_time_in_milliseconds());
 	comp.set_cooldown_table_id(3);
@@ -98,4 +98,51 @@ TEST_F(CoolDownTimeUtilTest, SetAndGetStartTime) {
 	CoolDownTimeMillisecondUtil::SetStartTime(comp, new_start_time);
 
 	EXPECT_EQ(CoolDownTimeMillisecondUtil::GetStartTime(comp), new_start_time);
+}
+
+// Test for IsCooldownComplete
+TEST_F(CoolDownTimeMillisecondUtilTest, IsCooldownComplete) {
+	CooldownTimeComp comp;
+	comp.set_start(current_time_in_milliseconds());
+	comp.set_cooldown_table_id(1);// 1 second
+
+	// Simulate 1 second elapsed
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+	EXPECT_TRUE(CoolDownTimeMillisecondUtil::IsCooldownComplete(comp));
+}
+
+// Test for IsInCooldown
+TEST_F(CoolDownTimeMillisecondUtilTest, IsInCooldown) {
+	CooldownTimeComp comp;
+	comp.set_start(current_time_in_milliseconds());
+	comp.set_cooldown_table_id(2);// 5 seconds
+
+	// Simulate 2 seconds elapsed
+	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+	EXPECT_TRUE(CoolDownTimeMillisecondUtil::IsInCooldown(comp));
+}
+
+// Test for ResetCooldown
+TEST_F(CoolDownTimeMillisecondUtilTest, ResetCooldown) {
+
+	CooldownTimeComp comp;
+	comp.set_start(current_time_in_milliseconds());
+	comp.set_cooldown_table_id(2);// 5 seconds
+
+	// Simulate some time passing
+	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+	CoolDownTimeMillisecondUtil::ResetCooldown(comp);
+
+	uint64_t remaining_time = CoolDownTimeMillisecondUtil::Remaining(comp);
+	EXPECT_GE(remaining_time, 5000); // Should be at least 5 seconds since it was reset
+}
+
+int main(int argc, char** argv)
+{
+	CooldownConfigurationTable::GetSingleton().Load();
+	testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
 }
