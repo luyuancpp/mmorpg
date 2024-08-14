@@ -1,9 +1,12 @@
 #include "ability_util.h"
 
+#include <muduo/base/Logging.h>
+
 #include "ability_config.h"
 #include "game_logic/combat/ability/comp/ability_comp.h"
 #include "game_logic/combat/ability/constants/ability_constants.h"
 #include "game_logic/scene/util/view_util.h"
+#include "macros/return_define.h"
 #include "pbc/ability_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
 #include "service_info/player_ability_service_info.h"
@@ -17,23 +20,13 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, con
         return result;
     }
 
-    result = ValidateTarget(request);
-    if (result != kOK) {
-        return result;
-    }
+    CHECK_RETURN_IF_NOT_OK(ValidateTarget(request));
 
-    result = CheckCooldown(caster, tableAbility);
-    if (result != kOK) {
-        return result;
-    }
+    CHECK_RETURN_IF_NOT_OK(CheckCooldown(caster, tableAbility));
 
-    result = HandleCastingTimer(caster, tableAbility);
-    if (result != kOK) {
-        return result;
-    }
+    CHECK_RETURN_IF_NOT_OK(HandleCastingTimer(caster, tableAbility));
 
     BroadcastAbilityUsedMessage(caster, request);
-
     SetupCastingTimer(caster, tableAbility, request->ability_id());
 
     return kOK;
@@ -42,9 +35,9 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, con
 bool AbilityUtil::IsAbilityOfType(uint32_t abilityId, uint32_t abilityType) {
     const auto* tableAbility = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
+        LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return false;
     }
-
     return std::find(tableAbility->ability_type().begin(), tableAbility->ability_type().end(), abilityType) != tableAbility->ability_type().end();
 }
 
@@ -108,6 +101,7 @@ void AbilityUtil::HandleAbilityDeactivate()
 std::pair<const ability_row*, uint32_t> AbilityUtil::ValidateAbilityTable(uint32_t abilityId) {
     const auto* tableAbility = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
+        LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return {nullptr, kInvalidTableId};
     }
     return {tableAbility, kOK};
@@ -116,12 +110,16 @@ std::pair<const ability_row*, uint32_t> AbilityUtil::ValidateAbilityTable(uint32
 uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
     const auto* tableAbility = GetAbilityTable(request->ability_id());
     if (!tableAbility->target_type().empty() && request->target_id() <= 0) {
+        LOG_ERROR << "Invalid target ID: " << request->target_id() 
+                 << " for ability ID: " << request->ability_id();
         return kAbilityInvalidTargetId;
     }
 
     if (!tableAbility->target_type().empty()) {
         entt::entity target{request->target_id()};
         if (!tls.registry.valid(target)) {
+            LOG_ERROR << "Invalid target entity: " << request->target_id() 
+                   << " for ability ID: " << request->ability_id();
             return kAbilityInvalidTargetId;
         }
     }
@@ -134,6 +132,8 @@ uint32_t AbilityUtil::CheckCooldown(entt::entity caster, const ability_row* tabl
         auto it = coolDownTimeListComp->cooldown_list().find(tableAbility->cooldown_id());
         if (it != coolDownTimeListComp->cooldown_list().end() &&
             CoolDownTimeMillisecondUtil::IsInCooldown(it->second)) {
+            LOG_ERROR << "Ability ID: " << tableAbility->id() 
+                    << " is in cooldown for player: " << entt::to_integral(caster);
             return kAbilityCooldownNotReady;
             }
     }
@@ -144,11 +144,15 @@ uint32_t AbilityUtil::HandleCastingTimer(entt::entity caster, const ability_row*
     const auto* castTimerComp = tls.registry.try_get<CastingTimer>(caster);
     if (castTimerComp) {
         if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
+            LOG_INFO << "Immediate ability: " << tableAbility->id() 
+                     << " is currently casting. Sending interrupt message.";
             SendAbilityInterruptedMessage(caster);
             tls.registry.remove<CastingTimer>(caster);
             return kOK;
         }
         if (!tableAbility->immediately() && castTimerComp->timer.IsActive()) {
+            LOG_ERROR << "Non-immediate ability: " << tableAbility->id() 
+                      << " is currently casting and cannot be interrupted.";
             return kAbilityUnInterruptible;
         }
         tls.registry.remove<CastingTimer>(caster);
