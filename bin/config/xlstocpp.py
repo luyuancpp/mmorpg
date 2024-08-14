@@ -81,6 +81,7 @@ def generate_cpp_implementation(datastring, sheetname):
     sheet_name_lower = sheetname.lower()
     s = '#include "google/protobuf/util/json_util.h"\n'
     s += '#include "src/util/file2string.h"\n'
+    s += '#include "muduo/base/Logging.h"\n'
     s += '#include "%s_config.h"\n\n' % sheetname
     s += 'void %sConfigurationTable::Load()\n{\n' % sheetname
     s += '    data_.Clear();\n'
@@ -88,7 +89,7 @@ def generate_cpp_implementation(datastring, sheetname):
     s += '    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_);\n'
     s += '        !result.ok())\n'
     s += '    {\n'
-    s += '        std::cout << "%s " << result.message().data() << std::endl;\n' % sheetname
+    s += '        LOG_FATAL << "%s " << result.message().data();\n' % sheetname
     s += '    }\n'
     s += '    for (int32_t i = 0; i < data_.data_size(); ++i)\n'
     s += '    {\n'

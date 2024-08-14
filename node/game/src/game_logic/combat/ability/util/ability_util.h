@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include <entt/src/entt/entity/entity.hpp>
@@ -30,7 +30,6 @@ public:
 	static void HandleAbilityActivate();
 	static void HandleAbilityDeactivate();
 
-private:
 	// 验证技能表
     static std::pair<const ability_row*, uint32_t> ValidateAbilityTable(uint32_t abilityId);
 

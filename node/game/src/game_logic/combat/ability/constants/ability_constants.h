@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <cstdint>
 
 //技能释放时不需要目标即可释放（如群疗，踩地板技能） -> 1 << 1
