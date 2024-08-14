@@ -43,11 +43,12 @@ def get_column_names(sheet):
     return column_names
 
 
-def get_row_data(row, column_names):
+def get_row_data(sheet, row, column_names):
     """
     Get row data as dictionary based on column names and validate cell formats.
 
     Args:
+    - sheet: openpyxl Worksheet object representing the Excel sheet.
     - row: openpyxl Row object representing Excel row data.
     - column_names: List of column names.
 
@@ -56,19 +57,24 @@ def get_row_data(row, column_names):
     """
     row_data = {}
     for counter, cell in enumerate(row):
+        if counter >= len(column_names):
+            logger.warning(f"Row {cell.row} in sheet '{sheet.title}' has more cells than column names.")
+            break
+
         col_name = column_names[counter]
         if col_name and col_name.strip():
             cell_value = cell.value
             if isinstance(cell_value, float) and cell_value.is_integer():
                 cell_value = int(cell_value)
 
-            # Check for empty or invalid data
-            if cell_value in (None, ''):
-                logger.warning(f"Cell at row {cell.row}, column '{col_name}' is empty or contains invalid data.")
+            # Construct the cell reference in A1 notation
+            cell_reference = f"{cell.column_letter}{cell.row}"
+
+            if cell_value in (None, '') and cell.row > begin_row_idx:
+                logger.warning(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
             row_data[col_name] = cell_value
+
     return row_data
-
-
 def get_sheet_data(sheet, column_names):
     """
     Get sheet data as list of dictionaries.
@@ -81,11 +87,22 @@ def get_sheet_data(sheet, column_names):
     - list: List of dictionaries containing sheet data.
     """
     sheet_data = []
-    for row in sheet.iter_rows(min_row=begin_row_idx + 1, values_only=False):
-        row_data = get_row_data(row, column_names)
+    for row in sheet.iter_rows(min_row=2, values_only=False):  # Skip header row
+        row_data = get_row_data(sheet, row, column_names)
         sheet_data.append(row_data)
     return sheet_data
 
+def get_column_names(sheet):
+    """
+    Extract column names from the first row of the sheet.
+
+    Args:
+    - sheet: openpyxl Worksheet object.
+
+    Returns:
+    - list: List of column names.
+    """
+    return [cell.value for cell in sheet[1]]  # Assuming first row contains column names
 
 def get_workbook_data(workbook):
     """
@@ -103,11 +120,12 @@ def get_workbook_data(workbook):
         if sheet.cell(row=1, column=1).value != "id":
             logger.error(f"{sheet_name} first column must be 'id'")
             continue
+
         column_names = get_column_names(sheet)
         sheet_data = get_sheet_data(sheet, column_names)
         workbook_data[sheet_name] = sheet_data
-    return workbook_data
 
+    return workbook_data
 
 def process_excel_file(file_path):
     """
