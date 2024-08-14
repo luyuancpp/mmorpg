@@ -46,7 +46,7 @@ def get_column_names(sheet):
 
 def get_row_data(row, column_names):
     """
-    Get row data as dictionary based on column names.
+    Get row data as dictionary based on column names and validate cell formats.
 
     Args:
     - row: xlrd Row object representing Excel row data.
@@ -57,10 +57,17 @@ def get_row_data(row, column_names):
     """
     row_data = {}
     for counter, cell in enumerate(row):
-        if column_names[counter].strip() != "":
-            if cell.ctype == 2 and cell.value % 1 == 0.0:
-                cell.value = int(cell.value)
-            row_data[column_names[counter]] = cell.value
+        col_name = column_names[counter]
+        if col_name.strip() != "":
+            if cell.ctype == xlrd.XL_CELL_NUMBER and cell.value % 1 == 0.0:
+                cell_value = int(cell.value)
+            else:
+                cell_value = cell.value
+
+            # Check for empty or invalid data
+            if cell_value in (None, ''):
+                logger.warning(f"Cell at row {row.rownum + 1}, column '{col_name}' is empty or contains invalid data.")
+            row_data[col_name] = cell_value
     return row_data
 
 
@@ -77,11 +84,10 @@ def get_sheet_data(sheet, column_names):
     """
     n_rows = sheet.nrows
     sheet_data = []
-    for idx in range(1, n_rows):
-        if idx >= begin_row_idx:
-            row = sheet.row(idx)
-            row_data = get_row_data(row, column_names)
-            sheet_data.append(row_data)
+    for idx in range(begin_row_idx, n_rows):
+        row = sheet.row(idx)
+        row_data = get_row_data(row, column_names)
+        sheet_data.append(row_data)
     return sheet_data
 
 
@@ -107,35 +113,54 @@ def get_workbook_data(workbook):
     return workbook_data
 
 
+def process_excel_file(file_path):
+    """
+    Process a single Excel file to generate JSON output.
+
+    Args:
+    - file_path: Path to the Excel file.
+    """
+    md5_file_path = file_path + '.md5'
+
+    # Check MD5 value to ensure the file hasn't changed
+    if not os.path.exists(md5_file_path):
+        md5tool.generate_md5_file_for(file_path, md5_file_path)
+    error = md5tool.check_against_md5_file(file_path, md5_file_path)
+    if error is not None:
+        logger.error(f"MD5 check failed for file: {file_path}")
+        return
+
+    # Open workbook and process data
+    try:
+        workbook = xlrd.open_workbook(file_path)
+        workbook_data = get_workbook_data(workbook)
+
+        # Write JSON files for each sheet
+        for sheet_name, data in workbook_data.items():
+            json_data = {"data": data}
+            json_string = json.dumps(json_data, sort_keys=True, indent=4, separators=(',', ': '))
+            json_string = json_string.replace('"[', '[').replace(']"', ']')  # Remove unnecessary quotes around lists
+            json_file_path = os.path.join(json_dir, f"{sheet_name}.json")
+            gencommon.mywrite(json_string, json_file_path)
+            logger.info(f"Generated JSON file: {json_file_path}")
+
+    except Exception as e:
+        logger.error(f"Failed to process file {file_path}: {e}")
+
+
 def main():
+    """
+    Main function to process all Excel files in the specified directory.
+    """
     # Create output directory if it doesn't exist
-    if not os.path.exists(json_dir):
-        os.makedirs(json_dir)
+    os.makedirs(json_dir, exist_ok=True)
 
     # Process each Excel file in xls_dir
-    for filename in os.listdir(xls_dir):
-        full_path = os.path.join(xls_dir, filename)
+    for filename in listdir(xls_dir):
+        full_path = join(xls_dir, filename)
         if isfile(full_path) and (filename.endswith('.xlsx') or filename.endswith('.xls')):
-            # Generate MD5 file if it doesn't exist
-            md5_file_path = full_path + '.md5'
-            if not os.path.exists(md5_file_path):
-                md5tool.generate_md5_file_for(full_path, md5_file_path)
-                error = md5tool.check_against_md5_file(full_path, md5_file_path)
-                if error is None:
-                    continue
+            process_excel_file(full_path)
 
-            # Open workbook and process data
-            workbook = xlrd.open_workbook(full_path)
-            workbook_data = get_workbook_data(workbook)
-
-            # Write JSON files for each sheet
-            for sheet_name, data in workbook_data.items():
-                json_data = {"data": data}
-                json_string = json.dumps(json_data, sort_keys=True, indent=4, separators=(',', ': '))
-                json_string = json_string.replace('"[', '[').replace(']"', ']')  # Remove unnecessary quotes around lists
-                json_file_path = os.path.join(json_dir, f"{sheet_name}.json")
-                gencommon.mywrite(json_string, json_file_path)
-                logger.info(f"Generated JSON file: {json_file_path}")
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,11 @@
 import os
 import subprocess
 
+import logging
+# Set up logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 # Create directories if they don't exist
 if not os.path.exists("generated/cpp/"):
     os.makedirs("generated/cpp/")
@@ -40,6 +45,6 @@ commands = [
 for command in commands:
     try:
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        print(result.stdout)
+        logger.info(result.stdout)
     except subprocess.CalledProcessError as e:
-        print(f"Error running command '{command}': {e}")
+        logger.error(f"Error running command '{command}': {e}")
