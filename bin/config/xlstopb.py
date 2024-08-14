@@ -2,12 +2,12 @@
 # coding=utf-8
 
 import os
-import xlrd
+import openpyxl
 import md5tool
 import logging
 
 # 全局变量
-END_ROW_INDEX = 3
+END_ROW_INDEX = 4
 PROTO_DIR = "generated/proto/"
 XLSX_DIR = "xlsx/"
 
@@ -18,20 +18,33 @@ logger = logging.getLogger(__name__)
 
 def get_column_names(sheet):
     """获取Excel表格的列名"""
-    return sheet.row_values(0, 0, sheet.row_len(0))
+    column_names = [cell.value for cell in sheet[1]]  # 获取第一行的列名
+    return column_names
 
 
 def get_row_data(row, column_names):
-    """将Excel表格的一行数据转换为字典形式"""
-    return {column_names[i]: row[i].value for i in range(len(row))}
+    """将Excel表格的一行数据转换为字典形式，并验证数据"""
+    row_data = {}
+    for i, cell in enumerate(row):
+        col_name = column_names[i]
+        if col_name and cell is not None:
+            if isinstance(cell, float) and cell.is_integer():
+                cell_value = int(cell)
+            else:
+                cell_value = cell
+
+            if cell_value in (None, ''):
+                logger.warning(f"Row {row[0].row}, column '{col_name}' is empty or invalid.")
+
+            row_data[col_name] = cell_value
+    return row_data
 
 
 def get_sheet_data(sheet, column_names):
     """获取整个Excel表格的数据"""
     sheet_data = []
-    for idx in range(1, sheet.nrows):
+    for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
         if idx <= END_ROW_INDEX:
-            row = sheet.row(idx)
             row_data = get_row_data(row, column_names)
             sheet_data.append(row_data)
     return sheet_data
@@ -40,8 +53,12 @@ def get_sheet_data(sheet, column_names):
 def get_workbook_data(workbook):
     """获取整个工作簿（Workbook）的数据"""
     workbook_data = {}
-    for sheet_name in workbook.sheet_names():
-        sheet = workbook.sheet_by_name(sheet_name)
+    for sheet_name in workbook.sheetnames:
+        sheet = workbook[sheet_name]
+        if sheet.cell(row=1, column=1).value != "id":
+            logger.error(f"{sheet_name} first column must be 'id'")
+            continue
+
         column_names = get_column_names(sheet)
         sheet_data = get_sheet_data(sheet, column_names)
         workbook_data[sheet_name] = sheet_data
@@ -54,12 +71,18 @@ def generate_proto_file(data, sheet_name):
     proto_content += f"option go_package = \"pb/game\";\n\n"
     proto_content += f'message {sheet_name}_row' + ' {\n'
     for index, key in enumerate(data[0], start=1):
+        if len(data) < 3 or key not in data[2]:
+            logger.warning(f"Column '{key}' is missing from the data.")
+            continue
+
         if data[2][key].strip() in ('client', 'design'):
             continue
-        if data[1][key].strip() == '':
+
+        if key not in data[1]:
             proto_content += f'\t{data[0][key]} {key} = {index};\n'
         else:
             proto_content += f'\t{data[1][key]} {data[0][key]} {key} = {index};\n'
+
     proto_content += '}\n\n'
     proto_content += f'message {sheet_name}_table' + ' {\n'
     proto_content += f'\trepeated {sheet_name}_row data = 1;\n'
@@ -76,8 +99,8 @@ def main():
     for filename in os.listdir(XLSX_DIR):
         file_path = os.path.join(XLSX_DIR, filename)
 
-        # 只处理xlsx和xls文件
-        if file_path.endswith('.xlsx') or file_path.endswith('.xls'):
+        # 只处理xlsx文件
+        if file_path.endswith('.xlsx'):
             md5_file_path = file_path + '.md5'
 
             # 检查MD5值，确保文件没有改变
@@ -88,7 +111,7 @@ def main():
                     continue
 
             # 打开Excel文件并获取数据
-            workbook = xlrd.open_workbook(file_path)
+            workbook = openpyxl.load_workbook(file_path)
             workbook_data = get_workbook_data(workbook)
 
             # 生成.proto文件并写入对应的目录
