@@ -55,7 +55,7 @@ def read_excel_data(file_path):
 
         groups = {}
         current_group = None
-        global_row_id = 0
+        global_row_id = 1
 
         for row_idx in range(8, num_rows + 1):  # Adjust for zero-based index and header rows
             row_cells = sheet[row_idx]
@@ -93,10 +93,6 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
         proto_content += f"syntax = \"proto3\";\n\n"
         proto_content += f"option go_package = \"pb/game\";\n\n"
         proto_content += f"enum {group_name} {{\n"
-
-        if group_name == "scene":
-            proto_content += f"  option allow_alias = true;\n\n"
-
         proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
 
         for enum_name, enum_id in group_data:
