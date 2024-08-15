@@ -125,16 +125,16 @@ def get_workbook_data(workbook):
 
 def save_json_with_custom_newlines(data, file_path):
     """
-    Save data to a JSON file with custom newline character.
+    Save data to a JSON file with compact and readable formatting while ensuring small file size.
 
     Args:
     - data: Data to be saved as JSON.
     - file_path: Path where the JSON file will be saved.
     """
-    # Convert data to JSON string
-    json_data = json.dumps({"data": data}, sort_keys=True, indent=4, separators=(',', ': '))
+    # Convert data to JSON string with compact yet readable formatting
+    json_data = json.dumps({"data": data}, sort_keys=True, indent=2, separators=(',', ': '))
 
-    # Ensure we use \n for newlines
+    # Ensure only LF (\n) for newlines
     json_data = json_data.replace('\r\n', '\n')  # Replace CRLF with LF
     json_data = json_data.replace('\r', '\n')    # Ensure any remaining CR is replaced with LF
 
