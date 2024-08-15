@@ -74,11 +74,13 @@ def get_row_data(sheet, row, column_names):
             # Construct the cell reference in A1 notation
             cell_reference = f"{cell.column_letter}{cell.row}"
 
-            if cell_value in (None, '') and cell.row > begin_row_idx :
+            if cell_value in (None, '') and cell.row > begin_row_idx:
                 logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
             row_data[col_name] = cell_value
 
     return row_data
+
+
 def get_sheet_data(sheet, column_names):
     """
     Get sheet data as list of dictionaries.
@@ -96,17 +98,6 @@ def get_sheet_data(sheet, column_names):
         sheet_data.append(row_data)
     return sheet_data
 
-def get_column_names(sheet):
-    """
-    Extract column names from the first row of the sheet.
-
-    Args:
-    - sheet: openpyxl Worksheet object.
-
-    Returns:
-    - list: List of column names.
-    """
-    return [cell.value for cell in sheet[1]]  # Assuming first row contains column names
 
 def get_workbook_data(workbook):
     """
@@ -130,6 +121,27 @@ def get_workbook_data(workbook):
         workbook_data[sheet_name] = sheet_data
 
     return workbook_data
+
+
+def save_json_with_custom_newlines(data, file_path):
+    """
+    Save data to a JSON file with custom newline character.
+
+    Args:
+    - data: Data to be saved as JSON.
+    - file_path: Path where the JSON file will be saved.
+    """
+    # Convert data to JSON string
+    json_data = json.dumps({"data": data}, sort_keys=True, indent=4, separators=(',', ': '))
+
+    # Replace newlines with \n
+    json_data = json_data.replace('\r\n', '\n')
+
+    # Write JSON data to file
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(json_data)
+        logger.info(f"Generated JSON file: {file_path}")
+
 
 def process_excel_file(file_path):
     """
@@ -155,12 +167,8 @@ def process_excel_file(file_path):
 
         # Write JSON files for each sheet
         for sheet_name, data in workbook_data.items():
-            json_data = {"data": data}
-            json_string = json.dumps(json_data, sort_keys=True, indent=4, separators=(',', ': '))
-            json_string = json_string.replace('"[', '[').replace(']"', ']')  # Remove unnecessary quotes around lists
             json_file_path = os.path.join(json_dir, f"{sheet_name}.json")
-            gencommon.mywrite(json_string, json_file_path)
-            logger.info(f"Generated JSON file: {json_file_path}")
+            save_json_with_custom_newlines(data, json_file_path)
 
     except Exception as e:
         logger.error(f"Failed to process file {file_path}: {e}")
