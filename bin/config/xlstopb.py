@@ -5,6 +5,8 @@ import os
 import openpyxl
 import md5tool
 import logging
+import concurrent.futures
+import multiprocessing
 
 # 全局变量
 END_ROW_INDEX = 4
@@ -90,38 +92,49 @@ def generate_proto_file(data, sheet_name):
     return proto_content
 
 
+def process_file(file_path):
+    """处理单个Excel文件并生成.proto文件"""
+    if file_path.endswith('.xlsx'):
+        md5_file_path = file_path + '.md5'
+
+        # 检查MD5值，确保文件没有改变
+        if not os.path.exists(md5_file_path):
+            md5tool.generate_md5_file_for(file_path, md5_file_path)
+            error = md5tool.check_against_md5_file(file_path, md5_file_path)
+            if error is None:
+                return
+
+        # 打开Excel文件并获取数据
+        workbook = openpyxl.load_workbook(file_path)
+        workbook_data = get_workbook_data(workbook)
+
+        # 生成.proto文件并写入对应的目录
+        for sheet_name, data in workbook_data.items():
+            sheet_name_lower = sheet_name.lower()
+            proto_content = generate_proto_file(data, sheet_name_lower)
+            proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name_lower}_config.proto')
+            with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
+                proto_file.write(proto_content)
+                logger.info(f"Generated .proto file: {proto_file_path}")
+
+
 def main():
     # 确保生成.proto文件的目录存在
     if not os.path.exists(PROTO_DIR):
         os.makedirs(PROTO_DIR)
 
-    # 遍历指定目录下的所有Excel文件
-    for filename in os.listdir(XLSX_DIR):
-        file_path = os.path.join(XLSX_DIR, filename)
+    # 获取所有xlsx文件
+    xlsx_files = [os.path.join(XLSX_DIR, filename) for filename in os.listdir(XLSX_DIR) if filename.endswith('.xlsx')]
 
-        # 只处理xlsx文件
-        if file_path.endswith('.xlsx'):
-            md5_file_path = file_path + '.md5'
-
-            # 检查MD5值，确保文件没有改变
-            if not os.path.exists(md5_file_path):
-                md5tool.generate_md5_file_for(file_path, md5_file_path)
-                error = md5tool.check_against_md5_file(file_path, md5_file_path)
-                if error is None:
-                    continue
-
-            # 打开Excel文件并获取数据
-            workbook = openpyxl.load_workbook(file_path)
-            workbook_data = get_workbook_data(workbook)
-
-            # 生成.proto文件并写入对应的目录
-            for sheet_name, data in workbook_data.items():
-                sheet_name_lower = sheet_name.lower()
-                proto_content = generate_proto_file(data, sheet_name_lower)
-                proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name_lower}_config.proto')
-                with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
-                    proto_file.write(proto_content)
-                    logger.info(f"Generated .proto file: {proto_file_path}")
+    # 使用线程池并发处理文件
+    num_threads = min(multiprocessing.cpu_count(), len(xlsx_files))  # 根据CPU核心数和文件数量选择线程数
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+        futures = [executor.submit(process_file, file_path) for file_path in xlsx_files]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                logger.error(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
