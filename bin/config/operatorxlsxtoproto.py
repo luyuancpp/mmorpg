@@ -95,6 +95,9 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
         proto_content += f"enum {group_name} {{\n"
         proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
 
+        if group_name == "scene":
+            proto_content += f"  option allow_alias = true;\n\n"
+
         for enum_name, enum_id in group_data:
             if enum_name in existing_id_mapping:
                 enum_id = existing_id_mapping[enum_name]
