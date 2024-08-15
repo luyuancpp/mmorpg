@@ -132,7 +132,7 @@ def save_json_with_custom_newlines(data, file_path):
     - file_path: Path where the JSON file will be saved.
     """
     # Convert data to JSON string with compact yet readable formatting
-    json_data = json.dumps({"data": data}, sort_keys=True, indent=2, separators=(',', ': '))
+    json_data = json.dumps({"data": data}, sort_keys=True, indent=1, separators=(',', ': '))
 
     # Ensure only LF (\n) for newlines
     json_data = json_data.replace('\r\n', '\n')  # Replace CRLF with LF
