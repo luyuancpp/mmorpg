@@ -3,7 +3,7 @@
 #include "muduo/net/TimerId.h"
 #include "muduo/net/Timer.h"
 
-#define  gs_thread_even_loop EventLoop::getEventLoopOfCurrentThread()
+#define  tlsEventLoop EventLoop::getEventLoopOfCurrentThread()
 
 TimerTaskComp::~TimerTaskComp()
 {
@@ -14,7 +14,7 @@ void TimerTaskComp::RunAt(const Timestamp& time, const TimerCallback& cb)
 {
 	Cancel();
     callback_ = cb;
-	id_ = gs_thread_even_loop->runAt(time, std::bind(&TimerTaskComp::OnTimer, this));
+	id_ = tlsEventLoop->runAt(time, std::bind(&TimerTaskComp::OnTimer, this));
     UpdateEndStamp();
 }
 
@@ -22,7 +22,7 @@ void TimerTaskComp::RunAfter(double delay, const TimerCallback& cb)
 {
 	Cancel();
     callback_ = cb;
-    id_ = gs_thread_even_loop->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
+    id_ = tlsEventLoop->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
     UpdateEndStamp();
 }
 
@@ -30,7 +30,7 @@ void TimerTaskComp::RunEvery(double interval, const TimerCallback& cb)
 {
     Cancel();	
     callback_ = cb;
-    id_ = gs_thread_even_loop->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
+    id_ = tlsEventLoop->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
     UpdateEndStamp();
 }
 
@@ -45,7 +45,7 @@ void TimerTaskComp::Call()
 
 void TimerTaskComp::Cancel()
 {
-    gs_thread_even_loop->cancel(id_);
+    tlsEventLoop->cancel(id_);
     id_ = TimerId();
     endTime = Timestamp();
     assert(nullptr == id_.GetTimer());
