@@ -70,7 +70,7 @@ def get_row_data(sheet, row, column_names):
             # Construct the cell reference in A1 notation
             cell_reference = f"{cell.column_letter}{cell.row}"
 
-            if cell_value in (None, '') and cell.row > begin_row_idx and col_name != 'desgin':
+            if cell_value in (None, '') and cell.row > begin_row_idx and col_name != 'designer':
                 logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
             row_data[col_name] = cell_value
 

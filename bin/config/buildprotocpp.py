@@ -21,7 +21,7 @@ def compile_protobuf_file(protobuf_file, protobuf_include_dir, output_dir):
     - output_dir (str): Directory where generated C++ files will be placed.
     """
     filename = os.path.basename(protobuf_file)
-    command = f'protoc -I={os.path.dirname(protobuf_file)} -I={protobuf_include_dir} --cpp_out={output_dir} {protobuf_file}'
+    command = f'protoc --proto_path={os.path.dirname(protobuf_file)} --proto_path={protobuf_include_dir} --cpp_out={output_dir} {protobuf_file}'
     try:
         subprocess.run(command, shell=True, check=True)
         logger.info(f"Compiled {filename} successfully.")
@@ -62,6 +62,6 @@ if __name__ == "__main__":
     # Adjust paths relative to the script's current directory
     source_dir = 'generated/proto'  # Source directory containing .proto files
     protobuf_include_dir = '../../third_party/protobuf/src'  # Protobuf headers directory
-    output_dir = 'generated/proto/cpp'  # Output directory for generated C++ files
+    output_dir = './generated/proto/cpp'  # Output directory for generated C++ files
 
     compile_protobuf_files(source_dir, protobuf_include_dir, output_dir)
