@@ -62,6 +62,10 @@ def get_row_data(sheet, row, column_names):
             break
 
         col_name = column_names[counter]
+
+        if col_name == 'designer':
+            continue
+
         if col_name and col_name.strip():
             cell_value = cell.value
             if isinstance(cell_value, float) and cell_value.is_integer():
@@ -70,7 +74,7 @@ def get_row_data(sheet, row, column_names):
             # Construct the cell reference in A1 notation
             cell_reference = f"{cell.column_letter}{cell.row}"
 
-            if cell_value in (None, '') and cell.row > begin_row_idx and col_name != 'designer':
+            if cell_value in (None, '') and cell.row > begin_row_idx :
                 logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
             row_data[col_name] = cell_value
 
@@ -87,7 +91,7 @@ def get_sheet_data(sheet, column_names):
     - list: List of dictionaries containing sheet data.
     """
     sheet_data = []
-    for row in sheet.iter_rows(min_row=2, values_only=False):  # Skip header row
+    for row in sheet.iter_rows(min_row=begin_row_idx + 1, values_only=False):  # Skip header row
         row_data = get_row_data(sheet, row, column_names)
         sheet_data.append(row_data)
     return sheet_data
