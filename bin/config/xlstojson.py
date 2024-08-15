@@ -134,11 +134,12 @@ def save_json_with_custom_newlines(data, file_path):
     # Convert data to JSON string
     json_data = json.dumps({"data": data}, sort_keys=True, indent=4, separators=(',', ': '))
 
-    # Replace newlines with \n
-    json_data = json_data.replace('\r\n', '\n')
+    # Ensure we use \n for newlines
+    json_data = json_data.replace('\r\n', '\n')  # Replace CRLF with LF
+    json_data = json_data.replace('\r', '\n')    # Ensure any remaining CR is replaced with LF
 
     # Write JSON data to file
-    with open(file_path, 'w', encoding='utf-8') as f:
+    with open(file_path, 'w', encoding='utf-8', newline='') as f:
         f.write(json_data)
         logger.info(f"Generated JSON file: {file_path}")
 
