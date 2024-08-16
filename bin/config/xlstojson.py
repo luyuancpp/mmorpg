@@ -6,6 +6,7 @@ import openpyxl
 import json
 import md5tool
 import logging
+import gencommon
 from os import listdir
 from os.path import isfile, join
 import concurrent.futures  # For parallel processing
@@ -54,6 +55,8 @@ def get_row_data(sheet, row, column_names):
     Returns:
     - dict: Dictionary containing row data.
     """
+    array_data, group_data = gencommon.get_group_column_names(column_names)
+
     row_data = {}
     for counter, cell in enumerate(row):
         if counter >= len(column_names):
@@ -73,9 +76,18 @@ def get_row_data(sheet, row, column_names):
             # Construct the cell reference in A1 notation
             cell_reference = f"{cell.column_letter}{cell.row}"
 
-            if cell_value in (None, '') and cell.row > begin_row_idx:
-                logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
-            row_data[col_name] = cell_value
+            if col_name in array_data:
+                logger.error(f"Column {col_name} already exists in sheet {sheet.title}")
+                if cell_value in (None, '') and cell.row > begin_row_idx:
+                    continue
+                if col_name in row_data:
+                    row_data[col_name].append(cell_value)
+                else:
+                    row_data[col_name] = [cell_value]
+            else:
+                if cell_value in (None, '') and cell.row > begin_row_idx:
+                    logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
+                row_data[col_name] = cell_value
 
     return row_data
 
