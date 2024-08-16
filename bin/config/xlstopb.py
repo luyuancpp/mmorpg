@@ -23,58 +23,11 @@ object_name_index = 3
 sheet_array_data_index = 4
 sheet_group_array_data_index = 5
 
+
 def get_column_names(sheet):
     """获取Excel表格的列名"""
     column_names = [cell.value for cell in sheet[1]]  # 获取第一行的列名
     return column_names
-
-
-def get_group_column_names(column_names):
-    # 返回普通数组列
-    array_column_names = {}
-    group_column_names = {}
-
-    column_len = len(column_names)
-
-    same_begin_index = -1
-
-    column_names_dict = {}
-
-    for i in range(column_len):
-        col_name = column_names[i]
-        next_index = i + 1
-        prev_index = i - 1
-
-        if prev_index >= 0:
-            if col_name != column_names[prev_index] and same_begin_index > 0:
-                array_column_names[column_names[prev_index]] = list(range(same_begin_index, prev_index + 1))
-                same_begin_index = -1
-
-        #处理普通连续
-        if next_index < column_len:
-            if column_names[i] == column_names[next_index] and same_begin_index < 0:
-                same_begin_index = i
-
-        #有相同组
-        if col_name in column_names_dict and prev_index >= 0 and col_name != column_names[prev_index]:
-            in_group = False
-
-            for key, value in group_column_names.items():
-                for k in value:
-                    if column_names[k] == col_name:
-                        in_group = True
-                        break
-                if in_group:
-                    break
-
-            if not in_group:
-                group_begin_index = column_names_dict[col_name]
-                group_index_list = list(range(group_begin_index, prev_index + 1))
-                group_column_names[col_name] = group_index_list
-
-        column_names_dict[col_name] = i
-
-    return array_column_names, group_column_names
 
 
 def get_row_data(row, column_names):
@@ -103,7 +56,7 @@ def get_sheet_data(sheet, column_names):
             row_data = get_row_data(row, column_names)
             sheet_data.append(row_data)
 
-    array_data, group_data = get_group_column_names(column_names)
+    array_data, group_data = gencommon.get_group_column_names(column_names)
     sheet_data.append(array_data)
     sheet_data.append(group_data)
     sheet_data.append(column_names)
@@ -125,6 +78,14 @@ def get_workbook_data(workbook):
     return workbook_data
 
 
+def is_key_in_group_array(data, key, column_names):
+    for k, v in data[sheet_group_array_data_index].items():
+        for cell in v:
+            if column_names[cell] == key:
+                return True
+    return False
+
+
 def generate_proto_file(data, sheet_name):
     """根据数据生成.proto文件内容"""
     proto_content = f'syntax = "proto3";\n\n'
@@ -142,25 +103,31 @@ def generate_proto_file(data, sheet_name):
         proto_content += '}\n\n'
 
     proto_content += f'message {sheet_name}_row' + ' {\n'
+
+    field_index = 1
     for index, key in enumerate(names_type_dict, start=1):
         if data[owner_index].get(key, '').strip() in ('client', 'design'):
             continue
 
         if key in data[sheet_array_data_index]:
-            proto_content += f'\trepeated {names_type_dict[key]} {key} = {index};\n'
-        elif key in data[sheet_group_array_data_index]:
+            proto_content += f'\trepeated {names_type_dict[key]} {key} = {field_index};\n'
+        elif is_key_in_group_array(data, key, column_names):
+            if  key not in data[sheet_group_array_data_index]:
+                continue
             value = data[sheet_group_array_data_index][key]
-            obj_name = gencommon.set_to_string(gencommon.find_common_words(column_names[value[0]], column_names[value[1]], '_'))
-            proto_content += f'\trepeated {obj_name} {obj_name}_list = {index};\n'
+            obj_name = gencommon.set_to_string(
+                gencommon.find_common_words(column_names[value[0]], column_names[value[1]], '_'))
+            proto_content += f'\trepeated {obj_name} {obj_name}_list = {field_index};\n'
         else:
-            proto_content += f'\t{names_type_dict[key]} {key} = {index};\n'
+            proto_content += f'\t{names_type_dict[key]} {key} = {field_index};\n'
+
+        field_index += 1
 
     proto_content += '}\n\n'
     proto_content += f'message {sheet_name}_table' + ' {\n'
     proto_content += f'\trepeated {sheet_name}_row data = 1;\n'
     proto_content += '}\n'
     return proto_content
-
 
 
 def process_file(file_path):
