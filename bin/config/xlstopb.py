@@ -19,17 +19,23 @@ logger = logging.getLogger(__name__)
 
 sheet_array_data_index = 3
 
+
 def get_column_names(sheet):
     """获取Excel表格的列名"""
     column_names = [cell.value for cell in sheet[1]]  # 获取第一行的列名
     return column_names
 
 
-def get_group_column_names( column_names):
-    list_group_column_names = {}
+def get_group_column_names(column_names):
+    # 返回普通数组列
+    array_column_names = {}
+    group_column_names = {}
+
     column_len = len(column_names)
 
     same_begin_index = -1
+
+    column_names_dict = {}
 
     for i in range(column_len):
         col_name = column_names[i]
@@ -38,8 +44,7 @@ def get_group_column_names( column_names):
 
         if prev_index >= 0:
             if col_name != column_names[prev_index] and same_begin_index > 0:
-                for j in range(same_begin_index, prev_index):
-                    list_group_column_names[column_names[prev_index]] = list(range(same_begin_index, prev_index + 1))
+                array_column_names[column_names[prev_index]] = list(range(same_begin_index, prev_index + 1))
                 same_begin_index = -1
 
         #处理普通连续
@@ -47,7 +52,30 @@ def get_group_column_names( column_names):
             if column_names[i] == column_names[next_index] and same_begin_index < 0:
                 same_begin_index = i
 
-    return list_group_column_names
+        #有相同组
+        if col_name in column_names_dict and prev_index >= 0 and col_name != column_names[prev_index]:
+            in_group = False
+
+            for key, value in group_column_names.items():
+                group = value[0]
+                for k in range(0, len(group)):
+                    if column_names[group[k]] == col_name:
+                        in_group = True
+                        break
+                if in_group:
+                    break
+
+            if not in_group:
+                group_begin_index = column_names_dict[col_name]
+                group_index_list = list(range(group_begin_index, prev_index + 1))
+                if col_name in group_column_names:
+                    group_column_names[col_name].append(group_index_list)
+                else:
+                    group_column_names[col_name] = [group_index_list]
+
+        column_names_dict[col_name] = i
+
+    return array_column_names, group_column_names
 
 
 def get_row_data(row, column_names):
@@ -76,7 +104,9 @@ def get_sheet_data(sheet, column_names):
             row_data = get_row_data(row, column_names)
             sheet_data.append(row_data)
 
-    sheet_data.append(get_group_column_names(column_names))
+    array_data, group_data = get_group_column_names(column_names)
+    sheet_data.append(array_data)
+    sheet_data.append(group_data)
     return sheet_data
 
 
@@ -101,11 +131,8 @@ def generate_proto_file(data, sheet_name):
     proto_content += f"option go_package = \"pb/game\";\n\n"
     proto_content += f'message {sheet_name}_row' + ' {\n'
     for index, key in enumerate(data[0], start=1):
-        if len(data) < 3 or key not in data[2]:
-            logger.warning(f"Column '{key}' is missing from the data.")
-            continue
 
-        if data[2][key].strip() in ('client', 'design'):
+        if data[1][key].strip() in ('client', 'design'):
             continue
 
         if key not in data[1]:
