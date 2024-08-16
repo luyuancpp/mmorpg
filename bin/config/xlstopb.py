@@ -7,9 +7,10 @@ import md5tool
 import logging
 import concurrent.futures
 import multiprocessing
+import gencommon
 
 # 全局变量
-END_ROW_INDEX = 4
+END_ROW_INDEX = 5
 PROTO_DIR = "generated/proto/"
 XLSX_DIR = "xlsx/"
 
@@ -17,8 +18,10 @@ XLSX_DIR = "xlsx/"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-sheet_array_data_index = 3
-
+owner_index = 2
+object_name_index = 3
+sheet_array_data_index = 4
+sheet_group_array_data_index = 5
 
 def get_column_names(sheet):
     """获取Excel表格的列名"""
@@ -57,9 +60,8 @@ def get_group_column_names(column_names):
             in_group = False
 
             for key, value in group_column_names.items():
-                group = value[0]
-                for k in range(0, len(group)):
-                    if column_names[group[k]] == col_name:
+                for k in value:
+                    if column_names[k] == col_name:
                         in_group = True
                         break
                 if in_group:
@@ -68,10 +70,7 @@ def get_group_column_names(column_names):
             if not in_group:
                 group_begin_index = column_names_dict[col_name]
                 group_index_list = list(range(group_begin_index, prev_index + 1))
-                if col_name in group_column_names:
-                    group_column_names[col_name].append(group_index_list)
-                else:
-                    group_column_names[col_name] = [group_index_list]
+                group_column_names[col_name] = group_index_list
 
         column_names_dict[col_name] = i
 
@@ -107,6 +106,7 @@ def get_sheet_data(sheet, column_names):
     array_data, group_data = get_group_column_names(column_names)
     sheet_data.append(array_data)
     sheet_data.append(group_data)
+    sheet_data.append(column_names)
     return sheet_data
 
 
@@ -129,16 +129,36 @@ def generate_proto_file(data, sheet_name):
     """根据数据生成.proto文件内容"""
     proto_content = f'syntax = "proto3";\n\n'
     proto_content += f"option go_package = \"pb/game\";\n\n"
-    proto_content += f'message {sheet_name}_row' + ' {\n'
-    for index, key in enumerate(data[0], start=1):
 
-        if data[1][key].strip() in ('client', 'design'):
+    names_type_dict = data[0]
+
+    column_names = data[6]
+
+    for k, v in data[sheet_group_array_data_index].items():
+        obj_name = gencommon.set_to_string(gencommon.find_common_words(column_names[v[0]], column_names[v[1]], '_'))
+
+        proto_content += f'message {obj_name}' + ' {\n'
+
+        for i in range(0, len(v)):
+            name = column_names[v[i]]
+            proto_content += f'\t{names_type_dict[name]} {name} = {i + 1};\n'
+        proto_content += '}\n\n'
+
+
+    proto_content += f'message {sheet_name}_row' + ' {\n'
+    for index, key in enumerate(names_type_dict, start=1):
+
+        if data[owner_index][key].strip() in ('client', 'design'):
             continue
 
-        if key not in data[1]:
-            proto_content += f'\t{data[0][key]} {key} = {index};\n'
-        elif key in data[sheet_array_data_index]:
-            proto_content += f'\trepeated {data[0][key]} {key} = {index};\n'
+        if key in data[sheet_array_data_index]:
+            proto_content += f'\trepeated {names_type_dict[key]} {key} = {index};\n'
+        elif key in data[sheet_group_array_data_index]:
+            value = data[sheet_group_array_data_index][key]
+            obj_name = gencommon.set_to_string(gencommon.find_common_words(column_names[v[0]], column_names[v[1]], '_'))
+            proto_content += f'\trepeated {obj_name} {obj_name}_list = {index};\n'
+        elif key not in data[1]:
+            proto_content += f'\t{names_type_dict[key]} {key} = {index};\n'
 
     proto_content += '}\n\n'
     proto_content += f'message {sheet_name}_table' + ' {\n'
