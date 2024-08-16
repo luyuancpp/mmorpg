@@ -134,7 +134,7 @@ def save_json_with_custom_newlines(data, file_path):
     json_data = json.dumps({"data": data}, sort_keys=True, indent=1, separators=(',', ': '))
 
     json_data = json_data.replace('"[', '[').replace(']"', ']')  # Remove unnecessary quotes around lists
-    
+
     # Ensure only LF (\n) for newlines
     json_data = json_data.replace('\r\n', '\n')  # Replace CRLF with LF
     json_data = json_data.replace('\r', '\n')    # Ensure any remaining CR is replaced with LF

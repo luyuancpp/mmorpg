@@ -17,11 +17,37 @@ XLSX_DIR = "xlsx/"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+sheet_array_data_index = 3
 
 def get_column_names(sheet):
     """获取Excel表格的列名"""
     column_names = [cell.value for cell in sheet[1]]  # 获取第一行的列名
     return column_names
+
+
+def get_group_column_names( column_names):
+    list_group_column_names = {}
+    column_len = len(column_names)
+
+    same_begin_index = -1
+
+    for i in range(column_len):
+        col_name = column_names[i]
+        next_index = i + 1
+        prev_index = i - 1
+
+        if prev_index >= 0:
+            if col_name != column_names[prev_index] and same_begin_index > 0:
+                for j in range(same_begin_index, prev_index):
+                    list_group_column_names[column_names[prev_index]] = list(range(same_begin_index, prev_index + 1))
+                same_begin_index = -1
+
+        #处理普通连续
+        if next_index < column_len:
+            if column_names[i] == column_names[next_index] and same_begin_index < 0:
+                same_begin_index = i
+
+    return list_group_column_names
 
 
 def get_row_data(row, column_names):
@@ -49,6 +75,8 @@ def get_sheet_data(sheet, column_names):
         if idx <= END_ROW_INDEX:
             row_data = get_row_data(row, column_names)
             sheet_data.append(row_data)
+
+    sheet_data.append(get_group_column_names(column_names))
     return sheet_data
 
 
@@ -82,8 +110,8 @@ def generate_proto_file(data, sheet_name):
 
         if key not in data[1]:
             proto_content += f'\t{data[0][key]} {key} = {index};\n'
-        else:
-            proto_content += f'\t{data[1][key]} {data[0][key]} {key} = {index};\n'
+        elif key in data[sheet_array_data_index]:
+            proto_content += f'\trepeated {data[0][key]} {key} = {index};\n'
 
     proto_content += '}\n\n'
     proto_content += f'message {sheet_name}_table' + ' {\n'

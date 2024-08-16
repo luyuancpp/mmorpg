@@ -141,8 +141,6 @@ def process_workbook(filename):
     is_xlsx = filename.endswith('.xlsx')
     if is_xlsx:
         workbook = openpyxl.load_workbook(filename)
-    else:
-        workbook = xlrd.open_workbook(filename)
 
     workbook_data = get_workbook_data(workbook, is_xlsx)
     for sheetname in workbook_data:
