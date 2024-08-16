@@ -131,33 +131,28 @@ def generate_proto_file(data, sheet_name):
     proto_content += f"option go_package = \"pb/game\";\n\n"
 
     names_type_dict = data[0]
-
     column_names = data[6]
 
     for k, v in data[sheet_group_array_data_index].items():
         obj_name = gencommon.set_to_string(gencommon.find_common_words(column_names[v[0]], column_names[v[1]], '_'))
-
         proto_content += f'message {obj_name}' + ' {\n'
-
-        for i in range(0, len(v)):
+        for i in range(len(v)):
             name = column_names[v[i]]
             proto_content += f'\t{names_type_dict[name]} {name} = {i + 1};\n'
         proto_content += '}\n\n'
 
-
     proto_content += f'message {sheet_name}_row' + ' {\n'
     for index, key in enumerate(names_type_dict, start=1):
-
-        if data[owner_index][key].strip() in ('client', 'design'):
+        if data[owner_index].get(key, '').strip() in ('client', 'design'):
             continue
 
         if key in data[sheet_array_data_index]:
             proto_content += f'\trepeated {names_type_dict[key]} {key} = {index};\n'
         elif key in data[sheet_group_array_data_index]:
             value = data[sheet_group_array_data_index][key]
-            obj_name = gencommon.set_to_string(gencommon.find_common_words(column_names[v[0]], column_names[v[1]], '_'))
+            obj_name = gencommon.set_to_string(gencommon.find_common_words(column_names[value[0]], column_names[value[1]], '_'))
             proto_content += f'\trepeated {obj_name} {obj_name}_list = {index};\n'
-        elif key not in data[1]:
+        else:
             proto_content += f'\t{names_type_dict[key]} {key} = {index};\n'
 
     proto_content += '}\n\n'
@@ -165,6 +160,7 @@ def generate_proto_file(data, sheet_name):
     proto_content += f'\trepeated {sheet_name}_row data = 1;\n'
     proto_content += '}\n'
     return proto_content
+
 
 
 def process_file(file_path):
