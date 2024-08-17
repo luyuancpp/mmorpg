@@ -4,27 +4,33 @@
 import os
 import logging
 import md5tool
+import gencommon
 from concurrent.futures import ThreadPoolExecutor
 
 # Set up logging configuration
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname=s - %(message)s')
 logger = logging.getLogger(__name__)
 
 xls_dir = "xlsx/"
+
 supported_extensions = {'.xlsx', '.xls'}
 
-def generate_md5_for_file(file_path):
-    """Generate MD5 for a single file."""
-    md5_file_path = file_path + '.md5'
+def generate_md5_for_file(file_path, output_dir):
+    """Generate MD5 for a single file and save it to the output directory."""
+    # Determine the output path for the .md5 file
+    md5_filename = os.path.basename(file_path) + '.md5'
+    md5_file_path = os.path.join(output_dir, md5_filename)
+
     try:
+        # Generate the MD5 file
         md5tool.generate_md5_file_for(file_path, md5_file_path)
-        logger.info(f"Generated MD5 file for: {file_path}")
+        logger.info(f"Generated MD5 file for: {file_path} -> {md5_file_path}")
         return True
     except Exception as e:
         logger.error(f"Error generating MD5 file for {file_path}: {e}")
         return False
 
-def generate_md5_files(directory):
+def generate_md5_files(directory, output_dir):
     """Generate MD5 files for all supported files in the directory."""
     if not os.path.exists(directory):
         logger.error(f"Directory does not exist: {directory}")
@@ -41,7 +47,7 @@ def generate_md5_files(directory):
     processed_files = 0
     failed_files = 0
     with ThreadPoolExecutor() as executor:
-        results = executor.map(generate_md5_for_file, files_to_process)
+        results = executor.map(lambda f: generate_md5_for_file(f, output_dir), files_to_process)
         for result in results:
             if result:
                 processed_files += 1
@@ -54,7 +60,11 @@ def generate_md5_files(directory):
         logger.warning(f"Failed to process {failed_files} files.")
 
 def main():
-    generate_md5_files(xls_dir)
+    # Ensure output directory exists
+    if not os.path.exists(gencommon.md5_output_dir):
+        os.makedirs(gencommon.md5_output_dir)
+
+    generate_md5_files(xls_dir, gencommon.md5_output_dir)
 
 if __name__ == "__main__":
     main()

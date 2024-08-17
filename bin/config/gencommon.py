@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-beginrowidx = 7
+beginrowidx = 10
 
+md5_output_dir = "generated/xlsx/md5/"
 
 def mywrite(str, filename):
     outputh = open(filename, "w", encoding="utf-8")
