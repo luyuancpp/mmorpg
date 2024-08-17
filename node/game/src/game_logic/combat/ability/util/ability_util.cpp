@@ -26,6 +26,8 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, con
 
     CHECK_RETURN_IF_NOT_OK(HandleCastingTimer(caster, tableAbility));
 
+    CHECK_RETURN_IF_NOT_OK(HandleRecoveryTimeTimer(caster, tableAbility));
+
     BroadcastAbilityUsedMessage(caster, request);
     SetupCastingTimer(caster, tableAbility, request->ability_id());
 
@@ -47,17 +49,25 @@ void AbilityUtil::HandleAbilityInitialize()
 
 }
 
-void AbilityUtil::HandleAbilityStart(entt::entity caster)
+void AbilityUtil::HandleAbilitySpell(const entt::entity caster, uint32_t abilityId)
 {
-    auto& castingTimer = tls.registry.emplace<CastingTimer>(caster).timer;
+    const auto* tableAbility = GetAbilityTable(abilityId);
+    if (tableAbility == nullptr) {
+        LOG_ERROR << "Ability table not found for ID: " << abilityId;
+        return ;
+    }
+
+    for (auto& it : tableAbility->effect())
+    {
+        
+    }
+    
+    auto& recoveryTimer = tls.registry.emplace<RecoveryTimeTimer>(caster).timer;
+    recoveryTimer.RunAfter(tableAbility->recoverytime(), [caster, abilityId] { return HandleAbilityFinish(caster, abilityId); });
+    
 }
 
-void AbilityUtil::HandleAbilitySpell()
-{
-
-}
-
-void AbilityUtil::HandleAbilityFinish()
+void AbilityUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilityId)
 {
 
 }
@@ -127,10 +137,9 @@ uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
 }
 
 uint32_t AbilityUtil::CheckCooldown(entt::entity caster, const ability_row* tableAbility) {
-    const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster);
-    if (coolDownTimeListComp) {
-        auto it = coolDownTimeListComp->cooldown_list().find(tableAbility->cooldown_id());
-        if (it != coolDownTimeListComp->cooldown_list().end() &&
+    if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
+        if (const auto it = coolDownTimeListComp->cooldown_list().find(tableAbility->cooldown_id());
+            it != coolDownTimeListComp->cooldown_list().end() &&
             CoolDownTimeMillisecondUtil::IsInCooldown(it->second)) {
             LOG_ERROR << "Ability ID: " << tableAbility->id() 
                     << " is in cooldown for player: " << entt::to_integral(caster);
@@ -140,9 +149,8 @@ uint32_t AbilityUtil::CheckCooldown(entt::entity caster, const ability_row* tabl
     return kOK;
 }
 
-uint32_t AbilityUtil::HandleCastingTimer(entt::entity caster, const ability_row* tableAbility) {
-    const auto* castTimerComp = tls.registry.try_get<CastingTimer>(caster);
-    if (castTimerComp) {
+uint32_t AbilityUtil::HandleCastingTimer(const entt::entity caster, const ability_row* tableAbility) {
+    if (const auto* castTimerComp = tls.registry.try_get<CastingTimer>(caster)) {
         if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
                      << " is currently casting. Sending interrupt message.";
@@ -156,6 +164,25 @@ uint32_t AbilityUtil::HandleCastingTimer(entt::entity caster, const ability_row*
             return kAbilityUnInterruptible;
         }
         tls.registry.remove<CastingTimer>(caster);
+    }
+    return kOK;
+}
+
+uint32_t AbilityUtil::HandleRecoveryTimeTimer(const entt::entity caster, const ability_row* tableAbility) {
+    if (const auto* castTimerComp = tls.registry.try_get<RecoveryTimeTimer>(caster)) {
+        if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
+            LOG_INFO << "Immediate ability: " << tableAbility->id() 
+                     << " is currently casting. Sending interrupt message.";
+            SendAbilityInterruptedMessage(caster);
+            tls.registry.remove<RecoveryTimeTimer>(caster);
+            return kOK;
+        }
+        if (!tableAbility->immediately() && castTimerComp->timer.IsActive()) {
+            LOG_ERROR << "Non-immediate ability: " << tableAbility->id() 
+                      << " is currently casting and cannot be interrupted.";
+            return kAbilityUnInterruptible;
+        }
+        tls.registry.remove<RecoveryTimeTimer>(caster);
     }
     return kOK;
 }
@@ -177,7 +204,7 @@ void AbilityUtil::BroadcastAbilityUsedMessage(entt::entity caster, const ::UseAb
 void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* tableAbility, uint32_t abilityId) {
     auto& castingTimer = tls.registry.emplace<CastingTimer>(caster).timer;
     if (IsAbilityOfType(abilityId, kGeneralAbility)) {
-        castingTimer.RunAfter(tableAbility->castpoint(), [caster] { return HandleAbilityStart(caster); });
+        castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleAbilitySpell(caster, abilityId); });
     } else if (IsAbilityOfType(abilityId, kChannelAbility)) {
         castingTimer.RunAfter(tableAbility->castpoint(), [caster] { return HandleChannelStart(caster); });
     }
