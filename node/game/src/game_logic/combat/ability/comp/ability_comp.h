@@ -19,7 +19,7 @@ struct ChannelFinishTimerComp
     TimerTaskComp timer;
 };
 //引导技能timer
-struct ChannelThinkIntervalTimerComp
+struct ChannelIntervalTimerComp
 {
     TimerTaskComp timer;
 };
