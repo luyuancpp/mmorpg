@@ -7,7 +7,7 @@
 #include "pbc/scene_error_tip.pb.h"
 #include "game_logic/node/comp/game_node_comp.h"
 #include "game_logic/network/message_util.h"
-#include "service_info/game_server_player_scene_service_info.h"
+#include "service_info/game_player_scene_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "game_logic/scene/util/player_change_scene_util.h"
 #include "game_logic/player/util/player_tip_util.h"
