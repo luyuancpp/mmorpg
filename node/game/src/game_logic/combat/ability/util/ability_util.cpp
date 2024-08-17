@@ -60,7 +60,7 @@ void AbilityUtil::HandleAbilitySpell(const entt::entity caster, const uint32_t a
     // Trigger ability effects
     TriggerSkillEffect(caster, abilityId);
 
-    // Trigger recovery
+    // Manage recovery
     HandleAbilityRecovery(caster, abilityId);
 }
 
@@ -178,7 +178,7 @@ uint32_t AbilityUtil::HandleCastingTimer(const entt::entity caster, const abilit
         if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
                      << " is currently casting. Sending interrupt message.";
-            SendAbilityInterruptedMessage(caster);
+            SendAbilityInterruptedMessage(caster, tableAbility->id());
             tls.registry.remove<CastingTimerComp>(caster);
             return kOK;
         }
@@ -197,7 +197,7 @@ uint32_t AbilityUtil::HandleRecoveryTimeTimer(const entt::entity caster, const a
         if (tableAbility->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
                      << " is currently casting. Sending interrupt message.";
-            SendAbilityInterruptedMessage(caster);
+            SendAbilityInterruptedMessage(caster, tableAbility->id());
             tls.registry.remove<RecoveryTimerComp>(caster);
             return kOK;
         }
@@ -216,7 +216,7 @@ uint32_t AbilityUtil::HandleChannelTimeTimer(const entt::entity caster, const ab
         if (tableAbility->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
                      << " is currently casting. Sending interrupt message.";
-            SendAbilityInterruptedMessage(caster);
+            SendAbilityInterruptedMessage(caster, tableAbility->id());
             //todo 技能被打断
             tls.registry.remove<ChannelFinishTimerComp>(caster);
             return kOK;
@@ -256,10 +256,10 @@ void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* tabl
 }
 
 // 发送技能中断消息
-void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster) {
+void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster, uint32_t abilityId) {
     AbilityInterruptedS2C abilityInterruptedS2C;
     abilityInterruptedS2C.set_entity(entt::to_integral(caster));
-    abilityInterruptedS2C.set_ability_id(0); // todo
+    abilityInterruptedS2C.set_ability_id(abilityId);
     ViewUtil::BroadcastMessageToVisiblePlayers(
         caster,
         PlayerAbilityServiceNotifyAbilityInterruptedMessageId,
@@ -267,8 +267,7 @@ void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster) {
     );
 }
 
-void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t abilityId)
-{
+void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t abilityId) {
     const auto* tableAbility = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
         LOG_ERROR << "Ability table not found for ID: " << abilityId;
@@ -290,7 +289,7 @@ void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId)
         return ;
     }
 
-    for (auto& it : tableAbility->effect())
+    for (auto& effect : tableAbility->effect())
     {
         
     }
