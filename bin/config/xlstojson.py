@@ -170,21 +170,6 @@ def save_json_with_custom_newlines(data, file_path):
 
 
 def process_excel_file(file_path):
-    """
-    Process a single Excel file to generate JSON output.
-
-    Args:
-    - file_path: Path to the Excel file.
-    """
-    md5_file_path = gencommon.md5_output_dir + os.path.basename(file_path) + '.md5'
-
-    # Check MD5 value to ensure the file hasn't changed
-    if not os.path.exists(md5_file_path):
-        md5tool.generate_md5_file_for(file_path, md5_file_path)
-    error = md5tool.check_against_md5_file(file_path, md5_file_path)
-    if error is not None:
-        logger.info(f"MD5 check failed for file: {file_path}")
-        return
 
     # Open workbook and process data
     try:
