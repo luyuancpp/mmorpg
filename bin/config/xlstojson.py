@@ -85,7 +85,23 @@ def get_row_data(sheet, row, column_names):
                     row_data[col_name] = [cell_value]
             elif gencommon.is_key_in_group_array(group_data, col_name, column_names):
                 obj_name = gencommon.column_name_to_obj_name(col_name, "_")
-                logger.error(f"obj_name: {obj_name}")
+                member_dict = {col_name: cell_value}
+                if obj_name in row_data:
+                    last_element = row_data[obj_name][-1]
+                    in_last_element = False
+
+                    for member in last_element:
+                        if col_name in member:
+                            in_last_element = True
+                            break
+
+                    if in_last_element:
+                        row_data[obj_name].append(member_dict)
+                    else:
+                        last_element[col_name] = cell_value
+
+                else:
+                    row_data[obj_name] = [member_dict]
             else:
                 if cell_value in (None, '') and cell.row > begin_row_idx:
                     logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
@@ -151,7 +167,7 @@ def save_json_with_custom_newlines(data, file_path):
 
     # Ensure only LF (\n) for newlines
     json_data = json_data.replace('\r\n', '\n')  # Replace CRLF with LF
-    json_data = json_data.replace('\r', '\n')    # Ensure any remaining CR is replaced with LF
+    json_data = json_data.replace('\r', '\n')  # Ensure any remaining CR is replaced with LF
 
     # Write JSON data to file
     with open(file_path, 'w', encoding='utf-8', newline='') as f:
@@ -198,7 +214,8 @@ def main():
     os.makedirs(json_dir, exist_ok=True)
 
     # Gather all Excel files
-    files = [join(xlsx_dir, filename) for filename in listdir(xlsx_dir) if isfile(join(xlsx_dir, filename)) and filename.endswith('.xlsx')]
+    files = [join(xlsx_dir, filename) for filename in listdir(xlsx_dir) if
+             isfile(join(xlsx_dir, filename)) and filename.endswith('.xlsx')]
 
     # Use a ThreadPoolExecutor to process files in parallel
     num_threads = os.cpu_count()  # Number of threads is equal to the number of CPU cores
