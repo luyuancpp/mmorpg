@@ -15,49 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\ability_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\all_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\condition_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\globalvariable_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\item_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\mainscene_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\mission_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\monsterbase_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\scene_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pbc\ability_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\ability_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\ability_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\bag_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\bag_operator.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\common_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\condition_config.pb.cc">
@@ -69,16 +27,10 @@
     <ClCompile Include="src\pbc\item_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\login_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pbc\mainscene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\mission_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\mission_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\monsterbase_config.pb.cc">
@@ -87,63 +39,12 @@
     <ClCompile Include="src\pbc\scene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pbc\scene_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\team_error_tip.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\cooldown_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pbc\cooldown_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ability_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\all_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\condition_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\globalvariable_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\item_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\mainscene_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\mission_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\monsterbase_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\scene_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pbc\ability_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\ability_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\ability_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\bag_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\bag_operator.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\common_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\condition_config.pb.h">
@@ -155,31 +56,16 @@
     <ClInclude Include="src\pbc\item_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\login_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pbc\mainscene_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\mission_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pbc\mission_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pbc\monsterbase_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\scene_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\scene_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\team_error_tip.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\cooldown_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\cooldown_config.pb.h">
