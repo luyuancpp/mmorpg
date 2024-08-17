@@ -16,9 +16,8 @@ public:
 	static bool IsAbilityOfType(uint32_t abilityId, uint32_t abilityType);
 
 	static void HandleAbilityInitialize();
-	static void HandleAbilityStart(entt::entity caster);
-	static void HandleAbilitySpell();
-	static void HandleAbilityFinish();
+	static void HandleAbilitySpell(const entt::entity caster, uint32_t abilityId);
+	static void HandleAbilityFinish(const entt::entity caster, uint32_t abilityId);
 
 	static void HandleChannelStart(entt::entity caster);
 	static void HandleChannelThink();
@@ -41,6 +40,8 @@ public:
 
     // 处理施法计时器
     static uint32_t HandleCastingTimer(entt::entity caster, const ability_row* tableAbility);
+
+	static uint32_t HandleRecoveryTimeTimer(const entt::entity caster, const ability_row* tableAbility);
 
     // 广播技能使用消息
     static void BroadcastAbilityUsedMessage(entt::entity caster, const ::UseAbilityRequest* request);
