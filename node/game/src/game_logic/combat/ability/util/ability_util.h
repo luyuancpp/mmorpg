@@ -41,11 +41,11 @@ public:
     static uint32_t CheckCooldown(entt::entity caster, const ability_row* tableAbility);
 
     // 处理施法计时器
-    static uint32_t HandleCastingTimer(entt::entity caster, const ability_row* tableAbility);
+    static uint32_t CheckCasting(entt::entity caster, const ability_row* tableAbility);
 
-	static uint32_t HandleRecoveryTimeTimer(const entt::entity caster, const ability_row* tableAbility);
+	static uint32_t CheckRecovery(const entt::entity caster, const ability_row* tableAbility);
 
-	static uint32_t HandleChannelTimeTimer(const entt::entity caster, const ability_row* tableAbility);
+	static uint32_t CheckChannel(const entt::entity caster, const ability_row* tableAbility);
 
     // 广播技能使用消息
     static void BroadcastAbilityUsedMessage(entt::entity caster, const ::UseAbilityRequest* request);

@@ -24,11 +24,11 @@ uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const :
 
     CHECK_RETURN_IF_NOT_OK(CheckCooldown(caster, tableAbility));
 
-    CHECK_RETURN_IF_NOT_OK(HandleCastingTimer(caster, tableAbility));
+    CHECK_RETURN_IF_NOT_OK(CheckCasting(caster, tableAbility));
 
-    CHECK_RETURN_IF_NOT_OK(HandleRecoveryTimeTimer(caster, tableAbility));
+    CHECK_RETURN_IF_NOT_OK(CheckRecovery(caster, tableAbility));
 
-    CHECK_RETURN_IF_NOT_OK(HandleChannelTimeTimer(caster, tableAbility));
+    CHECK_RETURN_IF_NOT_OK(CheckChannel(caster, tableAbility));
 
     BroadcastAbilityUsedMessage(caster, request);
     SetupCastingTimer(caster, tableAbility, request->ability_id());
@@ -56,6 +56,8 @@ void AbilityUtil::HandleAbilitySpell(const entt::entity caster, const uint32_t a
         LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return;
     }
+
+    LOG_INFO << "Handling ability spell. Caster: " << entt::to_integral(caster) << ", Ability ID: " << abilityId;
 
     // Trigger ability effects
     TriggerSkillEffect(caster, abilityId);
@@ -165,15 +167,17 @@ uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const ability_row
         if (const auto it = coolDownTimeListComp->cooldown_list().find(tableAbility->cooldown_id());
             it != coolDownTimeListComp->cooldown_list().end() &&
             CoolDownTimeMillisecondUtil::IsInCooldown(it->second)) {
-            LOG_ERROR << "Ability ID: " << tableAbility->id() 
-                    << " is in cooldown for player: " << entt::to_integral(caster);
+            LOG_ERROR << "Ability ID: " << tableAbility->id()
+                << " is in cooldown for player: " << entt::to_integral(caster)
+                << ". Cooldown ID: " << tableAbility->cooldown_id()
+                << ". Time remaining: " << CoolDownTimeMillisecondUtil::Remaining(it->second) << "ms";
             return kAbilityCooldownNotReady;
-            }
+        }
     }
     return kOK;
 }
 
-uint32_t AbilityUtil::HandleCastingTimer(const entt::entity caster, const ability_row* tableAbility) {
+uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const ability_row* tableAbility) {
     if (const auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(caster)) {
         if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
@@ -192,7 +196,7 @@ uint32_t AbilityUtil::HandleCastingTimer(const entt::entity caster, const abilit
     return kOK;
 }
 
-uint32_t AbilityUtil::HandleRecoveryTimeTimer(const entt::entity caster, const ability_row* tableAbility) {
+uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const ability_row* tableAbility) {
     if (const auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(caster)) {
         if (tableAbility->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
@@ -211,7 +215,7 @@ uint32_t AbilityUtil::HandleRecoveryTimeTimer(const entt::entity caster, const a
     return kOK;
 }
 
-uint32_t AbilityUtil::HandleChannelTimeTimer(const entt::entity caster, const ability_row* tableAbility) {
+uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const ability_row* tableAbility) {
     if (const auto* channelFinishTimeTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
         if (tableAbility->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
@@ -274,10 +278,11 @@ void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t ability
         return;
     }
 
+    LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(caster) << ", Ability ID: " << abilityId;
+
     for (const auto& effect : tableAbility->effect()) {
         // Apply each effect
-        // Example: Apply effect to the target or caster
-        // Implement the effect application logic here
+        // Implement effect application logic here
     }
 }
 
