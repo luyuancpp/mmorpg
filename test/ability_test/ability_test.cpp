@@ -13,10 +13,7 @@
 using ::testing::_;
 using ::testing::Return;
 
-struct SomeComponent
-{};
-
-// Mocked functions and data
+// Mocked classes and functions
 class MockAbilityTable {
 public:
     MOCK_METHOD(const ability_row*, GetAbilityTable, (uint32_t), (const));
@@ -33,10 +30,11 @@ class AbilityUtilTest : public ::testing::Test {
 protected:
     void SetUp() override {
         abilityUtil = std::make_unique<AbilityUtil>();
+        // Setup the mocks if necessary
     }
 
     void TearDown() override {
-        tls.registry.clear();
+        tls.registry.clear(); // Clean up the thread-local storage after each test
     }
 
     std::unique_ptr<AbilityUtil> abilityUtil;
@@ -69,8 +67,7 @@ TEST_F(AbilityUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
 
 TEST_F(AbilityUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     entt::entity target = tls.registry.create(); // Create a valid target in the registry
-    tls.registry.emplace<SomeComponent>(target); // Some component to make the entity valid
-
+ 
     ::UseAbilityRequest request;
     request.set_ability_id(10);
     request.set_target_id(entt::to_integral(target)); // Valid target ID
@@ -92,10 +89,12 @@ TEST_F(AbilityUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
     tableAbility->set_cooldown_id(1);
 
     CooldownTimeComp cooldownTimeComp;
+    cooldownTimeComp.set_cooldown_table_id(1);
+
     EXPECT_CALL(*mockCooldownTimeUtil, IsInCooldown(_))
         .WillRepeatedly(Return(true));
 
-    auto& cooldownList = tls.registry.emplace<CooldownTimeListComp>(caster);
+    auto & cooldownList = tls.registry.emplace<CooldownTimeListComp>(caster);
     cooldownTimeComp.set_cooldown_table_id(1);
     CoolDownTimeMillisecondUtil::Reset(cooldownTimeComp);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
@@ -111,12 +110,12 @@ TEST_F(AbilityUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     tableAbility->set_cooldown_id(1);
 
     CooldownTimeComp cooldownTimeComp;
+    cooldownTimeComp.set_cooldown_table_id(1);
+
     EXPECT_CALL(*mockCooldownTimeUtil, IsInCooldown(_))
         .WillRepeatedly(Return(false));
 
     auto& cooldownList = tls.registry.emplace<CooldownTimeListComp>(caster);
-    cooldownTimeComp.set_cooldown_table_id(1);
-    CoolDownTimeMillisecondUtil::Reset(cooldownTimeComp);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
 
     uint32_t result = abilityUtil->CheckCooldown(caster, tableAbility.get());
@@ -127,15 +126,12 @@ TEST_F(AbilityUtilTest, HandleCastingTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<ability_row>();
     tableAbility->set_immediately(true);
-
-    // Setup a CastingTimer with a mock behavior if needed
-    CastingTimerComp castingTimer;
-    // Simulate timer behavior if necessary
+    tableAbility->set_castpoint(1000); // Set cast point to 1000ms
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
-        .WillRepeatedly(Return(tableAbility.get())); // Mock implementation
+        .WillRepeatedly(Return(tableAbility.get()));
 
-    uint32_t result = abilityUtil->HandleCastingTimer(caster, tableAbility.get());
+    uint32_t result = abilityUtil->CheckCasting(caster, tableAbility.get());
     EXPECT_EQ(result, kOK);
 }
 
@@ -143,14 +139,12 @@ TEST_F(AbilityUtilTest, HandleRecoveryTimeTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<ability_row>();
     tableAbility->set_immediately(true);
-
-    // Setup a RecoveryTimer with a mock behavior if needed
-    RecoveryTimerComp recoveryTimer;
+    tableAbility->set_recoverytime(1000); // Set recovery time to 1000ms
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
         .WillRepeatedly(Return(tableAbility.get()));
 
-    uint32_t result = abilityUtil->HandleRecoveryTimeTimer(caster, tableAbility.get());
+    uint32_t result = abilityUtil->CheckRecovery(caster, tableAbility.get());
     EXPECT_EQ(result, kOK);
 }
 
@@ -158,14 +152,13 @@ TEST_F(AbilityUtilTest, HandleChannelTimeTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<ability_row>();
     tableAbility->set_immediately(true);
-
-    // Setup a ChannelFinishTimerComp with a mock behavior if needed
-    ChannelFinishTimerComp channelFinishTimer;
+    tableAbility->set_channelfinish(1000); // Set channel finish time to 1000ms
+    tableAbility->set_channelthink(500);   // Set channel interval to 500ms
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
         .WillRepeatedly(Return(tableAbility.get()));
 
-    uint32_t result = abilityUtil->HandleChannelTimeTimer(caster, tableAbility.get());
+    uint32_t result = abilityUtil->CheckChannel(caster, tableAbility.get());
     EXPECT_EQ(result, kOK);
 }
 
@@ -188,7 +181,7 @@ TEST_F(AbilityUtilTest, SetupCastingTimer_SetsTimer) {
     tableAbility->set_castpoint(1000); // Set cast point to 1000ms
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
-        .WillRepeatedly(Return(tableAbility.get())); // Mock implementation
+        .WillRepeatedly(Return(tableAbility.get()));
 
     EXPECT_CALL(*mockAbilityTable, IsAbilityOfType(_, kGeneralAbility))
         .WillRepeatedly(Return(true));
@@ -196,19 +189,92 @@ TEST_F(AbilityUtilTest, SetupCastingTimer_SetsTimer) {
     abilityUtil->SetupCastingTimer(caster, tableAbility.get(), 1);
 
     auto* castingTimerComp = tls.registry.try_get<CastingTimerComp>(caster);
-    castingTimerComp->timer.RunAfter(0.01, [] {});
     ASSERT_NE(castingTimerComp, nullptr);  // Check if the component was created
     EXPECT_TRUE(castingTimerComp->timer.IsActive());  // Check if the timer is active
 }
 
+TEST_F(AbilityUtilTest, HandleAbilitySpell_TriggersEffect) {
+    entt::entity caster = tls.registry.create();
+    auto tableAbility = std::make_shared<ability_row>();
+    tableAbility->set_id(1);
+
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
+        .WillRepeatedly(Return(tableAbility.get()));
+
+    EXPECT_NO_THROW(abilityUtil->HandleAbilitySpell(caster, 1));
+}
+
+TEST_F(AbilityUtilTest, HandleAbilityRecovery_SetsRecoveryTimer) {
+    entt::entity caster = tls.registry.create();
+    auto tableAbility = std::make_shared<ability_row>();
+    tableAbility->set_recoverytime(1000); // Set recovery time to 1000ms
+
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
+        .WillRepeatedly(Return(tableAbility.get()));
+
+    EXPECT_NO_THROW(abilityUtil->HandleAbilityRecovery(caster, 1));
+}
+
+TEST_F(AbilityUtilTest, HandleAbilityToggleOn_TriggersEffect) {
+    entt::entity caster = tls.registry.create();
+    auto tableAbility = std::make_shared<ability_row>();
+    tableAbility->set_id(1);
+
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
+        .WillRepeatedly(Return(tableAbility.get()));
+
+    EXPECT_NO_THROW(abilityUtil->HandleAbilityToggleOn(caster, 1));
+}
+
+TEST_F(AbilityUtilTest, HandleAbilityToggleOff_RemovesEffect) {
+    entt::entity caster = tls.registry.create();
+    auto tableAbility = std::make_shared<ability_row>();
+    tableAbility->set_id(1);
+
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
+        .WillRepeatedly(Return(tableAbility.get()));
+
+    EXPECT_NO_THROW(abilityUtil->HandleAbilityToggleOff(caster, 1));
+}
+
+TEST_F(AbilityUtilTest, HandleAbilityActivate_TriggersEffect) {
+    entt::entity caster = tls.registry.create();
+    auto tableAbility = std::make_shared<ability_row>();
+    tableAbility->set_id(1);
+
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
+        .WillRepeatedly(Return(tableAbility.get()));
+
+    EXPECT_NO_THROW(abilityUtil->HandleAbilityActivate(caster, 1));
+}
+
+TEST_F(AbilityUtilTest, HandleAbilityDeactivate_RemovesEffect) {
+    entt::entity caster = tls.registry.create();
+    auto tableAbility = std::make_shared<ability_row>();
+    tableAbility->set_id(1);
+
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
+        .WillRepeatedly(Return(tableAbility.get()));
+
+    EXPECT_NO_THROW(abilityUtil->HandleAbilityDeactivate(caster, 1));
+}
+
+TEST_F(AbilityUtilTest, SendAbilityInterruptedMessage_SendsMessage) {
+    entt::entity caster = tls.registry.create();
+    uint32_t abilityId = 1;
+
+    EXPECT_NO_THROW(abilityUtil->SendAbilityInterruptedMessage(caster, abilityId));
+}
+
+// Main function
 int main(int argc, char** argv) {
     EventLoop loop;
 
+    ::testing::InitGoogleTest(&argc, argv);
     CooldownConfigurationTable::GetSingleton().Load();
     AbilityConfigurationTable::GetSingleton().Load();
 
-    ::testing::InitGoogleTest(&argc, argv);
-    auto ret = RUN_ALL_TESTS();
-    tls.registry.clear();
+    int ret = RUN_ALL_TESTS();
+    tls.registry.clear(); // Clean up thread-local storage after all tests
     return ret;
 }
