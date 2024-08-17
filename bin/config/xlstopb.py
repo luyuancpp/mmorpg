@@ -143,7 +143,7 @@ def generate_proto_file(data, sheet_name):
 def process_file(file_path):
     """处理单个Excel文件并生成.proto文件"""
     if file_path.endswith('.xlsx'):
-        md5_file_path = file_path + '.md5'
+        md5_file_path = gencommon.md5_output_dir + file_path + '.md5'
 
         # 检查MD5值，确保文件没有改变
         try:

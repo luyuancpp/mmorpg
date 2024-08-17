@@ -176,7 +176,7 @@ def process_excel_file(file_path):
     Args:
     - file_path: Path to the Excel file.
     """
-    md5_file_path = file_path + '.md5'
+    md5_file_path = gencommon.md5_output_dir + file_path + '.md5'
 
     # Check MD5 value to ensure the file hasn't changed
     if not os.path.exists(md5_file_path):
