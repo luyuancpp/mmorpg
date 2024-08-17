@@ -15,10 +15,10 @@ import concurrent.futures  # For parallel processing
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-begin_row_idx = 9
-json_dir = "generated/json/"
-xlsx_dir = "xlsx/"
-gen_type = "server"
+BEGIN_ROW_IDX = 9
+JSON_DIR = "generated/json/"
+XLSX_DIR = "xlsx/"
+GEN_TYPE = "server"
 
 
 def get_column_names(sheet):
@@ -36,7 +36,7 @@ def get_column_names(sheet):
         second_row_value = sheet.cell(row=4, column=col_idx + 1).value
         if second_row_value == "designer":
             column_names.append("")
-        elif second_row_value != "common" and gen_type != second_row_value:
+        elif second_row_value != "common" and GEN_TYPE != second_row_value:
             column_names.append("")
         else:
             column_names.append(cell.value)
@@ -56,8 +56,8 @@ def get_row_data(sheet, row, column_names):
     - dict: Dictionary containing row data.
     """
     array_data, group_data = gencommon.get_group_column_names(column_names)
-
     row_data = {}
+
     for counter, cell in enumerate(row):
         if counter >= len(column_names):
             logger.warning(f"Row {cell.row} in sheet '{sheet.title}' has more cells than column names.")
@@ -77,7 +77,7 @@ def get_row_data(sheet, row, column_names):
             cell_reference = f"{cell.column_letter}{cell.row}"
 
             if col_name in array_data:
-                if cell_value in (None, '') and cell.row > begin_row_idx:
+                if cell_value in (None, '') and cell.row > BEGIN_ROW_IDX:
                     continue
                 if col_name in row_data:
                     row_data[col_name].append(cell_value)
@@ -88,22 +88,16 @@ def get_row_data(sheet, row, column_names):
                 member_dict = {col_name: cell_value}
                 if obj_name in row_data:
                     last_element = row_data[obj_name][-1]
-                    in_last_element = False
-
-                    for member in last_element:
-                        if col_name in member:
-                            in_last_element = True
-                            break
+                    in_last_element = any(col_name in member for member in last_element)
 
                     if in_last_element:
                         row_data[obj_name].append(member_dict)
                     else:
                         last_element[col_name] = cell_value
-
                 else:
                     row_data[obj_name] = [member_dict]
             else:
-                if cell_value in (None, '') and cell.row > begin_row_idx:
+                if cell_value in (None, '') and cell.row > BEGIN_ROW_IDX:
                     logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
                 row_data[col_name] = cell_value
 
@@ -122,7 +116,7 @@ def get_sheet_data(sheet, column_names):
     - list: List of dictionaries containing sheet data.
     """
     sheet_data = []
-    for row in sheet.iter_rows(min_row=begin_row_idx + 1, values_only=False):  # Skip header row
+    for row in sheet.iter_rows(min_row=BEGIN_ROW_IDX + 1, values_only=False):  # Skip header row
         row_data = get_row_data(sheet, row, column_names)
         sheet_data.append(row_data)
     return sheet_data
@@ -199,7 +193,7 @@ def process_excel_file(file_path):
 
         # Write JSON files for each sheet
         for sheet_name, data in workbook_data.items():
-            json_file_path = os.path.join(json_dir, f"{sheet_name}.json")
+            json_file_path = os.path.join(JSON_DIR, f"{sheet_name}.json")
             save_json_with_custom_newlines(data, json_file_path)
 
     except Exception as e:
@@ -211,11 +205,11 @@ def main():
     Main function to process all Excel files in the specified directory.
     """
     # Create output directory if it doesn't exist
-    os.makedirs(json_dir, exist_ok=True)
+    os.makedirs(JSON_DIR, exist_ok=True)
 
     # Gather all Excel files
-    files = [join(xlsx_dir, filename) for filename in listdir(xlsx_dir) if
-             isfile(join(xlsx_dir, filename)) and filename.endswith('.xlsx')]
+    files = [join(XLSX_DIR, filename) for filename in listdir(XLSX_DIR) if
+             isfile(join(XLSX_DIR, filename)) and filename.endswith('.xlsx')]
 
     # Use a ThreadPoolExecutor to process files in parallel
     num_threads = os.cpu_count()  # Number of threads is equal to the number of CPU cores
