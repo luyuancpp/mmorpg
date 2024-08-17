@@ -92,7 +92,7 @@ TEST_F(AbilityUtilTest, HandleCastingTimer_ImmediateAbility_ReturnsOk) {
 	tableAbility->set_immediately(true);
 
 	// Setup a CastingTimer with a mock behavior if needed
-	CastingTimer castingTimer;
+	CastingTimerComp castingTimer;
 	// Simulate timer behavior if necessary
 
 	EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))

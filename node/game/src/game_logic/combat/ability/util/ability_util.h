@@ -17,17 +17,18 @@ public:
 
 	static void HandleAbilityInitialize();
 	static void HandleAbilitySpell(const entt::entity caster, uint32_t abilityId);
+	static void HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId);
 	static void HandleAbilityFinish(const entt::entity caster, uint32_t abilityId);
 
-	static void HandleChannelStart(entt::entity caster);
-	static void HandleChannelThink();
-	static void HandleChannelFinish();
+	static void HandleChannelStart(entt::entity caster, uint32_t abilityId);
+	static void HandleChannelThink(entt::entity caster, uint32_t abilityId);
+	static void HandleChannelFinish(entt::entity caster, uint32_t abilityId);
 
-	static void HandleAbilityToggleOn();
-	static void HandleAbilityToggleOff();
+	static void HandleAbilityToggleOn(entt::entity caster, uint32_t abilityId);
+	static void HandleAbilityToggleOff(entt::entity caster, uint32_t abilityId);
 
-	static void HandleAbilityActivate();
-	static void HandleAbilityDeactivate();
+	static void HandleAbilityActivate(entt::entity caster, uint32_t abilityId);
+	static void HandleAbilityDeactivate(entt::entity caster, uint32_t abilityId);
 
 	// 验证技能表
     static std::pair<const ability_row*, uint32_t> ValidateAbilityTable(uint32_t abilityId);
@@ -43,6 +44,8 @@ public:
 
 	static uint32_t HandleRecoveryTimeTimer(const entt::entity caster, const ability_row* tableAbility);
 
+	static uint32_t HandleChannelTimeTimer(const entt::entity caster, const ability_row* tableAbility);
+
     // 广播技能使用消息
     static void BroadcastAbilityUsedMessage(entt::entity caster, const ::UseAbilityRequest* request);
 	
@@ -51,4 +54,8 @@ public:
 
     // 发送技能中断消息
     static void SendAbilityInterruptedMessage(entt::entity caster) ;
+
+	static void TriggerSkillEffect(entt::entity caster, uint32_t abilityId);
+
+	static void RemoveEffect(entt::entity caster, uint32_t abilityId);
 };
