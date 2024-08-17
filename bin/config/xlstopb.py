@@ -124,7 +124,7 @@ def generate_proto_file(data, sheet_name):
                 value = data[sheet_group_array_data_index][key]
                 obj_name = gencommon.set_to_string(
                     gencommon.find_common_words(column_names[value[0]], column_names[value[1]], '_'))
-                proto_content += f'\trepeated {obj_name} {obj_name}_list = {field_index};\n'
+                proto_content += f'\trepeated {obj_name} {obj_name} = {field_index};\n'
             else:
                 proto_content += f'\t{names_type_dict[key]} {key} = {field_index};\n'
 

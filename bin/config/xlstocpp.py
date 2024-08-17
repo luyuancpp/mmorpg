@@ -98,15 +98,8 @@ def generate_cpp_implementation(datastring, sheetname):
     s += '        !result.ok())\n'
     s += '    {\n'
     s += '        LOG_FATAL << "%s " << result.message().data();\n' % sheetname
-    s += '    }\n'
-    s += '    for (int32_t i = 0; i < data_.data_size(); ++i)\n'
-    s += '    {\n'
-    counter = 0
-    for d in datastring:
-        for v in d.values():
-            s += '        key_data_%s_.clear();\n' % counter
-            counter += 1
-    s += '    }\n'
+    s += '    }\n\n'
+
     s += '    for (int32_t i = 0; i < data_.data_size(); ++i)\n'
     s += '    {\n'
     s += '        const auto& row_data = data_.data(i);\n'
