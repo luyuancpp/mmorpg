@@ -11,7 +11,7 @@ class ability_row;
 class AbilityUtil
 {
 public:
-	static uint32_t CheckSkillActivationPrerequisites(entt::entity caster, const ::UseAbilityRequest* request);
+	static uint32_t CheckSkillPrerequisites(entt::entity caster, const ::UseAbilityRequest* request);
 
 	static bool IsAbilityOfType(uint32_t abilityId, uint32_t abilityType);
 
@@ -20,7 +20,8 @@ public:
 	static void HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId);
 	static void HandleAbilityFinish(const entt::entity caster, uint32_t abilityId);
 
-	static void HandleChannelStart(entt::entity caster, uint32_t abilityId);
+	static void SetupChannelTimers(entt::entity caster, uint32_t abilityId);
+	static void ClearChannelTimers(entt::entity caster);
 	static void HandleChannelThink(entt::entity caster, uint32_t abilityId);
 	static void HandleChannelFinish(entt::entity caster, uint32_t abilityId);
 

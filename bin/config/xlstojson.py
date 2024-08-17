@@ -183,7 +183,7 @@ def process_excel_file(file_path):
         md5tool.generate_md5_file_for(file_path, md5_file_path)
     error = md5tool.check_against_md5_file(file_path, md5_file_path)
     if error is not None:
-        logger.error(f"MD5 check failed for file: {file_path}")
+        logger.info(f"MD5 check failed for file: {file_path}")
         return
 
     # Open workbook and process data
