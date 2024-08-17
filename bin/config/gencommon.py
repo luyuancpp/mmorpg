@@ -29,6 +29,7 @@ def set_to_string(s):
     """将集合中的元素拼接成一个字符串"""
     return ''.join(str(element) for element in s)
 
+
 def get_group_column_names(column_names):
     # 返回普通数组列
     array_column_names = {}
@@ -50,12 +51,12 @@ def get_group_column_names(column_names):
                 array_column_names[column_names[prev_index]] = list(range(same_begin_index, prev_index + 1))
                 same_begin_index = -1
 
-        #处理普通连续
+        # 处理普通连续
         if next_index < column_len:
             if column_names[i] == column_names[next_index] and same_begin_index < 0:
                 same_begin_index = i
 
-        #有相同组
+        # 有相同组
         if col_name in column_names_dict and prev_index >= 0 and col_name != column_names[prev_index]:
             in_group = False
 
@@ -75,3 +76,15 @@ def get_group_column_names(column_names):
         column_names_dict[col_name] = i
 
     return array_column_names, group_column_names
+
+
+def is_key_in_group_array(data, key, column_names):
+    for k, v in data.items():
+        for cell in v:
+            if column_names[cell] == key:
+                return True
+    return False
+
+
+def column_name_to_obj_name(column_name, separator):
+    return column_name.split(separator)[0]

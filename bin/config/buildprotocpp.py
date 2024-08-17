@@ -8,7 +8,7 @@ import multiprocessing
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def compile_protobuf_file(protobuf_file, protobuf_include_dir, output_dir):

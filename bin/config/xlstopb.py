@@ -15,7 +15,7 @@ PROTO_DIR = "generated/proto/"
 XLSX_DIR = "xlsx/"
 
 # 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 owner_index = 2
@@ -78,14 +78,6 @@ def get_workbook_data(workbook):
     return workbook_data
 
 
-def is_key_in_group_array(data, key, column_names):
-    for k, v in data[sheet_group_array_data_index].items():
-        for cell in v:
-            if column_names[cell] == key:
-                return True
-    return False
-
-
 def generate_proto_file(data, sheet_name):
     """根据数据生成.proto文件内容"""
     proto_content = f'syntax = "proto3";\n\n'
@@ -111,8 +103,8 @@ def generate_proto_file(data, sheet_name):
 
         if key in data[sheet_array_data_index]:
             proto_content += f'\trepeated {names_type_dict[key]} {key} = {field_index};\n'
-        elif is_key_in_group_array(data, key, column_names):
-            if  key not in data[sheet_group_array_data_index]:
+        elif gencommon.is_key_in_group_array(data[sheet_group_array_data_index], key, column_names):
+            if key not in data[sheet_group_array_data_index]:
                 continue
             value = data[sheet_group_array_data_index][key]
             obj_name = gencommon.set_to_string(
