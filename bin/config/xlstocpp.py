@@ -90,7 +90,7 @@ def generate_cpp_implementation(datastring, sheetname):
     s = '#include "google/protobuf/util/json_util.h"\n'
     s += '#include "src/util/file2string.h"\n'
     s += '#include "muduo/base/Logging.h"\n'
-    s += '#include "%s_config.h"\n\n' % sheetname
+    s += '#include "%s_config.h"\n\n' % sheet_name_lower
     s += 'void %sConfigurationTable::Load()\n{\n' % sheetname
     s += '    data_.Clear();\n'
     s += '    const auto contents = File2String("config/generated/json/%s.json");\n' % sheet_name_lower

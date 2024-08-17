@@ -50,19 +50,18 @@ void AbilityUtil::HandleAbilityInitialize(){
 
 }
 
-void AbilityUtil::HandleAbilitySpell(const entt::entity caster, const uint32_t abilityId){
+void AbilityUtil::HandleAbilitySpell(const entt::entity caster, const uint32_t abilityId) {
     const auto* tableAbility = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
         LOG_ERROR << "Ability table not found for ID: " << abilityId;
-        return ;
+        return;
     }
 
-    for (auto& it : tableAbility->effect()){
-        
-    }
-    
+    // Trigger ability effects
+    TriggerSkillEffect(caster, abilityId);
+
+    // Trigger recovery
     HandleAbilityRecovery(caster, abilityId);
-    
 }
 
 void AbilityUtil::HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId){
@@ -273,12 +272,13 @@ void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t ability
     const auto* tableAbility = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
         LOG_ERROR << "Ability table not found for ID: " << abilityId;
-        return ;
+        return;
     }
 
-    for (auto& it : tableAbility->effect())
-    {
-        
+    for (const auto& effect : tableAbility->effect()) {
+        // Apply each effect
+        // Example: Apply effect to the target or caster
+        // Implement the effect application logic here
     }
 }
 
