@@ -141,37 +141,22 @@ def generate_proto_file(data, sheet_name):
 
 
 def process_file(file_path):
-    """处理单个Excel文件并生成.proto文件"""
-    if file_path.endswith('.xlsx'):
-        md5_file_path = gencommon.md5_output_dir + file_path + '.md5'
+    # 打开Excel文件并获取数据
+    try:
+        workbook = openpyxl.load_workbook(file_path)
+        workbook_data = get_workbook_data(workbook)
 
-        # 检查MD5值，确保文件没有改变
-        try:
-            if not os.path.exists(md5_file_path):
-                md5tool.generate_md5_file_for(file_path, md5_file_path)
-            error = md5tool.check_against_md5_file(file_path, md5_file_path)
-            if error is None:
-                return
-        except Exception as e:
-            logger.error(f"MD5 check failed for {file_path}: {e}")
-            return
-
-        # 打开Excel文件并获取数据
-        try:
-            workbook = openpyxl.load_workbook(file_path)
-            workbook_data = get_workbook_data(workbook)
-
-            # 生成.proto文件并写入对应的目录
-            for sheet_name, data in workbook_data.items():
-                sheet_name_lower = sheet_name.lower()
-                proto_content = generate_proto_file(data, sheet_name_lower)
-                if proto_content:
-                    proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name_lower}_config.proto')
-                    with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
-                        proto_file.write(proto_content)
-                        logger.info(f"Generated .proto file: {proto_file_path}")
-        except Exception as e:
-            logger.error(f"Failed to process file {file_path}: {e}")
+        # 生成.proto文件并写入对应的目录
+        for sheet_name, data in workbook_data.items():
+            sheet_name_lower = sheet_name.lower()
+            proto_content = generate_proto_file(data, sheet_name_lower)
+            if proto_content:
+                proto_file_path = os.path.join(PROTO_DIR, f'{sheet_name_lower}_config.proto')
+                with open(proto_file_path, 'w', encoding='utf-8') as proto_file:
+                    proto_file.write(proto_content)
+                    logger.info(f"Generated .proto file: {proto_file_path}")
+    except Exception as e:
+        logger.error(f"Failed to process file {file_path}: {e}")
 
 
 def main():
@@ -185,7 +170,8 @@ def main():
 
     # 获取所有xlsx文件
     try:
-        xlsx_files = [os.path.join(XLSX_DIR, filename) for filename in os.listdir(XLSX_DIR) if filename.endswith('.xlsx')]
+        xlsx_files = [os.path.join(XLSX_DIR, filename) for filename in os.listdir(XLSX_DIR) if
+                      filename.endswith('.xlsx')]
     except Exception as e:
         logger.error(f"Failed to list .xlsx files: {e}")
         return
