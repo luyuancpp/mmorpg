@@ -28,6 +28,8 @@ uint32_t AbilityUtil::CheckSkillActivationPrerequisites(entt::entity caster, con
 
     CHECK_RETURN_IF_NOT_OK(HandleRecoveryTimeTimer(caster, tableAbility));
 
+    CHECK_RETURN_IF_NOT_OK(HandleChannelTimeTimer(caster, tableAbility));
+
     BroadcastAbilityUsedMessage(caster, request);
     SetupCastingTimer(caster, tableAbility, request->ability_id());
 
@@ -62,9 +64,20 @@ void AbilityUtil::HandleAbilitySpell(const entt::entity caster, uint32_t ability
         
     }
     
-    auto& recoveryTimer = tls.registry.emplace<RecoveryTimeTimer>(caster).timer;
-    recoveryTimer.RunAfter(tableAbility->recoverytime(), [caster, abilityId] { return HandleAbilityFinish(caster, abilityId); });
+    HandleAbilityRecovery(caster, abilityId);
     
+}
+
+void AbilityUtil::HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId)
+{
+    const auto* tableAbility = GetAbilityTable(abilityId);
+    if (tableAbility == nullptr) {
+        LOG_ERROR << "Ability table not found for ID: " << abilityId;
+        return ;
+    }
+
+    auto& recoveryTimer = tls.registry.emplace<RecoveryTimerComp>(caster).timer;
+    recoveryTimer.RunAfter(tableAbility->recoverytime(), [caster, abilityId] { return HandleAbilityFinish(caster, abilityId); });
 }
 
 void AbilityUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilityId)
@@ -72,39 +85,55 @@ void AbilityUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilit
 
 }
 
-void AbilityUtil::HandleChannelStart(entt::entity caster)
+void AbilityUtil::HandleChannelStart(entt::entity caster, uint32_t abilityId)
 {
+    const auto* tableAbility = GetAbilityTable(abilityId);
+    if (tableAbility == nullptr) {
+        LOG_ERROR << "Ability table not found for ID: " << abilityId;
+        return ;
+    }
 
+    tls.registry.remove<ChannelFinishTimerComp>(caster);
+    auto& channelFinishTimeTimer = tls.registry.emplace<ChannelFinishTimerComp>(caster).timer;
+    channelFinishTimeTimer.RunAfter(tableAbility->channelfinish(),
+        [caster, abilityId] { return HandleChannelFinish(caster, abilityId);} );
+
+    tls.registry.remove<ChannelThinkIntervalTimerComp>(caster);
+    auto& channelThinkIntervalTimeTimer = tls.registry.emplace<ChannelThinkIntervalTimerComp>(caster).timer;
+    channelThinkIntervalTimeTimer.RunEvery(tableAbility->channelthink(),
+        [caster, abilityId] { return HandleChannelThink(caster, abilityId);} );
 }
 
-void AbilityUtil::HandleChannelThink()
+void AbilityUtil::HandleChannelThink(entt::entity caster, uint32_t abilityId)
 {
-
+    
 }
 
-void AbilityUtil::HandleChannelFinish()
+void AbilityUtil::HandleChannelFinish(entt::entity caster, uint32_t abilityId)
 {
+    tls.registry.remove<ChannelThinkIntervalTimerComp>(caster);
 
+    HandleAbilityRecovery(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityToggleOn()
+void AbilityUtil::HandleAbilityToggleOn(entt::entity caster, uint32_t abilityId)
 {
-
+    TriggerSkillEffect(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityToggleOff()
+void AbilityUtil::HandleAbilityToggleOff(entt::entity caster, uint32_t abilityId)
 {
-
+    RemoveEffect(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityActivate()
+void AbilityUtil::HandleAbilityActivate(entt::entity caster, uint32_t abilityId)
 {
-
+    TriggerSkillEffect(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityDeactivate()
+void AbilityUtil::HandleAbilityDeactivate(entt::entity caster, uint32_t abilityId)
 {
-
+    RemoveEffect(caster, abilityId);
 }
 
 // 验证技能表
@@ -150,12 +179,12 @@ uint32_t AbilityUtil::CheckCooldown(entt::entity caster, const ability_row* tabl
 }
 
 uint32_t AbilityUtil::HandleCastingTimer(const entt::entity caster, const ability_row* tableAbility) {
-    if (const auto* castTimerComp = tls.registry.try_get<CastingTimer>(caster)) {
+    if (const auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(caster)) {
         if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
                      << " is currently casting. Sending interrupt message.";
             SendAbilityInterruptedMessage(caster);
-            tls.registry.remove<CastingTimer>(caster);
+            tls.registry.remove<CastingTimerComp>(caster);
             return kOK;
         }
         if (!tableAbility->immediately() && castTimerComp->timer.IsActive()) {
@@ -163,26 +192,47 @@ uint32_t AbilityUtil::HandleCastingTimer(const entt::entity caster, const abilit
                       << " is currently casting and cannot be interrupted.";
             return kAbilityUnInterruptible;
         }
-        tls.registry.remove<CastingTimer>(caster);
+        tls.registry.remove<CastingTimerComp>(caster);
     }
     return kOK;
 }
 
 uint32_t AbilityUtil::HandleRecoveryTimeTimer(const entt::entity caster, const ability_row* tableAbility) {
-    if (const auto* castTimerComp = tls.registry.try_get<RecoveryTimeTimer>(caster)) {
-        if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
+    if (const auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(caster)) {
+        if (tableAbility->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << tableAbility->id() 
                      << " is currently casting. Sending interrupt message.";
             SendAbilityInterruptedMessage(caster);
-            tls.registry.remove<RecoveryTimeTimer>(caster);
+            tls.registry.remove<RecoveryTimerComp>(caster);
             return kOK;
         }
-        if (!tableAbility->immediately() && castTimerComp->timer.IsActive()) {
+        if (!tableAbility->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
             LOG_ERROR << "Non-immediate ability: " << tableAbility->id() 
                       << " is currently casting and cannot be interrupted.";
             return kAbilityUnInterruptible;
         }
-        tls.registry.remove<RecoveryTimeTimer>(caster);
+        tls.registry.remove<RecoveryTimerComp>(caster);
+    }
+    return kOK;
+}
+
+uint32_t AbilityUtil::HandleChannelTimeTimer(const entt::entity caster, const ability_row* tableAbility) {
+    if (const auto* channelFinishTimeTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
+        if (tableAbility->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
+            LOG_INFO << "Immediate ability: " << tableAbility->id() 
+                     << " is currently casting. Sending interrupt message.";
+            SendAbilityInterruptedMessage(caster);
+            //todo 技能被打断
+            tls.registry.remove<ChannelFinishTimerComp>(caster);
+            return kOK;
+        }
+        if (!tableAbility->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
+            LOG_ERROR << "Non-immediate ability: " << tableAbility->id() 
+                      << " is currently casting and cannot be interrupted.";
+            return kAbilityUnInterruptible;
+        }
+        //todo 技能被打断
+        tls.registry.remove<ChannelFinishTimerComp>(caster);
     }
     return kOK;
 }
@@ -202,11 +252,11 @@ void AbilityUtil::BroadcastAbilityUsedMessage(entt::entity caster, const ::UseAb
 }
 
 void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* tableAbility, uint32_t abilityId) {
-    auto& castingTimer = tls.registry.emplace<CastingTimer>(caster).timer;
+    auto& castingTimer = tls.registry.emplace<CastingTimerComp>(caster).timer;
     if (IsAbilityOfType(abilityId, kGeneralAbility)) {
         castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleAbilitySpell(caster, abilityId); });
     } else if (IsAbilityOfType(abilityId, kChannelAbility)) {
-        castingTimer.RunAfter(tableAbility->castpoint(), [caster] { return HandleChannelStart(caster); });
+        castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleChannelStart(caster, abilityId); });
     }
 }
 
@@ -220,4 +270,32 @@ void AbilityUtil::SendAbilityInterruptedMessage(entt::entity caster) {
         PlayerAbilityServiceNotifyAbilityInterruptedMessageId,
         abilityInterruptedS2C
     );
+}
+
+void AbilityUtil::TriggerSkillEffect(entt::entity caster, uint32_t abilityId)
+{
+    const auto* tableAbility = GetAbilityTable(abilityId);
+    if (tableAbility == nullptr) {
+        LOG_ERROR << "Ability table not found for ID: " << abilityId;
+        return ;
+    }
+
+    for (auto& it : tableAbility->effect())
+    {
+        
+    }
+}
+
+void AbilityUtil::RemoveEffect(entt::entity caster, uint32_t abilityId)
+{
+    const auto* tableAbility = GetAbilityTable(abilityId);
+    if (tableAbility == nullptr) {
+        LOG_ERROR << "Ability table not found for ID: " << abilityId;
+        return ;
+    }
+
+    for (auto& it : tableAbility->effect())
+    {
+        
+    }
 }
