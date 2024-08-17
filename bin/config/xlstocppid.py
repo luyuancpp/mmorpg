@@ -9,7 +9,7 @@ from os import listdir
 from os.path import isfile, join
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 begin_row_idx = gencommon.beginrowidx

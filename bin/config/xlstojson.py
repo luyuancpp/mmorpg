@@ -12,7 +12,7 @@ from os.path import isfile, join
 import concurrent.futures  # For parallel processing
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 begin_row_idx = 9
@@ -34,7 +34,7 @@ def get_column_names(sheet):
     column_names = []
     for col_idx, cell in enumerate(sheet[1]):
         second_row_value = sheet.cell(row=4, column=col_idx + 1).value
-        if second_row_value == "design":
+        if second_row_value == "designer":
             column_names.append("")
         elif second_row_value != "common" and gen_type != second_row_value:
             column_names.append("")
@@ -77,13 +77,15 @@ def get_row_data(sheet, row, column_names):
             cell_reference = f"{cell.column_letter}{cell.row}"
 
             if col_name in array_data:
-                logger.error(f"Column {col_name} already exists in sheet {sheet.title}")
                 if cell_value in (None, '') and cell.row > begin_row_idx:
                     continue
                 if col_name in row_data:
                     row_data[col_name].append(cell_value)
                 else:
                     row_data[col_name] = [cell_value]
+            elif gencommon.is_key_in_group_array(group_data, col_name, column_names):
+                obj_name = gencommon.column_name_to_obj_name(col_name, "_")
+                logger.error(f"obj_name: {obj_name}")
             else:
                 if cell_value in (None, '') and cell.row > begin_row_idx:
                     logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
