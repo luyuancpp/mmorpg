@@ -79,8 +79,11 @@ def generate_cpp_header(datastring, sheetname):
     for i in range(counter):
         s += '    kv_type key_data_%s_;\n' % i
     s += '};\n'
-    s += 'std::pair< %sConfigurationTable::row_type, uint32_t>  Get%sTable(uint32_t keyid);\n' % (sheetname, sheetname)
-    s += 'const %s_table& Get%sAllTable();\n' % (sheet_name_lower, sheetname)
+    s += '\ninline std::pair< %sConfigurationTable::row_type, uint32_t> Get%sTable(uint32_t keyid)\n{\n' % (
+    sheetname, sheetname)
+    s += '    return %sConfigurationTable::GetSingleton().GetTable(keyid);\n}\n' % sheetname
+    s += '\ninline  const %s_table& Get%sAllTable()\n{\n' % (sheet_name_lower, sheetname)
+    s += '    return %sConfigurationTable::GetSingleton().All();\n}\n' % sheetname
     return s
 
 
@@ -125,10 +128,7 @@ def generate_cpp_implementation(datastring, sheetname):
             s += '    const auto it = key_data_%s_.find(keyid);\n' % counter
             s += '    return it == key_data_%s_.end() ? nullptr : it->second;\n}\n' % counter
             counter += 1
-    s += '\nstd::pair< %sConfigurationTable::row_type, uint32_t> Get%sTable(uint32_t keyid)\n{\n' % (sheetname, sheetname)
-    s += '    return %sConfigurationTable::GetSingleton().GetTable(keyid);\n}\n\n' % sheetname
-    s += '\nconst %s_table& Get%sAllTable()\n{\n' % (sheet_name_lower, sheetname)
-    s += '    return %sConfigurationTable::GetSingleton().All();\n}\n' % sheetname
+
     return s
 
 
