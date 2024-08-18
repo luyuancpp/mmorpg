@@ -15,14 +15,14 @@ public:
 			: 0;
 
 		// 获取冷却表并处理其为 nullptr 的情况
-		auto table = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
-		if (table == nullptr) {
+		auto [tableCooldown, result] = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
+		if (tableCooldown == nullptr) {
 			// 记录日志或其他处理方式
 			return 0;
 		}
 
-		return (table->duration() > elapsed)
-			? table->duration() - elapsed
+		return (tableCooldown->duration() > elapsed)
+			? tableCooldown->duration() - elapsed
 			: 0;
 	}
 
@@ -48,14 +48,13 @@ public:
 
 	// 获取冷却时间的持续时间（毫秒）
 	inline static  uint64_t GetDuration(const CooldownTimeComp& cooldownTimeComp) {
-
-		auto table = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
-		if (table == nullptr) {
+		auto [tableCooldown, result] = GetCooldownTable(cooldownTimeComp.cooldown_table_id());
+		if (tableCooldown == nullptr) {
 			// 记录日志或其他处理方式
 			return 0;
 		}
 
-		return table->duration();
+		return tableCooldown->duration();
 	}
 
 	// 设置冷却时间的开始时间（毫秒）

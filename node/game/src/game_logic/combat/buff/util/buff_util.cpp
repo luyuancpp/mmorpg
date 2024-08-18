@@ -6,15 +6,15 @@
 #include "thread_local/storage.h"
 #include "buff_error_tip.pb.h"
 
-uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
-    auto [tableBuff, result] = ValidateBuffTable(buffTableId);
+uint32_t BuffUtil::CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTableId) {
+    auto [tableBuff, result] = GetBuffTable(buffTableId);
     if (result != kOK) {
         return result;
     }
 
     // 1. 检查是否已经存在相同类型的Buff
     for (const auto& [id, buff] : tls.registry.get<BuffListComp>(parent).buffList) {
-        auto [currentBuff, result] = ValidateBuffTable(buffTableId);
+        auto [currentBuff, result] = GetBuffTable(buffTableId);
         if (result != kOK) {
             return result;
         }
@@ -31,7 +31,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 
     // 2. 检查是否免疫
     for (const auto& [id, buff] : tls.registry.get<BuffListComp>(parent).buffList) {
-        auto [currentBuff, result] = ValidateBuffTable(buffTableId);
+        auto [currentBuff, result] = GetBuffTable(buffTableId);
         if (result != kOK) {
             return result;
         }
@@ -131,14 +131,4 @@ void BuffUtil::OnAfterDead(entt::entity parent)
 void BuffUtil::OnKill(entt::entity parent)
 {
 
-}
-
-std::pair<const buff_row*, uint32_t> BuffUtil::ValidateBuffTable(uint32_t buffTableId)
-{
-    const auto* tableBuff = GetBuffTable(buffTableId);
-    if (tableBuff == nullptr) {
-        LOG_ERROR << "Buff table not found for ID: " << buffTableId;
-        return { nullptr, kInvalidTableId };
-    }
-    return { tableBuff, kOK };
 }

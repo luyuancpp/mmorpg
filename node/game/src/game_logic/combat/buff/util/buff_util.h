@@ -11,7 +11,7 @@ class BuffUtil
 public:
     //Buff创建前检查当前Buff是否可创建。
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。
-    uint32_t CanCreateBuff(entt::entity parent, uint32_t buffTableId);
+    uint32_t CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTableId);
 
     //Buff在实例化之后，生效之前（还未加入到Buff容器中）时会抛出一个OnBuffAwake事件。
     // 如果存在某种Buff的效果是：受到负面效果时，驱散当前所有负面效果，并给自己加一个护盾。
@@ -68,6 +68,4 @@ public:
     //监听我方击杀目标时触发
     static void OnKill(entt::entity parent);
 
-    // 验证技能表
-    static std::pair<const buff_row*, uint32_t> ValidateBuffTable(uint32_t abilityId);
 };

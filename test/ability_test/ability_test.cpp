@@ -42,17 +42,6 @@ protected:
     std::unique_ptr<MockCooldownTimeUtil> mockCooldownTimeUtil = std::make_unique<MockCooldownTimeUtil>();
 };
 
-// Test cases
-
-TEST_F(AbilityUtilTest, ValidateAbilityTable_InvalidId_ReturnsError) {
-    const uint32_t invalidAbilityId = 9999999;
-    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(invalidAbilityId))
-        .WillRepeatedly(Return(nullptr));
-
-    auto [tableAbility, result] = abilityUtil->ValidateAbilityTable(invalidAbilityId);
-    EXPECT_EQ(result, kInvalidTableId);
-}
-
 TEST_F(AbilityUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
     ::UseAbilityRequest request;
     request.set_ability_id(1);

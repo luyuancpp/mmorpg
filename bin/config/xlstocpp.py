@@ -66,7 +66,7 @@ def generate_cpp_header(datastring, sheetname):
     s += '    static %sConfigurationTable& GetSingleton() { static %sConfigurationTable singleton; return singleton; }\n' % (
     sheetname, sheetname)
     s += '    const %s_table& All() const { return data_; }\n' % sheet_name_lower
-    s += '    row_type GetTable(uint32_t keyid);\n'
+    s += '    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);\n'
     counter = 0
     for d in datastring:
         for v in d.values():
@@ -79,7 +79,7 @@ def generate_cpp_header(datastring, sheetname):
     for i in range(counter):
         s += '    kv_type key_data_%s_;\n' % i
     s += '};\n'
-    s += 'const %sConfigurationTable::row_type Get%sTable(uint32_t keyid);\n' % (sheetname, sheetname)
+    s += 'std::pair< %sConfigurationTable::row_type, uint32_t>  Get%sTable(uint32_t keyid);\n' % (sheetname, sheetname)
     s += 'const %s_table& Get%sAllTable();\n' % (sheet_name_lower, sheetname)
     return s
 
@@ -90,18 +90,17 @@ def generate_cpp_implementation(datastring, sheetname):
     s = '#include "google/protobuf/util/json_util.h"\n'
     s += '#include "src/util/file2string.h"\n'
     s += '#include "muduo/base/Logging.h"\n'
+    s += '#include "common_error_tip.pb.h"\n'
     s += '#include "%s_config.h"\n\n' % sheet_name_lower
     s += 'void %sConfigurationTable::Load()\n{\n' % sheetname
     s += '    data_.Clear();\n'
     s += '    const auto contents = File2String("config/generated/json/%s.json");\n' % sheet_name_lower
     s += '    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_);\n'
-    s += '        !result.ok())\n'
-    s += '    {\n'
+    s += '        !result.ok()){\n'
     s += '        LOG_FATAL << "%s " << result.message().data();\n' % sheetname
     s += '    }\n\n'
 
-    s += '    for (int32_t i = 0; i < data_.data_size(); ++i)\n'
-    s += '    {\n'
+    s += '    for (int32_t i = 0; i < data_.data_size(); ++i){\n'
     s += '        const auto& row_data = data_.data(i);\n'
     counter = 0
     for d in datastring:
@@ -111,9 +110,13 @@ def generate_cpp_implementation(datastring, sheetname):
             counter += 1
     s += '    }\n'
     s += '}\n\n'
-    s += 'const %s_row* %sConfigurationTable::GetTable(uint32_t keyid)\n{\n' % (sheet_name_lower, sheetname)
+    s += 'const std::pair< %sConfigurationTable::row_type, uint32_t> %sConfigurationTable::GetTable(uint32_t keyid)\n{\n' % (sheetname, sheetname)
     s += '    const auto it = key_data_.find(keyid);\n'
-    s += '    return it == key_data_.end() ? nullptr : it->second;\n}\n'
+    s += '    if (it == key_data_.end()){\n'
+    s += '      LOG_ERROR << "%s table not found for ID: " << keyid; \n' % sheetname
+    s += '      return { nullptr, kInvalidTableId }; \n'
+    s += '    }\n'
+    s += '    return { it->second, kOK};\n}\n'
     counter = 0
     for d in datastring:
         for v in d.values():
@@ -122,7 +125,7 @@ def generate_cpp_implementation(datastring, sheetname):
             s += '    const auto it = key_data_%s_.find(keyid);\n' % counter
             s += '    return it == key_data_%s_.end() ? nullptr : it->second;\n}\n' % counter
             counter += 1
-    s += '\nconst %sConfigurationTable::row_type Get%sTable(uint32_t keyid)\n{\n' % (sheetname, sheetname)
+    s += '\nstd::pair< %sConfigurationTable::row_type, uint32_t> Get%sTable(uint32_t keyid)\n{\n' % (sheetname, sheetname)
     s += '    return %sConfigurationTable::GetSingleton().GetTable(keyid);\n}\n\n' % sheetname
     s += '\nconst %s_table& Get%sAllTable()\n{\n' % (sheet_name_lower, sheetname)
     s += '    return %sConfigurationTable::GetSingleton().All();\n}\n' % sheetname

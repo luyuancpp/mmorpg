@@ -15,7 +15,7 @@
 #include "time/util/cooldown_time_util.h"
 
 uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const ::UseAbilityRequest* request) {
-    auto [tableAbility, result] = ValidateAbilityTable(request->ability_table_id());
+    auto [tableAbility, result] = GetAbilityTable(request->ability_table_id());
     if (result != kOK) {
         return result;
     }
@@ -37,9 +37,8 @@ uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const :
 }
 
 bool AbilityUtil::IsAbilityOfType(const uint32_t abilityId, const uint32_t abilityType) {
-    const auto* tableAbility = GetAbilityTable(abilityId);
+    auto [tableAbility, result] = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
-        LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return false;
     }
 
@@ -72,9 +71,8 @@ void AbilityUtil::HandleGeneralAbilitySpell(const entt::entity caster, const uin
 }
 
 void AbilityUtil::HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId){
-    const auto* tableAbility = GetAbilityTable(abilityId);
+    auto [tableAbility, result] = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
-        LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return ;
     }
 
@@ -87,9 +85,8 @@ void AbilityUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilit
 }
 
 void AbilityUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilityId) {
-    const auto* tableAbility = GetAbilityTable(abilityId);
+    auto [tableAbility, result] = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
-        LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return ;
     }
 
@@ -142,18 +139,8 @@ void AbilityUtil::HandleAbilityDeactivate(const entt::entity caster, const uint3
     RemoveEffect(caster, abilityId);
 }
 
-// 验证技能表
-std::pair<const ability_row*, uint32_t> AbilityUtil::ValidateAbilityTable(const uint32_t abilityId) {
-    const auto* tableAbility = GetAbilityTable(abilityId);
-    if (tableAbility == nullptr) {
-        LOG_ERROR << "Ability table not found for ID: " << abilityId;
-        return {nullptr, kInvalidTableId};
-    }
-    return {tableAbility, kOK};
-}
-
 uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
-    const auto* tableAbility = GetAbilityTable(request->ability_table_id());
+    auto [tableAbility, result] = GetAbilityTable(request->ability_table_id());
     if (!tableAbility->target_type().empty() && request->target_id() <= 0) {
         LOG_ERROR << "Invalid target ID: " << request->target_id() 
                  << " for ability ID: " << request->ability_table_id();
@@ -286,9 +273,8 @@ void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster, uint3
 }
 
 void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t abilityId) {
-    const auto* tableAbility = GetAbilityTable(abilityId);
+    auto [tableAbility, Result] = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
-        LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return;
     }
 
@@ -301,9 +287,8 @@ void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t ability
 }
 
 void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId){
-    const auto* tableAbility = GetAbilityTable(abilityId);
+    auto [tableAbility, Result] = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
-        LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return ;
     }
 
