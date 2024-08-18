@@ -31,9 +31,6 @@ public:
 	static void HandleAbilityActivate(entt::entity caster, uint32_t abilityId);
 	static void HandleAbilityDeactivate(entt::entity caster, uint32_t abilityId);
 
-	// 验证技能表
-    static std::pair<const ability_row*, uint32_t> ValidateAbilityTable(uint32_t abilityId);
-
     // 验证目标
     static uint32_t ValidateTarget(const ::UseAbilityRequest* request);
 

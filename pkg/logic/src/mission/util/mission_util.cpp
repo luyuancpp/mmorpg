@@ -116,9 +116,8 @@ uint32_t MissionUtil::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 
 	// Initialize mission progress based on conditions
 	for (const auto& conditionId : missionComp->GetMissionConfig()->GetConditionIds(acceptEvent.mission_id())) {
-		const auto* const conditionTable = GetConditionTable(conditionId);
-		if (nullptr == conditionTable) {
-			LOG_ERROR << "Condition config not found for conditionId = " << conditionId;
+		auto [conditionTable, result] = GetConditionTable(conditionId);
+		if (conditionTable == nullptr) {
 			continue;
 		}
 		missionPb.add_progress(0);
@@ -191,10 +190,8 @@ void MissionUtil::CompleteAllMissions(entt::entity playerEntity, uint32_t operat
 
 // Function to check if a condition is completed
 bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
-	const auto* conditionTable = GetConditionTable(conditionId);
-	if (nullptr == conditionTable)
-
-	{
+	auto [conditionTable, result] = GetConditionTable(conditionId);
+	if (conditionTable == nullptr) {
 		return false;
 	}
 	return condition_comparison_functions[static_cast<size_t>(conditionTable->comparison())](progressValue, conditionTable->amount());
@@ -208,8 +205,8 @@ bool MissionUtil::AreAllConditionsFulfilled(const MissionPbComp& mission, uint32
 
 	// Ensure progress matches condition requirements
 	for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i) {
-		const auto* const conditionTable = GetConditionTable(conditions.at(i));
-		if (nullptr == conditionTable) {
+		auto [conditionTable, result] = GetConditionTable(conditions.at(i));
+		if (conditionTable == nullptr) {
 			continue;
 		}
 
@@ -284,8 +281,8 @@ void MissionUtil::RemoveMissionClassification(MissionsComp* missionComp, uint32_
 
 	// Remove mission classification based on condition type
 	for (int32_t i = 0; i < configConditions.size(); ++i) {
-		const auto* conditionTable = GetConditionTable(configConditions.Get(i));
-		if (nullptr == conditionTable) {
+		auto [conditionTable, result] = GetConditionTable(configConditions.Get(i));
+		if (conditionTable == nullptr) {
 			continue;
 		}
 		missionComp->GetEventMissionsClassify()[conditionTable->condition_type()].erase(missionId);
@@ -331,8 +328,8 @@ bool MissionUtil::UpdateMissionProgress(const MissionConditionEvent& conditionEv
 
 	// Iterate through mission conditions and update progress
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
-		const auto* const conditionTable = GetConditionTable(missionConditions.at(i));
-		if (nullptr == conditionTable) {
+		auto [conditionTable, result] = GetConditionTable(missionConditions.at(i));
+		if (conditionTable == nullptr) {
 			continue;
 		}
 
@@ -409,7 +406,7 @@ bool MissionUtil::UpdateProgressIfConditionMatches(const MissionConditionEvent& 
 void MissionUtil::UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
 	// Iterate through mission conditions and update progress
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
-		const auto* const conditionTable = GetConditionTable(missionConditions.at(i));
+		auto [conditionTable, result] = GetConditionTable(missionConditions.at(i));
 		if (nullptr == conditionTable) {
 			continue;
 		}

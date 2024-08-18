@@ -62,19 +62,19 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 	//计算不可叠加商品
 	for (auto& try_item : try_add_item_map)
 	{
-		auto p_table_item = GetItemTable(try_item.first);
-		if (nullptr == p_table_item)
-		{
-			return kInvalidTableId;
-		}
-		if (p_table_item->max_statck_size() <= 0)
+		auto [tableItem, result] = GetItemTable(try_item.first);
+        if (nullptr == tableItem || result != kOK) {
+            return result;
+        }
+
+		if (tableItem->max_statck_size() <= 0)
 		{
 			LOG_ERROR << "config error:" << try_item.first << "player:" << player_guid();
 			return kInvalidTableData;
 		}
-		else if (p_table_item->max_statck_size() == 1)//不可叠加占用一个格子
+		else if (tableItem->max_statck_size() == 1)//不可叠加占用一个格子
 		{
-			std::size_t need_grid_size = static_cast<std::size_t>(p_table_item->max_statck_size() * try_item.second);
+			std::size_t need_grid_size = static_cast<std::size_t>(tableItem->max_statck_size() * try_item.second);
 			if (empty_size <= 0 || empty_size < need_grid_size)
 			{
 				return kBagItemNotStacked;
@@ -101,8 +101,8 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 			{
 				continue;
 			}
-			auto table_item = GetItemTable(ji.first);//前面判断过了
-			auto remain_stack_size = table_item->max_statck_size() - item.second.size();
+			auto [tableItem, _] = GetItemTable(ji.first);//前面判断过了
+			auto remain_stack_size = tableItem->max_statck_size() - item.second.size();
 			if (remain_stack_size <= 0)//不可以叠加
 			{
 				continue;
@@ -118,8 +118,8 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 	//剩下的没叠加成功的
 	for (auto& it : need_stack_sizes)
 	{
-		auto table_item = GetItemTable(it.first);//前面判断过空了，以及除0
-		auto need_grid_size = calc_item_need_grid_size(it.second, table_item->max_statck_size());//满叠加的格子
+		auto [tableItem, _] = GetItemTable(it.first);//前面判断过空了，以及除0
+		auto need_grid_size = calc_item_need_grid_size(it.second, tableItem->max_statck_size());//满叠加的格子
 		if (empty_size <= 0 || empty_size < need_grid_size)
 		{
 			return kBagItemNotStacked;
@@ -140,12 +140,12 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 			{
 				continue;
 			}
-			auto table_item = GetItemTable(ji.first);
-			if (nullptr == table_item)
+			auto [tableItem, result] = GetItemTable(ji.first);
+			if (nullptr == tableItem)
 			{
-				return kInvalidTableId;
+				return result;
 			}
-			if (table_item->max_statck_size() <= 0)
+			if (tableItem->max_statck_size() <= 0)
 			{
 				LOG_ERROR << "config error:" << it.first << "player:" << player_guid();
 				return kInvalidTableData;
@@ -245,13 +245,11 @@ void Bag::Neaten()
 	for (auto& it : items_)
 	{
 		auto& item = it.second;
-		auto table_item = GetItemTable(item.config_id());
-		if (nullptr == table_item)
-		{
-			LOG_ERROR << "get_item_conf" << player_guid() << " config_id" << item.config_id();
+		auto [tableItem, result] = GetItemTable(item.config_id());
+		if (nullptr == tableItem){
 			continue;
 		}
-		if (item.size() >= table_item->max_statck_size())//满的不计算了,包括了不可叠加的
+		if (item.size() >= tableItem->max_statck_size())//满的不计算了,包括了不可叠加的
 		{
 			continue;
 		}
@@ -280,7 +278,7 @@ void Bag::Neaten()
 			continue;
 		}
 		auto config_id = (*item.begin())->config_id();
-		auto table_item = GetItemTable(config_id);//上面判断过了，其他人不要模仿
+		auto [tableItem, result] = GetItemTable(config_id);//上面判断过了，其他人不要模仿
 		uint32_t sz = 0;
 		for (auto& ji : item)
 		{
@@ -289,7 +287,7 @@ void Bag::Neaten()
 		std::size_t index = 0;//使用了的物品下标
 		for (index = 0; index < item.size(); ++index)
 		{
-			if (table_item->max_statck_size() >= sz)
+			if (tableItem->max_statck_size() >= sz)
 			{
 				item[index]->set_size(sz);
 				++index;//下标加1，break并没有加
@@ -297,8 +295,8 @@ void Bag::Neaten()
 			}
 			else
 			{
-				item[index]->set_size(table_item->max_statck_size());
-				sz -= table_item->max_statck_size();
+				item[index]->set_size(tableItem->max_statck_size());
+				sz -= tableItem->max_statck_size();
 			}
 		}
 		for (; index < item.size(); ++index)
@@ -337,17 +335,16 @@ uint32_t Bag::AddItem(const Item& add_item)
 		LOG_ERROR << "bag add item player:" << player_guid();
 		return kBagAddItemInvalidParam;
 	}
-	auto table_item = GetItemTable(item_base_db.config_id());
-	if (nullptr == table_item)
-	{
-		return kInvalidTableId;
+	auto [tableItem, result] = GetItemTable(item_base_db.config_id());
+	if (tableItem == nullptr){
+		return result;
 	}
-	if (table_item->max_statck_size() <= 0)
+	if (tableItem->max_statck_size() <= 0)
 	{
 		LOG_ERROR << "config error:" << item_base_db.config_id()  << "player:" << player_guid();
 		return kInvalidTableData;
 	}
-	if (table_item->max_statck_size() == 1)//不可以堆叠直接生成新guid
+	if (tableItem->max_statck_size() == 1)//不可以堆叠直接生成新guid
 	{
 		if (IsFull())
 		{
@@ -387,7 +384,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 			}
 		}		
 	}
-	else if(table_item->max_statck_size() > 1)//尝试堆叠到旧格子上
+	else if(tableItem->max_statck_size() > 1)//尝试堆叠到旧格子上
 	{
 		std::vector<Item*> can_stack;//原来可以叠加的物品
 		std::size_t check_need_stack_size = add_item.size();
@@ -398,8 +395,8 @@ uint32_t Bag::AddItem(const Item& add_item)
 			{
 				continue;
 			}
-			assert(table_item->max_statck_size() >= item.size());
-			auto remain_stack_size = table_item->max_statck_size() - item.size();	
+			assert(tableItem->max_statck_size() >= item.size());
+			auto remain_stack_size = tableItem->max_statck_size() - item.size();	
 			if (remain_stack_size <= 0)
 			{
 				continue;
@@ -420,7 +417,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 		//不可以放完继续检测,先检测格子够不够放，不够放就不行了
 		if (check_need_stack_size > 0)
 		{
-			need_grid_size = calc_item_need_grid_size(check_need_stack_size, table_item->max_statck_size());//放不完的还需要多少个格子
+			need_grid_size = calc_item_need_grid_size(check_need_stack_size, tableItem->max_statck_size());//放不完的还需要多少个格子
 			if (NotAdequateSize(need_grid_size))
 			{
 				return kBagAddItemBagFull;
@@ -433,7 +430,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 		{
 			auto& item = *it;
 			auto& item_base_db = tls.itemRegistry.get<ItemBaseDb>(it->entity());
-			auto remain_stack_size = table_item->max_statck_size() - item.size();
+			auto remain_stack_size = tableItem->max_statck_size() - item.size();
 			if (remain_stack_size >= need_stack_size)
 			{
 				item_base_db.set_size(item_base_db.size() + need_stack_size);
@@ -458,14 +455,14 @@ uint32_t Bag::AddItem(const Item& add_item)
 			auto& item_base_db = p.item_base_db;
 			item_base_db.set_config_id(add_item.config_id());
 			item_base_db.set_item_id(g_bag_node_sequence.Generate());
-			if (table_item->max_statck_size() >= need_stack_size)
+			if (tableItem->max_statck_size() >= need_stack_size)
 			{
 				item_base_db.set_size(need_stack_size);
 			}
 			else
 			{
-				item_base_db.set_size(table_item->max_statck_size());
-				need_stack_size -= table_item->max_statck_size();
+				item_base_db.set_size(tableItem->max_statck_size());
+				need_stack_size -= tableItem->max_statck_size();
 			}
 			auto new_item = CreateItem(p);
 			auto it = items_.emplace(item_base_db.item_id(), std::move(new_item));
