@@ -1,5 +1,6 @@
 ﻿#include "ability_util.h"
 
+#include <ranges>
 #include <muduo/base/Logging.h>
 
 #include "ability_config.h"
@@ -42,7 +43,7 @@ bool AbilityUtil::IsAbilityOfType(const uint32_t abilityId, const uint32_t abili
         LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return false;
     }
-    return std::find(tableAbility->ability_type().begin(), tableAbility->ability_type().end(), abilityType) != tableAbility->ability_type().end();
+    return std::ranges::find(tableAbility->ability_type(), abilityType) != tableAbility->ability_type().end();
 }
 
 
@@ -81,7 +82,7 @@ void AbilityUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilit
 
 }
 
-void AbilityUtil::SetupChannelTimers(entt::entity caster, uint32_t abilityId) {
+void AbilityUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilityId) {
     const auto* tableAbility = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
         LOG_ERROR << "Ability table not found for ID: " << abilityId;
@@ -159,6 +160,7 @@ uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
             return kAbilityInvalidTargetId;
         }
     }
+    
     return kOK;
 }
 
@@ -174,6 +176,7 @@ uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const ability_row
             return kAbilityCooldownNotReady;
         }
     }
+    
     return kOK;
 }
 
@@ -193,6 +196,7 @@ uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const ability_row*
         }
         tls.registry.remove<CastingTimerComp>(caster);
     }
+    
     return kOK;
 }
 
@@ -212,6 +216,7 @@ uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const ability_row
         }
         tls.registry.remove<RecoveryTimerComp>(caster);
     }
+    
     return kOK;
 }
 
@@ -233,6 +238,7 @@ uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const ability_row*
         //todo 技能被打断
         tls.registry.remove<ChannelFinishTimerComp>(caster);
     }
+    
     return kOK;
 }
 
@@ -255,7 +261,7 @@ void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* tabl
     if (IsAbilityOfType(abilityId, kGeneralAbility)) {
         castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleAbilitySpell(caster, abilityId); });
     } else if (IsAbilityOfType(abilityId, kChannelAbility)) {
-        castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return SetupChannelTimers(caster, abilityId); });
+        castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleChannelAbilitySpell(caster, abilityId); });
     }
 }
 
