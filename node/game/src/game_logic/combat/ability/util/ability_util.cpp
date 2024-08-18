@@ -51,14 +51,10 @@ void AbilityUtil::HandleAbilityInitialize(){
 
 }
 
-void AbilityUtil::HandleAbilitySpell(const entt::entity caster, const uint32_t abilityId) {
-    const auto* tableAbility = GetAbilityTable(abilityId);
-    if (tableAbility == nullptr) {
-        LOG_ERROR << "Ability table not found for ID: " << abilityId;
-        return;
-    }
+void AbilityUtil::HandleGeneralAbilitySpell(const entt::entity caster, const uint32_t abilityId) {
+    HandleAbilitySpell(caster, abilityId);
 
-    LOG_INFO << "Handling ability spell. Caster: " << entt::to_integral(caster) << ", Ability ID: " << abilityId;
+    LOG_INFO << "Handling general ability spell. Caster: " << entt::to_integral(caster) << ", Ability ID: " << abilityId;
 
     // Trigger ability effects
     TriggerSkillEffect(caster, abilityId);
@@ -89,6 +85,10 @@ void AbilityUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilit
         return ;
     }
 
+    LOG_INFO << "Handling channel ability spell. Caster: " << entt::to_integral(caster) << ", Ability ID: " << abilityId;
+    
+    HandleAbilitySpell(caster, abilityId);
+    
     auto& channelFinishTimer = tls.registry.emplace<ChannelFinishTimerComp>(caster).timer;
     channelFinishTimer.RunAfter(tableAbility->channelfinish(),
         [caster, abilityId] { return HandleChannelFinish(caster, abilityId); });
@@ -259,7 +259,7 @@ void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const :
 void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* tableAbility, uint32_t abilityId) {
     auto& castingTimer = tls.registry.emplace<CastingTimerComp>(caster).timer;
     if (IsAbilityOfType(abilityId, kGeneralAbility)) {
-        castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleAbilitySpell(caster, abilityId); });
+        castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleGeneralAbilitySpell(caster, abilityId); });
     } else if (IsAbilityOfType(abilityId, kChannelAbility)) {
         castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleChannelAbilitySpell(caster, abilityId); });
     }
@@ -292,16 +292,17 @@ void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t ability
     }
 }
 
-void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId)
-{
+void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId){
     const auto* tableAbility = GetAbilityTable(abilityId);
     if (tableAbility == nullptr) {
         LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return ;
     }
 
-    for (auto& effect : tableAbility->effect())
-    {
+    for (auto& effect : tableAbility->effect()){
         
     }
+}
+
+void AbilityUtil::HandleAbilitySpell(const entt::entity caster, uint32_t abilityId){
 }

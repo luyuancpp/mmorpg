@@ -201,7 +201,7 @@ TEST_F(AbilityUtilTest, HandleAbilitySpell_TriggersEffect) {
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
         .WillRepeatedly(Return(tableAbility.get()));
 
-    EXPECT_NO_THROW(abilityUtil->HandleAbilitySpell(caster, 1));
+    EXPECT_NO_THROW(abilityUtil->HandleGeneralAbilitySpell(caster, 1));
 }
 
 TEST_F(AbilityUtilTest, HandleAbilityRecovery_SetsRecoveryTimer) {
