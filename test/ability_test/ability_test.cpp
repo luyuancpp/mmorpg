@@ -58,7 +58,7 @@ TEST_F(AbilityUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
     request.set_ability_id(1);
     request.set_target_id(-1); // Invalid target ID
 
-    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_id()))
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_table_id()))
         .WillRepeatedly(Return(nullptr)); // Mock implementation
 
     uint32_t result = abilityUtil->ValidateTarget(&request);
@@ -75,7 +75,7 @@ TEST_F(AbilityUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     ability_row tableAbility;
     tableAbility.mutable_target_type()->Add(1); // Add target type to simulate need for target
 
-    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_id()))
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_table_id()))
         .WillRepeatedly(Return(&tableAbility));
 
     uint32_t result = abilityUtil->ValidateTarget(&request);
@@ -169,7 +169,7 @@ TEST_F(AbilityUtilTest, BroadcastAbilityUsedMessage_CreatesMessage) {
     request.set_target_id(2);
     request.mutable_position()->set_x(10); // Mock position
 
-    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_id()))
+    EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_table_id()))
         .WillRepeatedly(Return(nullptr)); // Mock implementation
 
     EXPECT_NO_THROW(abilityUtil->BroadcastAbilityUsedMessage(caster, &request));

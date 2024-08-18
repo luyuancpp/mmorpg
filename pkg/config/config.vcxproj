@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="src\ability_config.cpp" />
     <ClCompile Include="src\all_config.cpp" />
+    <ClCompile Include="src\buff_config.cpp" />
     <ClCompile Include="src\condition_config.cpp" />
     <ClCompile Include="src\cooldown_config.cpp" />
     <ClCompile Include="src\globalvariable_config.cpp" />
@@ -33,6 +34,8 @@
     <ClCompile Include="src\pbc\ability_operator.pb.cc" />
     <ClCompile Include="src\pbc\bag_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\bag_operator.pb.cc" />
+    <ClCompile Include="src\pbc\buff_config.pb.cc" />
+    <ClCompile Include="src\pbc\buff_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\common_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\condition_config.pb.cc" />
     <ClCompile Include="src\pbc\cooldown_config.pb.cc" />
@@ -52,6 +55,7 @@
   <ItemGroup>
     <ClInclude Include="src\ability_config.h" />
     <ClInclude Include="src\all_config.h" />
+    <ClInclude Include="src\buff_config.h" />
     <ClInclude Include="src\condition_config.h" />
     <ClInclude Include="src\cooldown_config.h" />
     <ClInclude Include="src\globalvariable_config.h" />
@@ -64,6 +68,8 @@
     <ClInclude Include="src\pbc\ability_operator.pb.h" />
     <ClInclude Include="src\pbc\bag_error_tip.pb.h" />
     <ClInclude Include="src\pbc\bag_operator.pb.h" />
+    <ClInclude Include="src\pbc\buff_config.pb.h" />
+    <ClInclude Include="src\pbc\buff_error_tip.pb.h" />
     <ClInclude Include="src\pbc\common_error_tip.pb.h" />
     <ClInclude Include="src\pbc\condition_config.pb.h" />
     <ClInclude Include="src\pbc\cooldown_config.pb.h" />
