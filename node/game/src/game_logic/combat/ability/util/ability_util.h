@@ -20,7 +20,7 @@ public:
 	static void HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId);
 	static void HandleAbilityFinish(const entt::entity caster, uint32_t abilityId);
 
-	static void SetupChannelTimers(entt::entity caster, uint32_t abilityId);
+	static void HandleChannelAbilitySpell(entt::entity caster, uint32_t abilityId);
 	static void ClearChannelTimers(entt::entity caster);
 	static void HandleChannelThink(entt::entity caster, uint32_t abilityId);
 	static void HandleChannelFinish(entt::entity caster, uint32_t abilityId);
