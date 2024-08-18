@@ -1,6 +1,5 @@
 ﻿#include "ability_util.h"
 
-#include <ranges>
 #include <muduo/base/Logging.h>
 
 #include "ability_config.h"
@@ -16,7 +15,7 @@
 #include "time/util/cooldown_time_util.h"
 
 uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const ::UseAbilityRequest* request) {
-    auto [tableAbility, result] = ValidateAbilityTable(request->ability_id());
+    auto [tableAbility, result] = ValidateAbilityTable(request->ability_table_id());
     if (result != kOK) {
         return result;
     }
@@ -32,7 +31,7 @@ uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const :
     CHECK_RETURN_IF_NOT_OK(CheckChannel(caster, tableAbility));
 
     BroadcastAbilityUsedMessage(caster, request);
-    SetupCastingTimer(caster, tableAbility, request->ability_id());
+    SetupCastingTimer(caster, tableAbility, request->ability_table_id());
 
     return kOK;
 }
@@ -154,10 +153,10 @@ std::pair<const ability_row*, uint32_t> AbilityUtil::ValidateAbilityTable(const 
 }
 
 uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
-    const auto* tableAbility = GetAbilityTable(request->ability_id());
+    const auto* tableAbility = GetAbilityTable(request->ability_table_id());
     if (!tableAbility->target_type().empty() && request->target_id() <= 0) {
         LOG_ERROR << "Invalid target ID: " << request->target_id() 
-                 << " for ability ID: " << request->ability_id();
+                 << " for ability ID: " << request->ability_table_id();
         return kAbilityInvalidTargetId;
     }
 
@@ -165,7 +164,7 @@ uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
         entt::entity target{request->target_id()};
         if (!tls.registry.valid(target)) {
             LOG_ERROR << "Invalid target entity: " << request->target_id() 
-                   << " for ability ID: " << request->ability_id();
+                   << " for ability ID: " << request->ability_table_id();
             return kAbilityInvalidTargetId;
         }
     }
@@ -255,7 +254,7 @@ void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const :
     AbilityUsedS2C abilityUsedS2C;
     abilityUsedS2C.set_entity(entt::to_integral(caster));
     abilityUsedS2C.add_target_entity(request->target_id());
-    abilityUsedS2C.set_ability_id(request->ability_id());
+    abilityUsedS2C.set_ability_id(request->ability_table_id());
     abilityUsedS2C.mutable_position()->CopyFrom(request->position());
 
     ViewUtil::BroadcastMessageToVisiblePlayers(
