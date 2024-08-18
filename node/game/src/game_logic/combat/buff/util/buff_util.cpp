@@ -1,10 +1,18 @@
 ﻿#include "buff_util.h"
+#include <muduo/base/Logging.h>
 #include "common_error_tip.pb.h"
 #include "buff_config.h"
-#include <muduo/base/Logging.h>
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "thread_local/storage.h"
 #include "buff_error_tip.pb.h"
+#include "macros/return_define.h"
+
+uint32_t BuffUtil::CreatedBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& AbilityContext)
+{
+    CHECK_RETURN_IF_NOT_OK(CheckIfBuffCanBeCreated(parent, buffTableId));
+
+    return kOK;
+}
 
 uint32_t BuffUtil::CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTableId) {
     auto [tableBuff, result] = GetBuffTable(buffTableId);
@@ -21,7 +29,7 @@ uint32_t BuffUtil::CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTab
 
         // 已存在相同类型的Buff，层数太大无法再叠加了
         if (currentBuff->id() == tableBuff->id()) {
-            if (buff.layer() >= currentBuff->maxlayer())
+            if (buff.pb.layer() >= currentBuff->maxlayer())
             {
                 return kBuffMaxBuffStack;
             }

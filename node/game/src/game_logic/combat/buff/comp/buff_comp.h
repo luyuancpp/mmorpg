@@ -11,7 +11,13 @@ struct BuffAbilityContextComp
 
 using BuffAbilityContextPtrComp = std::shared_ptr<BuffAbilityContextComp>;
 
+struct BuffComp
+{
+    BuffPBComp pb;
+    BuffAbilityContextPtrComp abilityContext;
+};
+
 struct BuffListComp
 {
-    std::map<uint32_t, BuffPBComp> buffList;
+    std::map<uint32_t, BuffComp> buffList;
 };

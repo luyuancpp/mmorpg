@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <entt/src/entt/entity/entity.hpp>
+#include "game_logic/combat/buff/comp/buff_comp.h"
 
 class buff_row;
 
@@ -9,6 +10,9 @@ class buff_row;
 class BuffUtil
 {
 public:
+
+    uint32_t CreatedBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& AbilityContext);
+
     //Buff创建前检查当前Buff是否可创建。
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。
     uint32_t CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTableId);
