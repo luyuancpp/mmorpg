@@ -16,7 +16,7 @@ public:
 	static bool IsAbilityOfType(uint32_t abilityId, uint32_t abilityType);
 
 	static void HandleAbilityInitialize();
-	static void HandleAbilitySpell(const entt::entity caster, uint32_t abilityId);
+	static void HandleGeneralAbilitySpell(const entt::entity caster, uint32_t abilityId);
 	static void HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId);
 	static void HandleAbilityFinish(const entt::entity caster, uint32_t abilityId);
 
@@ -59,4 +59,6 @@ public:
 	static void TriggerSkillEffect(entt::entity caster, uint32_t abilityId);
 
 	static void RemoveEffect(entt::entity caster, uint32_t abilityId);
+
+	static void HandleAbilitySpell(const entt::entity caster, uint32_t abilityId);
 };
