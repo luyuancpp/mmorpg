@@ -2,9 +2,16 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message Buff
+message BuffContextPBComp
 {
-  uint64 buff_id = 1;
-  uint32 table_id = 2;
+  float damage_value = 1;
 }
 
+message BuffPBComp
+{
+  uint32 buff_table_id = 1;
+  uint32 ability_id = 2;
+  uint64 parent_entity = 3;
+  uint32 layer = 4;
+  uint32 caster = 5;
+}
