@@ -43,7 +43,16 @@ bool AbilityUtil::IsAbilityOfType(const uint32_t abilityId, const uint32_t abili
         LOG_ERROR << "Ability table not found for ID: " << abilityId;
         return false;
     }
-    return std::ranges::find(tableAbility->ability_type(), abilityType) != tableAbility->ability_type().end();
+
+    for (auto& tabAbilityType : tableAbility->ability_type())
+    {
+        if ((1 << tabAbilityType) == abilityType)
+        {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 
