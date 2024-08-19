@@ -13,6 +13,8 @@ public:
 
     uint32_t AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext);
 
+    void OnBuffExpire(entt::entity parent, uint64_t buffId);
+
     //Buff创建前检查当前Buff是否可创建。
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。
     uint32_t CanCreateBuff(entt::entity parent, uint32_t buffTableId);
@@ -33,10 +35,10 @@ public:
     void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext, BuffComp& buffComp);
 
     //当Buff销毁前（还未从Buff容器中移除），我们提供给策划一个抽象接口OnBuffRemove，由策划配置具体效果。
-    void OnBuffRemove();
+    void OnBuffRemove(entt::entity parent, uint64_t buffId);
 
     //当Buff销毁后（已从Buff容器中移除），我们提供给策划一个抽象接口OnBuffDestroy，由策划配置具体效果。
-    void OnBuffDestroy();
+    void OnBuffDestroy(entt::entity parent);
 
     //Buff还可以创建定时器，以触发间隔持续效果。通过策划配置时调用StartIntervalThink操作，
     // 提供OnIntervalThink抽象接口供策划配置具体效果。
