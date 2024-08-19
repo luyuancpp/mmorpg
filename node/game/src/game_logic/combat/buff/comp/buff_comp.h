@@ -21,5 +21,5 @@ struct BuffComp
 
 struct BuffListComp
 {
-    std::map<uint32_t, BuffComp> buffList;
+    std::map<uint64_t, BuffComp> buffList;
 };

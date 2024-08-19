@@ -8,11 +8,9 @@
 #include "macros/return_define.h"
 #include "thread_local/storage_game.h"
 
-uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext)
-{
+uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext){
 	auto [buffTable, result] = GetBuffTable(buffTableId);
-	if (nullptr == buffTable)
-	{
+	if (nullptr == buffTable){
 		return  result;
 	}
 	
@@ -20,19 +18,22 @@ uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, co
 	result = CanCreateBuff(parent, buffTableId);
 	CHECK_RETURN_IF_NOT_OK(result);
 
-	BuffComp newBuff;
-
+	
 	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
 
-	if (HandleExistingBuff(parent, buffTableId, abilityContext))
-	{
-
-		// 处理已存在的Buff，如更新层数
-		// 如果处理成功，函数将返回，避免继续执行
+	if (HandleExistingBuff(parent, buffTableId, abilityContext)){
 		return kOK;
 	}
-	else
-	{
+	else{
+		BuffComp newBuff;
+
+		if (buffTable->nocaster()) {
+			newBuff.buffPB.set_caster(entt::null);
+		}else
+		{
+			newBuff.buffPB.set_caster(abilityContext->caster);
+		}
+		
 		// 发出Buff觉醒事件
 		bool shouldDestroy = OnBuffAwake(parent, buffTableId);
 
@@ -43,13 +44,13 @@ uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, co
 			do
 			{
 				newBuffId = tlsGame.buffIdGenerator.Generate();
-			} while (buffList.find(newBuffId) != buffList.end());
+			} while (buffList.contains(newBuffId));
 
 			newBuff.buffPB.set_buff_id( newBuffId);
+			newBuff.abilityContext = abilityContext;
+			
 			buffList[newBuffId] = newBuff;
 		}
-
-		
 
 		OnBuffStart(parent, buffTableId);
 	}
@@ -117,7 +118,6 @@ bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, con
 		if (buffPB.buffPB.buff_table_id() == buffTableId &&
 			buffPB.abilityContext->caster == abilityContext->caster)
 		{
-
 			OnBuffRefresh(parent, buffTableId, abilityContext, buffPB);
 			return true;
 		}
