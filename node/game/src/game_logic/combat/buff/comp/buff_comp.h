@@ -4,16 +4,18 @@
 #include <memory>
 #include "logic/component/buff_comp.pb.h"
 
+
 struct BuffAbilityContextComp
 {
     uint32_t tableAbilityId = { 0 };
+    uint64_t caster = { entt::null };
 };
 
 using BuffAbilityContextPtrComp = std::shared_ptr<BuffAbilityContextComp>;
 
 struct BuffComp
 {
-    BuffPBComp pb;
+    BuffPBComp buffPB;
     BuffAbilityContextPtrComp abilityContext;
 };
 

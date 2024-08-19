@@ -77,7 +77,6 @@
     <ClCompile Include="src\thread_local\storage_common_logic.cpp" />
     <ClCompile Include="src\thread_local\storage_lua.cpp" />
     <ClCompile Include="src\util\consistent_hash_node.cpp" />
-    <ClCompile Include="src\util\defer.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\util\pb.cpp" />
