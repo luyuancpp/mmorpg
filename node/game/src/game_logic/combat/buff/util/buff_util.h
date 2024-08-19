@@ -4,12 +4,15 @@
 #include "game_logic/combat/buff/comp/buff_comp.h"
 
 class buff_row;
+class AbilityExecutedEvent;
 
 //https://zhuanlan.zhihu.com/p/150812545
 
 class BuffUtil
 {
 public:
+
+    static void Initialize();
 
     uint32_t AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext);
 
@@ -53,7 +56,7 @@ public:
     void OnMotionInterrupt();
 
     //监听某个主动技能执行成功
-    static void OnAbilityExecuted(entt::entity parent);
+    static void OnAbilityExecuted(AbilityExecutedEvent& event);
 
     //监听我方给目标造成伤害时触发
     static void OnBeforeGiveDamage(entt::entity parent);

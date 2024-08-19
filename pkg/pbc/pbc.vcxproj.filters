@@ -183,6 +183,9 @@
     <ClCompile Include="src\proto\logic\component\game_node_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\event\buff_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\c2gate.pb.h">
@@ -396,6 +399,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\game_node_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\event\buff_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

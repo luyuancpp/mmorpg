@@ -111,6 +111,9 @@
     <ClCompile Include="src\handler\service\player\centre_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\event\buff_event_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -210,6 +213,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\player\centre_player_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\event\buff_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
