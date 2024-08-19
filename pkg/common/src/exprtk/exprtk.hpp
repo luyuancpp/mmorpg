@@ -5713,10 +5713,10 @@ namespace exprtk
          mutable bool depth_set;
          mutable std::size_t depth;
 
-         template <typename NodeSequence>
+         template <typename NodeIdGenerator>
          void collect(node_ptr_t const& node,
                       const bool deletable,
-                      NodeSequence& delete_node_list) const
+                      NodeIdGenerator& delete_node_list) const
          {
             if ((0 != node) && deletable)
             {
@@ -5724,23 +5724,23 @@ namespace exprtk
             }
          }
 
-         template <typename NodeSequence>
+         template <typename NodeIdGenerator>
          void collect(const nb_pair_t& branch,
-                      NodeSequence& delete_node_list) const
+                      NodeIdGenerator& delete_node_list) const
          {
             collect(branch.first, branch.second, delete_node_list);
          }
 
-         template <typename NodeSequence>
+         template <typename NodeIdGenerator>
          void collect(Node*& node,
-                      NodeSequence& delete_node_list) const
+                      NodeIdGenerator& delete_node_list) const
          {
             collect(node, branch_deletable(node), delete_node_list);
          }
 
-         template <std::size_t N, typename NodeSequence>
+         template <std::size_t N, typename NodeIdGenerator>
          void collect(const nb_pair_t(&branch)[N],
-                      NodeSequence& delete_node_list) const
+                      NodeIdGenerator& delete_node_list) const
          {
             for (std::size_t i = 0; i < N; ++i)
             {
@@ -5750,9 +5750,9 @@ namespace exprtk
 
          template <typename Allocator,
                    template <typename, typename> class Sequence,
-                   typename NodeSequence>
+                   typename NodeIdGenerator>
          void collect(const Sequence<nb_pair_t, Allocator>& branch,
-                      NodeSequence& delete_node_list) const
+                      NodeIdGenerator& delete_node_list) const
          {
             for (std::size_t i = 0; i < branch.size(); ++i)
             {
@@ -5762,9 +5762,9 @@ namespace exprtk
 
          template <typename Allocator,
                    template <typename, typename> class Sequence,
-                   typename NodeSequence>
+                   typename NodeIdGenerator>
          void collect(const Sequence<node_ptr_t, Allocator>& branch_list,
-                      NodeSequence& delete_node_list) const
+                      NodeIdGenerator& delete_node_list) const
          {
             for (std::size_t i = 0; i < branch_list.size(); ++i)
             {
@@ -5776,10 +5776,10 @@ namespace exprtk
                    typename AllocatorT,
                    typename AllocatorB,
                    template <typename, typename> class Sequence,
-                   typename NodeSequence>
+                   typename NodeIdGenerator>
          void collect(const Sequence<node_ptr_t, AllocatorT>& branch_list,
                       const Sequence<Boolean, AllocatorB>& branch_deletable_list,
-                      NodeSequence& delete_node_list) const
+                      NodeIdGenerator& delete_node_list) const
          {
             for (std::size_t i = 0; i < branch_list.size(); ++i)
             {

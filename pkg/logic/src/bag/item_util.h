@@ -3,11 +3,12 @@
 #include "type_define/type_define.h"
 #include "util/game_registry.h"
 #include "util/snow_flake.h"
+#include "util/node_id_generator.h"
 #include "thread_local/storage.h"
 
 #include "proto/logic/component/item_base_comp.pb.h"
 
-extern NodeBit12Sequence g_bag_node_sequence;
+extern NodeIdGenerator12BitId g_bag_node_sequence;
 
 class ItemEntity
 {

@@ -6,62 +6,90 @@
 #include "thread_local/storage.h"
 #include "buff_error_tip.pb.h"
 #include "macros/return_define.h"
+#include "util/node_id_generator.h"
+
+using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
 
 uint32_t BuffUtil::CreatedBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& AbilityContext)
 {
-    CHECK_RETURN_IF_NOT_OK(CheckIfBuffCanBeCreated(parent, buffTableId));
+	// 检查Buff是否可以被创建
+	uint32_t result = CheckIfBuffCanBeCreated(parent, buffTableId);
+	CHECK_RETURN_IF_NOT_OK(result);
 
-    return kOK;
+	BuffComp buff;
+
+	auto& buffListComp = tls.registry.get<BuffListComp>(parent);
+	auto& buffList = buffListComp.buffList;
+
+	// 查找并增加层数
+	if (auto buffIt = buffList.find(buffTableId); buffIt != buffList.end())
+	{
+		buffIt->second.pb.set_layer(buffIt->second.pb.layer() + 1);
+	}
+	else
+	{
+		// 发出Buff觉醒事件
+		auto destroy = OnBuffAwake(parent, buffTableId);
+
+		if (!destroy)
+		{
+			buffList[buffTableId] = buff;
+		}
+
+		OnBuffStart(parent, buffTableId);
+	}
+
+	return kOK;
 }
 
 uint32_t BuffUtil::CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTableId) {
-    auto [tableBuff, result] = GetBuffTable(buffTableId);
-    if (result != kOK) {
-        return result;
-    }
+	auto [tableBuff, result] = GetBuffTable(buffTableId);
+	if (result != kOK) {
+		return result;
+	}
 
-    // 1. 检查是否已经存在相同类型的Buff
-    for (const auto& [id, buff] : tls.registry.get<BuffListComp>(parent).buffList) {
-        auto [currentBuff, result] = GetBuffTable(buffTableId);
-        if (result != kOK) {
-            return result;
-        }
+	auto& buffListComp = tls.registry.get<BuffListComp>(parent);
+	const auto& buffList = buffListComp.buffList;
 
-        // 已存在相同类型的Buff，层数太大无法再叠加了
-        if (currentBuff->id() == tableBuff->id()) {
-            if (buff.pb.layer() >= currentBuff->maxlayer())
-            {
-                return kBuffMaxBuffStack;
-            }
-            break;
-        }
-    }
+	bool buffExists = false;
+	bool isImmune = false;
 
-    // 2. 检查是否免疫
-    for (const auto& [id, buff] : tls.registry.get<BuffListComp>(parent).buffList) {
-        auto [currentBuff, result] = GetBuffTable(buffTableId);
-        if (result != kOK) {
-            return result;
-        }
+	for (const auto& [id, buff] : buffList) {
+		auto [currentBuff, fetchResult] = GetBuffTable(id);
+		if (fetchResult != kOK) {
+			return fetchResult;
+		}
 
-        // 已存在相同类型的Buff，层数太大无法再叠加了
-        if (currentBuff->immunetag() == tableBuff->tag()) {
-            return kBuffTargetImmuneToBuff;
-        }
-    }
- 
-    // 3. 其他检查条件
-    // ...
+		if (currentBuff->id() == tableBuff->id()) {
+			// 已存在相同类型的Buff，检查层数
+			if (buff.pb.layer() >= currentBuff->maxlayer()) {
+				return kBuffMaxBuffStack;
+			}
+			buffExists = true;
+		}
 
-    return kOK; // 可以创建
+		if (currentBuff->immunetag() == tableBuff->tag()) {
+			isImmune = true;
+		}
+	}
+
+	if (isImmune) {
+		return kBuffTargetImmuneToBuff;
+	}
+
+	// 其他检查条件
+	// ...
+
+	return kOK; // 可以创建
 }
 
-void BuffUtil::OnBuffAwake()
+
+bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId)
 {
-
+	return false;
 }
 
-void BuffUtil::OnBuffStart()
+void BuffUtil::OnBuffStart(entt::entity parent, uint32_t buffTableId)
 {
 
 }

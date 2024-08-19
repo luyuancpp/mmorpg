@@ -17,14 +17,15 @@ public:
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。
     uint32_t CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTableId);
 
+
     //Buff在实例化之后，生效之前（还未加入到Buff容器中）时会抛出一个OnBuffAwake事件。
     // 如果存在某种Buff的效果是：受到负面效果时，驱散当前所有负面效果，并给自己加一个护盾。
     // 那么这个时候就需要监听BuffAwake事件了，此时会给自己加护盾，
     // 并且把所有负面Buff驱散。这意味着一个Buff可能还未生效之前即销毁了（小心Buff的生命周期）。
-    void OnBuffAwake();
+    bool OnBuffAwake(entt::entity parent, uint32_t buffTableId);
 
     //当Buff生效时（加入到Buff容器后），我们提供给策划一个抽象接口OnBuffStart，由策划配置具体效果。
-    void OnBuffStart();
+    void OnBuffStart(entt::entity parent, uint32_t buffTableId);
 
     //当Buff添加时存在相同类型且Caster相等的时候，Buff执行刷新流程（更新Buff层数，等级，持续时间等数据）。
     // 我们提供给策划一个抽象接口OnBuffRefresh，由策划配置具体效果。
