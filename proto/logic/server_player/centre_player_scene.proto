@@ -9,7 +9,7 @@ option cc_generic_services = true;
 
 message CentreEnterSceneRequest
 {
-  SceneInfo scene_info = 1;
+  SceneInfoPBComp scene_info = 1;
 }
 
 message CentreLeaveSceneRequest
