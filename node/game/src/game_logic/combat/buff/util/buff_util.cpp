@@ -6,34 +6,42 @@
 #include "thread_local/storage.h"
 #include "buff_error_tip.pb.h"
 #include "macros/return_define.h"
-#include "util/node_id_generator.h"
+#include "thread_local/storage_game.h"
 
-using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
-
-uint32_t BuffUtil::CreatedBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& AbilityContext)
+uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext)
 {
 	// 检查Buff是否可以被创建
-	uint32_t result = CheckIfBuffCanBeCreated(parent, buffTableId);
+	uint32_t result = CanCreateBuff(parent, buffTableId);
 	CHECK_RETURN_IF_NOT_OK(result);
 
-	BuffComp buff;
+	BuffComp newBuff;
 
 	auto& buffListComp = tls.registry.get<BuffListComp>(parent);
 	auto& buffList = buffListComp.buffList;
 
-	// 查找并增加层数
-	if (auto buffIt = buffList.find(buffTableId); buffIt != buffList.end())
+	if (HandleExistingBuff(parent, buffTableId, abilityContext))
 	{
-		buffIt->second.pb.set_layer(buffIt->second.pb.layer() + 1);
+
+		// 处理已存在的Buff，如更新层数
+		// 如果处理成功，函数将返回，避免继续执行
+		return kOK;
 	}
 	else
 	{
 		// 发出Buff觉醒事件
-		auto destroy = OnBuffAwake(parent, buffTableId);
+		bool shouldDestroy = OnBuffAwake(parent, buffTableId);
 
-		if (!destroy)
+		if (!shouldDestroy)
 		{
-			buffList[buffTableId] = buff;
+			// 生成唯一的Buff ID
+			uint64_t newBuffId = 0;
+			do
+			{
+				newBuffId = tlsGame.buffIdGenerator.Generate();
+			} while (buffList.find(newBuffId) != buffList.end());
+
+			newBuff.buffPB.set_buff_id( newBuffId);
+			buffList[newBuffId] = newBuff;
 		}
 
 		OnBuffStart(parent, buffTableId);
@@ -42,7 +50,7 @@ uint32_t BuffUtil::CreatedBuff(entt::entity parent, uint32_t buffTableId, const 
 	return kOK;
 }
 
-uint32_t BuffUtil::CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTableId) {
+uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 	auto [tableBuff, result] = GetBuffTable(buffTableId);
 	if (result != kOK) {
 		return result;
@@ -62,7 +70,7 @@ uint32_t BuffUtil::CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTab
 
 		if (currentBuff->id() == tableBuff->id()) {
 			// 已存在相同类型的Buff，检查层数
-			if (buff.pb.layer() >= currentBuff->maxlayer()) {
+			if (buff.buffPB.layer() >= currentBuff->maxlayer()) {
 				return kBuffMaxBuffStack;
 			}
 			buffExists = true;
@@ -83,6 +91,22 @@ uint32_t BuffUtil::CheckIfBuffCanBeCreated(entt::entity parent, uint32_t buffTab
 	return kOK; // 可以创建
 }
 
+bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext)
+{
+	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
+
+	for (auto& [buffId, buffPB] : buffList)
+	{
+		if (buffPB.buffPB.buff_table_id() == buffTableId &&
+			buffPB.abilityContext->caster == abilityContext->caster)
+		{
+
+			OnBuffRefresh(parent, buffTableId, abilityContext, buffPB);
+			return true;
+		}
+	}
+	return false;
+}
 
 bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId)
 {
@@ -94,7 +118,7 @@ void BuffUtil::OnBuffStart(entt::entity parent, uint32_t buffTableId)
 
 }
 
-void BuffUtil::OnBuffRefresh()
+void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext, BuffComp& buffComp)
 {
 
 }

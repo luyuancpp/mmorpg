@@ -9,10 +9,11 @@ message BuffContextPBComp
 
 message BuffPBComp
 {
-  uint32 buff_table_id = 1;
-  uint32 ability_id = 2;
-  uint64 parent_entity = 3;
-  uint32 layer = 4;
-  uint32 caster = 5;
-  bool triggerdamage = 6;
+  uint64 buff_id = 1;
+  uint32 buff_table_id = 2;
+  uint32 ability_id = 3;
+  uint64 parent_entity = 4;
+  uint32 layer = 5;
+  uint32 caster = 6;
+  bool triggerdamage = 7;
 }
