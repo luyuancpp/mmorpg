@@ -5,3 +5,7 @@ void MotionModifierBuffUtil::ApplyMotion()
 
 }
 
+void MotionModifierBuffUtil::ModifyMotion()
+{
+}
+
