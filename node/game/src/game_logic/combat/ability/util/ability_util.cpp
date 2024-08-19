@@ -241,7 +241,7 @@ void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const :
     AbilityUsedS2C abilityUsedS2C;
     abilityUsedS2C.set_entity(entt::to_integral(caster));
     abilityUsedS2C.add_target_entity(request->target_id());
-    abilityUsedS2C.set_ability_id(request->ability_table_id());
+    abilityUsedS2C.set_ability_table_id(request->ability_table_id());
     abilityUsedS2C.mutable_position()->CopyFrom(request->position());
 
     ViewUtil::BroadcastMessageToVisiblePlayers(
@@ -264,7 +264,7 @@ void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* tabl
 void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster, uint32_t abilityId) {
     AbilityInterruptedS2C abilityInterruptedS2C;
     abilityInterruptedS2C.set_entity(entt::to_integral(caster));
-    abilityInterruptedS2C.set_ability_id(abilityId);
+    abilityInterruptedS2C.set_ability_table_id(abilityId);
     ViewUtil::BroadcastMessageToVisiblePlayers(
         caster,
         PlayerAbilityServiceNotifyAbilityInterruptedMessageId,
