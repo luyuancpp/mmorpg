@@ -11,7 +11,7 @@ import "logic/component/actor_comp.proto";
 option cc_generic_services = true;
 
 message UseAbilityRequest {
-  uint32 ability_id = 1;
+  uint32 ability_table_id = 1;
   uint64 target_id = 2;
   Vector3 position = 3;  
   Rotation rotation = 4;
@@ -25,7 +25,7 @@ message AbilityInterruptedS2C
 {
   uint64 entity = 1;
   uint64 target_entity = 2;
-  uint32 ability_id = 3;
+  uint32 ability_table_id = 3;
   uint32 reason_code = 4;
 }
 
@@ -33,7 +33,7 @@ message AbilityUsedS2C
 {
   uint64 entity = 1;
   repeated uint64 target_entity = 2;
-  uint32 ability_id = 3;
+  uint32 ability_table_id = 3;
   Vector3 position = 4;
   uint64 time_stamp = 5;
 }

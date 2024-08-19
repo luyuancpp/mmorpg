@@ -136,6 +136,8 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
+    <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff.cpp" />
+    <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\grid_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp" />
     <ClCompile Include="src\handler\event\event_handler.cpp" />
@@ -186,6 +188,8 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\combat\buff\comp\buff_comp.h" />
     <ClInclude Include="src\game_logic\combat\buff\constants\buff_constants.h" />
     <ClInclude Include="src\game_logic\combat\buff\util\buff_util.h" />
+    <ClInclude Include="src\game_logic\combat\buff\util\modifier_util.h" />
+    <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_util.h" />
     <ClInclude Include="src\game_logic\common\constants\fps_constants.h" />
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h" />
     <ClInclude Include="src\game_logic\scene\comp\nav_comp.h" />
