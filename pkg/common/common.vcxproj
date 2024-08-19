@@ -50,6 +50,7 @@
     <ClInclude Include="src\util\expected.h" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\util\game_registry.h" />
+    <ClInclude Include="src\util\node_id_generator.h" />
     <ClInclude Include="src\util\pb.h" />
     <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\util\snow_flake.h" />

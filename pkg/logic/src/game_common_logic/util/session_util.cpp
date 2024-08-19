@@ -4,5 +4,5 @@
 
 NodeId GetGateNodeId(Guid session_id)
 {
-    return static_cast<NodeId>(session_id >> SessionIdGen::node_bit());
+    return static_cast<NodeId>(session_id >> SessionIdGenerator::node_bit());
 }

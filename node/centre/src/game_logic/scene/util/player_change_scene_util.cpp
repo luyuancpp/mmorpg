@@ -4,7 +4,7 @@
 #include "pbc/scene_error_tip.pb.h"
 #include "scene/util/scene_util.h"
 #include "thread_local/storage.h"
-
+#include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"
 
 //todo 各种服务器崩溃// 初始化场景切换队列

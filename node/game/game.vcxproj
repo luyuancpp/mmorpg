@@ -191,6 +191,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\combat\buff\util\modifier_util.h" />
     <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_util.h" />
     <ClInclude Include="src\game_logic\common\constants\fps_constants.h" />
+    <ClInclude Include="src\game_logic\common\sequence\node_sequence_generator.h" />
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h" />
     <ClInclude Include="src\game_logic\scene\comp\nav_comp.h" />
     <ClInclude Include="src\game_logic\scene\comp\grid_comp.h" />

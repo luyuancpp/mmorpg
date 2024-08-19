@@ -37,6 +37,7 @@
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\network\message_statistics.h" />
     <ClInclude Include="src\test\test.h" />
+    <ClInclude Include="src\util\node_id_generator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />

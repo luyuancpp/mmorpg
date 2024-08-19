@@ -14,11 +14,11 @@ public:
     entt::registry login_node_registry;
     ConsistentHashNode<uint64_t,entt::entity>& login_consistent_node() { return login_consistent_node_; }
     SessionList& sessions() { return session_list_; }
-    SessionIdGen& session_id_gen() { return session_id_gen_; }
+    SessionIdGenerator& session_id_gen() { return session_id_gen_; }
 private:
     ConsistentHashNode<uint64_t,entt::entity> login_consistent_node_;
     SessionList session_list_;
-    SessionIdGen session_id_gen_;
+    SessionIdGenerator session_id_gen_;
 };
 
 extern thread_local ThreadLocalStorageGate tls_gate;

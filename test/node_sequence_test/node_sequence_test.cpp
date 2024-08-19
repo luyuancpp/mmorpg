@@ -7,13 +7,14 @@
 #include <vector>
 
 #include "util/snow_flake.h"
+#include "util/node_id_generator.h"
 
 using GuidVector = std::vector<Guid>;
 using GuidSet = std::unordered_set<Guid>;
 
-using ServerSequence32 = NodeSequence<uint64_t, 32>;
+using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
 
-ServerSequence32 sf;
+NodeIdGenerator32BitId sf;
 
 static const std::size_t kTestSize = 0xffffff;
 

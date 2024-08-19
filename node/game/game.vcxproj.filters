@@ -341,5 +341,8 @@
     <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\game_logic\common\sequence\node_sequence_generator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

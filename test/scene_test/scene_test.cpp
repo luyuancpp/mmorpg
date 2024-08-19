@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "muduo/base/Logging.h"
 #include "scene/util/scene_util.h"
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"

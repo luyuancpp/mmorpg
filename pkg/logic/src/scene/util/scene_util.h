@@ -2,7 +2,7 @@
 
 #include "scene/comp/node_scene_comp.h"
 #include "scene/util/node_scene_util.h"
-#include "util/snow_flake.h"
+#include "util/node_id_generator.h"
 #include "proto/logic/component/scene_comp.pb.h"
 
 struct EnterSceneParam
@@ -201,5 +201,5 @@ public:
     static bool IsSceneEmpty();
 
 private:
-    inline static NodeBit12Sequence nodeSequence; // Sequence for generating node IDs
+    inline static NodeIdGenerator12BitId nodeSequence; // Sequence for generating node IDs
 };

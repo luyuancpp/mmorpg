@@ -1,7 +1,7 @@
 #include "item_util.h"
 
 
-NodeBit12Sequence g_bag_node_sequence;
+NodeIdGenerator12BitId g_bag_node_sequence;
 
 void BagEntityPtrDeleter(entt::entity* p)
 {
