@@ -29,7 +29,7 @@ message player_centre_database
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
-  PlayerSceneInfoComp scene_info = 2;
+  PlayerSceneContextPBComp scene_info = 2;
 }
 
 //玩家数据库表1,重要数据放这里，不重要数据放另外一个表，(重要:比如金钱，跟收入有关)，登录马上加载
