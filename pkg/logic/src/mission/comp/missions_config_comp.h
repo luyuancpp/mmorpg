@@ -31,66 +31,66 @@ struct MissionConfig : public IMissionConfig
 
     virtual uint32_t GetMissionType(uint32_t id) const override
     {
-        auto [tableMission, result] = GetMissionTable(id);
-        if (nullptr == tableMission)
+        auto [itemMission, result] = GetMissionTable(id);
+        if (nullptr == itemMission)
         {
             return 0;
         }
-        return tableMission->mission_type();
+        return itemMission->mission_type();
     }
 
     virtual uint32_t GetMissionSubType(uint32_t id) const override
     {
-        auto [tableMission, result] = GetMissionTable(id);
-        if (nullptr == tableMission)
+        auto [itemMission, result] = GetMissionTable(id);
+        if (nullptr == itemMission)
         {
             return 0;
         }
-        return tableMission->mission_sub_type();
+        return itemMission->mission_sub_type();
     }
 
     virtual uint32_t GetRewardId(uint32_t id)const override
     {
-        auto [tableMission, result] = GetMissionTable(id);
-        if (nullptr == tableMission)
+        auto [itemMission, result] = GetMissionTable(id);
+        if (nullptr == itemMission)
         {
             return 0;
         }
-        return tableMission->reward_id();
+        return itemMission->reward_id();
     }
 
     virtual bool AutoReward(uint32_t mission_id)const override
     {
-        auto [tableMission, result] = GetMissionTable(mission_id);
-        if (nullptr == tableMission)
+        auto [itemMission, result] = GetMissionTable(mission_id);
+        if (nullptr == itemMission)
         {
             return false;
         }
-        return  tableMission->auto_reward() > 0;
+        return  itemMission->auto_reward() > 0;
     }
 
     virtual const ::google::protobuf::RepeatedField<uint32_t>& GetConditionIds(uint32_t mission_id) const override
     {
-        auto [tableMission, result] = GetMissionTable(mission_id);
-        if (nullptr == tableMission)
+        auto [itemMission, result] = GetMissionTable(mission_id);
+        if (nullptr == itemMission)
         {
             static ::google::protobuf::RepeatedField<uint32_t> s;
             s.Clear();
             return s;
         }
-        return tableMission->condition_id();
+        return itemMission->condition_id();
     }
 
     virtual const ::google::protobuf::RepeatedField<uint32_t>& getNextMissionIds(uint32_t mission_id)const override
     {
-        auto [tableMission, result] = GetMissionTable(mission_id);
-        if (nullptr == tableMission)
+        auto [itemMission, result] = GetMissionTable(mission_id);
+        if (nullptr == itemMission)
         {
             static ::google::protobuf::RepeatedField<uint32_t> s;
             s.Clear();
             return s;
         }
-        return tableMission->next_mission_id();
+        return itemMission->next_mission_id();
     }
 
     virtual bool CheckTypeRepeated() const override { return true;   }

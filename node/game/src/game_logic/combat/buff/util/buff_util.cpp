@@ -10,14 +10,19 @@
 
 uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext)
 {
+	auto [buffTable, result] = GetBuffTable(buffTableId);
+	if (nullptr == buffTable)
+	{
+		return  result;
+	}
+	
 	// 检查Buff是否可以被创建
-	uint32_t result = CanCreateBuff(parent, buffTableId);
+	result = CanCreateBuff(parent, buffTableId);
 	CHECK_RETURN_IF_NOT_OK(result);
 
 	BuffComp newBuff;
 
-	auto& buffListComp = tls.registry.get<BuffListComp>(parent);
-	auto& buffList = buffListComp.buffList;
+	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
 
 	if (HandleExistingBuff(parent, buffTableId, abilityContext))
 	{
@@ -44,10 +49,23 @@ uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, co
 			buffList[newBuffId] = newBuff;
 		}
 
+		
+
 		OnBuffStart(parent, buffTableId);
 	}
 
 	return kOK;
+}
+
+void BuffUtil::OnBuffExpire(entt::entity parent, uint64_t buffId)
+{
+	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
+
+	OnBuffRemove(parent, buffId);
+
+	buffList.erase(buffId);
+
+	OnBuffDestroy(parent);
 }
 
 uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
@@ -56,8 +74,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 		return result;
 	}
 
-	auto& buffListComp = tls.registry.get<BuffListComp>(parent);
-	const auto& buffList = buffListComp.buffList;
+	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
 
 	bool buffExists = false;
 	bool isImmune = false;
@@ -123,12 +140,12 @@ void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const Bu
 
 }
 
-void BuffUtil::OnBuffRemove()
+void BuffUtil::OnBuffRemove(entt::entity parent, uint64_t buffId)
 {
 
 }
 
-void BuffUtil::OnBuffDestroy()
+void BuffUtil::OnBuffDestroy(entt::entity parent)
 {
 
 }
