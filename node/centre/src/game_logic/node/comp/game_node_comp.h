@@ -1,8 +1,8 @@
 #pragma once
 #include "muduo/net/TcpConnection.h"
-#include "proto/logic/component/gs_node_comp.pb.h"
+#include "proto/logic/component/game_node_comp.pb.h"
 
-using GameNodePlayerInfoPtr = std::shared_ptr<GameNodePlayerInfo>;
+using GameNodePlayerInfoPtrComp = std::shared_ptr<GameNodePlayerInfoPBComp>;
 
 
 

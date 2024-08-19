@@ -29,8 +29,8 @@ public:
 	void set_size(uint32_t sz) { itembase().set_size(sz); }
 
 private:
-	inline const ItemBaseDb& itembase()const { return tls.itemRegistry.get<ItemBaseDb>(entity()); }
-	inline ItemBaseDb& itembase(){ return tls.itemRegistry.get<ItemBaseDb>(entity()); }
+	inline const ItemPBComp& itembase()const { return tls.itemRegistry.get<ItemPBComp>(entity()); }
+	inline ItemPBComp& itembase(){ return tls.itemRegistry.get<ItemPBComp>(entity()); }
 	ItemEntity entity_;
 };
 
@@ -39,7 +39,7 @@ using ItemRawPtrVector = std::vector<Item*>;
 struct CreateItemParam
 {
 	CreateItemParam() { item_base_db.set_size(1); }
-	ItemBaseDb item_base_db;
+	ItemPBComp item_base_db;
 };
 
 Item CreateItem(const CreateItemParam& p);

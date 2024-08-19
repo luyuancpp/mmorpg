@@ -44,13 +44,13 @@ void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 	// 2 检查玩家是否已经在线，若在线则直接进入
 	if (playerIt != playerList.end())
 	{
-		PlayerGameNodeEnteryInfo enterInfo;
+		PlayerGameNodeEnteryInfoPBComp enterInfo;
 		enterInfo.set_centre_node_id(request->centre_node_id());
 		PlayerNodeUtil::EnterGs(playerIt->second, enterInfo);
 		return;
 	}
 
-	PlayerGameNodeEnteryInfo enterInfo;
+	PlayerGameNodeEnteryInfoPBComp enterInfo;
 	enterInfo.set_centre_node_id(request->centre_node_id());
 	auto asyncPlayerIt = tlsGame.playerNodeEntryInfoList.emplace(request->player_id(), enterInfo);
 
@@ -355,13 +355,13 @@ void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* 
 		return;
 	}
 
-	PlayerSessionInfo sessionInfo;
+	PlayerSessionPBComp sessionInfo;
 	sessionInfo.set_player_id(request->player_id());
 	tlsSessions.emplace(request->session_id(), sessionInfo);
 
-	if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player); nullptr == playerNodeInfo)
+	if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player); nullptr == playerNodeInfo)
 	{
-		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(request->session_id());
+		tls.registry.emplace_or_replace<PlayerNodeInfoPBComp>(player).set_gate_session_id(request->session_id());
 	}
 	else
 	{

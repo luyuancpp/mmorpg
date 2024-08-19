@@ -14,7 +14,7 @@ ItemEntity::ItemEntity() : entity_(new entt::entity(tls.itemRegistry.create()), 
 Item CreateItem(const CreateItemParam& p)
 {
 	Item item;
-	tls.itemRegistry.emplace<ItemBaseDb>(item.entity(), p.item_base_db);
+	tls.itemRegistry.emplace<ItemPBComp>(item.entity(), p.item_base_db);
 	return item;
 }
 

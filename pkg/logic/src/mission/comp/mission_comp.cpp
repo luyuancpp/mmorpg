@@ -26,7 +26,7 @@ MissionsComp::MissionsComp()
 std::size_t MissionsComp::CanGetRewardSize() const
 {
 	// Retrieve mission reward component
-	const auto* const missionReward = tls.registry.try_get<MissionRewardPbComp>(EventOwner());
+	const auto* const missionReward = tls.registry.try_get<RewardListPBComp>(EventOwner());
 	if (nullptr == missionReward)
 	{
 		return 0; // Return 0 if reward component is not found

@@ -13,7 +13,7 @@ void PlayerChangeSceneUtil::InitChangeSceneQueue(entt::entity player) {
 }
 
 // 添加切换场景信息到队列
-uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
+uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const CentreChangeSceneInfoPBComp& changeInfo) {
 	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
 		return kChangeScenePlayerQueueNotFound;  // 玩家队列组件为空
@@ -41,7 +41,7 @@ void PlayerChangeSceneUtil::PopFrontChangeSceneQueue(entt::entity player) {
 }
 
 // 设置当前切换场景信息的切换状态
-void PlayerChangeSceneUtil::SetChangeGsStatus(entt::entity player, CentreChangeSceneInfo::eChangeGsStatus s) {
+void PlayerChangeSceneUtil::SetChangeGsStatus(entt::entity player, CentreChangeSceneInfoPBComp::eChangeGsStatus s) {
 	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
 	if (!changeSceneQueue) {
 		return;
@@ -54,7 +54,7 @@ void PlayerChangeSceneUtil::SetChangeGsStatus(entt::entity player, CentreChangeS
 }
 
 // 将场景信息复制到切换场景信息中
-void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(CentreChangeSceneInfo& changeInfo, const SceneInfo& sceneInfo) {
+void PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(CentreChangeSceneInfoPBComp& changeInfo, const SceneInfoPBComp& sceneInfo) {
 	changeInfo.set_scene_confid(sceneInfo.scene_confid());
 	changeInfo.set_dungen_confid(sceneInfo.dungen_confid());
 	changeInfo.set_guid(sceneInfo.guid());
@@ -73,16 +73,16 @@ void PlayerChangeSceneUtil::ProcessChangeSceneQueue(entt::entity player) {
 	}
 
 	const auto& changeInfo = changeSceneQueue.front();
-	if (changeInfo.change_gs_type() == CentreChangeSceneInfo::eSameGs) {
+	if (changeInfo.change_gs_type() == CentreChangeSceneInfoPBComp::eSameGs) {
 		ProcessSameGsChangeScene(player, changeInfo);
 	}
-	else if (changeInfo.change_gs_type() == CentreChangeSceneInfo::eDifferentGs) {
+	else if (changeInfo.change_gs_type() == CentreChangeSceneInfoPBComp::eDifferentGs) {
 		ProcessDifferentGsChangeScene(player, changeInfo);
 	}
 }
 
 // 处理同一游戏服务器内的场景切换
-void PlayerChangeSceneUtil::ProcessSameGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
+void PlayerChangeSceneUtil::ProcessSameGsChangeScene(entt::entity player, const CentreChangeSceneInfoPBComp& changeInfo) {
 	const auto& destScene = entt::entity{ changeInfo.guid() };
 	if (entt::null == destScene) {
 		// 场景不存在，移除消息
@@ -97,11 +97,11 @@ void PlayerChangeSceneUtil::ProcessSameGsChangeScene(entt::entity player, const 
 }
 
 // 处理不同游戏服务器间的场景切换
-void PlayerChangeSceneUtil::ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfo& changeInfo) {
-	if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eLeaveGsScene) {
+void PlayerChangeSceneUtil::ProcessDifferentGsChangeScene(entt::entity player, const CentreChangeSceneInfoPBComp& changeInfo) {
+	if (changeInfo.change_gs_status() == CentreChangeSceneInfoPBComp::eLeaveGsScene) {
 		SceneUtil::LeaveScene({ player });
 	}
-	else if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eEnterGsSceneSucceed) {
+	else if (changeInfo.change_gs_status() == CentreChangeSceneInfoPBComp::eEnterGsSceneSucceed) {
 		const auto destScene = entt::entity{ changeInfo.guid() };
 		if (entt::null == destScene) {
 			SceneUtil::EnterDefaultScene({ player });
@@ -110,7 +110,7 @@ void PlayerChangeSceneUtil::ProcessDifferentGsChangeScene(entt::entity player, c
 			SceneUtil::EnterScene({ destScene, player });
 		}
 	}
-	else if (changeInfo.change_gs_status() == CentreChangeSceneInfo::eGateEnterGsSceneSucceed) {
+	else if (changeInfo.change_gs_status() == CentreChangeSceneInfoPBComp::eGateEnterGsSceneSucceed) {
 		PopFrontChangeSceneQueue(player);
 		OnEnterSceneOk(player);
 	}

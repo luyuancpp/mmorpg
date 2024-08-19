@@ -29,7 +29,7 @@ void GameNodeSceneUtil::InitializeNodeScenes() {
 }
 
 void GameNodeSceneUtil::RegisterSceneToCentre(entt::entity scene) {
-	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfo>(scene);
+	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComp>(scene);
 	if (!sceneInfo) {
 		return;
 	}
@@ -45,7 +45,7 @@ void GameNodeSceneUtil::RegisterSceneToCentre() {
 	RegisterSceneRequest request;
 	request.set_game_node_id(gGameNode->GetNodeId());
 
-	for (auto&& [entity, sceneInfo] : tls.sceneRegistry.view<SceneInfo>().each()) {
+	for (auto&& [entity, sceneInfo] : tls.sceneRegistry.view<SceneInfoPBComp>().each()) {
 		request.mutable_scenes_info()->Add()->CopyFrom(sceneInfo);
 	}
 
@@ -56,7 +56,7 @@ void GameNodeSceneUtil::HandleSceneCreation(const OnSceneCreate& message) {
 	entt::entity scene = entt::to_entity(message.entity());
 	tls.sceneRegistry.emplace<SceneGridListComp>(scene);
 
-	auto& sceneInfo = tls.sceneRegistry.get<SceneInfo>(scene);
+	auto& sceneInfo = tls.sceneRegistry.get<SceneInfoPBComp>(scene);
 	if (tlsGame.sceneNav.contains(sceneInfo.scene_confid())) {
 		// Auto-generated crowd handling
 		// auto& dtCrowd = tls.sceneRegistry.emplace<dtCrowd>(scene);

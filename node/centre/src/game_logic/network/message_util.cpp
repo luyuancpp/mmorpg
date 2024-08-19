@@ -38,7 +38,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 	if (!playerNodeInfo)
 	{
 		return;
@@ -84,7 +84,7 @@ void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& mess
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 	if (!playerNodeInfo)
 	{
 		return;
@@ -119,7 +119,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 	if (!playerNodeInfo)
 	{
 		return;
@@ -184,7 +184,7 @@ void CallGamePlayerMethod(uint32_t messageId, const google::protobuf::Message& m
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 	if (!playerNodeInfo)
 	{
 		return;

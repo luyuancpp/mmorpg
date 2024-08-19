@@ -229,7 +229,7 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
 	if (playerNodeInfo == nullptr)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player entity: " << tls.registry.get<Guid>(playerEntity);
@@ -302,7 +302,7 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 	LOG_INFO << "Player login attempt: Player ID " << clientMsgBody.player_id() << ", Session ID " << sessionId;
 
-	PlayerSessionInfo sessionInfo;
+	PlayerSessionPBComp sessionInfo;
 	sessionInfo.set_player_id(clientMsgBody.player_id());
 	tlsSessions.emplace(sessionId, sessionInfo);
 
@@ -328,7 +328,7 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 		//区分顶号和断线重连
 		// 
 		// Handle session takeover (顶号) or reconnect scenario
-		if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+		if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 			playerNodeInfo != nullptr)
 		{
 			// Handle session takeover (顶号)
@@ -350,14 +350,14 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 		{
 			LOG_INFO << "Existing player login: Player ID " << clientMsgBody.player_id();
 
-			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(sessionId);
+			tls.registry.emplace_or_replace<PlayerNodeInfoPBComp>(player).set_gate_session_id(sessionId);
 		}
 
 		//连续顶几次,所以用emplace_or_replace
-		LOG_INFO << "Player login type: " << (tls.registry.any_of<EnterGsFlag>(player) ? "Replace" : "New");
+		LOG_INFO << "Player login type: " << (tls.registry.any_of<EnterGameNodeInfoPBComp>(player) ? "Replace" : "New");
 
 		// Register player to gate node
-		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
+		tls.registry.emplace_or_replace<EnterGameNodeInfoPBComp>(player).set_enter_gs_type(LOGIN_REPLACE);
 		PlayerNodeUtil::RegisterPlayerToGateNode(player);
 	}
 
@@ -483,7 +483,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		return;
 	}
 
-	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "Player session info not found for player: " << playerId;
@@ -494,7 +494,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 
 	PlayerNodeUtil::RegisterPlayerToGateNode(player);
 
-	PlayerChangeSceneUtil::SetChangeGsStatus(player, CentreChangeSceneInfo::eEnterGsSceneSucceed);
+	PlayerChangeSceneUtil::SetChangeGsStatus(player, CentreChangeSceneInfoPBComp::eEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->game_node_id();

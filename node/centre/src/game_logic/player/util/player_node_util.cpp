@@ -40,15 +40,15 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_
 		return;
 	}
 
-	tls.registry.emplace_or_replace<PlayerNodeInfo>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
+	tls.registry.emplace_or_replace<PlayerNodeInfoPBComp>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
 	tls.registry.emplace<Player>(playerEntity);
 	tls.registry.emplace<Guid>(playerEntity, playerId);
-	tls.registry.emplace<PlayerSceneInfoComp>(playerEntity, playerData.scene_info());
+	tls.registry.emplace<PlayerSceneContextPBComp>(playerEntity, playerData.scene_info());
 
 	PlayerChangeSceneUtil::InitChangeSceneQueue(playerEntity);
 
 	// Set flag for first login
-	tls.registry.emplace<EnterGsFlag>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+	tls.registry.emplace<EnterGameNodeInfoPBComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
 	PlayerSceneUtil::HandleLoginEnterScene(playerEntity);
 	// On database loaded
@@ -61,7 +61,7 @@ void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_centre_databas
 
 void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
 {
-	const auto enterGameFlag = tls.registry.try_get<EnterGsFlag>(playerEntity);
+	const auto enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComp>(playerEntity);
 	if (!enterGameFlag)
 	{
 		return;
@@ -83,14 +83,14 @@ void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
 	{
 		Centre2GsLoginRequest message;
 		message.set_enter_gs_type(enterGameFlag->enter_gs_type());
-		tls.registry.remove<EnterGsFlag>(playerEntity);
+		tls.registry.remove<EnterGameNodeInfoPBComp>(playerEntity);
 		SendToGsPlayer(GamePlayerServiceCentre2GsLoginMessageId, message, playerEntity);
 	}
 }
 
 void PlayerNodeUtil::RegisterPlayerToGateNode(entt::entity playerEntity)
 {
-	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
+	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "Player session not found for player: " << tls.registry.try_get<Guid>(playerEntity);
@@ -119,7 +119,7 @@ void PlayerNodeUtil::RegisterPlayerToGateNode(entt::entity playerEntity)
 
 void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
 {
-	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
+	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "Invalid player session";
@@ -138,7 +138,7 @@ void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
 	request.set_player_id(*playerId);
 	SendToGs(GameServiceUpdateSessionDetailMessageId, request, playerNodeInfo->game_node_id());
 
-	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGsFlag>(playerEntity))
+	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComp>(playerEntity))
 	{
 		if (enterGameFlag->enter_gs_type() != LOGIN_NONE)
 		{
