@@ -15,34 +15,34 @@
 #include "time/util/cooldown_time_util.h"
 
 uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const ::UseAbilityRequest* request) {
-    auto [tableAbility, result] = GetAbilityTable(request->ability_table_id());
+    auto [abilityTable, result] = GetAbilityTable(request->ability_table_id());
     if (result != kOK) {
         return result;
     }
 
     CHECK_RETURN_IF_NOT_OK(ValidateTarget(request));
 
-    CHECK_RETURN_IF_NOT_OK(CheckCooldown(caster, tableAbility));
+    CHECK_RETURN_IF_NOT_OK(CheckCooldown(caster, abilityTable));
 
-    CHECK_RETURN_IF_NOT_OK(CheckCasting(caster, tableAbility));
+    CHECK_RETURN_IF_NOT_OK(CheckCasting(caster, abilityTable));
 
-    CHECK_RETURN_IF_NOT_OK(CheckRecovery(caster, tableAbility));
+    CHECK_RETURN_IF_NOT_OK(CheckRecovery(caster, abilityTable));
 
-    CHECK_RETURN_IF_NOT_OK(CheckChannel(caster, tableAbility));
+    CHECK_RETURN_IF_NOT_OK(CheckChannel(caster, abilityTable));
 
     BroadcastAbilityUsedMessage(caster, request);
-    SetupCastingTimer(caster, tableAbility, request->ability_table_id());
+    SetupCastingTimer(caster, abilityTable, request->ability_table_id());
 
     return kOK;
 }
 
 bool AbilityUtil::IsAbilityOfType(const uint32_t abilityId, const uint32_t abilityType) {
-    auto [tableAbility, result] = GetAbilityTable(abilityId);
-    if (tableAbility == nullptr) {
+    auto [abilityTable, result] = GetAbilityTable(abilityId);
+    if (abilityTable == nullptr) {
         return false;
     }
 
-    for (auto& tabAbilityType : tableAbility->ability_type())
+    for (auto& tabAbilityType : abilityTable->ability_type())
     {
         if ((1 << tabAbilityType) == abilityType)
         {
@@ -71,13 +71,13 @@ void AbilityUtil::HandleGeneralAbilitySpell(const entt::entity caster, const uin
 }
 
 void AbilityUtil::HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId){
-    auto [tableAbility, result] = GetAbilityTable(abilityId);
-    if (tableAbility == nullptr) {
+    auto [abilityTable, result] = GetAbilityTable(abilityId);
+    if (abilityTable == nullptr) {
         return ;
     }
 
     auto& recoveryTimer = tls.registry.emplace<RecoveryTimerComp>(caster).timer;
-    recoveryTimer.RunAfter(tableAbility->recoverytime(), [caster, abilityId] { return HandleAbilityFinish(caster, abilityId); });
+    recoveryTimer.RunAfter(abilityTable->recoverytime(), [caster, abilityId] { return HandleAbilityFinish(caster, abilityId); });
 }
 
 void AbilityUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilityId){
@@ -85,8 +85,8 @@ void AbilityUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilit
 }
 
 void AbilityUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilityId) {
-    auto [tableAbility, result] = GetAbilityTable(abilityId);
-    if (tableAbility == nullptr) {
+    auto [abilityTable, result] = GetAbilityTable(abilityId);
+    if (abilityTable == nullptr) {
         return ;
     }
 
@@ -95,11 +95,11 @@ void AbilityUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilit
     HandleAbilitySpell(caster, abilityId);
     
     auto& channelFinishTimer = tls.registry.emplace<ChannelFinishTimerComp>(caster).timer;
-    channelFinishTimer.RunAfter(tableAbility->channelfinish(),
+    channelFinishTimer.RunAfter(abilityTable->channelfinish(),
         [caster, abilityId] { return HandleChannelFinish(caster, abilityId); });
 
     auto& channelIntervalTimer = tls.registry.emplace<ChannelIntervalTimerComp>(caster).timer;
-    channelIntervalTimer.RunEvery(tableAbility->channelthink(),
+    channelIntervalTimer.RunEvery(abilityTable->channelthink(),
         [caster, abilityId] { return HandleChannelThink(caster, abilityId); });
 }
 
@@ -140,14 +140,14 @@ void AbilityUtil::HandleAbilityDeactivate(const entt::entity caster, const uint3
 }
 
 uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
-    auto [tableAbility, result] = GetAbilityTable(request->ability_table_id());
-    if (!tableAbility->target_type().empty() && request->target_id() <= 0) {
+    auto [abilityTable, result] = GetAbilityTable(request->ability_table_id());
+    if (!abilityTable->target_type().empty() && request->target_id() <= 0) {
         LOG_ERROR << "Invalid target ID: " << request->target_id() 
                  << " for ability ID: " << request->ability_table_id();
         return kAbilityInvalidTargetId;
     }
 
-    if (!tableAbility->target_type().empty()) {
+    if (!abilityTable->target_type().empty()) {
         entt::entity target{request->target_id()};
         if (!tls.registry.valid(target)) {
             LOG_ERROR << "Invalid target entity: " << request->target_id() 
@@ -159,14 +159,14 @@ uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
     return kOK;
 }
 
-uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const ability_row* tableAbility) {
+uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const ability_row* abilityTable) {
     if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
-        if (const auto it = coolDownTimeListComp->cooldown_list().find(tableAbility->cooldown_id());
+        if (const auto it = coolDownTimeListComp->cooldown_list().find(abilityTable->cooldown_id());
             it != coolDownTimeListComp->cooldown_list().end() &&
             CoolDownTimeMillisecondUtil::IsInCooldown(it->second)) {
-            LOG_ERROR << "Ability ID: " << tableAbility->id()
+            LOG_ERROR << "Ability ID: " << abilityTable->id()
                 << " is in cooldown for player: " << entt::to_integral(caster)
-                << ". Cooldown ID: " << tableAbility->cooldown_id()
+                << ". Cooldown ID: " << abilityTable->cooldown_id()
                 << ". Time remaining: " << CoolDownTimeMillisecondUtil::Remaining(it->second) << "ms";
             return kAbilityCooldownNotReady;
         }
@@ -175,17 +175,17 @@ uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const ability_row
     return kOK;
 }
 
-uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const ability_row* tableAbility) {
+uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const ability_row* abilityTable) {
     if (const auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(caster)) {
-        if (tableAbility->immediately() && castTimerComp->timer.IsActive()) {
-            LOG_INFO << "Immediate ability: " << tableAbility->id() 
+        if (abilityTable->immediately() && castTimerComp->timer.IsActive()) {
+            LOG_INFO << "Immediate ability: " << abilityTable->id() 
                      << " is currently casting. Sending interrupt message.";
-            SendAbilityInterruptedMessage(caster, tableAbility->id());
+            SendAbilityInterruptedMessage(caster, abilityTable->id());
             tls.registry.remove<CastingTimerComp>(caster);
             return kOK;
         }
-        if (!tableAbility->immediately() && castTimerComp->timer.IsActive()) {
-            LOG_ERROR << "Non-immediate ability: " << tableAbility->id() 
+        if (!abilityTable->immediately() && castTimerComp->timer.IsActive()) {
+            LOG_ERROR << "Non-immediate ability: " << abilityTable->id() 
                       << " is currently casting and cannot be interrupted.";
             return kAbilityUnInterruptible;
         }
@@ -195,17 +195,17 @@ uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const ability_row*
     return kOK;
 }
 
-uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const ability_row* tableAbility) {
+uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const ability_row* abilityTable) {
     if (const auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(caster)) {
-        if (tableAbility->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
-            LOG_INFO << "Immediate ability: " << tableAbility->id() 
+        if (abilityTable->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
+            LOG_INFO << "Immediate ability: " << abilityTable->id() 
                      << " is currently casting. Sending interrupt message.";
-            SendAbilityInterruptedMessage(caster, tableAbility->id());
+            SendAbilityInterruptedMessage(caster, abilityTable->id());
             tls.registry.remove<RecoveryTimerComp>(caster);
             return kOK;
         }
-        if (!tableAbility->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
-            LOG_ERROR << "Non-immediate ability: " << tableAbility->id() 
+        if (!abilityTable->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
+            LOG_ERROR << "Non-immediate ability: " << abilityTable->id() 
                       << " is currently casting and cannot be interrupted.";
             return kAbilityUnInterruptible;
         }
@@ -215,18 +215,18 @@ uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const ability_row
     return kOK;
 }
 
-uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const ability_row* tableAbility) {
+uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const ability_row* abilityTable) {
     if (const auto* channelFinishTimeTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
-        if (tableAbility->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
-            LOG_INFO << "Immediate ability: " << tableAbility->id() 
+        if (abilityTable->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
+            LOG_INFO << "Immediate ability: " << abilityTable->id() 
                      << " is currently casting. Sending interrupt message.";
-            SendAbilityInterruptedMessage(caster, tableAbility->id());
+            SendAbilityInterruptedMessage(caster, abilityTable->id());
             //todo 技能被打断
             tls.registry.remove<ChannelFinishTimerComp>(caster);
             return kOK;
         }
-        if (!tableAbility->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
-            LOG_ERROR << "Non-immediate ability: " << tableAbility->id() 
+        if (!abilityTable->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
+            LOG_ERROR << "Non-immediate ability: " << abilityTable->id() 
                       << " is currently casting and cannot be interrupted.";
             return kAbilityUnInterruptible;
         }
@@ -251,12 +251,12 @@ void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const :
     );
 }
 
-void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* tableAbility, uint32_t abilityId) {
+void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* abilityTable, uint32_t abilityId) {
     auto& castingTimer = tls.registry.emplace<CastingTimerComp>(caster).timer;
     if (IsAbilityOfType(abilityId, kGeneralAbility)) {
-        castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleGeneralAbilitySpell(caster, abilityId); });
+        castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] { return HandleGeneralAbilitySpell(caster, abilityId); });
     } else if (IsAbilityOfType(abilityId, kChannelAbility)) {
-        castingTimer.RunAfter(tableAbility->castpoint(), [caster, abilityId] { return HandleChannelAbilitySpell(caster, abilityId); });
+        castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] { return HandleChannelAbilitySpell(caster, abilityId); });
     }
 }
 
@@ -273,26 +273,26 @@ void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster, uint3
 }
 
 void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t abilityId) {
-    auto [tableAbility, Result] = GetAbilityTable(abilityId);
-    if (tableAbility == nullptr) {
+    auto [abilityTable, Result] = GetAbilityTable(abilityId);
+    if (abilityTable == nullptr) {
         return;
     }
 
     LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(caster) << ", Ability ID: " << abilityId;
 
-    for (const auto& effect : tableAbility->effect()) {
+    for (const auto& effect : abilityTable->effect()) {
         // Apply each effect
         // Implement effect application logic here
     }
 }
 
 void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId){
-    auto [tableAbility, Result] = GetAbilityTable(abilityId);
-    if (tableAbility == nullptr) {
+    auto [abilityTable, Result] = GetAbilityTable(abilityId);
+    if (abilityTable == nullptr) {
         return ;
     }
 
-    for (auto& effect : tableAbility->effect()){
+    for (auto& effect : abilityTable->effect()){
         
     }
 }

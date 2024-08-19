@@ -69,7 +69,7 @@ void BuffUtil::OnBuffExpire(entt::entity parent, uint64_t buffId)
 }
 
 uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
-	auto [tableBuff, result] = GetBuffTable(buffTableId);
+	auto [buffTable, result] = GetBuffTable(buffTableId);
 	if (result != kOK) {
 		return result;
 	}
@@ -80,20 +80,20 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 	bool isImmune = false;
 
 	for (const auto& [id, buff] : buffList) {
-		auto [currentBuff, fetchResult] = GetBuffTable(id);
+		auto [currentBuffTable, fetchResult] = GetBuffTable(id);
 		if (fetchResult != kOK) {
 			return fetchResult;
 		}
 
-		if (currentBuff->id() == tableBuff->id()) {
+		if (currentBuffTable->id() == buffTable->id()) {
 			// 已存在相同类型的Buff，检查层数
-			if (buff.buffPB.layer() >= currentBuff->maxlayer()) {
+			if (buff.buffPB.layer() >= currentBuffTable->maxlayer()) {
 				return kBuffMaxBuffStack;
 			}
 			buffExists = true;
 		}
 
-		if (currentBuff->immunetag() == tableBuff->tag()) {
+		if (currentBuffTable->immunetag() == buffTable->tag()) {
 			isImmune = true;
 		}
 	}
