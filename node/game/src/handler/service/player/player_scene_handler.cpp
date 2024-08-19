@@ -36,7 +36,7 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 
 	if (auto current_scene_comp = tls.registry.try_get<SceneEntityComp>(player))
 	{
-		const auto current_scene_info = tls.registry.try_get<SceneInfo>(current_scene_comp->sceneEntity);
+		const auto current_scene_info = tls.registry.try_get<SceneInfoPBComp>(current_scene_comp->sceneEntity);
 		if (current_scene_info && current_scene_info->guid() == scene_info.guid() && scene_info.guid() > 0)
 		{
 			LOG_WARN << "Player " << tls.registry.get<Guid>(player) << " is already in the requested scene: " << scene_info.guid();

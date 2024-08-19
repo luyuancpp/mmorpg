@@ -2,10 +2,10 @@
 #include <ranges>
 #include "scene/comp/node_scene_comp.h"
 #include "thread_local/storage.h"
-#include "proto/logic/component/gs_node_comp.pb.h"
+#include "proto/logic/component/game_node_comp.pb.h"
 #include "muduo/base/Logging.h"
 
-using GameNodePlayerInfoPtr = std::shared_ptr<GameNodePlayerInfo>;
+using GameNodePlayerInfoPtrComp = std::shared_ptr<GameNodePlayerInfoPBComp>;
 
 template <typename ServerType>
 entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
@@ -22,7 +22,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, co
 			continue;
 		}
 
-		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtrComp>(entity)).player_size();
 		if (nodePlayerSize == 0) {
 			bestNode = entity;
 			minServerPlayerSize = nodePlayerSize;
@@ -65,7 +65,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 			continue;
 		}
 
-		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtr>(entity)).player_size();
+		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtrComp>(entity)).player_size();
 
 		if (nodePlayerSize >= kMaxServerPlayerSize) {
 			continue;

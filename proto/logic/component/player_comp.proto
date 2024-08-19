@@ -8,7 +8,7 @@ message NormalLogin
 }
 
 //顶号登录
-message CoverPlayerLogin
+message CoverLogin
 {
 }
 

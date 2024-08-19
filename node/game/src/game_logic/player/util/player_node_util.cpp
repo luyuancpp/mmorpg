@@ -48,7 +48,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	velocity.set_z(1);
 	tls.registry.emplace<Velocity>(player, velocity);
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
-	tls.registry.emplace<PlayerNodeInfo>(player).set_centre_node_id(asyncIt->second.centre_node_id());
+	tls.registry.emplace<PlayerNodeInfoPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
 	// todo onload complete
 
@@ -85,13 +85,13 @@ void PlayerNodeUtil::SavePlayer(entt::entity player)
 }
 
 //考虑: 没load 完再次进入别的gs
-void PlayerNodeUtil::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfo& enterInfo)
+void PlayerNodeUtil::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComp& enterInfo)
 {
-	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 	if (playerNodeInfo == nullptr)
 	{
 		LOG_ERROR << "Player node info not found for player: " << tls.registry.get<Guid>(player);
-		playerNodeInfo = &tls.registry.emplace<PlayerNodeInfo>(player);
+		playerNodeInfo = &tls.registry.emplace<PlayerNodeInfoPBComp>(player);
 	}
 
 	playerNodeInfo->set_centre_node_id(enterInfo.centre_node_id());
@@ -159,7 +159,7 @@ void PlayerNodeUtil::RemovePlayerSession(const Guid playerId)
 
 void PlayerNodeUtil::RemovePlayerSession(entt::entity player)
 {
-	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 	if (playerNodeInfo == nullptr)
 	{
 		LOG_ERROR << "Player node info not found";

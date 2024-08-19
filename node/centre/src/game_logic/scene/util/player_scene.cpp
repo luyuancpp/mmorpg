@@ -22,7 +22,7 @@ void PlayerSceneUtil::HandleLoginEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* playerSceneInfo = tls.registry.try_get<PlayerSceneInfoComp>(playerEntity);
+    const auto* playerSceneInfo = tls.registry.try_get<PlayerSceneContextPBComp>(playerEntity);
     if (!playerSceneInfo)
     {
         LOG_ERROR << "Player scene info not found";
@@ -77,10 +77,10 @@ void PlayerSceneUtil::HandleLoginEnterScene(entt::entity playerEntity)
     ProcessPlayerEnterGameServer(playerEntity, SceneUtil::GetGameNodeId(currentSceneId));
 
     // Prepare change scene information
-    CentreChangeSceneInfo changeSceneInfo;
-    PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, tls.sceneRegistry.get<SceneInfo>(currentSceneId));
-    changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
-    changeSceneInfo.set_change_gs_status(CentreChangeSceneInfo::eEnterGsSceneSucceed);
+    CentreChangeSceneInfoPBComp changeSceneInfo;
+    PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, tls.sceneRegistry.get<SceneInfoPBComp>(currentSceneId));
+    changeSceneInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eDifferentGs);
+    changeSceneInfo.set_change_gs_status(CentreChangeSceneInfoPBComp::eEnterGsSceneSucceed);
     PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeSceneInfo);
 }
 
@@ -100,14 +100,14 @@ void PlayerSceneUtil::SendToGameNodeEnterScene(entt::entity playerEntity)
         return;
     }
 
-    const auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfo>((*playerSceneEntity).sceneEntity);
+    const auto* sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComp>((*playerSceneEntity).sceneEntity);
     if (!sceneInfo)
     {
         LOG_ERROR << "Scene info not found for player: " << playerId;
         return;
     }
 
-    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
+    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
     if (!playerNodeInfo)
     {
         LOG_ERROR << "Player session not valid for player: " << playerId;
@@ -124,7 +124,7 @@ void PlayerSceneUtil::SendToGameNodeEnterScene(entt::entity playerEntity)
 
 void PlayerSceneUtil::ProcessPlayerEnterGameServer(entt::entity playerEntity, NodeId nodeId)
 {
-    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(playerEntity);
+    const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
     if (!playerNodeInfo)
     {
         LOG_ERROR << "Player session not valid";
@@ -182,7 +182,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
-		toSceneGuid = tls.registry.get<SceneInfo>(toScene).guid();
+		toSceneGuid = tls.registry.get<SceneInfoPBComp>(toScene).guid();
 	}
 	else
 	{
@@ -196,7 +196,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		}
 	}
 
-	const auto* fromSceneInfo = tls.sceneRegistry.try_get<SceneInfo>(fromSceneEntity->sceneEntity);
+	const auto* fromSceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComp>(fromSceneEntity->sceneEntity);
 	if (!fromSceneInfo)
 	{
 		LOG_ERROR << "From scene info not found for player: " << playerId;
@@ -234,11 +234,11 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 
 	if (fromSceneGameNode == toSceneGameNode)
 	{
-		changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eSameGs);
+		changeSceneInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eSameGs);
 	}
 	else
 	{
-		changeSceneInfo.set_change_gs_type(CentreChangeSceneInfo::eDifferentGs);
+		changeSceneInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eDifferentGs);
 	}
 
 	LOG_INFO << "Change scene queue processed successfully for player: " << playerId;

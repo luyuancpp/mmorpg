@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type AbilityComp struct {
+type AbilityPBComp struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type AbilityComp struct {
 	AbilityTableId uint64 `protobuf:"varint,1,opt,name=ability_table_id,json=abilityTableId,proto3" json:"ability_table_id,omitempty"`
 }
 
-func (x *AbilityComp) Reset() {
-	*x = AbilityComp{}
+func (x *AbilityPBComp) Reset() {
+	*x = AbilityPBComp{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_ability_comp_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *AbilityComp) Reset() {
 	}
 }
 
-func (x *AbilityComp) String() string {
+func (x *AbilityPBComp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AbilityComp) ProtoMessage() {}
+func (*AbilityPBComp) ProtoMessage() {}
 
-func (x *AbilityComp) ProtoReflect() protoreflect.Message {
+func (x *AbilityPBComp) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_ability_comp_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,12 +55,12 @@ func (x *AbilityComp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AbilityComp.ProtoReflect.Descriptor instead.
-func (*AbilityComp) Descriptor() ([]byte, []int) {
+// Deprecated: Use AbilityPBComp.ProtoReflect.Descriptor instead.
+func (*AbilityPBComp) Descriptor() ([]byte, []int) {
 	return file_logic_component_ability_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *AbilityComp) GetAbilityTableId() uint64 {
+func (x *AbilityPBComp) GetAbilityTableId() uint64 {
 	if x != nil {
 		return x.AbilityTableId
 	}
@@ -72,11 +72,12 @@ var File_logic_component_ability_comp_proto protoreflect.FileDescriptor
 var file_logic_component_ability_comp_proto_rawDesc = []byte{
 	0x0a, 0x22, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e,
 	0x74, 0x2f, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x37, 0x0a, 0x0b, 0x41, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x43,
-	0x6f, 0x6d, 0x70, 0x12, 0x28, 0x0a, 0x10, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x5f, 0x74,
-	0x61, 0x62, 0x6c, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0e, 0x61,
-	0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x49, 0x64, 0x42, 0x09, 0x5a,
-	0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x39, 0x0a, 0x0d, 0x41, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x50,
+	0x42, 0x43, 0x6f, 0x6d, 0x70, 0x12, 0x28, 0x0a, 0x10, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79,
+	0x5f, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52,
+	0x0e, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x49, 0x64, 0x42,
+	0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -93,7 +94,7 @@ func file_logic_component_ability_comp_proto_rawDescGZIP() []byte {
 
 var file_logic_component_ability_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_logic_component_ability_comp_proto_goTypes = []any{
-	(*AbilityComp)(nil), // 0: AbilityComp
+	(*AbilityPBComp)(nil), // 0: AbilityPBComp
 }
 var file_logic_component_ability_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -110,7 +111,7 @@ func file_logic_component_ability_comp_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_logic_component_ability_comp_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*AbilityComp); i {
+			switch v := v.(*AbilityPBComp); i {
 			case 0:
 				return &v.state
 			case 1:

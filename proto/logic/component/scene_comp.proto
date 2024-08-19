@@ -12,7 +12,7 @@ message SceneInfo
 }
 
 
-message CentreChangeSceneInfo
+message CentreChangeSceneInfoPBComp
 {
   enum eChangeGsStatus
   {

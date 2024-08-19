@@ -47,7 +47,7 @@
     <ClCompile Include="src\proto\logic\component\actor_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\buff_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\frame_comp.pb.cc" />
-    <ClCompile Include="src\proto\logic\component\gs_node_comp.pb.cc" />
+    <ClCompile Include="src\proto\logic\component\game_node_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\item_base_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\item_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\mission_comp.pb.cc" />
@@ -105,7 +105,7 @@
     <ClInclude Include="src\proto\logic\component\actor_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\buff_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\frame_comp.pb.h" />
-    <ClInclude Include="src\proto\logic\component\gs_node_comp.pb.h" />
+    <ClInclude Include="src\proto\logic\component\game_node_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\item_base_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\item_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\mission_comp.pb.h" />

@@ -44,7 +44,7 @@ protected:
 
 TEST_F(AbilityUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
     ::UseAbilityRequest request;
-    request.set_ability_id(1);
+    request.set_ability_table_id(1);
     request.set_target_id(-1); // Invalid target ID
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_table_id()))
@@ -58,7 +58,7 @@ TEST_F(AbilityUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     entt::entity target = tls.registry.create(); // Create a valid target in the registry
  
     ::UseAbilityRequest request;
-    request.set_ability_id(10);
+    request.set_ability_table_id(10);
     request.set_target_id(entt::to_integral(target)); // Valid target ID
 
     ability_row tableAbility;
@@ -154,7 +154,7 @@ TEST_F(AbilityUtilTest, HandleChannelTimeTimer_ImmediateAbility_ReturnsOk) {
 TEST_F(AbilityUtilTest, BroadcastAbilityUsedMessage_CreatesMessage) {
     entt::entity caster = tls.registry.create();
     ::UseAbilityRequest request;
-    request.set_ability_id(1);
+    request.set_ability_table_id(1);
     request.set_target_id(2);
     request.mutable_position()->set_x(10); // Mock position
 

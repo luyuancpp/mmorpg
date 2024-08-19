@@ -52,14 +52,14 @@ public:
 
 private:
 	static void DeleteMissionClassification(entt::entity player, uint32_t missionId);
-	static bool UpdateMission(const MissionConditionEvent& conditionEvent, MissionPbComp& mission);
-	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPbComp& mission);
-	static void UpdateMissionStatus(MissionPbComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions);
+	static bool UpdateMission(const MissionConditionEvent& conditionEvent, MissionPBComp& mission);
+	static bool UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComp& mission);
+	static void UpdateMissionStatus(MissionPBComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions);
 	static void OnMissionCompletion(entt::entity player, const UInt32Set& completedMissions);
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp* missionComp);
 	static void RemoveMissionClassification(MissionsComp* missionComp, uint32_t missionId);
-	static bool AreAllConditionsFulfilled(const MissionPbComp& mission, uint32_t missionId, MissionsComp* missionComp);
-	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPbComp& mission, int index, const condition_row* conditionRow);
+	static bool AreAllConditionsFulfilled(const MissionPBComp& mission, uint32_t missionId, MissionsComp* missionComp);
+	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComp& mission, int index, const condition_row* conditionRow);
 };
 
 

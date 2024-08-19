@@ -6,7 +6,7 @@
 
 using PlayerRedis = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 
-class PlayerGameNodeEnteryInfo;
+class PlayerGameNodeEnteryInfoPBComp;
 
 class PlayerNodeUtil
 {
@@ -15,7 +15,7 @@ public:
 	static void HandlePlayerAsyncLoaded(Guid player_id, const player_database& message);
 	static void HandlePlayerAsyncSaved(Guid player_id, player_database& message);
 	static void SavePlayer(entt::entity player);
-	static void EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfo& enter_info);
+	static void EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComp& enter_info);
 	static void NotifyEnterGsSucceed(entt::entity player, NodeId centre_node_id);
 	static void LeaveGs(entt::entity player);
 	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);

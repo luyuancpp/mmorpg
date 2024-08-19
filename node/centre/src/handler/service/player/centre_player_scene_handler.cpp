@@ -22,7 +22,7 @@ void CentrePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Cen
 	LOG_INFO << "EnterScene request received for player: " << tls.registry.get<Guid>(player)
 		<< ", scene_info: " << request->scene_info().DebugString();
 
-	CentreChangeSceneInfo changeSceneInfo;
+	CentreChangeSceneInfoPBComp changeSceneInfo;
 	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, request->scene_info());
 	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(player, changeSceneInfo); ret != kOK)
 	{
@@ -70,7 +70,7 @@ void CentrePlayerSceneServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 		return;
 	}
 
-	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfo>(player);
+	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player: " << tls.registry.get<Guid>(player);
@@ -92,7 +92,7 @@ void CentrePlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,const ::S
 ///<<< BEGIN WRITING YOUR CODE
 	//给客户端发所有场景消息
 	SceneInfoS2C message;
-	for (const auto& [entity, info] : tls.sceneRegistry.view<SceneInfo>().each())
+	for (const auto& [entity, info] : tls.sceneRegistry.view<SceneInfoPBComp>().each())
 	{
 		message.mutable_scene_info()->Add()->CopyFrom(info);
 	}

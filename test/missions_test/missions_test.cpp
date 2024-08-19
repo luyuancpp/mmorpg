@@ -520,7 +520,7 @@ TEST(MissionsComp, MissionRewardList)
 	// Create a player entity with mission and mission reward components
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& missionsComponent = GetMissionsComponent(playerEntity);
-	tls.registry.emplace<MissionRewardPbComp>(playerEntity);
+	tls.registry.emplace<RewardListPBComp>(playerEntity);
 
 	// Accept mission
 	uint32_t missionId = 12;
@@ -581,7 +581,7 @@ TEST(MissionsComp, AbandonMission)
 	EXPECT_EQ(1, typeMissions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
 
 	// Set mission as rewardable
-	tls.registry.emplace_or_replace<MissionRewardPbComp>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
+	tls.registry.emplace_or_replace<RewardListPBComp>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
 
 	// Prepare abandon mission parameters
 	AbandonParam abandonParam;

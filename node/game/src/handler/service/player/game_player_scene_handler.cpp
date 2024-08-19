@@ -53,7 +53,7 @@ void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,const ::En
 	}
 
 	::EnterSceneS2C message;
-	message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(sceneEntity->sceneEntity));
+	message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfoPBComp>(sceneEntity->sceneEntity));
 	SendMessageToPlayer(ClientPlayerSceneServiceNotifyEnterSceneMessageId, message, player);
 ///<<< END WRITING YOUR CODE
 }
