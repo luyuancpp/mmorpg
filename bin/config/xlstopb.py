@@ -3,7 +3,6 @@
 
 import os
 import openpyxl
-import md5tool
 import logging
 import concurrent.futures
 import multiprocessing
@@ -18,6 +17,8 @@ XLSX_DIR = "xlsx/"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+file_type_index = 0
+map_type_index = 1
 owner_index = 2
 object_name_index = 3
 sheet_array_data_index = 4
@@ -56,7 +57,7 @@ def get_sheet_data(sheet, column_names):
     """获取整个Excel表格的数据"""
     sheet_data = []
     for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-        if idx <= END_ROW_INDEX:
+        if idx < gencommon.beginrowidx:
             row_data = get_row_data(row, column_names)
             sheet_data.append(row_data)
 
@@ -116,7 +117,9 @@ def generate_proto_file(data, sheet_name):
             if data[owner_index].get(key, '').strip() in ('client', 'design'):
                 continue
 
-            if key in data[sheet_array_data_index]:
+            if key in data[map_type_index].keys():
+                proto_content += f'\tmap <{names_type_dict[key]}, bool> {key} = {field_index};\n'
+            elif key in data[sheet_array_data_index]:
                 proto_content += f'\trepeated {names_type_dict[key]} {key} = {field_index};\n'
             elif gencommon.is_key_in_group_array(data[sheet_group_array_data_index], key, column_names):
                 if key not in data[sheet_group_array_data_index]:
