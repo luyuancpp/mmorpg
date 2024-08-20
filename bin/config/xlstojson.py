@@ -2,12 +2,12 @@
 # coding=utf-8
 
 import os
-import openpyxl
 import json
 import logging
 import concurrent.futures
 from os import listdir
 from os.path import isfile, join
+import openpyxl
 
 import gencommon  # Assuming gencommon contains the necessary functions
 
@@ -25,34 +25,73 @@ logger = logging.getLogger(__name__)
 def get_column_names(sheet):
     """
     Get column names from the sheet based on specified conditions.
-
-    Args:
-    - sheet: openpyxl Worksheet object representing Excel sheet data.
-
-    Returns:
-    - List[str]: List of column names.
     """
-    column_names = []
-    for col_idx, cell in enumerate(sheet[1]):
-        second_row_value = sheet.cell(row=4, column=col_idx + 1).value
-        if second_row_value == "designer" or (second_row_value != "common" and GEN_TYPE != second_row_value):
-            column_names.append("")
+    return [
+        sheet.cell(row=1, column=col_idx + 1).value
+        if sheet.cell(row=4, column=col_idx + 1).value in ["common", GEN_TYPE]
+        else ""
+        for col_idx in range(sheet.max_column)
+    ]
+
+
+def process_cell_value(cell):
+    """
+    Process cell value to ensure correct type.
+    """
+    cell_value = cell.value
+    if isinstance(cell_value, float) and cell_value.is_integer():
+        return int(cell_value)
+    return cell_value
+
+
+def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, column_names, prev_cell):
+    """
+    Handle data for map fields and update row data accordingly.
+    """
+    prev_column_name = column_names[prev_cell.col_idx - 1]
+
+    if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
+        return
+
+    prev_obj_name = gencommon.column_name_to_obj_name(prev_column_name, "_")
+    obj_name = gencommon.column_name_to_obj_name(col_name, "_")
+
+    if gencommon.set_flag == map_field_data[col_name]:
+        row_data.setdefault(col_name, {})[cell_value] = True
+    elif prev_column_name in map_field_data and gencommon.map_value_flag == map_field_data[prev_column_name] and prev_obj_name == obj_name:
+        row_data.setdefault(obj_name, {})[prev_cell.value] = cell_value
+
+
+def handle_array_data(cell, row_data, col_name, cell_value):
+    """
+    Handle data for array fields and update row data accordingly.
+    """
+    if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
+        return
+    row_data.setdefault(col_name, []).append(cell_value)
+
+
+def handle_group_data(cell, row_data, col_name, cell_value, prev_cell):
+    """
+    Handle data for group fields and update row data accordingly.
+    """
+    if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
+        return
+    obj_name = gencommon.column_name_to_obj_name(col_name, "_")
+    member_dict = {col_name: cell_value}
+    if obj_name in row_data:
+        last_element = row_data[obj_name][-1]
+        if col_name in last_element:
+            row_data[obj_name].append(member_dict)
         else:
-            column_names.append(cell.value)
-    return column_names
+            last_element[col_name] = cell_value
+    else:
+        row_data[obj_name] = [member_dict]
 
 
-def get_row_data(sheet, row, column_names) :
+def process_row(sheet, row, column_names):
     """
-    Get row data as dictionary based on column names and validate cell formats.
-
-    Args:
-    - sheet: openpyxl Worksheet object representing the Excel sheet.
-    - row: openpyxl Row object representing Excel row data.
-    - column_names: List of column names.
-
-    Returns:
-    - Dict[str, any]: Dictionary containing row data.
+    Process an individual row to extract data based on column names.
     """
     sheet_data = gencommon.get_sheet_data(sheet, column_names)
     array_data = sheet_data[gencommon.sheet_array_data_index]
@@ -68,81 +107,39 @@ def get_row_data(sheet, row, column_names) :
             break
 
         col_name = column_names[counter]
-
-        if col_name == 'designer':
+        if col_name == 'designer' or not col_name.strip():
             continue
 
-        if col_name and col_name.strip():
-            cell_value = cell.value
-            if isinstance(cell_value, float) and cell_value.is_integer():
-                cell_value = int(cell_value)
+        cell_value = process_cell_value(cell)
+        cell_reference = f"{cell.column_letter}{cell.row}"
 
-            cell_reference = f"{cell.column_letter}{cell.row}"
-            obj_name = gencommon.column_name_to_obj_name(col_name, "_")
-
-            if col_name in map_field_data or gencommon.is_key_in_map(group_data, col_name, map_field_data, column_names):
-                if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
-                    continue
-                if col_name in map_field_data and gencommon.set_flag == map_field_data[col_name]:
-                    if col_name in row_data:
-                        row_data[col_name][cell_value] = True
-                    else:
-                        row_data[col_name] = {cell_value: True}
-                else:
-                    if col_name not in map_field_data:
-                        if obj_name not in row_data:
-                            row_data[obj_name] = {}
-                        row_data[obj_name][prev_cell.value] = cell_value
-            elif col_name in array_data:
-                if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
-                    continue
-                if col_name in row_data:
-                    row_data[col_name].append(cell_value)
-                else:
-                    row_data[col_name] = [cell_value]
-            elif gencommon.is_key_in_group_array(group_data, col_name, column_names):
-                member_dict = {col_name: cell_value}
-                if obj_name in row_data:
-                    last_element = row_data[obj_name][-1]
-                    if col_name in last_element:
-                        row_data[obj_name].append(member_dict)
-                    else:
-                        last_element[col_name] = cell_value
-                else:
-                    row_data[obj_name] = [member_dict]
-            else:
-                if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
-                    logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
-                row_data[col_name] = cell_value
+        if col_name in map_field_data or gencommon.is_key_in_map(group_data, col_name, map_field_data, column_names):
+            handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, column_names, prev_cell)
+        elif col_name in array_data:
+            handle_array_data(cell, row_data, col_name, cell_value)
+        elif gencommon.is_key_in_group_array(group_data, col_name, column_names):
+            handle_group_data(cell, row_data, col_name, cell_value, prev_cell)
+        else:
+            if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
+                logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
+            row_data[col_name] = cell_value
 
         prev_cell = cell
 
     return row_data
 
 
-def get_sheet_data(sheet, column_names):
+def extract_sheet_data(sheet, column_names):
     """
-    Get sheet data as list of dictionaries.
-
-    Args:
-    - sheet: openpyxl Worksheet object representing Excel sheet data.
-    - column_names: List of column names.
-
-    Returns:
-    - List[Dict[str, any]]: List of dictionaries containing sheet data.
+    Extract data from all rows in the sheet.
     """
-    return [get_row_data(sheet, row, column_names) for row in sheet.iter_rows(min_row=BEGIN_ROW_IDX + 1, values_only=False)]
+    return [process_row(sheet, row, column_names) for row in
+            sheet.iter_rows(min_row=BEGIN_ROW_IDX + 1, values_only=False)]
 
 
-def get_workbook_data(workbook) :
+def extract_workbook_data(workbook):
     """
-    Get workbook data as dictionary of sheet names and their respective data.
-
-    Args:
-    - workbook: openpyxl Workbook object representing Excel workbook.
-
-    Returns:
-    - Dict[str, List[Dict[str, any]]]: Dictionary where keys are sheet names and values are lists of dictionaries containing sheet data.
+    Extract data from all sheets in the workbook.
     """
     workbook_data = {}
     for sheet_name in workbook.sheetnames:
@@ -152,19 +149,14 @@ def get_workbook_data(workbook) :
             continue
 
         column_names = get_column_names(sheet)
-        sheet_data = get_sheet_data(sheet, column_names)
-        workbook_data[sheet_name] = sheet_data
+        workbook_data[sheet_name] = extract_sheet_data(sheet, column_names)
 
     return workbook_data
 
 
-def save_json_with_custom_newlines(data: any, file_path: str) -> None:
+def save_json(data, file_path):
     """
-    Save data to a JSON file with compact and readable formatting while ensuring small file size.
-
-    Args:
-    - data: Data to be saved as JSON.
-    - file_path: Path where the JSON file will be saved.
+    Save data to a JSON file with compact and readable formatting.
     """
     json_data = json.dumps({"data": data}, sort_keys=True, indent=1, separators=(',', ': '))
     json_data = json_data.replace('"[', '[').replace(']"', ']')  # Remove unnecessary quotes around lists
@@ -175,32 +167,30 @@ def save_json_with_custom_newlines(data: any, file_path: str) -> None:
         logger.info(f"Generated JSON file: {file_path}")
 
 
-def process_excel_file(file_path: str) -> None:
+def process_excel_file(file_path):
     """
-    Process an individual Excel file to generate JSON files.
-
-    Args:
-    - file_path: Path to the Excel file.
+    Process an individual Excel file and generate JSON files for each sheet.
     """
     try:
         workbook = openpyxl.load_workbook(file_path)
-        workbook_data = get_workbook_data(workbook)
+        workbook_data = extract_workbook_data(workbook)
 
         for sheet_name, data in workbook_data.items():
             json_file_path = os.path.join(JSON_DIR, f"{sheet_name}.json")
-            save_json_with_custom_newlines(data, json_file_path)
+            save_json(data, json_file_path)
 
     except Exception as e:
         logger.error(f"Failed to process file {file_path}: {e}")
 
 
-def main() -> None:
+def main():
     """
     Main function to process all Excel files in the specified directory.
     """
     os.makedirs(JSON_DIR, exist_ok=True)
 
-    files = [join(XLSX_DIR, filename) for filename in listdir(XLSX_DIR) if isfile(join(XLSX_DIR, filename)) and filename.endswith('.xlsx')]
+    files = [join(XLSX_DIR, filename) for filename in listdir(XLSX_DIR) if
+             isfile(join(XLSX_DIR, filename)) and filename.endswith('.xlsx')]
 
     num_threads = os.cpu_count()
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
