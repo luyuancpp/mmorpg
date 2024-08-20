@@ -138,6 +138,13 @@ def get_row_data(row, column_names):
     return row_data
 
 
+def fill_map(group_data, map_field_data, column_names):
+    for k, v in group_data.items():
+        for cell_index in v:
+            if column_names[v[0]] in map_field_data and map_field_data[column_names[v[0]]] == map_flag:
+                map_field_data[column_names[cell_index]] = map_flag
+
+
 def get_sheet_data(sheet, column_names):
     """获取整个Excel表格的数据"""
     sheet_data = []
@@ -152,6 +159,7 @@ def get_sheet_data(sheet, column_names):
         logger.error(f"Failed to get group column names: {e}")
         array_data, group_data = {}, {}
 
+    fill_map(group_data, sheet_data[map_type_index], column_names)
     sheet_data.append(array_data)
     sheet_data.append(group_data)
     sheet_data.append(column_names)
