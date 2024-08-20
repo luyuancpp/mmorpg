@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s -
 logger = logging.getLogger(__name__)
 
 
-def get_column_names(sheet):
+def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> list[str]:
     """
     Get column names from the sheet based on specified conditions.
     """
@@ -34,7 +34,7 @@ def get_column_names(sheet):
     ]
 
 
-def process_cell_value(cell):
+def process_cell_value(cell: openpyxl.cell.cell.Cell) -> int | str | None:
     """
     Process cell value to ensure correct type.
     """
@@ -48,12 +48,12 @@ def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, 
     """
     Handle data for map fields and update row data accordingly.
     """
-    prev_column_name = column_names[prev_cell.col_idx - 1]
+    prev_column_name = column_names[prev_cell.col_idx - 1] if prev_cell else None
 
     if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
         return
 
-    prev_obj_name = gencommon.column_name_to_obj_name(prev_column_name, "_")
+    prev_obj_name = gencommon.column_name_to_obj_name(prev_column_name, "_") if prev_column_name else None
     obj_name = gencommon.column_name_to_obj_name(col_name, "_")
 
     if gencommon.set_flag == map_field_data[col_name]:
@@ -69,8 +69,7 @@ def handle_array_data(cell, row_data, col_name, cell_value):
     """
     if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
         return
-
-    if cell_value == 0 or cell_value == -1:
+    if cell_value in (0, -1):
         return
 
     row_data.setdefault(col_name, []).append(cell_value)
@@ -82,8 +81,7 @@ def handle_group_data(cell, row_data, col_name, cell_value, prev_cell):
     """
     if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
         return
-
-    if cell_value == 0 or cell_value == -1:
+    if cell_value in (0, -1):
         return
 
     obj_name = gencommon.column_name_to_obj_name(col_name, "_")
@@ -120,8 +118,6 @@ def process_row(sheet, row, column_names):
             continue
 
         cell_value = process_cell_value(cell)
-        cell_reference = f"{cell.column_letter}{cell.row}"
-
         if col_name in map_field_data or gencommon.is_key_in_map(group_data, col_name, map_field_data, column_names):
             handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, column_names, prev_cell)
         elif col_name in array_data:
@@ -130,7 +126,7 @@ def process_row(sheet, row, column_names):
             handle_group_data(cell, row_data, col_name, cell_value, prev_cell)
         else:
             if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
-                logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
+                logger.error(f"Sheet '{sheet.title}', Cell {cell.coordinate} is empty or contains invalid data.")
             row_data[col_name] = cell_value
 
         prev_cell = cell
@@ -146,7 +142,7 @@ def extract_sheet_data(sheet, column_names):
             sheet.iter_rows(min_row=BEGIN_ROW_IDX + 1, values_only=False)]
 
 
-def extract_workbook_data(workbook):
+def extract_workbook_data(workbook: openpyxl.Workbook) -> dict:
     """
     Extract data from all sheets in the workbook.
     """
@@ -163,7 +159,7 @@ def extract_workbook_data(workbook):
     return workbook_data
 
 
-def save_json(data, file_path):
+def save_json(data: dict, file_path: str) -> None:
     """
     Save data to a JSON file with compact and readable formatting.
     """
@@ -171,12 +167,15 @@ def save_json(data, file_path):
     json_data = json_data.replace('"[', '[').replace(']"', ']')  # Remove unnecessary quotes around lists
     json_data = json_data.replace('\r\n', '\n').replace('\r', '\n')  # Ensure only LF (\n) for newlines
 
-    with open(file_path, 'w', encoding='utf-8', newline='') as f:
-        f.write(json_data)
-        logger.info(f"Generated JSON file: {file_path}")
+    try:
+        with open(file_path, 'w', encoding='utf-8', newline='') as f:
+            f.write(json_data)
+            logger.info(f"Generated JSON file: {file_path}")
+    except IOError as e:
+        logger.error(f"Error saving JSON file {file_path}: {e}")
 
 
-def process_excel_file(file_path):
+def process_excel_file(file_path: str) -> None:
     """
     Process an individual Excel file and generate JSON files for each sheet.
     """
@@ -192,7 +191,7 @@ def process_excel_file(file_path):
         logger.error(f"Failed to process file {file_path}: {e}")
 
 
-def main():
+def main() -> None:
     """
     Main function to process all Excel files in the specified directory.
     """
@@ -201,7 +200,7 @@ def main():
     files = [join(XLSX_DIR, filename) for filename in listdir(XLSX_DIR) if
              isfile(join(XLSX_DIR, filename)) and filename.endswith('.xlsx')]
 
-    num_threads = os.cpu_count()
+    num_threads = os.cpu_count() or 1
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
         executor.map(process_excel_file, files)
 
