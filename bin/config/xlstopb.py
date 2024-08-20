@@ -7,7 +7,9 @@ import logging
 import concurrent.futures
 import multiprocessing
 import gencommon
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
+from os import listdir
+from os.path import isfile, join
 
 # Configuration Constants
 PROTO_DIR = "generated/proto/"
@@ -92,7 +94,7 @@ def generate_group_messages(data: Dict, column_names: List[str]) -> str:
     return proto_content
 
 
-def generate_row_message(sheet_name:str, data: Dict, column_names: List[str]) -> str:
+def generate_row_message(sheet_name: str, data: Dict, column_names: List[str]) -> str:
     """Generate the row message for the .proto file."""
     proto_content = f'message {sheet_name.lower()}_row {{\n'
     field_index = 1
@@ -103,7 +105,7 @@ def generate_row_message(sheet_name:str, data: Dict, column_names: List[str]) ->
 
         field_content = format_field(data, key, column_names, field_index)
         proto_content += field_content
-        if field_content != '':
+        if field_content:
             field_index += 1
 
     proto_content += '}\n\n'
@@ -187,6 +189,11 @@ def save_proto_file(content: str, sheet_name: str) -> None:
         logger.info(f"Generated .proto file: {proto_file_path}")
 
 
+def get_xlsx_files(directory: str) -> List[str]:
+    """List all .xlsx files in the specified directory."""
+    return [join(directory, filename) for filename in listdir(directory) if isfile(join(directory, filename)) and filename.endswith('.xlsx')]
+
+
 def main() -> None:
     """Main function to process all Excel files and generate .proto files."""
     try:
@@ -196,8 +203,7 @@ def main() -> None:
         return
 
     try:
-        xlsx_files = [os.path.join(XLSX_DIR, filename) for filename in os.listdir(XLSX_DIR) if
-                      filename.endswith('.xlsx')]
+        xlsx_files = get_xlsx_files(XLSX_DIR)
     except Exception as e:
         logger.error(f"Failed to list .xlsx files: {e}")
         return
