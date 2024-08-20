@@ -96,9 +96,23 @@ def get_group_column_names(column_names):
 
 def is_key_in_group_array(data, key, column_names):
     for k, v in data.items():
-        for cell in v:
-            if column_names[cell] == key:
+        for cell_index in v:
+            if column_names[cell_index] == key:
                 return True
+    return False
+
+
+def is_key_in_map(data, key, map_field_data, column_names):
+    for k, v in data.items():
+        found = False
+        for cell_index in v:
+            if column_names[cell_index] == key:
+                found = True
+                break
+        if found:
+            for cell_index in v:
+                if map_field_data[column_names[cell_index]] == map_flag:
+                    return True
     return False
 
 
