@@ -137,7 +137,7 @@ def format_map_field(data: Dict, key: str, column_names: List[str], field_index:
     map_type = data[MAP_TYPE_INDEX][key]
     if map_type == gencommon.set_flag:
         return f'\tmap <{data[0][key]}, bool> {key} = {field_index};\n'
-    elif map_type == gencommon.map_flag:
+    elif map_type == gencommon.map_key_flag:
         value_type = data[FILE_TYPE_INDEX]
         if key in data[SHEET_GROUP_ARRAY_DATA_INDEX]:
             value = data[SHEET_GROUP_ARRAY_DATA_INDEX][key]

@@ -9,7 +9,8 @@ md5_output_dir = "generated/xlsx/md5/"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-map_flag = 'map'
+map_key_flag = 'map_key'
+map_value_flag = 'map_value'
 set_flag = 'set'
 
 file_type_index = 0
@@ -111,8 +112,9 @@ def is_key_in_map(data, key, map_field_data, column_names):
                 break
         if found:
             for cell_index in v:
-                if column_names[cell_index] in map_field_data and map_field_data[column_names[cell_index]] == map_flag:
-                    return True
+                if column_names[cell_index] in map_field_data:
+                    column_name = map_field_data[cell_index]
+                    return map_field_data[column_name] == map_key_flag or map_field_data[column_name] == map_value_flag
     return False
 
 
@@ -141,8 +143,11 @@ def get_row_data(row, column_names):
 def fill_map(group_data, map_field_data, column_names):
     for k, v in group_data.items():
         for cell_index in v:
-            if column_names[v[0]] in map_field_data and map_field_data[column_names[v[0]]] == map_flag:
-                map_field_data[column_names[cell_index]] = map_flag
+            key_index = v[0]
+            if column_names[key_index] in map_field_data and map_field_data[column_names[key_index]] == map_key_flag:
+                map_field_data[column_names[key_index]] = map_key_flag
+                map_field_data[column_names[v[1]]] = map_value_flag
+                break
 
 
 def get_sheet_data(sheet, column_names):
