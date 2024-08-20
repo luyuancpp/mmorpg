@@ -79,16 +79,22 @@ def get_row_data(sheet, row, column_names):
             # Construct the cell reference in A1 notation
             cell_reference = f"{cell.column_letter}{cell.row}"
 
-            if col_name in map_field_data:
+            obj_name = gencommon.column_name_to_obj_name(col_name, "_")
+            if col_name in map_field_data or gencommon.is_key_in_map(group_data, col_name, map_field_data, column_names):
                 if cell_value in (None, '') and cell.row >= gencommon.beginrowidx:
                     continue
-                if 'set' == map_field_data[col_name]:
-                    member_dict = {cell_value: True}
+                if col_name in map_field_data and gencommon.set_flag == map_field_data[col_name]:
                     if col_name in row_data:
                         row_data[col_name][cell_value] = True
                     else:
                         row_data[col_name] = {}
                         row_data[col_name][cell_value] = True
+                else:
+                    if col_name in row_data:
+                        row_data[obj_name][col_name] = cell_value
+                    else:
+                        row_data[obj_name] = {}
+                        row_data[obj_name][col_name] = cell_value
             elif col_name in array_data:
                 if cell_value in (None, '') and cell.row >= gencommon.beginrowidx:
                     continue
@@ -97,7 +103,6 @@ def get_row_data(sheet, row, column_names):
                 else:
                     row_data[col_name] = [cell_value]
             elif gencommon.is_key_in_group_array(group_data, col_name, column_names):
-                obj_name = gencommon.column_name_to_obj_name(col_name, "_")
                 member_dict = {col_name: cell_value}
                 if obj_name in row_data:
                     last_element = row_data[obj_name][-1]
