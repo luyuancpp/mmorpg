@@ -83,7 +83,6 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 
 	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
 
-	bool buffExists = false;
 	bool isImmune = false;
 
 	for (const auto& [id, buff] : buffList) {
@@ -91,15 +90,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 		if (fetchResult != kOK) {
 			return fetchResult;
 		}
-
-		if (currentBuffTable->id() == buffTable->id()) {
-			// 已存在相同类型的Buff，检查层数
-			if (buff.buffPB.layer() >= currentBuffTable->maxlayer()) {
-				return kBuffMaxBuffStack;
-			}
-			buffExists = true;
-		}
-
+		
 		if (currentBuffTable->immunetag() == buffTable->tag()) {
 			isImmune = true;
 		}
@@ -117,13 +108,20 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 
 bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext)
 {
-	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
+	auto [buffTable, fetchResult] = GetBuffTable(buffTableId);
+	if (fetchResult != kOK) {
+		return fetchResult;
+	}
 
-	for (auto& [buffId, buffPB] : buffList)
+	for (auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
+		auto& [buffId, buffPB] : buffList)
 	{
 		if (buffPB.buffPB.buff_table_id() == buffTableId &&
 			buffPB.abilityContext->caster == abilityContext->caster)
 		{
+			if (buffPB.buffPB.layer() < buffTable->maxlayer()) {
+				buffPB.buffPB.set_layer(buffPB.buffPB.layer() + 1);
+			}
 			OnBuffRefresh(parent, buffTableId, abilityContext, buffPB);
 			return true;
 		}
