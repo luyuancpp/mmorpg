@@ -90,9 +90,13 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 		if (fetchResult != kOK) {
 			return fetchResult;
 		}
-		
-		if (currentBuffTable->immunetag() == buffTable->tag()) {
-			isImmune = true;
+
+		for (auto& [tag, _] : buffTable->tag())
+		{
+			if (currentBuffTable->immunetag().contains(tag)) {
+				isImmune = true;
+				break;
+			}
 		}
 	}
 
