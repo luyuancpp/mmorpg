@@ -59,7 +59,10 @@ def get_row_data(sheet, row, column_names):
     array_data = sheet_data[gencommon.sheet_array_data_index]
     group_data = sheet_data[gencommon.sheet_group_array_data_index]
     map_field_data = sheet_data[gencommon.map_type_index]
+
     row_data = {}
+
+    prev_cell = None
 
     for counter, cell in enumerate(row):
         if counter >= len(column_names):
@@ -90,11 +93,10 @@ def get_row_data(sheet, row, column_names):
                         row_data[col_name] = {}
                         row_data[col_name][cell_value] = True
                 else:
-                    if col_name in row_data:
-                        row_data[obj_name][col_name] = cell_value
-                    else:
-                        row_data[obj_name] = {}
-                        row_data[obj_name][col_name] = cell_value
+                    if col_name not in map_field_data:
+                        if obj_name not in row_data:
+                            row_data[obj_name] = {}
+                        row_data[obj_name][prev_cell.value] = cell_value
             elif col_name in array_data:
                 if cell_value in (None, '') and cell.row >= gencommon.beginrowidx:
                     continue
@@ -118,6 +120,8 @@ def get_row_data(sheet, row, column_names):
                 if cell_value in (None, '') and cell.row >= gencommon.beginrowidx:
                     logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
                 row_data[col_name] = cell_value
+
+        prev_cell = cell
 
     return row_data
 
