@@ -86,7 +86,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 	bool isImmune = false;
 
 	for (const auto& [id, buff] : buffList) {
-		auto [currentBuffTable, fetchResult] = GetBuffTable(id);
+		auto [currentBuffTable, fetchResult] = GetBuffTable(buff.buffPB.buff_table_id());
 		if (fetchResult != kOK) {
 			return fetchResult;
 		}

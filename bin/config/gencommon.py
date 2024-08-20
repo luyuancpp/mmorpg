@@ -111,7 +111,7 @@ def is_key_in_map(data, key, map_field_data, column_names):
                 break
         if found:
             for cell_index in v:
-                if map_field_data[column_names[cell_index]] == map_flag:
+                if column_names[cell_index] in map_field_data and map_field_data[column_names[cell_index]] == map_flag:
                     return True
     return False
 
