@@ -75,18 +75,20 @@ def generate_proto_file(data, sheet_name):
                 elif filedata == gencommon.map_flag:
                     if key not in data[sheet_group_array_data_index]:
                         continue
+                    value_type = data[file_type_index]
                     value = data[sheet_group_array_data_index][key]
-                    obj_name = gencommon.set_to_string(
-                        gencommon.find_common_words(column_names[value[0]], column_names[value[1]], '_'))
-                    proto_content += f'\tmap <{column_names[value[0]]}, {column_names[value[1]]}> {obj_name} = {field_index};\n'
+                    key_name = column_names[value[0]]
+                    value_name = column_names[value[1]]
+                    obj_name = gencommon.column_name_to_obj_name(key_name, '_')
+                    proto_content += f'\tmap <{value_type[key_name]}, {value_type[value_name]}> {obj_name} = {field_index};\n'
             elif key in data[sheet_array_data_index]:
                 proto_content += f'\trepeated {names_type_dict[key]} {key} = {field_index};\n'
             elif gencommon.is_key_in_group_array(data[sheet_group_array_data_index], key, column_names):
                 if key not in data[sheet_group_array_data_index]:
                     continue
                 value = data[sheet_group_array_data_index][key]
-                obj_name = gencommon.set_to_string(
-                    gencommon.find_common_words(column_names[value[0]], column_names[value[1]], '_'))
+                key_name = column_names[value[0]]
+                obj_name = gencommon.column_name_to_obj_name(key_name, '_')
                 proto_content += f'\trepeated {obj_name} {obj_name} = {field_index};\n'
             else:
                 proto_content += f'\t{names_type_dict[key]} {key} = {field_index};\n'

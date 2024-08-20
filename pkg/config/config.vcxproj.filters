@@ -111,6 +111,12 @@
     <ClCompile Include="src\pbc\buff_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\test_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\test_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ability_config.h">
@@ -207,6 +213,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\buff_error_tip.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\test_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\test_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
