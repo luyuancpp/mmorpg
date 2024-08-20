@@ -148,6 +148,8 @@ def format_map_field(data: Dict, key: str, column_names: List[str], field_index:
 
 def format_group_array_field(data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a group array field for the .proto file."""
+    if key not in data[SHEET_GROUP_ARRAY_DATA_INDEX]:
+        return ''
     value = data[SHEET_GROUP_ARRAY_DATA_INDEX][key]
     key_name = column_names[value[0]]
     obj_name = gencommon.column_name_to_obj_name(key_name, '_')
