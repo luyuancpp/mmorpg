@@ -24,54 +24,6 @@ sheet_array_data_index = 4
 sheet_group_array_data_index = 5
 
 
-def get_column_names(sheet):
-    """获取Excel表格的列名"""
-    try:
-        column_names = [cell.value for cell in sheet[1]]  # 获取第一行的列名
-        return column_names
-    except Exception as e:
-        logger.error(f"Failed to get column names: {e}")
-        return []
-
-
-def get_row_data(row, column_names):
-    """将Excel表格的一行数据转换为字典形式，并验证数据"""
-    row_data = {}
-    for i, cell in enumerate(row):
-        col_name = column_names[i]
-        if col_name and cell is not None:
-            if isinstance(cell, float) and cell.is_integer():
-                cell_value = int(cell)
-            else:
-                cell_value = cell
-
-            if cell_value in (None, ''):
-                logger.warning(f"Row {row[0].row}, column '{col_name}' is empty or invalid.")
-
-            row_data[col_name] = cell_value
-    return row_data
-
-
-def get_sheet_data(sheet, column_names):
-    """获取整个Excel表格的数据"""
-    sheet_data = []
-    for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-        if idx <= gencommon.FIELD_INFO_END_ROW_INDEX:
-            row_data = get_row_data(row, column_names)
-            sheet_data.append(row_data)
-
-    try:
-        array_data, group_data = gencommon.get_group_column_names(column_names)
-    except Exception as e:
-        logger.error(f"Failed to get group column names: {e}")
-        array_data, group_data = {}, {}
-
-    sheet_data.append(array_data)
-    sheet_data.append(group_data)
-    sheet_data.append(column_names)
-    return sheet_data
-
-
 def get_workbook_data(workbook):
     """获取整个工作簿（Workbook）的数据"""
     workbook_data = {}
@@ -82,10 +34,10 @@ def get_workbook_data(workbook):
                 logger.error(f"{sheet_name} first column must be 'id'")
                 continue
 
-            column_names = get_column_names(sheet)
+            column_names = gencommon.get_column_names(sheet)
             if not column_names:
                 continue
-            sheet_data = get_sheet_data(sheet, column_names)
+            sheet_data = gencommon.get_sheet_data(sheet, column_names)
             workbook_data[sheet_name] = sheet_data
         except Exception as e:
             logger.error(f"Failed to process sheet {sheet_name}: {e}")
@@ -117,7 +69,16 @@ def generate_proto_file(data, sheet_name):
                 continue
 
             if key in data[map_type_index].keys():
-                proto_content += f'\tmap <{names_type_dict[key]}, bool> {key} = {field_index};\n'
+                filedata = data[map_type_index][key]
+                if filedata == gencommon.set_flag:
+                    proto_content += f'\tmap <{names_type_dict[key]}, bool> {key} = {field_index};\n'
+                elif filedata == gencommon.map_flag:
+                    if key not in data[sheet_group_array_data_index]:
+                        continue
+                    value = data[sheet_group_array_data_index][key]
+                    obj_name = gencommon.set_to_string(
+                        gencommon.find_common_words(column_names[value[0]], column_names[value[1]], '_'))
+                    proto_content += f'\tmap <{column_names[value[0]]}, {column_names[value[1]]}> {obj_name} = {field_index};\n'
             elif key in data[sheet_array_data_index]:
                 proto_content += f'\trepeated {names_type_dict[key]} {key} = {field_index};\n'
             elif gencommon.is_key_in_group_array(data[sheet_group_array_data_index], key, column_names):

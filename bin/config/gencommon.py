@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 import logging
+
 beginrowidx = 10
 FIELD_INFO_END_ROW_INDEX = 5
 md5_output_dir = "generated/xlsx/md5/"
@@ -8,12 +9,16 @@ md5_output_dir = "generated/xlsx/md5/"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+map_flag = 'map'
+set_flag = 'set'
+
 file_type_index = 0
 map_type_index = 1
 owner_index = 2
 object_name_index = 3
 sheet_array_data_index = 4
 sheet_group_array_data_index = 5
+
 
 def mywrite(str, filename):
     outputh = open(filename, "w", encoding="utf-8")
@@ -100,6 +105,7 @@ def is_key_in_group_array(data, key, column_names):
 def column_name_to_obj_name(column_name, separator):
     return column_name.split(separator)[0]
 
+
 def get_row_data(row, column_names):
     """将Excel表格的一行数据转换为字典形式，并验证数据"""
     row_data = {}
@@ -116,6 +122,7 @@ def get_row_data(row, column_names):
 
             row_data[col_name] = cell_value
     return row_data
+
 
 def get_sheet_data(sheet, column_names):
     """获取整个Excel表格的数据"""
@@ -135,3 +142,13 @@ def get_sheet_data(sheet, column_names):
     sheet_data.append(group_data)
     sheet_data.append(column_names)
     return sheet_data
+
+
+def get_column_names(sheet):
+    """获取Excel表格的列名"""
+    try:
+        column_names = [cell.value for cell in sheet[1]]  # 获取第一行的列名
+        return column_names
+    except Exception as e:
+        logger.error(f"Failed to get column names: {e}")
+        return []
