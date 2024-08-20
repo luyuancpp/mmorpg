@@ -69,6 +69,10 @@ def handle_array_data(cell, row_data, col_name, cell_value):
     """
     if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
         return
+
+    if cell_value == 0 or cell_value == -1:
+        return
+
     row_data.setdefault(col_name, []).append(cell_value)
 
 
@@ -78,6 +82,10 @@ def handle_group_data(cell, row_data, col_name, cell_value, prev_cell):
     """
     if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
         return
+
+    if cell_value == 0 or cell_value == -1:
+        return
+
     obj_name = gencommon.column_name_to_obj_name(col_name, "_")
     member_dict = {col_name: cell_value}
     if obj_name in row_data:
