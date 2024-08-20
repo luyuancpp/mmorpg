@@ -58,7 +58,8 @@ def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, 
 
     if gencommon.set_flag == map_field_data[col_name]:
         row_data.setdefault(col_name, {})[cell_value] = True
-    elif prev_column_name in map_field_data and gencommon.map_value_flag == map_field_data[prev_column_name] and prev_obj_name == obj_name:
+    elif (prev_column_name in map_field_data and gencommon.map_key_flag == map_field_data[prev_column_name] and
+          prev_obj_name == obj_name):
         row_data.setdefault(obj_name, {})[prev_cell.value] = cell_value
 
 
