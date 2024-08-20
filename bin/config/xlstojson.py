@@ -101,9 +101,9 @@ def process_row(sheet, row, column_names):
     Process an individual row to extract data based on column names.
     """
     sheet_data = gencommon.get_sheet_data(sheet, column_names)
-    array_data = sheet_data[gencommon.sheet_array_data_index]
-    group_data = sheet_data[gencommon.sheet_group_array_data_index]
-    map_field_data = sheet_data[gencommon.map_type_index]
+    array_data = sheet_data[gencommon.SHEET_ARRAY_DATA_INDEX]
+    group_data = sheet_data[gencommon.SHEET_GROUP_ARRAY_DATA_INDEX]
+    map_field_data = sheet_data[gencommon.MAP_TYPE_INDEX]
 
     row_data = {}
     prev_cell = None

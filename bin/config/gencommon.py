@@ -13,13 +13,12 @@ map_key_flag = 'map_key'
 map_value_flag = 'map_value'
 set_flag = 'set'
 
-file_type_index = 0
-map_type_index = 1
-owner_index = 2
-object_name_index = 3
-sheet_array_data_index = 4
-sheet_group_array_data_index = 5
-
+FILE_TYPE_INDEX = 0
+MAP_TYPE_INDEX = 1
+OWNER_INDEX = 2
+OBJECT_NAME_INDEX = 3
+SHEET_ARRAY_DATA_INDEX = 4
+SHEET_GROUP_ARRAY_DATA_INDEX = 5
 
 def mywrite(str, filename):
     outputh = open(filename, "w", encoding="utf-8")
