@@ -55,7 +55,10 @@ def get_row_data(sheet, row, column_names):
     Returns:
     - dict: Dictionary containing row data.
     """
-    array_data, group_data = gencommon.get_group_column_names(column_names)
+    sheet_data = gencommon.get_sheet_data(sheet, column_names)
+    array_data = sheet_data[gencommon.sheet_array_data_index]
+    group_data = sheet_data[gencommon.sheet_group_array_data_index]
+    map_field_data = sheet_data[gencommon.map_type_index]
     row_data = {}
 
     for counter, cell in enumerate(row):
@@ -76,8 +79,18 @@ def get_row_data(sheet, row, column_names):
             # Construct the cell reference in A1 notation
             cell_reference = f"{cell.column_letter}{cell.row}"
 
-            if col_name in array_data:
-                if cell_value in (None, '') and cell.row > BEGIN_ROW_IDX:
+            if col_name in map_field_data:
+                if cell_value in (None, '') and cell.row >= gencommon.beginrowidx:
+                    continue
+                if 'set' == map_field_data[col_name]:
+                    member_dict = {cell_value: True}
+                    if col_name in row_data:
+                        row_data[col_name][cell_value] = True
+                    else:
+                        row_data[col_name] = {}
+                        row_data[col_name][cell_value] = True
+            elif col_name in array_data:
+                if cell_value in (None, '') and cell.row >= gencommon.beginrowidx:
                     continue
                 if col_name in row_data:
                     row_data[col_name].append(cell_value)
@@ -97,7 +110,7 @@ def get_row_data(sheet, row, column_names):
                 else:
                     row_data[obj_name] = [member_dict]
             else:
-                if cell_value in (None, '') and cell.row > BEGIN_ROW_IDX:
+                if cell_value in (None, '') and cell.row >= gencommon.beginrowidx:
                     logger.error(f"Sheet '{sheet.title}', Cell {cell_reference} is empty or contains invalid data.")
                 row_data[col_name] = cell_value
 
@@ -170,7 +183,6 @@ def save_json_with_custom_newlines(data, file_path):
 
 
 def process_excel_file(file_path):
-
     # Open workbook and process data
     try:
         workbook = openpyxl.load_workbook(file_path)

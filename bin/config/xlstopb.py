@@ -9,7 +9,6 @@ import multiprocessing
 import gencommon
 
 # 全局变量
-END_ROW_INDEX = 5
 PROTO_DIR = "generated/proto/"
 XLSX_DIR = "xlsx/"
 
@@ -57,7 +56,7 @@ def get_sheet_data(sheet, column_names):
     """获取整个Excel表格的数据"""
     sheet_data = []
     for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-        if idx < gencommon.beginrowidx:
+        if idx <= gencommon.FIELD_INFO_END_ROW_INDEX:
             row_data = get_row_data(row, column_names)
             sheet_data.append(row_data)
 

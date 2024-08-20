@@ -1,9 +1,19 @@
 #!/usr/bin/env python
 # coding=utf-8
-
+import logging
 beginrowidx = 10
-
+FIELD_INFO_END_ROW_INDEX = 5
 md5_output_dir = "generated/xlsx/md5/"
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+file_type_index = 0
+map_type_index = 1
+owner_index = 2
+object_name_index = 3
+sheet_array_data_index = 4
+sheet_group_array_data_index = 5
 
 def mywrite(str, filename):
     outputh = open(filename, "w", encoding="utf-8")
@@ -89,3 +99,39 @@ def is_key_in_group_array(data, key, column_names):
 
 def column_name_to_obj_name(column_name, separator):
     return column_name.split(separator)[0]
+
+def get_row_data(row, column_names):
+    """将Excel表格的一行数据转换为字典形式，并验证数据"""
+    row_data = {}
+    for i, cell in enumerate(row):
+        col_name = column_names[i]
+        if col_name and cell is not None:
+            if isinstance(cell, float) and cell.is_integer():
+                cell_value = int(cell)
+            else:
+                cell_value = cell
+
+            if cell_value in (None, ''):
+                logger.warning(f"Row {row[0].row}, column '{col_name}' is empty or invalid.")
+
+            row_data[col_name] = cell_value
+    return row_data
+
+def get_sheet_data(sheet, column_names):
+    """获取整个Excel表格的数据"""
+    sheet_data = []
+    for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+        if idx <= FIELD_INFO_END_ROW_INDEX:
+            row_data = get_row_data(row, column_names)
+            sheet_data.append(row_data)
+
+    try:
+        array_data, group_data = get_group_column_names(column_names)
+    except Exception as e:
+        logger.error(f"Failed to get group column names: {e}")
+        array_data, group_data = {}, {}
+
+    sheet_data.append(array_data)
+    sheet_data.append(group_data)
+    sheet_data.append(column_names)
+    return sheet_data
