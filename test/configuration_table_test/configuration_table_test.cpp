@@ -7,20 +7,36 @@
 
 void LoadAllConfig();
 
-TEST(LoadAllConfigTest, TestLoadTestXlsx)
+TEST(LoadAllConfigTest, GetAbilityAllTable)
 {
-    LoadAllConfig();
+	for (auto& it : GetAbilityAllTable().data())
+	{
+		LOG_INFO << it.DebugString();
+	}
+}
 
-    LOG_INFO << GetAbilityAllTable().DebugString();
-	LOG_INFO << GetBuffAllTable().DebugString();
-    LOG_INFO << GetTestAllTable().DebugString();
+TEST(LoadAllConfigTest, GetBuffAllTable)
+{
+	for (auto& it : GetBuffAllTable().data())
+	{
+		LOG_INFO << it.DebugString();
+	}
+}
+
+
+TEST(LoadAllConfigTest, GetTestAllTable)
+{
+    for (auto& it : GetTestAllTable().data())
+    {
+        LOG_INFO << it.DebugString();
+    }
 }
 
 // Main function
 int main(int argc, char** argv) {
 
     ::testing::InitGoogleTest(&argc, argv);
-
+    LoadAllConfig();
     int ret = RUN_ALL_TESTS();
     return ret;
 }
