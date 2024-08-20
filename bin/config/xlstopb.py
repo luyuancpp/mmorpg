@@ -20,12 +20,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Indices for data extraction
-FILE_TYPE_INDEX = 0
-MAP_TYPE_INDEX = 1
-OWNER_INDEX = 2
-OBJECT_NAME_INDEX = 3
-SHEET_ARRAY_DATA_INDEX = 4
-SHEET_GROUP_ARRAY_DATA_INDEX = 5
+
 
 def get_workbook_data(workbook: openpyxl.Workbook) -> Dict[str, Dict]:
     """Extract data from all sheets in the workbook."""
@@ -71,7 +66,7 @@ def create_proto_header() -> str:
 def generate_group_messages(data: Dict, column_names: List[str]) -> str:
     """Generate messages for grouped data."""
     proto_content = ''
-    group_data = data[SHEET_GROUP_ARRAY_DATA_INDEX]
+    group_data = data[gencommon.SHEET_GROUP_ARRAY_DATA_INDEX]
     for k, v in group_data.items():
         obj_name = gencommon.set_to_string(
             gencommon.find_common_words(column_names[v[0]], column_names[v[1]], '_')
@@ -89,7 +84,7 @@ def generate_row_message(sheet_name: str, data: Dict, column_names: List[str]) -
     field_index = 1
 
     for key, _ in data[0].items():
-        if not is_excluded_owner(data[OWNER_INDEX], key):
+        if not is_excluded_owner(data[gencommon.OWNER_INDEX], key):
             field_content = format_field(data, key, column_names, field_index)
             if field_content:
                 proto_content += field_content
@@ -104,24 +99,24 @@ def is_excluded_owner(owner_data: Dict, key: str) -> bool:
 
 def format_field(data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a field for the .proto file based on its type."""
-    if key in data[MAP_TYPE_INDEX]:
+    if key in data[gencommon.MAP_TYPE_INDEX]:
         return format_map_field(data, key, column_names, field_index)
-    elif key in data[SHEET_ARRAY_DATA_INDEX]:
+    elif key in data[gencommon.SHEET_ARRAY_DATA_INDEX]:
         return f'\trepeated {data[0][key]} {key} = {field_index};\n'
-    elif gencommon.is_key_in_group_array(data[SHEET_GROUP_ARRAY_DATA_INDEX], key, column_names):
+    elif gencommon.is_key_in_group_array(data[gencommon.SHEET_GROUP_ARRAY_DATA_INDEX], key, column_names):
         return format_group_array_field(data, key, column_names, field_index)
     else:
         return f'\t{data[0][key]} {key} = {field_index};\n'
 
 def format_map_field(data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a map field for the .proto file."""
-    map_type = data[MAP_TYPE_INDEX][key]
+    map_type = data[gencommon.MAP_TYPE_INDEX][key]
     if map_type == gencommon.set_flag:
         return f'\tmap <{data[0][key]}, bool> {key} = {field_index};\n'
     elif map_type == gencommon.map_key_flag:
-        value_type = data[FILE_TYPE_INDEX]
-        if key in data[SHEET_GROUP_ARRAY_DATA_INDEX]:
-            value = data[SHEET_GROUP_ARRAY_DATA_INDEX][key]
+        value_type = data[gencommon.FILE_TYPE_INDEX]
+        if key in data[gencommon.SHEET_GROUP_ARRAY_DATA_INDEX]:
+            value = data[gencommon.SHEET_GROUP_ARRAY_DATA_INDEX][key]
             key_name = column_names[value[0]]
             value_name = column_names[value[1]]
             obj_name = gencommon.column_name_to_obj_name(key_name, '_')
@@ -130,9 +125,9 @@ def format_map_field(data: Dict, key: str, column_names: List[str], field_index:
 
 def format_group_array_field(data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a group array field for the .proto file."""
-    if key not in data[SHEET_GROUP_ARRAY_DATA_INDEX]:
+    if key not in data[gencommon.SHEET_GROUP_ARRAY_DATA_INDEX]:
         return ''
-    value = data[SHEET_GROUP_ARRAY_DATA_INDEX][key]
+    value = data[gencommon.SHEET_GROUP_ARRAY_DATA_INDEX][key]
     key_name = column_names[value[0]]
     obj_name = gencommon.column_name_to_obj_name(key_name, '_')
     return f'\trepeated {obj_name} {obj_name} = {field_index};\n'
