@@ -163,7 +163,7 @@ def get_sheet_data(sheet, column_names):
         logger.error(f"Failed to get group column names: {e}")
         array_data, group_data = {}, {}
 
-    fill_map(group_data, sheet_data[map_type_index], column_names)
+    fill_map(group_data, sheet_data[MAP_TYPE_INDEX], column_names)
     sheet_data.append(array_data)
     sheet_data.append(group_data)
     sheet_data.append(column_names)
