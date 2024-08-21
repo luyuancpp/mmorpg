@@ -117,6 +117,12 @@
     <ClCompile Include="src\pbc\test_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\testmultikey_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\testmultikey_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ability_config.h">
@@ -219,6 +225,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\test_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\testmultikey_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\testmultikey_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
