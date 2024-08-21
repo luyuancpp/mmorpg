@@ -12,11 +12,16 @@ logger = logging.getLogger(__name__)
 map_key_flag = 'map_key'
 map_value_flag = 'map_value'
 set_flag = 'set'
+table_key = 'table_key'
 
 FILE_TYPE_INDEX = 0
 MAP_TYPE_INDEX = 1
 OWNER_INDEX = 2
 MULTI_KEY_INDEX = 3
+
+COL_OBJ_COL_NAME = 0
+COL_OBJ_COL_TYPE = 1
+COL_OBJ_TABLE_KEY_INDEX = 5
 
 SHEET_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX - 1
 SHEET_GROUP_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX
@@ -167,7 +172,7 @@ def get_first_19_rows_per_column(sheet):
             for row_idx in range(1, FIELD_INFO_END_ROW_INDEX):
                 cell_value = sheet.cell(row=row_idx, column=col_idx + 1).value
                 column_data.append(cell_value)
-            columns_data[col_name] = column_data
+            columns_data.append(column_data)
 
     return columns_data
 

@@ -28,12 +28,6 @@ def get_key_row_data(row, column_names):
     return {str(row[i].value): row[i].value for i in range(len(row)) if column_names[i].strip().lower() == "key"}
 
 
-def get_sheet_key_data(sheet, column_names):
-    """Extract key data from the sheet."""
-    row = sheet[1]  # Assuming the key row is the second row
-    return [get_key_row_data(row, column_names)]
-
-
 def get_workbook_data(workbook):
     """Extract data from the first sheet of the workbook."""
     workbook_data = {}
@@ -41,18 +35,30 @@ def get_workbook_data(workbook):
     if sheet_names:  # Read only the first sheet
         sheet = workbook[sheet_names[0]]
         column_names = get_column_names(sheet)
-        sheet_key_data = get_sheet_key_data(sheet, column_names)
 
         # Check if A5 cell value is 'multi' or None
         cell_value = sheet['A5'].value
         use_flat_multimap = cell_value is not None and cell_value.lower() == 'multi'
-
+        first_19_rows_per_column = gencommon.get_first_19_rows_per_column(sheet)
         workbook_data[sheet_names[0]] = {
-            'data': sheet_key_data,
-            'multi': use_flat_multimap
+            'multi': use_flat_multimap,
+            'get_first_19_rows_per_column': first_19_rows_per_column
         }
     return workbook_data
 
+def get_cpp_type_name(type_name):
+    if type_name == 'string':
+        type_name = 'std::string'
+    elif type_name.find('int') != -1:
+        type_name = type_name + '_t'
+    return type_name
+
+def get_cpp_type_param_name_with_ref(type_name):
+    if type_name == 'string':
+        type_name = 'const std::string &'
+    elif type_name.find('int') != -1:
+        type_name = type_name + '_t'
+    return type_name
 
 def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     """Generate C++ header file content."""
@@ -61,6 +67,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
 
     header_content = [
         "#pragma once",
+        "#include <cstdint>",
         "#include <memory>",
         f'#include <unordered_map>',
         f'#include "{sheet_name_lower}_config.pb.h"',
@@ -75,12 +82,20 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         '    void Load();',
         'private:',
         f'    {sheet_name_lower}_table data_;',
-        '    kv_type kv_data_;',
+        '    kv_type kv_data_;\n\n',
     ]
 
+    header_content.append('public:')
     for d in datastring:
-        for v in d.values():
-            header_content.append(f'    row_type key_{v}(uint32_t keyid) const;')
+        column_name = d[gencommon.COL_OBJ_COL_NAME]
+        if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
+            header_content.append(f'    row_type GetBy{column_name.title()}(uint32_t keyid) const;')
+    header_content.append('\nprivate:')
+    for d in datastring:
+        column_name = d[gencommon.COL_OBJ_COL_NAME]
+        if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
+            type_name = get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])
+            header_content.append(f'    std::{container_type}<{type_name}, row_type>  kv_{column_name}data_;')
 
     header_content.append('};')
     header_content.append(
@@ -112,12 +127,13 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         '    }',
         '    for (int32_t i = 0; i < data_.data_size(); ++i) {',
         '        const auto& row_data = data_.data(i);',
-        '        kv_data_.emplace(row_data.id(), &row_data);',
+        '        kv_data_.emplace(row_data.id(), &row_data);\n\n',
     ]
 
     for d in datastring:
-        for v in d.values():
-            cpp_content.append(f'        kv_data_{v}_.emplace(row_data.{v}(), &row_data);')
+        column_name = d[gencommon.COL_OBJ_COL_NAME]
+        if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
+            cpp_content.append(f'        kv_{column_name}data_.emplace(row_data.{column_name}(), &row_data);')
 
     cpp_content.extend([
         '    }',
@@ -129,16 +145,25 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         '        return { nullptr, kInvalidTableId };',
         '    }',
         '    return { it->second, kOK };',
-        '}',
+        '}\n\n',
     ])
 
     for d in datastring:
-        for v in d.values():
-            cpp_content.append(
-                f'const {sheet_name_lower}_row* {sheetname}ConfigurationTable::key_{v}(uint32_t keyid) const {{')
-            cpp_content.append(f'    const auto it = kv_data_{v}_.find(keyid);')
-            cpp_content.append(f'    return it == kv_data_{v}_.end() ? nullptr : it->second;')
-            cpp_content.append('}')
+        column_name = d[gencommon.COL_OBJ_COL_NAME]
+        if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
+            type_name = get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])
+            cpp_content.extend([
+                f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> '
+                f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} keyid) const{{',
+                f'    const auto it = kv_{column_name}data_.find(keyid);',
+                f'    if (it == kv_{column_name}data_.end()) {{',
+                f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyid;',
+                '        return { nullptr, kInvalidTableId };',
+                '    }',
+                '    return { it->second, kOK };',
+                '}\n',
+            ])
+
 
     return '\n'.join(cpp_content)
 
@@ -156,10 +181,10 @@ def process_workbook(filename):
         header_filename = f"{sheetname.lower()}_config.h"
         cpp_filename = f"{sheetname.lower()}_config.cpp"
 
-        cpp_header_content = generate_cpp_header(data['data'], sheetname, data['multi'])
+        cpp_header_content = generate_cpp_header(data['get_first_19_rows_per_column'], sheetname, data['multi'])
         gencommon.mywrite(cpp_header_content, os.path.join(CPP_DIR, header_filename))
 
-        cpp_implementation_content = generate_cpp_implementation(data['data'], sheetname, data['multi'])
+        cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname, data['multi'])
         gencommon.mywrite(cpp_implementation_content, os.path.join(CPP_DIR, cpp_filename))
 
 
