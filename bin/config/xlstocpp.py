@@ -46,12 +46,14 @@ def get_workbook_data(workbook):
         }
     return workbook_data
 
+
 def get_cpp_type_name(type_name):
     if type_name == 'string':
         type_name = 'std::string'
     elif type_name.find('int') != -1:
         type_name = type_name + '_t'
     return type_name
+
 
 def get_cpp_type_param_name_with_ref(type_name):
     if type_name == 'string':
@@ -60,37 +62,28 @@ def get_cpp_type_param_name_with_ref(type_name):
         type_name = type_name + '_t'
     return type_name
 
+
 def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     """Generate C++ header file content."""
     sheet_name_lower = sheetname.lower()
     container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
 
-    header_content = [
-        "#pragma once",
-        "#include <cstdint>",
-        "#include <memory>",
-        f'#include <unordered_map>',
-        f'#include "{sheet_name_lower}_config.pb.h"',
-        f'class {sheetname}ConfigurationTable {{',
-        'public:',
-        f'    using row_type = const {sheet_name_lower}_row*;',
-        f'    using kv_type = std::{container_type}<uint32_t, row_type>;',
-        f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
-        f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
-        f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
-        f'    const kv_type& KVData() const {{ return kv_data_; }}',
-        '    void Load();',
-        'private:',
-        f'    {sheet_name_lower}_table data_;',
-        '    kv_type kv_data_;\n\n',
-    ]
+    header_content = ["#pragma once", "#include <cstdint>", "#include <memory>", f'#include <unordered_map>',
+                      f'#include "{sheet_name_lower}_config.pb.h"', f'class {sheetname}ConfigurationTable {{',
+                      'public:', f'    using row_type = const {sheet_name_lower}_row*;',
+                      f'    using kv_type = std::{container_type}<uint32_t, row_type>;',
+                      f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
+                      f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
+                      f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
+                      f'    const kv_type& KVData() const {{ return kv_data_; }}', '    void Load();', 'private:',
+                      f'    {sheet_name_lower}_table data_;', '    kv_type kv_data_;\n\n', 'public:']
 
-    header_content.append('public:')
     for d in datastring:
         column_name = d[gencommon.COL_OBJ_COL_NAME]
         if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
             type_name = get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])
-            header_content.append(f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({type_name} keyid) const;')
+            header_content.append(
+                f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({type_name} keyid) const;')
     header_content.append('\nprivate:')
     for d in datastring:
         column_name = d[gencommon.COL_OBJ_COL_NAME]
@@ -123,7 +116,8 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         f'void {sheetname}ConfigurationTable::Load() {{',
         '    data_.Clear();',
         f'    const auto contents = File2String("config/generated/json/{sheet_name_lower}.json");',
-        f'    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {{',
+        f'    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); '
+        f'!result.ok()) {{',
         f'        LOG_FATAL << "{sheetname} " << result.message().data();',
         '    }',
         '    for (int32_t i = 0; i < data_.data_size(); ++i) {',
@@ -165,7 +159,6 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
                 '}\n',
             ])
 
-
     return '\n'.join(cpp_content)
 
 
@@ -185,7 +178,8 @@ def process_workbook(filename):
         cpp_header_content = generate_cpp_header(data['get_first_19_rows_per_column'], sheetname, data['multi'])
         gencommon.mywrite(cpp_header_content, os.path.join(CPP_DIR, header_filename))
 
-        cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname, data['multi'])
+        cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname,
+                                                                 data['multi'])
         gencommon.mywrite(cpp_implementation_content, os.path.join(CPP_DIR, cpp_filename))
 
 
