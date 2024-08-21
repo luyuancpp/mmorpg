@@ -109,7 +109,7 @@
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_TCHAR_DEFINED;UNICODE;NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../../pkg/common/src/;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../;../../pkg/pbc/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/logic/src/;../../pkg/pbc/src/;../../pkg/config/src/;../../pkg/pbc/src/game_config/;../../pkg/pbc/src/proto/;../../node/game/src/;../../pkg/muduo_windows/src/muduo/net/;../../pkg/muduo_windows/src/contrib/windows/include/;../../third_party/ue5navmesh/Public/;../../third_party/hexagons_grids/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
