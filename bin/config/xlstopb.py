@@ -45,7 +45,7 @@ def generate_proto_file(data: Dict, sheet_name: str) -> Optional[str]:
     """Generate .proto file content based on sheet data."""
     try:
         proto_content = create_proto_header()
-        column_names = data[6]
+        column_names = data[gencommon.SHEET_COLUM_NAME_INDEX]
 
         proto_content += generate_group_messages(data, column_names)
         proto_content += generate_row_message(sheet_name, data, column_names)
