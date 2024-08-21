@@ -13,9 +13,11 @@ map_key_flag = 'map_key'
 map_value_flag = 'map_value'
 set_flag = 'set'
 
+#第一行作为key 所以不用记录,后面的每一行用第一行作为key,自己的格子作为value
 FILE_TYPE_INDEX = 0
 MAP_TYPE_INDEX = 1
 OWNER_INDEX = 2
+MULTI_KEY_INDEX = 3
 
 SHEET_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX - 1
 SHEET_GROUP_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX
