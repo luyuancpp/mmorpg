@@ -80,15 +80,22 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     for d in datastring:
         column_name = d[gencommon.COL_OBJ_COL_NAME]
         if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
-            type_name = get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])
+            column_map_type = 'unordered_map'
+            if d[gencommon.COL_OBJ_TABLE_MULTI] == gencommon.multi_field_flag:
+                column_map_type = "unordered_multimap"
             header_content.append(
-                f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({type_name} keyid) const;')
+                f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])} keyid) const;')
+            header_content.append(
+                f'const  std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, row_type>& Get{column_name.title()}Data() const{{return kv_{column_name}data_;}}')
     header_content.append('\nprivate:')
     for d in datastring:
         column_name = d[gencommon.COL_OBJ_COL_NAME]
         if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
+            column_map_type = 'unordered_map'
+            if d[gencommon.COL_OBJ_TABLE_MULTI] == gencommon.multi_field_flag:
+                column_map_type = "unordered_multimap"
             type_name = get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])
-            header_content.append(f'    std::{container_type}<{type_name}, row_type>  kv_{column_name}data_;')
+            header_content.append(f'    std::{column_map_type}<{type_name}, row_type>  kv_{column_name}data_;')
 
     header_content.append('};')
     header_content.append(
