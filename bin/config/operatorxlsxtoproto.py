@@ -47,14 +47,15 @@ def write_temp_id_mapping(mapping):
 
 
 def read_excel_data(file_path):
-    """Reads data from the provided Excel file."""
+    """Reads data from the first sheet of the provided Excel file."""
     try:
         workbook = load_workbook(file_path, read_only=True)
-        sheet = workbook.active
+        sheet = workbook.active  # Only read the first sheet
         num_rows = sheet.max_row
 
         groups = {}
         current_group = None
+        current_group_data = []
         global_row_id = 1
 
         for row_idx in range(18, num_rows + 1):  # Adjust for zero-based index and header rows
@@ -65,7 +66,6 @@ def read_excel_data(file_path):
 
                 if current_group:
                     groups[current_group] = current_group_data
-                    current_group = None
 
                 current_group = group_name
                 current_group_data = []
@@ -73,7 +73,7 @@ def read_excel_data(file_path):
                 if current_group:
                     enum_name = row_cells[0].value
                     if enum_name:
-                        current_group_data.append((enum_name, global_row_id))
+                        current_group_data.append((enum_name.strip(), global_row_id))
                         global_row_id += 1
 
         if current_group:
@@ -90,15 +90,15 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
     """Generates Proto file for a given group."""
     try:
         proto_content = f"// Proto file for {group_name}\n"
-        proto_content += f"syntax = \"proto3\";\n\n"
-        proto_content += f"option go_package = \"pb/game\";\n\n"
+        proto_content += 'syntax = "proto3";\n\n'
+        proto_content += 'option go_package = "pb/game";\n\n'
         proto_content += f"enum {group_name} {{\n"
         proto_content += f"  k{group_name.capitalize()}OK = 0;\n"
 
         if group_name == "scene":
-            proto_content += f"  option allow_alias = true;\n\n"
+            proto_content += '  option allow_alias = true;\n\n'
 
-        for enum_name, enum_id in group_data:
+        for enum_name, _ in group_data:
             if enum_name in existing_id_mapping:
                 enum_id = existing_id_mapping[enum_name]
             else:
@@ -108,7 +108,7 @@ def generate_proto_file(group_name, group_data, existing_id_mapping):
             enum_name_with_k = f"k{enum_name.strip()}"
             proto_content += f"  {enum_name_with_k} = {enum_id};\n"
 
-        proto_content += "};\n"
+        proto_content += '};\n'
 
         proto_file_path = os.path.join(output_dir, f"{group_name.lower()}_operator.proto")
 
@@ -141,6 +141,7 @@ def generate_proto_files(groups):
 
 
 def main():
+    """Main function to read Excel data and generate Proto files."""
     groups = read_excel_data(excel_file_path)
     if groups:
         generate_proto_files(groups)
