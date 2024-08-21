@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+import concurrent.futures
 import os
 import openpyxl
 import gencommon
 import concurrent.futures
-from os import listdir
+from pathlib import Path
 from multiprocessing import cpu_count
 import logging
 
@@ -14,8 +15,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # Global Variables
 KEY_ROW_IDX = 4
-CPP_DIR = "generated/cpp/"
-XLS_DIR = "xlsx/"
+CPP_DIR = Path("generated/cpp")
+XLS_DIR = Path("xlsx")
 
 
 def get_column_names(sheet):
@@ -47,18 +48,20 @@ def get_workbook_data(workbook):
 
 
 def get_cpp_type_name(type_name):
+    """Return C++ type name based on the provided type_name."""
     if type_name == 'string':
-        type_name = 'std::string'
-    elif type_name.find('int') != -1:
-        type_name = type_name + '_t'
+        return 'std::string'
+    elif 'int' in type_name:
+        return f'{type_name}_t'
     return type_name
 
 
 def get_cpp_type_param_name_with_ref(type_name):
+    """Return C++ type parameter name with reference."""
     if type_name == 'string':
-        type_name = 'const std::string&'
-    elif type_name.find('int') != -1:
-        type_name = type_name + '_t'
+        return 'const std::string&'
+    elif 'int' in type_name:
+        return f'{type_name}_t'
     return type_name
 
 
@@ -67,15 +70,26 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     sheet_name_lower = sheetname.lower()
     container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
 
-    header_content = ["#pragma once", "#include <cstdint>", "#include <memory>", f'#include <unordered_map>',
-                      f'#include "{sheet_name_lower}_config.pb.h"', f'class {sheetname}ConfigurationTable {{',
-                      'public:', f'    using row_type = const {sheet_name_lower}_row*;',
-                      f'    using kv_type = std::{container_type}<uint32_t, row_type>;',
-                      f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
-                      f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
-                      f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
-                      f'    const kv_type& KVData() const {{ return kv_data_; }}', '    void Load();', 'private:',
-                      f'    {sheet_name_lower}_table data_;', '    kv_type kv_data_;\n\n', 'public:']
+    header_content = [
+        "#pragma once",
+        "#include <cstdint>",
+        "#include <memory>",
+        "#include <unordered_map>",
+        f'#include "{sheet_name_lower}_config.pb.h"',
+        f'class {sheetname}ConfigurationTable {{',
+        'public:',
+        f'    using row_type = const {sheet_name_lower}_row*;',
+        f'    using kv_type = std::{container_type}<uint32_t, row_type>;',
+        f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
+        f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
+        f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
+        f'    const kv_type& KVData() const {{ return kv_data_; }}',
+        '    void Load();',
+        'private:',
+        f'    {sheet_name_lower}_table data_;',
+        '    kv_type kv_data_;\n\n',
+        'public:'
+    ]
 
     for d in datastring:
         column_name = d[gencommon.COL_OBJ_COL_NAME]
@@ -83,10 +97,11 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
             column_map_type = 'unordered_map'
             if d[gencommon.COL_OBJ_TABLE_MULTI] == gencommon.multi_field_flag:
                 column_map_type = "unordered_multimap"
-            header_content.append(
-                f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])} keyid) const;')
-            header_content.append(
-                f'const std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, row_type>& Get{column_name.title()}Data() const{{return kv_{column_name}data_;}}')
+            header_content.extend([
+                f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])} keyid) const;',
+                f'const std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, row_type>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
+            ])
+
     header_content.append('\nprivate:')
     for d in datastring:
         column_name = d[gencommon.COL_OBJ_COL_NAME]
@@ -99,11 +114,9 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
 
     header_content.append('};')
     header_content.append(
-        f'\ninline std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> Get{sheetname}Table(uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}'
-    )
+        f'\ninline std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> Get{sheetname}Table(uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}')
     header_content.append(
-        f'\ninline const {sheet_name_lower}_table& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}'
-    )
+        f'\ninline const {sheet_name_lower}_table& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}')
 
     return '\n'.join(header_content)
 
@@ -155,7 +168,7 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
             type_name = get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])
             cpp_content.extend([
                 f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> '
-                f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} keyid) const{{',
+                f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} keyid) const {{',
                 f'    const auto it = kv_{column_name}data_.find(keyid);',
                 f'    if (it == kv_{column_name}data_.end()) {{',
                 f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyid;',
@@ -172,46 +185,36 @@ def process_workbook(filename):
     """Process a single workbook file and generate corresponding header and implementation files."""
     try:
         workbook = openpyxl.load_workbook(filename)
+        workbook_data = get_workbook_data(workbook)
+        for sheetname, data in workbook_data.items():
+            header_filename = f"{sheetname.lower()}_config.h"
+            cpp_filename = f"{sheetname.lower()}_config.cpp"
+
+            cpp_header_content = generate_cpp_header(data['get_first_19_rows_per_column'], sheetname, data['multi'])
+            gencommon.mywrite(cpp_header_content, CPP_DIR / header_filename)
+
+            cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname,
+                                                                     data['multi'])
+            gencommon.mywrite(cpp_implementation_content, CPP_DIR / cpp_filename)
     except Exception as e:
-        logging.error(f"Failed to load workbook {filename}: {e}")
-        return
-
-    workbook_data = get_workbook_data(workbook)
-    for sheetname, data in workbook_data.items():
-        header_filename = f"{sheetname.lower()}_config.h"
-        cpp_filename = f"{sheetname.lower()}_config.cpp"
-
-        cpp_header_content = generate_cpp_header(data['get_first_19_rows_per_column'], sheetname, data['multi'])
-        gencommon.mywrite(cpp_header_content, os.path.join(CPP_DIR, header_filename))
-
-        cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname,
-                                                                 data['multi'])
-        gencommon.mywrite(cpp_implementation_content, os.path.join(CPP_DIR, cpp_filename))
+        logging.error(f"Failed to load or process workbook {filename}: {e}")
 
 
 def generate_all_config():
     """Generate header and implementation files for loading all configurations."""
     sheetnames = []
-    dirfiles = listdir(XLS_DIR)
-    files = sorted(dirfiles, key=lambda file: os.path.getsize(os.path.join(XLS_DIR, file)), reverse=True)
+    xlsx_files = sorted(XLS_DIR.glob('*.xlsx'), key=lambda f: f.stat().st_size, reverse=True)
 
-    for filename in files:
-        filepath = os.path.join(XLS_DIR, filename)
-        if filepath.endswith('.xlsx'):
-            try:
-                workbook = openpyxl.load_workbook(filepath)
-                workbook_data = get_workbook_data(workbook)
-                sheetnames.extend(workbook_data.keys())
-            except Exception as e:
-                logging.error(f"Failed to process file {filepath}: {e}")
+    for filepath in xlsx_files:
+        try:
+            workbook = openpyxl.load_workbook(filepath)
+            workbook_data = get_workbook_data(workbook)
+            sheetnames.extend(workbook_data.keys())
+        except Exception as e:
+            logging.error(f"Failed to process file {filepath}: {e}")
 
-    header_content = '#pragma once\n'
-    header_content += 'void LoadAllConfig();\n'
-    header_content += 'void LoadAllConfigAsyncWhenServerLaunch();\n'
-
-    cpp_content = '#include "all_config.h"\n\n'
-    cpp_content += '#include <thread>\n'
-    cpp_content += '#include "muduo/base/CountDownLatch.h"\n\n'
+    header_content = '#pragma once\nvoid LoadAllConfig();\nvoid LoadAllConfigAsyncWhenServerLaunch();\n'
+    cpp_content = '#include "all_config.h"\n\n#include <thread>\n#include "muduo/base/CountDownLatch.h"\n\n'
 
     for item in sheetnames:
         cpp_content += f'#include "{item.lower()}_config.h"\n'
@@ -249,11 +252,10 @@ def generate_all_config():
 
 def main():
     """Main function to generate all configuration files."""
-    os.makedirs(CPP_DIR, exist_ok=True)
+    CPP_DIR.mkdir(parents=True, exist_ok=True)
 
     # List of Excel files
-    xlsx_files = [os.path.join(XLS_DIR, filename) for filename in listdir(XLS_DIR)
-                  if filename.endswith('.xlsx')]
+    xlsx_files = [XLS_DIR / filename for filename in os.listdir(XLS_DIR) if filename.endswith('.xlsx')]
 
     # Process Excel files in parallel
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -261,8 +263,8 @@ def main():
 
     # Generate header and implementation files for all configurations
     header_content, cpp_content = generate_all_config()
-    gencommon.mywrite(header_content, os.path.join(CPP_DIR, "all_config.h"))
-    gencommon.mywrite(cpp_content, os.path.join(CPP_DIR, "all_config.cpp"))
+    gencommon.mywrite(header_content, CPP_DIR / "all_config.h")
+    gencommon.mywrite(cpp_content, CPP_DIR / "all_config.cpp")
 
 
 if __name__ == "__main__":
