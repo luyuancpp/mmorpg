@@ -12,7 +12,6 @@ import openpyxl
 import gencommon  # Assuming gencommon contains the necessary functions
 
 # Configuration Constants
-BEGIN_ROW_IDX = 9
 JSON_DIR = "generated/json/"
 XLSX_DIR = "xlsx/"
 GEN_TYPE = "server"
@@ -50,7 +49,7 @@ def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, 
     """
     prev_column_name = column_names[prev_cell.col_idx - 1] if prev_cell else None
 
-    if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
+    if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
         return
 
     prev_obj_name = gencommon.column_name_to_obj_name(prev_column_name, "_") if prev_column_name else None
@@ -67,7 +66,7 @@ def handle_array_data(cell, row_data, col_name, cell_value):
     """
     Handle data for array fields and update row data accordingly.
     """
-    if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
+    if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
         return
     if cell_value in (0, -1):
         return
@@ -79,7 +78,7 @@ def handle_group_data(cell, row_data, col_name, cell_value, prev_cell):
     """
     Handle data for group fields and update row data accordingly.
     """
-    if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
+    if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
         return
     if cell_value in (0, -1):
         return
@@ -125,7 +124,7 @@ def process_row(sheet, row, column_names):
         elif gencommon.is_key_in_group_array(group_data, col_name, column_names):
             handle_group_data(cell, row_data, col_name, cell_value, prev_cell)
         else:
-            if cell_value in (None, '') and cell.row >= BEGIN_ROW_IDX:
+            if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
                 logger.error(f"Sheet '{sheet.title}', Cell {cell.coordinate} is empty or contains invalid data.")
             row_data[col_name] = cell_value
 
@@ -139,7 +138,7 @@ def extract_sheet_data(sheet, column_names):
     Extract data from all rows in the sheet.
     """
     return [process_row(sheet, row, column_names) for row in
-            sheet.iter_rows(min_row=BEGIN_ROW_IDX + 1, values_only=False)]
+            sheet.iter_rows(min_row=gencommon.BEGIN_ROW_IDX + 1, values_only=False)]
 
 
 def extract_workbook_data(workbook: openpyxl.Workbook) -> dict:

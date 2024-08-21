@@ -12,7 +12,6 @@ from os.path import isfile, join
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-begin_row_idx = gencommon.beginrowidx
 cpp_dir = "generated/cpp/"
 xlsx_dir = "xlsx/"
 gen_file_list = ["global_variable"]
@@ -24,7 +23,7 @@ def generate_id_enum(sheet):
     file_str = "#pragma once\n"
     file_str += f"enum e_{name}_configid : uint32_t\n{{\n"
 
-    for idx in range(begin_row_idx, n_rows + 1):
+    for idx in range(gencommon.BEGIN_ROW_IDX, n_rows + 1):
         cell_value = sheet.cell(row=idx, column=1).value
         if cell_value is not None:
             file_str += f"    {name}_config_id_{int(cell_value)},\n"
