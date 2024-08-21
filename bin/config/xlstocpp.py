@@ -42,9 +42,14 @@ def get_workbook_data(workbook):
         sheet = workbook[sheet_names[0]]
         column_names = get_column_names(sheet)
         sheet_key_data = get_sheet_key_data(sheet, column_names)
+
+        # Check if A5 cell value is 'multi' or None
+        cell_value = sheet['A5'].value
+        use_flat_multimap = cell_value is not None and cell_value.lower() == 'multi'
+
         workbook_data[sheet_names[0]] = {
             'data': sheet_key_data,
-            'multi': sheet['A5'].value.lower() == 'multi'  # Check the value of cell A5
+            'multi': use_flat_multimap
         }
     return workbook_data
 
