@@ -7,6 +7,10 @@ import gencommon
 import concurrent.futures
 from os import listdir
 from multiprocessing import cpu_count
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Global Variables
 KEY_ROW_IDX = 4
@@ -30,11 +34,11 @@ def get_workbook_data(workbook):
     """Extract data from the entire workbook."""
     workbook_data = {}
     sheet_names = workbook.sheetnames
-    for sheet_name in sheet_names:
-        sheet = workbook[sheet_name]
+    if sheet_names:  # Read only the first sheet
+        sheet = workbook[sheet_names[0]]
         column_names = get_column_names(sheet)
         sheet_key_data = get_sheet_key_data(sheet, column_names)
-        workbook_data[sheet_name] = sheet_key_data
+        workbook_data[sheet_names[0]] = sheet_key_data
     return workbook_data
 
 def generate_cpp_header(datastring, sheetname):
@@ -46,7 +50,7 @@ def generate_cpp_header(datastring, sheetname):
         "#include <unordered_map>",
         f'#include "{sheet_name_lower}_config.pb.h"',
         f'class {sheetname}ConfigurationTable {{',
-        f'public:',
+        'public:',
         f'    using row_type = const {sheet_name_lower}_row*;',
         f'    using kv_type = std::unordered_map<uint32_t, row_type>;',
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
@@ -122,7 +126,7 @@ def process_workbook(filename):
     try:
         workbook = openpyxl.load_workbook(filename)
     except Exception as e:
-        print(f"Failed to load workbook {filename}: {e}")
+        logging.error(f"Failed to load workbook {filename}: {e}")
         return
 
     workbook_data = get_workbook_data(workbook)
@@ -150,7 +154,7 @@ def generate_all_config():
                 workbook_data = get_workbook_data(workbook)
                 sheetnames.extend(workbook_data.keys())
             except Exception as e:
-                print(f"Failed to process file {filepath}: {e}")
+                logging.error(f"Failed to process file {filepath}: {e}")
 
     header_content = '#pragma once\n'
     header_content += 'void LoadAllConfig();\n'
