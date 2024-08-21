@@ -13,22 +13,18 @@ KEY_ROW_IDX = 4
 CPP_DIR = "generated/cpp/"
 XLS_DIR = "xlsx/"
 
-
 def get_column_names(sheet):
     """Get column names from the Excel sheet."""
-    return [cell.value for cell in sheet[KEY_ROW_IDX]]
-
+    return [cell.value for cell in sheet[KEY_ROW_IDX] if cell.value is not None]
 
 def get_key_row_data(row, column_names):
     """Extract key row data from the Excel sheet."""
-    return {str(row[i].value): row[i].value for i in range(len(row)) if column_names[i].strip() == "key"}
-
+    return {str(row[i].value): row[i].value for i in range(len(row)) if column_names[i].strip().lower() == "key"}
 
 def get_sheet_key_data(sheet, column_names):
     """Extract key data from the sheet."""
     row = sheet[1]  # Assuming the key row is the second row
     return [get_key_row_data(row, column_names)]
-
 
 def get_workbook_data(workbook):
     """Extract data from the entire workbook."""
@@ -40,7 +36,6 @@ def get_workbook_data(workbook):
         sheet_key_data = get_sheet_key_data(sheet, column_names)
         workbook_data[sheet_name] = sheet_key_data
     return workbook_data
-
 
 def generate_cpp_header(datastring, sheetname):
     """Generate C++ header file content."""
@@ -74,7 +69,6 @@ def generate_cpp_header(datastring, sheetname):
         f'\ninline const {sheet_name_lower}_table& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}')
 
     return '\n'.join(header_content)
-
 
 def generate_cpp_implementation(datastring, sheetname):
     """Generate C++ implementation file content."""
@@ -123,7 +117,6 @@ def generate_cpp_implementation(datastring, sheetname):
 
     return '\n'.join(cpp_content)
 
-
 def process_workbook(filename):
     """Process a single workbook file and generate corresponding header and implementation files."""
     try:
@@ -142,7 +135,6 @@ def process_workbook(filename):
 
         cpp_implementation_content = generate_cpp_implementation(data, sheetname)
         gencommon.mywrite(cpp_implementation_content, os.path.join(CPP_DIR, cpp_filename))
-
 
 def generate_all_config():
     """Generate header and implementation files for loading all configurations."""
@@ -201,7 +193,6 @@ def generate_all_config():
 
     return header_content, cpp_content
 
-
 def main():
     """Main function to generate all configuration files."""
     os.makedirs(CPP_DIR, exist_ok=True)
@@ -218,7 +209,6 @@ def main():
     header_content, cpp_content = generate_all_config()
     gencommon.mywrite(header_content, os.path.join(CPP_DIR, "all_config.h"))
     gencommon.mywrite(cpp_content, os.path.join(CPP_DIR, "all_config.cpp"))
-
 
 if __name__ == "__main__":
     main()
