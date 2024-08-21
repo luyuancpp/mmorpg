@@ -71,6 +71,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
         f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
         f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
+        f'    const kv_type& KeyData() const {{ return key_data_; }}',
         '    void Load();',
         'private:',
         f'    {sheet_name_lower}_table data_;',
