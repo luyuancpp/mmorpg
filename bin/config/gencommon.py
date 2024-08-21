@@ -2,7 +2,7 @@
 # coding=utf-8
 import logging
 
-beginrowidx = 10
+BEGIN_ROW_IDX = 9
 FIELD_INFO_END_ROW_INDEX = 5
 md5_output_dir = "generated/xlsx/md5/"
 
