@@ -34,7 +34,6 @@ def get_workbook_data(workbook):
     sheet_names = workbook.sheetnames
     if sheet_names:  # Read only the first sheet
         sheet = workbook[sheet_names[0]]
-        column_names = get_column_names(sheet)
 
         # Check if A5 cell value is 'multi' or None
         cell_value = sheet['A5'].value
