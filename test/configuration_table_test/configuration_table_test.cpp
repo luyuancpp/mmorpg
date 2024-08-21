@@ -2,6 +2,7 @@
 #include "gmock/gmock.h"
 #include "muduo/base/Logging.h"
 #include "test_config.h"
+#include "testmultikey_config.h"
 #include "ability_config.h"
 #include "buff_config.h"
 
@@ -30,6 +31,14 @@ TEST(LoadAllConfigTest, GetTestAllTable)
     {
         LOG_INFO << it.DebugString();
     }
+}
+
+TEST(LoadAllConfigTest, GetTestMultiKeyAllTable)
+{
+	for (auto& it : GetTestMultiKeyAllTable().data())
+	{
+		LOG_INFO << it.DebugString();
+	}
 }
 
 // Main function
