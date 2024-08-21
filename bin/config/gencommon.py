@@ -13,6 +13,7 @@ map_key_flag = 'map_key'
 map_value_flag = 'map_value'
 set_flag = 'set'
 table_key = 'table_key'
+multi_field_flag = 'multi'
 
 FILE_TYPE_INDEX = 0
 MAP_TYPE_INDEX = 1
@@ -21,6 +22,7 @@ MULTI_KEY_INDEX = 3
 
 COL_OBJ_COL_NAME = 0
 COL_OBJ_COL_TYPE = 1
+COL_OBJ_TABLE_MULTI = 4
 COL_OBJ_TABLE_KEY_INDEX = 5
 
 SHEET_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX - 1
