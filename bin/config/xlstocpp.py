@@ -57,12 +57,12 @@ def get_workbook_data(workbook):
 def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     """Generate C++ header file content."""
     sheet_name_lower = sheetname.lower()
-    container_type = "flat_multimap" if use_flat_multimap else "unordered_map"
+    container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
 
     header_content = [
         "#pragma once",
         "#include <memory>",
-        f'#include <{container_type}>',
+        f'#include <unordered_map>',
         f'#include "{sheet_name_lower}_config.pb.h"',
         f'class {sheetname}ConfigurationTable {{',
         'public:',
@@ -95,7 +95,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
 def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
     """Generate C++ implementation file content."""
     sheet_name_lower = sheetname.lower()
-    container_type = "flat_multimap" if use_flat_multimap else "unordered_map"
+    container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
 
     cpp_content = [
         '#include "google/protobuf/util/json_util.h"',
