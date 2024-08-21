@@ -8,162 +8,164 @@ import concurrent.futures
 from os import listdir
 from multiprocessing import cpu_count
 
-# 全局变量
-keyrowidx = 4
-cppdir = "generated/cpp/"
-xlsdir = "xlsx/"
+# Global Variables
+KEY_ROW_IDX = 4
+CPP_DIR = "generated/cpp/"
+XLS_DIR = "xlsx/"
 
 
-def get_column_names(sheet, is_xlsx):
-    """获取Excel表格的列名"""
-    if is_xlsx:
-        return [cell.value for cell in sheet[keyrowidx]]
-    else:
-        return sheet.row_values(keyrowidx, 0, sheet.ncols)
+def get_column_names(sheet):
+    """Get column names from the Excel sheet."""
+    return [cell.value for cell in sheet[KEY_ROW_IDX]]
 
 
 def get_key_row_data(row, column_names):
-    """将Excel表格的关键行数据转换为字典形式"""
-    row_data = {}
-    for i in range(len(row)):
-        if column_names[i].strip() == "key":
-            row_data[str(row[i].value)] = row[i].value
-    return row_data
+    """Extract key row data from the Excel sheet."""
+    return {str(row[i].value): row[i].value for i in range(len(row)) if column_names[i].strip() == "key"}
 
 
-def get_sheet_key_data(sheet, column_names, is_xlsx):
-    """获取表格的关键数据"""
-    if is_xlsx:
-        row = sheet[1]  # 获取第一行
-    else:
-        row = sheet.row(0)  # 获取第一行
-    key_row_data = get_key_row_data(row, column_names)
-    return [key_row_data]
+def get_sheet_key_data(sheet, column_names):
+    """Extract key data from the sheet."""
+    row = sheet[1]  # Assuming the key row is the second row
+    return [get_key_row_data(row, column_names)]
 
 
-def get_workbook_data(workbook, is_xlsx):
-    """获取整个工作簿（Workbook）的数据"""
+def get_workbook_data(workbook):
+    """Extract data from the entire workbook."""
     workbook_data = {}
-    sheet_names = workbook.sheetnames if is_xlsx else workbook.sheet_names()
+    sheet_names = workbook.sheetnames
     for sheet_name in sheet_names:
-        sheet = workbook[sheet_name] if is_xlsx else workbook.sheet_by_name(sheet_name)
-        column_names = get_column_names(sheet, is_xlsx)
-        sheet_key_data = get_sheet_key_data(sheet, column_names, is_xlsx)
+        sheet = workbook[sheet_name]
+        column_names = get_column_names(sheet)
+        sheet_key_data = get_sheet_key_data(sheet, column_names)
         workbook_data[sheet_name] = sheet_key_data
     return workbook_data
 
 
 def generate_cpp_header(datastring, sheetname):
-    """生成C++头文件内容"""
+    """Generate C++ header file content."""
     sheet_name_lower = sheetname.lower()
-    s = "#pragma once\n"
-    s += "#include <memory>\n"
-    s += "#include <unordered_map>\n"
-    s += '#include "%s_config.pb.h"\n' % sheet_name_lower
-    s += 'class %sConfigurationTable\n{\npublic:\n' % sheetname
-    s += '    using row_type = const %s_row*;\n' % sheet_name_lower
-    s += '    using kv_type = std::unordered_map<uint32_t, row_type>;\n'
-    s += '    static %sConfigurationTable& GetSingleton() { static %sConfigurationTable singleton; return singleton; }\n' % (
-    sheetname, sheetname)
-    s += '    const %s_table& All() const { return data_; }\n' % sheet_name_lower
-    s += '    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);\n'
+    header_content = [
+        "#pragma once",
+        "#include <memory>",
+        "#include <unordered_map>",
+        f'#include "{sheet_name_lower}_config.pb.h"',
+        f'class {sheetname}ConfigurationTable {{',
+        f'public:',
+        f'    using row_type = const {sheet_name_lower}_row*;',
+        f'    using kv_type = std::unordered_map<uint32_t, row_type>;',
+        f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
+        f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
+        f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
+    ]
+
     counter = 0
     for d in datastring:
         for v in d.values():
-            s += '    row_type key_%s(uint32_t keyid) const;\n' % v
+            header_content.append(f'    row_type key_{v}(uint32_t keyid) const;')
             counter += 1
-    s += '    void Load();\n'
-    s += 'private:\n'
-    s += '    %s_table data_;\n' % sheet_name_lower
-    s += '    kv_type key_data_;\n'
-    for i in range(counter):
-        s += '    kv_type key_data_%s_;\n' % i
-    s += '};\n'
-    s += '\ninline std::pair< %sConfigurationTable::row_type, uint32_t> Get%sTable(uint32_t keyid)\n{\n' % (
-    sheetname, sheetname)
-    s += '    return %sConfigurationTable::GetSingleton().GetTable(keyid);\n}\n' % sheetname
-    s += '\ninline  const %s_table& Get%sAllTable()\n{\n' % (sheet_name_lower, sheetname)
-    s += '    return %sConfigurationTable::GetSingleton().All();\n}\n' % sheetname
-    return s
+
+    header_content.extend([
+        '    void Load();',
+        'private:',
+        f'    {sheet_name_lower}_table data_;',
+        '    kv_type key_data_;',
+    ])
+    header_content.extend([f'    kv_type key_data_{i}_;' for i in range(counter)])
+    header_content.append('};')
+    header_content.append(
+        f'\ninline std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> Get{sheetname}Table(uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}')
+    header_content.append(
+        f'\ninline const {sheet_name_lower}_table& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}')
+
+    return '\n'.join(header_content)
 
 
 def generate_cpp_implementation(datastring, sheetname):
-    """生成C++实现文件内容"""
+    """Generate C++ implementation file content."""
     sheet_name_lower = sheetname.lower()
-    s = '#include "google/protobuf/util/json_util.h"\n'
-    s += '#include "src/util/file2string.h"\n'
-    s += '#include "muduo/base/Logging.h"\n'
-    s += '#include "common_error_tip.pb.h"\n'
-    s += '#include "%s_config.h"\n\n' % sheet_name_lower
-    s += 'void %sConfigurationTable::Load()\n{\n' % sheetname
-    s += '    data_.Clear();\n'
-    s += '    const auto contents = File2String("config/generated/json/%s.json");\n' % sheet_name_lower
-    s += '    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_);\n'
-    s += '        !result.ok()){\n'
-    s += '        LOG_FATAL << "%s " << result.message().data();\n' % sheetname
-    s += '    }\n\n'
+    cpp_content = [
+        '#include "google/protobuf/util/json_util.h"',
+        '#include "src/util/file2string.h"',
+        '#include "muduo/base/Logging.h"',
+        '#include "common_error_tip.pb.h"',
+        f'#include "{sheet_name_lower}_config.h"\n',
+        f'void {sheetname}ConfigurationTable::Load() {{',
+        '    data_.Clear();',
+        f'    const auto contents = File2String("config/generated/json/{sheet_name_lower}.json");',
+        f'    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {{',
+        f'        LOG_FATAL << "{sheetname} " << result.message().data();',
+        '    }',
+        '    for (int32_t i = 0; i < data_.data_size(); ++i) {',
+    ]
 
-    s += '    for (int32_t i = 0; i < data_.data_size(); ++i){\n'
-    s += '        const auto& row_data = data_.data(i);\n'
     counter = 0
     for d in datastring:
-        s += '        key_data_.emplace(row_data.id(), &row_data);\n'
+        cpp_content.append(f'        const auto& row_data = data_.data(i);')
+        cpp_content.append(f'        key_data_.emplace(row_data.id(), &row_data);')
         for v in d.values():
-            s += '        key_data_%s_.emplace(row_data.%s(), &row_data);\n' % (counter, v)
-            counter += 1
-    s += '    }\n'
-    s += '}\n\n'
-    s += 'const std::pair< %sConfigurationTable::row_type, uint32_t> %sConfigurationTable::GetTable(uint32_t keyid)\n{\n' % (sheetname, sheetname)
-    s += '    const auto it = key_data_.find(keyid);\n'
-    s += '    if (it == key_data_.end()){\n'
-    s += '      LOG_ERROR << "%s table not found for ID: " << keyid; \n' % sheetname
-    s += '      return { nullptr, kInvalidTableId }; \n'
-    s += '    }\n'
-    s += '    return { it->second, kOK};\n}\n'
-    counter = 0
-    for d in datastring:
-        for v in d.values():
-            s += 'const %s_row* %sConfigurationTable::key_%s(uint32_t keyid) const\n{\n' % (
-                sheet_name_lower, sheetname, v)
-            s += '    const auto it = key_data_%s_.find(keyid);\n' % counter
-            s += '    return it == key_data_%s_.end() ? nullptr : it->second;\n}\n' % counter
+            cpp_content.append(f'        key_data_{counter}_.emplace(row_data.{v}(), &row_data);')
             counter += 1
 
-    return s
+    cpp_content.extend([
+        '    }',
+        '}\n\n',
+        f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> {sheetname}ConfigurationTable::GetTable(uint32_t keyid) {{',
+        '    const auto it = key_data_.find(keyid);',
+        '    if (it == key_data_.end()) {',
+        f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyid;',
+        '        return { nullptr, kInvalidTableId };',
+        '    }',
+        '    return { it->second, kOK };',
+        '}',
+    ])
+
+    for d in datastring:
+        for v in d.values():
+            cpp_content.append(
+                f'const {sheet_name_lower}_row* {sheetname}ConfigurationTable::key_{v}(uint32_t keyid) const {{')
+            cpp_content.append(f'    const auto it = key_data_{counter}_.find(keyid);')
+            cpp_content.append(f'    return it == key_data_{counter}_.end() ? nullptr : it->second;')
+            cpp_content.append('}')
+
+    return '\n'.join(cpp_content)
 
 
 def process_workbook(filename):
-    """处理单个工作簿文件，生成对应的头文件和实现文件"""
-    is_xlsx = filename.endswith('.xlsx')
-    if is_xlsx:
+    """Process a single workbook file and generate corresponding header and implementation files."""
+    try:
         workbook = openpyxl.load_workbook(filename)
+    except Exception as e:
+        print(f"Failed to load workbook {filename}: {e}")
+        return
 
-    workbook_data = get_workbook_data(workbook, is_xlsx)
+    workbook_data = get_workbook_data(workbook)
     for sheetname in workbook_data:
-        header_filename = sheetname.lower() + "_config.h"
-        cpp_filename = sheetname.lower() + "_config.cpp"
+        header_filename = f"{sheetname.lower()}_config.h"
+        cpp_filename = f"{sheetname.lower()}_config.cpp"
 
         cpp_header_content = generate_cpp_header(workbook_data[sheetname], sheetname)
-        gencommon.mywrite(cpp_header_content, os.path.join(cppdir, header_filename))
+        gencommon.mywrite(cpp_header_content, os.path.join(CPP_DIR, header_filename))
 
         cpp_implementation_content = generate_cpp_implementation(workbook_data[sheetname], sheetname)
-        gencommon.mywrite(cpp_implementation_content, os.path.join(cppdir, cpp_filename))
+        gencommon.mywrite(cpp_implementation_content, os.path.join(CPP_DIR, cpp_filename))
 
 
 def generate_all_config():
-    """生成加载所有配置的头文件和实现文件内容"""
+    """Generate header and implementation files for loading all configurations."""
     sheetnames = []
-    dirfiles = listdir(xlsdir)
-    files = sorted(dirfiles, key=lambda file: os.path.getsize(os.path.join(xlsdir, file)), reverse=True)
+    dirfiles = listdir(XLS_DIR)
+    files = sorted(dirfiles, key=lambda file: os.path.getsize(os.path.join(XLS_DIR, file)), reverse=True)
 
     for filename in files:
-        filepath = os.path.join(xlsdir, filename)
-        if filepath.endswith('.xlsx') or filepath.endswith('.xls'):
-            is_xlsx = filepath.endswith('.xlsx')
-            workbook = openpyxl.load_workbook(filepath) if is_xlsx else xlrd.open_workbook(filepath)
-            workbook_data = get_workbook_data(workbook, is_xlsx)
-            for sheetname in workbook_data:
-                sheetnames.append(sheetname)
+        filepath = os.path.join(XLS_DIR, filename)
+        if filepath.endswith('.xlsx'):
+            try:
+                workbook = openpyxl.load_workbook(filepath)
+                workbook_data = get_workbook_data(workbook)
+                sheetnames.extend(workbook_data.keys())
+            except Exception as e:
+                print(f"Failed to process file {filepath}: {e}")
 
     header_content = '#pragma once\n'
     header_content += 'void LoadAllConfig();\n'
@@ -174,44 +176,32 @@ def generate_all_config():
     cpp_content += '#include "muduo/base/CountDownLatch.h"\n\n'
 
     for item in sheetnames:
-        cpp_content += '#include "%s_config.h"\n' % item
+        cpp_content += f'#include "{item.lower()}_config.h"\n'
 
     cpp_content += 'void LoadAllConfig()\n{\n'
     for item in sheetnames:
-        cpp_content += '    %sConfigurationTable::GetSingleton().Load();\n' % item
+        cpp_content += f'    {item}ConfigurationTable::GetSingleton().Load();\n'
     cpp_content += '}\n\n'
 
     cpucount = cpu_count()
     cpp_content += 'void LoadAllConfigAsyncWhenServerLaunch()\n{\n'
+    cpp_content += f'    static muduo::CountDownLatch latch_({len(sheetnames)});\n'
 
-    cpustr = [[] for _ in range(cpucount)]
-    count = 0
-    realthreadcount = 0
+    load_blocks = [[] for _ in range(cpucount)]
+    for idx, item in enumerate(sheetnames):
+        load_blocks[idx % cpucount].append(f'    {item}ConfigurationTable::GetSingleton().Load();\n')
 
-    for item in sheetnames:
-        loadstr = '    %sConfigurationTable::GetSingleton().Load();\n' % item
-        if count >= cpucount:
-            count = 0
-        cpustr[count].append(loadstr)
-        count += 1
-        if realthreadcount < count:
-            realthreadcount = count
-
-    cpp_content += '    static muduo::CountDownLatch latch_(' + str(realthreadcount) + ');\n'
-
-    for group in cpustr:
-        if len(group) <= 0:
-            continue
-        cpp_content += '\n    /// Begin\n'
-        cpp_content += '    {\n'
-        cpp_content += '        std::thread t([&]() {\n\n'
-        for blockstr in group:
-            cpp_content += blockstr
-        cpp_content += '            latch_.countDown();\n'
-        cpp_content += '        });\n'
-        cpp_content += '        t.detach();\n'
-        cpp_content += '    }\n'
-        cpp_content += '    /// End\n'
+    for block in load_blocks:
+        if block:
+            cpp_content += '\n    /// Begin\n'
+            cpp_content += '    {\n'
+            cpp_content += '        std::thread t([&]() {\n\n'
+            cpp_content += ''.join(block)
+            cpp_content += '            latch_.countDown();\n'
+            cpp_content += '        });\n'
+            cpp_content += '        t.detach();\n'
+            cpp_content += '    }\n'
+            cpp_content += '    /// End\n'
 
     cpp_content += '    latch_.wait();\n'
     cpp_content += '}\n'
@@ -220,22 +210,21 @@ def generate_all_config():
 
 
 def main():
-    """主函数，生成所有配置相关文件"""
-    if not os.path.exists(cppdir):
-        os.makedirs(cppdir)
+    """Main function to generate all configuration files."""
+    os.makedirs(CPP_DIR, exist_ok=True)
 
-    # 获取xlsx文件列表
-    xlsx_files = [os.path.join(xlsdir, filename) for filename in listdir(xlsdir)
-                  if filename.endswith('.xlsx') or filename.endswith('.xls')]
+    # List of Excel files
+    xlsx_files = [os.path.join(XLS_DIR, filename) for filename in listdir(XLS_DIR)
+                  if filename.endswith('.xlsx')]
 
-    # 多线程处理xlsx文件
+    # Process Excel files in parallel
     with concurrent.futures.ProcessPoolExecutor() as executor:
         executor.map(process_workbook, xlsx_files)
 
-    # 生成加载所有配置的头文件和实现文件
+    # Generate header and implementation files for all configurations
     header_content, cpp_content = generate_all_config()
-    gencommon.mywrite(header_content, os.path.join(cppdir, "all_config.h"))
-    gencommon.mywrite(cpp_content, os.path.join(cppdir, "all_config.cpp"))
+    gencommon.mywrite(header_content, os.path.join(CPP_DIR, "all_config.h"))
+    gencommon.mywrite(cpp_content, os.path.join(CPP_DIR, "all_config.cpp"))
 
 
 if __name__ == "__main__":
