@@ -29,7 +29,7 @@ def read_excel_data(file_path):
         current_group = None
         global_row_id = 0  # Start global_row_id at 0 for open enums
 
-        for row_idx in range(8, num_rows + 1):  # Adjust for zero-based index
+        for row_idx in range(18, num_rows + 1):  # Adjust for zero-based index
             row_cells = sheet[row_idx]
 
             if row_cells[0].value and row_cells[0].value.startswith('//'):

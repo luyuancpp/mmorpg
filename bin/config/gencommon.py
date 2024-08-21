@@ -2,8 +2,8 @@
 # coding=utf-8
 import logging
 
-BEGIN_ROW_IDX = 9
-FIELD_INFO_END_ROW_INDEX = 5
+BEGIN_ROW_IDX = 19
+FIELD_INFO_END_ROW_INDEX = 18
 md5_output_dir = "generated/xlsx/md5/"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
