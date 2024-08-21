@@ -57,21 +57,16 @@ def generate_cpp_header(datastring, sheetname):
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
         f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
         f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
-    ]
-
-    counter = 0
-    for d in datastring:
-        for v in d.values():
-            header_content.append(f'    row_type key_{v}(uint32_t keyid) const;')
-            counter += 1
-
-    header_content.extend([
         '    void Load();',
         'private:',
         f'    {sheet_name_lower}_table data_;',
         '    kv_type key_data_;',
-    ])
-    header_content.extend([f'    kv_type key_data_{i}_;' for i in range(counter)])
+    ]
+
+    for d in datastring:
+        for v in d.values():
+            header_content.append(f'    row_type key_{v}(uint32_t keyid) const;')
+
     header_content.append('};')
     header_content.append(
         f'\ninline std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> Get{sheetname}Table(uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}')
@@ -97,15 +92,13 @@ def generate_cpp_implementation(datastring, sheetname):
         f'        LOG_FATAL << "{sheetname} " << result.message().data();',
         '    }',
         '    for (int32_t i = 0; i < data_.data_size(); ++i) {',
+        '        const auto& row_data = data_.data(i);',
+        '        key_data_.emplace(row_data.id(), &row_data);',
     ]
 
-    counter = 0
     for d in datastring:
-        cpp_content.append(f'        const auto& row_data = data_.data(i);')
-        cpp_content.append(f'        key_data_.emplace(row_data.id(), &row_data);')
         for v in d.values():
-            cpp_content.append(f'        key_data_{counter}_.emplace(row_data.{v}(), &row_data);')
-            counter += 1
+            cpp_content.append(f'        key_data_{v}_.emplace(row_data.{v}(), &row_data);')
 
     cpp_content.extend([
         '    }',
@@ -124,8 +117,8 @@ def generate_cpp_implementation(datastring, sheetname):
         for v in d.values():
             cpp_content.append(
                 f'const {sheet_name_lower}_row* {sheetname}ConfigurationTable::key_{v}(uint32_t keyid) const {{')
-            cpp_content.append(f'    const auto it = key_data_{counter}_.find(keyid);')
-            cpp_content.append(f'    return it == key_data_{counter}_.end() ? nullptr : it->second;')
+            cpp_content.append(f'    const auto it = key_data_{v}_.find(keyid);')
+            cpp_content.append(f'    return it == key_data_{v}_.end() ? nullptr : it->second;')
             cpp_content.append('}')
 
     return '\n'.join(cpp_content)
@@ -140,14 +133,14 @@ def process_workbook(filename):
         return
 
     workbook_data = get_workbook_data(workbook)
-    for sheetname in workbook_data:
+    for sheetname, data in workbook_data.items():
         header_filename = f"{sheetname.lower()}_config.h"
         cpp_filename = f"{sheetname.lower()}_config.cpp"
 
-        cpp_header_content = generate_cpp_header(workbook_data[sheetname], sheetname)
+        cpp_header_content = generate_cpp_header(data, sheetname)
         gencommon.mywrite(cpp_header_content, os.path.join(CPP_DIR, header_filename))
 
-        cpp_implementation_content = generate_cpp_implementation(workbook_data[sheetname], sheetname)
+        cpp_implementation_content = generate_cpp_implementation(data, sheetname)
         gencommon.mywrite(cpp_implementation_content, os.path.join(CPP_DIR, cpp_filename))
 
 
