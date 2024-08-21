@@ -50,8 +50,10 @@
     <ClCompile Include="src\pbc\scene_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\scene_operator.pb.cc" />
     <ClCompile Include="src\pbc\team_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\testmultikey_config.pb.cc" />
     <ClCompile Include="src\pbc\test_config.pb.cc" />
     <ClCompile Include="src\scene_config.cpp" />
+    <ClCompile Include="src\testmultikey_config.cpp" />
     <ClCompile Include="src\test_config.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -86,8 +88,10 @@
     <ClInclude Include="src\pbc\scene_error_tip.pb.h" />
     <ClInclude Include="src\pbc\scene_operator.pb.h" />
     <ClInclude Include="src\pbc\team_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\testmultikey_config.pb.h" />
     <ClInclude Include="src\pbc\test_config.pb.h" />
     <ClInclude Include="src\scene_config.h" />
+    <ClInclude Include="src\testmultikey_config.h" />
     <ClInclude Include="src\test_config.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
