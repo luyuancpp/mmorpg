@@ -89,9 +89,9 @@ def writeCMakeLists(vcxprojDir, target_type):
 
     # set flags
     fileLines += "set(CMAKE_VERBOSE_MAKEFILE on)\n"
-    fileLines += "set(CMAKE_CXX_STANDARD  20)\n"
+    fileLines += "set(CMAKE_CXX_STANDARD  23)\n"
     fileLines += "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++23")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")\n'
