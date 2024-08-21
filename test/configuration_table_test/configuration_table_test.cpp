@@ -39,6 +39,9 @@ TEST(LoadAllConfigTest, GetTestMultiKeyAllTable)
 	{
 		LOG_INFO << it.DebugString();
 	}
+
+	auto& data = TestMultiKeyConfigurationTable::GetSingleton().GetMuint32KeyData();
+	auto list_value = data.equal_range(17);
 }
 
 // Main function
