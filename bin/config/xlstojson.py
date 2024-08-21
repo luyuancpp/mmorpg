@@ -8,7 +8,6 @@ import concurrent.futures
 from os import listdir
 from os.path import isfile, join
 import openpyxl
-
 import gencommon  # Assuming gencommon contains the necessary functions
 
 # Configuration Constants
@@ -48,7 +47,6 @@ def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, 
     Handle data for map fields and update row data accordingly.
     """
     prev_column_name = column_names[prev_cell.col_idx - 1] if prev_cell else None
-
     if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
         return
 
@@ -57,8 +55,8 @@ def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, 
 
     if gencommon.set_flag == map_field_data[col_name]:
         row_data.setdefault(col_name, {})[cell_value] = True
-    elif (prev_column_name in map_field_data and gencommon.map_key_flag == map_field_data[prev_column_name] and
-          prev_obj_name == obj_name):
+    elif (prev_column_name in map_field_data and gencommon.map_key_flag == map_field_data[prev_column_name]
+          and prev_obj_name == obj_name):
         row_data.setdefault(obj_name, {})[prev_cell.value] = cell_value
 
 
@@ -66,11 +64,8 @@ def handle_array_data(cell, row_data, col_name, cell_value):
     """
     Handle data for array fields and update row data accordingly.
     """
-    if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
+    if cell_value in (None, '', 0, -1) and cell.row >= gencommon.BEGIN_ROW_IDX:
         return
-    if cell_value in (0, -1):
-        return
-
     row_data.setdefault(col_name, []).append(cell_value)
 
 
@@ -78,9 +73,7 @@ def handle_group_data(cell, row_data, col_name, cell_value, prev_cell):
     """
     Handle data for group fields and update row data accordingly.
     """
-    if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
-        return
-    if cell_value in (0, -1):
+    if cell_value in (None, '', 0, -1) and cell.row >= gencommon.BEGIN_ROW_IDX:
         return
 
     obj_name = gencommon.column_name_to_obj_name(col_name, "_")
@@ -143,17 +136,19 @@ def extract_sheet_data(sheet, column_names):
 
 def extract_workbook_data(workbook: openpyxl.Workbook) -> dict:
     """
-    Extract data from all sheets in the workbook.
+    Extract data from the first sheet in the workbook.
     """
     workbook_data = {}
-    for sheet_name in workbook.sheetnames:
+    if workbook.sheetnames:
+        sheet_name = workbook.sheetnames[0]
         sheet = workbook[sheet_name]
         if sheet.cell(row=1, column=1).value != "id":
             logger.error(f"{sheet_name} first column must be 'id'")
-            continue
-
-        column_names = get_column_names(sheet)
-        workbook_data[sheet_name] = extract_sheet_data(sheet, column_names)
+        else:
+            column_names = get_column_names(sheet)
+            workbook_data[sheet_name] = extract_sheet_data(sheet, column_names)
+    else:
+        logger.error("No sheets found in the workbook.")
 
     return workbook_data
 
@@ -176,7 +171,7 @@ def save_json(data: dict, file_path: str) -> None:
 
 def process_excel_file(file_path: str) -> None:
     """
-    Process an individual Excel file and generate JSON files for each sheet.
+    Process an individual Excel file and generate a JSON file for the first sheet.
     """
     try:
         workbook = openpyxl.load_workbook(file_path)
