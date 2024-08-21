@@ -13,7 +13,6 @@ map_key_flag = 'map_key'
 map_value_flag = 'map_value'
 set_flag = 'set'
 
-#第一行作为key 所以不用记录,后面的每一行用第一行作为key,自己的格子作为value
 FILE_TYPE_INDEX = 0
 MAP_TYPE_INDEX = 1
 OWNER_INDEX = 2
@@ -23,31 +22,22 @@ SHEET_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX - 1
 SHEET_GROUP_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX
 SHEET_COLUM_NAME_INDEX = FIELD_INFO_END_ROW_INDEX + 1
 
-def mywrite(str, filename):
-    outputh = open(filename, "w", encoding="utf-8")
-    outputh.write(str)
-    outputh.close()
-
+def mywrite(content, filename):
+    """将字符串写入指定文件"""
+    with open(filename, "w", encoding="utf-8") as output_file:
+        output_file.write(content)
 
 def find_common_words(text1, text2, separator):
-    # 将文本转换为小写以确保不区分大小写
+    """查找两个文本中的共同单词"""
     text1 = text1.lower()
     text2 = text2.lower()
-
-    # 将文本拆分成单词列表
     words1 = set(text1.split(separator))
     words2 = set(text2.split(separator))
-
-    # 找出两个集合的交集，即共同的单词
-    common_words = words1.intersection(words2)
-
-    return common_words
-
+    return words1.intersection(words2)
 
 def set_to_string(s):
     """将集合中的元素拼接成一个字符串"""
-    return ''.join(str(element) for element in s)
-
+    return ''.join(map(str, s))
 
 def get_group_column_names(column_names):
     # 返回普通数组列
@@ -96,33 +86,23 @@ def get_group_column_names(column_names):
 
     return array_column_names, group_column_names
 
-
 def is_key_in_group_array(data, key, column_names):
-    for k, v in data.items():
-        for cell_index in v:
-            if column_names[cell_index] == key:
-                return True
-    return False
-
+    """检查一个键是否在分组数组中"""
+    return any(column_names[cell_index] == key for v in data.values() for cell_index in v)
 
 def is_key_in_map(data, key, map_field_data, column_names):
-    for k, v in data.items():
-        found = False
-        for cell_index in v:
-            if column_names[cell_index] == key:
-                found = True
-                break
-        if found:
+    """检查一个键是否在映射中"""
+    for v in data.values():
+        if key in (column_names[cell_index] for cell_index in v):
             for cell_index in v:
                 if column_names[cell_index] in map_field_data:
-                    column_name = map_field_data[cell_index]
-                    return map_field_data[column_name] == map_key_flag or map_field_data[column_name] == map_value_flag
+                    column_name = column_names[cell_index]
+                    return map_field_data[column_name] in (map_key_flag, map_value_flag)
     return False
 
-
 def column_name_to_obj_name(column_name, separator):
+    """根据分隔符从列名中提取对象名"""
     return column_name.split(separator)[0]
-
 
 def get_row_data(row, column_names):
     """将Excel表格的一行数据转换为字典形式，并验证数据"""
@@ -130,54 +110,42 @@ def get_row_data(row, column_names):
     for i, cell in enumerate(row):
         col_name = column_names[i]
         if col_name and cell is not None:
-            if isinstance(cell, float) and cell.is_integer():
-                cell_value = int(cell)
-            else:
-                cell_value = cell
-
+            cell_value = int(cell) if isinstance(cell, float) and cell.is_integer() else cell
             if cell_value in (None, ''):
-                logger.warning(f"Row {row[0].row}, column '{col_name}' is empty or invalid.")
-
+                # Check if row[0] is not None before accessing its attributes
+                row_number = row[0].row if row and row[0] else 'unknown'
+                logger.warning(f"Row {row_number}, column '{col_name}' is empty or invalid.")
             row_data[col_name] = cell_value
     return row_data
 
 
 def fill_map(group_data, map_field_data, column_names):
+    """填充映射数据"""
     for k, v in group_data.items():
-        for cell_index in v:
-            key_index = v[0]
-            if column_names[key_index] in map_field_data and map_field_data[column_names[key_index]] == map_key_flag:
-                map_field_data[column_names[key_index]] = map_key_flag
+        if column_names[v[0]] in map_field_data and map_field_data[column_names[v[0]]] == map_key_flag:
+            map_field_data[column_names[v[0]]] = map_key_flag
+            if len(v) > 1:
                 map_field_data[column_names[v[1]]] = map_value_flag
-                break
-
 
 def get_sheet_data(sheet, column_names):
     """获取整个Excel表格的数据"""
-    sheet_data = []
-    for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-        if idx <= FIELD_INFO_END_ROW_INDEX:
-            row_data = get_row_data(row, column_names)
-            sheet_data.append(row_data)
-
+    sheet_data = [get_row_data(row, column_names) for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2) if idx <= FIELD_INFO_END_ROW_INDEX]
     try:
         array_data, group_data = get_group_column_names(column_names)
     except Exception as e:
         logger.error(f"Failed to get group column names: {e}")
         array_data, group_data = {}, {}
 
-    fill_map(group_data, sheet_data[MAP_TYPE_INDEX], column_names)
+    fill_map(group_data, sheet_data[MAP_TYPE_INDEX] if sheet_data else {}, column_names)
     sheet_data.append(array_data)
     sheet_data.append(group_data)
     sheet_data.append(column_names)
     return sheet_data
 
-
 def get_column_names(sheet):
     """获取Excel表格的列名"""
     try:
-        column_names = [cell.value for cell in sheet[1]]  # 获取第一行的列名
-        return column_names
+        return [cell.value for cell in sheet[1]]  # 获取第一行的列名
     except Exception as e:
         logger.error(f"Failed to get column names: {e}")
         return []
