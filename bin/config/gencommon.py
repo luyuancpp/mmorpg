@@ -149,3 +149,30 @@ def get_column_names(sheet):
     except Exception as e:
         logger.error(f"Failed to get column names: {e}")
         return []
+
+
+def get_first_19_rows_per_column(sheet):
+    """获取Excel每列的前19行数据并将其转换为字典对象"""
+    # 初始化存储每列前19行数据的字典
+    columns_data = []
+
+    # 获取列名（假设第一行为列名）
+    column_names = [cell.value for cell in sheet[1]]
+
+    # 遍历每列
+    for col_idx, col_name in enumerate(column_names):
+        if col_name:  # 确保列名存在
+            column_data = []
+            # 获取该列的前19行数据
+            for row_idx in range(1, FIELD_INFO_END_ROW_INDEX):
+                cell_value = sheet.cell(row=row_idx, column=col_idx + 1).value
+                column_data.append(cell_value)
+            columns_data[col_name] = column_data
+
+    return columns_data
+
+
+def check_cell_value(columns_data, column_name, row_number, target_value):
+    cell_value = columns_data[column_name][row_number]
+
+    return cell_value == target_value
