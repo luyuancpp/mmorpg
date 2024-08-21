@@ -71,11 +71,11 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
         f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
         f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
-        f'    const kv_type& KeyData() const {{ return key_data_; }}',
+        f'    const kv_type& KVData() const {{ return kv_data_; }}',
         '    void Load();',
         'private:',
         f'    {sheet_name_lower}_table data_;',
-        '    kv_type key_data_;',
+        '    kv_type kv_data_;',
     ]
 
     for d in datastring:
@@ -112,19 +112,19 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         '    }',
         '    for (int32_t i = 0; i < data_.data_size(); ++i) {',
         '        const auto& row_data = data_.data(i);',
-        '        key_data_.emplace(row_data.id(), &row_data);',
+        '        kv_data_.emplace(row_data.id(), &row_data);',
     ]
 
     for d in datastring:
         for v in d.values():
-            cpp_content.append(f'        key_data_{v}_.emplace(row_data.{v}(), &row_data);')
+            cpp_content.append(f'        kv_data_{v}_.emplace(row_data.{v}(), &row_data);')
 
     cpp_content.extend([
         '    }',
         '}\n\n',
         f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> {sheetname}ConfigurationTable::GetTable(uint32_t keyid) {{',
-        '    const auto it = key_data_.find(keyid);',
-        '    if (it == key_data_.end()) {',
+        '    const auto it = kv_data_.find(keyid);',
+        '    if (it == kv_data_.end()) {',
         f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyid;',
         '        return { nullptr, kInvalidTableId };',
         '    }',
@@ -136,8 +136,8 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         for v in d.values():
             cpp_content.append(
                 f'const {sheet_name_lower}_row* {sheetname}ConfigurationTable::key_{v}(uint32_t keyid) const {{')
-            cpp_content.append(f'    const auto it = key_data_{v}_.find(keyid);')
-            cpp_content.append(f'    return it == key_data_{v}_.end() ? nullptr : it->second;')
+            cpp_content.append(f'    const auto it = kv_data_{v}_.find(keyid);')
+            cpp_content.append(f'    return it == kv_data_{v}_.end() ? nullptr : it->second;')
             cpp_content.append('}')
 
     return '\n'.join(cpp_content)
