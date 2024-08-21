@@ -17,42 +17,52 @@ KEY_ROW_IDX = 4
 CPP_DIR = "generated/cpp/"
 XLS_DIR = "xlsx/"
 
+
 def get_column_names(sheet):
     """Get column names from the Excel sheet."""
     return [cell.value for cell in sheet[KEY_ROW_IDX] if cell.value is not None]
 
+
 def get_key_row_data(row, column_names):
     """Extract key row data from the Excel sheet."""
     return {str(row[i].value): row[i].value for i in range(len(row)) if column_names[i].strip().lower() == "key"}
+
 
 def get_sheet_key_data(sheet, column_names):
     """Extract key data from the sheet."""
     row = sheet[1]  # Assuming the key row is the second row
     return [get_key_row_data(row, column_names)]
 
+
 def get_workbook_data(workbook):
-    """Extract data from the entire workbook."""
+    """Extract data from the first sheet of the workbook."""
     workbook_data = {}
     sheet_names = workbook.sheetnames
     if sheet_names:  # Read only the first sheet
         sheet = workbook[sheet_names[0]]
         column_names = get_column_names(sheet)
         sheet_key_data = get_sheet_key_data(sheet, column_names)
-        workbook_data[sheet_names[0]] = sheet_key_data
+        workbook_data[sheet_names[0]] = {
+            'data': sheet_key_data,
+            'multi': sheet['A5'].value.lower() == 'multi'  # Check the value of cell A5
+        }
     return workbook_data
 
-def generate_cpp_header(datastring, sheetname):
+
+def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     """Generate C++ header file content."""
     sheet_name_lower = sheetname.lower()
+    container_type = "std::flat_multimap" if use_flat_multimap else "std::unordered_map"
+
     header_content = [
         "#pragma once",
         "#include <memory>",
-        "#include <unordered_map>",
+        f'#include <{container_type}>',
         f'#include "{sheet_name_lower}_config.pb.h"',
         f'class {sheetname}ConfigurationTable {{',
         'public:',
         f'    using row_type = const {sheet_name_lower}_row*;',
-        f'    using kv_type = std::unordered_map<uint32_t, row_type>;',
+        f'    using kv_type = {container_type}<uint32_t, row_type>;',
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
         f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
         f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
@@ -68,15 +78,20 @@ def generate_cpp_header(datastring, sheetname):
 
     header_content.append('};')
     header_content.append(
-        f'\ninline std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> Get{sheetname}Table(uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}')
+        f'\ninline std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> Get{sheetname}Table(uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}'
+    )
     header_content.append(
-        f'\ninline const {sheet_name_lower}_table& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}')
+        f'\ninline const {sheet_name_lower}_table& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}'
+    )
 
     return '\n'.join(header_content)
 
-def generate_cpp_implementation(datastring, sheetname):
+
+def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
     """Generate C++ implementation file content."""
     sheet_name_lower = sheetname.lower()
+    container_type = "std::flat_multimap" if use_flat_multimap else "std::unordered_map"
+
     cpp_content = [
         '#include "google/protobuf/util/json_util.h"',
         '#include "src/util/file2string.h"',
@@ -121,6 +136,7 @@ def generate_cpp_implementation(datastring, sheetname):
 
     return '\n'.join(cpp_content)
 
+
 def process_workbook(filename):
     """Process a single workbook file and generate corresponding header and implementation files."""
     try:
@@ -134,11 +150,12 @@ def process_workbook(filename):
         header_filename = f"{sheetname.lower()}_config.h"
         cpp_filename = f"{sheetname.lower()}_config.cpp"
 
-        cpp_header_content = generate_cpp_header(data, sheetname)
+        cpp_header_content = generate_cpp_header(data['data'], sheetname, data['multi'])
         gencommon.mywrite(cpp_header_content, os.path.join(CPP_DIR, header_filename))
 
-        cpp_implementation_content = generate_cpp_implementation(data, sheetname)
+        cpp_implementation_content = generate_cpp_implementation(data['data'], sheetname, data['multi'])
         gencommon.mywrite(cpp_implementation_content, os.path.join(CPP_DIR, cpp_filename))
+
 
 def generate_all_config():
     """Generate header and implementation files for loading all configurations."""
@@ -197,6 +214,7 @@ def generate_all_config():
 
     return header_content, cpp_content
 
+
 def main():
     """Main function to generate all configuration files."""
     os.makedirs(CPP_DIR, exist_ok=True)
@@ -213,6 +231,7 @@ def main():
     header_content, cpp_content = generate_all_config()
     gencommon.mywrite(header_content, os.path.join(CPP_DIR, "all_config.h"))
     gencommon.mywrite(cpp_content, os.path.join(CPP_DIR, "all_config.cpp"))
+
 
 if __name__ == "__main__":
     main()
