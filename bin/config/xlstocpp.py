@@ -57,7 +57,7 @@ def get_workbook_data(workbook):
 def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     """Generate C++ header file content."""
     sheet_name_lower = sheetname.lower()
-    container_type = "std::flat_multimap" if use_flat_multimap else "std::unordered_map"
+    container_type = "flat_multimap" if use_flat_multimap else "unordered_map"
 
     header_content = [
         "#pragma once",
@@ -67,7 +67,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'class {sheetname}ConfigurationTable {{',
         'public:',
         f'    using row_type = const {sheet_name_lower}_row*;',
-        f'    using kv_type = {container_type}<uint32_t, row_type>;',
+        f'    using kv_type = std::{container_type}<uint32_t, row_type>;',
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
         f'    const {sheet_name_lower}_table& All() const {{ return data_; }}',
         f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
@@ -95,7 +95,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
 def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
     """Generate C++ implementation file content."""
     sheet_name_lower = sheetname.lower()
-    container_type = "std::flat_multimap" if use_flat_multimap else "std::unordered_map"
+    container_type = "flat_multimap" if use_flat_multimap else "unordered_map"
 
     cpp_content = [
         '#include "google/protobuf/util/json_util.h"',
