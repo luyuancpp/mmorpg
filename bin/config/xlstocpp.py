@@ -86,7 +86,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
             header_content.append(
                 f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])} keyid) const;')
             header_content.append(
-                f'const  std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, row_type>& Get{column_name.title()}Data() const{{return kv_{column_name}data_;}}')
+                f'const std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, row_type>& Get{column_name.title()}Data() const{{return kv_{column_name}data_;}}')
     header_content.append('\nprivate:')
     for d in datastring:
         column_name = d[gencommon.COL_OBJ_COL_NAME]
