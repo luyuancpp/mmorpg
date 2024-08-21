@@ -19,19 +19,19 @@ XLSX_DIR = "xlsx/"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Indices for data extraction
-
-
 def get_workbook_data(workbook: openpyxl.Workbook) -> Dict[str, Dict]:
-    """Extract data from all sheets in the workbook."""
+    """Extract data from the first sheet in the workbook."""
     data = {}
-    for sheet_name in workbook.sheetnames:
+    if workbook.sheetnames:
+        sheet_name = workbook.sheetnames[0]
         sheet = workbook[sheet_name]
         if validate_sheet(sheet):
             column_names = gencommon.get_column_names(sheet)
             if column_names:
                 sheet_data = gencommon.get_sheet_data(sheet, column_names)
                 data[sheet_name] = sheet_data
+    else:
+        logger.error("No sheets found in the workbook.")
     return data
 
 def validate_sheet(sheet: openpyxl.worksheet.worksheet.Worksheet) -> bool:
