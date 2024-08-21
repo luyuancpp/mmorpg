@@ -85,10 +85,6 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'    const std::pair<row_type, uint32_t> GetTable(uint32_t keyid);',
         f'    const kv_type& KVData() const {{ return kv_data_; }}',
         '    void Load();',
-        'private:',
-        f'    {sheet_name_lower}_table data_;',
-        '    kv_type kv_data_;\n\n',
-        'public:'
     ]
 
     for d in datastring:
@@ -98,11 +94,18 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
             if d[gencommon.COL_OBJ_TABLE_MULTI] == gencommon.multi_field_flag:
                 column_map_type = "unordered_multimap"
             header_content.extend([
-                f'const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])} keyid) const;',
-                f'const std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, row_type>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
+                f'    const std::pair<{sheetname}ConfigurationTable::row_type, uint32_t> GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])} keyid) const;',
+                f'    const std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, row_type>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
             ])
 
-    header_content.append('\nprivate:')
+    header_content.extend(
+        [
+            '\nprivate:',
+            f'    {sheet_name_lower}_table data_;',
+            '    kv_type kv_data_;\n',
+        ]
+    )
+
     for d in datastring:
         column_name = d[gencommon.COL_OBJ_COL_NAME]
         if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
