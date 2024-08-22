@@ -4,7 +4,6 @@
 #include "game_logic/combat/buff/comp/buff_comp.h"
 
 class buff_row;
-class BuffTable;
 class AbilityExecutedEvent;
 
 //https://zhuanlan.zhihu.com/p/150812545
