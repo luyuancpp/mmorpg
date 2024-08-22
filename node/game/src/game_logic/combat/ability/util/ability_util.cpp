@@ -212,88 +212,96 @@ uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const AbilityTabl
 
 	return kOK;
 }
-
 uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const AbilityTable* abilityTable) {
-    if (const auto* channelFinishTimeTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
-        if (abilityTable->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
-            LOG_INFO << "Immediate ability: " << abilityTable->id() 
-                     << " is currently casting. Sending interrupt message.";
-            SendAbilityInterruptedMessage(caster, abilityTable->id());
-            //todo 技能被打断
-            tls.registry.remove<ChannelFinishTimerComp>(caster);
-            return kOK;
-        }
-        if (!abilityTable->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
-            LOG_ERROR << "Non-immediate ability: " << abilityTable->id() 
-                      << " is currently casting and cannot be interrupted.";
-            return kAbilityUnInterruptible;
-        }
-        //todo 技能被打断
-        tls.registry.remove<ChannelFinishTimerComp>(caster);
-    }
-    
-    return kOK;
+	if (const auto* channelFinishTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
+		if (abilityTable->immediately() && channelFinishTimerComp->timer.IsActive()) {
+			LOG_INFO << "Immediate ability: " << abilityTable->id()
+				<< " is currently casting. Sending interrupt message.";
+			SendAbilityInterruptedMessage(caster, abilityTable->id());
+			// TODO: Implement logic for handling the skill interruption
+			tls.registry.remove<ChannelFinishTimerComp>(caster);
+			return kOK;
+		}
+
+		if (!abilityTable->immediately() && channelFinishTimerComp->timer.IsActive()) {
+			LOG_ERROR << "Non-immediate ability: " << abilityTable->id()
+				<< " is currently casting and cannot be interrupted.";
+			return kAbilityUnInterruptible;
+		}
+
+		// TODO: Implement logic for handling the skill interruption
+		tls.registry.remove<ChannelFinishTimerComp>(caster);
+	}
+
+	return kOK;
 }
 
 void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const ::UseAbilityRequest* request) {
-    AbilityUsedS2C abilityUsedS2C;
-    abilityUsedS2C.set_entity(entt::to_integral(caster));
-    abilityUsedS2C.add_target_entity(request->target_id());
-    abilityUsedS2C.set_ability_table_id(request->ability_table_id());
-    abilityUsedS2C.mutable_position()->CopyFrom(request->position());
+	AbilityUsedS2C abilityUsedS2C;
+	abilityUsedS2C.set_entity(entt::to_integral(caster));
+	abilityUsedS2C.add_target_entity(request->target_id());
+	abilityUsedS2C.set_ability_table_id(request->ability_table_id());
+	abilityUsedS2C.mutable_position()->CopyFrom(request->position());
 
-    ViewUtil::BroadcastMessageToVisiblePlayers(
-        caster,
-        PlayerAbilityServiceNotifyAbilityUsedMessageId,
-        abilityUsedS2C
-    );
+	ViewUtil::BroadcastMessageToVisiblePlayers(
+		caster,
+		PlayerAbilityServiceNotifyAbilityUsedMessageId,
+		abilityUsedS2C
+	);
 }
 
 void AbilityUtil::SetupCastingTimer(entt::entity caster, const AbilityTable* abilityTable, uint32_t abilityId) {
-    auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(caster).timer;
-    if (IsAbilityOfType(abilityId, kGeneralAbility)) {
-        castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] { return HandleGeneralAbilitySpell(caster, abilityId); });
-    } else if (IsAbilityOfType(abilityId, kChannelAbility)) {
-        castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] { return HandleChannelAbilitySpell(caster, abilityId); });
-    }
+	auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(caster).timer;
+	if (IsAbilityOfType(abilityId, kGeneralAbility)) {
+		castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] {
+			return HandleGeneralAbilitySpell(caster, abilityId);
+			});
+	}
+	else if (IsAbilityOfType(abilityId, kChannelAbility)) {
+		castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] {
+			return HandleChannelAbilitySpell(caster, abilityId);
+			});
+	}
 }
 
-// 发送技能中断消息
 void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster, uint32_t abilityId) {
-    AbilityInterruptedS2C abilityInterruptedS2C;
-    abilityInterruptedS2C.set_entity(entt::to_integral(caster));
-    abilityInterruptedS2C.set_ability_table_id(abilityId);
-    ViewUtil::BroadcastMessageToVisiblePlayers(
-        caster,
-        PlayerAbilityServiceNotifyAbilityInterruptedMessageId,
-        abilityInterruptedS2C
-    );
+	AbilityInterruptedS2C abilityInterruptedS2C;
+	abilityInterruptedS2C.set_entity(entt::to_integral(caster));
+	abilityInterruptedS2C.set_ability_table_id(abilityId);
+
+	ViewUtil::BroadcastMessageToVisiblePlayers(
+		caster,
+		PlayerAbilityServiceNotifyAbilityInterruptedMessageId,
+		abilityInterruptedS2C
+	);
 }
 
 void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t abilityId) {
-    auto [abilityTable, Result] = GetAbilityTable(abilityId);
-    if (abilityTable == nullptr) {
-        return;
-    }
+	auto [abilityTable, result] = GetAbilityTable(abilityId);
+	if (abilityTable == nullptr) {
+		LOG_ERROR << "Failed to get ability table for Ability ID: " << abilityId;
+		return;
+	}
 
-    LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(caster) << ", Ability ID: " << abilityId;
+	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(caster) << ", Ability ID: " << abilityId;
 
-    for (const auto& effect : abilityTable->effect()) {
-        // Apply each effect
-        // Implement effect application logic here
-    }
+	for (const auto& effect : abilityTable->effect()) {
+		// TODO: Implement effect application logic here
+	}
 }
 
-void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId){
-    auto [abilityTable, Result] = GetAbilityTable(abilityId);
-    if (abilityTable == nullptr) {
-        return ;
-    }
+void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId) {
+	auto [abilityTable, result] = GetAbilityTable(abilityId);
+	if (abilityTable == nullptr) {
+		LOG_ERROR << "Failed to get ability table for Ability ID: " << abilityId;
+		return;
+	}
 
-    for (auto& effect : abilityTable->effect()){
-        
-    }
+	for (const auto& effect : abilityTable->effect()) {
+		// TODO: Implement effect removal logic here
+	}
 }
 
-void AbilityUtil::HandleAbilitySpell(const entt::entity caster, uint32_t abilityId){
+void AbilityUtil::HandleAbilitySpell(const entt::entity caster, uint32_t abilityId) {
+	// TODO: Implement ability spell handling logic here
 }
