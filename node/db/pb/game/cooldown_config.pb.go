@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type CooldownRow struct {
+type CooldownTablePB struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -29,8 +29,8 @@ type CooldownRow struct {
 	Duration uint32 `protobuf:"varint,2,opt,name=duration,proto3" json:"duration,omitempty"`
 }
 
-func (x *CooldownRow) Reset() {
-	*x = CooldownRow{}
+func (x *CooldownTablePB) Reset() {
+	*x = CooldownTablePB{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_cooldown_config_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -38,13 +38,13 @@ func (x *CooldownRow) Reset() {
 	}
 }
 
-func (x *CooldownRow) String() string {
+func (x *CooldownTablePB) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CooldownRow) ProtoMessage() {}
+func (*CooldownTablePB) ProtoMessage() {}
 
-func (x *CooldownRow) ProtoReflect() protoreflect.Message {
+func (x *CooldownTablePB) ProtoReflect() protoreflect.Message {
 	mi := &file_cooldown_config_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,35 +56,35 @@ func (x *CooldownRow) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CooldownRow.ProtoReflect.Descriptor instead.
-func (*CooldownRow) Descriptor() ([]byte, []int) {
+// Deprecated: Use CooldownTablePB.ProtoReflect.Descriptor instead.
+func (*CooldownTablePB) Descriptor() ([]byte, []int) {
 	return file_cooldown_config_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CooldownRow) GetId() uint32 {
+func (x *CooldownTablePB) GetId() uint32 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *CooldownRow) GetDuration() uint32 {
+func (x *CooldownTablePB) GetDuration() uint32 {
 	if x != nil {
 		return x.Duration
 	}
 	return 0
 }
 
-type CooldownTable struct {
+type CooldownTabledDataPB struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Data []*CooldownRow `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*CooldownTablePB `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
-func (x *CooldownTable) Reset() {
-	*x = CooldownTable{}
+func (x *CooldownTabledDataPB) Reset() {
+	*x = CooldownTabledDataPB{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_cooldown_config_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -92,13 +92,13 @@ func (x *CooldownTable) Reset() {
 	}
 }
 
-func (x *CooldownTable) String() string {
+func (x *CooldownTabledDataPB) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CooldownTable) ProtoMessage() {}
+func (*CooldownTabledDataPB) ProtoMessage() {}
 
-func (x *CooldownTable) ProtoReflect() protoreflect.Message {
+func (x *CooldownTabledDataPB) ProtoReflect() protoreflect.Message {
 	mi := &file_cooldown_config_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -110,12 +110,12 @@ func (x *CooldownTable) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CooldownTable.ProtoReflect.Descriptor instead.
-func (*CooldownTable) Descriptor() ([]byte, []int) {
+// Deprecated: Use CooldownTabledDataPB.ProtoReflect.Descriptor instead.
+func (*CooldownTabledDataPB) Descriptor() ([]byte, []int) {
 	return file_cooldown_config_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CooldownTable) GetData() []*CooldownRow {
+func (x *CooldownTabledDataPB) GetData() []*CooldownTablePB {
 	if x != nil {
 		return x.Data
 	}
@@ -126,15 +126,16 @@ var File_cooldown_config_proto protoreflect.FileDescriptor
 
 var file_cooldown_config_proto_rawDesc = []byte{
 	0x0a, 0x15, 0x63, 0x6f, 0x6f, 0x6c, 0x64, 0x6f, 0x77, 0x6e, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3a, 0x0a, 0x0c, 0x63, 0x6f, 0x6f, 0x6c, 0x64,
-	0x6f, 0x77, 0x6e, 0x5f, 0x72, 0x6f, 0x77, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x75, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x64, 0x75, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x22, 0x33, 0x0a, 0x0e, 0x63, 0x6f, 0x6f, 0x6c, 0x64, 0x6f, 0x77, 0x6e, 0x5f,
-	0x74, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x21, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x63, 0x6f, 0x6f, 0x6c, 0x64, 0x6f, 0x77, 0x6e, 0x5f, 0x72,
-	0x6f, 0x77, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67,
-	0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3d, 0x0a, 0x0f, 0x43, 0x6f, 0x6f, 0x6c, 0x64,
+	0x6f, 0x77, 0x6e, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x50, 0x42, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x75,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x64, 0x75,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x3c, 0x0a, 0x14, 0x43, 0x6f, 0x6f, 0x6c, 0x64, 0x6f,
+	0x77, 0x6e, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x64, 0x44, 0x61, 0x74, 0x61, 0x50, 0x42, 0x12, 0x24,
+	0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x43,
+	0x6f, 0x6f, 0x6c, 0x64, 0x6f, 0x77, 0x6e, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x50, 0x42, 0x52, 0x04,
+	0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -151,11 +152,11 @@ func file_cooldown_config_proto_rawDescGZIP() []byte {
 
 var file_cooldown_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_cooldown_config_proto_goTypes = []any{
-	(*CooldownRow)(nil),   // 0: cooldown_row
-	(*CooldownTable)(nil), // 1: cooldown_table
+	(*CooldownTablePB)(nil),      // 0: CooldownTablePB
+	(*CooldownTabledDataPB)(nil), // 1: CooldownTabledDataPB
 }
 var file_cooldown_config_proto_depIdxs = []int32{
-	0, // 0: cooldown_table.data:type_name -> cooldown_row
+	0, // 0: CooldownTabledDataPB.data:type_name -> CooldownTablePB
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -170,7 +171,7 @@ func file_cooldown_config_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_cooldown_config_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*CooldownRow); i {
+			switch v := v.(*CooldownTablePB); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -182,7 +183,7 @@ func file_cooldown_config_proto_init() {
 			}
 		}
 		file_cooldown_config_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*CooldownTable); i {
+			switch v := v.(*CooldownTabledDataPB); i {
 			case 0:
 				return &v.state
 			case 1:

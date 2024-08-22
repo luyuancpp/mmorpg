@@ -348,7 +348,7 @@ bool MissionUtil::UpdateMissionProgress(const MissionConditionEvent& conditionEv
 }
 
 // Update mission progress if conditions match the event
-bool MissionUtil::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComp& mission, int index, const condition_row* conditionRow) {
+bool MissionUtil::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComp& mission, int index, const ConditionTablePB* conditionRow) {
 	// Retrieve old progress value
 	const auto oldProgress = mission.progress(index);
 

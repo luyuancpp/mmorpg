@@ -38,7 +38,7 @@ struct UpdateProgressParam {
 class AcceptMissionEvent;
 class MissionConditionEvent;
 class MissionsComp;
-class condition_row;
+class ConditionTablePB;
 
 class MissionUtil {
 public:
@@ -59,7 +59,7 @@ private:
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp* missionComp);
 	static void RemoveMissionClassification(MissionsComp* missionComp, uint32_t missionId);
 	static bool AreAllConditionsFulfilled(const MissionPBComp& mission, uint32_t missionId, MissionsComp* missionComp);
-	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComp& mission, int index, const condition_row* conditionRow);
+	static bool UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComp& mission, int index, const ConditionTablePB* conditionRow);
 };
 
 

@@ -31,7 +31,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	auto abilityContext = std::make_shared<BuffAbilityContextComp>();
 
 	// Mock BuffTable
-	buff_row mockBuffTable;
+	BuffTablePB mockBuffTable;
 	mockBuffTable.set_nocaster(false); // 设置一些默认值
 	mockBuffTable.set_maxlayer(3);
 
@@ -59,7 +59,7 @@ TEST_F(BuffUtilTest, CanCreateBuffSuccess) {
 	entt::entity parent = tls.registry.create();
 
 	// Mock BuffTable
-	buff_row mockBuffTable;
+	BuffTablePB mockBuffTable;
 	mockBuffTable.mutable_immunetag()->emplace( "immunetag1", true );
 
 	// Add a BuffTable to the registry

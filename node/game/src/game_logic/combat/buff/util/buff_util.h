@@ -3,7 +3,7 @@
 #include <entt/src/entt/entity/entity.hpp>
 #include "game_logic/combat/buff/comp/buff_comp.h"
 
-class buff_row;
+class BuffTablePB;
 class AbilityExecutedEvent;
 
 //https://zhuanlan.zhihu.com/p/150812545
