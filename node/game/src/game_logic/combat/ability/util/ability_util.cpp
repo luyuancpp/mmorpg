@@ -76,7 +76,7 @@ void AbilityUtil::HandleAbilityRecovery(const entt::entity caster, uint32_t abil
         return ;
     }
 
-    auto& recoveryTimer = tls.registry.emplace<RecoveryTimerComp>(caster).timer;
+    auto& recoveryTimer = tls.registry.emplace_or_replace<RecoveryTimerComp>(caster).timer;
     recoveryTimer.RunAfter(abilityTable->recoverytime(), [caster, abilityId] { return HandleAbilityFinish(caster, abilityId); });
 }
 
@@ -94,20 +94,14 @@ void AbilityUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilit
     
     HandleAbilitySpell(caster, abilityId);
     
-    auto& channelFinishTimer = tls.registry.emplace<ChannelFinishTimerComp>(caster).timer;
+    auto& channelFinishTimer = tls.registry.emplace_or_replace<ChannelFinishTimerComp>(caster).timer;
     channelFinishTimer.RunAfter(abilityTable->channelfinish(),
         [caster, abilityId] { return HandleChannelFinish(caster, abilityId); });
 
-    auto& channelIntervalTimer = tls.registry.emplace<ChannelIntervalTimerComp>(caster).timer;
+    auto& channelIntervalTimer = tls.registry.emplace_or_replace<ChannelIntervalTimerComp>(caster).timer;
     channelIntervalTimer.RunEvery(abilityTable->channelthink(),
         [caster, abilityId] { return HandleChannelThink(caster, abilityId); });
 }
-
-void AbilityUtil::ClearChannelTimers(const entt::entity caster) {
-    tls.registry.remove<ChannelFinishTimerComp>(caster);
-    tls.registry.remove<ChannelIntervalTimerComp>(caster);
-}
-
 
 void AbilityUtil::HandleChannelThink(entt::entity caster, uint32_t abilityId){
     
@@ -252,7 +246,7 @@ void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const :
 }
 
 void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* abilityTable, uint32_t abilityId) {
-    auto& castingTimer = tls.registry.emplace<CastingTimerComp>(caster).timer;
+    auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(caster).timer;
     if (IsAbilityOfType(abilityId, kGeneralAbility)) {
         castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] { return HandleGeneralAbilitySpell(caster, abilityId); });
     } else if (IsAbilityOfType(abilityId, kChannelAbility)) {

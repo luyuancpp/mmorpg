@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include "logic/component/buff_comp.pb.h"
+#include "time/comp/timer_task_comp.h"
 
 
 struct BuffAbilityContextComp
@@ -17,6 +18,7 @@ struct BuffComp
 {
     BuffPBComp buffPB;
     BuffAbilityContextPtrComp abilityContext;
+    TimerTaskComp intervalTTimer;
 };
 
 struct BuffListComp

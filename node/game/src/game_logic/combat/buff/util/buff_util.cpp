@@ -1,4 +1,6 @@
 ﻿#include "buff_util.h"
+
+#include <ranges>
 #include <muduo/base/Logging.h>
 #include "common_error_tip.pb.h"
 #include "buff_config.h"
@@ -55,10 +57,10 @@ uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, co
 			newBuff.buffPB.set_buff_id( newBuffId);
 			newBuff.abilityContext = abilityContext;
 			
-			buffList[newBuffId] = newBuff;
-		}
+			buffList[newBuffId] = std::move(newBuff);
 
-		OnBuffStart(parent, buffTableId);
+			OnBuffStart(parent, newBuffId);
+		}
 	}
 
 	return kOK;
@@ -68,11 +70,18 @@ void BuffUtil::OnBuffExpire(entt::entity parent, uint64_t buffId)
 {
 	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
 
+	const auto buffIt = buffList.find(buffId);
+	if (buffIt == buffList.end())
+	{
+		LOG_ERROR << "Can not found buff" << buffId;
+		return;	
+	}
+	
 	OnBuffRemove(parent, buffId);
 
 	buffList.erase(buffId);
 
-	OnBuffDestroy(parent);
+	OnBuffDestroy(parent, buffIt->second.buffPB.buff_table_id());
 }
 
 uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
@@ -85,7 +94,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId) {
 
 	bool isImmune = false;
 
-	for (const auto& [id, buff] : buffList) {
+	for (const auto& buff : buffList | std::views::values) {
 		auto [currentBuffTable, fetchResult] = GetBuffTable(buff.buffPB.buff_table_id());
 		if (fetchResult != kOK) {
 			return fetchResult;
@@ -138,9 +147,9 @@ bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId)
 	return false;
 }
 
-void BuffUtil::OnBuffStart(entt::entity parent, uint32_t buffTableId)
+void BuffUtil::OnBuffStart(entt::entity parent, uint64_t buffId)
 {
-
+	StartIntervalThink(parent, buffId);
 }
 
 void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext, BuffComp& buffComp)
@@ -153,12 +162,16 @@ void BuffUtil::OnBuffRemove(entt::entity parent, uint64_t buffId)
 
 }
 
-void BuffUtil::OnBuffDestroy(entt::entity parent)
+void BuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
 {
-
+	auto [buffTable, result] = GetBuffTable(buffTableId);
+	if (nullptr == buffTable){
+		return;
+	}
+	
 }
 
-void BuffUtil::StartIntervalThink()
+void BuffUtil::StartIntervalThink(entt::entity parent, uint64_t buffId)
 {
 
 }
