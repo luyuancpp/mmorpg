@@ -153,7 +153,7 @@ uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
     return kOK;
 }
 
-uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const ability_row* abilityTable) {
+uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const AbilityTablePB* abilityTable) {
     if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
         if (const auto it = coolDownTimeListComp->cooldown_list().find(abilityTable->cooldown_id());
             it != coolDownTimeListComp->cooldown_list().end() &&
@@ -169,7 +169,7 @@ uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const ability_row
     return kOK;
 }
 
-uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const ability_row* abilityTable) {
+uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const AbilityTablePB* abilityTable) {
     if (const auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(caster)) {
         if (abilityTable->immediately() && castTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << abilityTable->id() 
@@ -189,7 +189,7 @@ uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const ability_row*
     return kOK;
 }
 
-uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const ability_row* abilityTable) {
+uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const AbilityTablePB* abilityTable) {
     if (const auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(caster)) {
         if (abilityTable->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << abilityTable->id() 
@@ -209,7 +209,7 @@ uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const ability_row
     return kOK;
 }
 
-uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const ability_row* abilityTable) {
+uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const AbilityTablePB* abilityTable) {
     if (const auto* channelFinishTimeTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
         if (abilityTable->immediately() && channelFinishTimeTimerComp->timer.IsActive()) {
             LOG_INFO << "Immediate ability: " << abilityTable->id() 
@@ -245,7 +245,7 @@ void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const :
     );
 }
 
-void AbilityUtil::SetupCastingTimer(entt::entity caster, const ability_row* abilityTable, uint32_t abilityId) {
+void AbilityUtil::SetupCastingTimer(entt::entity caster, const AbilityTablePB* abilityTable, uint32_t abilityId) {
     auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(caster).timer;
     if (IsAbilityOfType(abilityId, kGeneralAbility)) {
         castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] { return HandleGeneralAbilitySpell(caster, abilityId); });

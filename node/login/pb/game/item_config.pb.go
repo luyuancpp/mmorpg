@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ItemRow struct {
+type ItemTablePB struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -29,8 +29,8 @@ type ItemRow struct {
 	MaxStatckSize uint32 `protobuf:"varint,2,opt,name=max_statck_size,json=maxStatckSize,proto3" json:"max_statck_size,omitempty"`
 }
 
-func (x *ItemRow) Reset() {
-	*x = ItemRow{}
+func (x *ItemTablePB) Reset() {
+	*x = ItemTablePB{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_item_config_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -38,13 +38,13 @@ func (x *ItemRow) Reset() {
 	}
 }
 
-func (x *ItemRow) String() string {
+func (x *ItemTablePB) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ItemRow) ProtoMessage() {}
+func (*ItemTablePB) ProtoMessage() {}
 
-func (x *ItemRow) ProtoReflect() protoreflect.Message {
+func (x *ItemTablePB) ProtoReflect() protoreflect.Message {
 	mi := &file_item_config_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,35 +56,35 @@ func (x *ItemRow) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ItemRow.ProtoReflect.Descriptor instead.
-func (*ItemRow) Descriptor() ([]byte, []int) {
+// Deprecated: Use ItemTablePB.ProtoReflect.Descriptor instead.
+func (*ItemTablePB) Descriptor() ([]byte, []int) {
 	return file_item_config_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ItemRow) GetId() uint32 {
+func (x *ItemTablePB) GetId() uint32 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *ItemRow) GetMaxStatckSize() uint32 {
+func (x *ItemTablePB) GetMaxStatckSize() uint32 {
 	if x != nil {
 		return x.MaxStatckSize
 	}
 	return 0
 }
 
-type ItemTable struct {
+type ItemTabledDataPB struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Data []*ItemRow `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*ItemTablePB `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
-func (x *ItemTable) Reset() {
-	*x = ItemTable{}
+func (x *ItemTabledDataPB) Reset() {
+	*x = ItemTabledDataPB{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_item_config_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -92,13 +92,13 @@ func (x *ItemTable) Reset() {
 	}
 }
 
-func (x *ItemTable) String() string {
+func (x *ItemTabledDataPB) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ItemTable) ProtoMessage() {}
+func (*ItemTabledDataPB) ProtoMessage() {}
 
-func (x *ItemTable) ProtoReflect() protoreflect.Message {
+func (x *ItemTabledDataPB) ProtoReflect() protoreflect.Message {
 	mi := &file_item_config_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -110,12 +110,12 @@ func (x *ItemTable) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ItemTable.ProtoReflect.Descriptor instead.
-func (*ItemTable) Descriptor() ([]byte, []int) {
+// Deprecated: Use ItemTabledDataPB.ProtoReflect.Descriptor instead.
+func (*ItemTabledDataPB) Descriptor() ([]byte, []int) {
 	return file_item_config_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ItemTable) GetData() []*ItemRow {
+func (x *ItemTabledDataPB) GetData() []*ItemTablePB {
 	if x != nil {
 		return x.Data
 	}
@@ -126,15 +126,16 @@ var File_item_config_proto protoreflect.FileDescriptor
 
 var file_item_config_proto_rawDesc = []byte{
 	0x0a, 0x11, 0x69, 0x74, 0x65, 0x6d, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x22, 0x42, 0x0a, 0x08, 0x69, 0x74, 0x65, 0x6d, 0x5f, 0x72, 0x6f, 0x77, 0x12,
-	0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64, 0x12,
-	0x26, 0x0a, 0x0f, 0x6d, 0x61, 0x78, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x63, 0x6b, 0x5f, 0x73, 0x69,
-	0x7a, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x6d, 0x61, 0x78, 0x53, 0x74, 0x61,
-	0x74, 0x63, 0x6b, 0x53, 0x69, 0x7a, 0x65, 0x22, 0x2b, 0x0a, 0x0a, 0x69, 0x74, 0x65, 0x6d, 0x5f,
-	0x74, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1d, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x69, 0x74, 0x65, 0x6d, 0x5f, 0x72, 0x6f, 0x77, 0x52, 0x04,
-	0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x74, 0x6f, 0x22, 0x45, 0x0a, 0x0b, 0x49, 0x74, 0x65, 0x6d, 0x54, 0x61, 0x62, 0x6c, 0x65,
+	0x50, 0x42, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02,
+	0x69, 0x64, 0x12, 0x26, 0x0a, 0x0f, 0x6d, 0x61, 0x78, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x63, 0x6b,
+	0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x6d, 0x61, 0x78,
+	0x53, 0x74, 0x61, 0x74, 0x63, 0x6b, 0x53, 0x69, 0x7a, 0x65, 0x22, 0x34, 0x0a, 0x10, 0x49, 0x74,
+	0x65, 0x6d, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x64, 0x44, 0x61, 0x74, 0x61, 0x50, 0x42, 0x12, 0x20,
+	0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x49,
+	0x74, 0x65, 0x6d, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x50, 0x42, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61,
+	0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -151,11 +152,11 @@ func file_item_config_proto_rawDescGZIP() []byte {
 
 var file_item_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_item_config_proto_goTypes = []any{
-	(*ItemRow)(nil),   // 0: item_row
-	(*ItemTable)(nil), // 1: item_table
+	(*ItemTablePB)(nil),      // 0: ItemTablePB
+	(*ItemTabledDataPB)(nil), // 1: ItemTabledDataPB
 }
 var file_item_config_proto_depIdxs = []int32{
-	0, // 0: item_table.data:type_name -> item_row
+	0, // 0: ItemTabledDataPB.data:type_name -> ItemTablePB
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -170,7 +171,7 @@ func file_item_config_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_item_config_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*ItemRow); i {
+			switch v := v.(*ItemTablePB); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -182,7 +183,7 @@ func file_item_config_proto_init() {
 			}
 		}
 		file_item_config_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*ItemTable); i {
+			switch v := v.(*ItemTabledDataPB); i {
 			case 0:
 				return &v.state
 			case 1:
