@@ -57,7 +57,7 @@ uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, co
 			newBuff.buffPB.set_buff_id( newBuffId);
 			newBuff.abilityContext = abilityContext;
 			
-			buffList[newBuffId] = std::move(newBuff);
+			buffList.emplace(newBuffId, std::move(newBuff));
 
 			OnBuffStart(parent, newBuffId);
 		}
@@ -173,7 +173,27 @@ void BuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
 
 void BuffUtil::StartIntervalThink(entt::entity parent, uint64_t buffId)
 {
+	auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
 
+	const auto buffIt = buffList.find(buffId);
+	if (buffIt == buffList.end())
+	{
+		LOG_ERROR << "Can not found buff" << buffId;
+		return;	
+	}
+
+	auto& buffComp = buffIt->second;
+	
+	auto [buffTable, result] = GetBuffTable(buffComp.buffPB.buff_table_id());
+	if (nullptr == buffTable){
+		return;
+	}
+
+	buffComp.intervalTTimer.RunEvery(buffTable->interval(), [parent, buffId] { return OnIntervalThink(parent, buffId); });	
+}
+
+void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
+{
 }
 
 void BuffUtil::ApplyMotion()
