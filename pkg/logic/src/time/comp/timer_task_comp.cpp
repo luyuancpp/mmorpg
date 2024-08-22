@@ -10,6 +10,22 @@ TimerTaskComp::~TimerTaskComp()
     Cancel();
 }
 
+TimerTaskComp::TimerTaskComp(const TimerTaskComp& param)
+{
+    const_cast<TimerTaskComp&>(param).Cancel();
+}
+
+TimerTaskComp::TimerTaskComp( TimerTaskComp&& param) noexcept
+{
+    param.Cancel();
+}
+
+TimerTaskComp & TimerTaskComp::operator=( TimerTaskComp&& param)
+{
+    param.Cancel();
+    return *this;
+}
+
 void TimerTaskComp::RunAt(const Timestamp& time, const TimerCallback& cb)
 {
 	Cancel();

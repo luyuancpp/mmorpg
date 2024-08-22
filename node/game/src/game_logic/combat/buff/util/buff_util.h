@@ -37,7 +37,7 @@ public:
     static bool OnBuffAwake(entt::entity parent, uint32_t buffTableId);
 
     //当Buff生效时（加入到Buff容器后），我们提供给策划一个抽象接口OnBuffStart，由策划配置具体效果。
-    static void OnBuffStart(entt::entity parent, uint32_t buffTableId);
+    static void OnBuffStart(entt::entity parent, uint64_t buffId);
 
     //当Buff添加时存在相同类型且Caster相等的时候，Buff执行刷新流程（更新Buff层数，等级，持续时间等数据）。
     // 我们提供给策划一个抽象接口OnBuffRefresh，由策划配置具体效果。
@@ -47,11 +47,11 @@ public:
     static void OnBuffRemove(entt::entity parent, uint64_t buffId);
 
     //当Buff销毁后（已从Buff容器中移除），我们提供给策划一个抽象接口OnBuffDestroy，由策划配置具体效果。
-    static void OnBuffDestroy(entt::entity parent);
+    static void OnBuffDestroy(entt::entity parent, uint32_t buffTableId);
 
     //Buff还可以创建定时器，以触发间隔持续效果。通过策划配置时调用StartIntervalThink操作，
     // 提供OnIntervalThink抽象接口供策划配置具体效果。
-    static void StartIntervalThink();
+    static void StartIntervalThink(entt::entity parent, uint64_t buffId);
 
     //Buff还可以通过请求改变运动来触发相关效果。
     //通过策划配置时调用ApplyMotion操作，提供OnMotionUpdate和OnMotionInterrupt接口供策划配置具体效果。
