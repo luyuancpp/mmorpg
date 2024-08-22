@@ -171,3 +171,87 @@ void BuffUtil::OnAbilityExecuted(AbilityExecutedEvent& event)
 {
     // Implement event handling logic
 }
+
+void BuffUtil::ApplyMotion()
+{
+
+}
+
+void BuffUtil::OnMotionUpdate()
+{
+
+}
+
+void BuffUtil::OnMotionInterrupt()
+{
+
+}
+
+
+void BuffUtil::OnBeforeGiveDamage(entt::entity parent)
+{
+    //class Buff {
+    //public:
+    //	bool HasFlag(int flag) const;
+    //	bool HasChanceForDOT() const;
+    //	// 添加DOT Buff的实现
+    //	void AddDOTBuff(entt::entity target);
+    //};
+    // 
+    // 检查并应用Buff效果
+    //	for (auto& buff : tls.registry.get<BuffListComp>(event.target).buffList) {
+    //		if (buff.second.HasFlag(DamageFlag_NotMiss)) {
+    //			event.damageFlags |= DamageFlag_NotMiss;
+    //		}
+    //	}
+}
+
+
+void BuffUtil::OnAfterGiveDamage(entt::entity parent)
+{
+    // 检查并应用DOT效果
+    //for (auto& buff : tls.registry.get<BuffListComp>(event.target).buffList) {
+    //	if (buff.second.HasChanceForDOT()) {
+    //		// 添加DOT Buff
+    //		AddDOTBuff(event.target);
+    //	}
+    //}
+}
+
+void BuffUtil::OnBeforeTakeDamage(entt::entity parent)
+{
+    //auto& buffs = tls.registry.get<BuffListComp>(event.target).buffList;
+    //for (auto& [buffId, buff] : buffs) {
+    //	if (buff.HasShield()) {
+    //		// 假设护盾Buff会减少伤害
+    //		event.damageAmount *= 0.5f; // 示例：护盾减少50%伤害
+    //	}
+    //}
+}
+
+void BuffUtil::OnAfterTakeDamage(entt::entity parent)
+{
+    // 检查并应用额外效果
+    //auto& buffs = tls.registry.get<BuffListComp>(event.target).buffList;
+    //for (auto& [buffId, buff] : buffs) {
+    //	if (buff.HasPostDamageEffect()) {
+    //		// 执行额外效果，例如添加额外的伤害效果
+    //		ApplyPostDamageEffects(event.target);
+    //	}
+    //}
+}
+
+void BuffUtil::OnBeforeDead(entt::entity parent)
+{
+
+}
+
+void BuffUtil::OnAfterDead(entt::entity parent)
+{
+
+}
+
+void BuffUtil::OnKill(entt::entity parent)
+{
+
+}
