@@ -14,6 +14,21 @@
 #include "time/comp/timer_task_comp.h"
 #include "time/util/cooldown_time_util.h"
 
+uint32_t AbilityUtil::UseAbility(entt::entity caster, const UseAbilityRequest* request)
+{
+    auto [abilityTable, result] = GetAbilityTable(request->ability_table_id());
+    if (result != kOK) {
+        return result;
+    }
+
+    CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
+    
+    BroadcastAbilityUsedMessage(caster, request);
+    SetupCastingTimer(caster, abilityTable, request->ability_table_id());
+
+    return kOK;
+}
+
 uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const ::UseAbilityRequest* request) {
     auto [abilityTable, result] = GetAbilityTable(request->ability_table_id());
     if (result != kOK) {
@@ -29,9 +44,6 @@ uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const :
     CHECK_RETURN_IF_NOT_OK(CheckRecovery(caster, abilityTable));
 
     CHECK_RETURN_IF_NOT_OK(CheckChannel(caster, abilityTable));
-
-    BroadcastAbilityUsedMessage(caster, request);
-    SetupCastingTimer(caster, abilityTable, request->ability_table_id());
 
     return kOK;
 }

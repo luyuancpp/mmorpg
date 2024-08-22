@@ -11,6 +11,7 @@ class AbilityTable;
 class AbilityUtil
 {
 public:
+	static uint32_t UseAbility(entt::entity caster, const ::UseAbilityRequest* request);
 	static uint32_t CheckSkillPrerequisites(entt::entity caster, const ::UseAbilityRequest* request);
 
 	static bool IsAbilityOfType(uint32_t abilityId, uint32_t abilityType);
