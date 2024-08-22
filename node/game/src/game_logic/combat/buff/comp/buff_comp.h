@@ -21,7 +21,8 @@ struct BuffComp
     TimerTaskComp intervalTTimer;
 };
 
+using BuffList = std::map<uint64_t, BuffComp>;
 struct BuffListComp
 {
-    std::map<uint64_t, BuffComp> buffList;
+    BuffList buffList;
 };
