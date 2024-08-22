@@ -175,7 +175,7 @@ TEST_F(AbilityUtilTest, SetupCastingTimer_SetsTimer) {
     EXPECT_CALL(*mockAbilityTable, IsAbilityOfType(_, kGeneralAbility))
         .WillRepeatedly(Return(true));
 
-    abilityUtil->SetupCastingTimer(caster, tableAbility.get(), 1);
+    abilityUtil->SetupCastingTimer(caster, tableAbility.get(), 2);
 
     auto* castingTimerComp = tls.registry.try_get<CastingTimerComp>(caster);
     ASSERT_NE(castingTimerComp, nullptr);  // Check if the component was created
