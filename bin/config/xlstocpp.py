@@ -71,8 +71,9 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
 
     table_type = f'{sheetname}Table*'
+    const_table_type = f'{const_table_type}'
     table_data_name = f'{sheetname}TabledData'
-    get_table_return_type = f'std::pair<const {table_type}, uint32_t>'
+    get_table_return_type = f'std::pair<{const_table_type}, uint32_t>'
 
     header_content = [
         "#pragma once",
@@ -82,7 +83,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'#include "{sheet_name_lower}_config.pb.h"\n\n',
         f'class {sheetname}ConfigurationTable {{',
         'public:',
-        f'    using KVDataType = std::{container_type}<uint32_t, const {table_type}>;',
+        f'    using KVDataType = std::{container_type}<uint32_t, {const_table_type}>;',
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
         f'    const {table_data_name}& All() const {{ return data_; }}',
         f'    {get_table_return_type} GetTable(uint32_t keyid);',
@@ -98,7 +99,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
                 column_map_type = "unordered_multimap"
             header_content.extend([
                 f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])} keyid) const;',
-                f'    const std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, const {table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
+                f'    const std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
             ])
 
     header_content.extend(
@@ -116,7 +117,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
             if d[gencommon.COL_OBJ_TABLE_MULTI] == gencommon.multi_field_flag:
                 column_map_type = "unordered_multimap"
             type_name = get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])
-            header_content.append(f'    std::{column_map_type}<{type_name}, const {table_type}>  kv_{column_name}data_;')
+            header_content.append(f'    std::{column_map_type}<{type_name}, {const_table_type}>  kv_{column_name}data_;')
 
     header_content.append('};')
     header_content.append(
@@ -132,8 +133,9 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
     sheet_name_lower = sheetname.lower()
     container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
     table_type = f'{sheetname}Table*'
-    get_table_return_type = f'std::pair<const {table_type}, uint32_t>'
-
+    get_table_return_type = f'std::pair<{const_table_type}, uint32_t>'
+    const_table_type = f'{const_table_type}'
+    
     cpp_content = [
         '#include "google/protobuf/util/json_util.h"',
         '#include "src/util/file2string.h"',
