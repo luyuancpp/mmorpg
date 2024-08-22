@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type MonsterBaseTablePB struct {
+type MonsterBaseTable struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type MonsterBaseTablePB struct {
 	Id uint32 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 
-func (x *MonsterBaseTablePB) Reset() {
-	*x = MonsterBaseTablePB{}
+func (x *MonsterBaseTable) Reset() {
+	*x = MonsterBaseTable{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_monsterbase_config_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *MonsterBaseTablePB) Reset() {
 	}
 }
 
-func (x *MonsterBaseTablePB) String() string {
+func (x *MonsterBaseTable) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MonsterBaseTablePB) ProtoMessage() {}
+func (*MonsterBaseTable) ProtoMessage() {}
 
-func (x *MonsterBaseTablePB) ProtoReflect() protoreflect.Message {
+func (x *MonsterBaseTable) ProtoReflect() protoreflect.Message {
 	mi := &file_monsterbase_config_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,28 +55,28 @@ func (x *MonsterBaseTablePB) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MonsterBaseTablePB.ProtoReflect.Descriptor instead.
-func (*MonsterBaseTablePB) Descriptor() ([]byte, []int) {
+// Deprecated: Use MonsterBaseTable.ProtoReflect.Descriptor instead.
+func (*MonsterBaseTable) Descriptor() ([]byte, []int) {
 	return file_monsterbase_config_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *MonsterBaseTablePB) GetId() uint32 {
+func (x *MonsterBaseTable) GetId() uint32 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-type MonsterBaseTabledDataPB struct {
+type MonsterBaseTabledData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Data []*MonsterBaseTablePB `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*MonsterBaseTable `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
-func (x *MonsterBaseTabledDataPB) Reset() {
-	*x = MonsterBaseTabledDataPB{}
+func (x *MonsterBaseTabledData) Reset() {
+	*x = MonsterBaseTabledData{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_monsterbase_config_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -84,13 +84,13 @@ func (x *MonsterBaseTabledDataPB) Reset() {
 	}
 }
 
-func (x *MonsterBaseTabledDataPB) String() string {
+func (x *MonsterBaseTabledData) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MonsterBaseTabledDataPB) ProtoMessage() {}
+func (*MonsterBaseTabledData) ProtoMessage() {}
 
-func (x *MonsterBaseTabledDataPB) ProtoReflect() protoreflect.Message {
+func (x *MonsterBaseTabledData) ProtoReflect() protoreflect.Message {
 	mi := &file_monsterbase_config_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,12 +102,12 @@ func (x *MonsterBaseTabledDataPB) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MonsterBaseTabledDataPB.ProtoReflect.Descriptor instead.
-func (*MonsterBaseTabledDataPB) Descriptor() ([]byte, []int) {
+// Deprecated: Use MonsterBaseTabledData.ProtoReflect.Descriptor instead.
+func (*MonsterBaseTabledData) Descriptor() ([]byte, []int) {
 	return file_monsterbase_config_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MonsterBaseTabledDataPB) GetData() []*MonsterBaseTablePB {
+func (x *MonsterBaseTabledData) GetData() []*MonsterBaseTable {
 	if x != nil {
 		return x.Data
 	}
@@ -118,15 +118,15 @@ var File_monsterbase_config_proto protoreflect.FileDescriptor
 
 var file_monsterbase_config_proto_rawDesc = []byte{
 	0x0a, 0x18, 0x6d, 0x6f, 0x6e, 0x73, 0x74, 0x65, 0x72, 0x62, 0x61, 0x73, 0x65, 0x5f, 0x63, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x24, 0x0a, 0x12, 0x4d, 0x6f,
-	0x6e, 0x73, 0x74, 0x65, 0x72, 0x42, 0x61, 0x73, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x50, 0x42,
-	0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64,
-	0x22, 0x42, 0x0a, 0x17, 0x4d, 0x6f, 0x6e, 0x73, 0x74, 0x65, 0x72, 0x42, 0x61, 0x73, 0x65, 0x54,
-	0x61, 0x62, 0x6c, 0x65, 0x64, 0x44, 0x61, 0x74, 0x61, 0x50, 0x42, 0x12, 0x27, 0x0a, 0x04, 0x64,
-	0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x4d, 0x6f, 0x6e, 0x73,
-	0x74, 0x65, 0x72, 0x42, 0x61, 0x73, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x50, 0x42, 0x52, 0x04,
-	0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x22, 0x0a, 0x10, 0x4d, 0x6f,
+	0x6e, 0x73, 0x74, 0x65, 0x72, 0x42, 0x61, 0x73, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x0e,
+	0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64, 0x22, 0x3e,
+	0x0a, 0x15, 0x4d, 0x6f, 0x6e, 0x73, 0x74, 0x65, 0x72, 0x42, 0x61, 0x73, 0x65, 0x54, 0x61, 0x62,
+	0x6c, 0x65, 0x64, 0x44, 0x61, 0x74, 0x61, 0x12, 0x25, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x4d, 0x6f, 0x6e, 0x73, 0x74, 0x65, 0x72, 0x42,
+	0x61, 0x73, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x09,
+	0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -143,11 +143,11 @@ func file_monsterbase_config_proto_rawDescGZIP() []byte {
 
 var file_monsterbase_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_monsterbase_config_proto_goTypes = []any{
-	(*MonsterBaseTablePB)(nil),      // 0: MonsterBaseTablePB
-	(*MonsterBaseTabledDataPB)(nil), // 1: MonsterBaseTabledDataPB
+	(*MonsterBaseTable)(nil),      // 0: MonsterBaseTable
+	(*MonsterBaseTabledData)(nil), // 1: MonsterBaseTabledData
 }
 var file_monsterbase_config_proto_depIdxs = []int32{
-	0, // 0: MonsterBaseTabledDataPB.data:type_name -> MonsterBaseTablePB
+	0, // 0: MonsterBaseTabledData.data:type_name -> MonsterBaseTable
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -162,7 +162,7 @@ func file_monsterbase_config_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_monsterbase_config_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*MonsterBaseTablePB); i {
+			switch v := v.(*MonsterBaseTable); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -174,7 +174,7 @@ func file_monsterbase_config_proto_init() {
 			}
 		}
 		file_monsterbase_config_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*MonsterBaseTabledDataPB); i {
+			switch v := v.(*MonsterBaseTabledData); i {
 			case 0:
 				return &v.state
 			case 1:

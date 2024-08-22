@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type MainSceneTablePB struct {
+type MainSceneTable struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -29,8 +29,8 @@ type MainSceneTablePB struct {
 	NavBinFile string `protobuf:"bytes,2,opt,name=nav_bin_file,json=navBinFile,proto3" json:"nav_bin_file,omitempty"`
 }
 
-func (x *MainSceneTablePB) Reset() {
-	*x = MainSceneTablePB{}
+func (x *MainSceneTable) Reset() {
+	*x = MainSceneTable{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_mainscene_config_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -38,13 +38,13 @@ func (x *MainSceneTablePB) Reset() {
 	}
 }
 
-func (x *MainSceneTablePB) String() string {
+func (x *MainSceneTable) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MainSceneTablePB) ProtoMessage() {}
+func (*MainSceneTable) ProtoMessage() {}
 
-func (x *MainSceneTablePB) ProtoReflect() protoreflect.Message {
+func (x *MainSceneTable) ProtoReflect() protoreflect.Message {
 	mi := &file_mainscene_config_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,35 +56,35 @@ func (x *MainSceneTablePB) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MainSceneTablePB.ProtoReflect.Descriptor instead.
-func (*MainSceneTablePB) Descriptor() ([]byte, []int) {
+// Deprecated: Use MainSceneTable.ProtoReflect.Descriptor instead.
+func (*MainSceneTable) Descriptor() ([]byte, []int) {
 	return file_mainscene_config_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *MainSceneTablePB) GetId() uint32 {
+func (x *MainSceneTable) GetId() uint32 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *MainSceneTablePB) GetNavBinFile() string {
+func (x *MainSceneTable) GetNavBinFile() string {
 	if x != nil {
 		return x.NavBinFile
 	}
 	return ""
 }
 
-type MainSceneTabledDataPB struct {
+type MainSceneTabledData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Data []*MainSceneTablePB `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*MainSceneTable `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
-func (x *MainSceneTabledDataPB) Reset() {
-	*x = MainSceneTabledDataPB{}
+func (x *MainSceneTabledData) Reset() {
+	*x = MainSceneTabledData{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_mainscene_config_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -92,13 +92,13 @@ func (x *MainSceneTabledDataPB) Reset() {
 	}
 }
 
-func (x *MainSceneTabledDataPB) String() string {
+func (x *MainSceneTabledData) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MainSceneTabledDataPB) ProtoMessage() {}
+func (*MainSceneTabledData) ProtoMessage() {}
 
-func (x *MainSceneTabledDataPB) ProtoReflect() protoreflect.Message {
+func (x *MainSceneTabledData) ProtoReflect() protoreflect.Message {
 	mi := &file_mainscene_config_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -110,12 +110,12 @@ func (x *MainSceneTabledDataPB) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MainSceneTabledDataPB.ProtoReflect.Descriptor instead.
-func (*MainSceneTabledDataPB) Descriptor() ([]byte, []int) {
+// Deprecated: Use MainSceneTabledData.ProtoReflect.Descriptor instead.
+func (*MainSceneTabledData) Descriptor() ([]byte, []int) {
 	return file_mainscene_config_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MainSceneTabledDataPB) GetData() []*MainSceneTablePB {
+func (x *MainSceneTabledData) GetData() []*MainSceneTable {
 	if x != nil {
 		return x.Data
 	}
@@ -126,17 +126,16 @@ var File_mainscene_config_proto protoreflect.FileDescriptor
 
 var file_mainscene_config_proto_rawDesc = []byte{
 	0x0a, 0x16, 0x6d, 0x61, 0x69, 0x6e, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x5f, 0x63, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x44, 0x0a, 0x10, 0x4d, 0x61, 0x69, 0x6e,
-	0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x50, 0x42, 0x12, 0x0e, 0x0a, 0x02,
-	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0c,
-	0x6e, 0x61, 0x76, 0x5f, 0x62, 0x69, 0x6e, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x0a, 0x6e, 0x61, 0x76, 0x42, 0x69, 0x6e, 0x46, 0x69, 0x6c, 0x65, 0x22, 0x3e,
-	0x0a, 0x15, 0x4d, 0x61, 0x69, 0x6e, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65,
-	0x64, 0x44, 0x61, 0x74, 0x61, 0x50, 0x42, 0x12, 0x25, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18,
-	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x4d, 0x61, 0x69, 0x6e, 0x53, 0x63, 0x65, 0x6e,
-	0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x50, 0x42, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x09,
-	0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x42, 0x0a, 0x0e, 0x4d, 0x61, 0x69, 0x6e,
+	0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x6e, 0x61,
+	0x76, 0x5f, 0x62, 0x69, 0x6e, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0a, 0x6e, 0x61, 0x76, 0x42, 0x69, 0x6e, 0x46, 0x69, 0x6c, 0x65, 0x22, 0x3a, 0x0a, 0x13,
+	0x4d, 0x61, 0x69, 0x6e, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x64, 0x44,
+	0x61, 0x74, 0x61, 0x12, 0x23, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x0f, 0x2e, 0x4d, 0x61, 0x69, 0x6e, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62,
+	0x6c, 0x65, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67,
+	0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -153,11 +152,11 @@ func file_mainscene_config_proto_rawDescGZIP() []byte {
 
 var file_mainscene_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_mainscene_config_proto_goTypes = []any{
-	(*MainSceneTablePB)(nil),      // 0: MainSceneTablePB
-	(*MainSceneTabledDataPB)(nil), // 1: MainSceneTabledDataPB
+	(*MainSceneTable)(nil),      // 0: MainSceneTable
+	(*MainSceneTabledData)(nil), // 1: MainSceneTabledData
 }
 var file_mainscene_config_proto_depIdxs = []int32{
-	0, // 0: MainSceneTabledDataPB.data:type_name -> MainSceneTablePB
+	0, // 0: MainSceneTabledData.data:type_name -> MainSceneTable
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -172,7 +171,7 @@ func file_mainscene_config_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_mainscene_config_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*MainSceneTablePB); i {
+			switch v := v.(*MainSceneTable); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -184,7 +183,7 @@ func file_mainscene_config_proto_init() {
 			}
 		}
 		file_mainscene_config_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*MainSceneTabledDataPB); i {
+			switch v := v.(*MainSceneTabledData); i {
 			case 0:
 				return &v.state
 			case 1:

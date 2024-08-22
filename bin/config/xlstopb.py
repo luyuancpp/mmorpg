@@ -80,7 +80,7 @@ def generate_group_messages(data: Dict, column_names: List[str]) -> str:
 
 def generate_row_message(sheet_name: str, data: Dict, column_names: List[str]) -> str:
     """Generate the row message for the .proto file."""
-    proto_content = f'message {sheet_name}TablePB {{\n'
+    proto_content = f'message {sheet_name}Table {{\n'
     field_index = 1
 
     for key, _ in data[0].items():
@@ -135,8 +135,8 @@ def format_group_array_field(data: Dict, key: str, column_names: List[str], fiel
 def generate_table_message(sheet_name: str) -> str:
     """Generate the table message for the .proto file."""
     return (
-        f'message {sheet_name}TabledDataPB {{\n'
-        f'\trepeated {sheet_name}TablePB data = 1;\n'
+        f'message {sheet_name}TabledData {{\n'
+        f'\trepeated {sheet_name}Table data = 1;\n'
         '}\n'
     )
 

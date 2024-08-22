@@ -25,7 +25,7 @@ uint64_t GenerateUniqueBuffId(const BuffList& buffList)
     return newBuffId;
 }
 
-bool IsTargetImmune(const BuffList& buffList, const BuffTablePB* buffTable)
+bool IsTargetImmune(const BuffList& buffList, const BuffTable* buffTable)
 {
     for (const auto& buff : buffList | std::views::values) {
         auto [currentBuffTable, fetchResult] = GetBuffTable(buff.buffPB.buff_table_id());
