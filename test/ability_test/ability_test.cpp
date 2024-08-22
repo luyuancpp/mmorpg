@@ -16,7 +16,7 @@ using ::testing::Return;
 // Mocked classes and functions
 class MockAbilityTable {
 public:
-    MOCK_METHOD(const AbilityTablePB*, GetAbilityTable, (uint32_t), (const));
+    MOCK_METHOD(const AbilityTable*, GetAbilityTable, (uint32_t), (const));
     MOCK_METHOD(bool, IsAbilityOfType, (uint32_t, uint32_t), (const));
 };
 
@@ -61,7 +61,7 @@ TEST_F(AbilityUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     request.set_ability_table_id(10);
     request.set_target_id(entt::to_integral(target)); // Valid target ID
 
-    AbilityTablePB tableAbility;
+    AbilityTable tableAbility;
     tableAbility.mutable_target_type()->Add(1); // Add target type to simulate need for target
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(request.ability_table_id()))
@@ -74,7 +74,7 @@ TEST_F(AbilityUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
 TEST_F(AbilityUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
     entt::entity caster = tls.registry.create();
 
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_cooldown_id(1);
 
     CooldownTimeComp cooldownTimeComp;
@@ -95,7 +95,7 @@ TEST_F(AbilityUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
 TEST_F(AbilityUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     entt::entity caster = tls.registry.create();
 
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_cooldown_id(1);
 
     CooldownTimeComp cooldownTimeComp;
@@ -113,7 +113,7 @@ TEST_F(AbilityUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
 
 TEST_F(AbilityUtilTest, HandleCastingTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_immediately(true);
     tableAbility->set_castpoint(1000); // Set cast point to 1000ms
 
@@ -126,7 +126,7 @@ TEST_F(AbilityUtilTest, HandleCastingTimer_ImmediateAbility_ReturnsOk) {
 
 TEST_F(AbilityUtilTest, HandleRecoveryTimeTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_immediately(true);
     tableAbility->set_recoverytime(1000); // Set recovery time to 1000ms
 
@@ -139,7 +139,7 @@ TEST_F(AbilityUtilTest, HandleRecoveryTimeTimer_ImmediateAbility_ReturnsOk) {
 
 TEST_F(AbilityUtilTest, HandleChannelTimeTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_immediately(true);
     tableAbility->set_channelfinish(1000); // Set channel finish time to 1000ms
     tableAbility->set_channelthink(500);   // Set channel interval to 500ms
@@ -166,7 +166,7 @@ TEST_F(AbilityUtilTest, BroadcastAbilityUsedMessage_CreatesMessage) {
 
 TEST_F(AbilityUtilTest, SetupCastingTimer_SetsTimer) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_castpoint(1000); // Set cast point to 1000ms
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
@@ -184,7 +184,7 @@ TEST_F(AbilityUtilTest, SetupCastingTimer_SetsTimer) {
 
 TEST_F(AbilityUtilTest, HandleAbilitySpell_TriggersEffect) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
@@ -195,7 +195,7 @@ TEST_F(AbilityUtilTest, HandleAbilitySpell_TriggersEffect) {
 
 TEST_F(AbilityUtilTest, HandleAbilityRecovery_SetsRecoveryTimer) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_recoverytime(1000); // Set recovery time to 1000ms
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(_))
@@ -206,7 +206,7 @@ TEST_F(AbilityUtilTest, HandleAbilityRecovery_SetsRecoveryTimer) {
 
 TEST_F(AbilityUtilTest, HandleAbilityToggleOn_TriggersEffect) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
@@ -217,7 +217,7 @@ TEST_F(AbilityUtilTest, HandleAbilityToggleOn_TriggersEffect) {
 
 TEST_F(AbilityUtilTest, HandleAbilityToggleOff_RemovesEffect) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
@@ -228,7 +228,7 @@ TEST_F(AbilityUtilTest, HandleAbilityToggleOff_RemovesEffect) {
 
 TEST_F(AbilityUtilTest, HandleAbilityActivate_TriggersEffect) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))
@@ -239,7 +239,7 @@ TEST_F(AbilityUtilTest, HandleAbilityActivate_TriggersEffect) {
 
 TEST_F(AbilityUtilTest, HandleAbilityDeactivate_RemovesEffect) {
     entt::entity caster = tls.registry.create();
-    auto tableAbility = std::make_shared<AbilityTablePB>();
+    auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
 
     EXPECT_CALL(*mockAbilityTable, GetAbilityTable(1))

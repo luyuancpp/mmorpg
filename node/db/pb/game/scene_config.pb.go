@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type SceneTablePB struct {
+type SceneTable struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -29,8 +29,8 @@ type SceneTablePB struct {
 	DungeonId uint32 `protobuf:"varint,2,opt,name=dungeon_id,json=dungeonId,proto3" json:"dungeon_id,omitempty"`
 }
 
-func (x *SceneTablePB) Reset() {
-	*x = SceneTablePB{}
+func (x *SceneTable) Reset() {
+	*x = SceneTable{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_scene_config_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -38,13 +38,13 @@ func (x *SceneTablePB) Reset() {
 	}
 }
 
-func (x *SceneTablePB) String() string {
+func (x *SceneTable) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SceneTablePB) ProtoMessage() {}
+func (*SceneTable) ProtoMessage() {}
 
-func (x *SceneTablePB) ProtoReflect() protoreflect.Message {
+func (x *SceneTable) ProtoReflect() protoreflect.Message {
 	mi := &file_scene_config_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,35 +56,35 @@ func (x *SceneTablePB) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SceneTablePB.ProtoReflect.Descriptor instead.
-func (*SceneTablePB) Descriptor() ([]byte, []int) {
+// Deprecated: Use SceneTable.ProtoReflect.Descriptor instead.
+func (*SceneTable) Descriptor() ([]byte, []int) {
 	return file_scene_config_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SceneTablePB) GetId() uint32 {
+func (x *SceneTable) GetId() uint32 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *SceneTablePB) GetDungeonId() uint32 {
+func (x *SceneTable) GetDungeonId() uint32 {
 	if x != nil {
 		return x.DungeonId
 	}
 	return 0
 }
 
-type SceneTabledDataPB struct {
+type SceneTabledData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Data []*SceneTablePB `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*SceneTable `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
-func (x *SceneTabledDataPB) Reset() {
-	*x = SceneTabledDataPB{}
+func (x *SceneTabledData) Reset() {
+	*x = SceneTabledData{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_scene_config_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -92,13 +92,13 @@ func (x *SceneTabledDataPB) Reset() {
 	}
 }
 
-func (x *SceneTabledDataPB) String() string {
+func (x *SceneTabledData) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SceneTabledDataPB) ProtoMessage() {}
+func (*SceneTabledData) ProtoMessage() {}
 
-func (x *SceneTabledDataPB) ProtoReflect() protoreflect.Message {
+func (x *SceneTabledData) ProtoReflect() protoreflect.Message {
 	mi := &file_scene_config_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -110,12 +110,12 @@ func (x *SceneTabledDataPB) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SceneTabledDataPB.ProtoReflect.Descriptor instead.
-func (*SceneTabledDataPB) Descriptor() ([]byte, []int) {
+// Deprecated: Use SceneTabledData.ProtoReflect.Descriptor instead.
+func (*SceneTabledData) Descriptor() ([]byte, []int) {
 	return file_scene_config_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SceneTabledDataPB) GetData() []*SceneTablePB {
+func (x *SceneTabledData) GetData() []*SceneTable {
 	if x != nil {
 		return x.Data
 	}
@@ -126,15 +126,15 @@ var File_scene_config_proto protoreflect.FileDescriptor
 
 var file_scene_config_proto_rawDesc = []byte{
 	0x0a, 0x12, 0x73, 0x63, 0x65, 0x6e, 0x65, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3d, 0x0a, 0x0c, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62,
-	0x6c, 0x65, 0x50, 0x42, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d,
-	0x52, 0x02, 0x69, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x64, 0x75, 0x6e, 0x67, 0x65, 0x6f, 0x6e, 0x5f,
-	0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x64, 0x75, 0x6e, 0x67, 0x65, 0x6f,
-	0x6e, 0x49, 0x64, 0x22, 0x36, 0x0a, 0x11, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62, 0x6c,
-	0x65, 0x64, 0x44, 0x61, 0x74, 0x61, 0x50, 0x42, 0x12, 0x21, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61,
-	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61,
-	0x62, 0x6c, 0x65, 0x50, 0x42, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x70,
-	0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3b, 0x0a, 0x0a, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62,
+	0x6c, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02,
+	0x69, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x64, 0x75, 0x6e, 0x67, 0x65, 0x6f, 0x6e, 0x5f, 0x69, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x64, 0x75, 0x6e, 0x67, 0x65, 0x6f, 0x6e, 0x49,
+	0x64, 0x22, 0x32, 0x0a, 0x0f, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x64,
+	0x44, 0x61, 0x74, 0x61, 0x12, 0x1f, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x53, 0x63, 0x65, 0x6e, 0x65, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x52,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -151,11 +151,11 @@ func file_scene_config_proto_rawDescGZIP() []byte {
 
 var file_scene_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_scene_config_proto_goTypes = []any{
-	(*SceneTablePB)(nil),      // 0: SceneTablePB
-	(*SceneTabledDataPB)(nil), // 1: SceneTabledDataPB
+	(*SceneTable)(nil),      // 0: SceneTable
+	(*SceneTabledData)(nil), // 1: SceneTabledData
 }
 var file_scene_config_proto_depIdxs = []int32{
-	0, // 0: SceneTabledDataPB.data:type_name -> SceneTablePB
+	0, // 0: SceneTabledData.data:type_name -> SceneTable
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -170,7 +170,7 @@ func file_scene_config_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_scene_config_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*SceneTablePB); i {
+			switch v := v.(*SceneTable); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -182,7 +182,7 @@ func file_scene_config_proto_init() {
 			}
 		}
 		file_scene_config_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*SceneTabledDataPB); i {
+			switch v := v.(*SceneTabledData); i {
 			case 0:
 				return &v.state
 			case 1:
