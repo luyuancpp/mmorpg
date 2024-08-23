@@ -10,6 +10,6 @@ class CentrePlayerSceneServiceImpl : public CentrePlayerSceneService{};
 class CentrePlayerServiceImpl : public CentrePlayerService{};
 void InitPlayerServiceReplied()
 {
-	g_player_service_replied.emplace("CentrePlayerSceneService", std::make_unique<CentrePlayerSceneServiceRepliedHandler>(new CentrePlayerSceneServiceImpl));
-	g_player_service_replied.emplace("CentrePlayerService", std::make_unique<CentrePlayerServiceRepliedHandler>(new CentrePlayerServiceImpl));
+	g_player_service_replied.emplace("CentrePlayerSceneService", std::make_unique<CentrePlayerSceneServiceRepliedHandler>(std::make_unique<CentrePlayerSceneServiceImpl>()));
+	g_player_service_replied.emplace("CentrePlayerService", std::make_unique<CentrePlayerServiceRepliedHandler>(std::make_unique<CentrePlayerServiceImpl>()));
 }

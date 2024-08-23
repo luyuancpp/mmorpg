@@ -63,6 +63,6 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 		SessionInfo:   in.SessionInfo,
 	}
 	l.svcCtx.CentreClient.Send(centreRequest, 54)
-	
+
 	return resp, nil
 }
