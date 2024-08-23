@@ -57,6 +57,9 @@
     <ClCompile Include="src\proto\common\gate_service.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\common\login_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\proto\common\login_service.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -75,13 +78,7 @@
     <ClCompile Include="src\proto\common\user_accounts.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\player_common.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\logic\client_player\player_scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\player_skill.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\actor_comp.pb.cc">
@@ -97,12 +94,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\item_base_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\component\item_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\component\mission_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\npc_comp.pb.cc">
@@ -138,13 +129,7 @@
     <ClCompile Include="src\proto\logic\constants\function_switch.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\logic\constants\node.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\logic\constants\scene.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\constants\test_switch.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\event\buff_event.pb.cc">
@@ -227,6 +212,9 @@
     <ClInclude Include="src\proto\common\gate_service.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\proto\common\login_service.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\proto\common\login_service.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -245,13 +233,7 @@
     <ClInclude Include="src\proto\common\user_accounts.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\player_common.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\logic\client_player\player_scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\player_skill.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\actor_comp.pb.h">
@@ -267,12 +249,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\item_base_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\component\item_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\component\mission_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\npc_comp.pb.h">
@@ -308,13 +284,7 @@
     <ClInclude Include="src\proto\logic\constants\function_switch.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\logic\constants\node.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\logic\constants\scene.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\constants\test_switch.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\event\buff_event.pb.h">
