@@ -10,29 +10,24 @@
 
 extern NodeIdGenerator12BitId g_bag_node_sequence;
 
-class ItemEntity
-{
-public:
-	ItemEntity();
-	inline entt::entity entity()const { return *entity_.get(); }
-private:
-	std::shared_ptr<entt::entity> entity_;
-};
 
 class ItemComp
 {
 public:
-	inline decltype(auto) entity() const { return entity_.entity(); }
-	inline decltype(auto) guid()const { return itembase().item_id(); }
+	ItemComp();
+	~ItemComp();
+
+	inline decltype(auto) Entity() const { return entity; }
+	inline decltype(auto) Guid()const { return itembase().item_id(); }
 	inline decltype(auto) config_id()const { return itembase().config_id(); }
 	inline decltype(auto) size()const { return itembase().size(); }
 
 	void set_size(uint32_t sz) { itembase().set_size(sz); }
 
 private:
-	inline const ItemPBComp& itembase()const { return tls.itemRegistry.get<ItemPBComp>(entity()); }
-	inline ItemPBComp& itembase(){ return tls.itemRegistry.get<ItemPBComp>(entity()); }
-	ItemEntity entity_;
+	inline const ItemPBComp& itembase()const { return tls.itemRegistry.get<ItemPBComp>(entity); }
+	inline ItemPBComp& itembase(){ return tls.itemRegistry.get<ItemPBComp>(entity); }
+	entt::entity entity;
 };
 
 using ItemRawPtrVector = std::vector<ItemComp*>;

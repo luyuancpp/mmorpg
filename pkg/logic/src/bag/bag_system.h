@@ -37,15 +37,16 @@ struct DelItemByPosParam
 class Bag
 {
 public:
-	using BagEntity = ItemEntity;
-	[[nodiscard]] entt::entity entity() const { return entity_.entity(); }
-	[[nodiscard]] Guid player_guid() const { return tls.itemRegistry.get<Guid>(entity()); }
+	Bag();
+	~Bag();
+	[[nodiscard]] entt::entity Entity() const { return entity; }
+	[[nodiscard]] Guid player_guid() const { return tls.itemRegistry.get<Guid>(Entity()); }
 	std::size_t size() const { return capacity_.size_; }
 	std::size_t item_size() const { return items_.size(); }
 	std::size_t pos_size() const { return pos_.size(); }
 	const PosMap& pos() const { return pos_; }
 
-	void set_player(Guid guid) const { tls.itemRegistry.emplace<Guid>(entity(), guid); }
+	void set_player(Guid guid) const { tls.itemRegistry.emplace<Guid>(Entity(), guid); }
 
 	[[nodiscard]] std::size_t GetItemStackSize(uint32_t config_id) const;
 	ItemComp* GetItemByGuid(Guid guid);
@@ -72,7 +73,7 @@ private:
 	uint32_t OnNewGrid(const ItemComp& item);
 	bool CanStack(const ItemComp& litem, const ItemComp& ritem);
 	
-	BagEntity entity_;
+	entt::entity entity;
 	ItemsMap items_{};
 	PosMap pos_{};
 	uint32_t type_{};
