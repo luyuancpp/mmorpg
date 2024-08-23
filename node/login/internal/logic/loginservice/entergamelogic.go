@@ -31,28 +31,38 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
 	defer data.SessionList.Remove(sessionId)
 	playerIdStr := strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
-	_, ok := data.SessionList.Get(sessionId)
+
 	resp := &game.EnterGameC2LResponse{
 		ClientMsgBody: &game.EnterGameResponse{ErrorMessage: &game.TipInfoMessage{}},
-		SessionInfo:   in.SessionInfo}
-	if !ok {
+		SessionInfo:   in.SessionInfo,
+	}
+
+	// Check if session is valid
+	if _, ok := data.SessionList.Get(sessionId); !ok {
 		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
 		return resp, nil
 	}
 
+	// Check if player data exists in Redis
 	reflection := proto.MessageReflect(&game.PlayerDatabase{})
 	key := string(reflection.Descriptor().FullName()) + playerIdStr
-	cmd := l.svcCtx.Redis.Get(l.ctx, key)
-	if len(cmd.Val()) == 0 {
+	playerData := l.svcCtx.Redis.Get(l.ctx, key).Val()
+
+	if len(playerData) == 0 {
+		// Player data not found in Redis, load it from the database
 		service := playerdbservice.NewPlayerDBService(*l.svcCtx.DBClient)
-		_, err := service.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId})
-		if err != nil {
+		if _, err := service.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId}); err != nil {
 			resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginPlayerGuidError)}
 			return resp, err
 		}
 	}
 
-	centreEnterGame := &game.CentrePlayerGameNodeEntryRequest{ClientMsgBody: in.ClientMsgBody, SessionInfo: in.SessionInfo}
-	l.svcCtx.CentreClient.Send(centreEnterGame, 54)
+	// Send request to the centre
+	centreRequest := &game.CentrePlayerGameNodeEntryRequest{
+		ClientMsgBody: in.ClientMsgBody,
+		SessionInfo:   in.SessionInfo,
+	}
+	l.svcCtx.CentreClient.Send(centreRequest, 54)
+	
 	return resp, nil
 }

@@ -18,7 +18,7 @@
 #include "thread_local/storage_game.h"
 
 // Generate a unique skill ID that is not in the provided context maps
-uint64_t GenerateUniqueSkillId(const SkillContextMap& casterBuffList, const SkillContextMap& targetBuffList) {
+uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
 	uint64_t newSkillId;
 	do {
 		newSkillId = tlsGame.skillIdGenerator.Generate();
@@ -28,7 +28,7 @@ uint64_t GenerateUniqueSkillId(const SkillContextMap& casterBuffList, const Skil
 
 // Initialize an entity with a SkillContextMap
 void SkillUtil::InitEntity(entt::entity entity) {
-	tls.registry.emplace<SkillContextMap>(entity);
+	tls.registry.emplace<SkillContextCompMap>(entity);
 }
 
 // Handle the use of a skill by the caster
@@ -43,23 +43,23 @@ uint32_t SkillUtil::UseSkill(entt::entity caster, const UseSkillRequest* request
 	BroadcastSkillUsedMessage(caster, request);
 
 	auto context = std::make_shared<SkillContextPtrComp::element_type>();
-	context->caster = entt::to_integral(caster);
-	context->skillTableId = request->skill_table_id();
-	context->target = request->target_id();
-	context->castTime = TimeUtil::NowMilliseconds();
+	context->set_caster(entt::to_integral(caster));
+	context->set_skilltableid(request->skill_table_id());
+	context->set_target(request->target_id());
+	context->set_casttime(TimeUtil::NowMilliseconds());
 
-	auto& casterSkillContextMap = tls.registry.get<SkillContextMap>(caster);
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
 	entt::entity target = entt::to_entity(request->target_id());
-	SkillContextMap emptySkillContextMap;
-	auto& targetSkillContextMap = tls.registry.valid(target) ? tls.registry.get<SkillContextMap>(target) : emptySkillContextMap;
+	SkillContextCompMap emptySkillContextMap;
+	auto& targetSkillContextMap = tls.registry.valid(target) ? tls.registry.get<SkillContextCompMap>(target) : emptySkillContextMap;
 
-	context->SkillId = GenerateUniqueSkillId(casterSkillContextMap, targetSkillContextMap);
-	casterSkillContextMap.emplace(context->SkillId, context);
+	context->set_skillid(GenerateUniqueSkillId(casterSkillContextMap, targetSkillContextMap));
+	casterSkillContextMap.emplace(context->skillid(), context);
 	if (tls.registry.valid(target)) {
-		targetSkillContextMap.emplace(context->SkillId, context);
+		targetSkillContextMap.emplace(context->skillid(), context);
 	}
 
-	SetupCastingTimer(caster, skillTable, context->SkillId);
+	SetupCastingTimer(caster, skillTable, context->skillid());
 
 	return kOK;
 }
@@ -125,12 +125,12 @@ void SkillUtil::HandleSkillFinish(const entt::entity caster, uint64_t skillId) {
 	// Implementation here
 
 	// todo player off line 
-	auto& casterSkillContextMap = tls.registry.get<SkillContextMap>(caster);
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
 	if (skillContentIt != casterSkillContextMap.end()) {
-		entt::entity target = entt::to_entity(skillContentIt->second->target);
+		entt::entity target = entt::to_entity(skillContentIt->second->target());
 		if (tls.registry.valid(target)) {
-			auto& targetSkillContextMap = tls.registry.get<SkillContextMap>(target);
+			auto& targetSkillContextMap = tls.registry.get<SkillContextCompMap>(target);
 			targetSkillContextMap.erase(skillId);
 		}
 		casterSkillContextMap.erase(skillContentIt);

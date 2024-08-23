@@ -28,7 +28,7 @@ protected:
 TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	uint32_t buffTableId = 1;
 	entt::entity parent = tls.registry.create();
-	auto abilityContext = std::make_shared<SkillContextComp>();
+	auto abilityContext = std::make_shared<SkillContextPBComp>();
 
 	// Mock BuffTable
 	BuffTable mockBuffTable;
