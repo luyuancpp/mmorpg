@@ -20,6 +20,7 @@ public:
 	SceneNavMapComp sceneNav;
 	FrameTime frameTime;
 	NodeIdGenerator32BitId buffIdGenerator;
+	NodeIdGenerator32BitId skillIdGenerator;
 };
 
 extern thread_local ThreadLocalStorageGame tlsGame;

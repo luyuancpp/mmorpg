@@ -15,7 +15,21 @@
 #include "time/util/time_util.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
+#include "thread_local/storage_game.h"
 
+uint64_t GenerateUniqueSkillId(const SkillContextMap& casterBuffList, const SkillContextMap& targetBuffList)
+{
+	uint64_t newSkillId;
+	do {
+		newSkillId = tlsGame.skillIdGenerator.Generate();
+	} while (casterBuffList.contains(newSkillId) || casterBuffList.contains(newSkillId));
+	return newSkillId;
+}
+
+void SkillUtil::InitEntity(entt::entity entity)
+{
+	tls.registry.emplace<SkillContextMap>(entity);
+}
 
 uint32_t SkillUtil::UseSkill(entt::entity caster, const UseSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
@@ -26,17 +40,31 @@ uint32_t SkillUtil::UseSkill(entt::entity caster, const UseSkillRequest* request
 	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
 
 	BroadcastSkillUsedMessage(caster, request);
-	SetupCastingTimer(caster, skillTable, request->skill_table_id());
 
 	auto context = std::make_shared<SkillContextPtrComp::element_type>();
 	context->caster = entt::to_integral(caster);
-	auto target = request->target_id();
 	context->skillTableId = request->skill_table_id();
 	context->target = request->target_id();
+	entt::entity target = entt::to_entity(request->target_id());
 	//context->castPosition.CopyFrom(castPosition);
 	context->castTime = TimeUtil::NowMilliseconds(); // 当前时间戳
 	//context.state = "Casting"; // 默认状态为“施放中”
 	//context->additionalData = additionalData;
+
+	auto& casterSkillContextMap = tls.registry.get<SkillContextMap>(caster);
+	if (!tls.registry.valid(target)) {
+		context->SkillId = GenerateUniqueSkillId(tls.registry.get<SkillContextMap>(caster), {});
+	}
+	else {
+		auto& targetSkillContextMap = tls.registry.get<SkillContextMap>(target);
+
+		context->SkillId = GenerateUniqueSkillId(casterSkillContextMap, targetSkillContextMap);
+
+		targetSkillContextMap.emplace(context->SkillId, context);
+	}
+	casterSkillContextMap.emplace(context->SkillId, context);
+
+	SetupCastingTimer(caster, skillTable, context->SkillId);
 
 	return kOK;
 }
@@ -56,7 +84,7 @@ uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::U
 	return kOK;
 }
 
-bool SkillUtil::IsSkillOfType(const uint32_t skillId, const uint32_t skillType) {
+bool SkillUtil::IsSkillOfType(const uint64_t skillId, const uint32_t skillType) {
 	auto [skillTable, result] = GetSkillTable(skillId);
 	if (skillTable == nullptr) {
 		return false;
@@ -75,7 +103,7 @@ void SkillUtil::HandleSkillInitialize() {
 	// Implementation here
 }
 
-void SkillUtil::HandleGeneralSkillSpell(const entt::entity caster, const uint32_t skillId) {
+void SkillUtil::HandleGeneralSkillSpell(const entt::entity caster, const uint64_t skillId) {
 	HandleSkillSpell(caster, skillId);
 
 	LOG_INFO << "Handling general skill spell. Caster: " << entt::to_integral(caster)
@@ -88,7 +116,7 @@ void SkillUtil::HandleGeneralSkillSpell(const entt::entity caster, const uint32_
 	HandleSkillRecovery(caster, skillId);
 }
 
-void SkillUtil::HandleSkillRecovery(const entt::entity caster, uint32_t skillId) {
+void SkillUtil::HandleSkillRecovery(const entt::entity caster, uint64_t skillId) {
 	auto [skillTable, result] = GetSkillTable(skillId);
 	if (skillTable == nullptr) {
 		return;
@@ -100,11 +128,11 @@ void SkillUtil::HandleSkillRecovery(const entt::entity caster, uint32_t skillId)
 		});
 }
 
-void SkillUtil::HandleSkillFinish(const entt::entity caster, uint32_t skillId) {
+void SkillUtil::HandleSkillFinish(const entt::entity caster, uint64_t skillId) {
 	// Implementation here
 }
 
-void SkillUtil::HandleChannelSkillSpell(entt::entity caster, uint32_t skillId) {
+void SkillUtil::HandleChannelSkillSpell(entt::entity caster, uint64_t skillId) {
 	auto [skillTable, result] = GetSkillTable(skillId);
 	if (skillTable == nullptr) {
 		return;
@@ -126,28 +154,28 @@ void SkillUtil::HandleChannelSkillSpell(entt::entity caster, uint32_t skillId) {
 		});
 }
 
-void SkillUtil::HandleChannelThink(entt::entity caster, uint32_t skillId) {
+void SkillUtil::HandleChannelThink(entt::entity caster, uint64_t skillId) {
 	// Implementation here
 }
 
-void SkillUtil::HandleChannelFinish(const entt::entity caster, const uint32_t skillId) {
+void SkillUtil::HandleChannelFinish(const entt::entity caster, const uint64_t skillId) {
 	tls.registry.remove<ChannelIntervalTimerComp>(caster);
 	HandleSkillRecovery(caster, skillId);
 }
 
-void SkillUtil::HandleSkillToggleOn(const entt::entity caster, const uint32_t skillId) {
+void SkillUtil::HandleSkillToggleOn(const entt::entity caster, const uint64_t skillId) {
 	TriggerSkillEffect(caster, skillId);
 }
 
-void SkillUtil::HandleSkillToggleOff(const entt::entity caster, const uint32_t skillId) {
+void SkillUtil::HandleSkillToggleOff(const entt::entity caster, const uint64_t skillId) {
 	RemoveEffect(caster, skillId);
 }
 
-void SkillUtil::HandleSkillActivate(const entt::entity caster, const uint32_t skillId) {
+void SkillUtil::HandleSkillActivate(const entt::entity caster, const uint64_t skillId) {
 	TriggerSkillEffect(caster, skillId);
 }
 
-void SkillUtil::HandleSkillDeactivate(const entt::entity caster, const uint32_t skillId) {
+void SkillUtil::HandleSkillDeactivate(const entt::entity caster, const uint64_t skillId) {
 	RemoveEffect(caster, skillId);
 }
 
@@ -282,7 +310,7 @@ void SkillUtil::BroadcastSkillUsedMessage(const entt::entity caster, const ::Use
 	);
 }
 
-void SkillUtil::SetupCastingTimer(entt::entity caster, const SkillTable* skillTable, uint32_t skillId) {
+void SkillUtil::SetupCastingTimer(entt::entity caster, const SkillTable* skillTable, uint64_t skillId) {
 	auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(caster).timer;
 	if (IsSkillOfType(skillId, kGeneralSkill)) {
 		castingTimer.RunAfter(skillTable->castpoint(), [caster, skillId] {
@@ -296,7 +324,7 @@ void SkillUtil::SetupCastingTimer(entt::entity caster, const SkillTable* skillTa
 	}
 }
 
-void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, uint32_t skillId) {
+void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, uint64_t skillId) {
 	SkillInterruptedS2C skillInterruptedS2C;
 	skillInterruptedS2C.set_entity(entt::to_integral(caster));
 	skillInterruptedS2C.set_skill_table_id(skillId);
@@ -308,7 +336,7 @@ void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, uint32_t 
 	);
 }
 
-void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint32_t skillId) {
+void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint64_t skillId) {
 	auto [skillTable, result] = GetSkillTable(skillId);
 	if (skillTable == nullptr) {
 		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
@@ -322,7 +350,7 @@ void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint32_t skillId) 
 	}
 }
 
-void SkillUtil::RemoveEffect(entt::entity caster, const uint32_t skillId) {
+void SkillUtil::RemoveEffect(entt::entity caster, const uint64_t skillId) {
 	auto [skillTable, result] = GetSkillTable(skillId);
 	if (skillTable == nullptr) {
 		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
@@ -334,6 +362,6 @@ void SkillUtil::RemoveEffect(entt::entity caster, const uint32_t skillId) {
 	}
 }
 
-void SkillUtil::HandleSkillSpell(const entt::entity caster, uint32_t skillId) {
+void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
 	// TODO: Implement skill spell handling logic here
 }
