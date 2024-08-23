@@ -3,21 +3,14 @@
 #include <cstdint>
 #include <memory>
 #include "logic/component/buff_comp.pb.h"
+#include "game_logic/combat/ability/comp/skill_comp.h"
 #include "time/comp/timer_task_comp.h"
 
-
-struct BuffAbilityContextComp
-{
-    uint32_t tableAbilityId = { 0 };
-    uint64_t caster = { entt::null };
-};
-
-using BuffAbilityContextPtrComp = std::shared_ptr<BuffAbilityContextComp>;
 
 struct BuffComp
 {
     BuffPBComp buffPB;
-    BuffAbilityContextPtrComp abilityContext;
+    AbilityContextPtrComp abilityContext;
     TimerTaskComp intervalTTimer;
 };
 

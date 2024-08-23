@@ -42,7 +42,7 @@ bool IsTargetImmune(const BuffList& buffList, const BuffTable* buffTable)
     return false;
 }
 
-uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext)
+uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (!buffTable) {
@@ -102,7 +102,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
     return isImmune ? kBuffTargetImmuneToBuff : kOK;
 }
 
-bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext)
+bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
     for (auto& [buffId, buffComp] : buffList) {
@@ -128,7 +128,7 @@ void BuffUtil::OnBuffStart(entt::entity parent, uint64_t buffId)
     StartIntervalThink(parent, buffId);
 }
 
-void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const BuffAbilityContextPtrComp& abilityContext, BuffComp& buffComp)
+void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext, BuffComp& buffComp)
 {
     // Implement logic if needed
 }

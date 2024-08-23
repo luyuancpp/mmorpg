@@ -1,8 +1,8 @@
-﻿#include "ability_util.h"
+﻿#include "skill_util.h"
 
 #include <muduo/base/Logging.h>
 #include "ability_config.h"
-#include "game_logic/combat/ability/comp/ability_comp.h"
+#include "game_logic/combat/ability/comp/skill_comp.h"
 #include "game_logic/combat/ability/constants/ability_constants.h"
 #include "game_logic/scene/util/view_util.h"
 #include "macros/return_define.h"
@@ -13,7 +13,7 @@
 #include "time/comp/timer_task_comp.h"
 #include "time/util/cooldown_time_util.h"
 
-uint32_t AbilityUtil::UseAbility(entt::entity caster, const UseAbilityRequest* request) {
+uint32_t SkillUtil::UseAbility(entt::entity caster, const UseAbilityRequest* request) {
 	auto [abilityTable, result] = GetAbilityTable(request->ability_table_id());
 	if (result != kOK) {
 		return result;
@@ -27,7 +27,7 @@ uint32_t AbilityUtil::UseAbility(entt::entity caster, const UseAbilityRequest* r
 	return kOK;
 }
 
-uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const ::UseAbilityRequest* request) {
+uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::UseAbilityRequest* request) {
 	auto [abilityTable, result] = GetAbilityTable(request->ability_table_id());
 	if (result != kOK) {
 		return result;
@@ -42,7 +42,7 @@ uint32_t AbilityUtil::CheckSkillPrerequisites(const entt::entity caster, const :
 	return kOK;
 }
 
-bool AbilityUtil::IsAbilityOfType(const uint32_t abilityId, const uint32_t abilityType) {
+bool SkillUtil::IsAbilityOfType(const uint32_t abilityId, const uint32_t abilityType) {
 	auto [abilityTable, result] = GetAbilityTable(abilityId);
 	if (abilityTable == nullptr) {
 		return false;
@@ -57,11 +57,11 @@ bool AbilityUtil::IsAbilityOfType(const uint32_t abilityId, const uint32_t abili
 	return false;
 }
 
-void AbilityUtil::HandleAbilityInitialize() {
+void SkillUtil::HandleAbilityInitialize() {
 	// Implementation here
 }
 
-void AbilityUtil::HandleGeneralAbilitySpell(const entt::entity caster, const uint32_t abilityId) {
+void SkillUtil::HandleGeneralAbilitySpell(const entt::entity caster, const uint32_t abilityId) {
 	HandleAbilitySpell(caster, abilityId);
 
 	LOG_INFO << "Handling general ability spell. Caster: " << entt::to_integral(caster)
@@ -74,7 +74,7 @@ void AbilityUtil::HandleGeneralAbilitySpell(const entt::entity caster, const uin
 	HandleAbilityRecovery(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId) {
+void SkillUtil::HandleAbilityRecovery(const entt::entity caster, uint32_t abilityId) {
 	auto [abilityTable, result] = GetAbilityTable(abilityId);
 	if (abilityTable == nullptr) {
 		return;
@@ -86,11 +86,11 @@ void AbilityUtil::HandleAbilityRecovery(const entt::entity caster, uint32_t abil
 		});
 }
 
-void AbilityUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilityId) {
+void SkillUtil::HandleAbilityFinish(const entt::entity caster, uint32_t abilityId) {
 	// Implementation here
 }
 
-void AbilityUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilityId) {
+void SkillUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilityId) {
 	auto [abilityTable, result] = GetAbilityTable(abilityId);
 	if (abilityTable == nullptr) {
 		return;
@@ -112,32 +112,32 @@ void AbilityUtil::HandleChannelAbilitySpell(entt::entity caster, uint32_t abilit
 		});
 }
 
-void AbilityUtil::HandleChannelThink(entt::entity caster, uint32_t abilityId) {
+void SkillUtil::HandleChannelThink(entt::entity caster, uint32_t abilityId) {
 	// Implementation here
 }
 
-void AbilityUtil::HandleChannelFinish(const entt::entity caster, const uint32_t abilityId) {
+void SkillUtil::HandleChannelFinish(const entt::entity caster, const uint32_t abilityId) {
 	tls.registry.remove<ChannelIntervalTimerComp>(caster);
 	HandleAbilityRecovery(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityToggleOn(const entt::entity caster, const uint32_t abilityId) {
+void SkillUtil::HandleAbilityToggleOn(const entt::entity caster, const uint32_t abilityId) {
 	TriggerSkillEffect(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityToggleOff(const entt::entity caster, const uint32_t abilityId) {
+void SkillUtil::HandleAbilityToggleOff(const entt::entity caster, const uint32_t abilityId) {
 	RemoveEffect(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityActivate(const entt::entity caster, const uint32_t abilityId) {
+void SkillUtil::HandleAbilityActivate(const entt::entity caster, const uint32_t abilityId) {
 	TriggerSkillEffect(caster, abilityId);
 }
 
-void AbilityUtil::HandleAbilityDeactivate(const entt::entity caster, const uint32_t abilityId) {
+void SkillUtil::HandleAbilityDeactivate(const entt::entity caster, const uint32_t abilityId) {
 	RemoveEffect(caster, abilityId);
 }
 
-uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
+uint32_t SkillUtil::ValidateTarget(const ::UseAbilityRequest* request) {
 	auto [abilityTable, result] = GetAbilityTable(request->ability_table_id());
 	if (!abilityTable->target_type().empty() && request->target_id() <= 0) {
 		LOG_ERROR << "Invalid target ID: " << request->target_id()
@@ -157,7 +157,7 @@ uint32_t AbilityUtil::ValidateTarget(const ::UseAbilityRequest* request) {
 	return kOK;
 }
 
-uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const AbilityTable* abilityTable) {
+uint32_t SkillUtil::CheckCooldown(const entt::entity caster, const AbilityTable* abilityTable) {
 	if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
 		if (const auto it = coolDownTimeListComp->cooldown_list().find(abilityTable->cooldown_id());
 			it != coolDownTimeListComp->cooldown_list().end() &&
@@ -173,7 +173,7 @@ uint32_t AbilityUtil::CheckCooldown(const entt::entity caster, const AbilityTabl
 	return kOK;
 }
 
-uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const AbilityTable* abilityTable) {
+uint32_t SkillUtil::CheckCasting(const entt::entity caster, const AbilityTable* abilityTable) {
 	if (const auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(caster)) {
 		if (abilityTable->immediately() && castTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate ability: " << abilityTable->id()
@@ -193,7 +193,7 @@ uint32_t AbilityUtil::CheckCasting(const entt::entity caster, const AbilityTable
 	return kOK;
 }
 
-uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const AbilityTable* abilityTable) {
+uint32_t SkillUtil::CheckRecovery(const entt::entity caster, const AbilityTable* abilityTable) {
 	if (const auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(caster)) {
 		if (abilityTable->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate ability: " << abilityTable->id()
@@ -212,7 +212,7 @@ uint32_t AbilityUtil::CheckRecovery(const entt::entity caster, const AbilityTabl
 
 	return kOK;
 }
-uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const AbilityTable* abilityTable) {
+uint32_t SkillUtil::CheckChannel(const entt::entity caster, const AbilityTable* abilityTable) {
 	if (const auto* channelFinishTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
 		if (abilityTable->immediately() && channelFinishTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate ability: " << abilityTable->id()
@@ -236,7 +236,7 @@ uint32_t AbilityUtil::CheckChannel(const entt::entity caster, const AbilityTable
 	return kOK;
 }
 
-void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const ::UseAbilityRequest* request) {
+void SkillUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const ::UseAbilityRequest* request) {
 	AbilityUsedS2C abilityUsedS2C;
 	abilityUsedS2C.set_entity(entt::to_integral(caster));
 	abilityUsedS2C.add_target_entity(request->target_id());
@@ -250,7 +250,7 @@ void AbilityUtil::BroadcastAbilityUsedMessage(const entt::entity caster, const :
 	);
 }
 
-void AbilityUtil::SetupCastingTimer(entt::entity caster, const AbilityTable* abilityTable, uint32_t abilityId) {
+void SkillUtil::SetupCastingTimer(entt::entity caster, const AbilityTable* abilityTable, uint32_t abilityId) {
 	auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(caster).timer;
 	if (IsAbilityOfType(abilityId, kGeneralAbility)) {
 		castingTimer.RunAfter(abilityTable->castpoint(), [caster, abilityId] {
@@ -264,7 +264,7 @@ void AbilityUtil::SetupCastingTimer(entt::entity caster, const AbilityTable* abi
 	}
 }
 
-void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster, uint32_t abilityId) {
+void SkillUtil::SendAbilityInterruptedMessage(const entt::entity caster, uint32_t abilityId) {
 	AbilityInterruptedS2C abilityInterruptedS2C;
 	abilityInterruptedS2C.set_entity(entt::to_integral(caster));
 	abilityInterruptedS2C.set_ability_table_id(abilityId);
@@ -276,7 +276,7 @@ void AbilityUtil::SendAbilityInterruptedMessage(const entt::entity caster, uint3
 	);
 }
 
-void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t abilityId) {
+void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint32_t abilityId) {
 	auto [abilityTable, result] = GetAbilityTable(abilityId);
 	if (abilityTable == nullptr) {
 		LOG_ERROR << "Failed to get ability table for Ability ID: " << abilityId;
@@ -290,7 +290,7 @@ void AbilityUtil::TriggerSkillEffect(entt::entity caster, const uint32_t ability
 	}
 }
 
-void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId) {
+void SkillUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId) {
 	auto [abilityTable, result] = GetAbilityTable(abilityId);
 	if (abilityTable == nullptr) {
 		LOG_ERROR << "Failed to get ability table for Ability ID: " << abilityId;
@@ -302,6 +302,6 @@ void AbilityUtil::RemoveEffect(entt::entity caster, const uint32_t abilityId) {
 	}
 }
 
-void AbilityUtil::HandleAbilitySpell(const entt::entity caster, uint32_t abilityId) {
+void SkillUtil::HandleAbilitySpell(const entt::entity caster, uint32_t abilityId) {
 	// TODO: Implement ability spell handling logic here
 }
