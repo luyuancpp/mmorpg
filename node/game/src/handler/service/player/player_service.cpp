@@ -16,9 +16,9 @@ class PlayerClientCommonServiceImpl : public PlayerClientCommonService{};
 class PlayerSkillServiceImpl : public PlayerSkillService{};
 void InitPlayerService()
 {
-	g_player_service.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceHandler>(new ClientPlayerSceneServiceImpl));
-	g_player_service.emplace("GamePlayerSceneService", std::make_unique<GamePlayerSceneServiceHandler>(new GamePlayerSceneServiceImpl));
-	g_player_service.emplace("GamePlayerService", std::make_unique<GamePlayerServiceHandler>(new GamePlayerServiceImpl));
-	g_player_service.emplace("PlayerClientCommonService", std::make_unique<PlayerClientCommonServiceHandler>(new PlayerClientCommonServiceImpl));
-	g_player_service.emplace("PlayerSkillService", std::make_unique<PlayerSkillServiceHandler>(new PlayerSkillServiceImpl));
+	g_player_service.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceHandler>(std::make_unique< ClientPlayerSceneServiceImpl>()));
+	g_player_service.emplace("GamePlayerSceneService", std::make_unique<GamePlayerSceneServiceHandler>(std::make_unique< GamePlayerSceneServiceImpl>()));
+	g_player_service.emplace("GamePlayerService", std::make_unique<GamePlayerServiceHandler>(std::make_unique< GamePlayerServiceImpl>()));
+	g_player_service.emplace("PlayerClientCommonService", std::make_unique<PlayerClientCommonServiceHandler>(std::make_unique< PlayerClientCommonServiceImpl>()));
+	g_player_service.emplace("PlayerSkillService", std::make_unique<PlayerSkillServiceHandler>(std::make_unique< PlayerSkillServiceImpl>()));
 }

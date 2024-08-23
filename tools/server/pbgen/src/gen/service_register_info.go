@@ -381,8 +381,8 @@ func generateInstanceData(ServiceList []string, isPlayerHandlerFunc func(*RPCMet
 
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
 		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.HandlerFileName + ">(new " +
-			className + "));\n"
+			"\", std::make_unique<" + method1Info.Service + config.HandlerFileName + ">(std::make_unique< " +
+			className + ">()));\n"
 	}
 
 	data.WriteString(includeData)
@@ -418,8 +418,8 @@ func generateRepliedInstanceData(ServiceList []string, isPlayerHandlerFunc func(
 
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
 		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerFileName + ">(new " +
-			className + "));\n"
+			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerFileName + ">(std::make_unique<" +
+			className + ">()));\n"
 	}
 
 	data.WriteString(includeData)
