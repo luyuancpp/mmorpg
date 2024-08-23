@@ -10,7 +10,6 @@ class GamePlayerSceneServiceImpl : public GamePlayerSceneService{};
 class GamePlayerServiceImpl : public GamePlayerService{};
 void InitPlayerServiceReplied()
 {
-	auto aa = std::make_unique<GamePlayerSceneServiceImpl>();
-	g_player_service_replied.emplace("GamePlayerSceneService", std::make_unique<GamePlayerSceneServiceRepliedHandler>(std::move(aa)));
+	g_player_service_replied.emplace("GamePlayerSceneService", std::make_unique<GamePlayerSceneServiceRepliedHandler>(std::make_unique<GamePlayerSceneServiceImpl>()));
 	g_player_service_replied.emplace("GamePlayerService", std::make_unique<GamePlayerServiceRepliedHandler>(std::make_unique<GamePlayerServiceImpl>()));
 }
