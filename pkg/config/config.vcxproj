@@ -18,6 +18,82 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\all_config.cpp" />
+    <ClCompile Include="src\buff_config.cpp" />
+    <ClCompile Include="src\condition_config.cpp" />
+    <ClCompile Include="src\cooldown_config.cpp" />
+    <ClCompile Include="src\globalvariable_config.cpp" />
+    <ClCompile Include="src\item_config.cpp" />
+    <ClCompile Include="src\mainscene_config.cpp" />
+    <ClCompile Include="src\mission_config.cpp" />
+    <ClCompile Include="src\monsterbase_config.cpp" />
+    <ClCompile Include="src\pbc\ability_operator.pb.cc" />
+    <ClCompile Include="src\pbc\bag_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\bag_operator.pb.cc" />
+    <ClCompile Include="src\pbc\buff_config.pb.cc" />
+    <ClCompile Include="src\pbc\buff_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\common_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\condition_config.pb.cc" />
+    <ClCompile Include="src\pbc\cooldown_config.pb.cc" />
+    <ClCompile Include="src\pbc\globalvariable_config.pb.cc" />
+    <ClCompile Include="src\pbc\item_config.pb.cc" />
+    <ClCompile Include="src\pbc\login_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\mainscene_config.pb.cc" />
+    <ClCompile Include="src\pbc\mission_config.pb.cc" />
+    <ClCompile Include="src\pbc\mission_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\monsterbase_config.pb.cc" />
+    <ClCompile Include="src\pbc\scene_config.pb.cc" />
+    <ClCompile Include="src\pbc\scene_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\scene_operator.pb.cc" />
+    <ClCompile Include="src\pbc\skill_config.pb.cc" />
+    <ClCompile Include="src\pbc\skill_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\team_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\testmultikey_config.pb.cc" />
+    <ClCompile Include="src\pbc\test_config.pb.cc" />
+    <ClCompile Include="src\scene_config.cpp" />
+    <ClCompile Include="src\skill_config.cpp" />
+    <ClCompile Include="src\testmultikey_config.cpp" />
+    <ClCompile Include="src\test_config.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\all_config.h" />
+    <ClInclude Include="src\buff_config.h" />
+    <ClInclude Include="src\condition_config.h" />
+    <ClInclude Include="src\cooldown_config.h" />
+    <ClInclude Include="src\globalvariable_config.h" />
+    <ClInclude Include="src\item_config.h" />
+    <ClInclude Include="src\mainscene_config.h" />
+    <ClInclude Include="src\mission_config.h" />
+    <ClInclude Include="src\monsterbase_config.h" />
+    <ClInclude Include="src\pbc\ability_operator.pb.h" />
+    <ClInclude Include="src\pbc\bag_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\bag_operator.pb.h" />
+    <ClInclude Include="src\pbc\buff_config.pb.h" />
+    <ClInclude Include="src\pbc\buff_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\common_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\condition_config.pb.h" />
+    <ClInclude Include="src\pbc\cooldown_config.pb.h" />
+    <ClInclude Include="src\pbc\globalvariable_config.pb.h" />
+    <ClInclude Include="src\pbc\item_config.pb.h" />
+    <ClInclude Include="src\pbc\login_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\mainscene_config.pb.h" />
+    <ClInclude Include="src\pbc\mission_config.pb.h" />
+    <ClInclude Include="src\pbc\mission_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\monsterbase_config.pb.h" />
+    <ClInclude Include="src\pbc\scene_config.pb.h" />
+    <ClInclude Include="src\pbc\scene_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\scene_operator.pb.h" />
+    <ClInclude Include="src\pbc\skill_config.pb.h" />
+    <ClInclude Include="src\pbc\skill_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\team_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\testmultikey_config.pb.h" />
+    <ClInclude Include="src\pbc\test_config.pb.h" />
+    <ClInclude Include="src\scene_config.h" />
+    <ClInclude Include="src\skill_config.h" />
+    <ClInclude Include="src\testmultikey_config.h" />
+    <ClInclude Include="src\test_config.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

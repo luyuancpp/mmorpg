@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-option go_package = "pb/game";
-
-message AbilityPBComp
-{
-  uint64 ability_table_id = 1;
-}
