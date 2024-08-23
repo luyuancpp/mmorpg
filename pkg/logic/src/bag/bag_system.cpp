@@ -30,27 +30,28 @@ std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 		}
 		size_sum += it.second.size();
 	}
+
 	return size_sum;
 }
 
-ItemComp* Bag::GetItemByGuid(Guid guid)
+entt::entity Bag::FindItemByGuid(Guid guid)
 {
 	auto it = items_.find(guid);
 	if (it == items_.end())
 	{
-		return nullptr;
+		return entt::null;
 	}
-	return &it->second;
+	return it->second;
 }
 
-ItemComp* Bag::GetItemByBos(uint32_t pos)
+entt::entity Bag::FindtemByBos(uint32_t pos)
 {
 	auto it = pos_.find(pos);
 	if (it == pos_.end())
 	{
-		return nullptr;
+		return  entt::null;
 	}
-	return GetItemByGuid(it->second);
+	return FindItemByGuid(it->second);
 }
 
 uint32_t Bag::GetItemPos(Guid guid)
@@ -78,8 +79,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
             return result;
         }
 
-		if (itemTable->max_statck_size() <= 0)
-		{
+		if (itemTable->max_statck_size() <= 0){
 			LOG_ERROR << "config error:" << try_item.first << "player:" << player_guid();
 			return kInvalidTableData;
 		}
@@ -104,16 +104,16 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 		return kOK;
 	}
 
-	for (auto& item : items_)
+	for (auto&& [_, item] : itemRegistry.view<ItemPBComp>().each())
 	{
 		for (auto& ji : need_stack_sizes)
 		{
-			if (item.second.config_id() != ji.first)
+			if (item.config_id() != ji.first)
 			{
 				continue;
 			}
 			auto [itemTable, _] = GetItemTable(ji.first);//前面判断过了
-			auto remain_stack_size = itemTable->max_statck_size() - item.second.size();
+			auto remain_stack_size = itemTable->max_statck_size() - item.size();
 			if (remain_stack_size <= 0)//不可以叠加
 			{
 				continue;
@@ -143,11 +143,11 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 {
 	auto stack_item_list = adequate_items;
-	for (auto& it : items_)
+	for (auto&& [_, item] : itemRegistry.view<ItemPBComp>().each())
 	{
 		for (auto& ji : stack_item_list)
 		{
-			if (it.second.config_id() != ji.first)
+			if (item.config_id() != ji.first)
 			{
 				continue;
 			}
@@ -158,57 +158,60 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 			}
 			if (itemTable->max_statck_size() <= 0)
 			{
-				LOG_ERROR << "config error:" << it.first << "player:" << player_guid();
+				LOG_ERROR << "config error:" << ji.first << "player:" << player_guid();
 				return kInvalidTableData;
 			}
-			if (ji.second <= it.second.size())
+			if (ji.second <= item.size())
 			{
 				stack_item_list.erase(ji.first);//该物品叠加成功,从列表删除
 				break;
 			}
-			ji.second -= it.second.size();
+			ji.second -= item.size();
 		}
+
 		if (stack_item_list.empty())
 		{
 			return kOK;
 		}
 	}
+
 	if (!stack_item_list.empty())
 	{
 		return kBagInsufficientItems;
 	}
+
 	return kOK;
 }
 
-uint32_t  Bag::DelItem(const U32U32UnorderedMap& try_del_items)
+uint32_t  Bag::RemoveItem(const U32U32UnorderedMap& try_del_items)
 {
 	CHECK_RETURN_IF_NOT_OK(HasSufficientItems(try_del_items));
-	auto try_del_items_back = try_del_items;
-	ItemRawPtrVector real_del_item;//删除的物品
-	for (auto& it : items_)
+	auto tryDelItemsCopy = try_del_items;
+	ItemRawPtrVector real_del_item;//删除的物品,通知客户端
+	for (auto&& [e, item] : itemRegistry.view<ItemPBComp>().each())
 	{
-		for (auto& ji : try_del_items_back)
+		for (auto& tryDeleteItem : tryDelItemsCopy)
 		{
-			if (it.second.config_id() != ji.first)
+			if (item.config_id() != tryDeleteItem.first)
 			{
 				continue;
 			}
-			auto sz = it.second.size();
-			if (ji.second <= sz)
+			auto sz = item.size();
+			if (tryDeleteItem.second <= sz)
 			{
-				it.second.set_size(sz - ji.second);
-				real_del_item.emplace_back(&it.second);
-				try_del_items_back.erase(ji.first);//该物品叠加成功,从列表删除
+				item.set_size(sz - tryDeleteItem.second);
+				real_del_item.emplace_back(e);
+				tryDelItemsCopy.erase(tryDeleteItem.first);//该物品叠加成功,从列表删除
 				break;
 			}
 			else
 			{
-				ji.second -= sz;
-				it.second.set_size(0);
-				real_del_item.emplace_back(&it.second);
+				tryDeleteItem.second -= sz;
+				item.set_size(0);
+				real_del_item.emplace_back(e);
 			}			
 		}
-		if (try_del_items_back.empty())
+		if (tryDelItemsCopy.empty())
 		{
 			break;
 		}
@@ -236,100 +239,133 @@ uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
 	{
 		return kBagDelItemFindItem;
 	}
-	auto& item = item_it->second;
+	
+	auto& item = itemRegistry.get<ItemPBComp>(item_it->second);
 	if (item.config_id() != p.item_config_id_)
 	{
 		return kBagDelItemConfig;
 	}
+
 	auto old_size = item.size();
 	if (old_size < p.size_)
 	{
 		return kItemDeletionSizeMismatch;
 	}
+
 	item.set_size(old_size - p.size_);
 	return kOK;
 }
 
 void Bag::Neaten()
 {
-	std::vector<ItemRawPtrVector> same_items;////每个元素里面存相同的物品列表
-	for (auto& it : items_)
+	std::vector<ItemRawPtrVector> sameitemEnttiyMatrix;////每个元素里面存相同的物品列表
+
+	for (auto&& [e, item] : itemRegistry.view<ItemPBComp>().each())
 	{
-		auto& item = it.second;
 		auto [itemTable, result] = GetItemTable(item.config_id());
 		if (nullptr == itemTable){
 			continue;
 		}
+
+		if (itemTable->max_statck_size() <= 1)
+		{
+			continue;
+		}
+
 		if (item.size() >= itemTable->max_statck_size())//满的不计算了,包括了不可叠加的
 		{
 			continue;
 		}
 		//计算未满的
-		bool hasnot_same = true;//有没有相同的
-		for (auto& ji : same_items)
+		bool hasNotSameItem = true;//有没有相同的
+		for (auto& sameVector : sameitemEnttiyMatrix)
 		{
-			if (!CanStack(item, **ji.begin()))
+			//看看是不是和第一个物品一样,一样则放到统计列表
+			auto& itemOther = itemRegistry.get<ItemPBComp>(*sameVector.begin());
+			if (!CanStack(item, itemOther))
 			{
 				continue;
 			}
-			ji.emplace_back(&item);//把可以叠加的放进相同物品列表里面
-			hasnot_same = false;
+
+			sameVector.emplace_back(e);//把可以叠加的放进相同物品列表里面
+			hasNotSameItem = false;
+			break;
 		}
-		if (hasnot_same)
+
+		if (hasNotSameItem)
 		{
-			same_items.emplace_back(ItemRawPtrVector{&item});//没有相同的直接放到新的物品列表里面
+			sameitemEnttiyMatrix.emplace_back(ItemRawPtrVector{e});//没有相同的直接放到新的物品列表里面
 		}
 	}
-	GuidVector clear_item_guids;
+
+	GuidVector clearItemGuidList;
 	//开始叠加
-	for (auto& item : same_items)
+	for (auto& itemList : sameitemEnttiyMatrix)
 	{
-		if (item.size() == 1)//只有一个，自然不在叠加的计算之内
+		if (itemList.empty())
 		{
 			continue;
 		}
-		auto config_id = (*item.begin())->config_id();
-		auto [itemTable, result] = GetItemTable(config_id);//上面判断过了，其他人不要模仿
-		uint32_t sz = 0;
-		for (auto& ji : item)
+
+		auto& firstItem = itemRegistry.get<ItemPBComp>(*itemList.begin());
+
+		auto [itemTable, result] = GetItemTable(firstItem.config_id());
+		if (nullptr == itemTable)
 		{
-			sz += ji->size();
+			continue;
 		}
-		std::size_t index = 0;//使用了的物品下标
-		for (index = 0; index < item.size(); ++index)
+
+		//计算总的，然后用总的放到每个格子里面
+		uint32_t totalStackSize = 0;
+		for (auto& e : itemList)
 		{
-			if (itemTable->max_statck_size() >= sz)
+			totalStackSize += itemRegistry.get<ItemPBComp>(e).size();
+		}
+
+		std::size_t index = 0;//计算过的物品下标
+
+		for (index = 0; index < itemList.size(); ++index)
+		{
+			auto currentItemEntity = itemList[index];
+			auto currentItem = itemRegistry.get<ItemPBComp>(currentItemEntity);
+
+			if (totalStackSize <= itemTable->max_statck_size())
 			{
-				item[index]->set_size(sz);
+				currentItem.set_size(totalStackSize);
 				++index;//下标加1，break并没有加
 				break;
 			}
 			else
 			{
-				item[index]->set_size(itemTable->max_statck_size());
-				sz -= itemTable->max_statck_size();
+				currentItem.set_size(itemTable->max_statck_size());
+				totalStackSize -= itemTable->max_statck_size();
 			}
 		}
-		for (; index < item.size(); ++index)
+
+		for (; index < itemList.size(); ++index)
 		{
-			item[index]->set_size(0);//被清空的物品
-			clear_item_guids.emplace_back(item[index]->Guid());
+			auto currentItemEntity = itemList[index];
+			auto currentItem = itemRegistry.get<ItemPBComp>(currentItemEntity);
+
+			currentItem.set_size(0);//被清空的物品
+
+			clearItemGuidList.emplace_back(currentItem.item_id());
 		}
 	}
-	if (clear_item_guids.empty())
-	{
-		return;//联系整理两次
-	}
+
 	//清空物品清空格子
-	for (auto& it : clear_item_guids)
+	for (auto& it : clearItemGuidList)
 	{
-		items_.erase(it);
+		DestroyItem(it);
 	}
+
 	pos_.clear();
-	//重新计算物品
-	for (auto& it : items_)
+
+	//重新计算物品位置
+	for (auto& [guid, e] : items_)
 	{
-		OnNewGrid(it.second);
+		auto& item = itemRegistry.get<ItemPBComp>(e);
+		OnNewGrid(item);
 	}
 }
 
@@ -340,21 +376,25 @@ uint32_t Bag::AddItem(const ItemComp& add_item)
 	{
 		return kBagAddItemHasNotBaseComponent;
 	}
+
 	auto& item_base_db = *p_item_base;
 	if (item_base_db.config_id() <= 0 || item_base_db.size() <= 0)
 	{
 		LOG_ERROR << "bag add item player:" << player_guid();
 		return kBagAddItemInvalidParam;
 	}
+
 	auto [itemTable, result] = GetItemTable(item_base_db.config_id());
 	if (itemTable == nullptr){
 		return result;
 	}
+
 	if (itemTable->max_statck_size() <= 0)
 	{
 		LOG_ERROR << "config error:" << item_base_db.config_id()  << "player:" << player_guid();
 		return kInvalidTableData;
 	}
+
 	if (itemTable->max_statck_size() == 1)//不可以堆叠直接生成新guid
 	{
 		if (IsFull())
@@ -488,14 +528,14 @@ uint32_t Bag::AddItem(const ItemComp& add_item)
 	return kOK;
 }
 
-uint32_t Bag::DelItem(Guid del_guid)
+uint32_t Bag::RemoveItem(Guid del_guid)
 {
 	auto it = items_.find(del_guid);
 	if (it == items_.end())
 	{
 		return kBagDeleteItemFindGuid;
 	}
-	items_.erase(del_guid);
+	DestroyItem(del_guid);
 	for (auto& pit : pos_)
 	{
 		if (pit.second != del_guid)
@@ -513,6 +553,11 @@ void Bag::Unlock(std::size_t sz)
 	capacity_.size_ += sz;
 }
 
+void Bag::DestroyItem(Guid guid)
+{
+	items_.erase(guid);
+}
+
 std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t stack_size)
 {
 	if (stack_size <= 0)
@@ -528,7 +573,7 @@ std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t sta
 	return stack_grid_size;
 }
 
-uint32_t Bag::OnNewGrid(const ItemComp& item)
+uint32_t Bag::OnNewGrid(const ItemPBComp& item)
 {
 	const auto grid_size = size();
 	for (uint32_t i = 0; i < grid_size; ++i)
@@ -537,13 +582,13 @@ uint32_t Bag::OnNewGrid(const ItemComp& item)
 		{
 			continue;
 		}
-		pos_.emplace(i, item.Guid());
+		pos_.emplace(i, item.item_id());
 		return i;
 	}
 	return kInvalidU32Id;
 }
 
-bool Bag::CanStack(const ItemComp& litem, const ItemComp& ritem)
+bool Bag::CanStack(const ItemPBComp& litem, const ItemPBComp& ritem)
 {
 	return litem.config_id() == ritem.config_id();
 }
