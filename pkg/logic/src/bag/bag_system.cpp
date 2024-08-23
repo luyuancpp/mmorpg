@@ -22,7 +22,7 @@ std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 	return size_sum;
 }
 
-Item* Bag::GetItemByGuid(Guid guid)
+ItemComp* Bag::GetItemByGuid(Guid guid)
 {
 	auto it = items_.find(guid);
 	if (it == items_.end())
@@ -32,7 +32,7 @@ Item* Bag::GetItemByGuid(Guid guid)
 	return &it->second;
 }
 
-Item* Bag::GetItemByBos(uint32_t pos)
+ItemComp* Bag::GetItemByBos(uint32_t pos)
 {
 	auto it = pos_.find(pos);
 	if (it == pos_.end())
@@ -322,7 +322,7 @@ void Bag::Neaten()
 	}
 }
 
-uint32_t Bag::AddItem(const Item& add_item)
+uint32_t Bag::AddItem(const ItemComp& add_item)
 {
 	auto p_item_base = tls.itemRegistry.try_get<ItemPBComp>(add_item.entity());
 	if (nullptr == p_item_base)
@@ -386,7 +386,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 	}
 	else if(itemTable->max_statck_size() > 1)//尝试堆叠到旧格子上
 	{
-		std::vector<Item*> can_stack;//原来可以叠加的物品
+		std::vector<ItemComp*> can_stack;//原来可以叠加的物品
 		std::size_t check_need_stack_size = add_item.size();
 		for (auto& it : items_)
 		{
@@ -517,7 +517,7 @@ std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t sta
 	return stack_grid_size;
 }
 
-uint32_t Bag::OnNewGrid(const Item& item)
+uint32_t Bag::OnNewGrid(const ItemComp& item)
 {
 	const auto grid_size = size();
 	for (uint32_t i = 0; i < grid_size; ++i)
@@ -532,7 +532,7 @@ uint32_t Bag::OnNewGrid(const Item& item)
 	return kInvalidU32Id;
 }
 
-bool Bag::CanStack(const Item& litem, const Item& ritem)
+bool Bag::CanStack(const ItemComp& litem, const ItemComp& ritem)
 {
 	return litem.config_id() == ritem.config_id();
 }

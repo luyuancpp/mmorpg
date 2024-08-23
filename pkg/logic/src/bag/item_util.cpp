@@ -11,9 +11,9 @@ void BagEntityPtrDeleter(entt::entity* p)
 
 ItemEntity::ItemEntity() : entity_(new entt::entity(tls.itemRegistry.create()), BagEntityPtrDeleter) {}
 
-Item CreateItem(const CreateItemParam& p)
+ItemComp CreateItem(const CreateItemParam& p)
 {
-	Item item;
+	ItemComp item;
 	tls.itemRegistry.emplace<ItemPBComp>(item.entity(), p.item_base_db);
 	return item;
 }
