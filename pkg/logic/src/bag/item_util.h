@@ -19,7 +19,7 @@ private:
 	std::shared_ptr<entt::entity> entity_;
 };
 
-class Item
+class ItemComp
 {
 public:
 	inline decltype(auto) entity() const { return entity_.entity(); }
@@ -35,7 +35,7 @@ private:
 	ItemEntity entity_;
 };
 
-using ItemRawPtrVector = std::vector<Item*>;
+using ItemRawPtrVector = std::vector<ItemComp*>;
 
 struct CreateItemParam
 {
@@ -43,4 +43,4 @@ struct CreateItemParam
 	ItemPBComp item_base_db;
 };
 
-Item CreateItem(const CreateItemParam& p);
+ItemComp CreateItem(const CreateItemParam& p);
