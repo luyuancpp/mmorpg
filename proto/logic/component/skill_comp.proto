@@ -4,5 +4,5 @@ option go_package = "pb/game";
 
 message SkillPBComp
 {
-  uint64 ability_table_id = 1;
+  uint64 skill_table_id = 1;
 }
