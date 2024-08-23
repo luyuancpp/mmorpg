@@ -129,7 +129,7 @@
     <ClCompile Include="src\game_logic\scene\util\view_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\combat\ability\util\skill_util.cpp">
+    <ClCompile Include="src\game_logic\combat\skill\util\skill_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\combat\buff\system\buff_system.cpp">
@@ -299,7 +299,7 @@
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\ability\util\skill_util.h">
+    <ClInclude Include="src\game_logic\combat\skill\util\skill_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\combat\buff\system\buff_system.h">
@@ -308,7 +308,7 @@
     <ClInclude Include="src\game_logic\combat\projectile\system\projectile_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\ability\constants\ability_constants.h">
+    <ClInclude Include="src\game_logic\combat\skill\constants\skill_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\constants\nav_constants.h">
@@ -323,7 +323,7 @@
     <ClInclude Include="src\handler\service\player\player_ability_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\ability\comp\skill_comp.h">
+    <ClInclude Include="src\game_logic\combat\skill\comp\skill_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\util\grid_util.h">

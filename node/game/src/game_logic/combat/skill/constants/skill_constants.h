@@ -7,16 +7,16 @@
 // Enum for target requirements
 enum eTargetRequirement : uint32_t {
 	kNoTargetRequired = 1 << 0,   // 不需要目标
-	kTargetedAbility = 1 << 1,    // 选定目标
+	kTargetedSkill = 1 << 1,    // 选定目标
 	kAreaOfEffect = 1 << 2        // 以指定地点为目标
 };
 
 
 // Enum for ability types
 enum eAbilityType : uint32_t {
-	kPassiveAbility = 1 << 0,    // 被动技能
-	kGeneralAbility = 1 << 1,    // 普通施法技能
-	kChannelAbility = 1 << 2,    // 持续施法技能
-	kToggleAbility = 1 << 3,     // 开关类技能
-	kActivateAbility = 1 << 4    // 激活类技能
+	kPassiveSkill = 1 << 0,    // 被动技能
+	kGeneralSkill = 1 << 1,    // 普通施法技能
+	kChannelSkill = 1 << 2,    // 持续施法技能
+	kToggleSkill = 1 << 3,     // 开关类技能
+	kActivateSkill = 1 << 4    // 激活类技能
 };

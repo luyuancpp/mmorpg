@@ -4,23 +4,23 @@
 #include "game_logic/combat/buff/comp/buff_comp.h"
 
 class BuffTable;
-class AbilityExecutedEvent;
+class SkillExecutedEvent;
 
 //https://zhuanlan.zhihu.com/p/150812545
 
 //Caster（Buff施加者），Parent（Buff当前挂载的目标）,
-//Ability(Buff由哪个技能创建)，BuffLayer（层数）,
+//Skill(Buff由哪个技能创建)，BuffLayer（层数）,
 //BuffLevel（等级）BuffDuration（时长），
 //BuffTag，BuffImmuneTag（免疫BuffTag）
 //以及Context(Buff创建时的一些相关上下文数据)等等。
 
-class Skill
+class BuffUtil
 {
 public:
 
     static void Initialize();
 
-    static uint32_t AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext);
+    static uint32_t AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     static void OnBuffExpire(entt::entity parent, uint64_t buffId);
 
@@ -28,7 +28,7 @@ public:
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。
     static uint32_t CanCreateBuff(entt::entity parent, uint32_t buffTableId);
 
-    static bool HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext);
+    static bool HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     //Buff在实例化之后，生效之前（还未加入到Buff容器中）时会抛出一个OnBuffAwake事件。
     // 如果存在某种Buff的效果是：受到负面效果时，驱散当前所有负面效果，并给自己加一个护盾。
@@ -41,7 +41,7 @@ public:
 
     //当Buff添加时存在相同类型且Caster相等的时候，Buff执行刷新流程（更新Buff层数，等级，持续时间等数据）。
     // 我们提供给策划一个抽象接口OnBuffRefresh，由策划配置具体效果。
-    static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext, BuffComp& buffComp);
+    static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp);
 
     //当Buff销毁前（还未从Buff容器中移除），我们提供给策划一个抽象接口OnBuffRemove，由策划配置具体效果。
     static void OnBuffRemove(entt::entity parent, uint64_t buffId);
@@ -64,7 +64,7 @@ public:
     static void OnMotionInterrupt();
 
     //监听某个主动技能执行成功
-    static void OnAbilityExecuted(AbilityExecutedEvent& event);
+    static void OnSkillExecuted(SkillExecutedEvent& event);
 
     //监听我方给目标造成伤害时触发
     static void OnBeforeGiveDamage(entt::entity parent);

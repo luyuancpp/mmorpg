@@ -3,14 +3,14 @@
 #include "muduo/base/Logging.h"
 #include "test_config.h"
 #include "testmultikey_config.h"
-#include "ability_config.h"
+#include "skill_config.h"
 #include "buff_config.h"
 
 void LoadAllConfig();
 
 TEST(LoadAllConfigTest, GetAbilityAllTable)
 {
-	for (auto& it : GetAbilityAllTable().data())
+	for (auto& it : GetSkillAllTable().data())
 	{
 		LOG_INFO << it.DebugString();
 	}
