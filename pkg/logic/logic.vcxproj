@@ -202,6 +202,7 @@
     <ClInclude Include="src\time\comp\timer_list.h" />
     <ClInclude Include="src\time\comp\timer_task_comp.h" />
     <ClInclude Include="src\time\comp\time_ measurement.h" />
+    <ClInclude Include="src\time\util\time_util.h" />
     <ClInclude Include="src\type_alias\player_session_type_alias.h" />
     <ClInclude Include="src\type_alias\session_id_gen.h" />
     <ClInclude Include="src\log\util\console_log_util.h" />

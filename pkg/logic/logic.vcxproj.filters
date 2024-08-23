@@ -48,5 +48,6 @@
     <ClInclude Include="src\time\util\time_meter_util.h" />
     <ClInclude Include="src\cooldown\util\cooldown_util.h" />
     <ClInclude Include="src\time\util\cooldown_time_util.h" />
+    <ClInclude Include="src\time\util\time_util.h" />
   </ItemGroup>
 </Project>

@@ -12,6 +12,10 @@
 #include "thread_local/storage.h"
 #include "time/comp/timer_task_comp.h"
 #include "time/util/cooldown_time_util.h"
+#include "time/util/time_util.h"
+#include "proto/logic/component/player_comp.pb.h"
+#include "proto/logic/component/npc_comp.pb.h"
+
 
 uint32_t SkillUtil::UseSkill(entt::entity caster, const UseSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
@@ -23,6 +27,16 @@ uint32_t SkillUtil::UseSkill(entt::entity caster, const UseSkillRequest* request
 
 	BroadcastSkillUsedMessage(caster, request);
 	SetupCastingTimer(caster, skillTable, request->skill_table_id());
+
+	auto context = std::make_shared<SkillContextPtrComp::element_type>();
+	context->caster = entt::to_integral(caster);
+	auto target = request->target_id();
+	context->skillTableId = request->skill_table_id();
+	context->target = request->target_id();
+	//context->castPosition.CopyFrom(castPosition);
+	context->castTime = TimeUtil::NowMilliseconds(); // 当前时间戳
+	//context.state = "Casting"; // 默认状态为“施放中”
+	//context->additionalData = additionalData;
 
 	return kOK;
 }
@@ -139,23 +153,41 @@ void SkillUtil::HandleSkillDeactivate(const entt::entity caster, const uint32_t 
 
 uint32_t SkillUtil::ValidateTarget(const ::UseSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
+	if (result != kOK || skillTable == nullptr) {
+		return result;
+	}
+
+	// Check if target ID is valid
 	if (!skillTable->target_type().empty() && request->target_id() <= 0) {
 		LOG_ERROR << "Invalid target ID: " << request->target_id()
-			<< " for skill ID: " << request->skill_table_id();
+			<< " provided for skill ID: " << request->skill_table_id()
+			<< ". Target ID must be positive if target type is specified.";
 		return kSkillInvalidTargetId;
 	}
 
+	// Validate target entity
 	if (!skillTable->target_type().empty()) {
 		entt::entity target{ request->target_id() };
+
 		if (!tls.registry.valid(target)) {
-			LOG_ERROR << "Invalid target entity: " << request->target_id()
-				<< " for skill ID: " << request->skill_table_id();
+			LOG_ERROR << "Target entity with ID: " << request->target_id()
+				<< " is invalid or does not exist for skill ID: " << request->skill_table_id();
+			return kSkillInvalidTargetId;
+		}
+
+		// Check target entity type
+		bool isValidTargetType = tls.registry.all_of<Player>(target) || tls.registry.all_of<Npc>(target);
+		if (!isValidTargetType) {
+			LOG_ERROR << "Target entity with ID: " << request->target_id()
+				<< " is of an invalid type for skill ID: " << request->skill_table_id()
+				<< ". Expected Player or Npc.";
 			return kSkillInvalidTargetId;
 		}
 	}
 
 	return kOK;
 }
+
 
 uint32_t SkillUtil::CheckCooldown(const entt::entity caster, const SkillTable* skillTable) {
 	if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
