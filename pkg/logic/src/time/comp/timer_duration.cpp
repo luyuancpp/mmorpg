@@ -54,14 +54,14 @@ void TimerDuration::InitTimer()
 	end_timer_.RunAt(muduo::Timestamp::fromUnixTime(end_time_), std::bind(&TimerDuration::OnEnd, this));
 }
 
-TimerDuration::time_duration_ptr TimerDuration::CreateDuration(int32_t nType,
+TimerDuration::TimerDurationPtr TimerDuration::CreateDuration(int32_t nType,
     time_t now,
     const std::string & sBeginTime,
     const std::string & sEndTime,
     const  muduo::net::TimerCallback & bCb,
     const  muduo::net::TimerCallback & eCb)
 {
-    time_duration_ptr ptr;
+    TimerDurationPtr ptr;
     switch (nType)
     {
 
@@ -89,7 +89,7 @@ TimerDuration::time_duration_ptr TimerDuration::CreateDuration(int32_t nType,
     return ptr;
 }
 
-TimerDuration::time_duration_ptr TimerDuration::CreateDuration(int32_t nType,
+TimerDuration::TimerDurationPtr TimerDuration::CreateDuration(int32_t nType,
     time_t now,
     time_t nBeginTime,
     time_t nEndTime,
@@ -97,24 +97,24 @@ TimerDuration::time_duration_ptr TimerDuration::CreateDuration(int32_t nType,
     const  muduo::net::TimerCallback & eCb
 )
 {
-    time_duration_ptr ptr;
+    TimerDurationPtr ptr;
 
     switch (nType)
     {
 
     case E_NORMAL:
     {
-        ptr.reset(new TimerDuration(nBeginTime, nEndTime, bCb, eCb));
+        ptr = std::make_unique<TimerDuration>(nBeginTime, nEndTime, bCb, eCb);
     }
     break;
     case E_DURATION_DAILY:
     {
-        ptr.reset(new DailyTimerDuration(nBeginTime, nEndTime, bCb, eCb));
+        ptr = std::make_unique<TimerDuration>(nBeginTime, nEndTime, bCb, eCb);
     }
     break;
     case  E_DURATION_WEEK:
     {
-        ptr.reset(new WeekTimerDuration(nBeginTime, nEndTime, bCb, eCb));
+        ptr = std::make_unique<TimerDuration>(nBeginTime, nEndTime, bCb, eCb);
     }
     break;
     default:
