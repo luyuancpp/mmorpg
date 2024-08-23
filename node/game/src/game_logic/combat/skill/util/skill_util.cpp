@@ -55,7 +55,9 @@ uint32_t SkillUtil::UseSkill(entt::entity caster, const UseSkillRequest* request
 
 	context->SkillId = GenerateUniqueSkillId(casterSkillContextMap, targetSkillContextMap);
 	casterSkillContextMap.emplace(context->SkillId, context);
-	if (tls.registry.valid(target)) targetSkillContextMap.emplace(context->SkillId, context);
+	if (tls.registry.valid(target)) {
+		targetSkillContextMap.emplace(context->SkillId, context);
+	}
 
 	SetupCastingTimer(caster, skillTable, context->SkillId);
 
@@ -122,11 +124,10 @@ void SkillUtil::HandleSkillRecovery(const entt::entity caster, uint64_t skillId)
 void SkillUtil::HandleSkillFinish(const entt::entity caster, uint64_t skillId) {
 	// Implementation here
 
-	//todo player off line 
+	// todo player off line 
 	auto& casterSkillContextMap = tls.registry.get<SkillContextMap>(caster);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
-	if (skillContentIt != casterSkillContextMap.end())
-	{
+	if (skillContentIt != casterSkillContextMap.end()) {
 		entt::entity target = entt::to_entity(skillContentIt->second->target);
 		if (tls.registry.valid(target)) {
 			auto& targetSkillContextMap = tls.registry.get<SkillContextMap>(target);
@@ -134,7 +135,6 @@ void SkillUtil::HandleSkillFinish(const entt::entity caster, uint64_t skillId) {
 		}
 		casterSkillContextMap.erase(skillContentIt);
 	}
-	
 }
 
 void SkillUtil::HandleChannelSkillSpell(entt::entity caster, uint64_t skillId) {
@@ -222,7 +222,6 @@ uint32_t SkillUtil::ValidateTarget(const ::UseSkillRequest* request) {
 	return kOK;
 }
 
-
 uint32_t SkillUtil::CheckCooldown(const entt::entity caster, const SkillTable* skillTable) {
 	if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
 		if (const auto it = coolDownTimeListComp->cooldown_list().find(skillTable->cooldown_id());
@@ -278,6 +277,7 @@ uint32_t SkillUtil::CheckRecovery(const entt::entity caster, const SkillTable* s
 
 	return kOK;
 }
+
 uint32_t SkillUtil::CheckChannel(const entt::entity caster, const SkillTable* skillTable) {
 	if (const auto* channelFinishTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
 		if (skillTable->immediately() && channelFinishTimerComp->timer.IsActive()) {
