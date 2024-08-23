@@ -16,6 +16,33 @@ ItemComp::ItemComp()
 {
 }
 
+ItemComp::ItemComp(const ItemComp& param)
+{
+
+	entity = tls.itemRegistry.create();
+}
+
+
+ItemComp::ItemComp(ItemComp&& param) noexcept
+{
+	param.entity = entt::null;
+	entity = tls.itemRegistry.create();
+}
+
+ItemComp& ItemComp::operator=(const ItemComp&)
+{
+	entity = tls.itemRegistry.create();
+	return *this;
+
+}
+
+ItemComp& ItemComp::operator=(ItemComp&& param)noexcept
+{
+	param.entity = entt::null;
+	entity = tls.itemRegistry.create();
+	return *this;
+}
+
 ItemComp::~ItemComp()
 {
 	Destroy(tls.itemRegistry, entity);
