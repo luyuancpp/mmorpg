@@ -130,6 +130,20 @@ void SkillUtil::HandleSkillRecovery(const entt::entity caster, uint64_t skillId)
 
 void SkillUtil::HandleSkillFinish(const entt::entity caster, uint64_t skillId) {
 	// Implementation here
+
+	//todo player off line 
+	auto& casterSkillContextMap = tls.registry.get<SkillContextMap>(caster);
+	auto skillContentIt = casterSkillContextMap.find(skillId);
+	if (skillContentIt != casterSkillContextMap.end())
+	{
+		entt::entity target = entt::to_entity(skillContentIt->second->target);
+		if (tls.registry.valid(target)) {
+			auto& targetSkillContextMap = tls.registry.get<SkillContextMap>(target);
+			targetSkillContextMap.erase(skillId);
+		}
+		casterSkillContextMap.erase(skillContentIt);
+	}
+	
 }
 
 void SkillUtil::HandleChannelSkillSpell(entt::entity caster, uint64_t skillId) {
