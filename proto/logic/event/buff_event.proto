@@ -2,17 +2,17 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message AbilityExecutedEvent 
+message SkillExecutedEvent 
 {
-  uint64 ability_id = 1;
+  uint64 skill_id = 1;
   uint64 caster_id = 2;
 }
 
 message BeforeGiveDamageEvent 
 {
-  uint64 ability_d = 1;
+  uint64 skill_idd = 1;
   uint64 attacker_id = 2;
   uint64 receiver_id = 3;
-  dobule damage_amount = 4;
+  double damage_amount = 4;
   uint32 damage_flags = 5;
 }

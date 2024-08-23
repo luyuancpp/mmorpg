@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+import "common/tip.proto";
+import "common/comp.proto";
+import "common/empty.proto";
+import "logic/component/ability_comp.proto";
+import "logic/component/actor_comp.proto";
+
+option cc_generic_services = true;
+
+message UseSkillRequest {
+  uint32 skill_table_id = 1;
+  uint64 target_id = 2;
+  Vector3 position = 3;  
+  Rotation rotation = 4;
+}
+
+message UseSkillResponse {
+  TipInfoMessage error_message = 1;  
+}
+
+message SkillInterruptedS2C
+{
+  uint64 entity = 1;
+  uint64 target_entity = 2;
+  uint32 skill_table_id = 3;
+  uint32 reason_code = 4;
+}
+
+message SkillUsedS2C
+{
+  uint64 entity = 1;
+  repeated uint64 target_entity = 2;
+  uint32 skill_table_id = 3;
+  Vector3 position = 4;
+  uint64 time_stamp = 5;
+}
+
+service PlayerSkillService { 
+  rpc UseSkill (UseSkillRequest) returns (UseSkillResponse);
+  rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
+  rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
+}
