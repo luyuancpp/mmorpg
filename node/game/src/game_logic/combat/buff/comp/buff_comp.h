@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include "logic/component/buff_comp.pb.h"
-#include "game_logic/combat/ability/comp/skill_comp.h"
+#include "game_logic/combat/skill/comp//skill_comp.h"
 #include "time/comp/timer_task_comp.h"
 
 

@@ -2,14 +2,14 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "common_error_tip.pb.h"
 #include "common/tip.pb.h"
-#include "game_logic/combat/ability/util/skill_util.h"
+#include "game_logic/combat/skill/util/skill_util.h"
 #include "macros/return_define.h"
 ///<<< END WRITING YOUR CODE
 void PlayerSkillServiceHandler::UseSkill(entt::entity player,const ::UseSkillRequest* request,
 	     UseSkillResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CHECK_PLAYER_REQUEST(request, SkillUtil::UseAbility);
+	CHECK_PLAYER_REQUEST(request, SkillUtil::UseSkill);
 ///<<< END WRITING YOUR CODE
 }
 
