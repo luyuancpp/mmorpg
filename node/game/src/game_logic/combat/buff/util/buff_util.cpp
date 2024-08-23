@@ -59,7 +59,7 @@ uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, co
     }
 
     BuffComp newBuff;
-    newBuff.buffPB.set_caster(buffTable->nocaster() ? entt::null : abilityContext->caster);
+    newBuff.buffPB.set_caster(buffTable->nocaster() ? entt::null : abilityContext->caster());
     bool shouldDestroy = OnBuffAwake(parent, buffTableId);
 
     if (!shouldDestroy) {
@@ -106,7 +106,7 @@ bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, con
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
     for (auto& [buffId, buffComp] : buffList) {
-        if (buffComp.buffPB.buff_table_id() == buffTableId && buffComp.abilityContext->caster == abilityContext->caster) {
+        if (buffComp.buffPB.buff_table_id() == buffTableId && buffComp.abilityContext->caster() == abilityContext->caster()) {
             if (buffComp.buffPB.layer() < GetBuffTable(buffTableId).first->maxlayer()) {
                 buffComp.buffPB.set_layer(buffComp.buffPB.layer() + 1);
             }
