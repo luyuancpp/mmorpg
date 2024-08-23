@@ -39,7 +39,7 @@ struct SkillContextComp
 	std::unordered_map<std::string, uint32_t> additionalData; // 附加数据
 };
 
-using AbilityContextPtrComp = std::shared_ptr<SkillContextComp>;
+using SkillContextPtrComp = std::shared_ptr<SkillContextComp>;
 
 // 存储技能上下文信息的容器
 using  SkillContextMap = std::unordered_map<uint32_t, SkillContextComp>;
