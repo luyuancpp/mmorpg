@@ -11,9 +11,9 @@
 #include "thread_local/storage_game.h"
 #include "proto/logic/event/buff_event.pb.h"
 
-void BuffUtil::Initialize()
+void Skill::Initialize()
 {
-    tls.dispatcher.sink<AbilityExecutedEvent>().connect<&BuffUtil::OnAbilityExecuted>();
+    tls.dispatcher.sink<AbilityExecutedEvent>().connect<&Skill::OnAbilityExecuted>();
 }
 
 uint64_t GenerateUniqueBuffId(const BuffList& buffList)
@@ -42,7 +42,7 @@ bool IsTargetImmune(const BuffList& buffList, const BuffTable* buffTable)
     return false;
 }
 
-uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext)
+uint32_t Skill::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (!buffTable) {
@@ -74,7 +74,7 @@ uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, co
     return kOK;
 }
 
-void BuffUtil::OnBuffExpire(entt::entity parent, uint64_t buffId)
+void Skill::OnBuffExpire(entt::entity parent, uint64_t buffId)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
     auto buffIt = buffList.find(buffId);
@@ -89,7 +89,7 @@ void BuffUtil::OnBuffExpire(entt::entity parent, uint64_t buffId)
     OnBuffDestroy(parent, buffIt->second.buffPB.buff_table_id());
 }
 
-uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
+uint32_t Skill::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (result != kOK) {
@@ -102,7 +102,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
     return isImmune ? kBuffTargetImmuneToBuff : kOK;
 }
 
-bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext)
+bool Skill::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
     for (auto& [buffId, buffComp] : buffList) {
@@ -117,33 +117,33 @@ bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, con
     return false;
 }
 
-bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId)
+bool Skill::OnBuffAwake(entt::entity parent, uint32_t buffTableId)
 {
     // Customize the logic if necessary
     return false;
 }
 
-void BuffUtil::OnBuffStart(entt::entity parent, uint64_t buffId)
+void Skill::OnBuffStart(entt::entity parent, uint64_t buffId)
 {
     StartIntervalThink(parent, buffId);
 }
 
-void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext, BuffComp& buffComp)
+void Skill::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const AbilityContextPtrComp& abilityContext, BuffComp& buffComp)
 {
     // Implement logic if needed
 }
 
-void BuffUtil::OnBuffRemove(entt::entity parent, uint64_t buffId)
+void Skill::OnBuffRemove(entt::entity parent, uint64_t buffId)
 {
     // Implement logic if needed
 }
 
-void BuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
+void Skill::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
 {
     // Implement logic if needed
 }
 
-void BuffUtil::StartIntervalThink(entt::entity parent, uint64_t buffId)
+void Skill::StartIntervalThink(entt::entity parent, uint64_t buffId)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
     auto buffIt = buffList.find(buffId);
@@ -162,33 +162,33 @@ void BuffUtil::StartIntervalThink(entt::entity parent, uint64_t buffId)
     buffComp.intervalTTimer.RunEvery(buffTable->interval(), [parent, buffId] { return OnIntervalThink(parent, buffId); });
 }
 
-void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
+void Skill::OnIntervalThink(entt::entity parent, uint64_t buffId)
 {
     // Implement interval logic if needed
 }
 
-void BuffUtil::OnAbilityExecuted(AbilityExecutedEvent& event)
+void Skill::OnAbilityExecuted(AbilityExecutedEvent& event)
 {
     // Implement event handling logic
 }
 
-void BuffUtil::ApplyMotion()
+void Skill::ApplyMotion()
 {
 
 }
 
-void BuffUtil::OnMotionUpdate()
+void Skill::OnMotionUpdate()
 {
 
 }
 
-void BuffUtil::OnMotionInterrupt()
+void Skill::OnMotionInterrupt()
 {
 
 }
 
 
-void BuffUtil::OnBeforeGiveDamage(entt::entity parent)
+void Skill::OnBeforeGiveDamage(entt::entity parent)
 {
     //class Buff {
     //public:
@@ -207,7 +207,7 @@ void BuffUtil::OnBeforeGiveDamage(entt::entity parent)
 }
 
 
-void BuffUtil::OnAfterGiveDamage(entt::entity parent)
+void Skill::OnAfterGiveDamage(entt::entity parent)
 {
     // 检查并应用DOT效果
     //for (auto& buff : tls.registry.get<BuffListComp>(event.target).buffList) {
@@ -218,7 +218,7 @@ void BuffUtil::OnAfterGiveDamage(entt::entity parent)
     //}
 }
 
-void BuffUtil::OnBeforeTakeDamage(entt::entity parent)
+void Skill::OnBeforeTakeDamage(entt::entity parent)
 {
     //auto& buffs = tls.registry.get<BuffListComp>(event.target).buffList;
     //for (auto& [buffId, buff] : buffs) {
@@ -229,7 +229,7 @@ void BuffUtil::OnBeforeTakeDamage(entt::entity parent)
     //}
 }
 
-void BuffUtil::OnAfterTakeDamage(entt::entity parent)
+void Skill::OnAfterTakeDamage(entt::entity parent)
 {
     // 检查并应用额外效果
     //auto& buffs = tls.registry.get<BuffListComp>(event.target).buffList;
@@ -241,17 +241,17 @@ void BuffUtil::OnAfterTakeDamage(entt::entity parent)
     //}
 }
 
-void BuffUtil::OnBeforeDead(entt::entity parent)
+void Skill::OnBeforeDead(entt::entity parent)
 {
 
 }
 
-void BuffUtil::OnAfterDead(entt::entity parent)
+void Skill::OnAfterDead(entt::entity parent)
 {
 
 }
 
-void BuffUtil::OnKill(entt::entity parent)
+void Skill::OnKill(entt::entity parent)
 {
 
 }

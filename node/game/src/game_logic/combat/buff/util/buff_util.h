@@ -14,7 +14,7 @@ class AbilityExecutedEvent;
 //BuffTag，BuffImmuneTag（免疫BuffTag）
 //以及Context(Buff创建时的一些相关上下文数据)等等。
 
-class BuffUtil
+class Skill
 {
 public:
 

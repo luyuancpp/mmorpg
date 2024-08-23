@@ -10,7 +10,7 @@
 struct BuffComp
 {
     BuffPBComp buffPB;
-    AbilityContextPtrComp abilityContext;
+    SkillContextPtrComp abilityContext;
     TimerTaskComp intervalTTimer;
 };
 

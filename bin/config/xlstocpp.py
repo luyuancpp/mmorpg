@@ -71,7 +71,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
 
     table_type = f'{sheetname}Table*'
-    const_table_type = f'{const_table_type}'
+    const_table_type = f'{table_type}'
     table_data_name = f'{sheetname}TabledData'
     get_table_return_type = f'std::pair<{const_table_type}, uint32_t>'
 
@@ -133,9 +133,9 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
     sheet_name_lower = sheetname.lower()
     container_type = "unordered_multimap" if use_flat_multimap else "unordered_map"
     table_type = f'{sheetname}Table*'
+    const_table_type = f'{table_type}'
     get_table_return_type = f'std::pair<{const_table_type}, uint32_t>'
-    const_table_type = f'{const_table_type}'
-    
+
     cpp_content = [
         '#include "google/protobuf/util/json_util.h"',
         '#include "src/util/file2string.h"',
