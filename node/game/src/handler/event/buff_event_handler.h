@@ -1,6 +1,7 @@
 #pragma once
 
-class AbilityExecutedEvent;
+class SkillExecutedEvent;
+class BeforeGiveDamageEvent;
 
 class BuffEventHandler
 {
@@ -8,5 +9,6 @@ public:
 	static void Register();
 	static void UnRegister();
 
-	static void AbilityExecutedEventHandler(const AbilityExecutedEvent& event);
+	static void SkillExecutedEventHandler(const SkillExecutedEvent& event);
+	static void BeforeGiveDamageEventHandler(const BeforeGiveDamageEvent& event);
 };
