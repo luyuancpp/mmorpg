@@ -8,6 +8,17 @@
 
 #include"item_config.h"
 
+Bag::Bag()
+	: entity(tls.itemRegistry.create())
+{
+}
+
+Bag::~Bag()
+{
+	Destroy(tls.itemRegistry, entity);
+}
+
+
 std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 {
 	std::size_t size_sum = 0;
@@ -302,7 +313,7 @@ void Bag::Neaten()
 		for (; index < item.size(); ++index)
 		{
 			item[index]->set_size(0);//被清空的物品
-			clear_item_guids.emplace_back(item[index]->guid());
+			clear_item_guids.emplace_back(item[index]->Guid());
 		}
 	}
 	if (clear_item_guids.empty())
@@ -324,7 +335,7 @@ void Bag::Neaten()
 
 uint32_t Bag::AddItem(const ItemComp& add_item)
 {
-	auto p_item_base = tls.itemRegistry.try_get<ItemPBComp>(add_item.entity());
+	auto p_item_base = tls.itemRegistry.try_get<ItemPBComp>(add_item.Entity());
 	if (nullptr == p_item_base)
 	{
 		return kBagAddItemHasNotBaseComponent;
@@ -429,7 +440,7 @@ uint32_t Bag::AddItem(const ItemComp& add_item)
 		for (auto& it : can_stack)
 		{
 			auto& item = *it;
-			auto& item_base_db = tls.itemRegistry.get<ItemPBComp>(it->entity());
+			auto& item_base_db = tls.itemRegistry.get<ItemPBComp>(it->Entity());
 			auto remain_stack_size = itemTable->max_statck_size() - item.size();
 			if (remain_stack_size >= need_stack_size)
 			{
@@ -526,7 +537,7 @@ uint32_t Bag::OnNewGrid(const ItemComp& item)
 		{
 			continue;
 		}
-		pos_.emplace(i, item.guid());
+		pos_.emplace(i, item.Guid());
 		return i;
 	}
 	return kInvalidU32Id;
