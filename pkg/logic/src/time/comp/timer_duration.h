@@ -12,7 +12,7 @@
  class TimerDuration
  {
  public:
-     using time_duration_ptr = std::unique_ptr<TimerDuration> ;
+     using TimerDurationPtr = std::unique_ptr<TimerDuration> ;
 
      enum eDurationEnum
      {
@@ -102,7 +102,7 @@
 
 	 void InitTimer();
 
-     static time_duration_ptr CreateDuration(int32_t nType,
+     static TimerDurationPtr CreateDuration(int32_t nType,
          time_t now,
                                              const std::string & sBeginTime,
                                              const std::string & sEndTime,
@@ -110,7 +110,7 @@
                                              const  muduo::net::TimerCallback & eCb
                                              );
 
-     static time_duration_ptr CreateDuration(int32_t nType,
+     static TimerDurationPtr CreateDuration(int32_t nType,
          time_t now,
          time_t nBeginTime,
          time_t nEndTime,

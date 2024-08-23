@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 
-#include "timer_task/timer_task.h"
+#include "timer_task_comp.h"
 
 namespace muduo
 {
@@ -10,51 +10,51 @@ namespace muduo
     {
     public:
 
-        using ptimer_type = std::shared_ptr<TimerTask> ;
+        using TimerPtr = std::shared_ptr<TimerTaskComp> ;
 
-        using timelist_type =  std::unordered_map<TimerTask *, ptimer_type>;
+        using TimerListType =  std::unordered_map<TimerTaskComp *, TimerPtr>;
 
         void Clear()
         {
-            m_vTimerList.clear();
+            timerList.clear();
         }
 
-        TimerTask * RunAt(const Timestamp& time, const TimerCallback& cb)
+        TimerTaskComp * RunAt(const Timestamp& time, const TimerCallback& cb)
         {
-            ptimer_type  p( new TimerTask);
+            auto  p = std::make_unique<TimerTaskComp>();
             p->RunAt(time, cb);
-            m_vTimerList.emplace(p.get(), p);
+            timerList.emplace(p.get(), p);
             return p.get();
         }
 
-        TimerTask * runAfter(double delay, const TimerCallback& cb)
+        TimerTaskComp * runAfter(double delay, const TimerCallback& cb)
         {
-            ptimer_type  p(new TimerTask);
+			auto  p = std::make_unique<TimerTaskComp>();
             p->RunAfter(delay, cb);
-            m_vTimerList.emplace(p.get(), p);
+            timerList.emplace(p.get(), p);
             return p.get();
         }
 
-        TimerTask * RunEvery(double interval, const TimerCallback& cb)
+        TimerTaskComp * RunEvery(double interval, const TimerCallback& cb)
         {
-            ptimer_type  p(new TimerTask);
+			auto  p = std::make_unique<TimerTaskComp>();
             p->RunEvery(interval, cb);
-            m_vTimerList.emplace(p.get(), p);
+            timerList.emplace(p.get(), p);
             return p.get();
         }
 
-        void Cancel(TimerTask *p)
+        void Cancel(TimerTaskComp *p)
         {
             if (nullptr == p)
             {
                 return;
             }
-            m_vTimerList.erase(p);
+            timerList.erase(p);
         }
 
 
     private:
-        timelist_type m_vTimerList;
+        TimerListType timerList;
     };
 }
 
