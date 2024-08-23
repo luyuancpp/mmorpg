@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "game_logic/combat/ability/util/ability_util.h"
+#include "game_logic/combat/ability/util/skill_util.h"
 #include "thread_local/storage.h"
 #include "ability_config.h"
-#include "game_logic/combat/ability/comp/ability_comp.h"
+#include "game_logic/combat/ability/comp/skill_comp.h"
 #include "game_logic/combat/ability/constants/ability_constants.h"
 #include "time/comp/timer_task_comp.h"
 #include "time/util/cooldown_time_util.h"
@@ -26,10 +26,10 @@ public:
 };
 
 // Test Fixture
-class AbilityUtilTest : public ::testing::Test {
+class SkillUtilTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        abilityUtil = std::make_unique<AbilityUtil>();
+        abilityUtil = std::make_unique<SkillUtil>();
         // Setup the mocks if necessary
     }
 
@@ -37,12 +37,12 @@ protected:
         tls.registry.clear(); // Clean up the thread-local storage after each test
     }
 
-    std::unique_ptr<AbilityUtil> abilityUtil;
+    std::unique_ptr<SkillUtil> abilityUtil;
     std::unique_ptr<MockAbilityTable> mockAbilityTable = std::make_unique<MockAbilityTable>();
     std::unique_ptr<MockCooldownTimeUtil> mockCooldownTimeUtil = std::make_unique<MockCooldownTimeUtil>();
 };
 
-TEST_F(AbilityUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
+TEST_F(SkillUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
     ::UseAbilityRequest request;
     request.set_ability_table_id(1);
     request.set_target_id(-1); // Invalid target ID
@@ -54,7 +54,7 @@ TEST_F(AbilityUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
     EXPECT_EQ(result, kAbilityInvalidTargetId);
 }
 
-TEST_F(AbilityUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
+TEST_F(SkillUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     entt::entity target = tls.registry.create(); // Create a valid target in the registry
  
     ::UseAbilityRequest request;
@@ -71,7 +71,7 @@ TEST_F(AbilityUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     EXPECT_EQ(result, kOK);
 }
 
-TEST_F(AbilityUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
+TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
     entt::entity caster = tls.registry.create();
 
     auto tableAbility = std::make_shared<AbilityTable>();
@@ -92,7 +92,7 @@ TEST_F(AbilityUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
     EXPECT_EQ(result, kAbilityCooldownNotReady);
 }
 
-TEST_F(AbilityUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
+TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     entt::entity caster = tls.registry.create();
 
     auto tableAbility = std::make_shared<AbilityTable>();
@@ -111,7 +111,7 @@ TEST_F(AbilityUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     EXPECT_EQ(result, kOK);
 }
 
-TEST_F(AbilityUtilTest, HandleCastingTimer_ImmediateAbility_ReturnsOk) {
+TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_immediately(true);
@@ -124,7 +124,7 @@ TEST_F(AbilityUtilTest, HandleCastingTimer_ImmediateAbility_ReturnsOk) {
     EXPECT_EQ(result, kOK);
 }
 
-TEST_F(AbilityUtilTest, HandleRecoveryTimeTimer_ImmediateAbility_ReturnsOk) {
+TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_immediately(true);
@@ -137,7 +137,7 @@ TEST_F(AbilityUtilTest, HandleRecoveryTimeTimer_ImmediateAbility_ReturnsOk) {
     EXPECT_EQ(result, kOK);
 }
 
-TEST_F(AbilityUtilTest, HandleChannelTimeTimer_ImmediateAbility_ReturnsOk) {
+TEST_F(SkillUtilTest, HandleChannelTimeTimer_ImmediateAbility_ReturnsOk) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_immediately(true);
@@ -151,7 +151,7 @@ TEST_F(AbilityUtilTest, HandleChannelTimeTimer_ImmediateAbility_ReturnsOk) {
     EXPECT_EQ(result, kOK);
 }
 
-TEST_F(AbilityUtilTest, BroadcastAbilityUsedMessage_CreatesMessage) {
+TEST_F(SkillUtilTest, BroadcastAbilityUsedMessage_CreatesMessage) {
     entt::entity caster = tls.registry.create();
     ::UseAbilityRequest request;
     request.set_ability_table_id(1);
@@ -164,7 +164,7 @@ TEST_F(AbilityUtilTest, BroadcastAbilityUsedMessage_CreatesMessage) {
     EXPECT_NO_THROW(abilityUtil->BroadcastAbilityUsedMessage(caster, &request));
 }
 
-TEST_F(AbilityUtilTest, SetupCastingTimer_SetsTimer) {
+TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_castpoint(1000); // Set cast point to 1000ms
@@ -182,7 +182,7 @@ TEST_F(AbilityUtilTest, SetupCastingTimer_SetsTimer) {
     EXPECT_TRUE(castingTimerComp->timer.IsActive());  // Check if the timer is active
 }
 
-TEST_F(AbilityUtilTest, HandleAbilitySpell_TriggersEffect) {
+TEST_F(SkillUtilTest, HandleAbilitySpell_TriggersEffect) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
@@ -193,7 +193,7 @@ TEST_F(AbilityUtilTest, HandleAbilitySpell_TriggersEffect) {
     EXPECT_NO_THROW(abilityUtil->HandleGeneralAbilitySpell(caster, 1));
 }
 
-TEST_F(AbilityUtilTest, HandleAbilityRecovery_SetsRecoveryTimer) {
+TEST_F(SkillUtilTest, HandleAbilityRecovery_SetsRecoveryTimer) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_recoverytime(1000); // Set recovery time to 1000ms
@@ -204,7 +204,7 @@ TEST_F(AbilityUtilTest, HandleAbilityRecovery_SetsRecoveryTimer) {
     EXPECT_NO_THROW(abilityUtil->HandleAbilityRecovery(caster, 1));
 }
 
-TEST_F(AbilityUtilTest, HandleAbilityToggleOn_TriggersEffect) {
+TEST_F(SkillUtilTest, HandleAbilityToggleOn_TriggersEffect) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
@@ -215,7 +215,7 @@ TEST_F(AbilityUtilTest, HandleAbilityToggleOn_TriggersEffect) {
     EXPECT_NO_THROW(abilityUtil->HandleAbilityToggleOn(caster, 1));
 }
 
-TEST_F(AbilityUtilTest, HandleAbilityToggleOff_RemovesEffect) {
+TEST_F(SkillUtilTest, HandleAbilityToggleOff_RemovesEffect) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
@@ -226,7 +226,7 @@ TEST_F(AbilityUtilTest, HandleAbilityToggleOff_RemovesEffect) {
     EXPECT_NO_THROW(abilityUtil->HandleAbilityToggleOff(caster, 1));
 }
 
-TEST_F(AbilityUtilTest, HandleAbilityActivate_TriggersEffect) {
+TEST_F(SkillUtilTest, HandleAbilityActivate_TriggersEffect) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
@@ -237,7 +237,7 @@ TEST_F(AbilityUtilTest, HandleAbilityActivate_TriggersEffect) {
     EXPECT_NO_THROW(abilityUtil->HandleAbilityActivate(caster, 1));
 }
 
-TEST_F(AbilityUtilTest, HandleAbilityDeactivate_RemovesEffect) {
+TEST_F(SkillUtilTest, HandleAbilityDeactivate_RemovesEffect) {
     entt::entity caster = tls.registry.create();
     auto tableAbility = std::make_shared<AbilityTable>();
     tableAbility->set_id(1);
@@ -248,7 +248,7 @@ TEST_F(AbilityUtilTest, HandleAbilityDeactivate_RemovesEffect) {
     EXPECT_NO_THROW(abilityUtil->HandleAbilityDeactivate(caster, 1));
 }
 
-TEST_F(AbilityUtilTest, SendAbilityInterruptedMessage_SendsMessage) {
+TEST_F(SkillUtilTest, SendAbilityInterruptedMessage_SendsMessage) {
     entt::entity caster = tls.registry.create();
     uint32_t abilityId = 1;
 

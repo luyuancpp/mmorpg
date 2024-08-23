@@ -8,7 +8,7 @@
 
 class AbilityTable;
 
-class AbilityUtil
+class SkillUtil
 {
 public:
 	static uint32_t UseAbility(entt::entity caster, const ::UseAbilityRequest* request);
