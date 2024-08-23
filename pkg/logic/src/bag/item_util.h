@@ -17,6 +17,11 @@ public:
 	ItemComp();
 	~ItemComp();
 
+	ItemComp(const ItemComp&);
+	ItemComp(ItemComp&& param) noexcept;
+	ItemComp& operator=(const ItemComp&);
+	ItemComp& operator=(ItemComp&& param)noexcept;
+
 	inline decltype(auto) Entity() const { return entity; }
 	inline decltype(auto) Guid()const { return itembase().item_id(); }
 	inline decltype(auto) config_id()const { return itembase().config_id(); }
