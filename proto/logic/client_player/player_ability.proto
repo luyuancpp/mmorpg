@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-option go_package = "pb/game";
-option cc_generic_services = true;
-
-service PlayerAbilityService { 
-
-}

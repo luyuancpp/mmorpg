@@ -5,15 +5,23 @@
 ///<<< END WRITING YOUR CODE
 void BuffEventHandler::Register()
 {
-		tls.dispatcher.sink<AbilityExecutedEvent>().connect<&BuffEventHandler::AbilityExecutedEventHandler>();
+		tls.dispatcher.sink<SkillExecutedEvent>().connect<&BuffEventHandler::SkillExecutedEventHandler>();
+		tls.dispatcher.sink<BeforeGiveDamageEvent>().connect<&BuffEventHandler::BeforeGiveDamageEventHandler>();
 }
 
 void BuffEventHandler::UnRegister()
 {
-		tls.dispatcher.sink<AbilityExecutedEvent>().disconnect<&BuffEventHandler::AbilityExecutedEventHandler>();
+		tls.dispatcher.sink<SkillExecutedEvent>().disconnect<&BuffEventHandler::SkillExecutedEventHandler>();
+		tls.dispatcher.sink<BeforeGiveDamageEvent>().disconnect<&BuffEventHandler::BeforeGiveDamageEventHandler>();
 }
 
-void BuffEventHandler::AbilityExecutedEventHandler(const AbilityExecutedEvent& event)
+void BuffEventHandler::SkillExecutedEventHandler(const SkillExecutedEvent& event)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void BuffEventHandler::BeforeGiveDamageEventHandler(const BeforeGiveDamageEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
