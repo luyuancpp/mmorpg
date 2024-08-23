@@ -141,9 +141,6 @@
     <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\service\player\player_ability_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\game_logic\scene\util\grid_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -318,9 +315,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\util\navigation_util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\service\player\player_ability_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\combat\skill\comp\skill_comp.h">
