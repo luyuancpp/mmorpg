@@ -30,10 +30,10 @@ struct ChannelIntervalTimerComp
 struct SkillContextComp
 {
 	uint64_t caster = { entt::null }; // 施法者
-	entt::entity target = { entt::null }; // 目标（如果有）
-	uint32_t abilityId = { 0 }; // 技能唯一id
-	uint32_t abilityTableId = { 0 };//技能表id
-	Transform transform;//施法位置
+	uint64_t target = { entt::null }; // 目标（如果有）
+	uint32_t SkillId = { 0 }; // 技能唯一id
+	uint32_t skillTableId = { 0 };//技能表id
+	Transform castPosition;//施法位置
 	uint64_t castTime = 0; // 施法时间
 	std::string state;              // 当前状态
 	std::unordered_map<std::string, uint32_t> additionalData; // 附加数据
@@ -42,4 +42,4 @@ struct SkillContextComp
 using SkillContextPtrComp = std::shared_ptr<SkillContextComp>;
 
 // 存储技能上下文信息的容器
-using  SkillContextMap = std::unordered_map<uint32_t, SkillContextComp>;
+using  SkillContextMap = std::unordered_map<uint32_t, SkillContextPtrComp>;
