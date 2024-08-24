@@ -5,8 +5,10 @@
 #include "macros/return_define.h"
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/bag_error_tip.pb.h"
-
-#include"item_config.h"
+#include "util/snow_flake.h"
+#include "item_config.h"
+#include "thread_local/storage.h"
+#include "util/defer.h"
 
 Bag::Bag()
 	: entity(tls.itemRegistry.create())
@@ -22,13 +24,13 @@ Bag::~Bag()
 std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 {
 	std::size_t size_sum = 0;
-	for (auto&  it : items_)
-	{
-		if (it.second.config_id() != config_id)
+    for (auto&& [_, item] : itemRegistry.view<ItemPBComp>().each())
+    {
+		if (item.config_id() != config_id)
 		{
 			continue;
 		}
-		size_sum += it.second.size();
+		size_sum += item.size();
 	}
 
 	return size_sum;
@@ -130,7 +132,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 	for (auto& it : need_stack_sizes)
 	{
 		auto [itemTable, _] = GetItemTable(it.first);//前面判断过空了，以及除0
-		auto need_grid_size = calc_item_need_grid_size(it.second, itemTable->max_statck_size());//满叠加的格子
+		auto need_grid_size = CalcItemStackNeedGridSize(it.second, itemTable->max_statck_size());//满叠加的格子
 		if (empty_size <= 0 || empty_size < need_grid_size)
 		{
 			return kBagItemNotStacked;
@@ -187,7 +189,7 @@ uint32_t  Bag::RemoveItem(const U32U32UnorderedMap& try_del_items)
 {
 	CHECK_RETURN_IF_NOT_OK(HasSufficientItems(try_del_items));
 	auto tryDelItemsCopy = try_del_items;
-	ItemRawPtrVector real_del_item;//删除的物品,通知客户端
+	EntityVector real_del_item;//删除的物品,通知客户端
 	for (auto&& [e, item] : itemRegistry.view<ItemPBComp>().each())
 	{
 		for (auto& tryDeleteItem : tryDelItemsCopy)
@@ -258,7 +260,7 @@ uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
 
 void Bag::Neaten()
 {
-	std::vector<ItemRawPtrVector> sameitemEnttiyMatrix;////每个元素里面存相同的物品列表
+	std::vector<EntityVector> sameitemEnttiyMatrix;////每个元素里面存相同的物品列表
 
 	for (auto&& [e, item] : itemRegistry.view<ItemPBComp>().each())
 	{
@@ -294,7 +296,7 @@ void Bag::Neaten()
 
 		if (hasNotSameItem)
 		{
-			sameitemEnttiyMatrix.emplace_back(ItemRawPtrVector{e});//没有相同的直接放到新的物品列表里面
+			sameitemEnttiyMatrix.emplace_back(EntityVector{e});//没有相同的直接放到新的物品列表里面
 		}
 	}
 
@@ -365,157 +367,165 @@ void Bag::Neaten()
 	for (auto& [guid, e] : items_)
 	{
 		auto& item = itemRegistry.get<ItemPBComp>(e);
-		OnNewGrid(item);
+		OnNewGrid(item.item_id());
 	}
 }
 
-uint32_t Bag::AddItem(const ItemComp& add_item)
+uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 {
-	auto p_item_base = tls.itemRegistry.try_get<ItemPBComp>(add_item.Entity());
-	if (nullptr == p_item_base)
-	{
-		return kBagAddItemHasNotBaseComponent;
-	}
-
-	auto& item_base_db = *p_item_base;
-	if (item_base_db.config_id() <= 0 || item_base_db.size() <= 0)
+	auto itemPBCompCopy = initItemParam.itemPBComp;
+	if (itemPBCompCopy.config_id() <= 0 || itemPBCompCopy.size() <= 0)
 	{
 		LOG_ERROR << "bag add item player:" << player_guid();
 		return kBagAddItemInvalidParam;
 	}
 
-	auto [itemTable, result] = GetItemTable(item_base_db.config_id());
+	auto [itemTable, result] = GetItemTable(itemPBCompCopy.config_id());
 	if (itemTable == nullptr){
 		return result;
 	}
 
 	if (itemTable->max_statck_size() <= 0)
 	{
-		LOG_ERROR << "config error:" << item_base_db.config_id()  << "player:" << player_guid();
 		return kInvalidTableData;
 	}
 
 	if (itemTable->max_statck_size() == 1)//不可以堆叠直接生成新guid
 	{
-		if (IsFull())
+		if (NotAdequateSize(itemPBCompCopy.size()))
 		{
-			return kBagAddItemBagFull;
+            // todo temp bag or mail
+            return kBagAddItemBagFull;
 		}
-		if (add_item.size() == 1)//只有一个
+
+		if (itemPBCompCopy.size() == 1)//只有一个
 		{
-			if (item_base_db.item_id() == kInvalidGuid)
+			auto newItem = itemRegistry.create();
+			auto& newItemPBComp = itemRegistry.emplace<ItemPBComp>(newItem, std::move(itemPBCompCopy));
+
+			if (newItemPBComp.item_id() == kInvalidGuid)
 			{
-				item_base_db.set_item_id(g_bag_node_sequence.Generate());
+				newItemPBComp.set_item_id(tls.itemIdGenerator.Generate());
 			}
-			auto it = items_.emplace(item_base_db.item_id(), std::move(add_item));
+
+			auto it = items_.emplace(newItemPBComp.item_id(), newItem);
 			if (!it.second)
 			{
+				defer(Destroy(itemRegistry, newItem));
 				LOG_ERROR << "bag add item" << player_guid();
 				return kBagDeleteItemAlreadyHasGuid;
 			}
-			OnNewGrid(it.first->second);
+
+			OnNewGrid(newItemPBComp.item_id());
 		}
 		else
 		{
-			//放到新格子里面
-			for (uint32_t i = 0; i < item_base_db.size(); ++i)
+			//todo 放装备列表，装备有一堆自己的guild
+			//对于一个，放到新格子里面，占用 itemPBCompCopy.size的格子
+			for (uint32_t i = 0; i < itemPBCompCopy.size(); ++i)
 			{
-				CreateItemParam p;
-				auto& item_base_db = p.item_base_db;
-				item_base_db.set_config_id(add_item.config_id());
-				item_base_db.set_item_id(g_bag_node_sequence.Generate());
-				auto new_item = CreateItem(p);
-				auto it = items_.emplace(item_base_db.item_id(), std::move(new_item));
+                auto newItem = itemRegistry.create();
+                auto& newItemPBComp = itemRegistry.emplace<ItemPBComp>(newItem, itemPBCompCopy);
+
+				newItemPBComp.set_size(1);
+				newItemPBComp.set_item_id(tls.itemIdGenerator.Generate());
+
+				auto it = items_.emplace(newItemPBComp.item_id(), newItem);
 				if (!it.second)
 				{
 					LOG_ERROR << "bag add item" << player_guid();
 					return kBagDeleteItemAlreadyHasGuid;
 				}
-				OnNewGrid(it.first->second);
+
+				OnNewGrid(newItemPBComp.item_id());
 			}
 		}		
 	}
 	else if(itemTable->max_statck_size() > 1)//尝试堆叠到旧格子上
 	{
-		std::vector<ItemComp*> can_stack;//原来可以叠加的物品
-		std::size_t check_need_stack_size = add_item.size();
-		for (auto& it : items_)
+		EntityVector doStackItemList;//原来可以叠加的物品实体
+
+		std::size_t checkNeedStackSize = itemPBCompCopy.size();
+        for (auto&& [e, item] : itemRegistry.view<ItemPBComp>().each())
 		{
-			auto& item = it.second;
-			if (!CanStack(item, add_item))//堆叠判断
+			if (!CanStack(item, itemPBCompCopy))//堆叠判断
 			{
 				continue;
 			}
-			assert(itemTable->max_statck_size() >= item.size());
-			auto remain_stack_size = itemTable->max_statck_size() - item.size();	
-			if (remain_stack_size <= 0)
+			assert(item.size() <= itemTable->max_statck_size());
+			auto remainStackSize = itemTable->max_statck_size() - item.size();	
+			if (remainStackSize <= 0)
 			{
 				continue;
 			}
 			//可以叠加,先把叠加的物品放进去
-			can_stack.emplace_back(&item);
-			if (check_need_stack_size > remain_stack_size )
+			doStackItemList.emplace_back(e);
+
+			if (checkNeedStackSize > remainStackSize )
 			{
-				check_need_stack_size -= remain_stack_size;
+				checkNeedStackSize -= remainStackSize;
 			}
 			else
 			{
-				check_need_stack_size = 0;//能放完
+				checkNeedStackSize = 0;//能放完
 				break;
 			}
 		}
-		std::size_t need_grid_size = 0;
+
+		std::size_t needEmptyGridSize = 0;
+
 		//不可以放完继续检测,先检测格子够不够放，不够放就不行了
-		if (check_need_stack_size > 0)
+		if (checkNeedStackSize > 0)
 		{
-			need_grid_size = calc_item_need_grid_size(check_need_stack_size, itemTable->max_statck_size());//放不完的还需要多少个格子
-			if (NotAdequateSize(need_grid_size))
+			//放不完的还需要多少个格子
+			needEmptyGridSize = CalcItemStackNeedGridSize(checkNeedStackSize, itemTable->max_statck_size());
+			if (NotAdequateSize(needEmptyGridSize))
 			{
 				return kBagAddItemBagFull;
 			}
 		}
+
 		//检测完毕真正放叠加物品在这里
 		//叠加到物品里面
-		auto need_stack_size = add_item.size();
-		for (auto& it : can_stack)
+		auto needStackSize = itemPBCompCopy.size();
+		for (auto& e : doStackItemList)
 		{
-			auto& item = *it;
-			auto& item_base_db = tls.itemRegistry.get<ItemPBComp>(it->Entity());
+			auto& item = itemRegistry.get<ItemPBComp>(e);
 			auto remain_stack_size = itemTable->max_statck_size() - item.size();
-			if (remain_stack_size >= need_stack_size)
+			if (remain_stack_size >= needStackSize)
 			{
-				item_base_db.set_size(item_base_db.size() + need_stack_size);
+				item.set_size(item.size() + needStackSize);
 				break;//可以放完了跳出循环，效率会高一点，不用遍历后面的了
 			}
 			else
 			{
-				item_base_db.set_size(item_base_db.size() + remain_stack_size);
-				need_stack_size -= remain_stack_size;
+				item.set_size(item.size() + remain_stack_size);
+				needStackSize -= remain_stack_size;
 			}
 		}
 
-		if (need_stack_size <= 0)//可以放完
+		if (needStackSize <= 0)//可以放完
 		{
 			return kOK;
 		}
 
 		//放到新格子里面
-		for (size_t i = 0; i < need_grid_size; ++i)
+		for (size_t i = 0; i < needEmptyGridSize; ++i)
 		{
-			CreateItemParam p;
-			auto& item_base_db = p.item_base_db;
-			item_base_db.set_config_id(add_item.config_id());
+			InitItemParam p;
+			auto& item_base_db = p.itemPBComp;
+			item_base_db.set_config_id(addItem.config_id());
 			item_base_db.set_item_id(g_bag_node_sequence.Generate());
-			if (itemTable->max_statck_size() >= need_stack_size)
+			if (itemTable->max_statck_size() >= needStackSize)
 			{
-				item_base_db.set_size(need_stack_size);
+				item_base_db.set_size(needStackSize);
 			}
 			else
 			{
 				item_base_db.set_size(itemTable->max_statck_size());
-				need_stack_size -= itemTable->max_statck_size();
+				needStackSize -= itemTable->max_statck_size();
 			}
-			auto new_item = CreateItem(p);
+			auto new_item = InitItem(p);
 			auto it = items_.emplace(item_base_db.item_id(), std::move(new_item));
 			if (!it.second)
 			{
@@ -558,7 +568,7 @@ void Bag::DestroyItem(Guid guid)
 	items_.erase(guid);
 }
 
-std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t stack_size)
+std::size_t Bag::CalcItemStackNeedGridSize(std::size_t item_size, std::size_t stack_size)
 {
 	if (stack_size <= 0)
 	{
@@ -573,16 +583,16 @@ std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t sta
 	return stack_grid_size;
 }
 
-uint32_t Bag::OnNewGrid(const ItemPBComp& item)
+uint32_t Bag::OnNewGrid(Guid guid)
 {
-	const auto grid_size = size();
-	for (uint32_t i = 0; i < grid_size; ++i)
+	const auto gridSize = size();
+	for (uint32_t i = 0; i < gridSize; ++i)
 	{
 		if (pos_.contains(i))
 		{
 			continue;
 		}
-		pos_.emplace(i, item.item_id());
+		pos_.emplace(i, guid);
 		return i;
 	}
 	return kInvalidU32Id;
