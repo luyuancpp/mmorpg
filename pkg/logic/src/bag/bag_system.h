@@ -73,6 +73,9 @@ public:
 	entt::registry& ItemRegistry() { return itemRegistry; }
 
 	static Guid GeneratorItemGuid();
+	static Guid LastGeneratorItemGuid();
+
+	bool IsInvalidItemGuid(const ItemPBComp& litem);
 private:
 	void DestroyItem(Guid del_guid);
 	std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
