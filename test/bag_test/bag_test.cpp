@@ -268,8 +268,7 @@ TEST(BagTest, AdequateItem)
     InitItemParam p;
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
-    InitItemParam item;
-    EXPECT_EQ(kOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(p));
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
     adequate_item[config_id10] = GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() / 2;
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
@@ -278,8 +277,8 @@ TEST(BagTest, AdequateItem)
 
     p.itemPBComp.set_config_id(config_id1);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
-    item ;
-    EXPECT_EQ(kOK, bag.AddItem(item));
+    p ;
+    EXPECT_EQ(kOK, bag.AddItem(p));
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
     adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size();//1��10�ɵ���999
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
@@ -290,17 +289,17 @@ TEST(BagTest, AdequateItem)
 
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
-    EXPECT_EQ(kOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(p));
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//2��10�ĵ���999
 
     p.itemPBComp.set_config_id(config_id11);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() * 3);
-    EXPECT_EQ(kOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(p));
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//2��10�ĵ���999
 
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
-    EXPECT_EQ(kOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(p));
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));//3��10�ĵ���999
 
     adequate_item[config_id11] = GetItemTable(config_id11).first->max_statck_size() * 3;//3��10�ɵ���999 3��11�ɵ���999
