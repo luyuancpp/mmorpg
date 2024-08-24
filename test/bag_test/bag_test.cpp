@@ -101,7 +101,7 @@ TEST(BagTest, AddStackItem12121212)
 {
     Bag bag;
     InitItemParam p;
-    p.itemPBComp.set_config_id(10);
+    p.itemPBComp.set_config_id(9);
     auto sz = 0;
 
     auto max_statck_size = GetItemTable(p.itemPBComp.config_id()).first->max_statck_size();
@@ -213,35 +213,45 @@ TEST(BagTest, AdequateSizeAddItemCannotStackItemFull)
     EXPECT_EQ(kOK, bag.HasEnoughSpace(adequate_add));
 }
 
+//可叠加混合,测试物品里面全满的情况，如999
 TEST(BagTest, AdequateSizeAddItemmixtureFull)
 {
-    uint32_t cannot_stack_config_id = 1;
-    uint32_t stack_config_id = 10;
+    uint32_t cannot_stack_config_id = 1;//不可以叠加的物品id
+    uint32_t stack_config_id = 10;//可以叠加的物品id
+    //一个不可叠加，10个可以叠加
     Bag bag;
     U32U32UnorderedMap adequate_add{ {cannot_stack_config_id, 1 },
         {stack_config_id, GetItemTable(stack_config_id).first->max_statck_size() * (uint32_t)BagCapacity::kDefaultCapacity} };
+
+
     EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));
+    //改成一个不可叠加，九个可以叠加
     adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 1) * GetItemTable(stack_config_id).first->max_statck_size();
     EXPECT_EQ(kOK, bag.HasEnoughSpace(adequate_add));
-
+    //添加一个格子以后不可以叠加了，添加一个可以叠加的物品
     InitItemParam p;
     p.itemPBComp.set_config_id(cannot_stack_config_id);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
 
-    EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));
+    
+    EXPECT_EQ(kOK, bag.AddItem(p));//剩九个格子
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));//因为占用了一个格子，所以总共不满十个格子
+    //改成8个可以叠加的格子,一个不可叠加，总共需要九个格子
     adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 2) * GetItemTable(stack_config_id).first->max_statck_size();
     EXPECT_EQ(kOK, bag.HasEnoughSpace(adequate_add));
     p.itemPBComp.set_config_id(stack_config_id);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
     EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));//��Ϊռ�����������ӣ������ܹ�����ʮ������
+    //改成7个可以叠加的格子,1个不可叠加，总共需要8个格子
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));
     adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 3) * GetItemTable(stack_config_id).first->max_statck_size();
     EXPECT_EQ(kOK, bag.HasEnoughSpace(adequate_add));
+
     p.itemPBComp.set_config_id(stack_config_id);
+    //放一个可以叠加的格子，个数少100
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() - 100);
     EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));//��Ϊռ�����������ӣ������ܹ�����ʮ������
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(adequate_add));
 }
 
 //��Ʒ�㹻����
