@@ -22,6 +22,7 @@ public:
 	entt::entity globalEntity{entt::null};
 
     SnowFlake itemIdGenerator;
+    Guid lastGeneratorItemGuid{ kInvalidGuid };
 
 	void ClearForTest();
 };

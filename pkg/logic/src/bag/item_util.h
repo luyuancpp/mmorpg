@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "type_define/type_define.h"
 
@@ -12,5 +12,5 @@ struct InitItemParam
 	ItemPBComp itemPBComp;
 };
 
-//todo ·Å×°±¸ÁÐ±í£¬×°±¸ÓÐÒ»¶Ñ×Ô¼ºµÄguild
+//todo æ”¾è£…å¤‡åˆ—è¡¨ï¼Œè£…å¤‡æœ‰ä¸€å †è‡ªå·±çš„guild
 void InitItem(InitItemParam& param);

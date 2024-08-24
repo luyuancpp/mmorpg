@@ -3,6 +3,7 @@
 #include "type_define/type_define.h"
 
 #include "item_util.h"
+#include "thread_local/storage.h"
 
 using ItemsMap = std::unordered_map<Guid, entt::entity>;
 using PosMap = std::unordered_map<uint32_t, Guid>;
@@ -49,8 +50,10 @@ public:
 	void set_player(Guid guid) const { tls.itemRegistry.emplace<Guid>(Entity(), guid); }
 
 	[[nodiscard]] std::size_t GetItemStackSize(uint32_t config_id) const;
-	entt::entity FindItemByGuid(Guid guid);
-	entt::entity FindtemByBos(uint32_t pos);
+	ItemPBComp* GetItemBaseByGuid(Guid guid);
+	ItemPBComp* GetItemBaseByBos(uint32_t pos);
+	entt::entity GetItemByGuid(Guid guid);
+	entt::entity GetItemByBos(uint32_t pos);
 	uint32_t GetItemPos(Guid guid);
 
 	bool HasItem(const Guid guid) const { return items_.find(guid) != items_.end(); }
@@ -68,6 +71,8 @@ public:
 	void Unlock(std::size_t sz);
 
 	entt::registry& ItemRegistry() { return itemRegistry; }
+
+	static Guid GeneratorItemGuid();
 private:
 	void DestroyItem(Guid del_guid);
 	std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
@@ -82,4 +87,5 @@ private:
 	uint32_t type_{};
 	BagCapacity capacity_;
 	entt::registry itemRegistry;
+	
 };
