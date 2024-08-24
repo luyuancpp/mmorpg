@@ -71,7 +71,7 @@ public:
 private:
 	void DestroyItem(Guid del_guid);
 	std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
-	std::size_t calc_item_need_grid_size(std::size_t item_size, std::size_t stack_size);
+	std::size_t CalcItemStackNeedGridSize(std::size_t item_size, std::size_t stack_size);
 	void sizeassert() const { assert(size() >= items_.size()); }
 	uint32_t OnNewGrid(Guid guid);
 	bool CanStack(const ItemPBComp& litem, const ItemPBComp& ritem);

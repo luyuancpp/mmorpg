@@ -513,26 +513,29 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		for (size_t i = 0; i < needEmptyGridSize; ++i)
 		{
 			InitItemParam p;
-			auto& item_base_db = p.itemPBComp;
-			item_base_db.set_config_id(addItem.config_id());
-			item_base_db.set_item_id(g_bag_node_sequence.Generate());
+            auto newItem = itemRegistry.create();
+            auto& newItemPBComp = itemRegistry.emplace<ItemPBComp>(newItem, itemPBCompCopy);
+
+            newItemPBComp.set_item_id(tls.itemIdGenerator.Generate());
+
 			if (itemTable->max_statck_size() >= needStackSize)
 			{
-				item_base_db.set_size(needStackSize);
+				newItemPBComp.set_size(needStackSize);
 			}
 			else
 			{
-				item_base_db.set_size(itemTable->max_statck_size());
+				newItemPBComp.set_size(itemTable->max_statck_size());
 				needStackSize -= itemTable->max_statck_size();
 			}
-			auto new_item = InitItem(p);
-			auto it = items_.emplace(item_base_db.item_id(), std::move(new_item));
-			if (!it.second)
-			{
-				LOG_ERROR << "bag add item" << player_guid();
-				continue;
-			}
-			OnNewGrid(it.first->second);
+
+            auto it = items_.emplace(newItemPBComp.item_id(), newItem);
+            if (!it.second)
+            {
+                LOG_ERROR << "bag add item" << player_guid();
+                return kBagDeleteItemAlreadyHasGuid;
+            }
+
+            OnNewGrid(newItemPBComp.item_id());
 		}
 	}
 	return kOK;
@@ -568,19 +571,20 @@ void Bag::DestroyItem(Guid guid)
 	items_.erase(guid);
 }
 
-std::size_t Bag::CalcItemStackNeedGridSize(std::size_t item_size, std::size_t stack_size)
+std::size_t Bag::CalcItemStackNeedGridSize(std::size_t itemStackSize, std::size_t stackSize)
 {
-	if (stack_size <= 0)
+	if (stackSize <= 0)
 	{
 		return UINT64_MAX;
 	}
 	//物品中可以堆叠的数量,用除法防止溢出,上面判断过大于0了
-	auto stack_grid_size = item_size / stack_size;//满叠加的格子
-	if (item_size % stack_size > 0)
+	auto stackGridSize = itemStackSize / stackSize;//满叠加的格子
+	if (itemStackSize % stackSize > 0)
 	{
-		stack_grid_size += 1;
+		stackGridSize += 1;
 	}
-	return stack_grid_size;
+
+	return stackGridSize;
 }
 
 uint32_t Bag::OnNewGrid(Guid guid)
