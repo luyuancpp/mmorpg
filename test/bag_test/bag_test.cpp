@@ -264,7 +264,7 @@ TEST(BagTest, AdequateItem)
     uint32_t config_id2 = 2;
     uint32_t config_id11 = 11;
     U32U32UnorderedMap adequate_item{ {config_id10 , 1} };
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//�ձ�������
+    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//空背包测试
     InitItemParam p;
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
@@ -272,37 +272,41 @@ TEST(BagTest, AdequateItem)
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
     adequate_item[config_id10] = GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() / 2;
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
-    adequate_item.emplace(config_id1, 1);//���ɵ���һ��
+    adequate_item.emplace(config_id1, 1);//不可叠加一个
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));
 
+    //创建一个不可以叠加的
     p.itemPBComp.set_config_id(config_id1);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
-    p ;
+   
     EXPECT_EQ(kOK, bag.AddItem(p));
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
-    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size();//1��10�ɵ���999
+    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size();//1个10可叠加999
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
-    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size() + 1;//1��10�ɵ���1000
+    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size() + 1;//1个10可叠加1000
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));
-    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size() * 3;//3��10�ɵ���999*3
+    adequate_item[config_id10] = GetItemTable(config_id10).first->max_statck_size() * 3;//3个10可叠加999*3
     EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));
 
+    //创建一个可以叠加的
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
+
     EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//2��10�ĵ���999
+    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//2个10的叠加999
 
     p.itemPBComp.set_config_id(config_id11);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() * 3);
     EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//2��10�ĵ���999
+    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(adequate_item));//2个10的叠加999
 
+    //创建一个可以叠加的
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
     EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));//3��10�ĵ���999
+    EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));//3个10的叠加99
 
-    adequate_item[config_id11] = GetItemTable(config_id11).first->max_statck_size() * 3;//3��10�ɵ���999 3��11�ɵ���999
+    adequate_item[config_id11] = GetItemTable(config_id11).first->max_statck_size() * 3;//3个10可叠加999 3个11可叠加999
     EXPECT_EQ(kOK, bag.HasSufficientItems(adequate_item));
 }
 
