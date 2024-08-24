@@ -43,8 +43,8 @@ public:
 	[[nodiscard]] entt::entity Entity() const { return entity; }
 	[[nodiscard]] Guid PlayerGuid() const { return playerGuid; }
 	std::size_t size() const { return capacity_.size_; }
-	std::size_t item_size() const { return items_.size(); }
-	std::size_t pos_size() const { return pos_.size(); }
+	std::size_t ItemGridSize() const { return items_.size(); }
+	std::size_t PosSize() const { return pos_.size(); }
 	const PosMap& pos() const { return pos_; }
 
 	void set_player(Guid guid) const { tls.itemRegistry.emplace<Guid>(Entity(), guid); }
@@ -75,11 +75,15 @@ public:
 	static Guid GeneratorItemGuid();
 	static Guid LastGeneratorItemGuid();
 
-	bool IsInvalidItemGuid(const ItemPBComp& litem);
+	static bool IsInvalidItemGuid(const ItemPBComp& litem);
+
+	static std::size_t CalcItemStackNeedGridSize(std::size_t item_size, std::size_t stack_size);
+
+	void ToString();
 private:
 	void DestroyItem(Guid del_guid);
 	std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
-	std::size_t CalcItemStackNeedGridSize(std::size_t item_size, std::size_t stack_size);
+	
 	void sizeassert() const { assert(size() >= items_.size()); }
 	uint32_t OnNewGrid(Guid guid);
 	bool CanStack(const ItemPBComp& litem, const ItemPBComp& ritem);

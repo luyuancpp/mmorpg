@@ -22,8 +22,8 @@ TEST(BagTest, AddNewGridItem)
     InitItemParam p;
     p.itemPBComp.set_config_id(1);
     EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(1, bag.item_size());
-    EXPECT_EQ(1, bag.pos_size());
+    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.PosSize());
     EXPECT_EQ(bag.GetItemBaseByBos(0)->config_id(), p.itemPBComp.config_id());
     EXPECT_EQ(bag.GetItemBaseByBos(0)->size(), p.itemPBComp.size());
     EXPECT_EQ(bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->config_id(), p.itemPBComp.config_id());
@@ -41,8 +41,8 @@ TEST(BagTest, AddNewGridItemFull)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         EXPECT_EQ(kOK, bag.AddItem(p));
-        EXPECT_EQ(i + 1, bag.item_size());
-        EXPECT_EQ(i + 1, bag.pos_size());
+        EXPECT_EQ(i + 1, bag.ItemGridSize());
+        EXPECT_EQ(i + 1, bag.PosSize());
         EXPECT_EQ(bag.GetItemBaseByBos(i)->config_id(), p.itemPBComp.config_id());
         EXPECT_EQ(bag.GetItemBaseByBos(i)->size(), p.itemPBComp.size());
         EXPECT_EQ(bag.GetItemBaseByBos(i)->config_id(), p.itemPBComp.config_id());
@@ -53,8 +53,8 @@ TEST(BagTest, AddNewGridItemFull)
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByBos(i)->item_id());
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->item_id());
     }   
-    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.ItemGridSize());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.PosSize());
 
     p.itemPBComp.set_config_id(1);
     EXPECT_EQ(kBagAddItemBagFull, bag.AddItem(p));
@@ -63,8 +63,8 @@ TEST(BagTest, AddNewGridItemFull)
     {
         EXPECT_EQ(kOK, bag.AddItem(p));
         uint32_t newindex = i + (uint32_t)BagCapacity::kDefaultCapacity;
-        EXPECT_EQ(newindex + 1 , bag.item_size());
-        EXPECT_EQ(newindex + 1, bag.pos_size());
+        EXPECT_EQ(newindex + 1 , bag.ItemGridSize());
+        EXPECT_EQ(newindex + 1, bag.PosSize());
         EXPECT_EQ(bag.GetItemBaseByBos(newindex)->config_id(), p.itemPBComp.config_id());
         EXPECT_EQ(bag.GetItemBaseByBos(newindex)->size(), p.itemPBComp.size());
         EXPECT_EQ(bag.GetItemBaseByBos(newindex)->config_id(), p.itemPBComp.config_id());
@@ -75,8 +75,8 @@ TEST(BagTest, AddNewGridItemFull)
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByBos(newindex)->item_id());
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->item_id());
     }
-    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.ItemGridSize());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.PosSize());
 }
 
 TEST(BagTest, Add10CanStack10CanNotStack)
@@ -88,55 +88,73 @@ TEST(BagTest, Add10CanStack10CanNotStack)
     uint32_t config_id1 = 1;
     p.itemPBComp.set_config_id(config_id1);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() * BagCapacity::kDefaultCapacity);
-    InitItemParam item;
-    EXPECT_EQ(kOK, bag.AddItem(item));
+    EXPECT_EQ(kOK, bag.AddItem(p));
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() * BagCapacity::kDefaultCapacity);
   
-    EXPECT_EQ(kOK, bag.AddItem(item));
-    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.pos_size());
+    EXPECT_EQ(kOK, bag.AddItem(p));
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.ItemGridSize());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.PosSize());
 }
 
-TEST(BagTest, AddStackItemHalfAdd)
+TEST(BagTest, AddStackItem12121212)
 {
     Bag bag;
     InitItemParam p;
     p.itemPBComp.set_config_id(10);
-    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity * 2; i++)
+    auto sz = 0;
+
+    auto max_statck_size = GetItemTable(p.itemPBComp.config_id()).first->max_statck_size();
+    auto half_max_statck_size = max_statck_size / 2;
+
+
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity * 2 ; i++)
     {
+
         if (i % 2 == 0)
         {
-            p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() / 2);
+            p.itemPBComp.set_size(half_max_statck_size);
         }
         else
         {
-            p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() / 2 + 1);
+            p.itemPBComp.set_size(max_statck_size);
         }
 
-        EXPECT_EQ(kOK, bag.AddItem(p));
-        auto index = i / 2;
-        auto sz = i / 2 + 1;
-        EXPECT_EQ(sz, bag.item_size());
-        EXPECT_EQ(sz, bag.pos_size());
-        if (i % 2 == 0)
+        sz += p.itemPBComp.size();
+
+        auto ret = bag.AddItem(p);
+        if (ret != kOK)
         {
-            EXPECT_EQ(bag.GetItemBaseByBos(index)->size(), p.itemPBComp.size());
-            EXPECT_EQ(bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->size(), p.itemPBComp.size());
+            break;
+        }
+
+        EXPECT_EQ(kOK, ret);
+        auto gridSize = Bag::CalcItemStackNeedGridSize(sz, max_statck_size);
+        uint32_t index = uint32_t(gridSize - 1);
+
+        EXPECT_EQ(gridSize, bag.ItemGridSize());
+        EXPECT_EQ(gridSize, bag.PosSize());
+        if (sz % max_statck_size == 0)
+        {
+            EXPECT_EQ(bag.GetItemBaseByBos(index / 2)->size(), max_statck_size);
+    
         }
         else
         {
-            EXPECT_EQ(bag.GetItemBaseByBos(index)->size(), GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
-            EXPECT_EQ(bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->size(), GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());
+            EXPECT_EQ(std::size_t(bag.GetItemBaseByBos(index)->size()), std::size_t(half_max_statck_size));
+            EXPECT_EQ(bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->size(), half_max_statck_size);
         }
         
         EXPECT_EQ(bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->config_id(), p.itemPBComp.config_id());
         EXPECT_EQ(index, bag.GetItemPos(Bag::LastGeneratorItemGuid()));
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByBos(index)->item_id());
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->item_id());
+
+        //bag.ToString();
     }
-    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.pos_size());
+
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.ItemGridSize());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.PosSize());
 }
 
 TEST(BagTest, AddStackItemUnlock)
@@ -148,8 +166,8 @@ TEST(BagTest, AddStackItemUnlock)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         EXPECT_EQ(kOK, bag.AddItem(p));
-        EXPECT_EQ(i + 1, bag.item_size());
-        EXPECT_EQ(i + 1, bag.pos_size());
+        EXPECT_EQ(i + 1, bag.ItemGridSize());
+        EXPECT_EQ(i + 1, bag.PosSize());
         EXPECT_EQ(bag.GetItemBaseByBos(i)->config_id(), p.itemPBComp.config_id());
         EXPECT_EQ(bag.GetItemBaseByBos(i)->size(), p.itemPBComp.size());
         EXPECT_EQ(bag.GetItemBaseByBos(i)->config_id(), p.itemPBComp.config_id());
@@ -160,8 +178,8 @@ TEST(BagTest, AddStackItemUnlock)
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByBos(i)->item_id());
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->item_id());
     }
-    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.ItemGridSize());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.PosSize());
 
     EXPECT_EQ(kBagAddItemBagFull, bag.AddItem(p));
     bag.Unlock(BagCapacity::kDefaultCapacity);
@@ -169,8 +187,8 @@ TEST(BagTest, AddStackItemUnlock)
     {
         EXPECT_EQ(kOK, bag.AddItem(p));
         uint32_t newindex = i + (uint32_t)BagCapacity::kDefaultCapacity;
-        EXPECT_EQ(newindex + 1, bag.item_size());
-        EXPECT_EQ(newindex + 1, bag.pos_size());
+        EXPECT_EQ(newindex + 1, bag.ItemGridSize());
+        EXPECT_EQ(newindex + 1, bag.PosSize());
         EXPECT_EQ(bag.GetItemBaseByBos(newindex)->config_id(), p.itemPBComp.config_id());
         EXPECT_EQ(bag.GetItemBaseByBos(newindex)->size(), p.itemPBComp.size());
         EXPECT_EQ(bag.GetItemBaseByBos(newindex)->config_id(), p.itemPBComp.config_id());
@@ -181,8 +199,8 @@ TEST(BagTest, AddStackItemUnlock)
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByBos(newindex)->item_id());
         EXPECT_EQ(Bag::LastGeneratorItemGuid(), bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->item_id());
     }
-    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.ItemGridSize());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.PosSize());
 }
 
 TEST(BagTest, AdequateSizeAddItemCannotStackItemFull)
@@ -324,8 +342,8 @@ TEST(BagTest, DelItem)
     EXPECT_EQ(0, bag.GetItemStackSize(config_id2));
     EXPECT_EQ(0, bag.GetItemStackSize(config_id11));
 
-    EXPECT_EQ(5, bag.item_size());
-    EXPECT_EQ(5, bag.pos_size());
+    EXPECT_EQ(5, bag.ItemGridSize());
+    EXPECT_EQ(5, bag.PosSize());
     
     std::vector<uint32_t> ps{ 0, 1, 2, 3, 4 };
     for (auto& it : ps)
@@ -342,11 +360,11 @@ TEST(BagTest, Del)
     p.itemPBComp.set_config_id(config_id1);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());// 1
     EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(1, bag.item_size());
-    EXPECT_EQ(1, bag.pos_size());
+    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.PosSize());
     EXPECT_EQ(kOK, bag.RemoveItem(Bag::LastGeneratorItemGuid()));
-    EXPECT_EQ(0, bag.item_size());
-    EXPECT_EQ(0, bag.pos_size());
+    EXPECT_EQ(0, bag.ItemGridSize());
+    EXPECT_EQ(0, bag.PosSize());
 }
 
 TEST(BagTest, DelItemByPos)
@@ -357,8 +375,8 @@ TEST(BagTest, DelItemByPos)
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size());// 999
     EXPECT_EQ(kOK, bag.AddItem(p));
-    EXPECT_EQ(1, bag.item_size());
-    EXPECT_EQ(1, bag.pos_size());
+    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.PosSize());
     DelItemByPosParam dp;
     EXPECT_EQ(kBagDelItemPos, bag.DelItemByPos(dp));
     dp.pos_ = 0;
@@ -371,8 +389,8 @@ TEST(BagTest, DelItemByPos)
     dp.size_ = GetItemTable(config_id10).first->max_statck_size() - 1;
     EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     EXPECT_EQ(0, bag.GetItemStackSize(config_id10));
-    EXPECT_EQ(1, bag.item_size());
-    EXPECT_EQ(1, bag.pos_size());
+    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.PosSize());
     EXPECT_EQ(0, bag.GetItemBaseByBos(0)->size());
     EXPECT_EQ(0, bag.GetItemBaseByGuid(Bag::LastGeneratorItemGuid())->size());
 }
@@ -403,7 +421,7 @@ TEST(BagTest, Neaten1)
         dp.size_ = GetItemTable(config_id10).first->max_statck_size() - 1;
         EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }   
-    for (uint32_t i = (uint32_t)BagCapacity::kDefaultCapacity; i < bag.pos_size(); ++i)
+    for (uint32_t i = (uint32_t)BagCapacity::kDefaultCapacity; i < bag.PosSize(); ++i)
     {
         DelItemByPosParam dp;
         dp.pos_ = i;
@@ -412,13 +430,13 @@ TEST(BagTest, Neaten1)
         dp.size_ = GetItemTable(config_id11).first->max_statck_size() - 1;
         EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
-    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         EXPECT_EQ(1, bag.GetItemBaseByBos(i)->size());
     }
     bag.Neaten();
-    EXPECT_EQ(2, bag.item_size());
-    EXPECT_EQ(2, bag.pos_size());
+    EXPECT_EQ(2, bag.ItemGridSize());
+    EXPECT_EQ(2, bag.PosSize());
     for (auto& it : bag.pos())
     {
         EXPECT_EQ(BagCapacity::kDefaultCapacity, (std::size_t)bag.GetItemBaseByBos(bag.GetItemPos(it.second))->size());
@@ -454,7 +472,7 @@ TEST(BagTest, Neaten400)
         dp.size_ = GetItemTable(config_id10).first->max_statck_size() - 1;
         EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
-    for (uint32_t i = uint32_t(config_id10_sz); i < bag.pos_size(); ++i)
+    for (uint32_t i = uint32_t(config_id10_sz); i < bag.PosSize(); ++i)
     {
         DelItemByPosParam dp;
         dp.pos_ = i;
@@ -463,13 +481,13 @@ TEST(BagTest, Neaten400)
         dp.size_ = GetItemTable(config_id11).first->max_statck_size() - 1;
         EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
-    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         EXPECT_EQ(1, bag.GetItemBaseByBos(i)->size());
     }
     bag.Neaten();
-    EXPECT_EQ(2, bag.item_size());
-    EXPECT_EQ(2, bag.pos_size());
+    EXPECT_EQ(2, bag.ItemGridSize());
+    EXPECT_EQ(2, bag.PosSize());
     std::size_t grid_sz = 200;
     for (auto& it : bag.pos())
     {
@@ -514,7 +532,7 @@ TEST(BagTest, Neaten400_1)
         EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
     auto use_config_id11_sz = unlock_size / 4 + config_id10_sz;
-    for (uint32_t i = uint32_t(config_id10_sz); i < bag.pos_size(); ++i)
+    for (uint32_t i = uint32_t(config_id10_sz); i < bag.PosSize(); ++i)
     {
         if (i >= use_config_id11_sz)
         {
@@ -531,7 +549,7 @@ TEST(BagTest, Neaten400_1)
     auto index2 = use_config_id10_sz * 2;//�ڶ��ٸ�������ǰ999
     auto index3 = use_config_id10_sz * 3;//��s���ٸ�������ǰ1
     auto index4 = use_config_id10_sz * 4;//��s���ٸ�������ǰ999
-    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         if (i < index1)
         {
@@ -557,11 +575,11 @@ TEST(BagTest, Neaten400_1)
     bag.Neaten();
     std::size_t grid_sz = 200;
     std::size_t remain_sz = 100;
-    EXPECT_EQ(grid_sz + 2, bag.item_size());
-    EXPECT_EQ(grid_sz + 2, bag.pos_size());   
+    EXPECT_EQ(grid_sz + 2, bag.ItemGridSize());
+    EXPECT_EQ(grid_sz + 2, bag.PosSize());   
     UInt32Set pos999;
     UInt32Set pos100;
-    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         if (item_statck_max_sz == bag.GetItemBaseByBos(i)->size())
         {
@@ -609,13 +627,13 @@ TEST(BagTest, NeatenCanNotStack)
         EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
  
-    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         EXPECT_EQ(1, bag.GetItemBaseByBos(i)->size());
     }
     bag.Neaten();
-    EXPECT_EQ(BagCapacity::kDefaultCapacity + 1, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefaultCapacity + 1, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity + 1, bag.ItemGridSize());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity + 1, bag.PosSize());
     for (auto& it : bag.pos())
     {
         if ((std::size_t)bag.GetItemBaseByBos(bag.GetItemPos(it.second))->size() != BagCapacity::kDefaultCapacity)
