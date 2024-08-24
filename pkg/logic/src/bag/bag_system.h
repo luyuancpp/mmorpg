@@ -63,7 +63,7 @@ public:
 	uint32_t RemoveItem(const U32U32UnorderedMap& try_del_items);
 	uint32_t DelItemByPos(const DelItemByPosParam& p);
 	void Neaten();
-	uint32_t AddItem(const ItemComp&  add_item);
+	uint32_t AddItem(const InitItemParam& itemPBComp);
 	uint32_t RemoveItem(Guid del_guid);	
 	void Unlock(std::size_t sz);
 
@@ -73,7 +73,7 @@ private:
 	std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
 	std::size_t calc_item_need_grid_size(std::size_t item_size, std::size_t stack_size);
 	void sizeassert() const { assert(size() >= items_.size()); }
-	uint32_t OnNewGrid(const ItemPBComp& item);
+	uint32_t OnNewGrid(Guid guid);
 	bool CanStack(const ItemPBComp& litem, const ItemPBComp& ritem);
 	
 	entt::entity entity;

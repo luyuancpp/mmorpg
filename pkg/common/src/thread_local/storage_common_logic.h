@@ -20,6 +20,7 @@ public:
     entt::entity GetPlayer(Guid player_uid);
     inline PlayerListMap& GetPlayerList() { return players_list_; }
     inline const PlayerListMap& GetPlayerList() const { return players_list_; }
+
 private:
     RouteNodeInfo route_data_;
     std::string route_msg_body_;

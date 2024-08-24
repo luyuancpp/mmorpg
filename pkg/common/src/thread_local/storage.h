@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util/game_registry.h"
+#include "util/snow_flake.h"
 
 class ThreadLocalStorage
 {
@@ -19,6 +20,8 @@ public:
 	entt::entity operatorEntity{entt::null};
 	entt::entity errorEntity{entt::null};
 	entt::entity globalEntity{entt::null};
+
+    SnowFlake itemIdGenerator;
 
 	void ClearForTest();
 };
