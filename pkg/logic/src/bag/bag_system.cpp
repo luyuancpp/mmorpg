@@ -424,7 +424,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			auto newItem = itemRegistry.create();
 			auto& newItemPBComp = itemRegistry.emplace<ItemPBComp>(newItem, std::move(itemPBCompCopy));
 
-			if (newItemPBComp.item_id() == kInvalidGuid)
+			if (IsInvalidItemGuid(newItemPBComp))
 			{
 				newItemPBComp.set_item_id(GeneratorItemGuid());
 			}
@@ -592,6 +592,18 @@ Guid Bag::GeneratorItemGuid()
 	tls.lastGeneratorItemGuid = tls.itemIdGenerator.Generate();
 	return  tls.lastGeneratorItemGuid;
 }
+
+
+Guid Bag::LastGeneratorItemGuid()
+{
+	return tls.lastGeneratorItemGuid;
+}
+
+bool Bag::IsInvalidItemGuid(const ItemPBComp& item)
+{
+	return item.item_id() == kInvalidGuid || item.item_id() <= 0;
+}
+
 
 void Bag::DestroyItem(Guid guid)
 {

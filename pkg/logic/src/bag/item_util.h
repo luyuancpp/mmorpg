@@ -8,7 +8,7 @@ using EntityVector = std::vector<entt::entity>;
 
 struct InitItemParam
 {
-	InitItemParam() { itemPBComp.set_size(1); }
+	InitItemParam() { itemPBComp.set_size(1); itemPBComp.set_item_id(kInvalidGuid); }
 	ItemPBComp itemPBComp;
 };
 
