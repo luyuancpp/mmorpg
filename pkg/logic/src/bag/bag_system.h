@@ -41,7 +41,7 @@ public:
 	Bag();
 	~Bag();
 	[[nodiscard]] entt::entity Entity() const { return entity; }
-	[[nodiscard]] Guid player_guid() const { return tls.itemRegistry.get<Guid>(Entity()); }
+	[[nodiscard]] Guid PlayerGuid() const { return playerGuid; }
 	std::size_t size() const { return capacity_.size_; }
 	std::size_t item_size() const { return items_.size(); }
 	std::size_t pos_size() const { return pos_.size(); }
@@ -90,5 +90,6 @@ private:
 	uint32_t type_{};
 	BagCapacity capacity_;
 	entt::registry itemRegistry;
+	Guid playerGuid{ kInvalidGuid };
 	
 };

@@ -103,7 +103,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
         }
 
 		if (itemTable->max_statck_size() <= 0){
-			LOG_ERROR << "config error:" << try_item.first << "player:" << player_guid();
+			LOG_ERROR << "config error:" << try_item.first << "player:" << PlayerGuid();
 			return kInvalidTableData;
 		}
 		else if (itemTable->max_statck_size() == 1)//不可叠加占用一个格子
@@ -181,7 +181,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 			}
 			if (itemTable->max_statck_size() <= 0)
 			{
-				LOG_ERROR << "config error:" << ji.first << "player:" << player_guid();
+				LOG_ERROR << "config error:" << ji.first << "player:" << PlayerGuid();
 				return kInvalidTableData;
 			}
 			if (ji.second <= item.size())
@@ -397,7 +397,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 	auto itemPBCompCopy = initItemParam.itemPBComp;
 	if (itemPBCompCopy.config_id() <= 0 || itemPBCompCopy.size() <= 0)
 	{
-		LOG_ERROR << "bag add item player:" << player_guid();
+		LOG_ERROR << "bag add item player:" << PlayerGuid();
 		return kBagAddItemInvalidParam;
 	}
 
@@ -433,7 +433,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			if (!it.second)
 			{
 				defer(Destroy(itemRegistry, newItem));
-				LOG_ERROR << "bag add item" << player_guid();
+				LOG_ERROR << "bag add item" << PlayerGuid();
 				return kBagDeleteItemAlreadyHasGuid;
 			}
 
@@ -454,7 +454,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 				auto it = items_.emplace(newItemPBComp.item_id(), newItem);
 				if (!it.second)
 				{
-					LOG_ERROR << "bag add item" << player_guid();
+					LOG_ERROR << "bag add item" << PlayerGuid();
 					return kBagDeleteItemAlreadyHasGuid;
 				}
 
@@ -552,7 +552,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
             auto it = items_.emplace(newItemPBComp.item_id(), newItem);
             if (!it.second)
             {
-                LOG_ERROR << "bag add item" << player_guid();
+                LOG_ERROR << "bag add item" << PlayerGuid();
                 return kBagDeleteItemAlreadyHasGuid;
             }
 

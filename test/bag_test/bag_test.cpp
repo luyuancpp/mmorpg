@@ -56,12 +56,12 @@ TEST(BagTest, AddNewGridItemFull)
     EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.item_size());
     EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.pos_size());
 
-    InitItemParam item;
-    EXPECT_EQ(kBagAddItemBagFull, bag.AddItem(item));
+    p.itemPBComp.set_config_id(1);
+    EXPECT_EQ(kBagAddItemBagFull, bag.AddItem(p));
     bag.Unlock(BagCapacity::kDefaultCapacity);
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
-        EXPECT_EQ(kOK, bag.AddItem(item));
+        EXPECT_EQ(kOK, bag.AddItem(p));
         uint32_t newindex = i + (uint32_t)BagCapacity::kDefaultCapacity;
         EXPECT_EQ(newindex + 1 , bag.item_size());
         EXPECT_EQ(newindex + 1, bag.pos_size());
