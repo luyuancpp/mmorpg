@@ -626,6 +626,17 @@ std::size_t Bag::CalcItemStackNeedGridSize(std::size_t itemStackSize, std::size_
 	return stackGridSize;
 }
 
+
+void Bag::ToString()
+{
+	std::string contex;
+	for (auto& pos : pos_)
+	{
+		contex +=  GetItemBaseByGuid(pos.second)->DebugString() + "||||||\n";
+	}
+	LOG_INFO << contex << "\n\n--------------";
+}
+
 uint32_t Bag::OnNewGrid(Guid guid)
 {
 	const auto gridSize = size();
