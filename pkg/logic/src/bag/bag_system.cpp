@@ -7,7 +7,6 @@
 #include "pbc/bag_error_tip.pb.h"
 #include "util/snow_flake.h"
 #include "item_config.h"
-#include "thread_local/storage.h"
 #include "util/defer.h"
 
 Bag::Bag()
@@ -36,24 +35,46 @@ std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 	return size_sum;
 }
 
-entt::entity Bag::FindItemByGuid(Guid guid)
+ItemPBComp* Bag::GetItemBaseByGuid(Guid guid)
+{
+	auto it = items_.find(guid);
+	if (it == items_.end())
+	{
+		return nullptr;
+	}
+
+	return itemRegistry.try_get<ItemPBComp>(it->second);
+}
+
+ItemPBComp* Bag::GetItemBaseByBos(uint32_t pos)
+{
+	auto it = pos_.find(pos);
+	if (it == pos_.end())
+	{
+		return  nullptr;
+	}
+	return GetItemBaseByGuid(it->second);
+}
+
+entt::entity Bag::GetItemByGuid(Guid guid)
 {
 	auto it = items_.find(guid);
 	if (it == items_.end())
 	{
 		return entt::null;
 	}
+
 	return it->second;
 }
 
-entt::entity Bag::FindtemByBos(uint32_t pos)
+entt::entity Bag::GetItemByBos(uint32_t pos)
 {
 	auto it = pos_.find(pos);
 	if (it == pos_.end())
 	{
 		return  entt::null;
 	}
-	return FindItemByGuid(it->second);
+	return GetItemByGuid(it->second);
 }
 
 uint32_t Bag::GetItemPos(Guid guid)
@@ -405,7 +426,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 
 			if (newItemPBComp.item_id() == kInvalidGuid)
 			{
-				newItemPBComp.set_item_id(tls.itemIdGenerator.Generate());
+				newItemPBComp.set_item_id(GeneratorItemGuid());
 			}
 
 			auto it = items_.emplace(newItemPBComp.item_id(), newItem);
@@ -428,7 +449,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
                 auto& newItemPBComp = itemRegistry.emplace<ItemPBComp>(newItem, itemPBCompCopy);
 
 				newItemPBComp.set_size(1);
-				newItemPBComp.set_item_id(tls.itemIdGenerator.Generate());
+				newItemPBComp.set_item_id(GeneratorItemGuid());
 
 				auto it = items_.emplace(newItemPBComp.item_id(), newItem);
 				if (!it.second)
@@ -516,7 +537,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
             auto newItem = itemRegistry.create();
             auto& newItemPBComp = itemRegistry.emplace<ItemPBComp>(newItem, itemPBCompCopy);
 
-            newItemPBComp.set_item_id(tls.itemIdGenerator.Generate());
+            newItemPBComp.set_item_id(GeneratorItemGuid());
 
 			if (itemTable->max_statck_size() >= needStackSize)
 			{
@@ -564,6 +585,12 @@ uint32_t Bag::RemoveItem(Guid del_guid)
 void Bag::Unlock(std::size_t sz)
 {
 	capacity_.size_ += sz;
+}
+
+Guid Bag::GeneratorItemGuid()
+{
+	tls.lastGeneratorItemGuid = tls.itemIdGenerator.Generate();
+	return  tls.lastGeneratorItemGuid;
 }
 
 void Bag::DestroyItem(Guid guid)
