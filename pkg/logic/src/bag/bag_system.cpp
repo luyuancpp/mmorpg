@@ -59,84 +59,76 @@ uint32_t Bag::GetItemPos(Guid guid) {
     return kInvalidU32Id;
 }
 
-uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
-{
-	auto empty_size = empty_grid_size();
-	U32U32UnorderedMap need_stack_sizes;//需要叠加的物品列表
-	bool has_stack_item = false;
-	//计算不可叠加商品
-	for (auto& try_item : try_add_item_map)
-	{
-		auto [itemTable, result] = GetItemTable(try_item.first);
-        if (nullptr == itemTable || result != kOK) {
+uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
+    auto empty_size = empty_grid_size();
+    U32U32UnorderedMap need_stack_sizes;
+    bool has_stack_item = false;
+
+    for (const auto& try_item : try_add_item_map) {
+        auto [itemTable, result] = GetItemTable(try_item.first);
+        if (!itemTable || result != kOK) {
             return result;
         }
 
-		if (itemTable->max_statck_size() <= 0){
-			LOG_ERROR << "config error:" << try_item.first << "player:" << PlayerGuid();
-			return kInvalidTableData;
-		}
-		else if (itemTable->max_statck_size() == 1)//不可叠加占用一个格子
-		{
-			std::size_t need_grid_size = static_cast<std::size_t>(itemTable->max_statck_size() * try_item.second);
-			if (empty_size <= 0 || empty_size < need_grid_size)
-			{
-				return kBagItemNotStacked;
-			}
-			empty_size -= need_grid_size;
-		}
-		else //可以叠加
-		{
-			need_stack_sizes.emplace(try_item.first, try_item.second);
-			has_stack_item = true;
-		}
-	}
+        if (itemTable->max_statck_size() <= 0) {
+            LOG_ERROR << "config error:" << try_item.first << "player:" << PlayerGuid();
+            return kInvalidTableData;
+        }
 
-	if (!has_stack_item)//没有需要去背包里面叠加的物品
-	{
-		return kOK;
-	}
+        if (itemTable->max_statck_size() == 1) {
+            std::size_t need_grid_size = static_cast<std::size_t>(itemTable->max_statck_size() * try_item.second);
+            if (empty_size <= 0 || empty_size < need_grid_size) {
+                return kBagItemNotStacked;
+            }
+            empty_size -= need_grid_size;
+        }
+        else {
+            need_stack_sizes.emplace(try_item.first, try_item.second);
+            has_stack_item = true;
+        }
+    }
 
-	for (auto&& [_, item] : itemRegistry.view<ItemPBComp>().each())
-	{
-		for (auto& ji : need_stack_sizes)
-		{
-			if (item.config_id() != ji.first)
-			{
-				continue;
-			}
-			auto [itemTable, _] = GetItemTable(ji.first);//前面判断过了
-			auto remain_stack_size = itemTable->max_statck_size() - item.size();
-			if (remain_stack_size <= 0)//不可以叠加
-			{
-				continue;
-			}
-			if (ji.second <= remain_stack_size)
-			{
-				need_stack_sizes.erase(ji.first);//该物品个数足够,从判断列表删除
-				break;
-			}
-			ji.second -= remain_stack_size;//扣除可以叠加，剩下的个数继续判断
-		}		
-	}
-	//剩下的没叠加成功的
-	for (auto& it : need_stack_sizes)
-	{
-		auto [itemTable, _] = GetItemTable(it.first);//前面判断过空了，以及除0
-		auto need_grid_size = CalculateStackGridSize(it.second, itemTable->max_statck_size());//满叠加的格子
-		if (empty_size <= 0 || empty_size < need_grid_size)
-		{
-			return kBagItemNotStacked;
-		}
-		empty_size -= need_grid_size;
-	}
-	return kOK;
+    if (!has_stack_item) {
+        return kOK;
+    }
+
+    for (const auto& [_, item] : itemRegistry.view<ItemPBComp>().each()) {
+        for (auto& ji : need_stack_sizes) {
+            if (item.config_id() != ji.first) {
+                continue;
+            }
+
+            auto [itemTable, _] = GetItemTable(ji.first);
+            auto remain_stack_size = itemTable->max_statck_size() - item.size();
+            if (remain_stack_size <= 0) {
+                continue;
+            }
+
+            if (ji.second <= remain_stack_size) {
+                need_stack_sizes.erase(ji.first);
+                break;
+            }
+
+            ji.second -= remain_stack_size;
+        }
+    }
+
+    for (const auto& it : need_stack_sizes) {
+        auto [itemTable, _] = GetItemTable(it.first);
+        auto need_grid_size = CalculateStackGridSize(it.second, itemTable->max_statck_size());
+        if (empty_size <= 0 || empty_size < need_grid_size) {
+            return kBagItemNotStacked;
+        }
+        empty_size -= need_grid_size;
+    }
+
+    return kOK;
 }
-uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems)
-{
+
+uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems) {
     auto itemsToCheck = requiredItems;
 
-    for (auto&& [entity, item] : itemRegistry.view<ItemPBComp>().each()) {
+    for (const auto& [entity, item] : itemRegistry.view<ItemPBComp>().each()) {
         auto configId = item.config_id();
         auto it = itemsToCheck.find(configId);
         if (it != itemsToCheck.end()) {
@@ -152,80 +144,71 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems)
     return itemsToCheck.empty() ? kOK : kBagInsufficientItems;
 }
 
-uint32_t  Bag::RemoveItems(const U32U32UnorderedMap& itemsToRemove)
-{
-	CHECK_RETURN_IF_NOT_OK(HasSufficientItems(itemsToRemove));
 
-	auto itemsToErase = itemsToRemove;
+uint32_t Bag::RemoveItems(const U32U32UnorderedMap& itemsToRemove) {
+    CHECK_RETURN_IF_NOT_OK(HasSufficientItems(itemsToRemove));
 
-	EntityVector itemsToRemoveReal;//删除的物品,通知客户端
+    auto itemsToErase = itemsToRemove;
+    EntityVector itemsToRemoveReal;
 
-	for (auto&& [e, item] : itemRegistry.view<ItemPBComp>().each())
-	{
-		for (auto& tryDeleteItem : itemsToErase)
-		{
-			if (item.config_id() != tryDeleteItem.first)
-			{
-				continue;
-			}
-			auto sz = item.size();
-			if (tryDeleteItem.second <= sz)
-			{
-				item.set_size(sz - tryDeleteItem.second);
-				itemsToRemoveReal.emplace_back(e);
-				itemsToErase.erase(tryDeleteItem.first);//该物品叠加成功,从列表删除
-				break;
-			}
-			else
-			{
-				tryDeleteItem.second -= sz;
-				item.set_size(0);
-				itemsToRemoveReal.emplace_back(e);
-			}			
-		}
-		if (itemsToErase.empty())
-		{
-			break;
-		}
-	}
-	return kOK;
+    for (const auto& [e, item] : itemRegistry.view<ItemPBComp>().each()) {
+        for (auto& tryDeleteItem : itemsToErase) {
+            if (item.config_id() != tryDeleteItem.first) {
+                continue;
+            }
+
+            auto sz = item.size();
+            if (tryDeleteItem.second <= sz) {
+                item.set_size(sz - tryDeleteItem.second);
+                itemsToRemoveReal.emplace_back(e);
+                itemsToErase.erase(tryDeleteItem.first);
+                break;
+            }
+            else {
+                tryDeleteItem.second -= sz;
+                item.set_size(0);
+                itemsToRemoveReal.emplace_back(e);
+            }
+        }
+
+        if (itemsToErase.empty()) {
+            break;
+        }
+    }
+
+    return kOK;
 }
 
-uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p)
-{
-	if (p.size_ <= 0)
-	{
-		return kBagDelItemSize;
-	}
-	auto pit = pos_.find(p.pos_);
-	if (pit == pos_.end())
-	{
-		return kBagDelItemPos;
-	}
-	if (pit->second != p.item_guid_)
-	{
-		return kBagDelItemGuid;
-	}
-	auto item_it = items_.find(p.item_guid_);
-	if (item_it == items_.end())
-	{
-		return kBagDelItemFindItem;
-	}
-	
-	auto& item = itemRegistry.get<ItemPBComp>(item_it->second);
-	if (item.config_id() != p.item_config_id_)
-	{
-		return kBagDelItemConfig;
-	}
+uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p) {
+    if (p.size_ <= 0) {
+        return kBagDelItemSize;
+    }
 
-	auto old_size = item.size();
-	if (old_size < p.size_)
-	{
-		return kBagItemDeletionSizeMismatch;
-	}
+    auto pit = pos_.find(p.pos_);
+    if (pit == pos_.end()) {
+        return kBagDelItemPos;
+    }
 
-	item.set_size(old_size - p.size_);
-	return kOK;
+    if (pit->second != p.item_guid_) {
+        return kBagDelItemGuid;
+    }
+
+    auto item_it = items_.find(p.item_guid_);
+    if (item_it == items_.end()) {
+        return kBagDelItemFindItem;
+    }
+
+    auto& item = itemRegistry.get<ItemPBComp>(item_it->second);
+    if (item.config_id() != p.item_config_id_) {
+        return kBagDelItemConfig;
+    }
+
+    if (item.size() < p.size_) {
+        return kBagItemDeletionSizeMismatch;
+    }
+
+    item.set_size(item.size() - p.size_);
+    return kOK;
 }
 
 void Bag::Neaten()
