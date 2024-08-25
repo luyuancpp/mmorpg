@@ -10,50 +10,40 @@
 #include "util/defer.h"
 
 Bag::Bag()
-	: entity(tls.itemRegistry.create())
+    : entity(tls.itemRegistry.create())
 {
 }
 
 Bag::~Bag()
 {
-	Destroy(tls.itemRegistry, entity);
+    Destroy(tls.itemRegistry, entity);
 }
 
 
-std::size_t Bag::GetItemStackSize(uint32_t config_id)const
-{
-	std::size_t size_sum = 0;
-    for (auto&& [_, item] : itemRegistry.view<ItemPBComp>().each())
-    {
-		if (item.config_id() != config_id)
-		{
-			continue;
-		}
-		size_sum += item.size();
-	}
-
-	return size_sum;
+std::size_t Bag::GetItemStackSize(uint32_t config_id) const {
+    std::size_t totalSize = 0;
+    for (auto&& [entity, item] : itemRegistry.view<ItemPBComp>().each()) {
+        if (item.config_id() == config_id) {
+            totalSize += item.size();
+        }
+    }
+    return totalSize;
 }
 
-ItemPBComp* Bag::GetItemBaseByGuid(Guid guid)
-{
-	auto it = items_.find(guid);
-	if (it == items_.end())
-	{
-		return nullptr;
-	}
-
-	return itemRegistry.try_get<ItemPBComp>(it->second);
+ItemPBComp* Bag::GetItemBaseByGuid(Guid guid) {
+    auto it = items_.find(guid);
+    if (it == items_.end()) {
+        return nullptr;
+    }
+    return itemRegistry.try_get<ItemPBComp>(it->second);
 }
 
-ItemPBComp* Bag::GetItemBaseByPos(uint32_t pos)
-{
-	auto it = pos_.find(pos);
-	if (it == pos_.end())
-	{
-		return  nullptr;
-	}
-	return GetItemBaseByGuid(it->second);
+ItemPBComp* Bag::GetItemBaseByPos(uint32_t pos) {
+    auto it = pos_.find(pos);
+    if (it == pos_.end()) {
+        return nullptr;
+    }
+    return GetItemBaseByGuid(it->second);
 }
 
 entt::entity Bag::GetItemByGuid(Guid guid)
@@ -162,7 +152,6 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 	}
 	return kOK;
 }
-
 uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 {
 	auto stack_item_list = adequate_items;
@@ -272,7 +261,7 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p)
 	auto old_size = item.size();
 	if (old_size < p.size_)
 	{
-		return kItemDeletionSizeMismatch;
+		return kBagItemDeletionSizeMismatch;
 	}
 
 	item.set_size(old_size - p.size_);
@@ -584,7 +573,7 @@ uint32_t Bag::RemoveItem(Guid del_guid)
 
 void Bag::Unlock(std::size_t sz)
 {
-	capacity_.size_ += sz;
+	capacity_ += sz;
 }
 
 Guid Bag::GeneratorItemGuid()
