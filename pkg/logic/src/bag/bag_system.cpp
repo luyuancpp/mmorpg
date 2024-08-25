@@ -172,14 +172,17 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems)
     return itemsToCheck.empty() ? kOK : kBagInsufficientItems;
 }
 
-uint32_t  Bag::RemoveItems(const U32U32UnorderedMap& try_del_items)
+uint32_t  Bag::RemoveItems(const U32U32UnorderedMap& itemsToRemove)
 {
-	CHECK_RETURN_IF_NOT_OK(HasSufficientItems(try_del_items));
-	auto tryDelItemsCopy = try_del_items;
-	EntityVector real_del_item;//删除的物品,通知客户端
+	CHECK_RETURN_IF_NOT_OK(HasSufficientItems(itemsToRemove));
+
+	auto itemsToErase = itemsToRemove;
+
+	EntityVector itemsToRemoveReal;//删除的物品,通知客户端
+
 	for (auto&& [e, item] : itemRegistry.view<ItemPBComp>().each())
 	{
-		for (auto& tryDeleteItem : tryDelItemsCopy)
+		for (auto& tryDeleteItem : itemsToErase)
 		{
 			if (item.config_id() != tryDeleteItem.first)
 			{
@@ -189,18 +192,18 @@ uint32_t  Bag::RemoveItems(const U32U32UnorderedMap& try_del_items)
 			if (tryDeleteItem.second <= sz)
 			{
 				item.set_size(sz - tryDeleteItem.second);
-				real_del_item.emplace_back(e);
-				tryDelItemsCopy.erase(tryDeleteItem.first);//该物品叠加成功,从列表删除
+				itemsToRemoveReal.emplace_back(e);
+				itemsToErase.erase(tryDeleteItem.first);//该物品叠加成功,从列表删除
 				break;
 			}
 			else
 			{
 				tryDeleteItem.second -= sz;
 				item.set_size(0);
-				real_del_item.emplace_back(e);
+				itemsToRemoveReal.emplace_back(e);
 			}			
 		}
-		if (tryDelItemsCopy.empty())
+		if (itemsToErase.empty())
 		{
 			break;
 		}
