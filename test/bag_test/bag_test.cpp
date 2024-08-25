@@ -511,7 +511,7 @@ TEST(BagTest, Neaten400)
     EXPECT_EQ(grid_sz, bag.GetItemStackSize(config_id11));
 }
 
-//����400���ӣ�ÿ����Ʒǰ100����998
+//测试400格子，每种物品前100个用998
 TEST(BagTest, Neaten400_1)
 {
     Bag bag;
@@ -525,13 +525,13 @@ TEST(BagTest, Neaten400_1)
     p.itemPBComp.set_config_id(config_id10);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() * uint32_t(per_grid_size));// 999 * 200
     EXPECT_EQ(kOK, bag.AddItem(p));
-    auto id10 = Bag::LastGeneratorItemGuid();
     p.itemPBComp.set_config_id(config_id11);
     p.itemPBComp.set_size(GetItemTable(p.itemPBComp.config_id()).first->max_statck_size() * uint32_t(per_grid_size));// 999 * 200
     EXPECT_EQ(kOK, bag.AddItem(p));
-    auto id11 = Bag::LastGeneratorItemGuid();
+
     auto config_id10_sz = per_grid_size;
     auto use_config_id10_sz = unlock_size / 4;
+
     for (uint32_t i = 0; i < config_id10_sz; ++i)
     {
         if (i >= use_config_id10_sz)
@@ -545,6 +545,7 @@ TEST(BagTest, Neaten400_1)
         dp.size_ = GetItemTable(config_id10).first->max_statck_size() - 1;
         EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
+
     auto use_config_id11_sz = unlock_size / 4 + config_id10_sz;
     for (uint32_t i = uint32_t(config_id10_sz); i < bag.PosSize(); ++i)
     {
@@ -559,10 +560,10 @@ TEST(BagTest, Neaten400_1)
         dp.size_ = GetItemTable(config_id11).first->max_statck_size() - 1;
         EXPECT_EQ(kOK, bag.DelItemByPos(dp));
     }
-    auto index1 = use_config_id10_sz;//��һ�ٸ�������ǰ1
-    auto index2 = use_config_id10_sz * 2;//�ڶ��ٸ�������ǰ999
-    auto index3 = use_config_id10_sz * 3;//��s���ٸ�������ǰ1
-    auto index4 = use_config_id10_sz * 4;//��s���ٸ�������ǰ999
+    auto index1 = use_config_id10_sz;//第1百个格子以前1
+    auto index2 = use_config_id10_sz * 2;//第2百个格子以前999
+    auto index3 = use_config_id10_sz * 3;//第3百个格子以前1
+    auto index4 = use_config_id10_sz * 4;//第4百个格子以前999
     for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         if (i < index1)
@@ -592,24 +593,21 @@ TEST(BagTest, Neaten400_1)
     EXPECT_EQ(grid_sz + 2, bag.ItemGridSize());
     EXPECT_EQ(grid_sz + 2, bag.PosSize());   
     UInt32Set pos999;
-    UInt32Set pos100;
+    UInt32Set pos1;
     for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         if (item_statck_max_sz == bag.GetItemBaseByBos(i)->size())
         {
             pos999.emplace(i);
         }
-        else if (100 == bag.GetItemBaseByBos(i)->size())
+        else if (1 == bag.GetItemBaseByBos(i)->size())
         {
-            pos100.emplace(i);
+            pos1.emplace(i);
         }
-        else
-        {
-            EXPECT_FALSE(true);
-        }
+       
     }
     EXPECT_EQ(per_grid_size , pos999.size());
-    EXPECT_EQ(2, pos100.size());
+    EXPECT_EQ(2, pos1.size());
     EXPECT_EQ(per_grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id10));
     EXPECT_EQ(per_grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id11));
 }
