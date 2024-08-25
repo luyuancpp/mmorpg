@@ -22,7 +22,7 @@ Bag::~Bag()
 
 std::size_t Bag::GetItemStackSize(uint32_t config_id) const {
     std::size_t totalSize = 0;
-    for (auto&& [entity, item] : itemRegistry.view<ItemPBComp>().each()) {
+    for (const auto& [entity, item] : itemRegistry.view<ItemPBComp>().each()) {
         if (item.config_id() == config_id) {
             totalSize += item.size();
         }
@@ -32,51 +32,31 @@ std::size_t Bag::GetItemStackSize(uint32_t config_id) const {
 
 ItemPBComp* Bag::GetItemBaseByGuid(Guid guid) {
     auto it = items_.find(guid);
-    if (it == items_.end()) {
-        return nullptr;
-    }
-    return itemRegistry.try_get<ItemPBComp>(it->second);
+    return (it != items_.end()) ? itemRegistry.try_get<ItemPBComp>(it->second) : nullptr;
 }
 
 ItemPBComp* Bag::GetItemBaseByPos(uint32_t pos) {
     auto it = pos_.find(pos);
-    if (it == pos_.end()) {
-        return nullptr;
+    return (it != pos_.end()) ? GetItemBaseByGuid(it->second) : nullptr;
+}
+
+entt::entity Bag::GetItemByGuid(Guid guid) {
+    auto it = items_.find(guid);
+    return (it != items_.end()) ? it->second : entt::null;
+}
+
+entt::entity Bag::GetItemByPos(uint32_t pos) {
+    auto it = pos_.find(pos);
+    return (it != pos_.end()) ? GetItemByGuid(it->second) : entt::null;
+}
+
+uint32_t Bag::GetItemPos(Guid guid) {
+    for (const auto& pit : pos_) {
+        if (pit.second == guid) {
+            return pit.first;
+        }
     }
-    return GetItemBaseByGuid(it->second);
-}
-
-entt::entity Bag::GetItemByGuid(Guid guid)
-{
-	auto it = items_.find(guid);
-	if (it == items_.end())
-	{
-		return entt::null;
-	}
-
-	return it->second;
-}
-
-entt::entity Bag::GetItemByPos(uint32_t pos)
-{
-	auto it = pos_.find(pos);
-	if (it == pos_.end())
-	{
-		return  entt::null;
-	}
-	return GetItemByGuid(it->second);
-}
-
-uint32_t Bag::GetItemPos(Guid guid)
-{
-	for (auto& pit : pos_)
-	{
-		if (pit.second == guid)
-		{
-			return pit.first;
-		}
-	}
-	return kInvalidU32Id;
+    return kInvalidU32Id;
 }
 
 uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
