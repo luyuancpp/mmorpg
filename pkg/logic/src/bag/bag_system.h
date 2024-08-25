@@ -27,7 +27,7 @@ enum EnumBagType : uint32_t
 	kBagMax = 4,
 };
 
-struct DelItemByPosParam
+struct RemoveItemByPosParam
 {
 	Guid item_guid_{kInvalidGuid};
 	uint32_t item_config_id_{kInvalidU32Id};
@@ -35,59 +35,56 @@ struct DelItemByPosParam
 	uint32_t size_{1};
 };
 
-class Bag
-{
+
+
+class Bag {
 public:
-	Bag();
-	~Bag();
-	[[nodiscard]] entt::entity Entity() const { return entity; }
-	[[nodiscard]] Guid PlayerGuid() const { return playerGuid; }
-	std::size_t size() const { return capacity_.size_; }
-	std::size_t ItemGridSize() const { return items_.size(); }
-	std::size_t PosSize() const { return pos_.size(); }
-	const PosMap& pos() const { return pos_; }
+    Bag();
+    ~Bag();
 
-	void set_player(Guid guid) const { tls.itemRegistry.emplace<Guid>(Entity(), guid); }
+    std::size_t size() const { return capacity_.size_; }
+    [[nodiscard]] Guid PlayerGuid() const { return playerGuid; }
+    std::size_t ItemGridSize() const { return items_.size(); }
+    std::size_t PosSize() const { return pos_.size(); }
+    const PosMap& pos() const { return pos_; }
 
-	[[nodiscard]] std::size_t GetItemStackSize(uint32_t config_id) const;
-	ItemPBComp* GetItemBaseByGuid(Guid guid);
-	ItemPBComp* GetItemBaseByBos(uint32_t pos);
-	entt::entity GetItemByGuid(Guid guid);
-	entt::entity GetItemByBos(uint32_t pos);
-	uint32_t GetItemPos(Guid guid);
+    std::size_t GetItemStackSize(uint32_t config_id) const;
+    ItemPBComp* GetItemBaseByGuid(Guid guid);
+    ItemPBComp* GetItemBaseByPos(uint32_t pos);
+    entt::entity GetItemByGuid(Guid guid);
+    entt::entity GetItemByPos(uint32_t pos);
+    uint32_t GetItemPos(Guid guid);
 
-	bool HasItem(const Guid guid) const { return items_.find(guid) != items_.end(); }
-	bool IsFull() const { return items_.size() >= size(); }
-	bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }
-	bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }
-	uint32_t HasEnoughSpace(const U32U32UnorderedMap& tryItems);
-	uint32_t HasSufficientItems(const U32U32UnorderedMap& adequate_items);
+    uint32_t HasEnoughSpace(const U32U32UnorderedMap& itemsToAdd);
+    uint32_t HasSufficientItems(const U32U32UnorderedMap& requiredItems);
+    uint32_t RemoveItems(const U32U32UnorderedMap& itemsToRemove);
+    uint32_t RemoveItemByPos(const RemoveItemByPosParam& param);
 
-	uint32_t RemoveItem(const U32U32UnorderedMap& try_del_items);
-	uint32_t DelItemByPos(const DelItemByPosParam& p);
-	void Neaten();
-	uint32_t AddItem(const InitItemParam& itemPBComp);
-	uint32_t RemoveItem(Guid del_guid);	
-	void Unlock(std::size_t sz);
+    bool IsFull() const { return items_.size() >= size(); }
+    bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }
+    bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }
 
-	entt::registry& ItemRegistry() { return itemRegistry; }
+    uint32_t AddItem(const InitItemParam& itemParam);
+    uint32_t RemoveItem(Guid guid);
 
-	static Guid GeneratorItemGuid();
-	static Guid LastGeneratorItemGuid();
+    void Neaten();
+    void Unlock(std::size_t additionalSize);
+    void ToString();
 
-	static bool IsInvalidItemGuid(const ItemPBComp& litem);
+    static Guid LastGeneratorItemGuid();
 
-	static std::size_t CalcItemStackNeedGridSize(std::size_t item_size, std::size_t stack_size);
+    static std::size_t CalculateStackGridSize(std::size_t itemStackSize, std::size_t stackSize);
 
-	void ToString();
 private:
-	void DestroyItem(Guid del_guid);
-	std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
-	
-	void sizeassert() const { assert(size() >= items_.size()); }
-	uint32_t OnNewGrid(Guid guid);
-	bool CanStack(const ItemPBComp& litem, const ItemPBComp& ritem);
-	
+    Guid GeneratorItemGuid();
+    bool IsInvalidItemGuid(const ItemPBComp& item) const;
+    void DestroyItem(Guid guid);
+    uint32_t OnNewGrid(Guid guid);
+    static bool CanStack(const ItemPBComp& item1, const ItemPBComp& item2);
+
+    std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
+    void sizeassert() const { assert(size() >= items_.size()); }
+
 	entt::entity entity;
 	ItemsMap items_{};
 	PosMap pos_{};
@@ -95,5 +92,4 @@ private:
 	BagCapacity capacity_;
 	entt::registry itemRegistry;
 	Guid playerGuid{ kInvalidGuid };
-	
 };

@@ -46,7 +46,7 @@ ItemPBComp* Bag::GetItemBaseByGuid(Guid guid)
 	return itemRegistry.try_get<ItemPBComp>(it->second);
 }
 
-ItemPBComp* Bag::GetItemBaseByBos(uint32_t pos)
+ItemPBComp* Bag::GetItemBaseByPos(uint32_t pos)
 {
 	auto it = pos_.find(pos);
 	if (it == pos_.end())
@@ -67,7 +67,7 @@ entt::entity Bag::GetItemByGuid(Guid guid)
 	return it->second;
 }
 
-entt::entity Bag::GetItemByBos(uint32_t pos)
+entt::entity Bag::GetItemByPos(uint32_t pos)
 {
 	auto it = pos_.find(pos);
 	if (it == pos_.end())
@@ -153,7 +153,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 	for (auto& it : need_stack_sizes)
 	{
 		auto [itemTable, _] = GetItemTable(it.first);//前面判断过空了，以及除0
-		auto need_grid_size = CalcItemStackNeedGridSize(it.second, itemTable->max_statck_size());//满叠加的格子
+		auto need_grid_size = CalculateStackGridSize(it.second, itemTable->max_statck_size());//满叠加的格子
 		if (empty_size <= 0 || empty_size < need_grid_size)
 		{
 			return kBagItemNotStacked;
@@ -206,7 +206,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
 	return kOK;
 }
 
-uint32_t  Bag::RemoveItem(const U32U32UnorderedMap& try_del_items)
+uint32_t  Bag::RemoveItems(const U32U32UnorderedMap& try_del_items)
 {
 	CHECK_RETURN_IF_NOT_OK(HasSufficientItems(try_del_items));
 	auto tryDelItemsCopy = try_del_items;
@@ -242,7 +242,7 @@ uint32_t  Bag::RemoveItem(const U32U32UnorderedMap& try_del_items)
 	return kOK;
 }
 
-uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
+uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p)
 {
 	if (p.size_ <= 0)
 	{
@@ -499,7 +499,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		if (checkNeedStackSize > 0)
 		{
 			//放不完的还需要多少个格子
-			needEmptyGridSize = CalcItemStackNeedGridSize(checkNeedStackSize, itemTable->max_statck_size());
+			needEmptyGridSize = CalculateStackGridSize(checkNeedStackSize, itemTable->max_statck_size());
 			if (NotAdequateSize(needEmptyGridSize))
 			{
 				return kBagAddItemBagFull;
@@ -599,7 +599,7 @@ Guid Bag::LastGeneratorItemGuid()
 	return tls.lastGeneratorItemGuid;
 }
 
-bool Bag::IsInvalidItemGuid(const ItemPBComp& item)
+bool Bag::IsInvalidItemGuid(const ItemPBComp& item)const
 {
 	return item.item_id() == kInvalidGuid || item.item_id() <= 0;
 }
@@ -610,7 +610,7 @@ void Bag::DestroyItem(Guid guid)
 	items_.erase(guid);
 }
 
-std::size_t Bag::CalcItemStackNeedGridSize(std::size_t itemStackSize, std::size_t stackSize)
+std::size_t Bag::CalculateStackGridSize(std::size_t itemStackSize, std::size_t stackSize)
 {
 	if (stackSize <= 0)
 	{
