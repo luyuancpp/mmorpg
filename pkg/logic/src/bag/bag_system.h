@@ -8,13 +8,14 @@
 using ItemsMap = std::unordered_map<Guid, entt::entity>;
 using PosMap = std::unordered_map<uint32_t, Guid>;
 
+constexpr std::size_t kDefaultCapacity{ 10 };
+constexpr std::size_t kEquipmentCapacity{ 10 };
+constexpr std::size_t kBagMaxCapacity{ 100 };
+constexpr std::size_t kTempBagMaxCapacity{ 200 };
+constexpr std::size_t kWarehouseMaxCapacity{ 200 };
+
 struct BagCapacity
 {
-	static constexpr std::size_t kDefaultCapacity{10};
-	static constexpr std::size_t kEquipmentCapacity{10};
-	static constexpr std::size_t kBagMaxCapacity{100};
-	static constexpr std::size_t kTempBagMaxCapacity{200};
-	static constexpr std::size_t kWarehouseMaxCapacity{200};
 	std::size_t size_{kDefaultCapacity};
 };
 
@@ -42,7 +43,7 @@ public:
     Bag();
     ~Bag();
 
-    std::size_t size() const { return capacity_.size_; }
+    std::size_t size() const { return capacity_; }
     [[nodiscard]] Guid PlayerGuid() const { return playerGuid; }
     std::size_t ItemGridSize() const { return items_.size(); }
     std::size_t PosSize() const { return pos_.size(); }
@@ -89,7 +90,7 @@ private:
 	ItemsMap items_{};
 	PosMap pos_{};
 	uint32_t type_{};
-	BagCapacity capacity_;
+    std::size_t capacity_{ kDefaultCapacity };
 	entt::registry itemRegistry;
 	Guid playerGuid{ kInvalidGuid };
 };
