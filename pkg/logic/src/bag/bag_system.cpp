@@ -152,47 +152,24 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map)
 	}
 	return kOK;
 }
-uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& adequate_items)
+uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems)
 {
-	auto stack_item_list = adequate_items;
-	for (auto&& [_, item] : itemRegistry.view<ItemPBComp>().each())
-	{
-		for (auto& ji : stack_item_list)
-		{
-			if (item.config_id() != ji.first)
-			{
-				continue;
-			}
-			auto [itemTable, result] = GetItemTable(ji.first);
-			if (nullptr == itemTable)
-			{
-				return result;
-			}
-			if (itemTable->max_statck_size() <= 0)
-			{
-				LOG_ERROR << "config error:" << ji.first << "player:" << PlayerGuid();
-				return kInvalidTableData;
-			}
-			if (ji.second <= item.size())
-			{
-				stack_item_list.erase(ji.first);//该物品叠加成功,从列表删除
-				break;
-			}
-			ji.second -= item.size();
-		}
+    auto itemsToCheck = requiredItems;
 
-		if (stack_item_list.empty())
-		{
-			return kOK;
-		}
-	}
+    for (auto&& [entity, item] : itemRegistry.view<ItemPBComp>().each()) {
+        auto configId = item.config_id();
+        auto it = itemsToCheck.find(configId);
+        if (it != itemsToCheck.end()) {
+            if (item.size() >= it->second) {
+                itemsToCheck.erase(it);
+            }
+            else {
+                it->second -= item.size();
+            }
+        }
+    }
 
-	if (!stack_item_list.empty())
-	{
-		return kBagInsufficientItems;
-	}
-
-	return kOK;
+    return itemsToCheck.empty() ? kOK : kBagInsufficientItems;
 }
 
 uint32_t  Bag::RemoveItems(const U32U32UnorderedMap& try_del_items)
