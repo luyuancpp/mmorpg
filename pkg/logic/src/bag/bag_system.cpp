@@ -542,22 +542,10 @@ void Bag::DestroyItem(Guid guid)
 	items_.erase(guid);
 }
 
-std::size_t Bag::CalculateStackGridSize(std::size_t itemStackSize, std::size_t stackSize)
+std::size_t Bag::CalculateStackGridSize(std::size_t total_size, std::size_t max_statck_size)
 {
-	if (stackSize <= 0)
-	{
-		return UINT64_MAX;
-	}
-	//物品中可以堆叠的数量,用除法防止溢出,上面判断过大于0了
-	auto stackGridSize = itemStackSize / stackSize;//满叠加的格子
-	if (itemStackSize % stackSize > 0)
-	{
-		stackGridSize += 1;
-	}
-
-	return stackGridSize;
+	return (total_size + max_statck_size - 1) / max_statck_size;
 }
-
 
 void Bag::ToString()
 {
