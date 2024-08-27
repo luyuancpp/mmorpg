@@ -9,8 +9,8 @@ TEST(TeamManger, CreateFullDismiss)
 {
 	TeamSystem team_list;
 
-	typedef std::vector<Guid> PlayerIdsV;
-	PlayerIdsV team_idl_ist;
+	typedef std::vector<Guid> PlayerIDVector;
+	PlayerIDVector team_idl_ist;
 	Guid player_id = 1;
 	for (int32_t i = 0; i < kMaxTeamSize; ++i)
 	{
