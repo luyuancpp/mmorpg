@@ -5,8 +5,10 @@ import (
 	"db/internal/config"
 	"db/internal/logic/pkg/queue"
 	"db/pb/game"
+	"fmt"
 	"github.com/go-sql-driver/mysql"
 	pbmysql "github.com/luyuancpp/pbmysql-go"
+	"github.com/zeromicro/go-zero/core/logx"
 	"log"
 )
 
@@ -28,7 +30,36 @@ func newMysqlConfig(config config.DBConf) *mysql.Config {
 	return myCnf
 }
 
+// 创建数据库的函数
+func CreateDatabase(config config.DBConf) error {
+	// 使用不包含数据库名的连接配置
+	mysqlConfig := newMysqlConfig(config)
+	mysqlConfig.DBName = "" // 确保不指定数据库名
+
+	conn, err := mysql.NewConnector(mysqlConfig)
+	if err != nil {
+		return fmt.Errorf("error creating MySQL connector: %w", err)
+	}
+
+	// 创建一个与 MySQL 服务器的连接
+	tempDB := sql.OpenDB(conn)
+	defer tempDB.Close()
+
+	// 执行创建数据库的 SQL 语句
+	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DBName))
+	if err != nil {
+		logx.Error("error creating database: %w", err)
+	}
+
+	return err
+}
+
 func openDB() error {
+	// 创建数据库
+	if err := CreateDatabase(config.DBConfig); err != nil {
+		return err
+	}
+
 	mysqlConfig := newMysqlConfig(config.DBConfig)
 	conn, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
