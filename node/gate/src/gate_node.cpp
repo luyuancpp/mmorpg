@@ -224,8 +224,7 @@ void GateNode::InitNodeConfig()
     DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void
-    GateNode::InitGameConfig ( )
+void GateNode::InitGameConfig ( )
 {
 }
 
