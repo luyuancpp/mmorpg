@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-var Db *sql.DB
+var db *sql.DB
 
 var PbDb *pbmysql.PbMysqlDB
 
@@ -53,12 +53,12 @@ func OpenDB(path string) error {
 		return err
 	}
 
-	Db = sql.OpenDB(conn)
-	Db.SetMaxOpenConns(dbConfig.MaxOpenConn)
-	Db.SetMaxIdleConns(dbConfig.MaxIdleConn)
+	db = sql.OpenDB(conn)
+	db.SetMaxOpenConns(dbConfig.MaxOpenConn)
+	db.SetMaxIdleConns(dbConfig.MaxIdleConn)
 
 	PbDb = pbmysql.NewPb2DbTables()
-	err = PbDb.OpenDB(Db, mysqlConfig.DBName)
+	err = PbDb.OpenDB(db, mysqlConfig.DBName)
 	if err != nil {
 		return err
 	}
@@ -75,32 +75,32 @@ func InitDBTable() {
 	PbDb.AddMysqlTable(&game.GateNodeDb{})
 	PbDb.AddMysqlTable(&game.GameNodeDb{})
 
-	_, err := Db.Exec(PbDb.GetCreateTableSql(&game.DatabaseNodeDb{}))
+	_, err := db.Exec(PbDb.GetCreateTableSql(&game.DatabaseNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.LoginNodeDb{}))
+	_, err = db.Exec(PbDb.GetCreateTableSql(&game.LoginNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.CentreNodeDb{}))
+	_, err = db.Exec(PbDb.GetCreateTableSql(&game.CentreNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.RedisNodeDb{}))
+	_, err = db.Exec(PbDb.GetCreateTableSql(&game.RedisNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.GateNodeDb{}))
+	_, err = db.Exec(PbDb.GetCreateTableSql(&game.GateNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.GameNodeDb{}))
+	_, err = db.Exec(PbDb.GetCreateTableSql(&game.GameNodeDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
