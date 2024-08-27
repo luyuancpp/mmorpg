@@ -36,7 +36,7 @@ using namespace muduo::net;
 
 constexpr std::size_t kMaxPlayerSize{50000};
 
-Guid GetPlayerIdBySessionId(const uint64_t session_id)
+Guid GetPlayerIDBySessionId(const uint64_t session_id)
 {
 	const auto session_it = tlsSessions.find(session_id);
 	if (session_it == tlsSessions.end())
@@ -49,7 +49,7 @@ Guid GetPlayerIdBySessionId(const uint64_t session_id)
 
 entt::entity GetPlayerEntityBySessionId(uint64_t session_id)
 {
-	auto player_id = GetPlayerIdBySessionId(session_id);
+	auto player_id = GetPlayerIDBySessionId(session_id);
 
 	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
 
@@ -369,7 +369,7 @@ void CentreServiceHandler::LoginNodeLeaveGame(::google::protobuf::RpcController*
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	PlayerNodeUtil::HandlePlayerLeave(GetPlayerIdBySessionId(tlsCommonLogic.session_id()));
+	PlayerNodeUtil::HandlePlayerLeave(GetPlayerIDBySessionId(tlsCommonLogic.session_id()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -380,7 +380,7 @@ void CentreServiceHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcCon
 {
 ///<<< BEGIN WRITING YOUR CODE
 	defer(Destroy(tls.registry, entt::entity{ tlsCommonLogic.session_id() }));
-	const auto player_id = GetPlayerIdBySessionId(tlsCommonLogic.session_id());
+	const auto player_id = GetPlayerIDBySessionId(tlsCommonLogic.session_id());
 	PlayerNodeUtil::HandlePlayerLeave(player_id);
 ///<<< END WRITING YOUR CODE
 }
