@@ -7,13 +7,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
+	"github.com/golang/protobuf/proto"
 	pbmysql "github.com/luyuancpp/pbmysql-go"
-	"log"
+	"github.com/zeromicro/go-zero/core/logx"
 	"os"
 )
 
 var db *sql.DB
-
 var PbDb *pbmysql.PbMysqlDB
 
 func NewMysqlConfig(config config.DBConfig) *mysql.Config {
@@ -26,31 +26,54 @@ func NewMysqlConfig(config config.DBConfig) *mysql.Config {
 	return myCnf
 }
 
+// 创建数据库的函数
+func CreateDatabase(config config.DBConfig) error {
+	// 使用不包含数据库名的连接配置
+	mysqlConfig := NewMysqlConfig(config)
+	mysqlConfig.DBName = "" // 确保不指定数据库名
+
+	conn, err := mysql.NewConnector(mysqlConfig)
+	if err != nil {
+		return fmt.Errorf("error creating MySQL connector: %w", err)
+	}
+
+	// 创建一个与 MySQL 服务器的连接
+	tempDB := sql.OpenDB(conn)
+	defer tempDB.Close()
+
+	// 执行创建数据库的 SQL 语句
+	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DBName))
+	if err != nil {
+		logx.Error("error creating database: %w", err)
+	}
+
+	return err
+}
+
 func OpenDB(path string) error {
 	file, err := os.Open(path)
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}(file)
 	if err != nil {
-		fmt.Println(err)
+		logx.Error("error opening config file: %w", err)
 		return err
 	}
+	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 	dbConfig := config.DBConfig{}
-	err = decoder.Decode(&dbConfig)
-	if err != nil {
-		log.Fatal(err)
+	if err := decoder.Decode(&dbConfig); err != nil {
+		return fmt.Errorf("error decoding config file: %w", err)
+	}
+
+	// 创建数据库
+	if err := CreateDatabase(dbConfig); err != nil {
 		return err
 	}
+
+	// 创建带有数据库名的连接配置
 	mysqlConfig := NewMysqlConfig(dbConfig)
 	conn, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
-		log.Fatal(err)
-		return err
+		return fmt.Errorf("error creating MySQL connector: %w", err)
 	}
 
 	db = sql.OpenDB(conn)
@@ -58,8 +81,8 @@ func OpenDB(path string) error {
 	db.SetMaxIdleConns(dbConfig.MaxIdleConn)
 
 	PbDb = pbmysql.NewPb2DbTables()
-	err = PbDb.OpenDB(db, mysqlConfig.DBName)
-	if err != nil {
+	if err := PbDb.OpenDB(db, mysqlConfig.DBName); err != nil {
+		logx.Error("error opening PbMysqlDB: %w", err)
 		return err
 	}
 
@@ -67,59 +90,43 @@ func OpenDB(path string) error {
 }
 
 func InitDBTable() {
+	tables := []proto.Message{
+		&game.DatabaseNodeDb{},
+		&game.LoginNodeDb{},
+		&game.CentreNodeDb{},
+		&game.RedisNodeDb{},
+		&game.GateNodeDb{},
+		&game.GameNodeDb{},
+	}
 
-	PbDb.AddMysqlTable(&game.DatabaseNodeDb{})
-	PbDb.AddMysqlTable(&game.LoginNodeDb{})
-	PbDb.AddMysqlTable(&game.CentreNodeDb{})
-	PbDb.AddMysqlTable(&game.RedisNodeDb{})
-	PbDb.AddMysqlTable(&game.GateNodeDb{})
-	PbDb.AddMysqlTable(&game.GameNodeDb{})
-
-	_, err := db.Exec(PbDb.GetCreateTableSql(&game.DatabaseNodeDb{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = db.Exec(PbDb.GetCreateTableSql(&game.LoginNodeDb{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = db.Exec(PbDb.GetCreateTableSql(&game.CentreNodeDb{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = db.Exec(PbDb.GetCreateTableSql(&game.RedisNodeDb{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = db.Exec(PbDb.GetCreateTableSql(&game.GateNodeDb{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = db.Exec(PbDb.GetCreateTableSql(&game.GameNodeDb{}))
-	if err != nil {
-		log.Fatal(err)
-		return
+	for _, table := range tables {
+		PbDb.AddMysqlTable(table)
+		sqlQuery := PbDb.GetCreateTableSql(table)
+		_, err := db.Exec(sqlQuery)
+		if err != nil {
+			logx.Error("error creating table: %v", err)
+		}
 	}
 }
 
 func AlterCreateDBTable() {
-	PbDb.UpdateTableField(&game.DatabaseNodeDb{})
-	PbDb.UpdateTableField(&game.LoginNodeDb{})
-	PbDb.UpdateTableField(&game.CentreNodeDb{})
-	PbDb.UpdateTableField(&game.RedisNodeDb{})
-	PbDb.UpdateTableField(&game.GateNodeDb{})
-	PbDb.UpdateTableField(&game.GameNodeDb{})
+	tables := []proto.Message{
+		&game.DatabaseNodeDb{},
+		&game.LoginNodeDb{},
+		&game.CentreNodeDb{},
+		&game.RedisNodeDb{},
+		&game.GateNodeDb{},
+		&game.GameNodeDb{},
+	}
+
+	for _, table := range tables {
+		PbDb.UpdateTableField(table)
+	}
 }
 
 func InitDB(path string) {
-	err := OpenDB(path)
-	if err != nil {
-		return
+	if err := OpenDB(path); err != nil {
+		logx.Error("error opening database: %v", err)
 	}
 	InitDBTable()
 	AlterCreateDBTable()
