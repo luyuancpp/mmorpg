@@ -12,19 +12,82 @@
         "id": "fd09b9c3-5ee2-4278-85cb-f397d8f4b705",
         "title": "A behavior tree",
         "description": "",
-        "root": null,
+        "root": "51710f75-1e1a-489e-b981-0967869339e0",
         "properties": {},
-        "nodes": {},
+        "nodes": {
+          "5a147eec-495f-4576-b325-6c9fce3db1be": {
+            "id": "5a147eec-495f-4576-b325-6c9fce3db1be",
+            "name": "SendCreatePlayer",
+            "category": "composite",
+            "title": "SendCreatePlayer",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 60,
+              "y": -168
+            },
+            "children": []
+          },
+          "51710f75-1e1a-489e-b981-0967869339e0": {
+            "id": "51710f75-1e1a-489e-b981-0967869339e0",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -204,
+              "y": -96
+            },
+            "children": [
+              "9b244ecb-0607-4099-8d00-78ab8be94dfb",
+              "5a147eec-495f-4576-b325-6c9fce3db1be"
+            ]
+          },
+          "9b244ecb-0607-4099-8d00-78ab8be94dfb": {
+            "id": "9b244ecb-0607-4099-8d00-78ab8be94dfb",
+            "name": "IsRoleListEmpty",
+            "category": "condition",
+            "title": "IsRoleListEmpty",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 72,
+              "y": -252
+            }
+          }
+        },
         "display": {
           "camera_x": 899.5,
           "camera_y": 546,
           "camera_z": 1,
-          "x": 0,
-          "y": 0
+          "x": -384,
+          "y": -24
         }
       }
     ],
-    "custom_nodes": [],
+    "custom_nodes": [
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "SendCreatePlayer",
+        "category": "composite",
+        "title": null,
+        "description": null,
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "IsRoleListEmpty",
+        "category": "condition",
+        "title": null,
+        "description": null,
+        "properties": {},
+        "parent": null
+      }
+    ],
     "custom_folders": []
   },
   "path": "D:\\game\\luyuan\\turn-based-game\\robot\\etc\\robot.b3"
