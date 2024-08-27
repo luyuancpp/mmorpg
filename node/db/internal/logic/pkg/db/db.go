@@ -7,33 +7,34 @@ import (
 	"db/pb/game"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
+	"github.com/golang/protobuf/proto"
 	pbmysql "github.com/luyuancpp/pbmysql-go"
 	"github.com/zeromicro/go-zero/core/logx"
 	"log"
 )
 
 type GameDB struct {
-	PbDB     *pbmysql.PbMysqlDB
+	PBDB     *pbmysql.PbMysqlDB
 	MsgQueue *queue.MsgQueue
 	DB       *sql.DB
 }
 
 var DB *GameDB
 
-func newMysqlConfig(config config.DBConf) *mysql.Config {
+func newMysqlConfig(conf config.DBConf) *mysql.Config {
 	myCnf := mysql.NewConfig()
-	myCnf.User = config.User
-	myCnf.Passwd = config.Passwd
-	myCnf.Addr = config.Addr
-	myCnf.Net = config.Net
-	myCnf.DBName = config.DBName
+	myCnf.User = conf.User
+	myCnf.Passwd = conf.Passwd
+	myCnf.Addr = conf.Addr
+	myCnf.Net = conf.Net
+	myCnf.DBName = conf.DBName
 	return myCnf
 }
 
 // 创建数据库的函数
-func CreateDatabase(config config.DBConf) error {
+func CreateDatabase(conf config.DBConf) error {
 	// 使用不包含数据库名的连接配置
-	mysqlConfig := newMysqlConfig(config)
+	mysqlConfig := newMysqlConfig(conf)
 	mysqlConfig.DBName = "" // 确保不指定数据库名
 
 	conn, err := mysql.NewConnector(mysqlConfig)
@@ -43,24 +44,29 @@ func CreateDatabase(config config.DBConf) error {
 
 	// 创建一个与 MySQL 服务器的连接
 	tempDB := sql.OpenDB(conn)
-	defer tempDB.Close()
+	defer func() {
+		if err := tempDB.Close(); err != nil {
+			logx.Error("error closing temp database connection: %w", err)
+		}
+	}()
 
 	// 执行创建数据库的 SQL 语句
-	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DBName))
+	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", conf.DBName))
 	if err != nil {
 		logx.Error("error creating database: %w", err)
-	}
-
-	return err
-}
-
-func openDB() error {
-	// 创建数据库
-	if err := CreateDatabase(config.DBConfig); err != nil {
 		return err
 	}
 
-	mysqlConfig := newMysqlConfig(config.DBConfig)
+	return nil
+}
+
+func openDB(conf config.DBConf) error {
+	// 创建数据库
+	if err := CreateDatabase(conf); err != nil {
+		return err
+	}
+
+	mysqlConfig := newMysqlConfig(conf)
 	conn, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
 		log.Fatal(err)
@@ -69,24 +75,23 @@ func openDB() error {
 
 	DB = &GameDB{
 		DB:       sql.OpenDB(conn),
-		PbDB:     pbmysql.NewPb2DbTables(),
-		MsgQueue: queue.NewMsgQueue(config.DBConfig.RoutineNum, config.DBConfig.ChannelBufferNum),
+		PBDB:     pbmysql.NewPb2DbTables(),
+		MsgQueue: queue.NewMsgQueue(conf.RoutineNum, conf.ChannelBufferNum),
 	}
 
-	DB.DB.SetMaxOpenConns(config.DBConfig.MaxOpenConn)
-	DB.DB.SetMaxIdleConns(config.DBConfig.MaxIdleConn)
+	DB.DB.SetMaxOpenConns(conf.MaxOpenConn)
+	DB.DB.SetMaxIdleConns(conf.MaxIdleConn)
 
-	err = DB.PbDB.OpenDB(DB.DB, mysqlConfig.DBName)
+	err = DB.PBDB.OpenDB(DB.DB, mysqlConfig.DBName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func InitDB() {
-	err := openDB()
-	if err != nil {
-		return
+func InitDB(conf config.DBConf) {
+	if err := openDB(conf); err != nil {
+		log.Fatalf("error opening database: %v", err)
 	}
 	createDBTable()
 	alterDBTable()
@@ -94,54 +99,46 @@ func InitDB() {
 }
 
 func createDBTable() {
-	DB.PbDB.AddMysqlTable(&game.UserAccounts{})
-	DB.PbDB.AddMysqlTable(&game.AccountShareDatabase{})
-	DB.PbDB.AddMysqlTable(&game.PlayerCentreDatabase{})
-	DB.PbDB.AddMysqlTable(&game.PlayerDatabase{})
-	DB.PbDB.AddMysqlTable(&game.PlayerUnimportanceDatabase{})
+	tables := []proto.Message{
+		&game.UserAccounts{},
+		&game.AccountShareDatabase{},
+		&game.PlayerCentreDatabase{},
+		&game.PlayerDatabase{},
+		&game.PlayerUnimportanceDatabase{},
+	}
 
-	_, err := DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.UserAccounts{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.AccountShareDatabase{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.PlayerCentreDatabase{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.PlayerDatabase{}))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.PlayerUnimportanceDatabase{}))
-	if err != nil {
-		log.Fatal(err)
-		return
+	for _, table := range tables {
+		DB.PBDB.AddMysqlTable(table)
+		sql := DB.PBDB.GetCreateTableSql(table)
+		_, err := DB.DB.Exec(sql)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
 	}
 }
 
 func alterDBTable() {
-	DB.PbDB.UpdateTableField(&game.UserAccounts{})
-	DB.PbDB.UpdateTableField(&game.AccountShareDatabase{})
-	DB.PbDB.UpdateTableField(&game.PlayerCentreDatabase{})
-	DB.PbDB.UpdateTableField(&game.PlayerDatabase{})
-	DB.PbDB.UpdateTableField(&game.PlayerUnimportanceDatabase{})
+	tables := []proto.Message{
+		&game.UserAccounts{},
+		&game.AccountShareDatabase{},
+		&game.PlayerCentreDatabase{},
+		&game.PlayerDatabase{},
+		&game.PlayerUnimportanceDatabase{},
+	}
+
+	for _, table := range tables {
+		DB.PBDB.UpdateTableField(table)
+	}
 }
 
 func initDBConsume() {
 	go func() {
-		for i := 0; i < config.DBConfig.RoutineNum; i++ {
+		for i := 0; i < DB.MsgQueue.RoutineNum; i++ {
 			go func(i int) {
 				for {
 					msg := DB.MsgQueue.Pop(i)
-					DB.PbDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)
+					DB.PBDB.LoadOneByWhereCase(msg.Body, msg.WhereCase)
 					msg.Chan <- true
 				}
 			}(i)

@@ -1,7 +1,10 @@
 package pkg
 
-import "db/internal/logic/pkg/db"
+import (
+	"db/internal/config"
+	"db/internal/logic/pkg/db"
+)
 
 func Init() {
-	db.InitDB()
+	db.InitDB(config.DBConfig)
 }
