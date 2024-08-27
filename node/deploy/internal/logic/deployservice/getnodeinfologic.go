@@ -40,12 +40,12 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 	}
 
 	zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
-	db.PbDb.LoadOneByWhereCase(response.Info.GetDatabaseInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetLoginInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetCentreInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetGameInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetGateInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetRedisInfo(), "where zone_id="+zoneId)
+	db.PBDB.LoadOneByWhereCase(response.Info.GetDatabaseInfo(), "where zone_id="+zoneId)
+	db.PBDB.LoadListByWhereCase(response.Info.GetLoginInfo(), "where zone_id="+zoneId)
+	db.PBDB.LoadListByWhereCase(response.Info.GetCentreInfo(), "where zone_id="+zoneId)
+	db.PBDB.LoadListByWhereCase(response.Info.GetGameInfo(), "where zone_id="+zoneId)
+	db.PBDB.LoadListByWhereCase(response.Info.GetGateInfo(), "where zone_id="+zoneId)
+	db.PBDB.LoadListByWhereCase(response.Info.GetRedisInfo(), "where zone_id="+zoneId)
 
 	//to do 分布式异步
 	setKeyName := ""
