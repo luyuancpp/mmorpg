@@ -18,15 +18,12 @@ compile_commands.json
 *.pyc
 *.dll
 *.log
-pkg/pbc/src/*
 x64/
 .vs/
-common/src/game_config/proto/*
 bin/config/xlwt/
 bin/config/xlrd/
 bin/config/generated/
 bin/zlib*
-pkg/config/src/
 tools/server/pbgen/.idea/
 tools/server/pbgen/bin/
 common/src/pb/pb2sol2/
