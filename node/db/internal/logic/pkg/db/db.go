@@ -63,13 +63,13 @@ func InitDB() {
 }
 
 func createDBTable() {
-	DB.PbDB.AddMysqlTable(&game.AccountDatabase{})
+	DB.PbDB.AddMysqlTable(&game.UserAccounts{})
 	DB.PbDB.AddMysqlTable(&game.AccountShareDatabase{})
 	DB.PbDB.AddMysqlTable(&game.PlayerCentreDatabase{})
 	DB.PbDB.AddMysqlTable(&game.PlayerDatabase{})
 	DB.PbDB.AddMysqlTable(&game.PlayerUnimportanceDatabase{})
 
-	_, err := DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.AccountDatabase{}))
+	_, err := DB.DB.Exec(DB.PbDB.GetCreateTableSql(&game.UserAccounts{}))
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -97,7 +97,7 @@ func createDBTable() {
 }
 
 func alterDBTable() {
-	DB.PbDB.UpdateTableField(&game.AccountDatabase{})
+	DB.PbDB.UpdateTableField(&game.UserAccounts{})
 	DB.PbDB.UpdateTableField(&game.AccountShareDatabase{})
 	DB.PbDB.UpdateTableField(&game.PlayerCentreDatabase{})
 	DB.PbDB.UpdateTableField(&game.PlayerDatabase{})

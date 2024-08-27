@@ -46,7 +46,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAcc
 
 	msgChannel := queue.MsgChannel{}
 	msgChannel.Key = hash64.Sum64()
-	msg := &game.AccountDatabase{}
+	msg := &game.UserAccounts{}
 	msgChannel.Body = msg
 	msgChannel.Chan = make(chan bool)
 	msgChannel.WhereCase = "where account='" + in.Account + "'"
