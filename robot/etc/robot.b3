@@ -1,0 +1,31 @@
+{
+  "name": "robot",
+  "description": "",
+  "data": {
+    "version": "0.3.0",
+    "scope": "project",
+    "selectedTree": "fd09b9c3-5ee2-4278-85cb-f397d8f4b705",
+    "trees": [
+      {
+        "version": "0.3.0",
+        "scope": "tree",
+        "id": "fd09b9c3-5ee2-4278-85cb-f397d8f4b705",
+        "title": "A behavior tree",
+        "description": "",
+        "root": null,
+        "properties": {},
+        "nodes": {},
+        "display": {
+          "camera_x": 899.5,
+          "camera_y": 546,
+          "camera_z": 1,
+          "x": 0,
+          "y": 0
+        }
+      }
+    ],
+    "custom_nodes": [],
+    "custom_folders": []
+  },
+  "path": "D:\\game\\luyuan\\turn-based-game\\robot\\etc\\robot.b3"
+}

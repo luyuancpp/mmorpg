@@ -15,28 +15,28 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 		zap.L().Error("player not found", zap.Uint64("player id ", client.PlayerId))
 		return
 	}
-	if response.MessageId == 18 {
+	if response.MessageId == game.ClientPlayerSceneServiceNotifySceneInfoMessageId {
 		message := &game.SceneInfoS2C{}
 		err := proto.Unmarshal(response.Body, message)
 		if err != nil {
 			return
 		}
 		SceneInfoS2CHandler(player, message)
-	} else if response.MessageId == 17 {
+	} else if response.MessageId == game.GamePlayerSceneServiceEnterSceneS2CMessageId {
 		message := &game.EnterSceneS2C{}
 		err := proto.Unmarshal(response.Body, message)
 		if err != nil {
 			return
 		}
 		EnterSceneS2CHandler(player, message)
-	} else if response.MessageId == 0 {
-		message := &game.TipS2C{}
+	} else if response.MessageId == game.PlayerClientCommonServiceSendTipToClientMessageId {
+		message := &game.TipInfoMessage{}
 		err := proto.Unmarshal(response.Body, message)
 		if err != nil {
 			return
 		}
 		TipS2CHandler(player, message)
-	} else if response.MessageId == 16 {
+	} else if response.MessageId == game.CentrePlayerSceneServiceEnterSceneMessageId {
 		message := &game.EnterSceneC2SResponse{}
 		err := proto.Unmarshal(response.Body, message)
 		if err != nil {
