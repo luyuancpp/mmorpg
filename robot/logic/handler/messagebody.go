@@ -52,5 +52,4 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 		zap.L().Info("un handle message", zap.String("response", response.String()))
 	}
 
-	player.TickBehaviorTree()
 }
