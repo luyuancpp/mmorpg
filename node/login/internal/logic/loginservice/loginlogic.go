@@ -3,7 +3,7 @@ package loginservicelogic
 import (
 	"context"
 	"github.com/golang/protobuf/proto"
-	"login/client/dbservice/accountdbservice"
+	"login/client/accountdbservice"
 	"login/data"
 	"strconv"
 
