@@ -156,8 +156,8 @@ const (
 	LoginPrefixName                 = "login"
 	DeployPrefixName                = "deploy"
 	DatabasePrefixName              = "db"
-	GsPrefixName                    = "game"
-	GsPlayerPrefixName              = "game_player"
+	GameNodePrefixName              = "game"
+	GameNodePlayerPrefixName        = "game_player"
 	CentrePrefixName                = "centre"
 	CentrePlayerPrefixName          = "centre_player"
 	PlayerName                      = "player"
@@ -165,6 +165,7 @@ const (
 	PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\"\n"
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
 	ClientLuaProjectRelative        = "script/lua/service/"
+	GatePrefixName                  = "gate"
 )
 
 const (
