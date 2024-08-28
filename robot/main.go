@@ -1,6 +1,7 @@
 package main
 
 import (
+	"client/config"
 	"client/logic/handler"
 	"client/pb/game"
 	"client/pkg"
@@ -23,9 +24,9 @@ func main() {
 	defer logger.Sync()
 	zap.ReplaceGlobals(logger)
 
-	for i := 1; i < 6; i++ {
+	for i := 1; i < config.AppConfig.Robots.Count; i++ {
 		go func(i int) {
-			client, err := muduo.NewClient("127.0.0.1", 4000, &muduo.TcpCodec{})
+			client, err := muduo.NewClient(config.AppConfig.Server.Ip, config.AppConfig.Server.Port, &muduo.TcpCodec{})
 			if err != nil {
 				log.Fatalln(err)
 			}

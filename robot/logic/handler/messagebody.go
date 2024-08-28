@@ -45,7 +45,8 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 	} else if response.MessageId == game.ClientPlayerSceneServiceNotifyActorListCreateMessageId ||
 		response.MessageId == game.ClientPlayerSceneServiceNotifyActorListDestroyMessageId ||
 		response.MessageId == game.ClientPlayerSceneServiceSceneInfoC2SMessageId ||
-		response.MessageId == game.ClientPlayerSceneServiceEnterSceneMessageId {
+		response.MessageId == game.ClientPlayerSceneServiceEnterSceneMessageId ||
+		response.MessageId == game.ClientPlayerSceneServiceNotifyActorDestroyMessageId {
 
 	} else {
 		zap.L().Info("un handle message", zap.String("response", response.String()))
