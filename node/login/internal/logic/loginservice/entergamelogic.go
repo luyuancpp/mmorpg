@@ -62,7 +62,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 		ClientMsgBody: in.ClientMsgBody,
 		SessionInfo:   in.SessionInfo,
 	}
-	l.svcCtx.CentreClient.Send(centreRequest, 54)
+	l.svcCtx.CentreClient.Send(centreRequest, game.CentreServiceLoginNodeEnterGameMessageId)
 
 	return resp, nil
 }

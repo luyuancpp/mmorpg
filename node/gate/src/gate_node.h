@@ -56,7 +56,7 @@ private:
 
     void Connect2Centre();
 
-    void Connect2Login() const;
+    void Connect2Login();
 
     void OnUnknownMessage(const TcpConnectionPtr& conn,
                                  const MessagePtr& message,
@@ -86,6 +86,7 @@ private:
     RpcClientPtr zone_centre_node_;
     GateServiceHandler service_handler_;
     TimerTaskComp deploy_rpc_timer_;
+    TimerTaskComp loginGrpcSelectTimer;
 };
 
 

@@ -22,7 +22,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 			return
 		}
 		SceneInfoS2CHandler(player, message)
-	} else if response.MessageId == game.GamePlayerSceneServiceEnterSceneS2CMessageId {
+	} else if response.MessageId == game.ClientPlayerSceneServiceNotifyEnterSceneMessageId {
 		message := &game.EnterSceneS2C{}
 		err := proto.Unmarshal(response.Body, message)
 		if err != nil {
@@ -42,7 +42,8 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 		if err != nil {
 			return
 		}
-	} else if response.MessageId == 23 {
+	} else if response.MessageId == game.ClientPlayerSceneServiceNotifyActorListCreateMessageId ||
+		response.MessageId == game.ClientPlayerSceneServiceNotifyActorListDestroyMessageId {
 
 	} else {
 		zap.L().Info("un handle message", zap.String("response", response.String()))

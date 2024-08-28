@@ -49,7 +49,6 @@ g_message_info[CentrePlayerSceneServiceEnterSceneMessageId] = RpcService{"Centre
 g_message_info[CentrePlayerSceneServiceLeaveSceneMessageId] = RpcService{"CentrePlayerSceneService","LeaveScene","CentreLeaveSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<CentrePlayerSceneServiceImpl>()};
 g_message_info[CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerCompleteMessageId] = RpcService{"CentrePlayerSceneService","LeaveSceneAsyncSavePlayerComplete","CentreLeaveSceneAsyncSavePlayerCompleteRequest","google::protobuf::Empty",std::make_unique_for_overwrite<CentrePlayerSceneServiceImpl>()};
 g_message_info[CentrePlayerSceneServiceSceneInfoC2SMessageId] = RpcService{"CentrePlayerSceneService","SceneInfoC2S","SceneInfoRequest","google::protobuf::Empty",std::make_unique_for_overwrite<CentrePlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(CentrePlayerSceneServiceSceneInfoC2SMessageId);
 
 g_message_info[CentrePlayerServiceTestMessageId] = RpcService{"CentrePlayerService","Test","google::protobuf::Empty","google::protobuf::Empty",std::make_unique_for_overwrite<CentrePlayerServiceImpl>()};
 
@@ -71,14 +70,21 @@ g_message_info[CentreServiceRoutePlayerStringMsgMessageId] = RpcService{"CentreS
 g_message_info[CentreServiceUnRegisterGameNodeMessageId] = RpcService{"CentreService","UnRegisterGameNode","UnRegisterGameNodeRequest","Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
 
 g_message_info[ClientPlayerSceneServiceEnterSceneMessageId] = RpcService{"ClientPlayerSceneService","EnterScene","EnterSceneC2SRequest","EnterSceneC2SResponse",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
+g_c2s_service_id.emplace(ClientPlayerSceneServiceEnterSceneMessageId);
 g_message_info[ClientPlayerSceneServiceNotifyEnterSceneMessageId] = RpcService{"ClientPlayerSceneService","NotifyEnterScene","EnterSceneS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
+g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyEnterSceneMessageId);
 g_message_info[ClientPlayerSceneServiceSceneInfoC2SMessageId] = RpcService{"ClientPlayerSceneService","SceneInfoC2S","SceneInfoRequest","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
 g_c2s_service_id.emplace(ClientPlayerSceneServiceSceneInfoC2SMessageId);
 g_message_info[ClientPlayerSceneServiceNotifySceneInfoMessageId] = RpcService{"ClientPlayerSceneService","NotifySceneInfo","SceneInfoS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
+g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifySceneInfoMessageId);
 g_message_info[ClientPlayerSceneServiceNotifyActorCreateMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorCreate","ActorCreateS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
+g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorCreateMessageId);
 g_message_info[ClientPlayerSceneServiceNotifyActorDestroyMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorDestroy","ActorDestroyS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
+g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorDestroyMessageId);
 g_message_info[ClientPlayerSceneServiceNotifyActorListCreateMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorListCreate","ActorListCreateS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
+g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListCreateMessageId);
 g_message_info[ClientPlayerSceneServiceNotifyActorListDestroyMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorListDestroy","ActorListDestroyS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
+g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListDestroyMessageId);
 
 g_message_info[GamePlayerSceneServiceEnterSceneMessageId] = RpcService{"GamePlayerSceneService","EnterScene","GsEnterSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};
 g_message_info[GamePlayerSceneServiceLeaveSceneMessageId] = RpcService{"GamePlayerSceneService","LeaveScene","GsLeaveSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};
@@ -111,10 +117,15 @@ g_message_info[GateServiceRoutePlayerMessageMessageId] = RpcService{"GateService
 g_message_info[GateServiceBroadcastToPlayersMessageId] = RpcService{"GateService","BroadcastToPlayers","BroadcastToPlayersRequest","Empty",std::make_unique_for_overwrite<GateServiceImpl>()};
 
 g_message_info[PlayerClientCommonServiceSendTipToClientMessageId] = RpcService{"PlayerClientCommonService","SendTipToClient","TipInfoMessage","Empty",std::make_unique_for_overwrite<PlayerClientCommonServiceImpl>()};
+g_c2s_service_id.emplace(PlayerClientCommonServiceSendTipToClientMessageId);
 g_message_info[PlayerClientCommonServiceKickPlayerMessageId] = RpcService{"PlayerClientCommonService","KickPlayer","TipInfoMessage","Empty",std::make_unique_for_overwrite<PlayerClientCommonServiceImpl>()};
+g_c2s_service_id.emplace(PlayerClientCommonServiceKickPlayerMessageId);
 
 g_message_info[PlayerSkillServiceUseSkillMessageId] = RpcService{"PlayerSkillService","UseSkill","UseSkillRequest","UseSkillResponse",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
+g_c2s_service_id.emplace(PlayerSkillServiceUseSkillMessageId);
 g_message_info[PlayerSkillServiceNotifySkillUsedMessageId] = RpcService{"PlayerSkillService","NotifySkillUsed","SkillUsedS2C","Empty",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
+g_c2s_service_id.emplace(PlayerSkillServiceNotifySkillUsedMessageId);
 g_message_info[PlayerSkillServiceNotifySkillInterruptedMessageId] = RpcService{"PlayerSkillService","NotifySkillInterrupted","SkillInterruptedS2C","Empty",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
+g_c2s_service_id.emplace(PlayerSkillServiceNotifySkillInterruptedMessageId);
 
 }

@@ -6,4 +6,7 @@ void InitRepliedHandler()
 	void InitCentreServiceRegisterGameNodeRepliedHandler();
 	InitCentreServiceRegisterGameNodeRepliedHandler();
 
+	void InitGateServiceRegisterGameRepliedHandler();
+	InitGateServiceRegisterGameRepliedHandler();
+
 }

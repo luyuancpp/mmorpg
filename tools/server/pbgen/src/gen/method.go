@@ -429,7 +429,7 @@ func isGsMethodHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	hasGsPrefix := strings.HasPrefix(firstMethodInfo.FileBaseName(), config.GsPrefixName)
+	hasGsPrefix := strings.HasPrefix(firstMethodInfo.FileBaseName(), config.GameNodePrefixName)
 
 	return isCommonOrLogicProto && hasGsPrefix
 }
@@ -449,7 +449,7 @@ func isGsPlayerHandler(methodList *RPCMethods) bool {
 	// Check if the file base name contains player name and does not contain centre prefix
 	fileBaseName := firstMethodInfo.FileBaseName()
 
-	if !strings.Contains(fileBaseName, config.GsPlayerPrefixName) {
+	if !strings.Contains(fileBaseName, config.GameNodePlayerPrefixName) {
 		return false
 	}
 
@@ -540,7 +540,7 @@ func isGsPlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	// Check if the file base name does not contain the GsPrefixName
+	// Check if the file base name does not contain the GameNodePrefixName
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePlayerPrefixName)
 }
 
@@ -604,7 +604,8 @@ func isGsMethodRepliedHandler(methodList *RPCMethods) bool {
 	}
 
 	// Check if the file base name contains specific keywords
-	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.GatePrefixName)
 }
 
 func writeGsMethodRepliedHandlerHeadFile(methodList RPCMethods) {
@@ -755,7 +756,8 @@ func isCentreMethodRepliedHandler(methodList *RPCMethods) bool {
 	}
 
 	// Ensure the file base name does not contain CentrePrefixName
-	return strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName)
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.GameNodePrefixName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.GatePrefixName)
 }
 
 func writeCentreMethodRepliedHandlerHeadFile(methodList RPCMethods) {
@@ -870,7 +872,7 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 	// Check if the FileBaseName of the method contains any of the specified prefixes
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.DeployPrefixName) ||
-		strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.GameNodePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.LoginPrefixName)
 }
 

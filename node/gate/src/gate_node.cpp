@@ -189,7 +189,7 @@ void GateNode::Connect2Centre()
     }
 }
 
-void GateNode::Connect2Login() const
+void GateNode::Connect2Login()
 {
     for (auto& login_node_info : node_net_info_.login_info().login_info())
     {
@@ -206,7 +206,7 @@ void GateNode::Connect2Login() const
         tls_gate.login_consistent_node().add(login_node_info.id(), 
             login_node_id);
     }
-    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.0001, AsyncCompleteRpcLoginService);
+    loginGrpcSelectTimer.RunEvery(0.01, AsyncCompleteRpcLoginService);
     void InitLoginNodeComponent();
     InitLoginNodeComponent();
 }

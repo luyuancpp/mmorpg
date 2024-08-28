@@ -315,7 +315,7 @@ func writeServiceInfoCppFile() {
 				method.Response,
 				handlerClassName,
 			))
-			if strings.Contains(rpcId, config.C2SMethodContainsName) {
+			if strings.Contains(method.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
 				initFuncBuilder.WriteString("g_c2s_service_id.emplace(" + rpcId + ");\n")
 			}
 		}
