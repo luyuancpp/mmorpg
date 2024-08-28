@@ -64,7 +64,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*rpcSession)->Send(GameServiceClientSendMessageToPlayerMessageId, request);
+	(*rpcSession)->Send(GameServiceSendMessageToPlayerMessageId, request);
 }
 
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
