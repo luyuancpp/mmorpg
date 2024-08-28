@@ -19,8 +19,8 @@ type GameClient struct {
 	Blackboard   *Blackboard
 }
 
+// NewGameClient 创建一个新的 GameClient 实例
 func NewGameClient(client *muduo.Client) *GameClient {
-
 	// 加载行为树配置文件
 	projectConfig, result := LoadRawProjectCfg("etc/robot.b3")
 	if !result {
@@ -31,36 +31,42 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	// 自定义节点注册
 	maps := b3.NewRegisterStructMaps()
 	maps.Register("SendCreatePlayer", new(behaviortree.SendCreatePlayer))
-	maps.Register("IsRoleListEmpty", new(behaviortree.IsRoleListEmpty)) // 确保你的行为树中需要该节点
+	maps.Register("IsRoleListEmpty", new(behaviortree.IsRoleListEmpty))
 
 	// 初始化行为树
 	behaviorTree := make([]*BehaviorTree, len(projectConfig.Data.Trees))
 	for i, v := range projectConfig.Data.Trees {
-		tree := CreateBevTreeFromConfig(&v, maps)
-		behaviorTree[i] = tree
+		behaviorTree[i] = CreateBevTreeFromConfig(&v, maps)
 	}
 
-	return &GameClient{Client: client, BehaviorTree: behaviorTree, Blackboard: NewBlackboard()}
+	return &GameClient{
+		Client:       client,
+		BehaviorTree: behaviorTree,
+		Blackboard:   NewBlackboard(),
+	}
 }
 
+// Send 向服务器发送消息
 func (c *GameClient) Send(message proto.Message, messageId uint32) {
 	rq := &game.ClientRequest{Id: 1, MessageId: messageId}
 	var err error
 	rq.Body, err = proto.Marshal(message)
 	if err != nil {
-		zap.L().Error("send message ", zap.Error(err))
+		zap.L().Error("Failed to marshal message", zap.Error(err))
 		return
 	}
 	c.Client.Send(rq)
+	//zap.L().Info("Sent message", zap.Uint32("messageId", messageId))
 }
 
+// Close 关闭客户端连接
 func (c *GameClient) Close() {
-	defer func(client *muduo.Client) {
-		err := client.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(c.Client)
+	err := c.Client.Close()
+	if err != nil {
+		zap.L().Error("Failed to close client", zap.Error(err))
+	} else {
+		zap.L().Info("Client closed successfully")
+	}
 }
 
 // TickBehaviorTree 更新所有行为树的状态
