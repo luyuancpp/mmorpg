@@ -50,6 +50,8 @@ func main() {
 					resp := msg.(*game.MessageBody)
 					handler.MessageBodyHandler(gameClient, resp)
 				}
+				
+				gameClient.TickBehaviorTree()
 			}
 
 		}(i)

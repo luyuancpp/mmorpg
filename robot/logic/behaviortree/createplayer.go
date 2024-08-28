@@ -35,5 +35,8 @@ func (this *IsRoleListEmpty) Initialize(setting *BTNodeCfg) {
 
 func (this *IsRoleListEmpty) OnTick(tick *Tick) b3.Status {
 	zap.L().Error("player tree tick")
+	if !tick.Blackboard.GetBool("loginsucess", "", "") {
+		return b3.FAILURE
+	}
 	return b3.SUCCESS
 }
