@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"client/pkg"
+	"client/interfaces"
 	"github.com/golang/protobuf/proto"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"go.uber.org/zap"
@@ -10,7 +10,7 @@ import (
 )
 
 type Player struct {
-	Client  *pkg.GameClient
+	Client  interfaces.GameClientInterface
 	SceneId uint32
 }
 
@@ -33,8 +33,12 @@ func init() {
 }
 
 // NewMainPlayer 创建一个新的玩家实例，初始化其行为树和黑板
-func NewMainPlayer(playerId uint64, client *pkg.GameClient) *Player {
-	client.PlayerId = playerId
+func NewMainPlayer(playerId uint64, clientI interface{}) *Player {
+	client, ok := clientI.(interfaces.GameClientInterface)
+	if !ok {
+		return nil
+	}
+	client.SetPlayerId(playerId)
 
 	player := &Player{Client: client}
 
@@ -44,6 +48,6 @@ func NewMainPlayer(playerId uint64, client *pkg.GameClient) *Player {
 }
 
 // Send 向服务器发送消息
-func (p *Player) Send(message proto.Message, messageId uint32) {
-	p.Client.Send(message, messageId)
+func (player *Player) Send(message proto.Message, messageId uint32) {
+	player.Client.Send(message, messageId)
 }

@@ -15,19 +15,6 @@
         "root": "51710f75-1e1a-489e-b981-0967869339e0",
         "properties": {},
         "nodes": {
-          "5a147eec-495f-4576-b325-6c9fce3db1be": {
-            "id": "5a147eec-495f-4576-b325-6c9fce3db1be",
-            "name": "SendCreatePlayer",
-            "category": "composite",
-            "title": "SendCreatePlayer",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 72,
-              "y": -180
-            },
-            "children": []
-          },
           "51710f75-1e1a-489e-b981-0967869339e0": {
             "id": "51710f75-1e1a-489e-b981-0967869339e0",
             "name": "Sequence",
@@ -40,20 +27,114 @@
               "y": -96
             },
             "children": [
-              "9b244ecb-0607-4099-8d00-78ab8be94dfb",
-              "5a147eec-495f-4576-b325-6c9fce3db1be"
+              "e725398d-bf31-4293-8d86-fe80a726c6f4",
+              "8ea9b488-2540-4467-8ebf-d860353c7097"
             ]
           },
-          "9b244ecb-0607-4099-8d00-78ab8be94dfb": {
-            "id": "9b244ecb-0607-4099-8d00-78ab8be94dfb",
+          "e725398d-bf31-4293-8d86-fe80a726c6f4": {
+            "id": "e725398d-bf31-4293-8d86-fe80a726c6f4",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -48,
+              "y": -180
+            },
+            "children": [
+              "db66cddc-c299-48b5-8b6a-72f0a951264a",
+              "e40e8edb-8a17-460c-84b1-0c33ef93fc8b",
+              "ff45d5eb-fae1-44b9-86cd-f3288307e8a8"
+            ]
+          },
+          "e40e8edb-8a17-460c-84b1-0c33ef93fc8b": {
+            "id": "e40e8edb-8a17-460c-84b1-0c33ef93fc8b",
+            "name": "Succeeder",
+            "category": "action",
+            "title": "Succeeder",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 156,
+              "y": -300
+            }
+          },
+          "8ea9b488-2540-4467-8ebf-d860353c7097": {
+            "id": "8ea9b488-2540-4467-8ebf-d860353c7097",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -36,
+              "y": -24
+            },
+            "children": [
+              "c8fee5c6-9a0a-4107-8649-a3ec5646d96d",
+              "e2037605-e064-4184-8323-a183c599df64",
+              "c74207aa-1fb0-4173-a86b-c2575b62343f"
+            ]
+          },
+          "e2037605-e064-4184-8323-a183c599df64": {
+            "id": "e2037605-e064-4184-8323-a183c599df64",
+            "name": "Failer",
+            "category": "action",
+            "title": "Failer",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 144,
+              "y": -36
+            }
+          },
+          "ff45d5eb-fae1-44b9-86cd-f3288307e8a8": {
+            "id": "ff45d5eb-fae1-44b9-86cd-f3288307e8a8",
+            "name": "SendCreatePlayer",
+            "category": "action",
+            "title": "SendCreatePlayer",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 300,
+              "y": -168
+            }
+          },
+          "c74207aa-1fb0-4173-a86b-c2575b62343f": {
+            "id": "c74207aa-1fb0-4173-a86b-c2575b62343f",
+            "name": "SendLoginPlayer",
+            "category": "action",
+            "title": "SendLoginPlayer",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 144,
+              "y": 48
+            }
+          },
+          "c8fee5c6-9a0a-4107-8649-a3ec5646d96d": {
+            "id": "c8fee5c6-9a0a-4107-8649-a3ec5646d96d",
             "name": "IsRoleListEmpty",
             "category": "condition",
             "title": "IsRoleListEmpty",
             "description": "",
             "properties": {},
             "display": {
-              "x": 72,
-              "y": -252
+              "x": 144,
+              "y": -108
+            }
+          },
+          "db66cddc-c299-48b5-8b6a-72f0a951264a": {
+            "id": "db66cddc-c299-48b5-8b6a-72f0a951264a",
+            "name": "IsRoleListEmpty",
+            "category": "condition",
+            "title": "IsRoleListEmpty",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 120,
+              "y": -408
             }
           }
         },
@@ -70,8 +151,8 @@
       {
         "version": "0.3.0",
         "scope": "node",
-        "name": "SendCreatePlayer",
-        "category": "composite",
+        "name": "IsRoleListEmpty",
+        "category": "condition",
         "title": null,
         "description": null,
         "properties": {},
@@ -80,8 +161,18 @@
       {
         "version": "0.3.0",
         "scope": "node",
-        "name": "IsRoleListEmpty",
-        "category": "condition",
+        "name": "SendCreatePlayer",
+        "category": "action",
+        "title": null,
+        "description": null,
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "SendLoginPlayer",
+        "category": "action",
         "title": null,
         "description": null,
         "properties": {},

@@ -12,7 +12,7 @@ func CreatePlayerHandler(client *pkg.GameClient, response *game.CreatePlayerResp
 		return
 	}
 	player := logic.NewMainPlayer(response.Players[0].Player.PlayerId, client)
-	zap.L().Info("create player ", zap.Uint64("player id", player.Client.PlayerId))
-	rq := &game.EnterGameRequest{PlayerId: player.Client.PlayerId}
+	zap.L().Info("create player ", zap.Uint64("player id", player.Client.GetPlayerId()))
+	rq := &game.EnterGameRequest{PlayerId: player.Client.GetPlayerId()}
 	client.Send(rq, game.LoginServiceEnterGameMessageId)
 }

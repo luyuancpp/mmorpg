@@ -50,12 +50,11 @@ func main() {
 					resp := msg.(*game.MessageBody)
 					handler.MessageBodyHandler(gameClient, resp)
 				}
-				
+
 				gameClient.TickBehaviorTree()
 			}
 
 		}(i)
-
 	}
 
 	time.Sleep(10000000 * time.Second)

@@ -1,0 +1,102 @@
+package behaviortree
+
+import (
+	"client/interfaces"
+	"client/logic"
+	"client/pb/game"
+	b3 "github.com/magicsea/behavior3go"
+	"go.uber.org/zap"
+
+	//. "github.com/magicsea/behavior3go/actions"
+	//. "github.com/magicsea/behavior3go/composites"
+	. "github.com/magicsea/behavior3go/config"
+	. "github.com/magicsea/behavior3go/core"
+)
+
+type SendCreatePlayer struct {
+	Action
+}
+
+func (this *SendCreatePlayer) Initialize(setting *BTNodeCfg) {
+	this.Action.Initialize(setting)
+}
+
+func (this *SendCreatePlayer) OnTick(tick *Tick) b3.Status {
+	clientI := tick.Blackboard.GetMem("client")
+
+	client, ok := clientI.(interfaces.GameClientInterface)
+	if !ok {
+		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))
+		return b3.FAILURE
+	}
+
+	rq := &game.CreatePlayerRequest{}
+	client.Send(rq, game.LoginServiceCreatePlayerMessageId)
+	return b3.SUCCESS
+}
+
+type IsRoleListEmpty struct {
+	Action
+}
+
+func (this *IsRoleListEmpty) Initialize(setting *BTNodeCfg) {
+	this.Action.Initialize(setting)
+}
+
+func (this *IsRoleListEmpty) OnTick(tick *Tick) b3.Status {
+	playerListI := tick.Blackboard.GetMem("loginplayerlist")
+	if nil == playerListI {
+		return b3.FAILURE
+	}
+
+	playerList, ok := playerListI.([]*game.AccountSimplePlayerWrapper)
+	if !ok {
+		return b3.FAILURE
+	}
+
+	if len(playerList) > 0 {
+		return b3.FAILURE
+	}
+
+	return b3.SUCCESS
+}
+
+type SendLoginPlayer struct {
+	Action
+}
+
+func (this *SendLoginPlayer) Initialize(setting *BTNodeCfg) {
+	this.Action.Initialize(setting)
+}
+
+func (this *SendLoginPlayer) OnTick(tick *Tick) b3.Status {
+	// 从黑板中获取客户端
+	clientI := tick.Blackboard.GetMem("client")
+	client, ok := clientI.(interfaces.GameClientInterface)
+	if !ok {
+		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))
+		return b3.FAILURE
+	}
+
+	// 从黑板中获取玩家列表
+	playerListI := tick.Blackboard.GetMem("loginplayerlist")
+	if playerListI == nil {
+		return b3.FAILURE
+	}
+
+	playerList, ok := playerListI.([]*game.AccountSimplePlayerWrapper)
+	if !ok {
+		return b3.FAILURE
+	}
+
+	// 处理玩家数据
+	playerId := playerList[0].Player.PlayerId
+	zap.L().Info("Player login", zap.Uint64("player id", playerId))
+	logic.PlayerList.Set(playerId, logic.NewMainPlayer(playerId, client))
+
+	// 发送请求
+	rq := &game.EnterGameRequest{PlayerId: playerId}
+	client.Send(rq, game.LoginServiceEnterGameMessageId)
+
+	return b3.SUCCESS
+}
