@@ -8,6 +8,8 @@ import (
 )
 
 func LoginHandler(client *pkg.GameClient, response *game.LoginResponse) {
+	client.Blackboard.SetMem("loginplayerlist", response.Players)
+	return
 	if response.Players == nil || len(response.Players) <= 0 {
 		rq := &game.CreatePlayerRequest{}
 		client.Send(rq, game.LoginServiceCreatePlayerMessageId)

@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// GameClient represents a client for interacting with the game server.
 type GameClient struct {
 	Client       *muduo.Client
 	PlayerId     uint64
@@ -19,35 +20,48 @@ type GameClient struct {
 	Blackboard   *Blackboard
 }
 
-// NewGameClient 创建一个新的 GameClient 实例
+// NewGameClient creates and initializes a new GameClient instance.
 func NewGameClient(client *muduo.Client) *GameClient {
-	// 加载行为树配置文件
+	// Load behavior tree configuration file
 	projectConfig, result := LoadRawProjectCfg("etc/robot.b3")
 	if !result {
-		zap.L().Error("Failed to load behavior tree configuration")
+		zap.L().Error("Failed to load behavior tree configuration", zap.String("path", "etc/robot.b3"))
 		return nil
 	}
 
-	// 自定义节点注册
+	// Register custom behavior tree nodes
 	maps := b3.NewRegisterStructMaps()
 	maps.Register("SendCreatePlayer", new(behaviortree.SendCreatePlayer))
 	maps.Register("IsRoleListEmpty", new(behaviortree.IsRoleListEmpty))
+	maps.Register("SendLoginPlayer", new(behaviortree.SendLoginPlayer))
 
-	// 初始化行为树
+	// Initialize behavior trees
 	behaviorTree := make([]*BehaviorTree, len(projectConfig.Data.Trees))
 	for i, v := range projectConfig.Data.Trees {
-		behaviorTree[i] = CreateBevTreeFromConfig(&v, maps)
+		tree := CreateBevTreeFromConfig(&v, maps)
+		if tree == nil {
+			zap.L().Error("Failed to create behavior tree", zap.Int("index", i))
+			return nil
+		}
+		behaviorTree[i] = tree
 	}
 
-	return &GameClient{
+	blackboard := NewBlackboard()
+
+	c := &GameClient{
 		Client:       client,
 		BehaviorTree: behaviorTree,
-		Blackboard:   NewBlackboard(),
+		Blackboard:   blackboard,
 	}
+
+	// Set the client instance in the blackboard
+	c.Blackboard.SetMem("client", c)
+
+	return c
 }
 
-// Send 向服务器发送消息
-func (c *GameClient) Send(message proto.Message, messageId uint32) {
+// Send sends a message to the server.
+func (gameClient *GameClient) Send(message proto.Message, messageId uint32) {
 	rq := &game.ClientRequest{Id: 1, MessageId: messageId}
 	var err error
 	rq.Body, err = proto.Marshal(message)
@@ -55,23 +69,30 @@ func (c *GameClient) Send(message proto.Message, messageId uint32) {
 		zap.L().Error("Failed to marshal message", zap.Error(err))
 		return
 	}
-	c.Client.Send(rq)
-	//zap.L().Info("Sent message", zap.Uint32("messageId", messageId))
+
+	gameClient.Client.Send(rq)
 }
 
-// Close 关闭客户端连接
-func (c *GameClient) Close() {
-	err := c.Client.Close()
-	if err != nil {
+// Close closes the client connection.
+func (gameClient *GameClient) Close() {
+	if err := gameClient.Client.Close(); err != nil {
 		zap.L().Error("Failed to close client", zap.Error(err))
 	} else {
 		zap.L().Info("Client closed successfully")
 	}
 }
 
-// TickBehaviorTree 更新所有行为树的状态
-func (c *GameClient) TickBehaviorTree() {
-	for i, tree := range c.BehaviorTree {
-		tree.Tick(i, c.Blackboard)
+// TickBehaviorTree updates the state of all behavior trees.
+func (gameClient *GameClient) TickBehaviorTree() {
+	for i, tree := range gameClient.BehaviorTree {
+		tree.Tick(i, gameClient.Blackboard)
 	}
+}
+
+func (gameClient *GameClient) SetPlayerId(playerId uint64) {
+	gameClient.PlayerId = playerId
+}
+
+func (gameClient *GameClient) GetPlayerId() uint64 {
+	return gameClient.PlayerId
 }
