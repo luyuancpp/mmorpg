@@ -13,15 +13,15 @@ import (
 	. "github.com/magicsea/behavior3go/core"
 )
 
-type SendCreatePlayer struct {
+type CreatePlayer struct {
 	Action
 }
 
-func (this *SendCreatePlayer) Initialize(setting *BTNodeCfg) {
+func (this *CreatePlayer) Initialize(setting *BTNodeCfg) {
 	this.Action.Initialize(setting)
 }
 
-func (this *SendCreatePlayer) OnTick(tick *Tick) b3.Status {
+func (this *CreatePlayer) OnTick(tick *Tick) b3.Status {
 	clientI := tick.Blackboard.GetMem("client")
 
 	client, ok := clientI.(interfaces.GameClientInterface)
@@ -61,15 +61,15 @@ func (this *IsRoleListEmpty) OnTick(tick *Tick) b3.Status {
 	return b3.SUCCESS
 }
 
-type SendLoginPlayer struct {
+type PlayerEnterGame struct {
 	Action
 }
 
-func (this *SendLoginPlayer) Initialize(setting *BTNodeCfg) {
+func (this *PlayerEnterGame) Initialize(setting *BTNodeCfg) {
 	this.Action.Initialize(setting)
 }
 
-func (this *SendLoginPlayer) OnTick(tick *Tick) b3.Status {
+func (this *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	// 从黑板中获取客户端
 	clientI := tick.Blackboard.GetMem("client")
 	client, ok := clientI.(interfaces.GameClientInterface)
