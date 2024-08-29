@@ -29,7 +29,7 @@
             "children": [
               "931be9da-2018-45a1-87e8-5fb7d7fd639a",
               "0a174595-76df-4ca8-84c3-3e1785429e94",
-              "af9fc218-f356-4443-8667-a95ec7f5e2ee"
+              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe"
             ]
           },
           "0a174595-76df-4ca8-84c3-3e1785429e94": {
@@ -45,7 +45,7 @@
             },
             "children": [
               "ec0ebf0c-60da-4c3e-8d90-1f4918e43157",
-              "5c4dfe71-cfee-4f44-bc75-c5d40acfe7ce"
+              "7f820a24-77b6-4f78-83f4-e8f83af00ec2"
             ]
           },
           "ec0ebf0c-60da-4c3e-8d90-1f4918e43157": {
@@ -60,30 +60,6 @@
               "y": -324
             }
           },
-          "5c4dfe71-cfee-4f44-bc75-c5d40acfe7ce": {
-            "id": "5c4dfe71-cfee-4f44-bc75-c5d40acfe7ce",
-            "name": "SendCreatePlayer",
-            "category": "action",
-            "title": "SendCreatePlayer",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 60,
-              "y": -240
-            }
-          },
-          "af9fc218-f356-4443-8667-a95ec7f5e2ee": {
-            "id": "af9fc218-f356-4443-8667-a95ec7f5e2ee",
-            "name": "SendLoginPlayer",
-            "category": "action",
-            "title": "SendLoginPlayer",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 60,
-              "y": -168
-            }
-          },
           "931be9da-2018-45a1-87e8-5fb7d7fd639a": {
             "id": "931be9da-2018-45a1-87e8-5fb7d7fd639a",
             "name": "AlreadyLoggedIn",
@@ -94,6 +70,30 @@
             "display": {
               "x": 60,
               "y": -396
+            }
+          },
+          "7f820a24-77b6-4f78-83f4-e8f83af00ec2": {
+            "id": "7f820a24-77b6-4f78-83f4-e8f83af00ec2",
+            "name": "CreatePlayer",
+            "category": "action",
+            "title": "CreatePlayer",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 72,
+              "y": -240
+            }
+          },
+          "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe": {
+            "id": "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe",
+            "name": "PlayerEnterGame",
+            "category": "action",
+            "title": "PlayerEnterGame",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 72,
+              "y": -168
             }
           }
         },
@@ -144,6 +144,36 @@
         "category": "condition",
         "title": null,
         "description": "是否已经登录",
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "RandomEnterScene",
+        "category": "action",
+        "title": null,
+        "description": null,
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "CreatePlayer",
+        "category": "action",
+        "title": null,
+        "description": null,
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "PlayerEnterGame",
+        "category": "action",
+        "title": null,
+        "description": null,
         "properties": {},
         "parent": null
       }

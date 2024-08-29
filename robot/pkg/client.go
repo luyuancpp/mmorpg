@@ -31,9 +31,9 @@ func NewGameClient(client *muduo.Client) *GameClient {
 
 	// Register custom behavior tree nodes
 	maps := b3.NewRegisterStructMaps()
-	maps.Register("SendCreatePlayer", new(behaviortree.SendCreatePlayer))
+	maps.Register("CreatePlayer", new(behaviortree.CreatePlayer))
 	maps.Register("IsRoleListEmpty", new(behaviortree.IsRoleListEmpty))
-	maps.Register("SendLoginPlayer", new(behaviortree.SendLoginPlayer))
+	maps.Register("PlayerEnterGame", new(behaviortree.PlayerEnterGame))
 	maps.Register("AlreadyLoggedIn", new(behaviortree.AlreadyLoggedIn))
 	// Initialize behavior trees
 	behaviorTree := make([]*BehaviorTree, len(projectConfig.Data.Trees))
