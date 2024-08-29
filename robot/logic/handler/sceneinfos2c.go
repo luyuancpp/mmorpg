@@ -8,6 +8,12 @@ import (
 )
 
 func SceneInfoS2CHandler(player *logic.Player, response *game.SceneInfoS2C) {
+
+	//client := player.Client.(*pkg.GameClient)
+	//client.Blackboard.SetMem(behaviortree.SceneInfo, response.SceneInfo)
+
+	//return
+
 	rq := &game.EnterSceneC2SRequest{}
 	randomIndex := rand.Intn(len(response.SceneInfo))
 	rq.SceneInfo = response.SceneInfo[randomIndex]

@@ -6,6 +6,7 @@ import (
 	"client/pb/game"
 	"client/pkg"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"strconv"
 
 	"github.com/luyuancpp/muduoclient/muduo"
@@ -23,7 +24,7 @@ func main() {
 
 	// 配置日志级别
 	lvl := zap.NewAtomicLevel()
-	lvl.SetLevel(zap.InfoLevel) // 根据需要调整日志级别
+	lvl.SetLevel(zapcore.Level(config.AppConfig.LogLevel)) // 根据需要调整日志级别
 
 	var wg sync.WaitGroup
 
@@ -32,7 +33,7 @@ func main() {
 		go func(i int) {
 			defer wg.Done()
 
-			client, err := muduo.NewClient(config.AppConfig.Server.Ip, config.AppConfig.Server.Port, &muduo.TcpCodec{})
+			client, err := muduo.NewClient(config.AppConfig.Server.IP, config.AppConfig.Server.Port, &muduo.TcpCodec{})
 			if err != nil {
 				zap.L().Error("Failed to create client", zap.Error(err))
 				return

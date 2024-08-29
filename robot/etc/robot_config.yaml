@@ -4,3 +4,4 @@ server:
   port: 4000
 robots:
   count: 1
+loglevel: 0  

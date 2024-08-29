@@ -4,7 +4,7 @@
   "data": {
     "version": "0.3.0",
     "scope": "project",
-    "selectedTree": "b27d16da-1efb-4291-be1d-3a6e02da27f6",
+    "selectedTree": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
     "trees": [
       {
         "version": "0.3.0",
@@ -103,6 +103,51 @@
           "camera_z": 1,
           "x": -420,
           "y": -264
+        }
+      },
+      {
+        "version": "0.3.0",
+        "scope": "tree",
+        "id": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
+        "title": "Scene",
+        "description": "",
+        "root": "71ea4983-3dba-47d3-8864-31379f923bab",
+        "properties": {},
+        "nodes": {
+          "6983a111-949e-4058-84cb-58209204e95d": {
+            "id": "6983a111-949e-4058-84cb-58209204e95d",
+            "name": "RandomEnterScene",
+            "category": "action",
+            "title": "RandomEnterScene",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 228,
+              "y": -96
+            }
+          },
+          "71ea4983-3dba-47d3-8864-31379f923bab": {
+            "id": "71ea4983-3dba-47d3-8864-31379f923bab",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -60,
+              "y": -108
+            },
+            "children": [
+              "6983a111-949e-4058-84cb-58209204e95d"
+            ]
+          }
+        },
+        "display": {
+          "camera_x": 785.5,
+          "camera_y": 473,
+          "camera_z": 1,
+          "x": -204,
+          "y": -48
         }
       }
     ],
