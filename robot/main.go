@@ -24,7 +24,7 @@ func main() {
 	defer logger.Sync()
 	zap.ReplaceGlobals(logger)
 
-	for i := 1; i < config.AppConfig.Robots.Count; i++ {
+	for i := 0; i < config.AppConfig.Robots.Count; i++ {
 		go func(i int) {
 			client, err := muduo.NewClient(config.AppConfig.Server.Ip, config.AppConfig.Server.Port, &muduo.TcpCodec{})
 			if err != nil {

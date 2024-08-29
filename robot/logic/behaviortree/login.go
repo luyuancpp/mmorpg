@@ -100,3 +100,27 @@ func (this *SendLoginPlayer) OnTick(tick *Tick) b3.Status {
 
 	return b3.SUCCESS
 }
+
+type AlreadyLoggedIn struct {
+	Action
+}
+
+func (this *AlreadyLoggedIn) Initialize(setting *BTNodeCfg) {
+	this.Action.Initialize(setting)
+}
+
+func (this *AlreadyLoggedIn) OnTick(tick *Tick) b3.Status {
+	// 从黑板中获取客户端
+	clientI := tick.Blackboard.GetMem("client")
+	client, ok := clientI.(interfaces.GameClientInterface)
+	if !ok {
+		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))
+		return b3.FAILURE
+	}
+
+	if client.GetPlayerId() <= 0 {
+		return b3.FAILURE
+	}
+
+	return b3.SUCCESS
+}
