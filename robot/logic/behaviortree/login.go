@@ -22,7 +22,7 @@ func (this *CreatePlayer) Initialize(setting *BTNodeCfg) {
 }
 
 func (this *CreatePlayer) OnTick(tick *Tick) b3.Status {
-	clientI := tick.Blackboard.GetMem("client")
+	clientI := tick.Blackboard.GetMem(ClientIdentifier)
 
 	client, ok := clientI.(interfaces.GameClientInterface)
 	if !ok {
@@ -44,7 +44,7 @@ func (this *IsRoleListEmpty) Initialize(setting *BTNodeCfg) {
 }
 
 func (this *IsRoleListEmpty) OnTick(tick *Tick) b3.Status {
-	playerListI := tick.Blackboard.GetMem("loginplayerlist")
+	playerListI := tick.Blackboard.GetMem(PlayerListIdentifier)
 	if nil == playerListI {
 		return b3.FAILURE
 	}
@@ -71,7 +71,7 @@ func (this *PlayerEnterGame) Initialize(setting *BTNodeCfg) {
 
 func (this *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	// 从黑板中获取客户端
-	clientI := tick.Blackboard.GetMem("client")
+	clientI := tick.Blackboard.GetMem(ClientIdentifier)
 	client, ok := clientI.(interfaces.GameClientInterface)
 	if !ok {
 		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))
@@ -79,7 +79,7 @@ func (this *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	}
 
 	// 从黑板中获取玩家列表
-	playerListI := tick.Blackboard.GetMem("loginplayerlist")
+	playerListI := tick.Blackboard.GetMem(PlayerListIdentifier)
 	if playerListI == nil {
 		return b3.FAILURE
 	}
@@ -111,7 +111,7 @@ func (this *AlreadyLoggedIn) Initialize(setting *BTNodeCfg) {
 
 func (this *AlreadyLoggedIn) OnTick(tick *Tick) b3.Status {
 	// 从黑板中获取客户端
-	clientI := tick.Blackboard.GetMem("client")
+	clientI := tick.Blackboard.GetMem(ClientIdentifier)
 	client, ok := clientI.(interfaces.GameClientInterface)
 	if !ok {
 		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))

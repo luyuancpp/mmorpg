@@ -57,7 +57,7 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	}
 
 	// Set the client instance in the blackboard
-	c.Blackboard.SetMem("client", c)
+	c.Blackboard.SetMem(behaviortree.ClientIdentifier, c)
 
 	return c
 }
