@@ -45,14 +45,14 @@ func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 	rq := &game.EnterSceneC2SRequest{}
 	randomIndex := rand.Intn(len(sceneInfo))
 	rq.SceneInfo = sceneInfo[randomIndex]
-
 	for player.SceneId == rq.SceneInfo.Guid {
 		randomIndex := rand.Intn(len(sceneInfo))
 		rq.SceneInfo = sceneInfo[randomIndex]
 	}
 
-	zap.L().Info("enter scene ", zap.String("request", rq.String()))
 	client.Send(rq, game.ClientPlayerSceneServiceEnterSceneMessageId)
+
+	tick.Blackboard.SetMem(SceneInfo, nil)
 
 	return b3.SUCCESS
 }
