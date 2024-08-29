@@ -34,7 +34,7 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	maps.Register("SendCreatePlayer", new(behaviortree.SendCreatePlayer))
 	maps.Register("IsRoleListEmpty", new(behaviortree.IsRoleListEmpty))
 	maps.Register("SendLoginPlayer", new(behaviortree.SendLoginPlayer))
-
+	maps.Register("AlreadyLoggedIn", new(behaviortree.AlreadyLoggedIn))
 	// Initialize behavior trees
 	behaviorTree := make([]*BehaviorTree, len(projectConfig.Data.Trees))
 	for i, v := range projectConfig.Data.Trees {

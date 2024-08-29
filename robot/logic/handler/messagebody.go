@@ -9,7 +9,7 @@ import (
 )
 
 func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
-	//zap.L().Debug("message body", zap.String("response ", response.String()))
+	zap.L().Debug("message body", zap.String("response ", response.String()))
 	player, ok := logic.PlayerList.Get(client.PlayerId)
 	if !ok {
 		zap.L().Error("player not found", zap.Uint64("player id ", client.PlayerId))
