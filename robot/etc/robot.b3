@@ -110,26 +110,6 @@
       {
         "version": "0.3.0",
         "scope": "node",
-        "name": "SendCreatePlayer",
-        "category": "action",
-        "title": null,
-        "description": null,
-        "properties": {},
-        "parent": null
-      },
-      {
-        "version": "0.3.0",
-        "scope": "node",
-        "name": "SendLoginPlayer",
-        "category": "action",
-        "title": null,
-        "description": null,
-        "properties": {},
-        "parent": null
-      },
-      {
-        "version": "0.3.0",
-        "scope": "node",
         "name": "IsRoleListEmpty",
         "category": "condition",
         "title": null,
