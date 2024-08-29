@@ -1,29 +1,37 @@
 package config
 
 import (
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"log"
+	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
-// Config 用于映射 YAML 文件中的数据
-type Config struct {
-	Server struct {
-		Address string `yaml:"address"`
-		Ip      string `yaml:"ip"`
-		Port    int    `yaml:"port"`
-	} `yaml:"server"`
-	Robots struct {
-		Count int `yaml:"count"`
-	} `yaml:"robots"`
+// ServerConfig defines the structure for server configuration
+type ServerConfig struct {
+	Address string `yaml:"address"`
+	IP      string `yaml:"ip"`
+	Port    int    `yaml:"port"`
 }
 
-// 包变量
+// RobotsConfig defines the structure for robots configuration
+type RobotsConfig struct {
+	Count int `yaml:"count"`
+}
+
+// Config holds the entire configuration
+type Config struct {
+	Server   ServerConfig `yaml:"server"`
+	Robots   RobotsConfig `yaml:"robots"`
+	LogLevel int          `yaml:"loglevel"`
+}
+
+// AppConfig is a package-level variable to hold the configuration
 var AppConfig Config
 
-// 初始化配置
-func init() {
-	data, err := ioutil.ReadFile("etc/robot_config.yaml")
+// LoadConfig reads the YAML configuration file and populates AppConfig
+func LoadConfig(filePath string) {
+	data, err := os.ReadFile(filePath) // 使用 os.ReadFile 替代 ioutil.ReadFile
 	if err != nil {
 		log.Fatalf("error reading YAML file: %v", err)
 	}
@@ -32,4 +40,8 @@ func init() {
 	if err != nil {
 		log.Fatalf("error parsing YAML data: %v", err)
 	}
+}
+
+func init() {
+	LoadConfig("etc/robot_config.yaml")
 }
