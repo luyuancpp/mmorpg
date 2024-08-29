@@ -10,6 +10,8 @@ github.com/luyuancpp/muduoclient v0.0.8 h1:elLhNl4Ap3P8bsPD89hAtqlNVbA9slfTqKhYM
 github.com/luyuancpp/muduoclient v0.0.8/go.mod h1:LKTAiE+8/tKth+y1jRFf39/A6KrlsVLZNSWdnpzrNis=
 github.com/magicsea/behavior3go v0.0.2 h1:Q6IH3Oc1XZBxlhErkyKJ6aQKFFNHE7i1y6tgKkEt6/g=
 github.com/magicsea/behavior3go v0.0.2/go.mod h1:YPRcRdnDiwdQrUzMm9d07cMhCOTzdquY5iKbNBEAhSk=
+github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9M+97sNutRR1RKhG96O6jWumTTnw=
+github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
 github.com/orcaman/concurrent-map/v2 v2.0.1 h1:jOJ5Pg2w1oeB6PeDurIYf6k9PQ+aTITr/6lP/L/zp6c=
 github.com/orcaman/concurrent-map/v2 v2.0.1/go.mod h1:9Eq3TG2oBe5FirmYWQfYO5iH1q0Jv47PLaNK++uCdOM=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
