@@ -11,7 +11,7 @@ import (
 // MessageBodyHandler 处理接收到的消息体
 func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 	// Log the incoming message body for debugging
-	zap.L().Info("Received message body", zap.String("response", response.String()))
+	zap.L().Debug("Received message body", zap.String("response", response.String()))
 
 	// Retrieve the player from the player list
 	player, ok := logic.PlayerList.Get(client.PlayerId)

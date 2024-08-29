@@ -5,15 +5,20 @@ import (
 	"client/logic/handler"
 	"client/pb/game"
 	"client/pkg"
+	"github.com/luyuancpp/muduoclient/muduo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"strconv"
-
-	"github.com/luyuancpp/muduoclient/muduo"
 	"sync"
 )
 
 func main() {
+	go func() {
+		log.Fatal(http.ListenAndServe("localhost:6060", nil))
+	}()
 	// 初始化日志记录器
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -59,6 +64,7 @@ func main() {
 				case "MessageBody":
 					resp := msg.(*game.MessageBody)
 					handler.MessageBodyHandler(gameClient, resp)
+				case "EnterGameResponse":
 				default:
 					zap.L().Warn("Unhandled message type", zap.String("message_type", string(d.Name())))
 				}
