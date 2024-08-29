@@ -1,13 +1,6 @@
-start deploy_server.exe
+start centre.exe
 ping /n 1 127.1 >nul
-start lobby_server.exe
+start gate.exe
 ping /n 1 127.1 >nul
-start database_server.exe
+start game.exe
 ping /n 1 127.1 >nul
-start controller_server.exe
-ping /n 1 127.1 >nul
-start login_server.exe
-ping /n 1 127.1 >nul
-start game_server.exe
-ping /n 1 127.1 >nul
-start gate_server.exe
