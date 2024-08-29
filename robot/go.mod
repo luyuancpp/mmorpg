@@ -13,4 +13,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require go.uber.org/multierr v1.10.0 // indirect
+require (
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+)
