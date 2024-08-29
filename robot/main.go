@@ -6,56 +6,67 @@ import (
 	"client/pb/game"
 	"client/pkg"
 	"go.uber.org/zap"
+	"strconv"
 
 	"github.com/luyuancpp/muduoclient/muduo"
-	"log"
-	"strconv"
-	"time"
+	"sync"
 )
 
 func main() {
-
+	// 初始化日志记录器
 	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
 	}
-	lvl := zap.NewAtomicLevel()
-	lvl.SetLevel(zap.ErrorLevel)
 	defer logger.Sync()
 	zap.ReplaceGlobals(logger)
 
+	// 配置日志级别
+	lvl := zap.NewAtomicLevel()
+	lvl.SetLevel(zap.InfoLevel) // 根据需要调整日志级别
+
+	var wg sync.WaitGroup
+
 	for i := 0; i < config.AppConfig.Robots.Count; i++ {
+		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
+
 			client, err := muduo.NewClient(config.AppConfig.Server.Ip, config.AppConfig.Server.Port, &muduo.TcpCodec{})
 			if err != nil {
-				log.Fatalln(err)
+				zap.L().Error("Failed to create client", zap.Error(err))
+				return
 			}
 			gameClient := pkg.NewGameClient(client)
 			defer gameClient.Close()
 
-			{
-				rq := &game.LoginRequest{Account: "luhailong" + strconv.Itoa(i), Password: "luhailong"}
-				gameClient.Send(rq, game.LoginServiceLoginMessageId)
-			}
+			// 登录请求
+			rq := &game.LoginRequest{Account: "luhailong" + strconv.Itoa(i), Password: "luhailong"}
+			gameClient.Send(rq, game.LoginServiceLoginMessageId)
+
+			// 处理消息
 			for {
 				msg := <-gameClient.Client.Conn.InMsgList
 				d := muduo.GetDescriptor(&msg)
-				if d.Name() == "LoginResponse" {
+				switch d.Name() {
+				case "LoginResponse":
 					resp := msg.(*game.LoginResponse)
 					handler.LoginHandler(gameClient, resp)
-				} else if d.Name() == "CreatePlayerResponse" {
+				case "CreatePlayerResponse":
 					resp := msg.(*game.CreatePlayerResponse)
 					handler.CreatePlayerHandler(gameClient, resp)
-				} else if d.Name() == "MessageBody" {
+				case "MessageBody":
 					resp := msg.(*game.MessageBody)
 					handler.MessageBodyHandler(gameClient, resp)
+				default:
+					zap.L().Warn("Unhandled message type", zap.String("message_type", string(d.Name())))
 				}
 
 				gameClient.TickBehaviorTree()
 			}
-
 		}(i)
 	}
 
-	time.Sleep(10000000 * time.Second)
+	// 等待所有 goroutine 完成
+	wg.Wait()
 }
