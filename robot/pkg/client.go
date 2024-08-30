@@ -14,10 +14,11 @@ import (
 
 // GameClient represents a client for interacting with the game server.
 type GameClient struct {
-	Client       *muduo.Client
-	PlayerId     uint64
-	BehaviorTree []*BehaviorTree
-	Blackboard   *Blackboard
+	Client            *muduo.Client
+	PlayerId          uint64
+	BehaviorTree      []*BehaviorTree
+	Blackboard        *Blackboard
+	MessageSequenceID uint64
 }
 
 // NewGameClient creates and initializes a new GameClient instance.
@@ -66,9 +67,13 @@ func NewGameClient(client *muduo.Client) *GameClient {
 
 // Send sends a message to the server.
 func (gameClient *GameClient) Send(message proto.Message, messageId uint32) {
-	rq := &game.ClientRequest{Id: 1, MessageId: messageId}
+	rq := &game.ClientRequest{Id: gameClient.MessageSequenceID, MessageId: messageId}
+
+	gameClient.MessageSequenceID++
+
 	var err error
 	rq.Body, err = proto.Marshal(message)
+
 	if err != nil {
 		zap.L().Error("Failed to marshal message", zap.Error(err))
 		return
