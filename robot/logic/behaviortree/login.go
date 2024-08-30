@@ -1,11 +1,11 @@
 package behaviortree
 
 import (
-	"client/interfaces"
-	"client/logic"
-	"client/pb/game"
 	b3 "github.com/magicsea/behavior3go"
 	"go.uber.org/zap"
+	"robot/interfaces"
+	"robot/logic"
+	"robot/pb/game"
 
 	//. "github.com/magicsea/behavior3go/actions"
 	//. "github.com/magicsea/behavior3go/composites"

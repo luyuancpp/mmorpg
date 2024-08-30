@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"client/logic/behaviortree"
-	"client/pb/game"
-	"client/pkg"
+	"robot/logic/behaviortree"
+	"robot/pb/game"
+	"robot/pkg"
 )
 
 func CreatePlayerHandler(client *pkg.GameClient, response *game.CreatePlayerResponse) {

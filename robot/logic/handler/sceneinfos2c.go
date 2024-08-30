@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"client/logic"
-	"client/logic/behaviortree"
-	"client/pb/game"
-	"client/pkg"
+	"robot/logic"
+	"robot/logic/behaviortree"
+	"robot/pb/game"
+	"robot/pkg"
 )
 
 func SceneInfoS2CHandler(player *logic.Player, response *game.SceneInfoS2C) {

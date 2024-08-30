@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"client/logic"
-	"client/pb/game"
 	"go.uber.org/zap"
+	"robot/logic"
+	"robot/pb/game"
 )
 
 func TipS2CHandler(player *logic.Player, response *game.TipInfoMessage) {

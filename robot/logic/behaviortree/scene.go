@@ -1,14 +1,14 @@
 package behaviortree
 
 import (
-	"client/interfaces"
-	"client/logic"
-	"client/pb/game"
 	b3 "github.com/magicsea/behavior3go"
 	. "github.com/magicsea/behavior3go/config"
 	. "github.com/magicsea/behavior3go/core"
 	"go.uber.org/zap"
 	"math/rand"
+	"robot/interfaces"
+	"robot/logic"
+	"robot/pb/game"
 )
 
 type RandomEnterScene struct {
@@ -29,7 +29,7 @@ func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 
 	sceneInfo, ok := tick.Blackboard.GetMem(SceneInformationKey).([]*game.SceneInfoPBComp)
 	if !ok {
-		zap.L().Error("Failed to cast scene info  from blackboard", zap.Any(PlayerListIdentifier, tick.Blackboard.GetMem(PlayerListIdentifier)))
+		zap.L().Debug("Failed to cast scene info  from blackboard", zap.Any(PlayerListIdentifier, tick.Blackboard.GetMem(PlayerListIdentifier)))
 		return b3.FAILURE
 	}
 

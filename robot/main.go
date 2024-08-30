@@ -1,16 +1,16 @@
 package main
 
 import (
-	"client/config"
-	"client/logic/handler"
-	"client/pb/game"
-	"client/pkg"
 	"github.com/luyuancpp/muduoclient/muduo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"robot/config"
+	"robot/logic/handler"
+	"robot/pb/game"
+	"robot/pkg"
 	"strconv"
 	"sync"
 )
