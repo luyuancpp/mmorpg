@@ -54,9 +54,10 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	blackboard := NewBlackboard()
 
 	c := &GameClient{
-		Client:       client,
-		BehaviorTree: behaviorTree,
-		Blackboard:   blackboard,
+		Client:            client,
+		BehaviorTree:      behaviorTree,
+		Blackboard:        blackboard,
+		MessageSequenceID: 1,
 	}
 
 	// Set the client instance in the blackboard
