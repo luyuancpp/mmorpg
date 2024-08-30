@@ -6,6 +6,7 @@ import (
 	. "github.com/magicsea/behavior3go/core"
 	"go.uber.org/zap"
 	"math/rand"
+	"robot/config"
 	"robot/interfaces"
 	"robot/logic"
 	"robot/pb/game"
@@ -51,5 +52,37 @@ func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 
 	tick.Blackboard.SetMem(SceneInformationKey, nil)
 
+	return b3.SUCCESS
+}
+
+type CheckSceneSwitchCount struct {
+	Action
+}
+
+func (this *CheckSceneSwitchCount) Initialize(setting *BTNodeCfg) {
+	this.Action.Initialize(setting)
+}
+
+func (this *CheckSceneSwitchCount) OnTick(tick *Tick) b3.Status {
+	count := tick.Blackboard.GetInt32(SceneSwitchCountKey, "", "")
+
+	if count >= config.AppConfig.Robots.SceneSwitchCount {
+		return b3.FAILURE
+	}
+
+	return b3.SUCCESS
+}
+
+type AddSceneSwitchCount struct {
+	Action
+}
+
+func (this *AddSceneSwitchCount) Initialize(setting *BTNodeCfg) {
+	this.Action.Initialize(setting)
+}
+
+func (this *AddSceneSwitchCount) OnTick(tick *Tick) b3.Status {
+	count := tick.Blackboard.GetInt32(SceneSwitchCountKey, "", "")
+	tick.Blackboard.Set(SceneSwitchCountKey, count+1, "", "")
 	return b3.SUCCESS
 }

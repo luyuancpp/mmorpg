@@ -111,7 +111,7 @@
         "id": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
         "title": "Scene",
         "description": "",
-        "root": "71ea4983-3dba-47d3-8864-31379f923bab",
+        "root": "9d8f4d0c-ae86-4909-a731-00301eb17b16",
         "properties": {},
         "nodes": {
           "6983a111-949e-4058-84cb-58209204e95d": {
@@ -122,24 +122,50 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 228,
-              "y": -96
+              "x": 204,
+              "y": -132
             }
           },
-          "71ea4983-3dba-47d3-8864-31379f923bab": {
-            "id": "71ea4983-3dba-47d3-8864-31379f923bab",
-            "name": "Priority",
-            "category": "composite",
-            "title": "Priority",
+          "fc177da2-012a-482d-889e-e48e15eec028": {
+            "id": "fc177da2-012a-482d-889e-e48e15eec028",
+            "name": "CheckSceneSwitchCount",
+            "category": "condition",
+            "title": "CheckSceneSwitchCount",
             "description": "",
             "properties": {},
             "display": {
-              "x": -60,
-              "y": -108
+              "x": 216,
+              "y": -216
+            }
+          },
+          "9d8f4d0c-ae86-4909-a731-00301eb17b16": {
+            "id": "9d8f4d0c-ae86-4909-a731-00301eb17b16",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -24,
+              "y": -144
             },
             "children": [
-              "6983a111-949e-4058-84cb-58209204e95d"
+              "fc177da2-012a-482d-889e-e48e15eec028",
+              "6983a111-949e-4058-84cb-58209204e95d",
+              "df33bc43-80cb-4ec5-83d8-ad721b7410d9"
             ]
+          },
+          "df33bc43-80cb-4ec5-83d8-ad721b7410d9": {
+            "id": "df33bc43-80cb-4ec5-83d8-ad721b7410d9",
+            "name": "AddSceneSwitchCount",
+            "category": "action",
+            "title": "AddSceneSwitchCount",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 252,
+              "y": -60
+            }
           }
         },
         "display": {
@@ -196,6 +222,26 @@
         "version": "0.3.0",
         "scope": "node",
         "name": "PlayerEnterGame",
+        "category": "action",
+        "title": null,
+        "description": null,
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "CheckSceneSwitchCount",
+        "category": "condition",
+        "title": null,
+        "description": null,
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "AddSceneSwitchCount",
         "category": "action",
         "title": null,
         "description": null,
