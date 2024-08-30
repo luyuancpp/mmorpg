@@ -4,4 +4,5 @@ server:
   port: 4000
 robots:
   count: 20
+  sceneSwitchCount: 1000
 loglevel: 1
