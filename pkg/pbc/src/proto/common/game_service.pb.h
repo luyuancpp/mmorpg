@@ -796,424 +796,6 @@ class CreateSceneRequest final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class ClientSendMessageToPlayerResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ClientSendMessageToPlayerResponse) */ {
- public:
-  inline ClientSendMessageToPlayerResponse() : ClientSendMessageToPlayerResponse(nullptr) {}
-  ~ClientSendMessageToPlayerResponse() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ClientSendMessageToPlayerResponse(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline ClientSendMessageToPlayerResponse(const ClientSendMessageToPlayerResponse& from) : ClientSendMessageToPlayerResponse(nullptr, from) {}
-  inline ClientSendMessageToPlayerResponse(ClientSendMessageToPlayerResponse&& from) noexcept
-      : ClientSendMessageToPlayerResponse(nullptr, std::move(from)) {}
-  inline ClientSendMessageToPlayerResponse& operator=(const ClientSendMessageToPlayerResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline ClientSendMessageToPlayerResponse& operator=(ClientSendMessageToPlayerResponse&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const ClientSendMessageToPlayerResponse& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const ClientSendMessageToPlayerResponse* internal_default_instance() {
-    return reinterpret_cast<const ClientSendMessageToPlayerResponse*>(
-        &_ClientSendMessageToPlayerResponse_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(ClientSendMessageToPlayerResponse& a, ClientSendMessageToPlayerResponse& b) { a.Swap(&b); }
-  inline void Swap(ClientSendMessageToPlayerResponse* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(ClientSendMessageToPlayerResponse* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  ClientSendMessageToPlayerResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<ClientSendMessageToPlayerResponse>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ClientSendMessageToPlayerResponse& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ClientSendMessageToPlayerResponse& from) { ClientSendMessageToPlayerResponse::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(ClientSendMessageToPlayerResponse* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "ClientSendMessageToPlayerResponse"; }
-
- protected:
-  explicit ClientSendMessageToPlayerResponse(::google::protobuf::Arena* arena);
-  ClientSendMessageToPlayerResponse(::google::protobuf::Arena* arena, const ClientSendMessageToPlayerResponse& from);
-  ClientSendMessageToPlayerResponse(::google::protobuf::Arena* arena, ClientSendMessageToPlayerResponse&& from) noexcept
-      : ClientSendMessageToPlayerResponse(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kResponseFieldNumber = 1,
-    kSessionIdFieldNumber = 2,
-    kIdFieldNumber = 4,
-    kMessageIdFieldNumber = 3,
-  };
-  // bytes response = 1;
-  void clear_response() ;
-  const std::string& response() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_response(Arg_&& arg, Args_... args);
-  std::string* mutable_response();
-  PROTOBUF_NODISCARD std::string* release_response();
-  void set_allocated_response(std::string* value);
-
-  private:
-  const std::string& _internal_response() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_response(
-      const std::string& value);
-  std::string* _internal_mutable_response();
-
-  public:
-  // uint64 session_id = 2;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint64 id = 4;
-  void clear_id() ;
-  ::uint64_t id() const;
-  void set_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_id() const;
-  void _internal_set_id(::uint64_t value);
-
-  public:
-  // uint32 message_id = 3;
-  void clear_message_id() ;
-  ::uint32_t message_id() const;
-  void set_message_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_message_id() const;
-  void _internal_set_message_id(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:ClientSendMessageToPlayerResponse)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 0,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::ArenaStringPtr response_;
-    ::uint64_t session_id_;
-    ::uint64_t id_;
-    ::uint32_t message_id_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_common_2fgame_5fservice_2eproto;
-};
-// -------------------------------------------------------------------
-
-class ClientSendMessageToPlayerRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ClientSendMessageToPlayerRequest) */ {
- public:
-  inline ClientSendMessageToPlayerRequest() : ClientSendMessageToPlayerRequest(nullptr) {}
-  ~ClientSendMessageToPlayerRequest() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ClientSendMessageToPlayerRequest(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline ClientSendMessageToPlayerRequest(const ClientSendMessageToPlayerRequest& from) : ClientSendMessageToPlayerRequest(nullptr, from) {}
-  inline ClientSendMessageToPlayerRequest(ClientSendMessageToPlayerRequest&& from) noexcept
-      : ClientSendMessageToPlayerRequest(nullptr, std::move(from)) {}
-  inline ClientSendMessageToPlayerRequest& operator=(const ClientSendMessageToPlayerRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline ClientSendMessageToPlayerRequest& operator=(ClientSendMessageToPlayerRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const ClientSendMessageToPlayerRequest& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const ClientSendMessageToPlayerRequest* internal_default_instance() {
-    return reinterpret_cast<const ClientSendMessageToPlayerRequest*>(
-        &_ClientSendMessageToPlayerRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(ClientSendMessageToPlayerRequest& a, ClientSendMessageToPlayerRequest& b) { a.Swap(&b); }
-  inline void Swap(ClientSendMessageToPlayerRequest* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(ClientSendMessageToPlayerRequest* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  ClientSendMessageToPlayerRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<ClientSendMessageToPlayerRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ClientSendMessageToPlayerRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ClientSendMessageToPlayerRequest& from) { ClientSendMessageToPlayerRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(ClientSendMessageToPlayerRequest* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "ClientSendMessageToPlayerRequest"; }
-
- protected:
-  explicit ClientSendMessageToPlayerRequest(::google::protobuf::Arena* arena);
-  ClientSendMessageToPlayerRequest(::google::protobuf::Arena* arena, const ClientSendMessageToPlayerRequest& from);
-  ClientSendMessageToPlayerRequest(::google::protobuf::Arena* arena, ClientSendMessageToPlayerRequest&& from) noexcept
-      : ClientSendMessageToPlayerRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kBodyFieldNumber = 1,
-    kSessionIdFieldNumber = 2,
-    kIdFieldNumber = 4,
-    kMessageIdFieldNumber = 3,
-  };
-  // bytes body = 1;
-  void clear_body() ;
-  const std::string& body() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_body(Arg_&& arg, Args_... args);
-  std::string* mutable_body();
-  PROTOBUF_NODISCARD std::string* release_body();
-  void set_allocated_body(std::string* value);
-
-  private:
-  const std::string& _internal_body() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(
-      const std::string& value);
-  std::string* _internal_mutable_body();
-
-  public:
-  // uint64 session_id = 2;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint64 id = 4;
-  void clear_id() ;
-  ::uint64_t id() const;
-  void set_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_id() const;
-  void _internal_set_id(::uint64_t value);
-
-  public:
-  // uint32 message_id = 3;
-  void clear_message_id() ;
-  ::uint32_t message_id() const;
-  void set_message_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_message_id() const;
-  void _internal_set_message_id(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:ClientSendMessageToPlayerRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 0,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::ArenaStringPtr body_;
-    ::uint64_t session_id_;
-    ::uint64_t id_;
-    ::uint32_t message_id_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_common_2fgame_5fservice_2eproto;
-};
-// -------------------------------------------------------------------
-
 class Centre2GsEnterSceneRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:Centre2GsEnterSceneRequest) */ {
  public:
@@ -1571,6 +1153,376 @@ class GameNodeConnectRequest final : public ::google::protobuf::Message
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::NetworkAddress* rpc_client_;
     ::uint32_t gate_node_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_common_2fgame_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ClientSendMessageToPlayerResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ClientSendMessageToPlayerResponse) */ {
+ public:
+  inline ClientSendMessageToPlayerResponse() : ClientSendMessageToPlayerResponse(nullptr) {}
+  ~ClientSendMessageToPlayerResponse() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ClientSendMessageToPlayerResponse(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ClientSendMessageToPlayerResponse(const ClientSendMessageToPlayerResponse& from) : ClientSendMessageToPlayerResponse(nullptr, from) {}
+  inline ClientSendMessageToPlayerResponse(ClientSendMessageToPlayerResponse&& from) noexcept
+      : ClientSendMessageToPlayerResponse(nullptr, std::move(from)) {}
+  inline ClientSendMessageToPlayerResponse& operator=(const ClientSendMessageToPlayerResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ClientSendMessageToPlayerResponse& operator=(ClientSendMessageToPlayerResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ClientSendMessageToPlayerResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ClientSendMessageToPlayerResponse* internal_default_instance() {
+    return reinterpret_cast<const ClientSendMessageToPlayerResponse*>(
+        &_ClientSendMessageToPlayerResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(ClientSendMessageToPlayerResponse& a, ClientSendMessageToPlayerResponse& b) { a.Swap(&b); }
+  inline void Swap(ClientSendMessageToPlayerResponse* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ClientSendMessageToPlayerResponse* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ClientSendMessageToPlayerResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ClientSendMessageToPlayerResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ClientSendMessageToPlayerResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ClientSendMessageToPlayerResponse& from) { ClientSendMessageToPlayerResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ClientSendMessageToPlayerResponse* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ClientSendMessageToPlayerResponse"; }
+
+ protected:
+  explicit ClientSendMessageToPlayerResponse(::google::protobuf::Arena* arena);
+  ClientSendMessageToPlayerResponse(::google::protobuf::Arena* arena, const ClientSendMessageToPlayerResponse& from);
+  ClientSendMessageToPlayerResponse(::google::protobuf::Arena* arena, ClientSendMessageToPlayerResponse&& from) noexcept
+      : ClientSendMessageToPlayerResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kMessageBodyFieldNumber = 1,
+    kSessionIdFieldNumber = 2,
+  };
+  // .MessageBody message_body = 1;
+  bool has_message_body() const;
+  void clear_message_body() ;
+  const ::MessageBody& message_body() const;
+  PROTOBUF_NODISCARD ::MessageBody* release_message_body();
+  ::MessageBody* mutable_message_body();
+  void set_allocated_message_body(::MessageBody* value);
+  void unsafe_arena_set_allocated_message_body(::MessageBody* value);
+  ::MessageBody* unsafe_arena_release_message_body();
+
+  private:
+  const ::MessageBody& _internal_message_body() const;
+  ::MessageBody* _internal_mutable_message_body();
+
+  public:
+  // uint64 session_id = 2;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:ClientSendMessageToPlayerResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::MessageBody* message_body_;
+    ::uint64_t session_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_common_2fgame_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ClientSendMessageToPlayerRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ClientSendMessageToPlayerRequest) */ {
+ public:
+  inline ClientSendMessageToPlayerRequest() : ClientSendMessageToPlayerRequest(nullptr) {}
+  ~ClientSendMessageToPlayerRequest() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ClientSendMessageToPlayerRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ClientSendMessageToPlayerRequest(const ClientSendMessageToPlayerRequest& from) : ClientSendMessageToPlayerRequest(nullptr, from) {}
+  inline ClientSendMessageToPlayerRequest(ClientSendMessageToPlayerRequest&& from) noexcept
+      : ClientSendMessageToPlayerRequest(nullptr, std::move(from)) {}
+  inline ClientSendMessageToPlayerRequest& operator=(const ClientSendMessageToPlayerRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ClientSendMessageToPlayerRequest& operator=(ClientSendMessageToPlayerRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ClientSendMessageToPlayerRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ClientSendMessageToPlayerRequest* internal_default_instance() {
+    return reinterpret_cast<const ClientSendMessageToPlayerRequest*>(
+        &_ClientSendMessageToPlayerRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(ClientSendMessageToPlayerRequest& a, ClientSendMessageToPlayerRequest& b) { a.Swap(&b); }
+  inline void Swap(ClientSendMessageToPlayerRequest* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ClientSendMessageToPlayerRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ClientSendMessageToPlayerRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ClientSendMessageToPlayerRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ClientSendMessageToPlayerRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ClientSendMessageToPlayerRequest& from) { ClientSendMessageToPlayerRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ClientSendMessageToPlayerRequest* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ClientSendMessageToPlayerRequest"; }
+
+ protected:
+  explicit ClientSendMessageToPlayerRequest(::google::protobuf::Arena* arena);
+  ClientSendMessageToPlayerRequest(::google::protobuf::Arena* arena, const ClientSendMessageToPlayerRequest& from);
+  ClientSendMessageToPlayerRequest(::google::protobuf::Arena* arena, ClientSendMessageToPlayerRequest&& from) noexcept
+      : ClientSendMessageToPlayerRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kMessageBodyFieldNumber = 1,
+    kSessionIdFieldNumber = 2,
+  };
+  // .MessageBody message_body = 1;
+  bool has_message_body() const;
+  void clear_message_body() ;
+  const ::MessageBody& message_body() const;
+  PROTOBUF_NODISCARD ::MessageBody* release_message_body();
+  ::MessageBody* mutable_message_body();
+  void set_allocated_message_body(::MessageBody* value);
+  void unsafe_arena_set_allocated_message_body(::MessageBody* value);
+  ::MessageBody* unsafe_arena_release_message_body();
+
+  private:
+  const ::MessageBody& _internal_message_body() const;
+  ::MessageBody* _internal_mutable_message_body();
+
+  public:
+  // uint64 session_id = 2;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:ClientSendMessageToPlayerRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::MessageBody* message_body_;
+    ::uint64_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1986,54 +1938,95 @@ inline void PlayerEnterGameNodeRequest::_internal_set_centre_node_id(::uint32_t 
 
 // ClientSendMessageToPlayerRequest
 
-// bytes body = 1;
-inline void ClientSendMessageToPlayerRequest::clear_body() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.body_.ClearToEmpty();
+// .MessageBody message_body = 1;
+inline bool ClientSendMessageToPlayerRequest::has_message_body() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.message_body_ != nullptr);
+  return value;
 }
-inline const std::string& ClientSendMessageToPlayerRequest::body() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.body)
-  return _internal_body();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void ClientSendMessageToPlayerRequest::set_body(Arg_&& arg,
-                                                     Args_... args) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:ClientSendMessageToPlayerRequest.body)
-}
-inline std::string* ClientSendMessageToPlayerRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_body();
-  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerRequest.body)
-  return _s;
-}
-inline const std::string& ClientSendMessageToPlayerRequest::_internal_body() const {
+inline const ::MessageBody& ClientSendMessageToPlayerRequest::_internal_message_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.body_.Get();
+  const ::MessageBody* p = _impl_.message_body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageBody&>(::_MessageBody_default_instance_);
 }
-inline void ClientSendMessageToPlayerRequest::_internal_set_body(const std::string& value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.body_.Set(value, GetArena());
+inline const ::MessageBody& ClientSendMessageToPlayerRequest::message_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.message_body)
+  return _internal_message_body();
 }
-inline std::string* ClientSendMessageToPlayerRequest::_internal_mutable_body() {
+inline void ClientSendMessageToPlayerRequest::unsafe_arena_set_allocated_message_body(::MessageBody* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _impl_.body_.Mutable( GetArena());
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_body_);
+  }
+  _impl_.message_body_ = reinterpret_cast<::MessageBody*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ClientSendMessageToPlayerRequest.message_body)
 }
-inline std::string* ClientSendMessageToPlayerRequest::release_body() {
+inline ::MessageBody* ClientSendMessageToPlayerRequest::release_message_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerRequest.body)
-  return _impl_.body_.Release();
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MessageBody* released = _impl_.message_body_;
+  _impl_.message_body_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
 }
-inline void ClientSendMessageToPlayerRequest::set_allocated_body(std::string* value) {
+inline ::MessageBody* ClientSendMessageToPlayerRequest::unsafe_arena_release_message_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.body_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.body_.IsDefault()) {
-          _impl_.body_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerRequest.body)
+  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerRequest.message_body)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MessageBody* temp = _impl_.message_body_;
+  _impl_.message_body_ = nullptr;
+  return temp;
+}
+inline ::MessageBody* ClientSendMessageToPlayerRequest::_internal_mutable_message_body() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.message_body_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageBody>(GetArena());
+    _impl_.message_body_ = reinterpret_cast<::MessageBody*>(p);
+  }
+  return _impl_.message_body_;
+}
+inline ::MessageBody* ClientSendMessageToPlayerRequest::mutable_message_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::MessageBody* _msg = _internal_mutable_message_body();
+  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerRequest.message_body)
+  return _msg;
+}
+inline void ClientSendMessageToPlayerRequest::set_allocated_message_body(::MessageBody* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_body_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.message_body_ = reinterpret_cast<::MessageBody*>(value);
+  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerRequest.message_body)
 }
 
 // uint64 session_id = 2;
@@ -2058,102 +2051,99 @@ inline void ClientSendMessageToPlayerRequest::_internal_set_session_id(::uint64_
   _impl_.session_id_ = value;
 }
 
-// uint32 message_id = 3;
-inline void ClientSendMessageToPlayerRequest::clear_message_id() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.message_id_ = 0u;
-}
-inline ::uint32_t ClientSendMessageToPlayerRequest::message_id() const {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.message_id)
-  return _internal_message_id();
-}
-inline void ClientSendMessageToPlayerRequest::set_message_id(::uint32_t value) {
-  _internal_set_message_id(value);
-  // @@protoc_insertion_point(field_set:ClientSendMessageToPlayerRequest.message_id)
-}
-inline ::uint32_t ClientSendMessageToPlayerRequest::_internal_message_id() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.message_id_;
-}
-inline void ClientSendMessageToPlayerRequest::_internal_set_message_id(::uint32_t value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.message_id_ = value;
-}
-
-// uint64 id = 4;
-inline void ClientSendMessageToPlayerRequest::clear_id() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_ = ::uint64_t{0u};
-}
-inline ::uint64_t ClientSendMessageToPlayerRequest::id() const {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.id)
-  return _internal_id();
-}
-inline void ClientSendMessageToPlayerRequest::set_id(::uint64_t value) {
-  _internal_set_id(value);
-  // @@protoc_insertion_point(field_set:ClientSendMessageToPlayerRequest.id)
-}
-inline ::uint64_t ClientSendMessageToPlayerRequest::_internal_id() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.id_;
-}
-inline void ClientSendMessageToPlayerRequest::_internal_set_id(::uint64_t value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_ = value;
-}
-
 // -------------------------------------------------------------------
 
 // ClientSendMessageToPlayerResponse
 
-// bytes response = 1;
-inline void ClientSendMessageToPlayerResponse::clear_response() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.response_.ClearToEmpty();
+// .MessageBody message_body = 1;
+inline bool ClientSendMessageToPlayerResponse::has_message_body() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.message_body_ != nullptr);
+  return value;
 }
-inline const std::string& ClientSendMessageToPlayerResponse::response() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.response)
-  return _internal_response();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void ClientSendMessageToPlayerResponse::set_response(Arg_&& arg,
-                                                     Args_... args) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.response_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:ClientSendMessageToPlayerResponse.response)
-}
-inline std::string* ClientSendMessageToPlayerResponse::mutable_response() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_response();
-  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerResponse.response)
-  return _s;
-}
-inline const std::string& ClientSendMessageToPlayerResponse::_internal_response() const {
+inline const ::MessageBody& ClientSendMessageToPlayerResponse::_internal_message_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.response_.Get();
+  const ::MessageBody* p = _impl_.message_body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageBody&>(::_MessageBody_default_instance_);
 }
-inline void ClientSendMessageToPlayerResponse::_internal_set_response(const std::string& value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.response_.Set(value, GetArena());
+inline const ::MessageBody& ClientSendMessageToPlayerResponse::message_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.message_body)
+  return _internal_message_body();
 }
-inline std::string* ClientSendMessageToPlayerResponse::_internal_mutable_response() {
+inline void ClientSendMessageToPlayerResponse::unsafe_arena_set_allocated_message_body(::MessageBody* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _impl_.response_.Mutable( GetArena());
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_body_);
+  }
+  _impl_.message_body_ = reinterpret_cast<::MessageBody*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ClientSendMessageToPlayerResponse.message_body)
 }
-inline std::string* ClientSendMessageToPlayerResponse::release_response() {
+inline ::MessageBody* ClientSendMessageToPlayerResponse::release_message_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerResponse.response)
-  return _impl_.response_.Release();
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MessageBody* released = _impl_.message_body_;
+  _impl_.message_body_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
 }
-inline void ClientSendMessageToPlayerResponse::set_allocated_response(std::string* value) {
+inline ::MessageBody* ClientSendMessageToPlayerResponse::unsafe_arena_release_message_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.response_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.response_.IsDefault()) {
-          _impl_.response_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerResponse.response)
+  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerResponse.message_body)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MessageBody* temp = _impl_.message_body_;
+  _impl_.message_body_ = nullptr;
+  return temp;
+}
+inline ::MessageBody* ClientSendMessageToPlayerResponse::_internal_mutable_message_body() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.message_body_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageBody>(GetArena());
+    _impl_.message_body_ = reinterpret_cast<::MessageBody*>(p);
+  }
+  return _impl_.message_body_;
+}
+inline ::MessageBody* ClientSendMessageToPlayerResponse::mutable_message_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::MessageBody* _msg = _internal_mutable_message_body();
+  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerResponse.message_body)
+  return _msg;
+}
+inline void ClientSendMessageToPlayerResponse::set_allocated_message_body(::MessageBody* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_body_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.message_body_ = reinterpret_cast<::MessageBody*>(value);
+  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerResponse.message_body)
 }
 
 // uint64 session_id = 2;
@@ -2176,50 +2166,6 @@ inline ::uint64_t ClientSendMessageToPlayerResponse::_internal_session_id() cons
 inline void ClientSendMessageToPlayerResponse::_internal_set_session_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.session_id_ = value;
-}
-
-// uint32 message_id = 3;
-inline void ClientSendMessageToPlayerResponse::clear_message_id() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.message_id_ = 0u;
-}
-inline ::uint32_t ClientSendMessageToPlayerResponse::message_id() const {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.message_id)
-  return _internal_message_id();
-}
-inline void ClientSendMessageToPlayerResponse::set_message_id(::uint32_t value) {
-  _internal_set_message_id(value);
-  // @@protoc_insertion_point(field_set:ClientSendMessageToPlayerResponse.message_id)
-}
-inline ::uint32_t ClientSendMessageToPlayerResponse::_internal_message_id() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.message_id_;
-}
-inline void ClientSendMessageToPlayerResponse::_internal_set_message_id(::uint32_t value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.message_id_ = value;
-}
-
-// uint64 id = 4;
-inline void ClientSendMessageToPlayerResponse::clear_id() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_ = ::uint64_t{0u};
-}
-inline ::uint64_t ClientSendMessageToPlayerResponse::id() const {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.id)
-  return _internal_id();
-}
-inline void ClientSendMessageToPlayerResponse::set_id(::uint64_t value) {
-  _internal_set_id(value);
-  // @@protoc_insertion_point(field_set:ClientSendMessageToPlayerResponse.id)
-}
-inline ::uint64_t ClientSendMessageToPlayerResponse::_internal_id() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.id_;
-}
-inline void ClientSendMessageToPlayerResponse::_internal_set_id(::uint64_t value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_ = value;
 }
 
 // -------------------------------------------------------------------

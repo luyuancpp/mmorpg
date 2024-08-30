@@ -18,18 +18,14 @@ message PlayerEnterGameNodeRequest
 
 message ClientSendMessageToPlayerRequest
 {
-  bytes body = 1;
+  MessageBody message_body = 1;
   uint64 session_id = 2;
-  uint32 message_id = 3;
-  uint64 id = 4;
 }
 
 message ClientSendMessageToPlayerResponse
 {
-  bytes response = 1;
+  MessageBody message_body = 1;
   uint64 session_id = 2;
-  uint32 message_id = 3;
-  uint64 id = 4;
 }
 
 message SessionDisconnectRequest

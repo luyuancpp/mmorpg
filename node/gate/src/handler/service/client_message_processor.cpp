@@ -137,10 +137,10 @@ void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionP
 
 		auto gameNode = tls.gameNodeRegistry.get<RpcClientPtr>(gameNodeId);
 		ClientSendMessageToPlayerRequest message;
-		message.set_body(request->body());
+		message.mutable_message_body()->set_body(request->body());
 		message.set_session_id(sessionId);
-		message.set_id(request->id());
-		message.set_message_id(request->message_id());
+		message.mutable_message_body()->set_id(request->id());
+		message.mutable_message_body()->set_message_id(request->message_id());
 		gameNode->CallMethod(GameServiceClientSendMessageToPlayerMessageId, message);
 
 		LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
