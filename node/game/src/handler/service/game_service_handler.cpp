@@ -143,17 +143,17 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (request->message_id() >= g_message_info.size())
+	if (request->message_body().message_id() >= g_message_info.size())
 	{
-		LOG_ERROR << "message_id not found " << request->message_id();
+		LOG_ERROR << "message_id not found " << request->message_body().message_id();
 		return;
 	}
 
-	const auto& messageInfo = g_message_info.at(request->message_id());
+	const auto& messageInfo = g_message_info.at(request->message_body().message_id());
 	const auto serviceIt = g_player_service.find(messageInfo.service);
 	if (serviceIt == g_player_service.end())
 	{
-		LOG_ERROR << "GatePlayerService message id not found " << request->message_id();
+		LOG_ERROR << "GatePlayerService message id not found " << request->message_body().message_id();
 		return;
 	}
 
@@ -161,7 +161,7 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "GatePlayerService message id not found " << request->message_id();
+		LOG_ERROR << "GatePlayerService message id not found " << request->message_body().message_id();
 		return;
 	}
 
@@ -169,27 +169,27 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	if (it == tlsSessions.end())
 	{
 		LOG_ERROR << "session id not found " << request->session_id() << ","
-			<< " message id " << request->message_id();
+			<< " message id " << request->message_body().message_id();
 		return;
 	}
 
 	const auto player = tlsCommonLogic.GetPlayer(it->second.player_id());
 	if (entt::null == player)
 	{
-		LOG_ERROR << "GatePlayerService player not loading " << request->message_id()
+		LOG_ERROR << "GatePlayerService player not loading " << request->message_body().message_id()
 			<< "player_id" << it->second.player_id();
 		return;
 	}
 
 	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-	playerRequest->ParseFromArray(request->body().data(), static_cast<int32_t>(request->body().size()));
+	playerRequest->ParseFromArray(request->message_body().body().data(), static_cast<int32_t>(request->message_body().body().size()));
 
 	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
 	serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-	response->set_response(playerResponse->SerializeAsString());
-	response->set_message_id(request->message_id());
-	response->set_id(request->id());
+	response->mutable_message_body()->set_body(playerResponse->SerializeAsString());
+	response->mutable_message_body()->set_message_id(request->message_body().message_id());
+	response->mutable_message_body()->set_id(request->message_body().id());
 	response->set_session_id(request->session_id());
 ///<<< END WRITING YOUR CODE
 }

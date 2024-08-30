@@ -767,6 +767,7 @@ class MessageBody final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kBodyFieldNumber = 1,
+    kIdFieldNumber = 3,
     kMessageIdFieldNumber = 2,
   };
   // bytes body = 1;
@@ -785,6 +786,16 @@ class MessageBody final : public ::google::protobuf::Message
   std::string* _internal_mutable_body();
 
   public:
+  // uint64 id = 3;
+  void clear_id() ;
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
+
+  public:
   // uint32 message_id = 2;
   void clear_message_id() ;
   ::uint32_t message_id() const;
@@ -800,7 +811,7 @@ class MessageBody final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 0,
+      2, 3, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -817,6 +828,7 @@ class MessageBody final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::ArenaStringPtr body_;
+    ::uint64_t id_;
     ::uint32_t message_id_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -4483,6 +4495,28 @@ inline ::uint32_t MessageBody::_internal_message_id() const {
 inline void MessageBody::_internal_set_message_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.message_id_ = value;
+}
+
+// uint64 id = 3;
+inline void MessageBody::clear_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.id_ = ::uint64_t{0u};
+}
+inline ::uint64_t MessageBody::id() const {
+  // @@protoc_insertion_point(field_get:MessageBody.id)
+  return _internal_id();
+}
+inline void MessageBody::set_id(::uint64_t value) {
+  _internal_set_id(value);
+  // @@protoc_insertion_point(field_set:MessageBody.id)
+}
+inline ::uint64_t MessageBody::_internal_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.id_;
+}
+inline void MessageBody::_internal_set_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.id_ = value;
 }
 
 // -------------------------------------------------------------------

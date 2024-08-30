@@ -55,16 +55,13 @@ void OnGameServiceSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn
 void OnGameServiceClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<ClientSendMessageToPlayerResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    MessageBody msg;
     auto it = tls_gate.sessions().find(replied->session_id());
     if (it == tls_gate.sessions().end())
     {
         LOG_ERROR << "conn id not found  session id " << "," << replied->session_id();
         return;
     }
-    msg.set_body(replied->response());
-    msg.set_message_id(replied->message_id());
-    g_gate_node->Codec().send(it->second.conn_, msg);
+    g_gate_node->Codec().send(it->second.conn_, replied->message_body());
 ///<<< END WRITING YOUR CODE
 }
 

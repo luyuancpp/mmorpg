@@ -21,6 +21,8 @@ tls_lua_state.new_usertype<MessageBody>("MessageBody",
 [](MessageBody& pb) ->decltype(auto){ return pb.mutable_body();},
 "message_id",
 sol::property(&MessageBody::message_id, &MessageBody::set_message_id),
+"id",
+sol::property(&MessageBody::id, &MessageBody::set_id),
 "DebugString",
 &MessageBody::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

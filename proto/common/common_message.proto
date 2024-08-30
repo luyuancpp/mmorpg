@@ -15,6 +15,7 @@ message MessageBody
 {
   bytes body = 1;
   uint32 message_id = 2;
+  uint64 id = 3;
 }
 
 message NodeMessageHead
