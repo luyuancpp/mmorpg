@@ -1,8 +1,6 @@
 package pkg
 
 import (
-	"client/logic/behaviortree"
-	"client/pb/game"
 	"github.com/golang/protobuf/proto"
 	"github.com/luyuancpp/muduoclient/muduo"
 	b3 "github.com/magicsea/behavior3go"
@@ -10,6 +8,8 @@ import (
 	. "github.com/magicsea/behavior3go/core"
 	. "github.com/magicsea/behavior3go/loader"
 	"go.uber.org/zap"
+	"robot/logic/behaviortree"
+	"robot/pb/game"
 )
 
 // GameClient represents a client for interacting with the game server.

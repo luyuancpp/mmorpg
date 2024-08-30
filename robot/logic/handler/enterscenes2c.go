@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"client/logic"
-	"client/pb/game"
+	"robot/logic"
+	"robot/pb/game"
 )
 
 func EnterSceneS2CHandler(player *logic.Player, response *game.EnterSceneS2C) {
