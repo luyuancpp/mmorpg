@@ -22,6 +22,7 @@ public:
 	static void OnPlayerRegisteredToGateNode(entt::entity player);
 	static void RemovePlayerSession(Guid player_id);
 	static void RemovePlayerSession(entt::entity player);
-	static  void DestroyPlayer(Guid player_id);
+	static void RemovePlayerSessionSilently(Guid player_id);
+	static void DestroyPlayer(Guid player_id);
 };
 

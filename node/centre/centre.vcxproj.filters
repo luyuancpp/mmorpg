@@ -218,5 +218,8 @@
     <ClInclude Include="src\handler\event\buff_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\game_logic\player\comp\player_comp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

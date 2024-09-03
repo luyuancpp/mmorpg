@@ -144,18 +144,6 @@
         "root": "e2809542-d25c-4213-bdf9-022ea5d4e5e7",
         "properties": {},
         "nodes": {
-          "6983a111-949e-4058-84cb-58209204e95d": {
-            "id": "6983a111-949e-4058-84cb-58209204e95d",
-            "name": "RandomEnterScene",
-            "category": "action",
-            "title": "RandomEnterScene",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 312,
-              "y": -204
-            }
-          },
           "9d8f4d0c-ae86-4909-a731-00301eb17b16": {
             "id": "9d8f4d0c-ae86-4909-a731-00301eb17b16",
             "name": "Sequence",
@@ -169,7 +157,6 @@
             },
             "children": [
               "5ecfb339-b7b9-466c-88a5-edd121cd0030",
-              "6983a111-949e-4058-84cb-58209204e95d",
               "5d069eed-bceb-4403-8cba-6d866d0c31cb"
             ]
           },

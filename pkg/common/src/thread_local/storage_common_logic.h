@@ -18,8 +18,8 @@ public:
     uint64_t session_id() const { return current_session_id_; }
 
     entt::entity GetPlayer(Guid player_uid);
-    inline PlayerListMap& GetPlayerList() { return players_list_; }
-    inline const PlayerListMap& GetPlayerList() const { return players_list_; }
+    inline PlayerListMap& GetPlayerList() { return playerList; }
+    inline const PlayerListMap& GetPlayerList() const { return playerList; }
 
 private:
     RouteNodeInfo route_data_;
@@ -28,7 +28,7 @@ private:
     uint32_t next_route_node_id_{UINT32_MAX};
     uint64_t current_session_id_{kInvalidSessionId};
     std::string prev_node_replied_;
-    PlayerListMap players_list_;
+    PlayerListMap playerList;
 };
 
 extern thread_local ThreadLocalStorageCommonLogic tlsCommonLogic;
