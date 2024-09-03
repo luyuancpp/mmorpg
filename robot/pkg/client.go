@@ -38,9 +38,10 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	maps.Register("PlayerEnterGame", new(behaviortree.PlayerEnterGame))
 	maps.Register("AlreadyLoggedIn", new(behaviortree.AlreadyLoggedIn))
 	maps.Register("RandomEnterScene", new(behaviortree.RandomEnterScene))
-	maps.Register("TestSequenceOrder", new(behaviortree.TestSequenceOrder))
-	maps.Register("AddSceneSwitchCount", new(behaviortree.AddSceneSwitchCount))
+	maps.Register("CheckTestCount", new(behaviortree.CheckTestCount))
+	maps.Register("IncrementTestCount", new(behaviortree.IncrementTestCount))
 	maps.Register("SetSubTree", new(behaviortree.SetSubTree))
+	maps.Register("InitTree", new(behaviortree.InitTree))
 
 	var currentTree *BehaviorTree
 	// Initialize behavior trees
