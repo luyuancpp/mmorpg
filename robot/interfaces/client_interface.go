@@ -8,4 +8,5 @@ type GameClientInterface interface {
 	Close()
 	SetPlayerId(playerId uint64)
 	GetPlayerId() uint64
+	SetSubTree(treeTitle string)
 }
