@@ -16,8 +16,7 @@ type ServerConfig struct {
 
 // RobotsConfig defines the structure for robots configuration
 type RobotsConfig struct {
-	Count            int   `yaml:"count"`
-	SceneSwitchCount int32 `yaml:"sceneSwitchCount"`
+	Count int `yaml:"count"`
 }
 
 // Config holds the entire configuration

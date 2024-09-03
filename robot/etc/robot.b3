@@ -4,7 +4,7 @@
   "data": {
     "version": "0.3.0",
     "scope": "project",
-    "selectedTree": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
+    "selectedTree": "3961d49d-3426-410b-bc92-6fe8f3b1dee2",
     "trees": [
       {
         "version": "0.3.0",
@@ -29,7 +29,7 @@
             "children": [
               "931be9da-2018-45a1-87e8-5fb7d7fd639a",
               "0a174595-76df-4ca8-84c3-3e1785429e94",
-              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe"
+              "ae9aebdb-68a8-441e-9835-f957a53ee342"
             ]
           },
           "0a174595-76df-4ca8-84c3-3e1785429e94": {
@@ -93,8 +93,38 @@
             "properties": {},
             "display": {
               "x": 72,
-              "y": -168
+              "y": -180
             }
+          },
+          "bcd2c3f9-74f7-4574-87bf-e930b92563eb": {
+            "id": "bcd2c3f9-74f7-4574-87bf-e930b92563eb",
+            "name": "SetSubTree",
+            "category": "action",
+            "title": "SetSubTree(<treeTitle>)",
+            "description": "",
+            "properties": {
+              "treeTitle": "Scene"
+            },
+            "display": {
+              "x": 84,
+              "y": -108
+            }
+          },
+          "ae9aebdb-68a8-441e-9835-f957a53ee342": {
+            "id": "ae9aebdb-68a8-441e-9835-f957a53ee342",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -132,
+              "y": -180
+            },
+            "children": [
+              "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe",
+              "bcd2c3f9-74f7-4574-87bf-e930b92563eb"
+            ]
           }
         },
         "display": {
@@ -111,7 +141,7 @@
         "id": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
         "title": "Scene",
         "description": "",
-        "root": "9d8f4d0c-ae86-4909-a731-00301eb17b16",
+        "root": "e2809542-d25c-4213-bdf9-022ea5d4e5e7",
         "properties": {},
         "nodes": {
           "6983a111-949e-4058-84cb-58209204e95d": {
@@ -119,18 +149,6 @@
             "name": "RandomEnterScene",
             "category": "action",
             "title": "RandomEnterScene",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 204,
-              "y": -132
-            }
-          },
-          "fc177da2-012a-482d-889e-e48e15eec028": {
-            "id": "fc177da2-012a-482d-889e-e48e15eec028",
-            "name": "CheckSceneSwitchCount",
-            "category": "condition",
-            "title": "CheckSceneSwitchCount",
             "description": "",
             "properties": {},
             "display": {
@@ -146,11 +164,11 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": -24,
-              "y": -144
+              "x": 12,
+              "y": -156
             },
             "children": [
-              "fc177da2-012a-482d-889e-e48e15eec028",
+              "cfd57ed9-6168-499c-936a-21300b0fbb3a",
               "6983a111-949e-4058-84cb-58209204e95d",
               "df33bc43-80cb-4ec5-83d8-ad721b7410d9"
             ]
@@ -163,8 +181,53 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 252,
-              "y": -60
+              "x": 228,
+              "y": -132
+            }
+          },
+          "cfd57ed9-6168-499c-936a-21300b0fbb3a": {
+            "id": "cfd57ed9-6168-499c-936a-21300b0fbb3a",
+            "name": "TestSequenceOrder",
+            "category": "action",
+            "title": "TestSequenceOrder(<treeTitle>,<count>)",
+            "description": "",
+            "properties": {
+              "treeTitle": "Scene",
+              "count": 1000
+            },
+            "display": {
+              "x": 228,
+              "y": -276
+            }
+          },
+          "e2809542-d25c-4213-bdf9-022ea5d4e5e7": {
+            "id": "e2809542-d25c-4213-bdf9-022ea5d4e5e7",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -144,
+              "y": -96
+            },
+            "children": [
+              "9d8f4d0c-ae86-4909-a731-00301eb17b16",
+              "d9837df3-b98b-4c0f-8109-4cb51db7b057"
+            ]
+          },
+          "d9837df3-b98b-4c0f-8109-4cb51db7b057": {
+            "id": "d9837df3-b98b-4c0f-8109-4cb51db7b057",
+            "name": "SetSubTree",
+            "category": "action",
+            "title": "SetSubTree(<treeTitle>)",
+            "description": "",
+            "properties": {
+              "treeTitle": "Battle"
+            },
+            "display": {
+              "x": 108,
+              "y": -48
             }
           }
         },
@@ -172,8 +235,53 @@
           "camera_x": 785.5,
           "camera_y": 473,
           "camera_z": 1,
-          "x": -204,
+          "x": -252,
           "y": -48
+        }
+      },
+      {
+        "version": "0.3.0",
+        "scope": "tree",
+        "id": "3961d49d-3426-410b-bc92-6fe8f3b1dee2",
+        "title": "Battle",
+        "description": "",
+        "root": "0a1fe30a-3fc1-43f2-8e26-fce15fae767c",
+        "properties": {},
+        "nodes": {
+          "0a1fe30a-3fc1-43f2-8e26-fce15fae767c": {
+            "id": "0a1fe30a-3fc1-43f2-8e26-fce15fae767c",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 180,
+              "y": -12
+            },
+            "children": [
+              "43daf4e3-6ad7-4f8e-8ffd-0b1e6214fe7d"
+            ]
+          },
+          "43daf4e3-6ad7-4f8e-8ffd-0b1e6214fe7d": {
+            "id": "43daf4e3-6ad7-4f8e-8ffd-0b1e6214fe7d",
+            "name": "IsRoleListEmpty",
+            "category": "condition",
+            "title": "IsRoleListEmpty",
+            "description": "登录的时候角色列表是否为空",
+            "properties": {},
+            "display": {
+              "x": 348,
+              "y": -72
+            }
+          }
+        },
+        "display": {
+          "camera_x": 739,
+          "camera_y": 381,
+          "camera_z": 1,
+          "x": 0,
+          "y": 0
         }
       }
     ],
@@ -246,6 +354,31 @@
         "title": null,
         "description": null,
         "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "TestSequenceOrder",
+        "category": "action",
+        "title": "TestSequenceOrder(<treeTitle>,<count>)",
+        "description": null,
+        "properties": {
+          "treeTitle": "treeTitle",
+          "count": 1000
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "SetSubTree",
+        "category": "action",
+        "title": "SetSubTree(<treeTitle>)",
+        "description": null,
+        "properties": {
+          "treeTitle": "treeTitle"
+        },
         "parent": null
       }
     ],

@@ -16,7 +16,8 @@ import (
 type GameClient struct {
 	Client            *muduo.Client
 	PlayerId          uint64
-	BehaviorTree      []*BehaviorTree
+	BehaviorTree      map[string]*BehaviorTree
+	CurrentTree       *BehaviorTree
 	Blackboard        *Blackboard
 	MessageSequenceID uint64
 }
@@ -37,18 +38,24 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	maps.Register("PlayerEnterGame", new(behaviortree.PlayerEnterGame))
 	maps.Register("AlreadyLoggedIn", new(behaviortree.AlreadyLoggedIn))
 	maps.Register("RandomEnterScene", new(behaviortree.RandomEnterScene))
-	maps.Register("CheckSceneSwitchCount", new(behaviortree.CheckSceneSwitchCount))
+	maps.Register("TestSequenceOrder", new(behaviortree.TestSequenceOrder))
 	maps.Register("AddSceneSwitchCount", new(behaviortree.AddSceneSwitchCount))
+	maps.Register("SetSubTree", new(behaviortree.SetSubTree))
 
+	var currentTree *BehaviorTree
 	// Initialize behavior trees
-	behaviorTree := make([]*BehaviorTree, len(projectConfig.Data.Trees))
+	behaviorTree := make(map[string]*BehaviorTree)
 	for i, v := range projectConfig.Data.Trees {
 		tree := CreateBevTreeFromConfig(&v, maps)
 		if tree == nil {
 			zap.L().Error("Failed to create behavior tree", zap.Int("index", i))
 			return nil
 		}
-		behaviorTree[i] = tree
+
+		if tree.GetTitile() == behaviortree.LoginSubTree {
+			currentTree = tree
+		}
+		behaviorTree[tree.GetTitile()] = tree
 	}
 
 	blackboard := NewBlackboard()
@@ -56,6 +63,7 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	c := &GameClient{
 		Client:            client,
 		BehaviorTree:      behaviorTree,
+		CurrentTree:       currentTree,
 		Blackboard:        blackboard,
 		MessageSequenceID: 1,
 	}
@@ -94,9 +102,7 @@ func (gameClient *GameClient) Close() {
 
 // TickBehaviorTree updates the state of all behavior trees.
 func (gameClient *GameClient) TickBehaviorTree() {
-	for i, tree := range gameClient.BehaviorTree {
-		tree.Tick(i, gameClient.Blackboard)
-	}
+	gameClient.CurrentTree.Tick(0, gameClient.Blackboard)
 }
 
 func (gameClient *GameClient) SetPlayerId(playerId uint64) {
@@ -105,4 +111,14 @@ func (gameClient *GameClient) SetPlayerId(playerId uint64) {
 
 func (gameClient *GameClient) GetPlayerId() uint64 {
 	return gameClient.PlayerId
+}
+
+func (gameClient *GameClient) SetSubTree(treeTitle string) {
+	tree, ok := gameClient.BehaviorTree[treeTitle]
+
+	if !ok {
+		return
+	}
+
+	gameClient.CurrentTree = tree
 }
