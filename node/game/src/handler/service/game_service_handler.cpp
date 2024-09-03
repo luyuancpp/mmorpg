@@ -36,7 +36,7 @@ void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 		<< ", centre_node_id: " << request->centre_node_id();
 
 	// 1 清除玩家会话，处理连续顶号进入情况
-	PlayerNodeUtil::RemovePlayerSession(request->player_id());
+	PlayerNodeUtil::RemovePlayerSessionSilently(request->player_id());
 
 	const auto& playerList = tlsCommonLogic.GetPlayerList();
 	auto playerIt = playerList.find(request->player_id());

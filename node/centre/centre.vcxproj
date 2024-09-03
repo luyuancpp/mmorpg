@@ -211,6 +211,7 @@
   <ItemGroup>
     <ClInclude Include="src\centre_node.h" />
     <ClInclude Include="src\game_logic\network\message_util.h" />
+    <ClInclude Include="src\game_logic\player\comp\player_comp.h" />
     <ClInclude Include="src\handler\event\buff_event_handler.h" />
     <ClInclude Include="src\handler\event\event_handler.h" />
     <ClInclude Include="src\handler\event\mission_event_handler.h" />

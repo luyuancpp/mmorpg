@@ -6,6 +6,7 @@
 
 #include "network/gate_session.h"
 #include "game_logic/network/message_util.h"
+#include "game_logic/player/comp/player_comp.h"
 #include "service_info/game_player_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
@@ -50,6 +51,8 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_
 	// Set flag for first login
 	tls.registry.emplace<EnterGameNodeInfoPBComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
+	PlayerNodeUtil::HandlePlayerSession(playerEntity);
+
 	PlayerSceneUtil::HandleLoginEnterScene(playerEntity);
 	// On database loaded
 }
@@ -57,6 +60,21 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_
 void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
 {
 	// Placeholder for handling saved player data asynchronously
+}
+
+void PlayerNodeUtil::HandlePlayerSession(entt::entity player)
+{
+	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComp>(player))
+	{
+		if (enterGameFlag->enter_gs_type() != LOGIN_NONE && enterGameFlag->enter_gs_type() != LOGIN_RECONNECT)
+		{
+			PlayerNodeUtil::HandlePlayerLogin(player);
+		}
+		else
+		{
+			PlayerNodeUtil::HandlePlayerReconnection(player);
+		}
+	}
 }
 
 void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
@@ -67,25 +85,15 @@ void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
 		return;
 	}
 
-	if (enterGameFlag->enter_gs_type() == LOGIN_FIRST)
-	{
-		// Handle first login scenario
-	}
-	else if (enterGameFlag->enter_gs_type() == LOGIN_REPLACE)
-	{
-		// Handle login replace scenario
-	}
-	else if (enterGameFlag->enter_gs_type() == LOGIN_RECONNECT)
-	{
-		// Handle reconnect scenario
-	}
+	Centre2GsLoginRequest message;
+	message.set_enter_gs_type(enterGameFlag->enter_gs_type());
+	tls.registry.remove<EnterGameNodeInfoPBComp>(playerEntity);
+	SendToGsPlayer(GamePlayerServiceCentre2GsLoginMessageId, message, playerEntity);
+}
 
-	{
-		Centre2GsLoginRequest message;
-		message.set_enter_gs_type(enterGameFlag->enter_gs_type());
-		tls.registry.remove<EnterGameNodeInfoPBComp>(playerEntity);
-		SendToGsPlayer(GamePlayerServiceCentre2GsLoginMessageId, message, playerEntity);
-	}
+void PlayerNodeUtil::HandlePlayerReconnection(entt::entity player)
+{
+
 }
 
 void PlayerNodeUtil::RegisterPlayerToGateNode(entt::entity playerEntity)
@@ -138,34 +146,42 @@ void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
 	request.set_player_id(*playerId);
 	SendToGs(GameServiceUpdateSessionDetailMessageId, request, playerNodeInfo->game_node_id());
 
-	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComp>(playerEntity))
-	{
-		if (enterGameFlag->enter_gs_type() != LOGIN_NONE)
-		{
-			HandlePlayerLogin(playerEntity);
-		}
-	}
+	
 }
 
-void PlayerNodeUtil::HandlePlayerLeave(Guid playerUid)
+void PlayerNodeUtil::HandleNormalExit(Guid playerID)
+{
+	Logout(playerID);
+}
+
+void PlayerNodeUtil::HandleAbnormalExit(Guid playerID)
+{
+	const auto playerEntity = tlsCommonLogic.GetPlayer(playerID);
+	if (!tls.registry.valid(playerEntity))
+	{
+		LOG_ERROR << "Player not found: " << playerID;
+		return;
+	}
+
+	tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(20, [playerID]() {Logout(playerID); });
+}
+
+void PlayerNodeUtil::Logout(Guid playerID)
 {
 	// TODO: Handle leave during login
 	// TODO: Immediate logout on disconnect will be revisited later
 	// TODO: Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
-	defer(tlsCommonLogic.GetPlayerList().erase(playerUid));
+	defer(tlsCommonLogic.GetPlayerList().erase(playerID));
 
-	const auto playerEntity = tlsCommonLogic.GetPlayer(playerUid);
+	const auto playerEntity = tlsCommonLogic.GetPlayer(playerID);
 	if (!tls.registry.valid(playerEntity))
 	{
 		return;
 	}
 
-	if (!tls.registry.try_get<SceneEntityComp>(playerEntity))
-	{
-		// Handle cases where player didn't enter any scene yet (e.g., login process or scene switch)
-	}
-	else
+	if (tls.registry.try_get<SceneEntityComp>(playerEntity))
 	{
 		SceneUtil::LeaveScene({ playerEntity });
 	}
+	
 }

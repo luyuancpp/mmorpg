@@ -170,6 +170,16 @@ void PlayerNodeUtil::RemovePlayerSession(entt::entity player)
 	playerNodeInfo->set_gate_session_id(kInvalidSessionId);
 }
 
+void PlayerNodeUtil::RemovePlayerSessionSilently(Guid player_id)
+{
+	auto playerIt = tlsCommonLogic.GetPlayerList().find(player_id);
+	if (playerIt == tlsCommonLogic.GetPlayerList().end())
+	{
+		return;
+	}
+	RemovePlayerSession(playerIt->second);
+}
+
 void PlayerNodeUtil::DestroyPlayer(Guid playerId)
 {
 	defer(tlsCommonLogic.GetPlayerList().erase(playerId));
