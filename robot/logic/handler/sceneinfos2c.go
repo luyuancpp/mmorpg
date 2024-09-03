@@ -14,4 +14,5 @@ func SceneInfoS2CHandler(player *logic.Player, response *game.SceneInfoS2C) {
 	client := player.Client.(*pkg.GameClient)
 	client.Blackboard.SetMem(behaviortree.SceneInformationKey, response.SceneInfo)
 	zap.L().Error("change scene :", zap.Any("time", i))
+	i++
 }

@@ -64,48 +64,13 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
     // todo 玩家没登录直接发其他消息，乱发消息
 	// todo如果我没登录就发送其他协议到controller game server 怎么办
 	// Handle disconnection
-	if (!conn->connected())
+	if (conn->connected())
 	{
-		const auto sessionId = entt::to_integral(SessionId(conn));
-
-		// 重要: 此消息一定要发，不能值通过controller 的gw disconnect去发
-		// 重要: 比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
-		// Disconnect from login server if session exists
-		{
-			const auto& loginNode = GetLoginNode(sessionId);
-			if (entt::null != loginNode)
-			{
-				LoginNodeDisconnectRequest request;
-				request.set_session_id(sessionId);
-				SendDisconnectC2LRequest(loginNode, request);
-			}
-		}
-
-		// Notify centre server about disconnection
-		{
-			GateSessionDisconnectRequest request;
-			request.mutable_session_info()->set_session_id(sessionId);
-			g_gate_node->GetZoneCentreNode()->CallMethod(CentreServiceGateSessionDisconnectMessageId, request);
-		}
-
-		// Remove session from registry
-		tls_gate.sessions().erase(sessionId);
-
-		LOG_TRACE << "Disconnected session id: " << sessionId;
+		HandleConnectionEstablished(conn);
 	}
 	else
 	{
-		auto sessionId = tls_gate.session_id_gen().Generate();
-		while (tls_gate.sessions().contains(sessionId))
-		{
-			sessionId = tls_gate.session_id_gen().Generate();
-		}
-		conn->setContext(sessionId);
-		Session session;
-		session.conn_ = conn;
-		tls_gate.sessions().emplace(sessionId, std::move(session));
-
-		LOG_TRACE << "New connection, assigned session id: " << sessionId;
+		OnDisConneHandleConnectionClosedcted(conn);
 	}
 }
 
@@ -202,4 +167,49 @@ void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint3
 	g_gate_node->Codec().send(conn, message);
 
 	LOG_ERROR << "Sent tip message to session id: " << SessionId(conn) << ", tip id: " << tipId;
+}
+
+void ClientMessageProcessor::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
+{
+	auto sessionId = tls_gate.session_id_gen().Generate();
+	while (tls_gate.sessions().contains(sessionId))
+	{
+		sessionId = tls_gate.session_id_gen().Generate();
+	}
+	conn->setContext(sessionId);
+	Session session;
+	session.conn_ = conn;
+	tls_gate.sessions().emplace(sessionId, std::move(session));
+
+	LOG_TRACE << "New connection, assigned session id: " << sessionId;
+}
+
+void ClientMessageProcessor::OnDisConneHandleConnectionClosedcted(const muduo::net::TcpConnectionPtr& conn)
+{
+	const auto sessionId = entt::to_integral(SessionId(conn));
+
+	{
+		// 重要: 此消息一定要发，不能只通过controller 的gw disconnect去发
+		// 重要: 比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
+		// todo 登录时候断开应该登录服务器也告诉centre
+		const auto& loginNode = GetLoginNode(sessionId);
+		if (entt::null != loginNode)
+		{
+			LoginNodeDisconnectRequest request;
+			request.set_session_id(sessionId);
+			SendDisconnectC2LRequest(loginNode, request);
+		}
+	}
+
+	// Notify centre server about disconnection
+	{
+		GateSessionDisconnectRequest request;
+		request.mutable_session_info()->set_session_id(sessionId);
+		g_gate_node->GetZoneCentreNode()->CallMethod(CentreServiceGateSessionDisconnectMessageId, request);
+	}
+
+	// Remove session from registry
+	tls_gate.sessions().erase(sessionId);
+
+	LOG_TRACE << "Disconnected session id: " << sessionId;
 }
