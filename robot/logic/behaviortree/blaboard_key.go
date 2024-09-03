@@ -5,5 +5,6 @@ const (
 	ClientIdentifier     = "clientIdentifier" //客户端标识
 	SceneInformationKey  = "sceneInformation" //场景信息
 	PlayerListIdentifier = "playerList"       //玩家列表
-	SceneSwitchCountKey  = "sceneSwitchCount" // 切换场景次数常量
+	TestCountKey         = "testCount"        // 切换场景次数常量
+	testMaxCount         = "testMaxCount"
 )

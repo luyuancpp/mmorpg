@@ -53,17 +53,3 @@ func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 
 	return b3.SUCCESS
 }
-
-type AddSceneSwitchCount struct {
-	Action
-}
-
-func (this *AddSceneSwitchCount) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
-}
-
-func (this *AddSceneSwitchCount) OnTick(tick *Tick) b3.Status {
-	count := tick.Blackboard.GetInt32(SceneSwitchCountKey, "", "")
-	tick.Blackboard.Set(SceneSwitchCountKey, count+1, "", "")
-	return b3.SUCCESS
-}

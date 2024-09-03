@@ -17,7 +17,6 @@ const (
 type SetSubTree struct {
 	Action
 	treeTitle string
-	count     int
 }
 
 func (this *SetSubTree) Initialize(setting *BTNodeCfg) {
@@ -35,6 +34,27 @@ func (this *SetSubTree) OnTick(tick *Tick) b3.Status {
 	}
 
 	client.SetSubTree(this.treeTitle)
+
+	return b3.SUCCESS
+}
+
+type InitTree struct {
+	Action
+	initialized bool
+}
+
+func (this *InitTree) Initialize(setting *BTNodeCfg) {
+	this.Action.Initialize(setting)
+}
+
+func (this *InitTree) OnTick(tick *Tick) b3.Status {
+
+	if this.initialized {
+		return b3.FAILURE
+	}
+
+	this.initialized = true
+	tick.Blackboard.Set(TestCountKey, int32(0), "", "")
 
 	return b3.SUCCESS
 }

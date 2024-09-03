@@ -4,7 +4,7 @@
   "data": {
     "version": "0.3.0",
     "scope": "project",
-    "selectedTree": "3961d49d-3426-410b-bc92-6fe8f3b1dee2",
+    "selectedTree": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
     "trees": [
       {
         "version": "0.3.0",
@@ -152,8 +152,8 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 216,
-              "y": -216
+              "x": 312,
+              "y": -204
             }
           },
           "9d8f4d0c-ae86-4909-a731-00301eb17b16": {
@@ -164,41 +164,14 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 12,
-              "y": -156
+              "x": 84,
+              "y": -132
             },
             "children": [
-              "cfd57ed9-6168-499c-936a-21300b0fbb3a",
+              "5ecfb339-b7b9-466c-88a5-edd121cd0030",
               "6983a111-949e-4058-84cb-58209204e95d",
-              "df33bc43-80cb-4ec5-83d8-ad721b7410d9"
+              "5d069eed-bceb-4403-8cba-6d866d0c31cb"
             ]
-          },
-          "df33bc43-80cb-4ec5-83d8-ad721b7410d9": {
-            "id": "df33bc43-80cb-4ec5-83d8-ad721b7410d9",
-            "name": "AddSceneSwitchCount",
-            "category": "action",
-            "title": "AddSceneSwitchCount",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 228,
-              "y": -132
-            }
-          },
-          "cfd57ed9-6168-499c-936a-21300b0fbb3a": {
-            "id": "cfd57ed9-6168-499c-936a-21300b0fbb3a",
-            "name": "TestSequenceOrder",
-            "category": "action",
-            "title": "TestSequenceOrder(<treeTitle>,<count>)",
-            "description": "",
-            "properties": {
-              "treeTitle": "Scene",
-              "count": 1000
-            },
-            "display": {
-              "x": 228,
-              "y": -276
-            }
           },
           "e2809542-d25c-4213-bdf9-022ea5d4e5e7": {
             "id": "e2809542-d25c-4213-bdf9-022ea5d4e5e7",
@@ -208,12 +181,12 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": -144,
-              "y": -96
+              "x": -96,
+              "y": -84
             },
             "children": [
               "9d8f4d0c-ae86-4909-a731-00301eb17b16",
-              "d9837df3-b98b-4c0f-8109-4cb51db7b057"
+              "af2e99b2-220b-4a34-88ef-d116c2d9e15c"
             ]
           },
           "d9837df3-b98b-4c0f-8109-4cb51db7b057": {
@@ -226,9 +199,78 @@
               "treeTitle": "Battle"
             },
             "display": {
-              "x": 108,
-              "y": -48
+              "x": 336,
+              "y": 72
             }
+          },
+          "5ecfb339-b7b9-466c-88a5-edd121cd0030": {
+            "id": "5ecfb339-b7b9-466c-88a5-edd121cd0030",
+            "name": "CheckTestCount",
+            "category": "condition",
+            "title": "CheckTestCount(<count>)",
+            "description": "",
+            "properties": {
+              "count": 10000
+            },
+            "display": {
+              "x": 324,
+              "y": -300
+            }
+          },
+          "5d069eed-bceb-4403-8cba-6d866d0c31cb": {
+            "id": "5d069eed-bceb-4403-8cba-6d866d0c31cb",
+            "name": "IncrementTestCount",
+            "category": "action",
+            "title": "IncrementTestCount()",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 324,
+              "y": -108
+            }
+          },
+          "d46976a5-3d40-4ece-8ce7-dd97d0a8c343": {
+            "id": "d46976a5-3d40-4ece-8ce7-dd97d0a8c343",
+            "name": "CheckTestCount",
+            "category": "condition",
+            "title": "CheckTestCount(<count>)",
+            "description": "",
+            "properties": {
+              "count": 10001
+            },
+            "display": {
+              "x": 432,
+              "y": -36
+            }
+          },
+          "af2e99b2-220b-4a34-88ef-d116c2d9e15c": {
+            "id": "af2e99b2-220b-4a34-88ef-d116c2d9e15c",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 60,
+              "y": -36
+            },
+            "children": [
+              "b4715eb9-0856-481e-8759-d93d4303cfa9",
+              "d9837df3-b98b-4c0f-8109-4cb51db7b057"
+            ]
+          },
+          "b4715eb9-0856-481e-8759-d93d4303cfa9": {
+            "id": "b4715eb9-0856-481e-8759-d93d4303cfa9",
+            "name": "Inverter",
+            "category": "decorator",
+            "title": "Inverter",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 192,
+              "y": -48
+            },
+            "child": "d46976a5-3d40-4ece-8ce7-dd97d0a8c343"
           }
         },
         "display": {
@@ -260,19 +302,34 @@
               "y": -12
             },
             "children": [
-              "43daf4e3-6ad7-4f8e-8ffd-0b1e6214fe7d"
+              "2035daba-5c13-44d6-8a43-6a656e64e55e",
+              "0a77f22e-efd3-45ca-8f47-43c7b2e06f95"
             ]
           },
-          "43daf4e3-6ad7-4f8e-8ffd-0b1e6214fe7d": {
-            "id": "43daf4e3-6ad7-4f8e-8ffd-0b1e6214fe7d",
-            "name": "IsRoleListEmpty",
+          "2035daba-5c13-44d6-8a43-6a656e64e55e": {
+            "id": "2035daba-5c13-44d6-8a43-6a656e64e55e",
+            "name": "CheckTestCount",
             "category": "condition",
-            "title": "IsRoleListEmpty",
-            "description": "登录的时候角色列表是否为空",
+            "title": "CheckTestCount(<count>)",
+            "description": "",
+            "properties": {
+              "count": 1000000
+            },
+            "display": {
+              "x": 396,
+              "y": -108
+            }
+          },
+          "0a77f22e-efd3-45ca-8f47-43c7b2e06f95": {
+            "id": "0a77f22e-efd3-45ca-8f47-43c7b2e06f95",
+            "name": "IncrementTestCount",
+            "category": "action",
+            "title": "IncrementTestCount()",
+            "description": "",
             "properties": {},
             "display": {
-              "x": 348,
-              "y": -72
+              "x": 372,
+              "y": 0
             }
           }
         },
@@ -339,39 +396,6 @@
       {
         "version": "0.3.0",
         "scope": "node",
-        "name": "CheckSceneSwitchCount",
-        "category": "condition",
-        "title": null,
-        "description": null,
-        "properties": {},
-        "parent": null
-      },
-      {
-        "version": "0.3.0",
-        "scope": "node",
-        "name": "AddSceneSwitchCount",
-        "category": "action",
-        "title": null,
-        "description": null,
-        "properties": {},
-        "parent": null
-      },
-      {
-        "version": "0.3.0",
-        "scope": "node",
-        "name": "TestSequenceOrder",
-        "category": "action",
-        "title": "TestSequenceOrder(<treeTitle>,<count>)",
-        "description": null,
-        "properties": {
-          "treeTitle": "treeTitle",
-          "count": 1000
-        },
-        "parent": null
-      },
-      {
-        "version": "0.3.0",
-        "scope": "node",
         "name": "SetSubTree",
         "category": "action",
         "title": "SetSubTree(<treeTitle>)",
@@ -379,6 +403,38 @@
         "properties": {
           "treeTitle": "treeTitle"
         },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "CheckTestCount",
+        "category": "condition",
+        "title": "CheckTestCount(<count>)",
+        "description": null,
+        "properties": {
+          "count": 1000
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "IncrementTestCount",
+        "category": "action",
+        "title": "IncrementTestCount()",
+        "description": null,
+        "properties": {},
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "InitTree",
+        "category": "action",
+        "title": null,
+        "description": null,
+        "properties": {},
         "parent": null
       }
     ],
