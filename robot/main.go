@@ -13,6 +13,7 @@ import (
 	"robot/pkg"
 	"strconv"
 	"sync"
+	"time"
 )
 
 func main() {
@@ -52,24 +53,30 @@ func main() {
 
 			// 处理消息
 			for {
-				msg := <-gameClient.Client.Conn.InMsgList
-				d := muduo.GetDescriptor(&msg)
-				switch d.Name() {
-				case "LoginResponse":
-					resp := msg.(*game.LoginResponse)
-					handler.LoginHandler(gameClient, resp)
-				case "CreatePlayerResponse":
-					resp := msg.(*game.CreatePlayerResponse)
-					handler.CreatePlayerHandler(gameClient, resp)
-				case "MessageBody":
-					resp := msg.(*game.MessageBody)
-					handler.MessageBodyHandler(gameClient, resp)
-				case "EnterGameResponse":
-				default:
-					zap.L().Warn("Unhandled message type", zap.String("message_type", string(d.Name())))
-				}
+				select {
+				case msg := <-gameClient.Client.Conn.InMsgList:
+					d := muduo.GetDescriptor(&msg)
+					switch d.Name() {
+					case "LoginResponse":
+						resp := msg.(*game.LoginResponse)
+						handler.LoginHandler(gameClient, resp)
+						gameClient.TickBehaviorTree()
+					case "CreatePlayerResponse":
+						resp := msg.(*game.CreatePlayerResponse)
+						handler.CreatePlayerHandler(gameClient, resp)
+						gameClient.TickBehaviorTree()
+					case "MessageBody":
+						resp := msg.(*game.MessageBody)
+						handler.MessageBodyHandler(gameClient, resp)
+						gameClient.TickBehaviorTree()
+					case "EnterGameResponse":
+					default:
+						zap.L().Warn("Unhandled message type", zap.String("message_type", string(d.Name())))
 
-				gameClient.TickBehaviorTree()
+					}
+				case <-time.After(1 * time.Second):
+					gameClient.TickBehaviorTree()
+				}
 			}
 		}(i)
 	}

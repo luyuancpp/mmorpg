@@ -36,6 +36,8 @@ public:
 
     static void Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 private:
+    void HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn);
+    void OnDisConneHandleConnectionClosedcted(const muduo::net::TcpConnectionPtr& conn);
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;   
 };

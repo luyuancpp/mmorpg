@@ -151,6 +151,8 @@ namespace muduo
 
             void MessageStatistics(const RpcMessage& message);
 
+            void SendMessage(const RpcMessage& message);
+
             RpcCodec codec_;
             TcpConnectionPtr conn_;
 

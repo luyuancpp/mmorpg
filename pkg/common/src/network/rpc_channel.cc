@@ -72,8 +72,7 @@ void RpcChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Messa
 	  LOG_ERROR << "message error " << this;
 	  return;
   }
-  codec_.send(conn_, message);
-  MessageStatistics(message);
+  SendMessage(message);
 }
 
 void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& request)
@@ -95,8 +94,7 @@ void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& re
         LOG_ERROR << "message error " << this;
         return;
     }
-    codec_.send(conn_, message);
-	MessageStatistics(message);
+	SendMessage(message);
 }
 
 void RpcChannel::onMessage(const TcpConnectionPtr& conn,
@@ -120,7 +118,6 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   RpcMessage& message = *messagePtr;
   if (message.type() == RESPONSE)
   {
-	  assert(services_ != NULL);
       if ( message.message_id() >= g_message_info.size())
       {
           return;
@@ -131,7 +128,6 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 		  return;
 	  }
 	  google::protobuf::Service* service = message_info.service_impl_instance_.get();
-	  assert(service != NULL);
 	  const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
 	  const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	  if (nullptr == method)
@@ -148,7 +144,6 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   }
   else if (message.type() == REQUEST)
   {
-    // FIXME: extract to a function
       onNormalRequestResponseMessage(conn, message, receiveTime);
   }
   else if (message.type() == S2C_REQUEST)
@@ -177,8 +172,7 @@ void RpcChannel::Route2Node(uint32_t message_id, const ::google::protobuf::Messa
         return;
     }
     message.set_message_id(message_id);
-    codec_.send(conn_, message);
-	MessageStatistics(message);
+	SendMessage(message);
 }
 
 void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
@@ -228,13 +222,11 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
         return;
     }
     rpc_response.set_message_id(message.message_id());
-    codec_.send(conn_, rpc_response);
-	MessageStatistics(message);
+	SendMessage(rpc_response);
 }
 
 void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
-	assert(services_ != NULL);
 	if ( message.message_id() >= g_message_info.size())
 	{
 		return;
@@ -247,7 +239,6 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 		return;
 	}
 	google::protobuf::Service* service = it->second;
-	assert(service != NULL);
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
@@ -267,7 +258,6 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 
 void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
-	assert(services_ != NULL);
 	if ( message.message_id() >= g_message_info.size())
 	{
 		return;
@@ -280,7 +270,6 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
 		return;
 	}
 	google::protobuf::Service* service = it->second;
-	assert(service != NULL);
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
@@ -314,8 +303,7 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
             return;
         }
         rpc_response.set_message_id(message.message_id());
-        codec_.send(conn_, rpc_response);
-		MessageStatistics(rpc_response);
+		SendMessage(rpc_response);
     }
 }
 
@@ -324,8 +312,7 @@ void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
     RpcMessage response;
     response.set_type(RESPONSE);
     response.set_error(error);
-    codec_.send(conn_, response);
-	MessageStatistics(response);
+	SendMessage(response);
 }
 
 void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& body)
@@ -340,8 +327,7 @@ void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::
     response.set_type(RESPONSE);
     response.set_response(body); // FIXME: error check
     response.set_message_id(message_id);
-    codec_.send(conn_, response);
-	MessageStatistics(response);
+	SendMessage(response);
 }
 
 void RpcChannel::MessageStatistics(const RpcMessage& message)
@@ -352,5 +338,12 @@ void RpcChannel::MessageStatistics(const RpcMessage& message)
 	}
 	auto& statistic = g_message_statistics[message.message_id()];
 	statistic.set_count(statistic.count() + 1);
+}
+
+void RpcChannel::SendMessage(const RpcMessage& message)
+{
+	codec_.send(conn_, message);
+
+	MessageStatistics(message);
 }
 
