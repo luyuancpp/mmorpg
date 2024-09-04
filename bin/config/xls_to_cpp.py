@@ -39,7 +39,7 @@ def get_workbook_data(workbook):
         # Check if A5 cell value is 'multi' or None
         cell_value = sheet['A5'].value
         use_flat_multimap = cell_value is not None and cell_value.lower() == 'multi'
-        first_19_rows_per_column = gencommon.get_first_19_rows_per_column(sheet)
+        first_19_rows_per_column = gen_common.get_first_19_rows_per_column(sheet)
         workbook_data[sheet_names[0]] = {
             'multi': use_flat_multimap,
             'get_first_19_rows_per_column': first_19_rows_per_column
@@ -92,14 +92,14 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     ]
 
     for d in datastring:
-        column_name = d[gencommon.COL_OBJ_COL_NAME]
-        if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
+        column_name = d[gen_common.COL_OBJ_COL_NAME]
+        if d[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.table_key:
             column_map_type = 'unordered_map'
-            if d[gencommon.COL_OBJ_TABLE_MULTI] == gencommon.multi_field_flag:
+            if d[gen_common.COL_OBJ_TABLE_MULTI] == gen_common.multi_field_flag:
                 column_map_type = "unordered_multimap"
             header_content.extend([
-                f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])} keyid) const;',
-                f'    const std::{column_map_type}<{get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
+                f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gen_common.COL_OBJ_COL_TYPE])} keyid) const;',
+                f'    const std::{column_map_type}<{get_cpp_type_name(d[gen_common.COL_OBJ_COL_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
             ])
 
     header_content.extend(
@@ -111,12 +111,12 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     )
 
     for d in datastring:
-        column_name = d[gencommon.COL_OBJ_COL_NAME]
-        if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
+        column_name = d[gen_common.COL_OBJ_COL_NAME]
+        if d[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.table_key:
             column_map_type = 'unordered_map'
-            if d[gencommon.COL_OBJ_TABLE_MULTI] == gencommon.multi_field_flag:
+            if d[gen_common.COL_OBJ_TABLE_MULTI] == gen_common.multi_field_flag:
                 column_map_type = "unordered_multimap"
-            type_name = get_cpp_type_name(d[gencommon.COL_OBJ_COL_TYPE])
+            type_name = get_cpp_type_name(d[gen_common.COL_OBJ_COL_TYPE])
             header_content.append(f'    std::{column_map_type}<{type_name}, {const_table_type}>  kv_{column_name}data_;')
 
     header_content.append('};')
@@ -155,8 +155,8 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
     ]
 
     for d in datastring:
-        column_name = d[gencommon.COL_OBJ_COL_NAME]
-        if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
+        column_name = d[gen_common.COL_OBJ_COL_NAME]
+        if d[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.table_key:
             cpp_content.append(f'        kv_{column_name}data_.emplace(row_data.{column_name}(), &row_data);')
 
     cpp_content.extend([
@@ -173,9 +173,9 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
     ])
 
     for d in datastring:
-        column_name = d[gencommon.COL_OBJ_COL_NAME]
-        if d[gencommon.COL_OBJ_TABLE_KEY_INDEX] == gencommon.table_key:
-            type_name = get_cpp_type_param_name_with_ref(d[gencommon.COL_OBJ_COL_TYPE])
+        column_name = d[gen_common.COL_OBJ_COL_NAME]
+        if d[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.table_key:
+            type_name = get_cpp_type_param_name_with_ref(d[gen_common.COL_OBJ_COL_TYPE])
             cpp_content.extend([
                 f'{get_table_return_type} '
                 f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} keyid) const {{',
@@ -201,11 +201,11 @@ def process_workbook(filename):
             cpp_filename = f"{sheetname.lower()}_config.cpp"
 
             cpp_header_content = generate_cpp_header(data['get_first_19_rows_per_column'], sheetname, data['multi'])
-            gencommon.mywrite(cpp_header_content, CPP_DIR / header_filename)
+            gen_common.mywrite(cpp_header_content, CPP_DIR / header_filename)
 
             cpp_implementation_content = generate_cpp_implementation(data['get_first_19_rows_per_column'], sheetname,
                                                                      data['multi'])
-            gencommon.mywrite(cpp_implementation_content, CPP_DIR / cpp_filename)
+            gen_common.mywrite(cpp_implementation_content, CPP_DIR / cpp_filename)
     except Exception as e:
         logging.error(f"Failed to load or process workbook {filename}: {e}")
 
@@ -273,8 +273,8 @@ def main():
 
     # Generate header and implementation files for all configurations
     header_content, cpp_content = generate_all_config()
-    gencommon.mywrite(header_content, CPP_DIR / "all_config.h")
-    gencommon.mywrite(cpp_content, CPP_DIR / "all_config.cpp")
+    gen_common.mywrite(header_content, CPP_DIR / "all_config.h")
+    gen_common.mywrite(cpp_content, CPP_DIR / "all_config.cpp")
 
 
 if __name__ == "__main__":

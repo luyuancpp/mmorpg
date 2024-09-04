@@ -8,7 +8,7 @@ import concurrent.futures
 from os import listdir
 from os.path import isfile, join
 import openpyxl
-import gen_common  # Assuming gencommon contains the necessary functions
+import gen_common  # Assuming gen_common contains the necessary functions
 from common import constants
 
 # Setup Logging

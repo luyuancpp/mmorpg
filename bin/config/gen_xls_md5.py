@@ -61,10 +61,10 @@ def generate_md5_files(directory, output_dir):
 
 def main():
     # Ensure output directory exists
-    if not os.path.exists(gencommon.md5_output_dir):
-        os.makedirs(gencommon.md5_output_dir)
+    if not os.path.exists(gen_common.md5_output_dir):
+        os.makedirs(gen_common.md5_output_dir)
 
-    generate_md5_files(xls_dir, gencommon.md5_output_dir)
+    generate_md5_files(xls_dir, gen_common.md5_output_dir)
 
 if __name__ == "__main__":
     main()

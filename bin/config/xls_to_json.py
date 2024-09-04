@@ -8,7 +8,7 @@ import concurrent.futures
 from os import listdir
 from os.path import isfile, join
 import openpyxl
-import gen_common  # Assuming gencommon contains the necessary functions
+import gen_common  # Assuming gen_common contains the necessary functions
 from common import constants
 
 # Configuration Constants
@@ -48,15 +48,15 @@ def handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, 
     Handle data for map fields and update row data accordingly.
     """
     prev_column_name = column_names[prev_cell.col_idx - 1] if prev_cell else None
-    if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
+    if cell_value in (None, '') and cell.row >= gen_common.BEGIN_ROW_IDX:
         return
 
-    prev_obj_name = gencommon.column_name_to_obj_name(prev_column_name, "_") if prev_column_name else None
-    obj_name = gencommon.column_name_to_obj_name(col_name, "_")
+    prev_obj_name = gen_common.column_name_to_obj_name(prev_column_name, "_") if prev_column_name else None
+    obj_name = gen_common.column_name_to_obj_name(col_name, "_")
 
-    if gencommon.set_flag == map_field_data[col_name]:
+    if gen_common.set_flag == map_field_data[col_name]:
         row_data.setdefault(col_name, {})[cell_value] = True
-    elif (prev_column_name in map_field_data and gencommon.map_key_flag == map_field_data[prev_column_name]
+    elif (prev_column_name in map_field_data and gen_common.map_key_flag == map_field_data[prev_column_name]
           and prev_obj_name == obj_name):
         row_data.setdefault(obj_name, {})[prev_cell.value] = cell_value
 
@@ -65,7 +65,7 @@ def handle_array_data(cell, row_data, col_name, cell_value):
     """
     Handle data for array fields and update row data accordingly.
     """
-    if cell_value in (None, '', 0, -1) and cell.row >= gencommon.BEGIN_ROW_IDX:
+    if cell_value in (None, '', 0, -1) and cell.row >= gen_common.BEGIN_ROW_IDX:
         return
     row_data.setdefault(col_name, []).append(cell_value)
 
@@ -74,10 +74,10 @@ def handle_group_data(cell, row_data, col_name, cell_value, prev_cell):
     """
     Handle data for group fields and update row data accordingly.
     """
-    if cell_value in (None, '', 0, -1) and cell.row >= gencommon.BEGIN_ROW_IDX:
+    if cell_value in (None, '', 0, -1) and cell.row >= gen_common.BEGIN_ROW_IDX:
         return
 
-    obj_name = gencommon.column_name_to_obj_name(col_name, "_")
+    obj_name = gen_common.column_name_to_obj_name(col_name, "_")
     member_dict = {col_name: cell_value}
     if obj_name in row_data:
         last_element = row_data[obj_name][-1]
@@ -93,10 +93,10 @@ def process_row(sheet, row, column_names):
     """
     Process an individual row to extract data based on column names.
     """
-    sheet_data = gencommon.get_sheet_data(sheet, column_names)
-    array_data = sheet_data[gencommon.SHEET_ARRAY_DATA_INDEX]
-    group_data = sheet_data[gencommon.SHEET_GROUP_ARRAY_DATA_INDEX]
-    map_field_data = sheet_data[gencommon.MAP_TYPE_INDEX]
+    sheet_data = gen_common.get_sheet_data(sheet, column_names)
+    array_data = sheet_data[gen_common.SHEET_ARRAY_DATA_INDEX]
+    group_data = sheet_data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX]
+    map_field_data = sheet_data[gen_common.MAP_TYPE_INDEX]
 
     row_data = {}
     prev_cell = None
@@ -111,14 +111,14 @@ def process_row(sheet, row, column_names):
             continue
 
         cell_value = process_cell_value(cell)
-        if col_name in map_field_data or gencommon.is_key_in_map(group_data, col_name, map_field_data, column_names):
+        if col_name in map_field_data or gen_common.is_key_in_map(group_data, col_name, map_field_data, column_names):
             handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, column_names, prev_cell)
         elif col_name in array_data:
             handle_array_data(cell, row_data, col_name, cell_value)
-        elif gencommon.is_key_in_group_array(group_data, col_name, column_names):
+        elif gen_common.is_key_in_group_array(group_data, col_name, column_names):
             handle_group_data(cell, row_data, col_name, cell_value, prev_cell)
         else:
-            if cell_value in (None, '') and cell.row >= gencommon.BEGIN_ROW_IDX:
+            if cell_value in (None, '') and cell.row >= gen_common.BEGIN_ROW_IDX:
                 logger.error(f"Sheet '{sheet.title}', Cell {cell.coordinate} is empty or contains invalid data.")
             row_data[col_name] = cell_value
 
@@ -132,7 +132,7 @@ def extract_sheet_data(sheet, column_names):
     Extract data from all rows in the sheet.
     """
     return [process_row(sheet, row, column_names) for row in
-            sheet.iter_rows(min_row=gencommon.BEGIN_ROW_IDX + 1, values_only=False)]
+            sheet.iter_rows(min_row=gen_common.BEGIN_ROW_IDX + 1, values_only=False)]
 
 
 def extract_workbook_data(workbook: openpyxl.Workbook) -> dict:
