@@ -191,8 +191,29 @@ class GlobalVariableTable final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
+    kTostringFieldNumber = 4,
     kIdFieldNumber = 1,
+    kTouint32FieldNumber = 2,
+    kToint32FieldNumber = 3,
+    kTofloatFieldNumber = 5,
+    kTodoubleFieldNumber = 6,
   };
+  // string tostring = 4;
+  void clear_tostring() ;
+  const std::string& tostring() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_tostring(Arg_&& arg, Args_... args);
+  std::string* mutable_tostring();
+  PROTOBUF_NODISCARD std::string* release_tostring();
+  void set_allocated_tostring(std::string* value);
+
+  private:
+  const std::string& _internal_tostring() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_tostring(
+      const std::string& value);
+  std::string* _internal_mutable_tostring();
+
+  public:
   // uint32 id = 1;
   void clear_id() ;
   ::uint32_t id() const;
@@ -203,13 +224,53 @@ class GlobalVariableTable final : public ::google::protobuf::Message
   void _internal_set_id(::uint32_t value);
 
   public:
+  // uint32 touint32 = 2;
+  void clear_touint32() ;
+  ::uint32_t touint32() const;
+  void set_touint32(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_touint32() const;
+  void _internal_set_touint32(::uint32_t value);
+
+  public:
+  // int32 toint32 = 3;
+  void clear_toint32() ;
+  ::int32_t toint32() const;
+  void set_toint32(::int32_t value);
+
+  private:
+  ::int32_t _internal_toint32() const;
+  void _internal_set_toint32(::int32_t value);
+
+  public:
+  // float tofloat = 5;
+  void clear_tofloat() ;
+  float tofloat() const;
+  void set_tofloat(float value);
+
+  private:
+  float _internal_tofloat() const;
+  void _internal_set_tofloat(float value);
+
+  public:
+  // double todouble = 6;
+  void clear_todouble() ;
+  double todouble() const;
+  void set_todouble(double value);
+
+  private:
+  double _internal_todouble() const;
+  void _internal_set_todouble(double value);
+
+  public:
   // @@protoc_insertion_point(class_scope:GlobalVariableTable)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
-      0, 2>
+      3, 6, 0,
+      36, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -224,7 +285,12 @@ class GlobalVariableTable final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::ArenaStringPtr tostring_;
     ::uint32_t id_;
+    ::uint32_t touint32_;
+    ::int32_t toint32_;
+    float tofloat_;
+    double todouble_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -442,6 +508,144 @@ inline ::uint32_t GlobalVariableTable::_internal_id() const {
 inline void GlobalVariableTable::_internal_set_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = value;
+}
+
+// uint32 touint32 = 2;
+inline void GlobalVariableTable::clear_touint32() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.touint32_ = 0u;
+}
+inline ::uint32_t GlobalVariableTable::touint32() const {
+  // @@protoc_insertion_point(field_get:GlobalVariableTable.touint32)
+  return _internal_touint32();
+}
+inline void GlobalVariableTable::set_touint32(::uint32_t value) {
+  _internal_set_touint32(value);
+  // @@protoc_insertion_point(field_set:GlobalVariableTable.touint32)
+}
+inline ::uint32_t GlobalVariableTable::_internal_touint32() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.touint32_;
+}
+inline void GlobalVariableTable::_internal_set_touint32(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.touint32_ = value;
+}
+
+// int32 toint32 = 3;
+inline void GlobalVariableTable::clear_toint32() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.toint32_ = 0;
+}
+inline ::int32_t GlobalVariableTable::toint32() const {
+  // @@protoc_insertion_point(field_get:GlobalVariableTable.toint32)
+  return _internal_toint32();
+}
+inline void GlobalVariableTable::set_toint32(::int32_t value) {
+  _internal_set_toint32(value);
+  // @@protoc_insertion_point(field_set:GlobalVariableTable.toint32)
+}
+inline ::int32_t GlobalVariableTable::_internal_toint32() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.toint32_;
+}
+inline void GlobalVariableTable::_internal_set_toint32(::int32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.toint32_ = value;
+}
+
+// string tostring = 4;
+inline void GlobalVariableTable::clear_tostring() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.tostring_.ClearToEmpty();
+}
+inline const std::string& GlobalVariableTable::tostring() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:GlobalVariableTable.tostring)
+  return _internal_tostring();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void GlobalVariableTable::set_tostring(Arg_&& arg,
+                                                     Args_... args) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.tostring_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:GlobalVariableTable.tostring)
+}
+inline std::string* GlobalVariableTable::mutable_tostring() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_tostring();
+  // @@protoc_insertion_point(field_mutable:GlobalVariableTable.tostring)
+  return _s;
+}
+inline const std::string& GlobalVariableTable::_internal_tostring() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.tostring_.Get();
+}
+inline void GlobalVariableTable::_internal_set_tostring(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.tostring_.Set(value, GetArena());
+}
+inline std::string* GlobalVariableTable::_internal_mutable_tostring() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.tostring_.Mutable( GetArena());
+}
+inline std::string* GlobalVariableTable::release_tostring() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:GlobalVariableTable.tostring)
+  return _impl_.tostring_.Release();
+}
+inline void GlobalVariableTable::set_allocated_tostring(std::string* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.tostring_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.tostring_.IsDefault()) {
+          _impl_.tostring_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:GlobalVariableTable.tostring)
+}
+
+// float tofloat = 5;
+inline void GlobalVariableTable::clear_tofloat() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.tofloat_ = 0;
+}
+inline float GlobalVariableTable::tofloat() const {
+  // @@protoc_insertion_point(field_get:GlobalVariableTable.tofloat)
+  return _internal_tofloat();
+}
+inline void GlobalVariableTable::set_tofloat(float value) {
+  _internal_set_tofloat(value);
+  // @@protoc_insertion_point(field_set:GlobalVariableTable.tofloat)
+}
+inline float GlobalVariableTable::_internal_tofloat() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.tofloat_;
+}
+inline void GlobalVariableTable::_internal_set_tofloat(float value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.tofloat_ = value;
+}
+
+// double todouble = 6;
+inline void GlobalVariableTable::clear_todouble() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.todouble_ = 0;
+}
+inline double GlobalVariableTable::todouble() const {
+  // @@protoc_insertion_point(field_get:GlobalVariableTable.todouble)
+  return _internal_todouble();
+}
+inline void GlobalVariableTable::set_todouble(double value) {
+  _internal_set_todouble(value);
+  // @@protoc_insertion_point(field_set:GlobalVariableTable.todouble)
+}
+inline double GlobalVariableTable::_internal_todouble() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.todouble_;
+}
+inline void GlobalVariableTable::_internal_set_todouble(double value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.todouble_ = value;
 }
 
 // -------------------------------------------------------------------

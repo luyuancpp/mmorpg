@@ -17,7 +17,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
 #include "util/defer.h"
-
+#include "globalvariable_config.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
