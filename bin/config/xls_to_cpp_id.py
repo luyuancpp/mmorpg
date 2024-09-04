@@ -3,7 +3,7 @@
 
 import os
 import openpyxl
-import gencommon  # Ensure gencommon provides BEGIN_ROW_IDX and mywrite functions
+import gen_common  # Ensure gencommon provides BEGIN_ROW_IDX and mywrite functions
 import logging
 from os import listdir
 from os.path import isfile, join
