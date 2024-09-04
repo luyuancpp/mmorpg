@@ -9,7 +9,7 @@ import multiprocessing
 from typing import Dict, List, Optional
 from os import listdir
 from os.path import isfile, join
-import gencommon
+import gen_common
 
 # Configuration Constants
 PROTO_DIR = "generated/proto/"

@@ -4,7 +4,7 @@
 import os
 import logging
 import md5tool
-import gencommon
+import gen_common
 from concurrent.futures import ThreadPoolExecutor
 
 # Set up logging configuration

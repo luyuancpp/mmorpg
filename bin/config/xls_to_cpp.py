@@ -4,7 +4,7 @@
 import concurrent.futures
 import os
 import openpyxl
-import gencommon
+import gen_common
 import concurrent.futures
 from pathlib import Path
 from multiprocessing import cpu_count

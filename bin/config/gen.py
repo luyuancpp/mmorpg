@@ -28,19 +28,19 @@ for directory in directories:
 
 # Define commands to execute
 commands = [
-    "python xlstojson.py",
-    "python xlstopb.py",
-    "python tipxlsxtoproto.py",
-    "python operatorxlsxtoproto.py",
-    "python xlstocpp.py",
-    "python xlstocppid.py",
-    "python buildprotocpp.py",
-    "python buildprotogo.py",
+    "python xls_to_json.py",
+    "python xls_to_pb.py",
+    "python tip_xlsx_to_proto.py",
+    "python operator_xlsx_to_proto.py",
+    "python xls_to_cpp.py",
+    "python xls_to_cpp_id.py",
+    "python build_proto_cpp.py",
+    "python build_proto_go.py",
     "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
     "python md5tool.py md5copy ./generated/proto/cpp/ ../../pkg/config/src/pbc/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/login/pb/game/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/db/pb/game/",
-    "python genxlsmd5.py"
+    "python gen_xls_md5.py"
 ]
 
 # Execute commands and capture return codes
