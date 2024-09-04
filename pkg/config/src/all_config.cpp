@@ -10,10 +10,10 @@
 #include "buff_config.h"
 #include "test_config.h"
 #include "item_config.h"
+#include "globalvariable_config.h"
 #include "mainscene_config.h"
 #include "scene_config.h"
 #include "monsterbase_config.h"
-#include "globalvariable_config.h"
 #include "cooldown_config.h"
 void LoadAllConfig()
 {
@@ -24,10 +24,10 @@ void LoadAllConfig()
     BuffConfigurationTable::GetSingleton().Load();
     TestConfigurationTable::GetSingleton().Load();
     ItemConfigurationTable::GetSingleton().Load();
+    GlobalVariableConfigurationTable::GetSingleton().Load();
     MainSceneConfigurationTable::GetSingleton().Load();
     SceneConfigurationTable::GetSingleton().Load();
     MonsterBaseConfigurationTable::GetSingleton().Load();
-    GlobalVariableConfigurationTable::GetSingleton().Load();
     CooldownConfigurationTable::GetSingleton().Load();
 }
 
@@ -116,6 +116,17 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
+    GlobalVariableConfigurationTable::GetSingleton().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    /// End
+
+    /// Begin
+    {
+        std::thread t([&]() {
+
     MainSceneConfigurationTable::GetSingleton().Load();
             latch_.countDown();
         });
@@ -139,17 +150,6 @@ void LoadAllConfigAsyncWhenServerLaunch()
         std::thread t([&]() {
 
     MonsterBaseConfigurationTable::GetSingleton().Load();
-            latch_.countDown();
-        });
-        t.detach();
-    }
-    /// End
-
-    /// Begin
-    {
-        std::thread t([&]() {
-
-    GlobalVariableConfigurationTable::GetSingleton().Load();
             latch_.countDown();
         });
         t.detach();

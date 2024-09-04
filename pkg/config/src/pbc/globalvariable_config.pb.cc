@@ -24,7 +24,14 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 
 inline constexpr GlobalVariableTable::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : id_{0u},
+      : tostring_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        id_{0u},
+        touint32_{0u},
+        toint32_{0},
+        tofloat_{0},
+        todouble_{0},
         _cached_size_{0} {}
 
 template <typename>
@@ -76,6 +83,11 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::GlobalVariableTable, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::GlobalVariableTable, _impl_.touint32_),
+        PROTOBUF_FIELD_OFFSET(::GlobalVariableTable, _impl_.toint32_),
+        PROTOBUF_FIELD_OFFSET(::GlobalVariableTable, _impl_.tostring_),
+        PROTOBUF_FIELD_OFFSET(::GlobalVariableTable, _impl_.tofloat_),
+        PROTOBUF_FIELD_OFFSET(::GlobalVariableTable, _impl_.todouble_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::GlobalVariableTabledData, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -90,7 +102,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::GlobalVariableTable)},
-        {9, -1, -1, sizeof(::GlobalVariableTabledData)},
+        {14, -1, -1, sizeof(::GlobalVariableTabledData)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_GlobalVariableTable_default_instance_._instance,
@@ -98,16 +110,18 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_globalvariable_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\033globalvariable_config.proto\"!\n\023GlobalV"
-    "ariableTable\022\n\n\002id\030\001 \001(\r\">\n\030GlobalVariab"
-    "leTabledData\022\"\n\004data\030\001 \003(\0132\024.GlobalVaria"
-    "bleTableB\tZ\007pb/gameb\006proto3"
+    "\n\033globalvariable_config.proto\"y\n\023GlobalV"
+    "ariableTable\022\n\n\002id\030\001 \001(\r\022\020\n\010touint32\030\002 \001"
+    "(\r\022\017\n\007toint32\030\003 \001(\005\022\020\n\010tostring\030\004 \001(\t\022\017\n"
+    "\007tofloat\030\005 \001(\002\022\020\n\010todouble\030\006 \001(\001\">\n\030Glob"
+    "alVariableTabledData\022\"\n\004data\030\001 \003(\0132\024.Glo"
+    "balVariableTableB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_globalvariable_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_globalvariable_5fconfig_2eproto = {
     false,
     false,
-    147,
+    235,
     descriptor_table_protodef_globalvariable_5fconfig_2eproto,
     "globalvariable_config.proto",
     &descriptor_table_globalvariable_5fconfig_2eproto_once,
@@ -147,19 +161,45 @@ GlobalVariableTable::GlobalVariableTable(::google::protobuf::Arena* arena)
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:GlobalVariableTable)
 }
+inline PROTOBUF_NDEBUG_INLINE GlobalVariableTable::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : tostring_(arena, from.tostring_),
+        _cached_size_{0} {}
+
 GlobalVariableTable::GlobalVariableTable(
-    ::google::protobuf::Arena* arena, const GlobalVariableTable& from)
-    : GlobalVariableTable(arena) {
-  MergeFrom(from);
+    ::google::protobuf::Arena* arena,
+    const GlobalVariableTable& from)
+    : ::google::protobuf::Message(arena) {
+  GlobalVariableTable* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, id_),
+           offsetof(Impl_, todouble_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::todouble_));
+
+  // @@protoc_insertion_point(copy_constructor:GlobalVariableTable)
 }
 inline PROTOBUF_NDEBUG_INLINE GlobalVariableTable::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
+      : tostring_(arena),
+        _cached_size_{0} {}
 
 inline void GlobalVariableTable::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.id_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           0,
+           offsetof(Impl_, todouble_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::todouble_));
 }
 GlobalVariableTable::~GlobalVariableTable() {
   // @@protoc_insertion_point(destructor:GlobalVariableTable)
@@ -168,6 +208,7 @@ GlobalVariableTable::~GlobalVariableTable() {
 }
 inline void GlobalVariableTable::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.tostring_.Destroy();
   _impl_.~Impl_();
 }
 
@@ -192,7 +233,10 @@ PROTOBUF_NOINLINE void GlobalVariableTable::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.id_ = 0u;
+  _impl_.tostring_.ClearToEmpty();
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.todouble_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.todouble_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -204,15 +248,15 @@ const char* GlobalVariableTable::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GlobalVariableTable::_table_ = {
+const ::_pbi::TcParseTable<3, 6, 0, 36, 2> GlobalVariableTable::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    6, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967232,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    6,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     &_GlobalVariableTable_default_instance_._instance,
@@ -221,18 +265,53 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GlobalVariableTable::_table_ = {
     ::_pbi::TcParser::GetTable<::GlobalVariableTable>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    {::_pbi::TcParser::MiniParse, {}},
     // uint32 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GlobalVariableTable, _impl_.id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.id_)}},
+    // uint32 touint32 = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GlobalVariableTable, _impl_.touint32_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.touint32_)}},
+    // int32 toint32 = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GlobalVariableTable, _impl_.toint32_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.toint32_)}},
+    // string tostring = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 63, 0, PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.tostring_)}},
+    // float tofloat = 5;
+    {::_pbi::TcParser::FastF32S1,
+     {45, 63, 0, PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.tofloat_)}},
+    // double todouble = 6;
+    {::_pbi::TcParser::FastF64S1,
+     {49, 63, 0, PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.todouble_)}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 id = 1;
     {PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint32 touint32 = 2;
+    {PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.touint32_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // int32 toint32 = 3;
+    {PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.toint32_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    // string tostring = 4;
+    {PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.tostring_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // float tofloat = 5;
+    {PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.tofloat_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kFloat)},
+    // double todouble = 6;
+    {PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.todouble_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
   }},
   // no aux_entries
   {{
+    "\23\0\0\0\10\0\0\0"
+    "GlobalVariableTable"
+    "tostring"
   }},
 };
 
@@ -248,6 +327,52 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GlobalVariableTable::_table_ = {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
         1, this->_internal_id(), target);
+  }
+
+  // uint32 touint32 = 2;
+  if (this->_internal_touint32() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        2, this->_internal_touint32(), target);
+  }
+
+  // int32 toint32 = 3;
+  if (this->_internal_toint32() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt32ToArrayWithField<3>(
+            stream, this->_internal_toint32(), target);
+  }
+
+  // string tostring = 4;
+  if (!this->_internal_tostring().empty()) {
+    const std::string& _s = this->_internal_tostring();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GlobalVariableTable.tostring");
+    target = stream->WriteStringMaybeAliased(4, _s, target);
+  }
+
+  // float tofloat = 5;
+  static_assert(sizeof(::uint32_t) == sizeof(float),
+                "Code assumes ::uint32_t and float are the same size.");
+  float tmp_tofloat = this->_internal_tofloat();
+  ::uint32_t raw_tofloat;
+  memcpy(&raw_tofloat, &tmp_tofloat, sizeof(tmp_tofloat));
+  if (raw_tofloat != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteFloatToArray(
+        5, this->_internal_tofloat(), target);
+  }
+
+  // double todouble = 6;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_todouble = this->_internal_todouble();
+  ::uint64_t raw_todouble;
+  memcpy(&raw_todouble, &tmp_todouble, sizeof(tmp_todouble));
+  if (raw_todouble != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+        6, this->_internal_todouble(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -267,10 +392,48 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GlobalVariableTable::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  // string tostring = 4;
+  if (!this->_internal_tostring().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_tostring());
+  }
+
   // uint32 id = 1;
   if (this->_internal_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_id());
+  }
+
+  // uint32 touint32 = 2;
+  if (this->_internal_touint32() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_touint32());
+  }
+
+  // int32 toint32 = 3;
+  if (this->_internal_toint32() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+        this->_internal_toint32());
+  }
+
+  // float tofloat = 5;
+  static_assert(sizeof(::uint32_t) == sizeof(float),
+                "Code assumes ::uint32_t and float are the same size.");
+  float tmp_tofloat = this->_internal_tofloat();
+  ::uint32_t raw_tofloat;
+  memcpy(&raw_tofloat, &tmp_tofloat, sizeof(tmp_tofloat));
+  if (raw_tofloat != 0) {
+    total_size += 5;
+  }
+
+  // double todouble = 6;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_todouble = this->_internal_todouble();
+  ::uint64_t raw_todouble;
+  memcpy(&raw_todouble, &tmp_todouble, sizeof(tmp_todouble));
+  if (raw_todouble != 0) {
+    total_size += 9;
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -285,8 +448,33 @@ void GlobalVariableTable::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (!from._internal_tostring().empty()) {
+    _this->_internal_set_tostring(from._internal_tostring());
+  }
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
+  }
+  if (from._internal_touint32() != 0) {
+    _this->_impl_.touint32_ = from._impl_.touint32_;
+  }
+  if (from._internal_toint32() != 0) {
+    _this->_impl_.toint32_ = from._impl_.toint32_;
+  }
+  static_assert(sizeof(::uint32_t) == sizeof(float),
+                "Code assumes ::uint32_t and float are the same size.");
+  float tmp_tofloat = from._internal_tofloat();
+  ::uint32_t raw_tofloat;
+  memcpy(&raw_tofloat, &tmp_tofloat, sizeof(tmp_tofloat));
+  if (raw_tofloat != 0) {
+    _this->_impl_.tofloat_ = from._impl_.tofloat_;
+  }
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_todouble = from._internal_todouble();
+  ::uint64_t raw_todouble;
+  memcpy(&raw_todouble, &tmp_todouble, sizeof(tmp_todouble));
+  if (raw_todouble != 0) {
+    _this->_impl_.todouble_ = from._impl_.todouble_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -304,8 +492,16 @@ PROTOBUF_NOINLINE bool GlobalVariableTable::IsInitialized() const {
 
 void GlobalVariableTable::InternalSwap(GlobalVariableTable* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.id_, other->_impl_.id_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.tostring_, &other->_impl_.tostring_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.todouble_)
+      + sizeof(GlobalVariableTable::_impl_.todouble_)
+      - PROTOBUF_FIELD_OFFSET(GlobalVariableTable, _impl_.id_)>(
+          reinterpret_cast<char*>(&_impl_.id_),
+          reinterpret_cast<char*>(&other->_impl_.id_));
 }
 
 ::google::protobuf::Metadata GlobalVariableTable::GetMetadata() const {
