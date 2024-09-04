@@ -14,7 +14,7 @@ from common import constants
 # Configuration Constants
 JSON_DIR = "generated/json/"
 XLSX_DIR = "xlsx/"
-GEN_TYPE = "server"
+
 
 # Setup Logging
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -27,7 +27,7 @@ def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> list[str]
     """
     return [
         sheet.cell(row=1, column=col_idx + 1).value
-        if sheet.cell(row=4, column=col_idx + 1).value in ["common", GEN_TYPE]
+        if sheet.cell(row=4, column=col_idx + 1).value in constants.SERVER_GEN_TYPE
         else ""
         for col_idx in range(sheet.max_column)
     ]
@@ -107,7 +107,7 @@ def process_row(sheet, row, column_names):
             break
 
         col_name = column_names[counter]
-        if col_name == constants.DESIGNER or col_name == constants.DESIGNER or not col_name.strip():
+        if not col_name.strip():
             continue
 
         cell_value = process_cell_value(cell)
