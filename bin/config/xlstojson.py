@@ -9,7 +9,7 @@ from os import listdir
 from os.path import isfile, join
 import openpyxl
 import gencommon  # Assuming gencommon contains the necessary functions
-import constants
+from common import constants
 
 # Configuration Constants
 JSON_DIR = "generated/json/"
@@ -107,7 +107,7 @@ def process_row(sheet, row, column_names):
             break
 
         col_name = column_names[counter]
-        if col_name == constants.DESIGNER or not col_name.strip():
+        if col_name == constants.DESIGNER or col_name == constants.DESIGNER or not col_name.strip():
             continue
 
         cell_value = process_cell_value(cell)
