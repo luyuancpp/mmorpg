@@ -62,6 +62,7 @@ const PlayerSkillServiceNotifySkillInterruptedMessageId = 58
 const GameServiceInvokePlayerServiceMessageId = 59
 const ClientPlayerSceneServiceNotifyEnterSceneMessageId = 60
 const GameServiceRegisterGateNodeMessageId = 61
+const GamePlayerServiceExitGameMessageId = 62
 const GateServiceSendMessageToPlayerMessageId = 63
 const GameServiceRouteNodeStringMsgMessageId = 64
 const GameServiceRoutePlayerStringMsgMessageId = 65

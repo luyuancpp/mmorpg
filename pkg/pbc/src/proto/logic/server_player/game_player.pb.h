@@ -20,6 +20,7 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
+#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -54,6 +55,9 @@ extern const ::google::protobuf::internal::DescriptorTable
 class Centre2GsLoginRequest;
 struct Centre2GsLoginRequestDefaultTypeInternal;
 extern Centre2GsLoginRequestDefaultTypeInternal _Centre2GsLoginRequest_default_instance_;
+class GameNodeExitGameRequest;
+struct GameNodeExitGameRequestDefaultTypeInternal;
+extern GameNodeExitGameRequestDefaultTypeInternal _GameNodeExitGameRequest_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -63,6 +67,134 @@ namespace protobuf {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class GameNodeExitGameRequest final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:GameNodeExitGameRequest) */ {
+ public:
+  inline GameNodeExitGameRequest() : GameNodeExitGameRequest(nullptr) {}
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GameNodeExitGameRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline GameNodeExitGameRequest(const GameNodeExitGameRequest& from) : GameNodeExitGameRequest(nullptr, from) {}
+  inline GameNodeExitGameRequest(GameNodeExitGameRequest&& from) noexcept
+      : GameNodeExitGameRequest(nullptr, std::move(from)) {}
+  inline GameNodeExitGameRequest& operator=(const GameNodeExitGameRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GameNodeExitGameRequest& operator=(GameNodeExitGameRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GameNodeExitGameRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const GameNodeExitGameRequest* internal_default_instance() {
+    return reinterpret_cast<const GameNodeExitGameRequest*>(
+        &_GameNodeExitGameRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(GameNodeExitGameRequest& a, GameNodeExitGameRequest& b) { a.Swap(&b); }
+  inline void Swap(GameNodeExitGameRequest* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GameNodeExitGameRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GameNodeExitGameRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<GameNodeExitGameRequest>(arena);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const GameNodeExitGameRequest& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const GameNodeExitGameRequest& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
+  }
+
+  public:
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "GameNodeExitGameRequest"; }
+
+ protected:
+  explicit GameNodeExitGameRequest(::google::protobuf::Arena* arena);
+  GameNodeExitGameRequest(::google::protobuf::Arena* arena, const GameNodeExitGameRequest& from);
+  GameNodeExitGameRequest(::google::protobuf::Arena* arena, GameNodeExitGameRequest&& from) noexcept
+      : GameNodeExitGameRequest(arena) {
+    *this = ::std::move(from);
+  }
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  // @@protoc_insertion_point(class_scope:GameNodeExitGameRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  friend struct ::TableStruct_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto;
+};
 // -------------------------------------------------------------------
 
 class Centre2GsLoginRequest final : public ::google::protobuf::Message
@@ -254,6 +386,10 @@ class GamePlayerService : public ::google::protobuf::Service {
                         const ::Centre2GsLoginRequest* request,
                         ::google::protobuf::Empty* response,
                         ::google::protobuf::Closure* done);
+  virtual void ExitGame(::google::protobuf::RpcController* controller,
+                        const ::GameNodeExitGameRequest* request,
+                        ::google::protobuf::Empty* response,
+                        ::google::protobuf::Closure* done);
 
   // implements Service ----------------------------------------------
   const ::google::protobuf::ServiceDescriptor* GetDescriptor() override;
@@ -287,6 +423,10 @@ class GamePlayerService_Stub final : public GamePlayerService {
   // implements GamePlayerService ------------------------------------------
   void Centre2GsLogin(::google::protobuf::RpcController* controller,
                         const ::Centre2GsLoginRequest* request,
+                        ::google::protobuf::Empty* response,
+                        ::google::protobuf::Closure* done) override;
+  void ExitGame(::google::protobuf::RpcController* controller,
+                        const ::GameNodeExitGameRequest* request,
                         ::google::protobuf::Empty* response,
                         ::google::protobuf::Closure* done) override;
 
@@ -330,6 +470,10 @@ inline void Centre2GsLoginRequest::_internal_set_enter_gs_type(::uint32_t value)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.enter_gs_type_ = value;
 }
+
+// -------------------------------------------------------------------
+
+// GameNodeExitGameRequest
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

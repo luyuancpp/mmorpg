@@ -185,3 +185,11 @@ void PlayerNodeUtil::DestroyPlayer(Guid playerId)
 	defer(tlsCommonLogic.GetPlayerList().erase(playerId));
 	Destroy(tls.registry, tlsCommonLogic.GetPlayer(playerId));
 }
+
+void PlayerNodeUtil::HandleExitGameNode(entt::entity player)
+{
+	// 离开gs 清除session
+	PlayerNodeUtil::SavePlayer(player);
+	tls.registry.emplace<UnregisterPlayer>(player);
+	//todo 存完之后center 才能再次登录
+}

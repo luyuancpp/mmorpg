@@ -10,6 +10,10 @@ public:
 		const ::Centre2GsLoginRequest* request,
 		::google::protobuf::Empty* response);
 
+	static void ExitGame(entt::entity player,
+		const ::GameNodeExitGameRequest* request,
+		::google::protobuf::Empty* response);
+
 	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
 		entt::entity player,
 		const ::google::protobuf::Message* request,
@@ -20,6 +24,11 @@ public:
 		case 0:
 			Centre2GsLogin(player,
 			::google::protobuf::internal::DownCast<const Centre2GsLoginRequest*>(request),
+			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+		break;
+		case 1:
+			ExitGame(player,
+			::google::protobuf::internal::DownCast<const GameNodeExitGameRequest*>(request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		default:

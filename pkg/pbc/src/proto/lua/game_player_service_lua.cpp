@@ -12,4 +12,10 @@ void InitGamePlayerServiceLua()
 		return GamePlayerService_Stub::descriptor()->method(0);
 	};
 
+	tls_lua_state["GamePlayerServiceExitGameMessageId"] = 62;
+	tls_lua_state["GamePlayerServiceExitGameIndex"] = 1;
+	tls_lua_state["GamePlayerServiceExitGame"] = []()-> const ::google::protobuf::MethodDescriptor* {
+		return GamePlayerService_Stub::descriptor()->method(1);
+	};
+
 }
