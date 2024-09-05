@@ -8,4 +8,4 @@ COMMON_TYPE = "common"
 SERVER_GEN_TYPE = [SERVER_TYPE, COMMON_TYPE]
 XLSX_DIR = "xlsx/"
 GENERATOR_CONSTANTS_NAME_DIR = "generated/cpp_table_id_constants_name/"
-GENERATOR_TABLE_INDEX_MAPPING_DIR = "generated/table_index_mapping/"
+GENERATOR_TABLE_INDEX_MAPPING_DIR = "mapping/table_index_mapping/"

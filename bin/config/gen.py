@@ -39,6 +39,7 @@ commands = [
     "python build_proto_cpp.py",
     "python build_proto_go.py",
     "python generate_cpp_constants.py",
+    "python generate_id_bit_index.py",
     "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
     "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "
     "../../pkg/config/src/cpp_table_id_constants_name/",
