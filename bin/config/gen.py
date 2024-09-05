@@ -15,9 +15,11 @@ directories = [
     "generated/proto/",
     "generated/proto/cpp/",
     "generated/proto/go/",
+    "generated/cpp_table_id_constants_name/",
     "generated/json",
     "../../pkg/config/src/pbc/",
     "../../pkg/config/src/"
+    "../../pkg/config/src/cpp_table_id_constants_name/"
 ]
 
 # Create directories if they don't exist
@@ -36,7 +38,10 @@ commands = [
     "python xls_to_cpp_id.py",
     "python build_proto_cpp.py",
     "python build_proto_go.py",
+    "python generate_cpp_constants.py",
     "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
+    "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "
+    "../../pkg/config/src/cpp_table_id_constants_name/",
     "python md5tool.py md5copy ./generated/proto/cpp/ ../../pkg/config/src/pbc/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/login/pb/game/",
     "python md5tool.py md5copy ./generated/proto/go/pb/game/ ../../node/db/pb/game/",
