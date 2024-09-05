@@ -54,10 +54,6 @@ def save_cpp_constants_to_file(cpp_constants, output_file):
     with open(output_file, 'w') as file:
         file.write(cpp_constants)
 
-# 使用示例
-excel_file = 'xlsx/GlobalVariable.xlsx'
-output_file = 'xlsx/output_constants.h'
-
 def process_file(excel_file) -> None:
     cpp_constants = generate_cpp_constants(excel_file)
     workbook = openpyxl.load_workbook(excel_file)
