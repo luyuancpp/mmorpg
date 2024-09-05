@@ -1,4 +1,4 @@
-#include "scene_event_handler.h"
+﻿#include "scene_event_handler.h"
 #include "logic/event/scene_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE 
@@ -76,9 +76,9 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 
 	// If the change scene queue component is not found, the queue is empty, or the scene change type is 'DifferentGs'
 	if (!changeSceneQueue ||
-		changeSceneQueue->changeSceneQueue.empty() ||
-		changeSceneQueue->changeSceneQueue.front().change_gs_type() == CentreChangeSceneInfoPBComp::eDifferentGs)
+		changeSceneQueue->changeSceneQueue.empty())
 	{
+		// 处理玩家直接退出游戏的情况
 		// Handle the case where the player is exiting the game
 		GameNodeExitGameRequest exitGameRequest;
 		// Set any required fields for the exit game request here if needed
@@ -89,7 +89,10 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& event)
 		return;
 	}
 
+	const auto& changeSceneInfo = changeSceneQueue->changeSceneQueue.front();
+
 	GsLeaveSceneRequest leaveSceneRequest;
+	leaveSceneRequest.set_change_gs(changeSceneInfo.change_gs_type() == CentreChangeSceneInfoPBComp::eDifferentGs);
 	SendToGsPlayer(GamePlayerSceneServiceLeaveSceneMessageId, leaveSceneRequest, player);
 
 	LOG_TRACE << "Player is leaving scene "
