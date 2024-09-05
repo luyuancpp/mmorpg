@@ -2,7 +2,6 @@
 # coding=utf-8
 
 import os
-import json
 import logging
 import concurrent.futures
 from os import listdir
@@ -25,26 +24,32 @@ class ExcelToCppConverter:
         self.workbook = openpyxl.load_workbook(excel_file)
         self.sheet = self.workbook.sheetnames[0]
         self.worksheet = self.workbook[self.sheet]
+        self.constants_name_index = self._find_constants_name_index()
+
+    def _find_constants_name_index(self) -> Optional[int]:
+        headers = [cell.value for cell in self.worksheet[1]]
+        return headers.index('constants_name') if 'constants_name' in headers else None
+
+    def should_process(self) -> bool:
+        return self.constants_name_index is not None
 
     def generate_cpp_constants(self) -> str:
         cpp_constants = "#pragma once\n\n"
-        headers = [cell.value for cell in self.worksheet[1]]
-        constants_name_index = headers.index('constants_name') if 'constants_name' in headers else None
 
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
             id_value = row[0]
             if id_value is None:
                 continue  # Skip rows with no ID
 
-            constant_name = self._generate_constant_name(row, constants_name_index, id_value)
+            constant_name = self._generate_constant_name(row, id_value)
             cpp_constant = f"constexpr uint32_t {constant_name} = {id_value};\n"
             cpp_constants += cpp_constant
 
         return cpp_constants
 
-    def _generate_constant_name(self, row: tuple, constants_name_index: Optional[int], id_value: int) -> str:
-        if constants_name_index is not None and row[constants_name_index]:
-            return f'k{self.sheet}_{row[constants_name_index]}'
+    def _generate_constant_name(self, row: tuple, id_value: int) -> str:
+        if self.constants_name_index is not None and row[self.constants_name_index]:
+            return f'k{self.sheet}_{row[self.constants_name_index]}'
         return f"k{self.sheet}_{id_value}"
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
@@ -61,8 +66,11 @@ def get_xlsx_files(directory: str) -> List[str]:
 
 def process_file(excel_file: str) -> None:
     converter = ExcelToCppConverter(excel_file)
-    cpp_constants = converter.generate_cpp_constants()
-    converter.save_cpp_constants_to_file(cpp_constants)
+    if converter.should_process():
+        cpp_constants = converter.generate_cpp_constants()
+        converter.save_cpp_constants_to_file(cpp_constants)
+    else:
+        logger.warning(f"Skipping file {excel_file} as it does not contain 'constants_name' column.")
 
 
 def main() -> None:
