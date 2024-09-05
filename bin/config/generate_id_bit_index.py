@@ -25,7 +25,7 @@ class ExcelToCppConverter:
         self.sheet = self.workbook.sheetnames[0]
         self.worksheet = self.workbook[self.sheet]
         self.bit_index_col = self._find_bit_index_column()
-        self.mapping_file = join(constants.GENERATOR_CONSTANTS_NAME_DIR, f"{self.sheet.lower()}_mapping.json")
+        self.mapping_file = join(constants.GENERATOR_TABLE_INDEX_MAPPING_DIR, f"{self.sheet.lower()}_mapping.json")
 
     def _find_bit_index_column(self) -> Optional[int]:
         """Find the index of the column where the 7th row contains 'bit_index'."""
@@ -141,7 +141,7 @@ def process_file(excel_file: str) -> None:
 def main() -> None:
     """Main function to process all Excel files."""
     os.makedirs(constants.GENERATOR_CONSTANTS_NAME_DIR, exist_ok=True)
-
+    os.makedirs(constants.GENERATOR_TABLE_INDEX_MAPPING_DIR, exist_ok=True)
     try:
         xlsx_files = get_xlsx_files(constants.XLSX_DIR)
     except Exception as e:
