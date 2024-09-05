@@ -17,6 +17,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
 #include "util/defer.h"
+#include "cpp_table_id_constants_name/globalvariable_table_id_constants.h"
 #include "globalvariable_config.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
@@ -163,7 +164,12 @@ void PlayerNodeUtil::HandleAbnormalExit(Guid playerID)
 		return;
 	}
 
-	tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(20, [playerID]() {Logout(playerID); });
+	auto [tableAbnormalLogout, result] = GetGlobalVariableTable(kGlobalVariable_Abnormal_logout);
+	if (nullptr != tableAbnormalLogout)
+	{
+		tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(tableAbnormalLogout->todouble(), [playerID]() {Logout(playerID); });
+	}
+
 }
 
 void PlayerNodeUtil::Logout(Guid playerID)

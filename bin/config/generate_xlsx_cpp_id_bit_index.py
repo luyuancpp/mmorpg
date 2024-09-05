@@ -80,6 +80,7 @@ class ExcelToCppConverter:
     def generate_cpp_constants(self) -> str:
         """Generate C++ constants from the Excel data."""
         cpp_constants = "#pragma once\n\n"
+        cpp_constants += '#include <cstdint>\n\n'
         id_to_index = self._load_existing_mapping()
         unused_indexes = self._find_unused_indexes(id_to_index)
         current_index = max(id_to_index.values(), default=-1) + 1
@@ -120,7 +121,7 @@ class ExcelToCppConverter:
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
         """Save the generated C++ constants to a file."""
-        output_file = join(constants.GENERATOR_CONSTANTS_NAME_DIR, f"{self.sheet.lower()}_table_id_bit_index.h")
+        output_file = join(constants.GENERATOR_TABLE_INDEX_DIR, f"{self.sheet.lower()}_table_id_bit_index.h")
         with open(output_file, 'w') as file:
             file.write(cpp_constants)
 
@@ -140,7 +141,7 @@ def process_file(excel_file: str) -> None:
 
 def main() -> None:
     """Main function to process all Excel files."""
-    os.makedirs(constants.GENERATOR_CONSTANTS_NAME_DIR, exist_ok=True)
+    os.makedirs(constants.GENERATOR_TABLE_INDEX_DIR, exist_ok=True)
     os.makedirs(constants.GENERATOR_TABLE_INDEX_MAPPING_DIR, exist_ok=True)
     try:
         xlsx_files = get_xlsx_files(constants.XLSX_DIR)
