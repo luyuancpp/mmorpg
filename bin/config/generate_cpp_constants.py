@@ -70,7 +70,7 @@ def process_file(excel_file: str) -> None:
         cpp_constants = converter.generate_cpp_constants()
         converter.save_cpp_constants_to_file(cpp_constants)
     else:
-        logger.warning(f"Skipping file {excel_file} as it does not contain 'constants_name' column.")
+        logger.debug(f"Skipping file {excel_file} as it does not contain 'constants_name' column.")
 
 
 def main() -> None:
