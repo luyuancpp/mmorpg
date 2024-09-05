@@ -24,5 +24,6 @@ public:
 	static void RemovePlayerSession(entt::entity player);
 	static void RemovePlayerSessionSilently(Guid player_id);
 	static void DestroyPlayer(Guid player_id);
+	static void HandleExitGameNode(entt::entity player);
 };
 

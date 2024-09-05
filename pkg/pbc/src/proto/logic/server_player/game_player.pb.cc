@@ -21,6 +21,18 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
+      template <typename>
+PROTOBUF_CONSTEXPR GameNodeExitGameRequest::GameNodeExitGameRequest(::_pbi::ConstantInitialized) {}
+struct GameNodeExitGameRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GameNodeExitGameRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GameNodeExitGameRequestDefaultTypeInternal() {}
+  union {
+    GameNodeExitGameRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameNodeExitGameRequestDefaultTypeInternal _GameNodeExitGameRequest_default_instance_;
 
 inline constexpr Centre2GsLoginRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -40,7 +52,7 @@ struct Centre2GsLoginRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 Centre2GsLoginRequestDefaultTypeInternal _Centre2GsLoginRequest_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto[1];
+static ::_pb::Metadata file_level_metadata_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto[2];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto = nullptr;
 static const ::_pb::ServiceDescriptor*
@@ -57,23 +69,35 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::Centre2GsLoginRequest, _impl_.enter_gs_type_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::GameNodeExitGameRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::Centre2GsLoginRequest)},
+        {9, -1, -1, sizeof(::GameNodeExitGameRequest)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_Centre2GsLoginRequest_default_instance_._instance,
+    &::_GameNodeExitGameRequest_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n%logic/server_player/game_player.proto\032"
     "\033google/protobuf/empty.proto\".\n\025Centre2G"
-    "sLoginRequest\022\025\n\renter_gs_type\030\001 \001(\r2U\n\021"
-    "GamePlayerService\022@\n\016Centre2GsLogin\022\026.Ce"
-    "ntre2GsLoginRequest\032\026.google.protobuf.Em"
-    "ptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "sLoginRequest\022\025\n\renter_gs_type\030\001 \001(\r\"\031\n\027"
+    "GameNodeExitGameRequest2\223\001\n\021GamePlayerSe"
+    "rvice\022@\n\016Centre2GsLogin\022\026.Centre2GsLogin"
+    "Request\032\026.google.protobuf.Empty\022<\n\010ExitG"
+    "ame\022\030.GameNodeExitGameRequest\032\026.google.p"
+    "rotobuf.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto_deps[1] =
     {
@@ -83,13 +107,13 @@ static ::absl::once_flag descriptor_table_logic_2fserver_5fplayer_2fgame_5fplaye
 const ::_pbi::DescriptorTable descriptor_table_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto = {
     false,
     false,
-    225,
+    315,
     descriptor_table_protodef_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto,
     "logic/server_player/game_player.proto",
     &descriptor_table_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto_once,
     descriptor_table_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto_deps,
     1,
-    1,
+    2,
     schemas,
     file_default_instances,
     TableStruct_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto::offsets,
@@ -291,6 +315,41 @@ void Centre2GsLoginRequest::InternalSwap(Centre2GsLoginRequest* PROTOBUF_RESTRIC
 }
 // ===================================================================
 
+class GameNodeExitGameRequest::_Internal {
+ public:
+};
+
+GameNodeExitGameRequest::GameNodeExitGameRequest(::google::protobuf::Arena* arena)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  // @@protoc_insertion_point(arena_constructor:GameNodeExitGameRequest)
+}
+GameNodeExitGameRequest::GameNodeExitGameRequest(
+    ::google::protobuf::Arena* arena,
+    const GameNodeExitGameRequest& from)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  GameNodeExitGameRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:GameNodeExitGameRequest)
+}
+
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata GameNodeExitGameRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto_getter,
+                                   &descriptor_table_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto_once,
+                                   file_level_metadata_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto[1]);
+}
+// ===================================================================
+
 const ::google::protobuf::ServiceDescriptor* GamePlayerService::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto);
   return file_level_service_descriptors_logic_2fserver_5fplayer_2fgame_5fplayer_2eproto[0];
@@ -303,6 +362,11 @@ const ::google::protobuf::ServiceDescriptor* GamePlayerService::GetDescriptor() 
 void GamePlayerService::Centre2GsLogin(::google::protobuf::RpcController* controller,
                          const ::Centre2GsLoginRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method Centre2GsLogin() not implemented.");
+  done->Run();
+}
+void GamePlayerService::ExitGame(::google::protobuf::RpcController* controller,
+                         const ::GameNodeExitGameRequest*, ::google::protobuf::Empty*, ::google::protobuf::Closure* done) {
+  controller->SetFailed("Method ExitGame() not implemented.");
   done->Run();
 }
 
@@ -318,6 +382,11 @@ void GamePlayerService::CallMethod(
              ::google::protobuf::internal::DownCast<const ::Centre2GsLoginRequest*>(request),
              ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response), done);
       break;
+    case 1:
+      ExitGame(controller,
+             ::google::protobuf::internal::DownCast<const ::GameNodeExitGameRequest*>(request),
+             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response), done);
+      break;
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -331,6 +400,8 @@ const ::google::protobuf::Message& GamePlayerService::GetRequestPrototype(
   switch (method->index()) {
     case 0:
       return ::Centre2GsLoginRequest::default_instance();
+    case 1:
+      return ::GameNodeExitGameRequest::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -344,6 +415,8 @@ const ::google::protobuf::Message& GamePlayerService::GetResponsePrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
+      return ::google::protobuf::Empty::default_instance();
+    case 1:
       return ::google::protobuf::Empty::default_instance();
 
     default:
@@ -371,6 +444,12 @@ void GamePlayerService_Stub::Centre2GsLogin(::google::protobuf::RpcController* c
                               const ::Centre2GsLoginRequest* request,
                               ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
+                       request, response, done);
+}
+void GamePlayerService_Stub::ExitGame(::google::protobuf::RpcController* controller,
+                              const ::GameNodeExitGameRequest* request,
+                              ::google::protobuf::Empty* response, ::google::protobuf::Closure* done) {
+  channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

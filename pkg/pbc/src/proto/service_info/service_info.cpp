@@ -91,6 +91,7 @@ g_message_info[GamePlayerSceneServiceLeaveSceneMessageId] = RpcService{"GamePlay
 g_message_info[GamePlayerSceneServiceEnterSceneS2CMessageId] = RpcService{"GamePlayerSceneService","EnterSceneS2C","EnterSceneS2CRequest","EnterScenerS2CResponse",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};
 
 g_message_info[GamePlayerServiceCentre2GsLoginMessageId] = RpcService{"GamePlayerService","Centre2GsLogin","Centre2GsLoginRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerServiceImpl>()};
+g_message_info[GamePlayerServiceExitGameMessageId] = RpcService{"GamePlayerService","ExitGame","GameNodeExitGameRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerServiceImpl>()};
 
 g_message_info[GameSceneServiceTestMessageId] = RpcService{"GameSceneService","Test","GameSceneTest","Empty",std::make_unique_for_overwrite<GameSceneServiceImpl>()};
 

@@ -32,8 +32,7 @@ void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,const ::GsLea
 	if (request->change_gs()) // 存储完毕以后才能换场景，防止回档
 	{
 		// 离开gs 清除session
-		PlayerNodeUtil::SavePlayer(player);
-		tls.registry.emplace<UnregisterPlayer>(player);
+		PlayerNodeUtil::HandleExitGameNode(player);
 		LOG_INFO << "Player " << tls.registry.get<Guid>(player) << " session cleared after leaving scene.";
 	}
 ///<<< END WRITING YOUR CODE

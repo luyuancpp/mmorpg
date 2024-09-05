@@ -10,4 +10,9 @@ sol::property(&Centre2GsLoginRequest::enter_gs_type, &Centre2GsLoginRequest::set
 &Centre2GsLoginRequest::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<GameNodeExitGameRequest>("GameNodeExitGameRequest",
+"DebugString",
+&GameNodeExitGameRequest::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 }
