@@ -25,12 +25,16 @@ class ExcelToCppConverter:
         self.sheet = self.workbook.sheetnames[0]
         self.worksheet = self.workbook[self.sheet]
         self.bit_index_col = self._find_bit_index_column()
-        self.mapping_file = constants.GENERATOR_CONSTANTS_NAME_DIR + self.sheet.lower() + '_mapping.json'
+        self.mapping_file = join(constants.GENERATOR_CONSTANTS_NAME_DIR, f"{self.sheet.lower()}_mapping.json")
 
     def _find_bit_index_column(self) -> Optional[int]:
-        """Find the index of the 'bit_index' column."""
+        """Find the index of the column where the 7th row contains 'bit_index'."""
         headers = [cell.value for cell in self.worksheet[1]]
-        return headers.index('bit_index') if 'bit_index' in headers else None
+        for col_idx in range(len(headers)):
+            cell_value = self.worksheet.cell(row=gen_common.COL_OBJ_TABLE_BIT_INDEX, column=col_idx + 1).value
+            if cell_value is not None and cell_value.strip().lower() == 'bit_index':
+                return col_idx
+        return None
 
     def _load_existing_mapping(self) -> Dict[int, int]:
         """Load existing ID to index mapping from a JSON file."""
@@ -44,14 +48,22 @@ class ExcelToCppConverter:
         with open(self.mapping_file, 'w') as file:
             json.dump(mapping, file, indent=4)
 
+    def _find_unused_indexes(self, id_to_index: Dict[int, int]) -> List[int]:
+        """Find and return a list of unused indexes."""
+        used_indexes = set(id_to_index.values())
+        all_indexes = set(range(len(id_to_index) + 100))  # Create a range with a bit more space
+        unused_indexes = sorted(all_indexes - used_indexes)
+        return unused_indexes
+
     def should_process(self) -> bool:
-        """Check if the worksheet contains the 'bit_index' column."""
+        """Check if the worksheet contains a valid 'bit_index' column."""
         return self.bit_index_col is not None
 
     def generate_cpp_constants(self) -> str:
         """Generate C++ constants from the Excel data."""
         cpp_constants = "#pragma once\n\n"
         id_to_index = self._load_existing_mapping()
+        unused_indexes = self._find_unused_indexes(id_to_index)
         current_index = max(id_to_index.values(), default=-1) + 1
 
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
@@ -60,8 +72,12 @@ class ExcelToCppConverter:
                 continue  # Skip rows with no ID
 
             if id_value not in id_to_index:
-                id_to_index[id_value] = current_index
-                current_index += 1
+                if unused_indexes:
+                    index = unused_indexes.pop(0)
+                else:
+                    index = current_index
+                    current_index += 1
+                id_to_index[id_value] = index
 
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
             id_value = row[0]
@@ -83,7 +99,7 @@ class ExcelToCppConverter:
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:
         """Save the generated C++ constants to a file."""
-        output_file = constants.GENERATOR_CONSTANTS_NAME_DIR + self.sheet.lower() + '_table_id_bit_index.h'
+        output_file = join(constants.GENERATOR_CONSTANTS_NAME_DIR, f"{self.sheet.lower()}_table_id_bit_index.h")
         with open(output_file, 'w') as file:
             file.write(cpp_constants)
 
@@ -99,7 +115,7 @@ def process_file(excel_file: str) -> None:
         cpp_constants = converter.generate_cpp_constants()
         converter.save_cpp_constants_to_file(cpp_constants)
     else:
-        logger.info(f"Skipping file {excel_file} as it does not contain 'bit_index' column.")
+        logger.info(f"Skipping file {excel_file} as it does not contain a valid 'bit_index' value in the 7th row.")
 
 def main() -> None:
     """Main function to process all Excel files."""
