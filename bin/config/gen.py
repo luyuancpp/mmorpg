@@ -19,7 +19,8 @@ directories = [
     "generated/json",
     "../../pkg/config/src/pbc/",
     "../../pkg/config/src/",
-    "../../pkg/config/src/cpp_table_id_constants_name/"
+    "../../pkg/config/src/cpp_table_id_constants_name/",
+    "../../pkg/config/src/cpp_table_id_bit_index/"
 ]
 
 # Create directories if they don't exist
@@ -41,6 +42,8 @@ commands = [
     "python generate__xlsx_cpp_constants.py",
     "python generate_xlsx_cpp_id_bit_index.py",
     "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
+    "python md5tool.py md5copy ./generated/cpp_table_id_bit_index/ "
+    "../../pkg/config/src/cpp_table_id_bit_index/",
     "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "
     "../../pkg/config/src/cpp_table_id_constants_name/",
     "python md5tool.py md5copy ./generated/proto/cpp/ ../../pkg/config/src/pbc/",
