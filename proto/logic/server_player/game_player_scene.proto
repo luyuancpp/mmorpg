@@ -17,7 +17,6 @@ message GsEnterSceneRequest
 
 message GsLeaveSceneRequest
 {
-  bool change_gs = 1;
 }
 
 

@@ -60,7 +60,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_database& message)
 {
 	//todo session 啥时候删除？
-	//告诉Centre 保存完毕，可以切换场景了
+	//告诉Centre 保存完毕，可以切换场景了,或者再登录可以重新上线了
 	CentreLeaveSceneAsyncSavePlayerCompleteRequest request;
 	SendToCentrePlayerById(CentrePlayerSceneServiceLeaveSceneAsyncSavePlayerCompleteMessageId, request, playerId);
 
