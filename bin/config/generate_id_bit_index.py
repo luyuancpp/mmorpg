@@ -40,7 +40,15 @@ class ExcelToCppConverter:
         """Load existing ID to index mapping from a JSON file."""
         if os.path.exists(self.mapping_file):
             with open(self.mapping_file, 'r') as file:
-                return json.load(file)
+                try:
+                    # Load the JSON data
+                    data = json.load(file)
+
+                    # Convert keys to integers
+                    return {int(k): v for k, v in data.items()}
+                except json.JSONDecodeError:
+                    print("Error: JSON file is not valid.")
+                    return {}
         return {}
 
     def _save_mapping(self, mapping: Dict[int, int]) -> None:
@@ -51,9 +59,19 @@ class ExcelToCppConverter:
     def _find_unused_indexes(self, id_to_index: Dict[int, int]) -> List[int]:
         """Find and return a list of unused indexes."""
         used_indexes = set(id_to_index.values())
-        all_indexes = set(range(len(id_to_index) + 100))  # Create a range with a bit more space
+        all_indexes = set(range(len(id_to_index)))
         unused_indexes = sorted(all_indexes - used_indexes)
         return unused_indexes
+
+    def _find_max_bit_index(self) -> int:
+        """Find the maximum bit index in the 7th row."""
+        max_bit_index = -1
+        if self.bit_index_col is not None:
+            for row in self.worksheet.iter_rows(min_row=20, values_only=True):
+                bit_index = row[self.bit_index_col]
+                if isinstance(bit_index, int) and bit_index > max_bit_index:
+                    max_bit_index = bit_index
+        return max_bit_index
 
     def should_process(self) -> bool:
         """Check if the worksheet contains a valid 'bit_index' column."""
@@ -85,8 +103,11 @@ class ExcelToCppConverter:
                 continue  # Skip rows with no ID
 
             constant_name = self._generate_constant_name(row, id_to_index[id_value])
-            cpp_constant = f"constexpr uint32_t {constant_name} = {id_to_index[id_value]};\n"
+            cpp_constant = f"constexpr uint32_t k{constant_name} = {id_to_index[id_value]};\n"
             cpp_constants += cpp_constant
+
+        max_bit_index = self._find_max_bit_index()
+        cpp_constants += f"constexpr uint32_t kMaxBitIndex = {max_bit_index};\n"
 
         self._save_mapping(id_to_index)
         return cpp_constants
@@ -115,7 +136,7 @@ def process_file(excel_file: str) -> None:
         cpp_constants = converter.generate_cpp_constants()
         converter.save_cpp_constants_to_file(cpp_constants)
     else:
-        logger.info(f"Skipping file {excel_file} as it does not contain a valid 'bit_index' value in the 7th row.")
+        logger.debug(f"Skipping file {excel_file} as it does not contain a valid 'bit_index' value in the 7th row.")
 
 def main() -> None:
     """Main function to process all Excel files."""
