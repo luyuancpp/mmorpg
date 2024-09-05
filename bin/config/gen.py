@@ -30,16 +30,16 @@ for directory in directories:
 
 # Define commands to execute
 commands = [
-    "python xls_to_json.py",
-    "python xls_to_pb.py",
-    "python tip_xlsx_to_proto.py",
+    "python gen_xls_to_json.py",
+    "python gen_xls_to_proto.py",
+    "python gen_xlsx_cpp_tip_to_proto.py",
     "python operator_xlsx_to_proto.py",
-    "python xls_to_cpp.py",
-    "python xls_to_cpp_id.py",
-    "python build_proto_cpp.py",
-    "python build_proto_go.py",
-    "python generate_cpp_constants.py",
-    "python generate_id_bit_index.py",
+    "python gen_xls_to_cpp_config.py",
+    "python gen_xls_cpp_id.py",
+    "python gen_proto_cpp.py",
+    "python gen_proto_go.py",
+    "python generate__xlsx_cpp_constants.py",
+    "python generate_xlsx_cpp_id_bit_index.py",
     "python md5tool.py md5copy ./generated/cpp/ ../../pkg/config/src/",
     "python md5tool.py md5copy ./generated/cpp_table_id_constants_name/ "
     "../../pkg/config/src/cpp_table_id_constants_name/",
