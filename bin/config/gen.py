@@ -18,7 +18,7 @@ directories = [
     "generated/cpp_table_id_constants_name/",
     "generated/json",
     "../../pkg/config/src/pbc/",
-    "../../pkg/config/src/"
+    "../../pkg/config/src/",
     "../../pkg/config/src/cpp_table_id_constants_name/"
 ]
 
