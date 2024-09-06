@@ -55,7 +55,6 @@
 54=CentreServiceRegisterGameNode
 55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene
-57=GameServiceSessionDisconnect
 58=PlayerSkillServiceNotifySkillInterrupted
 59=GameServiceInvokePlayerService
 60=ClientPlayerSceneServiceNotifyEnterScene

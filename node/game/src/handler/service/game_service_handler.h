@@ -21,12 +21,6 @@ public:
 		::google::protobuf::Closure* done)override;
 
 
-	void SessionDisconnect(::google::protobuf::RpcController* controller,
-		const ::SessionDisconnectRequest* request,
-		::Empty* response,
-		::google::protobuf::Closure* done)override;
-
-
 	void RegisterGateNode(::google::protobuf::RpcController* controller,
 		const ::RegisterGateNodeRequest* request,
 		::Empty* response,

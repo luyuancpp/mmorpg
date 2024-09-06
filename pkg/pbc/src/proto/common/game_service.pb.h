@@ -1733,10 +1733,6 @@ class GameService : public ::google::protobuf::Service {
                         const ::ClientSendMessageToPlayerRequest* request,
                         ::ClientSendMessageToPlayerResponse* response,
                         ::google::protobuf::Closure* done);
-  virtual void SessionDisconnect(::google::protobuf::RpcController* controller,
-                        const ::SessionDisconnectRequest* request,
-                        ::Empty* response,
-                        ::google::protobuf::Closure* done);
   virtual void RegisterGateNode(::google::protobuf::RpcController* controller,
                         const ::RegisterGateNodeRequest* request,
                         ::Empty* response,
@@ -1811,10 +1807,6 @@ class GameService_Stub final : public GameService {
   void ClientSendMessageToPlayer(::google::protobuf::RpcController* controller,
                         const ::ClientSendMessageToPlayerRequest* request,
                         ::ClientSendMessageToPlayerResponse* response,
-                        ::google::protobuf::Closure* done) override;
-  void SessionDisconnect(::google::protobuf::RpcController* controller,
-                        const ::SessionDisconnectRequest* request,
-                        ::Empty* response,
                         ::google::protobuf::Closure* done) override;
   void RegisterGateNode(::google::protobuf::RpcController* controller,
                         const ::RegisterGateNodeRequest* request,

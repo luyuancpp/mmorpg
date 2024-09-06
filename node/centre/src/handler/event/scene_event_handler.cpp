@@ -1,4 +1,4 @@
-﻿#include "scene_event_handler.h"
+#include "scene_event_handler.h"
 #include "logic/event/scene_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE 

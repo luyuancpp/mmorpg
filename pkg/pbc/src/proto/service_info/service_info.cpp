@@ -98,7 +98,6 @@ g_message_info[GameSceneServiceTestMessageId] = RpcService{"GameSceneService","T
 g_message_info[GameServicePlayerEnterGameNodeMessageId] = RpcService{"GameService","PlayerEnterGameNode","PlayerEnterGameNodeRequest","Empty",std::make_unique_for_overwrite<GameServiceImpl>()};
 g_message_info[GameServiceSendMessageToPlayerMessageId] = RpcService{"GameService","SendMessageToPlayer","NodeRouteMessageRequest","NodeRouteMessageResponse",std::make_unique_for_overwrite<GameServiceImpl>()};
 g_message_info[GameServiceClientSendMessageToPlayerMessageId] = RpcService{"GameService","ClientSendMessageToPlayer","ClientSendMessageToPlayerRequest","ClientSendMessageToPlayerResponse",std::make_unique_for_overwrite<GameServiceImpl>()};
-g_message_info[GameServiceSessionDisconnectMessageId] = RpcService{"GameService","SessionDisconnect","SessionDisconnectRequest","Empty",std::make_unique_for_overwrite<GameServiceImpl>()};
 g_message_info[GameServiceRegisterGateNodeMessageId] = RpcService{"GameService","RegisterGateNode","RegisterGateNodeRequest","Empty",std::make_unique_for_overwrite<GameServiceImpl>()};
 g_message_info[GameServiceCentreSendToPlayerViaGameNodeMessageId] = RpcService{"GameService","CentreSendToPlayerViaGameNode","NodeRouteMessageRequest","Empty",std::make_unique_for_overwrite<GameServiceImpl>()};
 g_message_info[GameServiceInvokePlayerServiceMessageId] = RpcService{"GameService","InvokePlayerService","NodeRouteMessageRequest","NodeRouteMessageResponse",std::make_unique_for_overwrite<GameServiceImpl>()};

@@ -1,4 +1,4 @@
-﻿#include "gate_service_handler.h"
+#include "gate_service_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
