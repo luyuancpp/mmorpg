@@ -53,6 +53,7 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 			resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1005}
 			return resp, err
 		}
+		cmd = l.svcCtx.Redis.Get(l.ctx, rdKey)
 	}
 
 	valueBytes, err := cmd.Bytes()
