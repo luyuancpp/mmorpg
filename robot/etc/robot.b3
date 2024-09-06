@@ -157,6 +157,7 @@
             },
             "children": [
               "5ecfb339-b7b9-466c-88a5-edd121cd0030",
+              "cde68fdc-daae-4ccc-ba87-749f3947eda3",
               "5d069eed-bceb-4403-8cba-6d866d0c31cb"
             ]
           },
@@ -258,6 +259,18 @@
               "y": -48
             },
             "child": "d46976a5-3d40-4ece-8ce7-dd97d0a8c343"
+          },
+          "cde68fdc-daae-4ccc-ba87-749f3947eda3": {
+            "id": "cde68fdc-daae-4ccc-ba87-749f3947eda3",
+            "name": "RandomEnterScene",
+            "category": "action",
+            "title": "RandomEnterScene",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 372,
+              "y": -216
+            }
           }
         },
         "display": {
