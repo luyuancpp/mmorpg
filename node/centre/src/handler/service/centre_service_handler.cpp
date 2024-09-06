@@ -358,9 +358,9 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 		// Register player to gate node
 		tls.registry.emplace_or_replace<EnterGameNodeInfoPBComp>(player).set_enter_gs_type(LOGIN_REPLACE);
-		PlayerNodeUtil::RegisterPlayerToGateNode(player);
+		PlayerNodeUtil::AddGameNodePlayerToGateNode(player);
 
-		PlayerNodeUtil::HandlePlayerSession(player);
+		PlayerNodeUtil::ProcessPlayerSessionState(player);
 	}
 
 
@@ -497,7 +497,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 
 	playerNodeInfo->set_game_node_id(request->game_node_id());
 
-	PlayerNodeUtil::RegisterPlayerToGateNode(player);
+	PlayerNodeUtil::AddGameNodePlayerToGateNode(player);
 
 	PlayerChangeSceneUtil::SetChangeGsStatus(player, CentreChangeSceneInfoPBComp::eEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);

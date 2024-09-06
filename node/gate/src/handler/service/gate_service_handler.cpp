@@ -1,4 +1,4 @@
-#include "gate_service_handler.h"
+﻿#include "gate_service_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
@@ -9,6 +9,13 @@
 #include "util/pb.h"
 
 #include "proto/logic/component/player_network_comp.pb.h"
+
+bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
+{
+	// 在这里定义所有需要记录错误日志的有效 message_id
+	return (message_id != 47 && message_id != 21);
+}
+
 ///<<< END WRITING YOUR CODE
 void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* controller,const ::RegisterGameNodeRequest* request,
 	     Empty* response,
@@ -80,7 +87,11 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	auto sessionIt = tls_gate.sessions().find(request->head().session_id());
 	if (sessionIt == tls_gate.sessions().end())
 	{
-		LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->head().session_id();
+		if (shouldLogProtocolErrorForDisconnectedPlayer(request->body().message_id()))
+		{
+			LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->head().session_id() << ", message ID:" << request->body().message_id();
+		}
+
 		return;
 	}
 	g_gate_node->Send(sessionIt->second.conn_, request->body());
@@ -126,7 +137,11 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 		auto sessionIt = tls_gate.sessions().find(sessionId);
 		if (sessionIt == tls_gate.sessions().end())
 		{
-			LOG_ERROR << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId;
+			if (shouldLogProtocolErrorForDisconnectedPlayer(request->body().message_id()))
+			{
+				LOG_ERROR << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->body().message_id();
+			}
+
 			continue;
 		}
 		g_gate_node->Send(sessionIt->second.conn_, request->body());

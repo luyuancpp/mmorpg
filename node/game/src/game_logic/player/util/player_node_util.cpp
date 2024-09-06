@@ -140,7 +140,7 @@ void PlayerNodeUtil::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 	}
 }
 
-void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity player)
+void PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(entt::entity player)
 {
 
 }

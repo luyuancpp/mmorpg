@@ -52,8 +52,6 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_
 	// Set flag for first login
 	tls.registry.emplace<EnterGameNodeInfoPBComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
-	PlayerNodeUtil::HandlePlayerSession(playerEntity);
-
 	PlayerSceneUtil::HandleLoginEnterScene(playerEntity);
 	// On database loaded
 }
@@ -63,7 +61,7 @@ void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_centre_databas
 	// Placeholder for handling saved player data asynchronously
 }
 
-void PlayerNodeUtil::HandlePlayerSession(entt::entity player)
+void PlayerNodeUtil::ProcessPlayerSessionState(entt::entity player)
 {
 	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComp>(player))
 	{
@@ -75,6 +73,8 @@ void PlayerNodeUtil::HandlePlayerSession(entt::entity player)
 		{
 			PlayerNodeUtil::HandlePlayerReconnection(player);
 		}
+
+		tls.registry.remove<EnterGameNodeInfoPBComp>(player);
 	}
 }
 
@@ -88,7 +88,7 @@ void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
 
 	Centre2GsLoginRequest message;
 	message.set_enter_gs_type(enterGameFlag->enter_gs_type());
-	tls.registry.remove<EnterGameNodeInfoPBComp>(playerEntity);
+	
 	SendToGsPlayer(GamePlayerServiceCentre2GsLoginMessageId, message, playerEntity);
 }
 
@@ -97,7 +97,7 @@ void PlayerNodeUtil::HandlePlayerReconnection(entt::entity player)
 
 }
 
-void PlayerNodeUtil::RegisterPlayerToGateNode(entt::entity playerEntity)
+void PlayerNodeUtil::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 {
 	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
 	if (!playerNodeInfo)
@@ -126,7 +126,7 @@ void PlayerNodeUtil::RegisterPlayerToGateNode(entt::entity playerEntity)
 	(*gateNode)->CallMethod(GateServicePlayerEnterGameNodeMessageId, request);
 }
 
-void PlayerNodeUtil::OnPlayerRegisteredToGateNode(entt::entity playerEntity)
+void PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
 {
 	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
 	if (!playerNodeInfo)

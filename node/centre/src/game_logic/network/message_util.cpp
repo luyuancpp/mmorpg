@@ -54,7 +54,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
 	auto rpcSession = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeId);
 	if (!rpcSession)
 	{
-		LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->game_node_id();
+		LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->game_node_id() << " message ID ->" << messageId;
 		return;
 	}
 
