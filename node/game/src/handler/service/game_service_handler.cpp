@@ -199,10 +199,7 @@ void GameServiceHandler::SessionDisconnect(::google::protobuf::RpcController* co
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto player = tlsCommonLogic.GetPlayer(request->player_id());
-	defer(tlsCommonLogic.GetPlayerList().erase(request->player_id()));
 	PlayerNodeUtil::RemovePlayerSession(request->player_id());
-	Destroy(tls.registry, player);
 ///<<< END WRITING YOUR CODE
 }
 
