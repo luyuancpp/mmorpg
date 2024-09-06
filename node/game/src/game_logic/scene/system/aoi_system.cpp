@@ -164,6 +164,7 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridListComp& gridList, ent
     actorDestroyMessage.Clear();
     actorListDestroyMessage.Clear();
     actorDestroyMessage.set_entity(entt::to_integral(entity));
+
     for (const auto& gridId : gridsToLeave) {
         auto it = gridList.find(gridId);
         if (it == gridList.end()) {
@@ -177,6 +178,7 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridListComp& gridList, ent
             ViewUtil::HandlePlayerLeaveMessage(entity, observer);
         }
     }
+
     SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListDestroyMessageId, actorListDestroyMessage, entity);
     BroadCastToPlayer(observersToNotifyExit, ClientPlayerSceneServiceNotifyActorDestroyMessageId, actorDestroyMessage);
 }
