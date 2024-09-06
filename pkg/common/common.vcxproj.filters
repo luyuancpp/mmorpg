@@ -38,6 +38,7 @@
     <ClInclude Include="src\network\message_statistics.h" />
     <ClInclude Include="src\test\test.h" />
     <ClInclude Include="src\util\node_id_generator.h" />
+    <ClInclude Include="src\util\stacktrace_util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />

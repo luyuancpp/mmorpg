@@ -5,7 +5,6 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
-
 #include "pbc/login_error_tip.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "handler/service/player/player_service.h"
@@ -30,6 +29,7 @@
 #include "network/rpc_session.h"
 #include "util/defer.h"
 #include "util/pb.h"
+#include "util/stacktrace_util.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -41,7 +41,7 @@ Guid GetPlayerIDBySessionId(const uint64_t session_id)
 	const auto session_it = tlsSessions.find(session_id);
 	if (session_it == tlsSessions.end())
 	{
-		LOG_ERROR << "Cannot find session ID " << session_id;
+		LOG_ERROR << "Cannot find session ID " << session_id << GetStackTraceAsString();
 		return kInvalidGuid;
 	}
 	return session_it->second.player_id();
