@@ -9,5 +9,6 @@
             "127.0.0.1:2379"
         ],
         "Key": "dbservice.rpc"
-    }
+    },
+    "Timeout": 3000
 }
