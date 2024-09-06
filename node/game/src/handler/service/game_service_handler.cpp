@@ -194,15 +194,6 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::SessionDisconnect(::google::protobuf::RpcController* controller,const ::SessionDisconnectRequest* request,
-	     Empty* response,
-	     ::google::protobuf::Closure* done)
-{
-///<<< BEGIN WRITING YOUR CODE
-	PlayerNodeUtil::RemovePlayerSession(request->player_id());
-///<<< END WRITING YOUR CODE
-}
-
 void GameServiceHandler::RegisterGateNode(::google::protobuf::RpcController* controller,const ::RegisterGateNodeRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
