@@ -368,7 +368,7 @@ void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* 
 		playerNodeInfo->set_gate_session_id(request->session_id());
 	}
 
-	PlayerNodeUtil::OnPlayerRegisteredToGateNode(player);
+	PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE
 }
 
