@@ -263,9 +263,6 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 
 	PlayerNodeUtil::HandleNormalExit(playerId);
 
-	SessionDisconnectRequest disconnectRequest;
-	disconnectRequest.set_player_id(playerId);
-	(*gameNode)->CallMethod(GameServiceSessionDisconnectMessageId, disconnectRequest);
 ///<<< END WRITING YOUR CODE
 }
 
