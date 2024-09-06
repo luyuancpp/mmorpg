@@ -395,7 +395,7 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	const auto it = tlsSessions.find(request->head().session_id());
 	if (it == tlsSessions.end())
 	{
-		LOG_ERROR << "Session not found: " << request->head().session_id();
+		LOG_ERROR << "Session not found: " << request->head().session_id() << " message id :" << request->body().message_id();
 		return;
 	}
 

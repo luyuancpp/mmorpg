@@ -57,7 +57,6 @@ const CentreServiceLoginNodeEnterGameMessageId = 53
 const CentreServiceRegisterGameNodeMessageId = 54
 const LoginServiceDisconnectMessageId = 55
 const GamePlayerSceneServiceLeaveSceneMessageId = 56
-const GameServiceSessionDisconnectMessageId = 57
 const PlayerSkillServiceNotifySkillInterruptedMessageId = 58
 const GameServiceInvokePlayerServiceMessageId = 59
 const ClientPlayerSceneServiceNotifyEnterSceneMessageId = 60
