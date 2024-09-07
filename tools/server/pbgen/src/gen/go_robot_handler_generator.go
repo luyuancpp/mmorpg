@@ -1,9 +1,7 @@
 package gen
 
 import (
-	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"pbgen/config"
@@ -33,64 +31,43 @@ func GoRobotHandlerGenerator() {
 	// Track the handlers that should exist based on the current service mappings
 	existingHandlers := make(map[string]bool)
 
-	// Open the file containing the service mappings
-	file, err := os.Open(config.ServiceIdFilePath)
-	if err != nil {
-		log.Fatalf("Error opening file: %v", err)
-		return
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
+	for _, v := range ServiceMethodMap {
+		if !isClientMethodRepliedHandler(&v) {
 			continue
 		}
+		for _, method := range v {
+			serviceName := method.Service
 
-		// Parse each line: 0=ServiceName
-		parts := strings.Split(line, "=")
-		if len(parts) != 2 {
-			log.Printf("Invalid format: %s", line)
-			continue
+			// Only process services that contain "GamePlayer" or "ClientPlayer"
+			if !strings.Contains(serviceName, "GamePlayer") && !strings.Contains(serviceName, "ClientPlayer") {
+				continue
+			}
+
+			// Generate the Go handler function name and response type
+			handlerName := fmt.Sprintf("%sHandler", serviceName+method.Method)
+			responseType := method.Response
+
+			// Generate a valid file name for the Go file
+			fileName := sanitizeFileName(serviceName + method.Method)
+			filePath := filepath.Join(config.RobotMethodHandlerDirectory, fileName+".go")
+
+			// Mark this handler as existing
+			existingHandlers[filePath] = true
+
+			// Check if the file already exists
+			if fileExists(filePath) {
+				fmt.Printf("File %s already exists. Skipping generation.\n", filePath)
+				continue
+			}
+
+			// Create a file for the service
+			err := generateHandlerFile(filePath, handlerName, responseType)
+			if err != nil {
+				continue
+			}
+
+			fmt.Printf("Generated %s for service %s\n", filePath, fileName)
 		}
-
-		serviceNumber := parts[0]
-		serviceName := parts[1]
-
-		// Only process services that contain "GamePlayer" or "ClientPlayer"
-		if !strings.Contains(serviceName, "GamePlayer") && !strings.Contains(serviceName, "ClientPlayer") {
-			continue
-		}
-
-		// Generate the Go handler function name and response type
-		handlerName := fmt.Sprintf("%sHandler", serviceName)
-		responseType := fmt.Sprintf("%sS2C", serviceName)
-
-		// Generate a valid file name for the Go file
-		fileName := sanitizeFileName(serviceName)
-		filePath := filepath.Join(config.RobotMethodHandlerDirectory, fileName+".go")
-
-		// Mark this handler as existing
-		existingHandlers[filePath] = true
-
-		// Check if the file already exists
-		if fileExists(filePath) {
-			fmt.Printf("File %s already exists. Skipping generation.\n", filePath)
-			continue
-		}
-
-		// Create a file for the service
-		err := generateHandlerFile(filePath, handlerName, responseType)
-		if err != nil {
-			log.Printf("Error generating file for service %s: %v", serviceNumber, err)
-			continue
-		}
-		fmt.Printf("Generated %s for service %s\n", filePath, serviceNumber)
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatalf("Error reading file: %v", err)
 	}
 }
 
