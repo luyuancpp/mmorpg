@@ -58,6 +58,11 @@ func GoRobotHandlerGenerator() {
 		serviceNumber := parts[0]
 		serviceName := parts[1]
 
+		// Only process services that contain "GamePlayer" or "ClientPlayer"
+		if !strings.Contains(serviceName, "GamePlayer") && !strings.Contains(serviceName, "ClientPlayer") {
+			continue
+		}
+
 		// Generate the Go handler function name and response type
 		handlerName := fmt.Sprintf("%sHandler", serviceName)
 		responseType := fmt.Sprintf("%sS2C", serviceName)
@@ -87,12 +92,6 @@ func GoRobotHandlerGenerator() {
 	if err := scanner.Err(); err != nil {
 		log.Fatalf("Error reading file: %v", err)
 	}
-
-	// Remove any existing handlers that are no longer part of the service list
-	err = removeObsoleteHandlers(existingHandlers)
-	if err != nil {
-		log.Fatalf("Error removing obsolete handlers: %v", err)
-	}
 }
 
 // Generates a Go file using the provided handler and response names.
@@ -105,7 +104,7 @@ func generateHandlerFile(fileName, handlerName, responseType string) error {
 	defer file.Close()
 
 	// Template for the Go file content
-	tmpl, err := template.New("handler").Parse(config.RobotMethodHandlerDirectory)
+	tmpl, err := template.New("handler").Parse(handlerTemplate)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -128,31 +127,6 @@ func fileExists(filePath string) bool {
 
 // sanitizeFileName replaces invalid characters in service names for valid file names.
 func sanitizeFileName(serviceName string) string {
-	// Replace any invalid characters (optional: you can customize this if needed)
-	return strings.ReplaceAll(serviceName, " ", "_")
-}
-
-// removeObsoleteHandlers deletes files from the output directory that are not in the existing handlers map.
-func removeObsoleteHandlers(existingHandlers map[string]bool) error {
-	// List all files in the output directory
-	files, err := os.ReadDir(config.RobotMethodHandlerDirectory)
-	if err != nil {
-		return fmt.Errorf("could not list directory: %w", err)
-	}
-
-	// Loop through the files in the directory
-	for _, file := range files {
-		// Get the full file path
-		filePath := filepath.Join(config.RobotDirectory, file.Name())
-
-		// If the file is not in the map of existing handlers, remove it
-		if !existingHandlers[filePath] {
-			fmt.Printf("Removing obsolete handler: %s\n", filePath)
-			err := os.Remove(filePath)
-			if err != nil {
-				return fmt.Errorf("could not remove file %s: %w", filePath, err)
-			}
-		}
-	}
-	return nil
+	// Replace any invalid characters and convert to lowercase
+	return strings.ToLower(strings.ReplaceAll(serviceName, " ", "_"))
 }

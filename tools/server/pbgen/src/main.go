@@ -90,5 +90,6 @@ func main() {
 	gen.WriteServiceRegisterInfoFile()
 	gen.WriteLuaServiceHeadHandlerFile()
 	//gen.WriteClientServiceHeadHandlerFile()
+	gen.GoRobotHandlerGenerator()
 	util.Wg.Wait()
 }

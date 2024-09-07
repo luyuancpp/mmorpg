@@ -138,7 +138,7 @@ var (
 
 // 常量：方法处理目录
 const (
-	ClientMethodHandlerDirectory                = ProjectDir + RobotDirectory + HandlerSourceDirectory
+	RobotMethodHandlerDirectory                 = ProjectDir + RobotDirectory + "logic/handler/"
 	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
 	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
 	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
