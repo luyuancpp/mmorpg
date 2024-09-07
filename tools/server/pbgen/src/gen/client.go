@@ -59,7 +59,7 @@ func writeClientMethodHandlerHeadFile(methodList RPCMethods) {
 	}
 
 	fileName := methodList[0].FileBaseName() + config.HandlerHeaderExtension
-	util.WriteMd5Data2File(config.ClientMethodHandlerDirectory+fileName, getClientMethodHandlerHeadStr(methodList))
+	util.WriteMd5Data2File(config.RobotMethodHandlerDirectory+fileName, getClientMethodHandlerHeadStr(methodList))
 }
 
 // writeClientHandlerDefaultInstanceFile 写入客户端处理器默认实例文件
