@@ -6,5 +6,4 @@ const (
 	SceneInformationKey  = "sceneInformation" //场景信息
 	PlayerListIdentifier = "playerList"       //玩家列表
 	TestCountKey         = "testCount"        // 切换场景次数常量
-	testMaxCount         = "testMaxCount"
 )
