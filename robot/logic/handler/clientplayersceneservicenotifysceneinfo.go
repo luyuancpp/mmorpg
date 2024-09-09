@@ -2,6 +2,7 @@ package handler
 
 import (
 	"robot/logic"
+	"robot/logic/behaviortree"
 	"robot/pb/game"
 	"robot/pkg"
 )

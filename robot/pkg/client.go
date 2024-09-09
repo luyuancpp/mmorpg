@@ -33,6 +33,34 @@ func NewGameClient(client *muduo.Client) *GameClient {
 
 	// Register custom behavior tree nodes
 	maps := b3.NewRegisterStructMaps()
+	registerNodes(maps)
+
+	// Initialize behavior trees
+	behaviorTree, currentTree := initializeBehaviorTrees(projectConfig, maps)
+
+	if currentTree == nil {
+		zap.L().Error("No default behavior tree found")
+		return nil
+	}
+
+	blackboard := NewBlackboard()
+
+	clientInstance := &GameClient{
+		Client:            client,
+		BehaviorTree:      behaviorTree,
+		CurrentTree:       currentTree,
+		Blackboard:        blackboard,
+		MessageSequenceID: 1,
+	}
+
+	// Set the client instance in the blackboard
+	clientInstance.Blackboard.SetMem(behaviortree.ClientIdentifier, clientInstance)
+
+	return clientInstance
+}
+
+// registerNodes registers custom behavior tree nodes.
+func registerNodes(maps *b3.RegisterStructMaps) {
 	maps.Register("CreatePlayer", new(behaviortree.CreatePlayer))
 	maps.Register("IsRoleListEmpty", new(behaviortree.IsRoleListEmpty))
 	maps.Register("PlayerEnterGame", new(behaviortree.PlayerEnterGame))
@@ -42,15 +70,18 @@ func NewGameClient(client *muduo.Client) *GameClient {
 	maps.Register("IncrementTestCount", new(behaviortree.IncrementTestCount))
 	maps.Register("SetSubTree", new(behaviortree.SetSubTree))
 	maps.Register("InitTree", new(behaviortree.InitTree))
+}
 
-	var currentTree *BehaviorTree
-	// Initialize behavior trees
+// initializeBehaviorTrees initializes behavior trees from configuration.
+func initializeBehaviorTrees(config *RawProjectCfg, maps *b3.RegisterStructMaps) (map[string]*BehaviorTree, *BehaviorTree) {
 	behaviorTree := make(map[string]*BehaviorTree)
-	for i, v := range projectConfig.Data.Trees {
+	var currentTree *BehaviorTree
+
+	for i, v := range config.Data.Trees {
 		tree := CreateBevTreeFromConfig(&v, maps)
 		if tree == nil {
 			zap.L().Error("Failed to create behavior tree", zap.Int("index", i))
-			return nil
+			continue
 		}
 
 		if tree.GetTitile() == behaviortree.LoginSubTree {
@@ -59,67 +90,61 @@ func NewGameClient(client *muduo.Client) *GameClient {
 		behaviorTree[tree.GetTitile()] = tree
 	}
 
-	blackboard := NewBlackboard()
-
-	c := &GameClient{
-		Client:            client,
-		BehaviorTree:      behaviorTree,
-		CurrentTree:       currentTree,
-		Blackboard:        blackboard,
-		MessageSequenceID: 1,
-	}
-
-	// Set the client instance in the blackboard
-	c.Blackboard.SetMem(behaviortree.ClientIdentifier, c)
-
-	return c
+	return behaviorTree, currentTree
 }
 
 // Send sends a message to the server.
-func (gameClient *GameClient) Send(message proto.Message, messageId uint32) {
-	rq := &game.ClientRequest{Id: gameClient.MessageSequenceID, MessageId: messageId}
-
-	gameClient.MessageSequenceID++
+func (client *GameClient) Send(message proto.Message, messageId uint32) {
+	rq := &game.ClientRequest{
+		Id:        client.MessageSequenceID,
+		MessageId: messageId,
+	}
+	client.MessageSequenceID++
 
 	var err error
 	rq.Body, err = proto.Marshal(message)
-
 	if err != nil {
 		zap.L().Error("Failed to marshal message", zap.Error(err))
 		return
 	}
 
-	gameClient.Client.Send(rq)
+	client.Client.Send(rq)
 }
 
 // Close closes the client connection.
-func (gameClient *GameClient) Close() {
-	if err := gameClient.Client.Close(); err != nil {
+func (client *GameClient) Close() {
+	if err := client.Client.Close(); err != nil {
 		zap.L().Error("Failed to close client", zap.Error(err))
 	} else {
 		zap.L().Info("Client closed successfully")
 	}
 }
 
-// TickBehaviorTree updates the state of all behavior trees.
-func (gameClient *GameClient) TickBehaviorTree() {
-	gameClient.CurrentTree.Tick(0, gameClient.Blackboard)
-}
-
-func (gameClient *GameClient) SetPlayerId(playerId uint64) {
-	gameClient.PlayerId = playerId
-}
-
-func (gameClient *GameClient) GetPlayerId() uint64 {
-	return gameClient.PlayerId
-}
-
-func (gameClient *GameClient) SetSubTree(treeTitle string) {
-	tree, ok := gameClient.BehaviorTree[treeTitle]
-
-	if !ok {
-		return
+// TickBehaviorTree updates the state of the current behavior tree.
+func (client *GameClient) TickBehaviorTree() {
+	if client.CurrentTree != nil {
+		client.CurrentTree.Tick(0, client.Blackboard)
+	} else {
+		zap.L().Warn("No behavior tree to tick")
 	}
+}
 
-	gameClient.CurrentTree = tree
+// SetPlayerId sets the player ID for the client.
+func (client *GameClient) SetPlayerId(playerId uint64) {
+	client.PlayerId = playerId
+}
+
+// GetPlayerId retrieves the player ID for the client.
+func (client *GameClient) GetPlayerId() uint64 {
+	return client.PlayerId
+}
+
+// SetSubTree sets the current behavior tree to the specified subtree.
+func (client *GameClient) SetSubTree(treeTitle string) {
+	tree, ok := client.BehaviorTree[treeTitle]
+	if ok {
+		client.CurrentTree = tree
+	} else {
+		zap.L().Warn("Behavior tree not found", zap.String("title", treeTitle))
+	}
 }
