@@ -224,7 +224,7 @@
             "title": "CheckTestCount(<count>)",
             "description": "",
             "properties": {
-              "count": 10001
+              "count": 10000
             },
             "display": {
               "x": 432,
