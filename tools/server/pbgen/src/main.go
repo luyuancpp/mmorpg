@@ -91,5 +91,6 @@ func main() {
 	gen.WriteLuaServiceHeadHandlerFile()
 	//gen.WriteClientServiceHeadHandlerFile()
 	gen.GoRobotHandlerGenerator()
+	gen.GoRobotTotalHandlerGenerator()
 	util.Wg.Wait()
 }
