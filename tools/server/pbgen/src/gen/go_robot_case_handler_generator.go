@@ -76,7 +76,7 @@ func GoRobotTotalHandlerGenerator() {
 
 		for _, method := range serviceMethods {
 
-			if !isRelevantService(method.Service) {
+			if !isRelevantService(method) {
 				continue
 			}
 
@@ -127,8 +127,9 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 }
 
 // isRelevantService checks if the service name is relevant.
-func isRelevantService(serviceName string) bool {
-	return strings.Contains(serviceName, "GamePlayer") || strings.Contains(serviceName, "ClientPlayer")
+func isRelevantService(method *RPCMethod) bool {
+	return strings.Contains(method.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
+		strings.Contains(method.Service, "GamePlayer") || strings.Contains(method.Service, "ClientPlayer")
 }
 
 // determineResponseType returns the response type or request type based on configuration.

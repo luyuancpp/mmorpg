@@ -13,6 +13,7 @@ const handlerTemplate = `package handler
 
 import (
 	"robot/pb/game"
+	"robot/logic"
 )
 
 func {{.HandlerName}}(player *logic.Player, response *game.{{.ResponseType}}) {
@@ -37,7 +38,7 @@ func GoRobotHandlerGenerator() {
 		for _, method := range v {
 			serviceName := method.Service
 
-			if !isRelevantService(method.Service) {
+			if !isRelevantService(method) {
 				continue
 			}
 			// Generate the Go handler function name and response type
@@ -57,7 +58,6 @@ func GoRobotHandlerGenerator() {
 
 			// Check if the file already exists
 			if fileExists(filePath) {
-				fmt.Printf("File %s already exists. Skipping generation.\n", filePath)
 				continue
 			}
 
