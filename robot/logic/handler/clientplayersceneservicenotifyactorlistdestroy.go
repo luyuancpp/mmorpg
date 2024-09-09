@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic"
+	"robot/pb/game"
 )
 
 func ClientPlayerSceneServiceNotifyActorListDestroyHandler(player *logic.Player, response *game.ActorListDestroyS2C) {

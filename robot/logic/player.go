@@ -25,6 +25,7 @@ func fnv32(key uint64) uint32 {
 		zap.L().Error("Error generating hash", zap.Error(err))
 		return 0
 	}
+
 	return hash32.Sum32()
 }
 
