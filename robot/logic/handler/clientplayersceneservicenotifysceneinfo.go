@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"robot/logic"
 	"robot/logic/behaviortree"
+	"robot/logic/gameobject"
 	"robot/pb/game"
 	"robot/pkg"
 )
 
-func ClientPlayerSceneServiceNotifySceneInfoHandler(player *logic.Player, response *game.SceneInfoS2C) {
+func ClientPlayerSceneServiceNotifySceneInfoHandler(player *gameobject.Player, response *game.SceneInfoS2C) {
 	client := player.Client.(*pkg.GameClient)
 	client.Blackboard.SetMem(behaviortree.SceneInformationKey, response.SceneInfo)
 }

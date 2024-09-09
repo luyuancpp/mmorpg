@@ -9,6 +9,7 @@ import (
 	. "github.com/magicsea/behavior3go/loader"
 	"go.uber.org/zap"
 	"robot/logic/behaviortree"
+	"robot/logic/gameobject"
 	"robot/pb/game"
 )
 
@@ -53,8 +54,7 @@ func NewGameClient(client *muduo.Client) *GameClient {
 		MessageSequenceID: 1,
 	}
 
-	// Set the client instance in the blackboard
-	clientInstance.Blackboard.SetMem(behaviortree.ClientIdentifier, clientInstance)
+	clientInstance.InitializeBehaviorTreeBlackboard()
 
 	return clientInstance
 }
@@ -91,6 +91,14 @@ func initializeBehaviorTrees(config *RawProjectCfg, maps *b3.RegisterStructMaps)
 	}
 
 	return behaviorTree, currentTree
+}
+
+// InitializeBehaviorTreeBlackboard initializes or resets the behavior tree's blackboard.
+func (client *GameClient) InitializeBehaviorTreeBlackboard() {
+	client.Blackboard = NewBlackboard()
+	client.Blackboard.SetMem(behaviortree.ClientIdentifier, client)
+	client.Blackboard.SetMem(behaviortree.ActorListIdentifier, &gameobject.ActorList{})
+	zap.L().Info("Behavior tree blackboard initialized")
 }
 
 // Send sends a message to the server.

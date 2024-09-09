@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"robot/logic/gameobject"
 	"robot/pb/game"
-	"robot/logic"
 )
 
-func ClientPlayerSceneServiceSceneInfoC2SHandler(player *logic.Player, response *game.SceneInfoRequest) {
+func ClientPlayerSceneServiceSceneInfoC2SHandler(player *gameobject.Player, response *game.SceneInfoRequest) {
 
 }

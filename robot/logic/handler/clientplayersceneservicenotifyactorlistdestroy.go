@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"robot/logic"
+	"robot/logic/gameobject"
 	"robot/pb/game"
 )
 
-func ClientPlayerSceneServiceNotifyActorListDestroyHandler(player *logic.Player, response *game.ActorListDestroyS2C) {
+func ClientPlayerSceneServiceNotifyActorListDestroyHandler(player *gameobject.Player, response *game.ActorListDestroyS2C) {
 
 }

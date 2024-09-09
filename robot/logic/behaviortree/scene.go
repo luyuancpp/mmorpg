@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"math/rand"
 	"robot/interfaces"
-	"robot/logic"
+	"robot/logic/gameobject"
 	"robot/pb/game"
 )
 
@@ -33,7 +33,7 @@ func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	player, ok := logic.PlayerList.Get(client.GetPlayerId())
+	player, ok := gameobject.PlayerList.Get(client.GetPlayerId())
 	if !ok {
 		zap.L().Error("Failed to get player player id :", zap.Any(ClientIdentifier, client.GetPlayerId()))
 		return b3.FAILURE
@@ -50,6 +50,6 @@ func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 	client.Send(rq, game.ClientPlayerSceneServiceEnterSceneMessageId)
 
 	tick.Blackboard.SetMem(SceneInformationKey, nil)
-
+	
 	return b3.SUCCESS
 }

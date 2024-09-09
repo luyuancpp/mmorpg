@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"robot/logic/gameobject"
 	"robot/pb/game"
-	"robot/logic"
 )
 
-func PlayerSkillServiceNotifySkillUsedHandler(player *logic.Player, response *game.SkillUsedS2C) {
+func PlayerSkillServiceNotifySkillUsedHandler(player *gameobject.Player, response *game.SkillUsedS2C) {
 
 }
