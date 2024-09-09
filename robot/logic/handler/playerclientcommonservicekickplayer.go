@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"robot/logic/gameobject"
 	"robot/pb/game"
-	"robot/logic"
 )
 
-func PlayerClientCommonServiceKickPlayerHandler(player *logic.Player, response *game.TipInfoMessage) {
+func PlayerClientCommonServiceKickPlayerHandler(player *gameobject.Player, response *game.TipInfoMessage) {
 
 }

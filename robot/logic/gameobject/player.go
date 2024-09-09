@@ -1,4 +1,4 @@
-package logic
+package gameobject
 
 import (
 	"github.com/golang/protobuf/proto"

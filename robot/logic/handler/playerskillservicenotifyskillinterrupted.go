@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"robot/logic/gameobject"
 	"robot/pb/game"
-	"robot/logic"
 )
 
-func PlayerSkillServiceNotifySkillInterruptedHandler(player *logic.Player, response *game.SkillInterruptedS2C) {
+func PlayerSkillServiceNotifySkillInterruptedHandler(player *gameobject.Player, response *game.SkillInterruptedS2C) {
 
 }

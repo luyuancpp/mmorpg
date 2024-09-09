@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"robot/logic/gameobject"
 	"robot/pb/game"
-	"robot/logic"
 )
 
-func PlayerSkillServiceUseSkillHandler(player *logic.Player, response *game.UseSkillResponse) {
+func PlayerSkillServiceUseSkillHandler(player *gameobject.Player, response *game.UseSkillResponse) {
 
 }
