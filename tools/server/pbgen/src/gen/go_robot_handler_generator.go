@@ -13,10 +13,9 @@ const handlerTemplate = `package handler
 
 import (
 	"robot/pb/game"
-	"robot/pkg"
 )
 
-func {{.HandlerName}}(client *pkg.GameClient, response *game.{{.ResponseType}}) {
+func {{.HandlerName}}(player *logic.Player, response *game.{{.ResponseType}}) {
 
 }
 `
@@ -38,14 +37,16 @@ func GoRobotHandlerGenerator() {
 		for _, method := range v {
 			serviceName := method.Service
 
-			// Only process services that contain "GamePlayer" or "ClientPlayer"
-			if !strings.Contains(serviceName, "GamePlayer") && !strings.Contains(serviceName, "ClientPlayer") {
+			if !isRelevantService(method.Service) {
 				continue
 			}
-
 			// Generate the Go handler function name and response type
 			handlerName := fmt.Sprintf("%sHandler", serviceName+method.Method)
 			responseType := method.Response
+
+			if strings.Contains(responseType, config.EmptyResponseName) {
+				responseType = method.Request
+			}
 
 			// Generate a valid file name for the Go file
 			fileName := sanitizeFileName(serviceName + method.Method)

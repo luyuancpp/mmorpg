@@ -45,28 +45,44 @@ const (
 	PbcLuaDirectory               = PbcOutputDirectory + "lua/"
 )
 
+// 常量：方法处理目录
+const (
+	RobotMethodHandlerDirectory                 = ProjectDir + RobotDirectory + "logic/handler/"
+	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
+	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
+	GameNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	CentreNodeMethodHandlerDirectory            = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory
+	CentreNodePlayerMethodHandlerDirectory      = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
+	CentreMethodRepliedHandleDir                = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory
+	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
+	GateMethodHandlerDirectory                  = ProjectDir + GateNodeDirectory + HandlerSourceDirectory
+	GateMethodRepliedHandlerDirectory           = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory
+)
+
 // 常量：输出目录
 const (
-	PbcOutputDirectory            = ProjectDir + PbcProtoDirectory
-	GrpcOutputDirectory           = ProjectDir + PbcProtoDirectory
-	RobotGoOutputDirectory        = ProjectDir + RobotDirectory
-	GoPbGameDirectory             = "pb/game/"
-	RobotGoGamePbDirectory        = RobotGoOutputDirectory + GoPbGameDirectory
-	MessageIdGoFile               = "message_id.go"
-	RobotMessageIdFilePath        = RobotGoGamePbDirectory + MessageIdGoFile
-	LoginDirectory                = ProjectDir + "node/login/"
-	LoginGoGameDirectory          = LoginDirectory + GoPbGameDirectory
-	LoginMessageIdGoFile          = LoginGoGameDirectory + MessageIdGoFile
-	DbGoDirectory                 = ProjectDir + "node/db/"
-	DbGoGameDirectory             = DbGoDirectory + GoPbGameDirectory
-	ServiceInfoDirectory          = PbcOutputDirectory + "service_info/"
-	ServiceInfoExtension          = "_service_info"
-	ServiceCppFilePath            = ServiceInfoDirectory + "service_info.cpp"
-	ServiceHeaderFilePath         = ServiceInfoDirectory + "service_info.h"
-	LuaServiceFilePath            = PbcLuaDirectory + "lua_service.cpp"
-	ClientLuaDirectory            = ProjectDir + "bin/script/lua/service/"
-	ClientLuaServiceFilePath      = ProjectDir + "client/src/handler/service_lua.cpp"
-	ClientServiceInstanceFilePath = ProjectDir + "client/src/handler/player_service.cpp"
+	PbcOutputDirectory               = ProjectDir + PbcProtoDirectory
+	GrpcOutputDirectory              = ProjectDir + PbcProtoDirectory
+	RobotGoOutputDirectory           = ProjectDir + RobotDirectory
+	GoPbGameDirectory                = "pb/game/"
+	RobotGoGamePbDirectory           = RobotGoOutputDirectory + GoPbGameDirectory
+	MessageIdGoFile                  = "message_id.go"
+	RobotMessageIdFilePath           = RobotGoGamePbDirectory + MessageIdGoFile
+	LoginDirectory                   = ProjectDir + "node/login/"
+	LoginGoGameDirectory             = LoginDirectory + GoPbGameDirectory
+	LoginMessageIdGoFile             = LoginGoGameDirectory + MessageIdGoFile
+	DbGoDirectory                    = ProjectDir + "node/db/"
+	DbGoGameDirectory                = DbGoDirectory + GoPbGameDirectory
+	ServiceInfoDirectory             = PbcOutputDirectory + "service_info/"
+	ServiceInfoExtension             = "_service_info"
+	ServiceCppFilePath               = ServiceInfoDirectory + "service_info.cpp"
+	ServiceHeaderFilePath            = ServiceInfoDirectory + "service_info.h"
+	LuaServiceFilePath               = PbcLuaDirectory + "lua_service.cpp"
+	ClientLuaDirectory               = ProjectDir + "bin/script/lua/service/"
+	ClientLuaServiceFilePath         = ProjectDir + "client/src/handler/service_lua.cpp"
+	ClientServiceInstanceFilePath    = ProjectDir + "client/src/handler/player_service.cpp"
+	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 )
 
 // 常量：文件名
@@ -134,21 +150,6 @@ var (
 	LogicProtoDirIndex     = 3
 	ClientPlayerDirIndex   = 4
 	ServerPlayerDirIndex   = 5
-)
-
-// 常量：方法处理目录
-const (
-	RobotMethodHandlerDirectory                 = ProjectDir + RobotDirectory + "logic/handler/"
-	GameNodeMethodHandlerDirectory              = ProjectDir + GameNodeDirectory + HandlerSourceDirectory
-	GameNodePlayerMethodHandlerDirectory        = ProjectDir + GameNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
-	GameNodeMethodRepliedHandlerDirectory       = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory
-	GameNodePlayerMethodRepliedHandlerDirectory = ProjectDir + GameNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
-	CentreNodeMethodHandlerDirectory            = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory
-	CentreNodePlayerMethodHandlerDirectory      = ProjectDir + CentreNodeDirectory + HandlerSourceDirectory + PlayerName + "/"
-	CentreMethodRepliedHandleDir                = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory
-	CentrePlayerMethodRepliedHandlerDirectory   = ProjectDir + CentreNodeDirectory + RepliedHandlerSourceDirectory + PlayerName + "/"
-	GateMethodHandlerDirectory                  = ProjectDir + GateNodeDirectory + HandlerSourceDirectory
-	GateMethodRepliedHandlerDirectory           = ProjectDir + GateNodeDirectory + RepliedHandlerSourceDirectory
 )
 
 // 常量：其他常量
