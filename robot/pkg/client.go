@@ -70,6 +70,15 @@ func registerNodes(maps *b3.RegisterStructMaps) {
 	maps.Register("IncrementTestCount", new(behaviortree.IncrementTestCount))
 	maps.Register("SetSubTree", new(behaviortree.SetSubTree))
 	maps.Register("InitTree", new(behaviortree.InitTree))
+	maps.Register("BoardEqualConst", new(behaviortree.BoardEqualConst))
+	maps.Register("GetHatredTarget", new(behaviortree.GetHatredTarget))
+	maps.Register("SetBoardTargetPos", new(behaviortree.SetBoardTargetPos))
+	maps.Register("MoveToEntity", new(behaviortree.MoveToEntity))
+	maps.Register("GetTargetDistance", new(behaviortree.GetTargetDistance))
+	maps.Register("GetReleasableSkillList", new(behaviortree.GetReleasableSkillList))
+	maps.Register("CheckSkillByDistance", new(behaviortree.CheckSkillByDistance))
+	maps.Register("GetSkillID", new(behaviortree.GetSkillID))
+	maps.Register("ReleaseSkill", new(behaviortree.ReleaseSkill))
 }
 
 // initializeBehaviorTrees initializes behavior trees from configuration.
