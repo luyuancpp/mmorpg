@@ -32,7 +32,7 @@ void SkillUtil::InitEntity(entt::entity entity) {
 }
 
 // Handle the use of a skill by the caster
-uint32_t SkillUtil::UseSkill(entt::entity caster, const UseSkillRequest* request) {
+uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kOK) {
 		return result;
@@ -64,7 +64,7 @@ uint32_t SkillUtil::UseSkill(entt::entity caster, const UseSkillRequest* request
 	return kOK;
 }
 
-uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::UseSkillRequest* request) {
+uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kOK) {
 		return result;
@@ -185,7 +185,7 @@ void SkillUtil::HandleSkillDeactivate(const entt::entity caster, const uint64_t 
 	RemoveEffect(caster, skillId);
 }
 
-uint32_t SkillUtil::ValidateTarget(const ::UseSkillRequest* request) {
+uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kOK || skillTable == nullptr) {
 		return result;
@@ -302,7 +302,7 @@ uint32_t SkillUtil::CheckChannel(const entt::entity caster, const SkillTable* sk
 	return kOK;
 }
 
-void SkillUtil::BroadcastSkillUsedMessage(const entt::entity caster, const ::UseSkillRequest* request) {
+void SkillUtil::BroadcastSkillUsedMessage(const entt::entity caster, const ::ReleaseSkillSkillRequest* request) {
 	SkillUsedS2C skillUsedS2C;
 	skillUsedS2C.set_entity(entt::to_integral(caster));
 	skillUsedS2C.add_target_entity(request->target_id());

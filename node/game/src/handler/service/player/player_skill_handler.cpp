@@ -5,11 +5,11 @@
 #include "game_logic/combat/skill/util/skill_util.h"
 #include "macros/return_define.h"
 ///<<< END WRITING YOUR CODE
-void PlayerSkillServiceHandler::UseSkill(entt::entity player,const ::UseSkillRequest* request,
-	     UseSkillResponse* response)
+void PlayerSkillServiceHandler::ReleaseSkill(entt::entity player,const ::ReleaseSkillSkillRequest* request,
+	     ReleaseSkillResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CHECK_PLAYER_REQUEST(request, SkillUtil::UseSkill);
+	CHECK_PLAYER_REQUEST(request, SkillUtil::ReleaseSkill);
 ///<<< END WRITING YOUR CODE
 }
 

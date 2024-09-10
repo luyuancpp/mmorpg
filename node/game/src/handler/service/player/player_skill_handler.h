@@ -6,9 +6,9 @@ class PlayerSkillServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
-	static void UseSkill(entt::entity player,
-		const ::UseSkillRequest* request,
-		::UseSkillResponse* response);
+	static void ReleaseSkill(entt::entity player,
+		const ::ReleaseSkillSkillRequest* request,
+		::ReleaseSkillResponse* response);
 
 	static void NotifySkillUsed(entt::entity player,
 		const ::SkillUsedS2C* request,
@@ -26,10 +26,10 @@ public:
 		switch(method->index())
 		{
 		case 0:
-			UseSkill(player,
-			::google::protobuf::internal::DownCast<const UseSkillRequest*>(request),
-			::google::protobuf::internal::DownCast<UseSkillResponse*>(response));
-			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<UseSkillResponse*>(response));
+			ReleaseSkill(player,
+			::google::protobuf::internal::DownCast<const ReleaseSkillSkillRequest*>(request),
+			::google::protobuf::internal::DownCast<ReleaseSkillResponse*>(response));
+			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<ReleaseSkillResponse*>(response));
 		break;
 		case 1:
 			NotifySkillUsed(player,

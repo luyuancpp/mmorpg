@@ -13,8 +13,8 @@ class SkillUtil
 public:
 	static void InitEntity(entt::entity entity);
 
-	static uint32_t UseSkill(entt::entity caster, const ::UseSkillRequest* request);
-	static uint32_t CheckSkillPrerequisites(entt::entity caster, const ::UseSkillRequest* request);
+	static uint32_t ReleaseSkill(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
+	static uint32_t CheckSkillPrerequisites(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
 
 	static bool IsSkillOfType(uint64_t skillId, uint32_t skillType);
 
@@ -34,7 +34,7 @@ public:
 	static void HandleSkillDeactivate(entt::entity caster, uint64_t skillId);
 
     // 验证目标
-    static uint32_t ValidateTarget(const ::UseSkillRequest* request);
+    static uint32_t ValidateTarget(const ::ReleaseSkillSkillRequest* request);
 
     // 检查冷却时间
     static uint32_t CheckCooldown(entt::entity caster, const SkillTable* tableSkill);
@@ -47,7 +47,7 @@ public:
 	static uint32_t CheckChannel(const entt::entity caster, const SkillTable* tableSkill);
 
     // 广播技能使用消息
-    static void BroadcastSkillUsedMessage(entt::entity caster, const ::UseSkillRequest* request);
+    static void BroadcastSkillUsedMessage(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
 	
     // 设置施法计时器
     static void SetupCastingTimer(entt::entity caster, const SkillTable* tableSkill, uint64_t skillId);

@@ -44,26 +44,26 @@ struct SkillInterruptedS2CDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillInterruptedS2CDefaultTypeInternal _SkillInterruptedS2C_default_instance_;
 
-inline constexpr UseSkillResponse::Impl_::Impl_(
+inline constexpr ReleaseSkillResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         error_message_{nullptr} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR UseSkillResponse::UseSkillResponse(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ReleaseSkillResponse::ReleaseSkillResponse(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
 struct UseSkillResponseDefaultTypeInternal {
   PROTOBUF_CONSTEXPR UseSkillResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~UseSkillResponseDefaultTypeInternal() {}
   union {
-    UseSkillResponse _instance;
+    ReleaseSkillResponse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UseSkillResponseDefaultTypeInternal _UseSkillResponse_default_instance_;
 
-inline constexpr UseSkillRequest::Impl_::Impl_(
+inline constexpr ReleaseSkillSkillRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         position_{nullptr},
@@ -72,13 +72,13 @@ inline constexpr UseSkillRequest::Impl_::Impl_(
         skill_table_id_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR UseSkillRequest::UseSkillRequest(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ReleaseSkillSkillRequest::ReleaseSkillSkillRequest(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
 struct UseSkillRequestDefaultTypeInternal {
   PROTOBUF_CONSTEXPR UseSkillRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~UseSkillRequestDefaultTypeInternal() {}
   union {
-    UseSkillRequest _instance;
+    ReleaseSkillSkillRequest _instance;
   };
 };
 
@@ -116,31 +116,31 @@ static const ::_pb::ServiceDescriptor*
 const ::uint32_t
     TableStruct_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
-        PROTOBUF_FIELD_OFFSET(::UseSkillRequest, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::UseSkillRequest, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillSkillRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillSkillRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::UseSkillRequest, _impl_.skill_table_id_),
-        PROTOBUF_FIELD_OFFSET(::UseSkillRequest, _impl_.target_id_),
-        PROTOBUF_FIELD_OFFSET(::UseSkillRequest, _impl_.position_),
-        PROTOBUF_FIELD_OFFSET(::UseSkillRequest, _impl_.rotation_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillSkillRequest, _impl_.skill_table_id_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillSkillRequest, _impl_.target_id_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillSkillRequest, _impl_.position_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillSkillRequest, _impl_.rotation_),
         ~0u,
         ~0u,
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::UseSkillResponse, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::UseSkillResponse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillResponse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::UseSkillResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseSkillResponse, _impl_.error_message_),
         0,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::SkillInterruptedS2C, _internal_metadata_),
@@ -176,8 +176,8 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, 12, -1, sizeof(::UseSkillRequest)},
-        {16, 25, -1, sizeof(::UseSkillResponse)},
+        {0, 12, -1, sizeof(::ReleaseSkillSkillRequest)},
+        {16, 25, -1, sizeof(::ReleaseSkillResponse)},
         {26, -1, -1, sizeof(::SkillInterruptedS2C)},
         {38, 51, -1, sizeof(::SkillUsedS2C)},
 };
@@ -253,39 +253,39 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2f
 }
 // ===================================================================
 
-class UseSkillRequest::_Internal {
+class ReleaseSkillSkillRequest::_Internal {
  public:
-  using HasBits = decltype(std::declval<UseSkillRequest>()._impl_._has_bits_);
+  using HasBits = decltype(std::declval<ReleaseSkillSkillRequest>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_._has_bits_);
+    8 * PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_._has_bits_);
 };
 
-void UseSkillRequest::clear_position() {
+void ReleaseSkillSkillRequest::clear_position() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.position_ != nullptr) _impl_.position_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-void UseSkillRequest::clear_rotation() {
+void ReleaseSkillSkillRequest::clear_rotation() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.rotation_ != nullptr) _impl_.rotation_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-UseSkillRequest::UseSkillRequest(::google::protobuf::Arena* arena)
+ReleaseSkillSkillRequest::ReleaseSkillSkillRequest(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:UseSkillRequest)
 }
-inline PROTOBUF_NDEBUG_INLINE UseSkillRequest::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ReleaseSkillSkillRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
-UseSkillRequest::UseSkillRequest(
+ReleaseSkillSkillRequest::ReleaseSkillSkillRequest(
     ::google::protobuf::Arena* arena,
-    const UseSkillRequest& from)
+    const ReleaseSkillSkillRequest& from)
     : ::google::protobuf::Message(arena) {
-  UseSkillRequest* const _this = this;
+  ReleaseSkillSkillRequest* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -307,12 +307,12 @@ UseSkillRequest::UseSkillRequest(
 
   // @@protoc_insertion_point(copy_constructor:UseSkillRequest)
 }
-inline PROTOBUF_NDEBUG_INLINE UseSkillRequest::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ReleaseSkillSkillRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void UseSkillRequest::SharedCtor(::_pb::Arena* arena) {
+inline void ReleaseSkillSkillRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, position_),
@@ -321,12 +321,12 @@ inline void UseSkillRequest::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, position_) +
                sizeof(Impl_::skill_table_id_));
 }
-UseSkillRequest::~UseSkillRequest() {
+ReleaseSkillSkillRequest::~ReleaseSkillSkillRequest() {
   // @@protoc_insertion_point(destructor:UseSkillRequest)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void UseSkillRequest::SharedDtor() {
+inline void ReleaseSkillSkillRequest::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   delete _impl_.position_;
   delete _impl_.rotation_;
@@ -334,20 +334,20 @@ inline void UseSkillRequest::SharedDtor() {
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-UseSkillRequest::GetClassData() const {
+ReleaseSkillSkillRequest::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_._cached_size_),
               false,
           },
-          &UseSkillRequest::MergeImpl,
-          &UseSkillRequest::kDescriptorMethods,
+          &ReleaseSkillSkillRequest::MergeImpl,
+          &ReleaseSkillSkillRequest::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void UseSkillRequest::Clear() {
+PROTOBUF_NOINLINE void ReleaseSkillSkillRequest::Clear() {
 // @@protoc_insertion_point(message_clear_start:UseSkillRequest)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
@@ -372,7 +372,7 @@ PROTOBUF_NOINLINE void UseSkillRequest::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* UseSkillRequest::_InternalParse(
+const char* ReleaseSkillSkillRequest::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -380,9 +380,9 @@ const char* UseSkillRequest::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 2, 0, 2> UseSkillRequest::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 2, 0, 2> ReleaseSkillSkillRequest::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_._has_bits_),
     0, // no _extensions_
     4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -394,35 +394,35 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> UseSkillRequest::_table_ = {
     &_UseSkillRequest_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::UseSkillRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ReleaseSkillSkillRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .Rotation rotation = 4;
     {::_pbi::TcParser::FastMtS1,
-     {34, 1, 1, PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.rotation_)}},
+     {34, 1, 1, PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.rotation_)}},
     // uint32 skill_table_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(UseSkillRequest, _impl_.skill_table_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.skill_table_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ReleaseSkillSkillRequest, _impl_.skill_table_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.skill_table_id_)}},
     // uint64 target_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(UseSkillRequest, _impl_.target_id_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.target_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleaseSkillSkillRequest, _impl_.target_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.target_id_)}},
     // .Vector3 position = 3;
     {::_pbi::TcParser::FastMtS1,
-     {26, 0, 0, PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.position_)}},
+     {26, 0, 0, PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.position_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 skill_table_id = 1;
-    {PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.skill_table_id_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.skill_table_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint64 target_id = 2;
-    {PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.target_id_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.target_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // .Vector3 position = 3;
-    {PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.position_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.position_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .Rotation rotation = 4;
-    {PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.rotation_), _Internal::kHasBitsOffset + 1, 1,
+    {PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.rotation_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::Vector3>()},
@@ -431,7 +431,7 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> UseSkillRequest::_table_ = {
   }},
 };
 
-::uint8_t* UseSkillRequest::_InternalSerialize(
+::uint8_t* ReleaseSkillSkillRequest::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:UseSkillRequest)
@@ -474,7 +474,7 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> UseSkillRequest::_table_ = {
   return target;
 }
 
-::size_t UseSkillRequest::ByteSizeLong() const {
+::size_t ReleaseSkillSkillRequest::ByteSizeLong() const {
 // @@protoc_insertion_point(message_byte_size_start:UseSkillRequest)
   ::size_t total_size = 0;
 
@@ -513,9 +513,9 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> UseSkillRequest::_table_ = {
 }
 
 
-void UseSkillRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<UseSkillRequest*>(&to_msg);
-  auto& from = static_cast<const UseSkillRequest&>(from_msg);
+void ReleaseSkillSkillRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ReleaseSkillSkillRequest*>(&to_msg);
+  auto& from = static_cast<const ReleaseSkillSkillRequest&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:UseSkillRequest)
   ABSL_DCHECK_NE(&from, _this);
@@ -553,64 +553,64 @@ void UseSkillRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void UseSkillRequest::CopyFrom(const UseSkillRequest& from) {
+void ReleaseSkillSkillRequest::CopyFrom(const ReleaseSkillSkillRequest& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:UseSkillRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool UseSkillRequest::IsInitialized() const {
+PROTOBUF_NOINLINE bool ReleaseSkillSkillRequest::IsInitialized() const {
   return true;
 }
 
-void UseSkillRequest::InternalSwap(UseSkillRequest* PROTOBUF_RESTRICT other) {
+void ReleaseSkillSkillRequest::InternalSwap(ReleaseSkillSkillRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.skill_table_id_)
-      + sizeof(UseSkillRequest::_impl_.skill_table_id_)
-      - PROTOBUF_FIELD_OFFSET(UseSkillRequest, _impl_.position_)>(
+      PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.skill_table_id_)
+      + sizeof(ReleaseSkillSkillRequest::_impl_.skill_table_id_)
+      - PROTOBUF_FIELD_OFFSET(ReleaseSkillSkillRequest, _impl_.position_)>(
           reinterpret_cast<char*>(&_impl_.position_),
           reinterpret_cast<char*>(&other->_impl_.position_));
 }
 
-::google::protobuf::Metadata UseSkillRequest::GetMetadata() const {
+::google::protobuf::Metadata ReleaseSkillSkillRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_once,
                                    file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto[0]);
 }
 // ===================================================================
 
-class UseSkillResponse::_Internal {
+class ReleaseSkillResponse::_Internal {
  public:
-  using HasBits = decltype(std::declval<UseSkillResponse>()._impl_._has_bits_);
+  using HasBits = decltype(std::declval<ReleaseSkillResponse>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(UseSkillResponse, _impl_._has_bits_);
+    8 * PROTOBUF_FIELD_OFFSET(ReleaseSkillResponse, _impl_._has_bits_);
 };
 
-void UseSkillResponse::clear_error_message() {
+void ReleaseSkillResponse::clear_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-UseSkillResponse::UseSkillResponse(::google::protobuf::Arena* arena)
+ReleaseSkillResponse::ReleaseSkillResponse(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:UseSkillResponse)
 }
-inline PROTOBUF_NDEBUG_INLINE UseSkillResponse::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ReleaseSkillResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
-UseSkillResponse::UseSkillResponse(
+ReleaseSkillResponse::ReleaseSkillResponse(
     ::google::protobuf::Arena* arena,
-    const UseSkillResponse& from)
+    const ReleaseSkillResponse& from)
     : ::google::protobuf::Message(arena) {
-  UseSkillResponse* const _this = this;
+  ReleaseSkillResponse* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -622,41 +622,41 @@ UseSkillResponse::UseSkillResponse(
 
   // @@protoc_insertion_point(copy_constructor:UseSkillResponse)
 }
-inline PROTOBUF_NDEBUG_INLINE UseSkillResponse::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ReleaseSkillResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void UseSkillResponse::SharedCtor(::_pb::Arena* arena) {
+inline void ReleaseSkillResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.error_message_ = {};
 }
-UseSkillResponse::~UseSkillResponse() {
+ReleaseSkillResponse::~ReleaseSkillResponse() {
   // @@protoc_insertion_point(destructor:UseSkillResponse)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void UseSkillResponse::SharedDtor() {
+inline void ReleaseSkillResponse::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   delete _impl_.error_message_;
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-UseSkillResponse::GetClassData() const {
+ReleaseSkillResponse::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(UseSkillResponse, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(ReleaseSkillResponse, _impl_._cached_size_),
               false,
           },
-          &UseSkillResponse::MergeImpl,
-          &UseSkillResponse::kDescriptorMethods,
+          &ReleaseSkillResponse::MergeImpl,
+          &ReleaseSkillResponse::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void UseSkillResponse::Clear() {
+PROTOBUF_NOINLINE void ReleaseSkillResponse::Clear() {
 // @@protoc_insertion_point(message_clear_start:UseSkillResponse)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
@@ -672,7 +672,7 @@ PROTOBUF_NOINLINE void UseSkillResponse::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* UseSkillResponse::_InternalParse(
+const char* ReleaseSkillResponse::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -680,9 +680,9 @@ const char* UseSkillResponse::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 1, 0, 2> UseSkillResponse::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> ReleaseSkillResponse::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(UseSkillResponse, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(ReleaseSkillResponse, _impl_._has_bits_),
     0, // no _extensions_
     1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -694,17 +694,17 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> UseSkillResponse::_table_ = {
     &_UseSkillResponse_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::UseSkillResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ReleaseSkillResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .TipInfoMessage error_message = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(UseSkillResponse, _impl_.error_message_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ReleaseSkillResponse, _impl_.error_message_)}},
   }}, {{
     65535, 65535
   }}, {{
     // .TipInfoMessage error_message = 1;
-    {PROTOBUF_FIELD_OFFSET(UseSkillResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ReleaseSkillResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
@@ -712,7 +712,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> UseSkillResponse::_table_ = {
   }},
 };
 
-::uint8_t* UseSkillResponse::_InternalSerialize(
+::uint8_t* ReleaseSkillResponse::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:UseSkillResponse)
@@ -735,7 +735,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> UseSkillResponse::_table_ = {
   return target;
 }
 
-::size_t UseSkillResponse::ByteSizeLong() const {
+::size_t ReleaseSkillResponse::ByteSizeLong() const {
 // @@protoc_insertion_point(message_byte_size_start:UseSkillResponse)
   ::size_t total_size = 0;
 
@@ -754,9 +754,9 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> UseSkillResponse::_table_ = {
 }
 
 
-void UseSkillResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<UseSkillResponse*>(&to_msg);
-  auto& from = static_cast<const UseSkillResponse&>(from_msg);
+void ReleaseSkillResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ReleaseSkillResponse*>(&to_msg);
+  auto& from = static_cast<const ReleaseSkillResponse&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:UseSkillResponse)
   ABSL_DCHECK_NE(&from, _this);
@@ -777,25 +777,25 @@ void UseSkillResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void UseSkillResponse::CopyFrom(const UseSkillResponse& from) {
+void ReleaseSkillResponse::CopyFrom(const ReleaseSkillResponse& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:UseSkillResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool UseSkillResponse::IsInitialized() const {
+PROTOBUF_NOINLINE bool ReleaseSkillResponse::IsInitialized() const {
   return true;
 }
 
-void UseSkillResponse::InternalSwap(UseSkillResponse* PROTOBUF_RESTRICT other) {
+void ReleaseSkillResponse::InternalSwap(ReleaseSkillResponse* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   swap(_impl_.error_message_, other->_impl_.error_message_);
 }
 
-::google::protobuf::Metadata UseSkillResponse::GetMetadata() const {
+::google::protobuf::Metadata ReleaseSkillResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_once,
                                    file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto[1]);
@@ -1410,7 +1410,7 @@ const ::google::protobuf::ServiceDescriptor* PlayerSkillService::GetDescriptor()
 }
 
 void PlayerSkillService::UseSkill(::google::protobuf::RpcController* controller,
-                         const ::UseSkillRequest*, ::UseSkillResponse*, ::google::protobuf::Closure* done) {
+                         const ::ReleaseSkillSkillRequest*, ::ReleaseSkillResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method UseSkill() not implemented.");
   done->Run();
 }
@@ -1434,8 +1434,8 @@ void PlayerSkillService::CallMethod(
   switch (method->index()) {
     case 0:
       UseSkill(controller,
-             ::google::protobuf::internal::DownCast<const ::UseSkillRequest*>(request),
-             ::google::protobuf::internal::DownCast<::UseSkillResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::ReleaseSkillSkillRequest*>(request),
+             ::google::protobuf::internal::DownCast<::ReleaseSkillResponse*>(response), done);
       break;
     case 1:
       NotifySkillUsed(controller,
@@ -1459,7 +1459,7 @@ const ::google::protobuf::Message& PlayerSkillService::GetRequestPrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
-      return ::UseSkillRequest::default_instance();
+      return ::ReleaseSkillSkillRequest::default_instance();
     case 1:
       return ::SkillUsedS2C::default_instance();
     case 2:
@@ -1477,7 +1477,7 @@ const ::google::protobuf::Message& PlayerSkillService::GetResponsePrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
-      return ::UseSkillResponse::default_instance();
+      return ::ReleaseSkillResponse::default_instance();
     case 1:
       return ::Empty::default_instance();
     case 2:
@@ -1505,8 +1505,8 @@ PlayerSkillService_Stub::~PlayerSkillService_Stub() {
 }
 
 void PlayerSkillService_Stub::UseSkill(::google::protobuf::RpcController* controller,
-                              const ::UseSkillRequest* request,
-                              ::UseSkillResponse* response, ::google::protobuf::Closure* done) {
+                              const ::ReleaseSkillSkillRequest* request,
+                              ::ReleaseSkillResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
