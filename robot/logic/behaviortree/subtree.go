@@ -19,13 +19,13 @@ type SetSubTree struct {
 	treeTitle string
 }
 
-func (this *SetSubTree) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
-	this.treeTitle = setting.GetPropertyAsString("treeTitle")
+func (s *SetSubTree) Initialize(setting *BTNodeCfg) {
+	s.Action.Initialize(setting)
+	s.treeTitle = setting.GetPropertyAsString("treeTitle")
 }
 
-func (this *SetSubTree) OnTick(tick *Tick) b3.Status {
-	clientI := tick.Blackboard.GetMem(ClientIdentifier)
+func (s *SetSubTree) OnTick(tick *Tick) b3.Status {
+	clientI := tick.Blackboard.GetMem(ClientBoardKey)
 
 	client, ok := clientI.(interfaces.GameClientInterface)
 	if !ok {
@@ -33,7 +33,7 @@ func (this *SetSubTree) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	client.SetSubTree(this.treeTitle)
+	client.SetSubTree(s.treeTitle)
 
 	return b3.SUCCESS
 }
@@ -43,18 +43,18 @@ type InitTree struct {
 	initialized bool
 }
 
-func (this *InitTree) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
+func (i *InitTree) Initialize(setting *BTNodeCfg) {
+	i.Action.Initialize(setting)
 }
 
-func (this *InitTree) OnTick(tick *Tick) b3.Status {
+func (i *InitTree) OnTick(tick *Tick) b3.Status {
 
-	if this.initialized {
+	if i.initialized {
 		return b3.FAILURE
 	}
 
-	this.initialized = true
-	tick.Blackboard.Set(TestCountKey, int32(0), "", "")
+	i.initialized = true
+	tick.Blackboard.Set(TestCountBoardKey, int32(0), "", "")
 
 	return b3.SUCCESS
 }

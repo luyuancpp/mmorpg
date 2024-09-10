@@ -17,12 +17,12 @@ type CreatePlayer struct {
 	Action
 }
 
-func (this *CreatePlayer) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
+func (c *CreatePlayer) Initialize(setting *BTNodeCfg) {
+	c.Action.Initialize(setting)
 }
 
-func (this *CreatePlayer) OnTick(tick *Tick) b3.Status {
-	clientI := tick.Blackboard.GetMem(ClientIdentifier)
+func (c *CreatePlayer) OnTick(tick *Tick) b3.Status {
+	clientI := tick.Blackboard.GetMem(ClientBoardKey)
 
 	client, ok := clientI.(interfaces.GameClientInterface)
 	if !ok {
@@ -39,12 +39,12 @@ type IsRoleListEmpty struct {
 	Action
 }
 
-func (this *IsRoleListEmpty) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
+func (i *IsRoleListEmpty) Initialize(setting *BTNodeCfg) {
+	i.Action.Initialize(setting)
 }
 
-func (this *IsRoleListEmpty) OnTick(tick *Tick) b3.Status {
-	playerListI := tick.Blackboard.GetMem(PlayerListIdentifier)
+func (i *IsRoleListEmpty) OnTick(tick *Tick) b3.Status {
+	playerListI := tick.Blackboard.GetMem(PlayerListBoardKey)
 	if nil == playerListI {
 		return b3.FAILURE
 	}
@@ -65,13 +65,13 @@ type PlayerEnterGame struct {
 	Action
 }
 
-func (this *PlayerEnterGame) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
+func (p *PlayerEnterGame) Initialize(setting *BTNodeCfg) {
+	p.Action.Initialize(setting)
 }
 
-func (this *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
+func (p *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	// 从黑板中获取客户端
-	clientI := tick.Blackboard.GetMem(ClientIdentifier)
+	clientI := tick.Blackboard.GetMem(ClientBoardKey)
 	client, ok := clientI.(interfaces.GameClientInterface)
 	if !ok {
 		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))
@@ -79,7 +79,7 @@ func (this *PlayerEnterGame) OnTick(tick *Tick) b3.Status {
 	}
 
 	// 从黑板中获取玩家列表
-	playerListI := tick.Blackboard.GetMem(PlayerListIdentifier)
+	playerListI := tick.Blackboard.GetMem(PlayerListBoardKey)
 	if playerListI == nil {
 		return b3.FAILURE
 	}
@@ -105,13 +105,13 @@ type AlreadyLoggedIn struct {
 	Action
 }
 
-func (this *AlreadyLoggedIn) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
+func (a *AlreadyLoggedIn) Initialize(setting *BTNodeCfg) {
+	a.Action.Initialize(setting)
 }
 
-func (this *AlreadyLoggedIn) OnTick(tick *Tick) b3.Status {
+func (a *AlreadyLoggedIn) OnTick(tick *Tick) b3.Status {
 	// 从黑板中获取客户端
-	clientI := tick.Blackboard.GetMem(ClientIdentifier)
+	clientI := tick.Blackboard.GetMem(ClientBoardKey)
 	client, ok := clientI.(interfaces.GameClientInterface)
 	if !ok {
 		zap.L().Error("Failed to cast client from blackboard", zap.Any("client", clientI))
