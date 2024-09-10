@@ -50,6 +50,6 @@ func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 	client.Send(rq, game.ClientPlayerSceneServiceEnterSceneMessageId)
 
 	tick.Blackboard.SetMem(SceneInformationKey, nil)
-	
+
 	return b3.SUCCESS
 }
