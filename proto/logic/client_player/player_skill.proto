@@ -10,14 +10,14 @@ import "logic/component/actor_comp.proto";
 
 option cc_generic_services = true;
 
-message UseSkillRequest {
+message ReleaseSkillSkillRequest {
   uint32 skill_table_id = 1;
   uint64 target_id = 2;
   Vector3 position = 3;  
   Rotation rotation = 4;
 }
 
-message UseSkillResponse {
+message ReleaseSkillSkillResponse {
   TipInfoMessage error_message = 1;  
 }
 
@@ -39,7 +39,7 @@ message SkillUsedS2C
 }
 
 service PlayerSkillService { 
-  rpc UseSkill (UseSkillRequest) returns (UseSkillResponse);
+  rpc ReleaseSkill (ReleaseSkillSkillRequest) returns (ReleaseSkillSkillResponse);
   rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
   rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
 }
