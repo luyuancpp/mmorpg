@@ -10,5 +10,5 @@ func CreatePlayerHandler(client *pkg.GameClient, response *game.CreatePlayerResp
 	if response.ErrorMessage.Id > 0 {
 		return
 	}
-	client.Blackboard.SetMem(behaviortree.PlayerListIdentifier, response.Players)
+	client.Blackboard.SetMem(behaviortree.PlayerListBoardKey, response.Players)
 }

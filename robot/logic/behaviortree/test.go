@@ -11,14 +11,14 @@ type CheckTestCount struct {
 	count int32
 }
 
-func (this *CheckTestCount) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
-	this.count = int32(setting.GetPropertyAsInt("count"))
+func (c *CheckTestCount) Initialize(setting *BTNodeCfg) {
+	c.Action.Initialize(setting)
+	c.count = int32(setting.GetPropertyAsInt("count"))
 }
 
-func (this *CheckTestCount) OnTick(tick *Tick) b3.Status {
-	count := tick.Blackboard.GetInt32(TestCountKey, "", "")
-	if count >= this.count {
+func (c *CheckTestCount) OnTick(tick *Tick) b3.Status {
+	count := tick.Blackboard.GetInt32(TestCountBoardKey, "", "")
+	if count >= c.count {
 		return b3.FAILURE
 	}
 
@@ -29,12 +29,12 @@ type IncrementTestCount struct {
 	Action
 }
 
-func (this *IncrementTestCount) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
+func (ic *IncrementTestCount) Initialize(setting *BTNodeCfg) {
+	ic.Action.Initialize(setting)
 }
 
-func (this *IncrementTestCount) OnTick(tick *Tick) b3.Status {
-	count := tick.Blackboard.GetInt32(TestCountKey, "", "")
-	tick.Blackboard.Set(TestCountKey, count+1, "", "")
+func (ic *IncrementTestCount) OnTick(tick *Tick) b3.Status {
+	count := tick.Blackboard.GetInt32(TestCountBoardKey, "", "")
+	tick.Blackboard.Set(TestCountBoardKey, count+1, "", "")
 	return b3.SUCCESS
 }

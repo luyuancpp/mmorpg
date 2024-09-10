@@ -15,27 +15,27 @@ type RandomEnterScene struct {
 	Action
 }
 
-func (this *RandomEnterScene) Initialize(setting *BTNodeCfg) {
-	this.Action.Initialize(setting)
+func (res *RandomEnterScene) Initialize(setting *BTNodeCfg) {
+	res.Action.Initialize(setting)
 }
 
-func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
+func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 	// 从黑板中获取客户端
-	client, ok := tick.Blackboard.GetMem(ClientIdentifier).(interfaces.GameClientInterface)
+	client, ok := tick.Blackboard.GetMem(ClientBoardKey).(interfaces.GameClientInterface)
 	if !ok {
-		zap.L().Error("Failed to cast client from blackboard", zap.Any(ClientIdentifier, tick.Blackboard.GetMem(ClientIdentifier)))
+		zap.L().Error("Failed to cast client from blackboard", zap.Any(ClientBoardKey, tick.Blackboard.GetMem(ClientBoardKey)))
 		return b3.FAILURE
 	}
 
-	sceneInfo, ok := tick.Blackboard.GetMem(SceneInformationKey).([]*game.SceneInfoPBComp)
+	sceneInfo, ok := tick.Blackboard.GetMem(SceneInformationBoardKey).([]*game.SceneInfoPBComp)
 	if !ok {
-		zap.L().Debug("Failed to cast scene info  from blackboard", zap.Any(PlayerListIdentifier, tick.Blackboard.GetMem(PlayerListIdentifier)))
+		zap.L().Debug("Failed to cast scene info  from blackboard", zap.Any(PlayerListBoardKey, tick.Blackboard.GetMem(PlayerListBoardKey)))
 		return b3.FAILURE
 	}
 
 	player, ok := gameobject.PlayerList.Get(client.GetPlayerId())
 	if !ok {
-		zap.L().Error("Failed to get player player id :", zap.Any(ClientIdentifier, client.GetPlayerId()))
+		zap.L().Error("Failed to get player player id :", zap.Any(ClientBoardKey, client.GetPlayerId()))
 		return b3.FAILURE
 	}
 
@@ -49,7 +49,7 @@ func (this *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 
 	client.Send(rq, game.ClientPlayerSceneServiceEnterSceneMessageId)
 
-	tick.Blackboard.SetMem(SceneInformationKey, nil)
+	tick.Blackboard.SetMem(SceneInformationBoardKey, nil)
 
 	return b3.SUCCESS
 }

@@ -7,5 +7,5 @@ import (
 )
 
 func LoginHandler(client *pkg.GameClient, response *game.LoginResponse) {
-	client.Blackboard.SetMem(behaviortree.PlayerListIdentifier, response.Players)
+	client.Blackboard.SetMem(behaviortree.PlayerListBoardKey, response.Players)
 }

@@ -9,5 +9,5 @@ import (
 
 func ClientPlayerSceneServiceNotifySceneInfoHandler(player *gameobject.Player, response *game.SceneInfoS2C) {
 	client := player.Client.(*pkg.GameClient)
-	client.Blackboard.SetMem(behaviortree.SceneInformationKey, response.SceneInfo)
+	client.Blackboard.SetMem(behaviortree.SceneInformationBoardKey, response.SceneInfo)
 }
