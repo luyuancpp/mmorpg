@@ -52,3 +52,7 @@ func NewMainPlayer(playerId uint64, clientI interface{}) *Player {
 func (player *Player) Send(message proto.Message, messageId uint32) {
 	player.Client.Send(message, messageId)
 }
+
+func (player *Player) GetClient() interfaces.GameClientInterface {
+	return player.Client
+}
