@@ -6,9 +6,9 @@
 
 void InitPlayerSkillServiceLua()
 {
-	tls_lua_state["PlayerSkillServiceUseSkillMessageId"] = 18;
-	tls_lua_state["PlayerSkillServiceUseSkillIndex"] = 0;
-	tls_lua_state["PlayerSkillServiceUseSkill"] = []()-> const ::google::protobuf::MethodDescriptor* {
+	tls_lua_state["PlayerSkillServiceReleaseSkillMessageId"] = 18;
+	tls_lua_state["PlayerSkillServiceReleaseSkillIndex"] = 0;
+	tls_lua_state["PlayerSkillServiceReleaseSkill"] = []()-> const ::google::protobuf::MethodDescriptor* {
 		return PlayerSkillService_Stub::descriptor()->method(0);
 	};
 
@@ -22,6 +22,12 @@ void InitPlayerSkillServiceLua()
 	tls_lua_state["PlayerSkillServiceNotifySkillInterruptedIndex"] = 2;
 	tls_lua_state["PlayerSkillServiceNotifySkillInterrupted"] = []()-> const ::google::protobuf::MethodDescriptor* {
 		return PlayerSkillService_Stub::descriptor()->method(2);
+	};
+
+	tls_lua_state["PlayerSkillServiceGetSkillListMessageId"] = 57;
+	tls_lua_state["PlayerSkillServiceGetSkillListIndex"] = 3;
+	tls_lua_state["PlayerSkillServiceGetSkillList"] = []()-> const ::google::protobuf::MethodDescriptor* {
+		return PlayerSkillService_Stub::descriptor()->method(3);
 	};
 
 }

@@ -56,6 +56,7 @@
     <ClCompile Include="src\proto\logic\component\player_login_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\player_network_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\player_scene_comp.pb.cc" />
+    <ClCompile Include="src\proto\logic\component\player_skill_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\scene_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\skill_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\team_comp.pb.cc" />
@@ -115,6 +116,7 @@
     <ClInclude Include="src\proto\logic\component\player_login_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\player_network_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\player_scene_comp.pb.h" />
+    <ClInclude Include="src\proto\logic\component\player_skill_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\scene_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\skill_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\team_comp.pb.h" />

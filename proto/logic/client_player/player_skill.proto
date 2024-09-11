@@ -38,8 +38,18 @@ message SkillUsedS2C
   uint64 time_stamp = 5;
 }
 
+// 获取技能列表请求
+message GetSkillListRequest {
+}
+
+// 获取技能列表响应
+message GetSkillListResponse {
+  TipInfoMessage error_message = 1;  
+}
+
 service PlayerSkillService { 
   rpc ReleaseSkill (ReleaseSkillSkillRequest) returns (ReleaseSkillSkillResponse);
   rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
   rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
+  rpc GetSkillList (GetSkillListRequest) returns (GetSkillListResponse);
 }

@@ -8,7 +8,7 @@ public:
 	using PlayerService::PlayerService;
 	static void ReleaseSkill(entt::entity player,
 		const ::ReleaseSkillSkillRequest* request,
-		::ReleaseSkillResponse* response);
+		::ReleaseSkillSkillResponse* response);
 
 	static void NotifySkillUsed(entt::entity player,
 		const ::SkillUsedS2C* request,
@@ -17,6 +17,10 @@ public:
 	static void NotifySkillInterrupted(entt::entity player,
 		const ::SkillInterruptedS2C* request,
 		::Empty* response);
+
+	static void GetSkillList(entt::entity player,
+		const ::GetSkillListRequest* request,
+		::GetSkillListResponse* response);
 
 	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
 		entt::entity player,
@@ -28,8 +32,8 @@ public:
 		case 0:
 			ReleaseSkill(player,
 			::google::protobuf::internal::DownCast<const ReleaseSkillSkillRequest*>(request),
-			::google::protobuf::internal::DownCast<ReleaseSkillResponse*>(response));
-			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<ReleaseSkillResponse*>(response));
+			::google::protobuf::internal::DownCast<ReleaseSkillSkillResponse*>(response));
+			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<ReleaseSkillSkillResponse*>(response));
 		break;
 		case 1:
 			NotifySkillUsed(player,
@@ -40,6 +44,12 @@ public:
 			NotifySkillInterrupted(player,
 			::google::protobuf::internal::DownCast<const SkillInterruptedS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
+		break;
+		case 3:
+			GetSkillList(player,
+			::google::protobuf::internal::DownCast<const GetSkillListRequest*>(request),
+			::google::protobuf::internal::DownCast<GetSkillListResponse*>(response));
+			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<GetSkillListResponse*>(response));
 		break;
 		default:
 		break;

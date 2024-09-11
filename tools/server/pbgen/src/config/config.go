@@ -2,19 +2,22 @@ package config
 
 // 常量：项目目录和路径
 const (
-	ProjectDir    = "../../../../"
-	ProtoDir      = "../../../../proto/"
-	Md5Ex         = ".md5"
-	Md5Dir        = "../bin/md5/"
-	ProtoEx       = ".proto"
-	ProtoPbcEx    = ".pb.cc"
-	ProtoPbhEx    = ".pb.h"
-	ProtoGoEx     = ".pb.go"
-	GrpcPbcEx     = ".grpc.pb.cc"
-	GrpcEx        = "grpc"
-	ClientGoMd5Ex = "client_go"
-	LoginGoMd5Ex  = "login_go"
-	DBGoMd5Ex     = "db_go"
+	ProjectDir         = "../../../../"
+	ProtoDir           = "../../../../proto/"
+	BinDirectory       = "../bin/"
+	Md5Ex              = ".md5"
+	Md5Dir             = "../bin/md5/"
+	ProtoEx            = ".proto"
+	ProtoPbcEx         = ".pb.cc"
+	ProtoPbhEx         = ".pb.h"
+	ProtoGoEx          = ".pb.go"
+	GrpcPbcEx          = ".grpc.pb.cc"
+	GrpcEx             = "grpc"
+	ClientGoMd5Ex      = "client_go"
+	LoginGoMd5Ex       = "login_go"
+	DBGoMd5Ex          = "db_go"
+	DBDescDirectory    = "../bin/proto_desc/"
+	ProtoDescExtension = ".desc"
 )
 
 // 常量：文件扩展名
@@ -95,6 +98,7 @@ const (
 	RegisterRepliedHandlerCppExtension = "register" + CppRepliedHandlerEx
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
 	DbProtoFileName                    = "db_base.proto"
+	GameMysqlDBProtoFileName           = "mysql_database_table.proto"
 )
 
 // 常量：代码相关

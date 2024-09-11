@@ -121,11 +121,13 @@ g_c2s_service_id.emplace(PlayerClientCommonServiceSendTipToClientMessageId);
 g_message_info[PlayerClientCommonServiceKickPlayerMessageId] = RpcService{"PlayerClientCommonService","KickPlayer","TipInfoMessage","Empty",std::make_unique_for_overwrite<PlayerClientCommonServiceImpl>()};
 g_c2s_service_id.emplace(PlayerClientCommonServiceKickPlayerMessageId);
 
-g_message_info[PlayerSkillServiceUseSkillMessageId] = RpcService{"PlayerSkillService","UseSkill","UseSkillRequest","UseSkillResponse",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
-g_c2s_service_id.emplace(PlayerSkillServiceUseSkillMessageId);
+g_message_info[PlayerSkillServiceReleaseSkillMessageId] = RpcService{"PlayerSkillService","ReleaseSkill","ReleaseSkillSkillRequest","ReleaseSkillSkillResponse",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
+g_c2s_service_id.emplace(PlayerSkillServiceReleaseSkillMessageId);
 g_message_info[PlayerSkillServiceNotifySkillUsedMessageId] = RpcService{"PlayerSkillService","NotifySkillUsed","SkillUsedS2C","Empty",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
 g_c2s_service_id.emplace(PlayerSkillServiceNotifySkillUsedMessageId);
 g_message_info[PlayerSkillServiceNotifySkillInterruptedMessageId] = RpcService{"PlayerSkillService","NotifySkillInterrupted","SkillInterruptedS2C","Empty",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
 g_c2s_service_id.emplace(PlayerSkillServiceNotifySkillInterruptedMessageId);
+g_message_info[PlayerSkillServiceGetSkillListMessageId] = RpcService{"PlayerSkillService","GetSkillList","GetSkillListRequest","GetSkillListResponse",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
+g_c2s_service_id.emplace(PlayerSkillServiceGetSkillListMessageId);
 
 }

@@ -20,6 +20,7 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
+#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -55,18 +56,24 @@ struct TableStruct_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto;
+class GetSkillListRequest;
+struct GetSkillListRequestDefaultTypeInternal;
+extern GetSkillListRequestDefaultTypeInternal _GetSkillListRequest_default_instance_;
+class GetSkillListResponse;
+struct GetSkillListResponseDefaultTypeInternal;
+extern GetSkillListResponseDefaultTypeInternal _GetSkillListResponse_default_instance_;
+class ReleaseSkillSkillRequest;
+struct ReleaseSkillSkillRequestDefaultTypeInternal;
+extern ReleaseSkillSkillRequestDefaultTypeInternal _ReleaseSkillSkillRequest_default_instance_;
+class ReleaseSkillSkillResponse;
+struct ReleaseSkillSkillResponseDefaultTypeInternal;
+extern ReleaseSkillSkillResponseDefaultTypeInternal _ReleaseSkillSkillResponse_default_instance_;
 class SkillInterruptedS2C;
 struct SkillInterruptedS2CDefaultTypeInternal;
 extern SkillInterruptedS2CDefaultTypeInternal _SkillInterruptedS2C_default_instance_;
 class SkillUsedS2C;
 struct SkillUsedS2CDefaultTypeInternal;
 extern SkillUsedS2CDefaultTypeInternal _SkillUsedS2C_default_instance_;
-class ReleaseSkillSkillRequest;
-struct UseSkillRequestDefaultTypeInternal;
-extern UseSkillRequestDefaultTypeInternal _UseSkillRequest_default_instance_;
-class ReleaseSkillResponse;
-struct UseSkillResponseDefaultTypeInternal;
-extern UseSkillResponseDefaultTypeInternal _UseSkillResponse_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -281,23 +288,22 @@ class SkillInterruptedS2C final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class ReleaseSkillResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:UseSkillResponse) */ {
+class GetSkillListRequest final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:GetSkillListRequest) */ {
  public:
-  inline ReleaseSkillResponse() : ReleaseSkillResponse(nullptr) {}
-  ~ReleaseSkillResponse() override;
+  inline GetSkillListRequest() : GetSkillListRequest(nullptr) {}
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ReleaseSkillResponse(
+  explicit PROTOBUF_CONSTEXPR GetSkillListRequest(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline ReleaseSkillResponse(const ReleaseSkillResponse& from) : ReleaseSkillResponse(nullptr, from) {}
-  inline ReleaseSkillResponse(ReleaseSkillResponse&& from) noexcept
-      : ReleaseSkillResponse(nullptr, std::move(from)) {}
-  inline ReleaseSkillResponse& operator=(const ReleaseSkillResponse& from) {
+  inline GetSkillListRequest(const GetSkillListRequest& from) : GetSkillListRequest(nullptr, from) {}
+  inline GetSkillListRequest(GetSkillListRequest&& from) noexcept
+      : GetSkillListRequest(nullptr, std::move(from)) {}
+  inline GetSkillListRequest& operator=(const GetSkillListRequest& from) {
     CopyFrom(from);
     return *this;
   }
-  inline ReleaseSkillResponse& operator=(ReleaseSkillResponse&& from) noexcept {
+  inline GetSkillListRequest& operator=(GetSkillListRequest&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -329,16 +335,16 @@ class ReleaseSkillResponse final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const ReleaseSkillResponse& default_instance() {
+  static const GetSkillListRequest& default_instance() {
     return *internal_default_instance();
   }
-  static inline const ReleaseSkillResponse* internal_default_instance() {
-    return reinterpret_cast<const ReleaseSkillResponse*>(
-        &_UseSkillResponse_default_instance_);
+  static inline const GetSkillListRequest* internal_default_instance() {
+    return reinterpret_cast<const GetSkillListRequest*>(
+        &_GetSkillListRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(ReleaseSkillResponse& a, ReleaseSkillResponse& b) { a.Swap(&b); }
-  inline void Swap(ReleaseSkillResponse* other) {
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(GetSkillListRequest& a, GetSkillListRequest& b) { a.Swap(&b); }
+  inline void Swap(GetSkillListRequest* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -350,7 +356,7 @@ class ReleaseSkillResponse final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(ReleaseSkillResponse* other) {
+  void UnsafeArenaSwap(GetSkillListRequest* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -358,79 +364,39 @@ class ReleaseSkillResponse final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  ReleaseSkillResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<ReleaseSkillResponse>(arena);
+  GetSkillListRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<GetSkillListRequest>(arena);
   }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ReleaseSkillResponse& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ReleaseSkillResponse& from) { ReleaseSkillResponse::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
+  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const GetSkillListRequest& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const GetSkillListRequest& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
+  }
 
   public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(ReleaseSkillResponse* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "UseSkillResponse"; }
+  static ::absl::string_view FullMessageName() { return "GetSkillListRequest"; }
 
  protected:
-  explicit ReleaseSkillResponse(::google::protobuf::Arena* arena);
-  ReleaseSkillResponse(::google::protobuf::Arena* arena, const ReleaseSkillResponse& from);
-  ReleaseSkillResponse(::google::protobuf::Arena* arena, ReleaseSkillResponse&& from) noexcept
-      : ReleaseSkillResponse(arena) {
+  explicit GetSkillListRequest(::google::protobuf::Arena* arena);
+  GetSkillListRequest(::google::protobuf::Arena* arena, const GetSkillListRequest& from);
+  GetSkillListRequest(::google::protobuf::Arena* arena, GetSkillListRequest&& from) noexcept
+      : GetSkillListRequest(arena) {
     *this = ::std::move(from);
   }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
 
  public:
   ::google::protobuf::Metadata GetMetadata() const final;
   // nested types ----------------------------------------------------
 
   // accessors -------------------------------------------------------
-  enum : int {
-    kErrorMessageFieldNumber = 1,
-  };
-  // .TipInfoMessage error_message = 1;
-  bool has_error_message() const;
-  void clear_error_message() ;
-  const ::TipInfoMessage& error_message() const;
-  PROTOBUF_NODISCARD ::TipInfoMessage* release_error_message();
-  ::TipInfoMessage* mutable_error_message();
-  void set_allocated_error_message(::TipInfoMessage* value);
-  void unsafe_arena_set_allocated_error_message(::TipInfoMessage* value);
-  ::TipInfoMessage* unsafe_arena_release_error_message();
-
-  private:
-  const ::TipInfoMessage& _internal_error_message() const;
-  ::TipInfoMessage* _internal_mutable_error_message();
-
-  public:
-  // @@protoc_insertion_point(class_scope:UseSkillResponse)
+  // @@protoc_insertion_point(class_scope:GetSkillListRequest)
  private:
   class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 1,
-      0, 2>
-      _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
   template <typename T>
@@ -444,226 +410,8 @@ class ReleaseSkillResponse final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::TipInfoMessage* error_message_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto;
-};
-// -------------------------------------------------------------------
-
-class ReleaseSkillSkillRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:UseSkillRequest) */ {
- public:
-  inline ReleaseSkillSkillRequest() : ReleaseSkillSkillRequest(nullptr) {}
-  ~ReleaseSkillSkillRequest() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ReleaseSkillSkillRequest(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline ReleaseSkillSkillRequest(const ReleaseSkillSkillRequest& from) : ReleaseSkillSkillRequest(nullptr, from) {}
-  inline ReleaseSkillSkillRequest(ReleaseSkillSkillRequest&& from) noexcept
-      : ReleaseSkillSkillRequest(nullptr, std::move(from)) {}
-  inline ReleaseSkillSkillRequest& operator=(const ReleaseSkillSkillRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline ReleaseSkillSkillRequest& operator=(ReleaseSkillSkillRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const ReleaseSkillSkillRequest& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const ReleaseSkillSkillRequest* internal_default_instance() {
-    return reinterpret_cast<const ReleaseSkillSkillRequest*>(
-        &_UseSkillRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 0;
-  friend void swap(ReleaseSkillSkillRequest& a, ReleaseSkillSkillRequest& b) { a.Swap(&b); }
-  inline void Swap(ReleaseSkillSkillRequest* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(ReleaseSkillSkillRequest* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  ReleaseSkillSkillRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<ReleaseSkillSkillRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ReleaseSkillSkillRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ReleaseSkillSkillRequest& from) { ReleaseSkillSkillRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(ReleaseSkillSkillRequest* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "UseSkillRequest"; }
-
- protected:
-  explicit ReleaseSkillSkillRequest(::google::protobuf::Arena* arena);
-  ReleaseSkillSkillRequest(::google::protobuf::Arena* arena, const ReleaseSkillSkillRequest& from);
-  ReleaseSkillSkillRequest(::google::protobuf::Arena* arena, ReleaseSkillSkillRequest&& from) noexcept
-      : ReleaseSkillSkillRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPositionFieldNumber = 3,
-    kRotationFieldNumber = 4,
-    kTargetIdFieldNumber = 2,
-    kSkillTableIdFieldNumber = 1,
-  };
-  // .Vector3 position = 3;
-  bool has_position() const;
-  void clear_position() ;
-  const ::Vector3& position() const;
-  PROTOBUF_NODISCARD ::Vector3* release_position();
-  ::Vector3* mutable_position();
-  void set_allocated_position(::Vector3* value);
-  void unsafe_arena_set_allocated_position(::Vector3* value);
-  ::Vector3* unsafe_arena_release_position();
-
-  private:
-  const ::Vector3& _internal_position() const;
-  ::Vector3* _internal_mutable_position();
-
-  public:
-  // .Rotation rotation = 4;
-  bool has_rotation() const;
-  void clear_rotation() ;
-  const ::Rotation& rotation() const;
-  PROTOBUF_NODISCARD ::Rotation* release_rotation();
-  ::Rotation* mutable_rotation();
-  void set_allocated_rotation(::Rotation* value);
-  void unsafe_arena_set_allocated_rotation(::Rotation* value);
-  ::Rotation* unsafe_arena_release_rotation();
-
-  private:
-  const ::Rotation& _internal_rotation() const;
-  ::Rotation* _internal_mutable_rotation();
-
-  public:
-  // uint64 target_id = 2;
-  void clear_target_id() ;
-  ::uint64_t target_id() const;
-  void set_target_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_target_id() const;
-  void _internal_set_target_id(::uint64_t value);
-
-  public:
-  // uint32 skill_table_id = 1;
-  void clear_skill_table_id() ;
-  ::uint32_t skill_table_id() const;
-  void set_skill_table_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_skill_table_id() const;
-  void _internal_set_skill_table_id(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:UseSkillRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 2,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::Vector3* position_;
-    ::Rotation* rotation_;
-    ::uint64_t target_id_;
-    ::uint32_t skill_table_id_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
   friend struct ::TableStruct_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto;
 };
 // -------------------------------------------------------------------
@@ -896,6 +644,566 @@ class SkillUsedS2C final : public ::google::protobuf::Message
   union { Impl_ _impl_; };
   friend struct ::TableStruct_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto;
 };
+// -------------------------------------------------------------------
+
+class ReleaseSkillSkillResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ReleaseSkillSkillResponse) */ {
+ public:
+  inline ReleaseSkillSkillResponse() : ReleaseSkillSkillResponse(nullptr) {}
+  ~ReleaseSkillSkillResponse() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ReleaseSkillSkillResponse(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ReleaseSkillSkillResponse(const ReleaseSkillSkillResponse& from) : ReleaseSkillSkillResponse(nullptr, from) {}
+  inline ReleaseSkillSkillResponse(ReleaseSkillSkillResponse&& from) noexcept
+      : ReleaseSkillSkillResponse(nullptr, std::move(from)) {}
+  inline ReleaseSkillSkillResponse& operator=(const ReleaseSkillSkillResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ReleaseSkillSkillResponse& operator=(ReleaseSkillSkillResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ReleaseSkillSkillResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ReleaseSkillSkillResponse* internal_default_instance() {
+    return reinterpret_cast<const ReleaseSkillSkillResponse*>(
+        &_ReleaseSkillSkillResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(ReleaseSkillSkillResponse& a, ReleaseSkillSkillResponse& b) { a.Swap(&b); }
+  inline void Swap(ReleaseSkillSkillResponse* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ReleaseSkillSkillResponse* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ReleaseSkillSkillResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ReleaseSkillSkillResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ReleaseSkillSkillResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ReleaseSkillSkillResponse& from) { ReleaseSkillSkillResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ReleaseSkillSkillResponse* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ReleaseSkillSkillResponse"; }
+
+ protected:
+  explicit ReleaseSkillSkillResponse(::google::protobuf::Arena* arena);
+  ReleaseSkillSkillResponse(::google::protobuf::Arena* arena, const ReleaseSkillSkillResponse& from);
+  ReleaseSkillSkillResponse(::google::protobuf::Arena* arena, ReleaseSkillSkillResponse&& from) noexcept
+      : ReleaseSkillSkillResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kErrorMessageFieldNumber = 1,
+  };
+  // .TipInfoMessage error_message = 1;
+  bool has_error_message() const;
+  void clear_error_message() ;
+  const ::TipInfoMessage& error_message() const;
+  PROTOBUF_NODISCARD ::TipInfoMessage* release_error_message();
+  ::TipInfoMessage* mutable_error_message();
+  void set_allocated_error_message(::TipInfoMessage* value);
+  void unsafe_arena_set_allocated_error_message(::TipInfoMessage* value);
+  ::TipInfoMessage* unsafe_arena_release_error_message();
+
+  private:
+  const ::TipInfoMessage& _internal_error_message() const;
+  ::TipInfoMessage* _internal_mutable_error_message();
+
+  public:
+  // @@protoc_insertion_point(class_scope:ReleaseSkillSkillResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::TipInfoMessage* error_message_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ReleaseSkillSkillRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ReleaseSkillSkillRequest) */ {
+ public:
+  inline ReleaseSkillSkillRequest() : ReleaseSkillSkillRequest(nullptr) {}
+  ~ReleaseSkillSkillRequest() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ReleaseSkillSkillRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ReleaseSkillSkillRequest(const ReleaseSkillSkillRequest& from) : ReleaseSkillSkillRequest(nullptr, from) {}
+  inline ReleaseSkillSkillRequest(ReleaseSkillSkillRequest&& from) noexcept
+      : ReleaseSkillSkillRequest(nullptr, std::move(from)) {}
+  inline ReleaseSkillSkillRequest& operator=(const ReleaseSkillSkillRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ReleaseSkillSkillRequest& operator=(ReleaseSkillSkillRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ReleaseSkillSkillRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ReleaseSkillSkillRequest* internal_default_instance() {
+    return reinterpret_cast<const ReleaseSkillSkillRequest*>(
+        &_ReleaseSkillSkillRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 0;
+  friend void swap(ReleaseSkillSkillRequest& a, ReleaseSkillSkillRequest& b) { a.Swap(&b); }
+  inline void Swap(ReleaseSkillSkillRequest* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ReleaseSkillSkillRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ReleaseSkillSkillRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ReleaseSkillSkillRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ReleaseSkillSkillRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ReleaseSkillSkillRequest& from) { ReleaseSkillSkillRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ReleaseSkillSkillRequest* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ReleaseSkillSkillRequest"; }
+
+ protected:
+  explicit ReleaseSkillSkillRequest(::google::protobuf::Arena* arena);
+  ReleaseSkillSkillRequest(::google::protobuf::Arena* arena, const ReleaseSkillSkillRequest& from);
+  ReleaseSkillSkillRequest(::google::protobuf::Arena* arena, ReleaseSkillSkillRequest&& from) noexcept
+      : ReleaseSkillSkillRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPositionFieldNumber = 3,
+    kRotationFieldNumber = 4,
+    kTargetIdFieldNumber = 2,
+    kSkillTableIdFieldNumber = 1,
+  };
+  // .Vector3 position = 3;
+  bool has_position() const;
+  void clear_position() ;
+  const ::Vector3& position() const;
+  PROTOBUF_NODISCARD ::Vector3* release_position();
+  ::Vector3* mutable_position();
+  void set_allocated_position(::Vector3* value);
+  void unsafe_arena_set_allocated_position(::Vector3* value);
+  ::Vector3* unsafe_arena_release_position();
+
+  private:
+  const ::Vector3& _internal_position() const;
+  ::Vector3* _internal_mutable_position();
+
+  public:
+  // .Rotation rotation = 4;
+  bool has_rotation() const;
+  void clear_rotation() ;
+  const ::Rotation& rotation() const;
+  PROTOBUF_NODISCARD ::Rotation* release_rotation();
+  ::Rotation* mutable_rotation();
+  void set_allocated_rotation(::Rotation* value);
+  void unsafe_arena_set_allocated_rotation(::Rotation* value);
+  ::Rotation* unsafe_arena_release_rotation();
+
+  private:
+  const ::Rotation& _internal_rotation() const;
+  ::Rotation* _internal_mutable_rotation();
+
+  public:
+  // uint64 target_id = 2;
+  void clear_target_id() ;
+  ::uint64_t target_id() const;
+  void set_target_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_target_id() const;
+  void _internal_set_target_id(::uint64_t value);
+
+  public:
+  // uint32 skill_table_id = 1;
+  void clear_skill_table_id() ;
+  ::uint32_t skill_table_id() const;
+  void set_skill_table_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_skill_table_id() const;
+  void _internal_set_skill_table_id(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:ReleaseSkillSkillRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 4, 2,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::Vector3* position_;
+    ::Rotation* rotation_;
+    ::uint64_t target_id_;
+    ::uint32_t skill_table_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto;
+};
+// -------------------------------------------------------------------
+
+class GetSkillListResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:GetSkillListResponse) */ {
+ public:
+  inline GetSkillListResponse() : GetSkillListResponse(nullptr) {}
+  ~GetSkillListResponse() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetSkillListResponse(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline GetSkillListResponse(const GetSkillListResponse& from) : GetSkillListResponse(nullptr, from) {}
+  inline GetSkillListResponse(GetSkillListResponse&& from) noexcept
+      : GetSkillListResponse(nullptr, std::move(from)) {}
+  inline GetSkillListResponse& operator=(const GetSkillListResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetSkillListResponse& operator=(GetSkillListResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetSkillListResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const GetSkillListResponse* internal_default_instance() {
+    return reinterpret_cast<const GetSkillListResponse*>(
+        &_GetSkillListResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 5;
+  friend void swap(GetSkillListResponse& a, GetSkillListResponse& b) { a.Swap(&b); }
+  inline void Swap(GetSkillListResponse* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetSkillListResponse* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetSkillListResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<GetSkillListResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetSkillListResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetSkillListResponse& from) { GetSkillListResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(GetSkillListResponse* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "GetSkillListResponse"; }
+
+ protected:
+  explicit GetSkillListResponse(::google::protobuf::Arena* arena);
+  GetSkillListResponse(::google::protobuf::Arena* arena, const GetSkillListResponse& from);
+  GetSkillListResponse(::google::protobuf::Arena* arena, GetSkillListResponse&& from) noexcept
+      : GetSkillListResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kErrorMessageFieldNumber = 1,
+  };
+  // .TipInfoMessage error_message = 1;
+  bool has_error_message() const;
+  void clear_error_message() ;
+  const ::TipInfoMessage& error_message() const;
+  PROTOBUF_NODISCARD ::TipInfoMessage* release_error_message();
+  ::TipInfoMessage* mutable_error_message();
+  void set_allocated_error_message(::TipInfoMessage* value);
+  void unsafe_arena_set_allocated_error_message(::TipInfoMessage* value);
+  ::TipInfoMessage* unsafe_arena_release_error_message();
+
+  private:
+  const ::TipInfoMessage& _internal_error_message() const;
+  ::TipInfoMessage* _internal_mutable_error_message();
+
+  public:
+  // @@protoc_insertion_point(class_scope:GetSkillListResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::TipInfoMessage* error_message_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto;
+};
 
 // ===================================================================
 
@@ -916,9 +1224,9 @@ class PlayerSkillService : public ::google::protobuf::Service {
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
-  virtual void UseSkill(::google::protobuf::RpcController* controller,
+  virtual void ReleaseSkill(::google::protobuf::RpcController* controller,
                         const ::ReleaseSkillSkillRequest* request,
-                        ::ReleaseSkillResponse* response,
+                        ::ReleaseSkillSkillResponse* response,
                         ::google::protobuf::Closure* done);
   virtual void NotifySkillUsed(::google::protobuf::RpcController* controller,
                         const ::SkillUsedS2C* request,
@@ -927,6 +1235,10 @@ class PlayerSkillService : public ::google::protobuf::Service {
   virtual void NotifySkillInterrupted(::google::protobuf::RpcController* controller,
                         const ::SkillInterruptedS2C* request,
                         ::Empty* response,
+                        ::google::protobuf::Closure* done);
+  virtual void GetSkillList(::google::protobuf::RpcController* controller,
+                        const ::GetSkillListRequest* request,
+                        ::GetSkillListResponse* response,
                         ::google::protobuf::Closure* done);
 
   // implements Service ----------------------------------------------
@@ -959,9 +1271,9 @@ class PlayerSkillService_Stub final : public PlayerSkillService {
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
   // implements PlayerSkillService ------------------------------------------
-  void UseSkill(::google::protobuf::RpcController* controller,
+  void ReleaseSkill(::google::protobuf::RpcController* controller,
                         const ::ReleaseSkillSkillRequest* request,
-                        ::ReleaseSkillResponse* response,
+                        ::ReleaseSkillSkillResponse* response,
                         ::google::protobuf::Closure* done) override;
   void NotifySkillUsed(::google::protobuf::RpcController* controller,
                         const ::SkillUsedS2C* request,
@@ -970,6 +1282,10 @@ class PlayerSkillService_Stub final : public PlayerSkillService {
   void NotifySkillInterrupted(::google::protobuf::RpcController* controller,
                         const ::SkillInterruptedS2C* request,
                         ::Empty* response,
+                        ::google::protobuf::Closure* done) override;
+  void GetSkillList(::google::protobuf::RpcController* controller,
+                        const ::GetSkillListRequest* request,
+                        ::GetSkillListResponse* response,
                         ::google::protobuf::Closure* done) override;
 
  private:
@@ -989,7 +1305,7 @@ class PlayerSkillService_Stub final : public PlayerSkillService {
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// UseSkillRequest
+// ReleaseSkillSkillRequest
 
 // uint32 skill_table_id = 1;
 inline void ReleaseSkillSkillRequest::clear_skill_table_id() {
@@ -997,12 +1313,12 @@ inline void ReleaseSkillSkillRequest::clear_skill_table_id() {
   _impl_.skill_table_id_ = 0u;
 }
 inline ::uint32_t ReleaseSkillSkillRequest::skill_table_id() const {
-  // @@protoc_insertion_point(field_get:UseSkillRequest.skill_table_id)
+  // @@protoc_insertion_point(field_get:ReleaseSkillSkillRequest.skill_table_id)
   return _internal_skill_table_id();
 }
 inline void ReleaseSkillSkillRequest::set_skill_table_id(::uint32_t value) {
   _internal_set_skill_table_id(value);
-  // @@protoc_insertion_point(field_set:UseSkillRequest.skill_table_id)
+  // @@protoc_insertion_point(field_set:ReleaseSkillSkillRequest.skill_table_id)
 }
 inline ::uint32_t ReleaseSkillSkillRequest::_internal_skill_table_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
@@ -1019,12 +1335,12 @@ inline void ReleaseSkillSkillRequest::clear_target_id() {
   _impl_.target_id_ = ::uint64_t{0u};
 }
 inline ::uint64_t ReleaseSkillSkillRequest::target_id() const {
-  // @@protoc_insertion_point(field_get:UseSkillRequest.target_id)
+  // @@protoc_insertion_point(field_get:ReleaseSkillSkillRequest.target_id)
   return _internal_target_id();
 }
 inline void ReleaseSkillSkillRequest::set_target_id(::uint64_t value) {
   _internal_set_target_id(value);
-  // @@protoc_insertion_point(field_set:UseSkillRequest.target_id)
+  // @@protoc_insertion_point(field_set:ReleaseSkillSkillRequest.target_id)
 }
 inline ::uint64_t ReleaseSkillSkillRequest::_internal_target_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
@@ -1047,7 +1363,7 @@ inline const ::Vector3& ReleaseSkillSkillRequest::_internal_position() const {
   return p != nullptr ? *p : reinterpret_cast<const ::Vector3&>(::_Vector3_default_instance_);
 }
 inline const ::Vector3& ReleaseSkillSkillRequest::position() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:UseSkillRequest.position)
+  // @@protoc_insertion_point(field_get:ReleaseSkillSkillRequest.position)
   return _internal_position();
 }
 inline void ReleaseSkillSkillRequest::unsafe_arena_set_allocated_position(::Vector3* value) {
@@ -1061,7 +1377,7 @@ inline void ReleaseSkillSkillRequest::unsafe_arena_set_allocated_position(::Vect
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:UseSkillRequest.position)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ReleaseSkillSkillRequest.position)
 }
 inline ::Vector3* ReleaseSkillSkillRequest::release_position() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
@@ -1084,7 +1400,7 @@ inline ::Vector3* ReleaseSkillSkillRequest::release_position() {
 }
 inline ::Vector3* ReleaseSkillSkillRequest::unsafe_arena_release_position() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:UseSkillRequest.position)
+  // @@protoc_insertion_point(field_release:ReleaseSkillSkillRequest.position)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::Vector3* temp = _impl_.position_;
@@ -1102,7 +1418,7 @@ inline ::Vector3* ReleaseSkillSkillRequest::_internal_mutable_position() {
 inline ::Vector3* ReleaseSkillSkillRequest::mutable_position() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::Vector3* _msg = _internal_mutable_position();
-  // @@protoc_insertion_point(field_mutable:UseSkillRequest.position)
+  // @@protoc_insertion_point(field_mutable:ReleaseSkillSkillRequest.position)
   return _msg;
 }
 inline void ReleaseSkillSkillRequest::set_allocated_position(::Vector3* value) {
@@ -1123,7 +1439,7 @@ inline void ReleaseSkillSkillRequest::set_allocated_position(::Vector3* value) {
   }
 
   _impl_.position_ = reinterpret_cast<::Vector3*>(value);
-  // @@protoc_insertion_point(field_set_allocated:UseSkillRequest.position)
+  // @@protoc_insertion_point(field_set_allocated:ReleaseSkillSkillRequest.position)
 }
 
 // .Rotation rotation = 4;
@@ -1138,7 +1454,7 @@ inline const ::Rotation& ReleaseSkillSkillRequest::_internal_rotation() const {
   return p != nullptr ? *p : reinterpret_cast<const ::Rotation&>(::_Rotation_default_instance_);
 }
 inline const ::Rotation& ReleaseSkillSkillRequest::rotation() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:UseSkillRequest.rotation)
+  // @@protoc_insertion_point(field_get:ReleaseSkillSkillRequest.rotation)
   return _internal_rotation();
 }
 inline void ReleaseSkillSkillRequest::unsafe_arena_set_allocated_rotation(::Rotation* value) {
@@ -1152,7 +1468,7 @@ inline void ReleaseSkillSkillRequest::unsafe_arena_set_allocated_rotation(::Rota
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:UseSkillRequest.rotation)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ReleaseSkillSkillRequest.rotation)
 }
 inline ::Rotation* ReleaseSkillSkillRequest::release_rotation() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
@@ -1175,7 +1491,7 @@ inline ::Rotation* ReleaseSkillSkillRequest::release_rotation() {
 }
 inline ::Rotation* ReleaseSkillSkillRequest::unsafe_arena_release_rotation() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:UseSkillRequest.rotation)
+  // @@protoc_insertion_point(field_release:ReleaseSkillSkillRequest.rotation)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::Rotation* temp = _impl_.rotation_;
@@ -1193,7 +1509,7 @@ inline ::Rotation* ReleaseSkillSkillRequest::_internal_mutable_rotation() {
 inline ::Rotation* ReleaseSkillSkillRequest::mutable_rotation() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::Rotation* _msg = _internal_mutable_rotation();
-  // @@protoc_insertion_point(field_mutable:UseSkillRequest.rotation)
+  // @@protoc_insertion_point(field_mutable:ReleaseSkillSkillRequest.rotation)
   return _msg;
 }
 inline void ReleaseSkillSkillRequest::set_allocated_rotation(::Rotation* value) {
@@ -1214,29 +1530,29 @@ inline void ReleaseSkillSkillRequest::set_allocated_rotation(::Rotation* value) 
   }
 
   _impl_.rotation_ = reinterpret_cast<::Rotation*>(value);
-  // @@protoc_insertion_point(field_set_allocated:UseSkillRequest.rotation)
+  // @@protoc_insertion_point(field_set_allocated:ReleaseSkillSkillRequest.rotation)
 }
 
 // -------------------------------------------------------------------
 
-// UseSkillResponse
+// ReleaseSkillSkillResponse
 
 // .TipInfoMessage error_message = 1;
-inline bool ReleaseSkillResponse::has_error_message() const {
+inline bool ReleaseSkillSkillResponse::has_error_message() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
-inline const ::TipInfoMessage& ReleaseSkillResponse::_internal_error_message() const {
+inline const ::TipInfoMessage& ReleaseSkillSkillResponse::_internal_error_message() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::TipInfoMessage* p = _impl_.error_message_;
   return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
 }
-inline const ::TipInfoMessage& ReleaseSkillResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:UseSkillResponse.error_message)
+inline const ::TipInfoMessage& ReleaseSkillSkillResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ReleaseSkillSkillResponse.error_message)
   return _internal_error_message();
 }
-inline void ReleaseSkillResponse::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
+inline void ReleaseSkillSkillResponse::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
@@ -1247,9 +1563,9 @@ inline void ReleaseSkillResponse::unsafe_arena_set_allocated_error_message(::Tip
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:UseSkillResponse.error_message)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ReleaseSkillSkillResponse.error_message)
 }
-inline ::TipInfoMessage* ReleaseSkillResponse::release_error_message() {
+inline ::TipInfoMessage* ReleaseSkillSkillResponse::release_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -1268,16 +1584,16 @@ inline ::TipInfoMessage* ReleaseSkillResponse::release_error_message() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::TipInfoMessage* ReleaseSkillResponse::unsafe_arena_release_error_message() {
+inline ::TipInfoMessage* ReleaseSkillSkillResponse::unsafe_arena_release_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:UseSkillResponse.error_message)
+  // @@protoc_insertion_point(field_release:ReleaseSkillSkillResponse.error_message)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
 }
-inline ::TipInfoMessage* ReleaseSkillResponse::_internal_mutable_error_message() {
+inline ::TipInfoMessage* ReleaseSkillSkillResponse::_internal_mutable_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.error_message_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
@@ -1285,13 +1601,13 @@ inline ::TipInfoMessage* ReleaseSkillResponse::_internal_mutable_error_message()
   }
   return _impl_.error_message_;
 }
-inline ::TipInfoMessage* ReleaseSkillResponse::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::TipInfoMessage* ReleaseSkillSkillResponse::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
-  // @@protoc_insertion_point(field_mutable:UseSkillResponse.error_message)
+  // @@protoc_insertion_point(field_mutable:ReleaseSkillSkillResponse.error_message)
   return _msg;
 }
-inline void ReleaseSkillResponse::set_allocated_error_message(::TipInfoMessage* value) {
+inline void ReleaseSkillSkillResponse::set_allocated_error_message(::TipInfoMessage* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -1309,7 +1625,7 @@ inline void ReleaseSkillResponse::set_allocated_error_message(::TipInfoMessage* 
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  // @@protoc_insertion_point(field_set_allocated:UseSkillResponse.error_message)
+  // @@protoc_insertion_point(field_set_allocated:ReleaseSkillSkillResponse.error_message)
 }
 
 // -------------------------------------------------------------------
@@ -1608,6 +1924,105 @@ inline ::uint64_t SkillUsedS2C::_internal_time_stamp() const {
 inline void SkillUsedS2C::_internal_set_time_stamp(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.time_stamp_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GetSkillListRequest
+
+// -------------------------------------------------------------------
+
+// GetSkillListResponse
+
+// .TipInfoMessage error_message = 1;
+inline bool GetSkillListResponse::has_error_message() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
+  return value;
+}
+inline const ::TipInfoMessage& GetSkillListResponse::_internal_error_message() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::TipInfoMessage* p = _impl_.error_message_;
+  return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
+}
+inline const ::TipInfoMessage& GetSkillListResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:GetSkillListResponse.error_message)
+  return _internal_error_message();
+}
+inline void GetSkillListResponse::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:GetSkillListResponse.error_message)
+}
+inline ::TipInfoMessage* GetSkillListResponse::release_error_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::TipInfoMessage* released = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::TipInfoMessage* GetSkillListResponse::unsafe_arena_release_error_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:GetSkillListResponse.error_message)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::TipInfoMessage* temp = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  return temp;
+}
+inline ::TipInfoMessage* GetSkillListResponse::_internal_mutable_error_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.error_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
+    _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(p);
+  }
+  return _impl_.error_message_;
+}
+inline ::TipInfoMessage* GetSkillListResponse::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::TipInfoMessage* _msg = _internal_mutable_error_message();
+  // @@protoc_insertion_point(field_mutable:GetSkillListResponse.error_message)
+  return _msg;
+}
+inline void GetSkillListResponse::set_allocated_error_message(::TipInfoMessage* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:GetSkillListResponse.error_message)
 }
 
 #ifdef __GNUC__

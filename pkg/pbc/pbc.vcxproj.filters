@@ -186,6 +186,9 @@
     <ClCompile Include="src\proto\logic\client_player\player_skill.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\component\player_skill_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\c2gate.pb.h">
@@ -402,6 +405,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\client_player\player_skill.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\component\player_skill_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

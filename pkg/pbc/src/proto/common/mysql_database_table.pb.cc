@@ -22,24 +22,24 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr player_unimportance_database::Impl_::Impl_(
+inline constexpr player_database1::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : player_id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR player_unimportance_database::player_unimportance_database(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR player_database1::player_database1(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct player_unimportance_databaseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR player_unimportance_databaseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~player_unimportance_databaseDefaultTypeInternal() {}
+struct player_database1DefaultTypeInternal {
+  PROTOBUF_CONSTEXPR player_database1DefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~player_database1DefaultTypeInternal() {}
   union {
-    player_unimportance_database _instance;
+    player_database1 _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 player_unimportance_databaseDefaultTypeInternal _player_unimportance_database_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 player_database1DefaultTypeInternal _player_database1_default_instance_;
 
 inline constexpr account_share_database::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -91,6 +91,7 @@ inline constexpr player_database::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         transform_{nullptr},
+        skill_list_{nullptr},
         player_id_{::uint64_t{0u}},
         register_time_{::int64_t{0}} {}
 
@@ -181,18 +182,20 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.transform_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.register_time_),
+        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.skill_list_),
         ~0u,
         0,
         ~0u,
+        1,
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::player_unimportance_database, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::player_database1, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::player_unimportance_database, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::player_database1, _impl_.player_id_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -200,15 +203,15 @@ static const ::_pbi::MigrationSchema
         {0, 11, -1, sizeof(::user_accounts)},
         {14, -1, -1, sizeof(::account_share_database)},
         {23, 33, -1, sizeof(::player_centre_database)},
-        {35, 46, -1, sizeof(::player_database)},
-        {49, -1, -1, sizeof(::player_unimportance_database)},
+        {35, 47, -1, sizeof(::player_database)},
+        {51, -1, -1, sizeof(::player_database1)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_user_accounts_default_instance_._instance,
     &::_account_share_database_default_instance_._instance,
     &::_player_centre_database_default_instance_._instance,
     &::_player_database_default_instance_._instance,
-    &::_player_unimportance_database_default_instance_._instance,
+    &::_player_database1_default_instance_._instance,
 };
 const char descriptor_table_protodef_common_2fmysql_5fdatabase_5ftable_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -216,39 +219,42 @@ const char descriptor_table_protodef_common_2fmysql_5fdatabase_5ftable_2eproto[]
     "mon/db_base.proto\032\032common/user_accounts."
     "proto\032\021common/comp.proto\032\'logic/componen"
     "t/player_scene_comp.proto\032 logic/compone"
-    "nt/actor_comp.proto\"q\n\ruser_accounts\022\017\n\007"
-    "account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016simpl"
-    "e_players\030\003 \001(\0132\030.AccountSimplePlayerLis"
-    "t:\013\222\265\030\007account\"6\n\026account_share_database"
-    "\022\017\n\007account\030\001 \001(\t:\013\222\265\030\007account\"v\n\026player"
-    "_centre_database\022\021\n\tplayer_id\030\001 \001(\004\022-\n\ns"
-    "cene_info\030\002 \001(\0132\031.PlayerSceneContextPBCo"
-    "mp:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"v\n\017player"
-    "_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttransfor"
-    "m\030\002 \001(\0132\n.Transform\022\025\n\rregister_time\030\003 \001"
-    "(\003:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"M\n\034player"
-    "_unimportance_database\022\021\n\tplayer_id\030\001 \001("
-    "\004:\032\222\265\030\tplayer_id\262\265\030\tplayer_idB\tZ\007pb/game"
-    "b\006proto3"
+    "nt/actor_comp.proto\032\'logic/component/pla"
+    "yer_skill_comp.proto\"q\n\ruser_accounts\022\017\n"
+    "\007account\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016simp"
+    "le_players\030\003 \001(\0132\030.AccountSimplePlayerLi"
+    "st:\013\222\265\030\007account\"6\n\026account_share_databas"
+    "e\022\017\n\007account\030\001 \001(\t:\013\222\265\030\007account\"v\n\026playe"
+    "r_centre_database\022\021\n\tplayer_id\030\001 \001(\004\022-\n\n"
+    "scene_info\030\002 \001(\0132\031.PlayerSceneContextPBC"
+    "omp:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"\242\001\n\017play"
+    "er_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttransf"
+    "orm\030\002 \001(\0132\n.Transform\022\025\n\rregister_time\030\003"
+    " \001(\003\022*\n\nskill_list\030\004 \001(\0132\026.PlayerSkillLi"
+    "stPBComp:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"A\n\020"
+    "player_database1\022\021\n\tplayer_id\030\001 \001(\004:\032\222\265\030"
+    "\tplayer_id\262\265\030\tplayer_idB\tZ\007pb/gameb\006prot"
+    "o3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_deps[5] =
+static const ::_pbi::DescriptorTable* const descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_deps[6] =
     {
         &::descriptor_table_common_2fcomp_2eproto,
         &::descriptor_table_common_2fdb_5fbase_2eproto,
         &::descriptor_table_common_2fuser_5faccounts_2eproto,
         &::descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto,
         &::descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
+        &::descriptor_table_logic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    688,
+    762,
     descriptor_table_protodef_common_2fmysql_5fdatabase_5ftable_2eproto,
     "common/mysql_database_table.proto",
     &descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_once,
     descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_deps,
-    5,
+    6,
     5,
     schemas,
     file_default_instances,
@@ -1018,6 +1024,11 @@ void player_database::clear_transform() {
   if (_impl_.transform_ != nullptr) _impl_.transform_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
+void player_database::clear_skill_list() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.skill_list_ != nullptr) _impl_.skill_list_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
 player_database::player_database(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
@@ -1041,6 +1052,9 @@ player_database::player_database(
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
   _impl_.transform_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::Transform>(
                               arena, *from._impl_.transform_)
+                        : nullptr;
+  _impl_.skill_list_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComp>(
+                              arena, *from._impl_.skill_list_)
                         : nullptr;
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
@@ -1074,6 +1088,7 @@ player_database::~player_database() {
 inline void player_database::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   delete _impl_.transform_;
+  delete _impl_.skill_list_;
   _impl_.~Impl_();
 }
 
@@ -1099,9 +1114,15 @@ PROTOBUF_NOINLINE void player_database::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.transform_ != nullptr);
-    _impl_.transform_->Clear();
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(_impl_.transform_ != nullptr);
+      _impl_.transform_->Clear();
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(_impl_.skill_list_ != nullptr);
+      _impl_.skill_list_->Clear();
+    }
   }
   ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.register_time_) -
@@ -1118,16 +1139,16 @@ const char* player_database::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 1, 0, 2> player_database::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 2, 0, 2> player_database::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(player_database, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
-    1,  // num_aux_entries
+    4,  // num_field_entries
+    2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_player_database_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -1135,7 +1156,9 @@ const ::_pbi::TcParseTable<2, 3, 1, 0, 2> player_database::_table_ = {
     ::_pbi::TcParser::GetTable<::player_database>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // .PlayerSkillListPBComp skill_list = 4;
+    {::_pbi::TcParser::FastMtS1,
+     {34, 1, 1, PROTOBUF_FIELD_OFFSET(player_database, _impl_.skill_list_)}},
     // uint64 player_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database, _impl_.player_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_)}},
@@ -1157,8 +1180,12 @@ const ::_pbi::TcParseTable<2, 3, 1, 0, 2> player_database::_table_ = {
     // int64 register_time = 3;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.register_time_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // .PlayerSkillListPBComp skill_list = 4;
+    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.skill_list_), _Internal::kHasBitsOffset + 1, 1,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::Transform>()},
+    {::_pbi::TcParser::GetTable<::PlayerSkillListPBComp>()},
   }}, {{
   }},
 };
@@ -1191,6 +1218,12 @@ const ::_pbi::TcParseTable<2, 3, 1, 0, 2> player_database::_table_ = {
             stream, this->_internal_register_time(), target);
   }
 
+  // .PlayerSkillListPBComp skill_list = 4;
+  if (cached_has_bits & 0x00000002u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        4, *_impl_.skill_list_, _impl_.skill_list_->GetCachedSize(), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1208,13 +1241,21 @@ const ::_pbi::TcParseTable<2, 3, 1, 0, 2> player_database::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .Transform transform = 2;
   cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.transform_);
-  }
+  if (cached_has_bits & 0x00000003u) {
+    // .Transform transform = 2;
+    if (cached_has_bits & 0x00000001u) {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.transform_);
+    }
 
+    // .PlayerSkillListPBComp skill_list = 4;
+    if (cached_has_bits & 0x00000002u) {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.skill_list_);
+    }
+
+  }
   // uint64 player_id = 1;
   if (this->_internal_player_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
@@ -1241,13 +1282,24 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.transform_ != nullptr);
-    if (_this->_impl_.transform_ == nullptr) {
-      _this->_impl_.transform_ =
-          ::google::protobuf::Message::CopyConstruct<::Transform>(arena, *from._impl_.transform_);
-    } else {
-      _this->_impl_.transform_->MergeFrom(*from._impl_.transform_);
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(from._impl_.transform_ != nullptr);
+      if (_this->_impl_.transform_ == nullptr) {
+        _this->_impl_.transform_ =
+            ::google::protobuf::Message::CopyConstruct<::Transform>(arena, *from._impl_.transform_);
+      } else {
+        _this->_impl_.transform_->MergeFrom(*from._impl_.transform_);
+      }
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(from._impl_.skill_list_ != nullptr);
+      if (_this->_impl_.skill_list_ == nullptr) {
+        _this->_impl_.skill_list_ =
+            ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComp>(arena, *from._impl_.skill_list_);
+      } else {
+        _this->_impl_.skill_list_->MergeFrom(*from._impl_.skill_list_);
+      }
     }
   }
   if (from._internal_player_id() != 0) {
@@ -1290,55 +1342,55 @@ void player_database::InternalSwap(player_database* PROTOBUF_RESTRICT other) {
 }
 // ===================================================================
 
-class player_unimportance_database::_Internal {
+class player_database1::_Internal {
  public:
 };
 
-player_unimportance_database::player_unimportance_database(::google::protobuf::Arena* arena)
+player_database1::player_database1(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:player_unimportance_database)
+  // @@protoc_insertion_point(arena_constructor:player_database1)
 }
-player_unimportance_database::player_unimportance_database(
-    ::google::protobuf::Arena* arena, const player_unimportance_database& from)
-    : player_unimportance_database(arena) {
+player_database1::player_database1(
+    ::google::protobuf::Arena* arena, const player_database1& from)
+    : player_database1(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE player_unimportance_database::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE player_database1::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void player_unimportance_database::SharedCtor(::_pb::Arena* arena) {
+inline void player_database1::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.player_id_ = {};
 }
-player_unimportance_database::~player_unimportance_database() {
-  // @@protoc_insertion_point(destructor:player_unimportance_database)
+player_database1::~player_database1() {
+  // @@protoc_insertion_point(destructor:player_database1)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void player_unimportance_database::SharedDtor() {
+inline void player_database1::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-player_unimportance_database::GetClassData() const {
+player_database1::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(player_unimportance_database, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(player_database1, _impl_._cached_size_),
               false,
           },
-          &player_unimportance_database::MergeImpl,
-          &player_unimportance_database::kDescriptorMethods,
+          &player_database1::MergeImpl,
+          &player_database1::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void player_unimportance_database::Clear() {
-// @@protoc_insertion_point(message_clear_start:player_unimportance_database)
+PROTOBUF_NOINLINE void player_database1::Clear() {
+// @@protoc_insertion_point(message_clear_start:player_database1)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1348,7 +1400,7 @@ PROTOBUF_NOINLINE void player_unimportance_database::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* player_unimportance_database::_InternalParse(
+const char* player_database1::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -1356,7 +1408,7 @@ const char* player_unimportance_database::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> player_unimportance_database::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> player_database1::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -1367,20 +1419,20 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> player_unimportance_database::_table_ 
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_player_unimportance_database_default_instance_._instance,
+    &_player_database1_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::player_unimportance_database>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::player_database1>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 player_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_unimportance_database, _impl_.player_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(player_unimportance_database, _impl_.player_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database1, _impl_.player_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(player_database1, _impl_.player_id_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 player_id = 1;
-    {PROTOBUF_FIELD_OFFSET(player_unimportance_database, _impl_.player_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(player_database1, _impl_.player_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -1388,10 +1440,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> player_unimportance_database::_table_ 
   }},
 };
 
-::uint8_t* player_unimportance_database::_InternalSerialize(
+::uint8_t* player_database1::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:player_unimportance_database)
+  // @@protoc_insertion_point(serialize_to_array_start:player_database1)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1407,12 +1459,12 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> player_unimportance_database::_table_ 
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:player_unimportance_database)
+  // @@protoc_insertion_point(serialize_to_array_end:player_database1)
   return target;
 }
 
-::size_t player_unimportance_database::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:player_unimportance_database)
+::size_t player_database1::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:player_database1)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1429,10 +1481,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> player_unimportance_database::_table_ 
 }
 
 
-void player_unimportance_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<player_unimportance_database*>(&to_msg);
-  auto& from = static_cast<const player_unimportance_database&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:player_unimportance_database)
+void player_database1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<player_database1*>(&to_msg);
+  auto& from = static_cast<const player_database1&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:player_database1)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1443,24 +1495,24 @@ void player_unimportance_database::MergeImpl(::google::protobuf::MessageLite& to
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void player_unimportance_database::CopyFrom(const player_unimportance_database& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:player_unimportance_database)
+void player_database1::CopyFrom(const player_database1& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:player_database1)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool player_unimportance_database::IsInitialized() const {
+PROTOBUF_NOINLINE bool player_database1::IsInitialized() const {
   return true;
 }
 
-void player_unimportance_database::InternalSwap(player_unimportance_database* PROTOBUF_RESTRICT other) {
+void player_database1::InternalSwap(player_database1* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
         swap(_impl_.player_id_, other->_impl_.player_id_);
 }
 
-::google::protobuf::Metadata player_unimportance_database::GetMetadata() const {
+::google::protobuf::Metadata player_database1::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_getter,
                                    &descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_once,
                                    file_level_metadata_common_2fmysql_5fdatabase_5ftable_2eproto[4]);

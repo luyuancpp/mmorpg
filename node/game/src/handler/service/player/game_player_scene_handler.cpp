@@ -4,7 +4,7 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "service_info/player_scene_service_info.h"
 #include "game_logic/player/util/player_node_util.h"
-#include "game_logic/player/util/player_util.h"
+#include "game_logic/player/util/player_scene_util.h"
 #include "game_logic/scene/util/game_node_scene_util.h"
 #include "game_logic/network/message_util.h"
 #include "scene/util/scene_util.h"

@@ -33,6 +33,7 @@
 #include "common/comp.pb.h"
 #include "logic/component/player_scene_comp.pb.h"
 #include "logic/component/actor_comp.pb.h"
+#include "logic/component/player_skill_comp.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -63,9 +64,9 @@ extern player_centre_databaseDefaultTypeInternal _player_centre_database_default
 class player_database;
 struct player_databaseDefaultTypeInternal;
 extern player_databaseDefaultTypeInternal _player_database_default_instance_;
-class player_unimportance_database;
-struct player_unimportance_databaseDefaultTypeInternal;
-extern player_unimportance_databaseDefaultTypeInternal _player_unimportance_database_default_instance_;
+class player_database1;
+struct player_database1DefaultTypeInternal;
+extern player_database1DefaultTypeInternal _player_database1_default_instance_;
 class user_accounts;
 struct user_accountsDefaultTypeInternal;
 extern user_accountsDefaultTypeInternal _user_accounts_default_instance_;
@@ -80,23 +81,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class player_unimportance_database final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:player_unimportance_database) */ {
+class player_database1 final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:player_database1) */ {
  public:
-  inline player_unimportance_database() : player_unimportance_database(nullptr) {}
-  ~player_unimportance_database() override;
+  inline player_database1() : player_database1(nullptr) {}
+  ~player_database1() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR player_unimportance_database(
+  explicit PROTOBUF_CONSTEXPR player_database1(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline player_unimportance_database(const player_unimportance_database& from) : player_unimportance_database(nullptr, from) {}
-  inline player_unimportance_database(player_unimportance_database&& from) noexcept
-      : player_unimportance_database(nullptr, std::move(from)) {}
-  inline player_unimportance_database& operator=(const player_unimportance_database& from) {
+  inline player_database1(const player_database1& from) : player_database1(nullptr, from) {}
+  inline player_database1(player_database1&& from) noexcept
+      : player_database1(nullptr, std::move(from)) {}
+  inline player_database1& operator=(const player_database1& from) {
     CopyFrom(from);
     return *this;
   }
-  inline player_unimportance_database& operator=(player_unimportance_database&& from) noexcept {
+  inline player_database1& operator=(player_database1&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -128,16 +129,16 @@ class player_unimportance_database final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const player_unimportance_database& default_instance() {
+  static const player_database1& default_instance() {
     return *internal_default_instance();
   }
-  static inline const player_unimportance_database* internal_default_instance() {
-    return reinterpret_cast<const player_unimportance_database*>(
-        &_player_unimportance_database_default_instance_);
+  static inline const player_database1* internal_default_instance() {
+    return reinterpret_cast<const player_database1*>(
+        &_player_database1_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 4;
-  friend void swap(player_unimportance_database& a, player_unimportance_database& b) { a.Swap(&b); }
-  inline void Swap(player_unimportance_database* other) {
+  friend void swap(player_database1& a, player_database1& b) { a.Swap(&b); }
+  inline void Swap(player_database1* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -149,7 +150,7 @@ class player_unimportance_database final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(player_unimportance_database* other) {
+  void UnsafeArenaSwap(player_database1* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -157,13 +158,13 @@ class player_unimportance_database final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  player_unimportance_database* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<player_unimportance_database>(arena);
+  player_database1* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<player_database1>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const player_unimportance_database& from);
+  void CopyFrom(const player_database1& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const player_unimportance_database& from) { player_unimportance_database::MergeImpl(*this, from); }
+  void MergeFrom(const player_database1& from) { player_database1::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -184,16 +185,16 @@ class player_unimportance_database final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(player_unimportance_database* other);
+  void InternalSwap(player_database1* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "player_unimportance_database"; }
+  static ::absl::string_view FullMessageName() { return "player_database1"; }
 
  protected:
-  explicit player_unimportance_database(::google::protobuf::Arena* arena);
-  player_unimportance_database(::google::protobuf::Arena* arena, const player_unimportance_database& from);
-  player_unimportance_database(::google::protobuf::Arena* arena, player_unimportance_database&& from) noexcept
-      : player_unimportance_database(arena) {
+  explicit player_database1(::google::protobuf::Arena* arena);
+  player_database1(::google::protobuf::Arena* arena, const player_database1& from);
+  player_database1(::google::protobuf::Arena* arena, player_database1&& from) noexcept
+      : player_database1(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -217,7 +218,7 @@ class player_unimportance_database final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:player_unimportance_database)
+  // @@protoc_insertion_point(class_scope:player_database1)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -755,6 +756,7 @@ class player_database final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kTransformFieldNumber = 2,
+    kSkillListFieldNumber = 4,
     kPlayerIdFieldNumber = 1,
     kRegisterTimeFieldNumber = 3,
   };
@@ -771,6 +773,21 @@ class player_database final : public ::google::protobuf::Message
   private:
   const ::Transform& _internal_transform() const;
   ::Transform* _internal_mutable_transform();
+
+  public:
+  // .PlayerSkillListPBComp skill_list = 4;
+  bool has_skill_list() const;
+  void clear_skill_list() ;
+  const ::PlayerSkillListPBComp& skill_list() const;
+  PROTOBUF_NODISCARD ::PlayerSkillListPBComp* release_skill_list();
+  ::PlayerSkillListPBComp* mutable_skill_list();
+  void set_allocated_skill_list(::PlayerSkillListPBComp* value);
+  void unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComp* value);
+  ::PlayerSkillListPBComp* unsafe_arena_release_skill_list();
+
+  private:
+  const ::PlayerSkillListPBComp& _internal_skill_list() const;
+  ::PlayerSkillListPBComp* _internal_mutable_skill_list();
 
   public:
   // uint64 player_id = 1;
@@ -798,7 +815,7 @@ class player_database final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 1,
+      2, 4, 2,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -817,6 +834,7 @@ class player_database final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::Transform* transform_;
+    ::PlayerSkillListPBComp* skill_list_;
     ::uint64_t player_id_;
     ::int64_t register_time_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1527,28 +1545,119 @@ inline void player_database::_internal_set_register_time(::int64_t value) {
   _impl_.register_time_ = value;
 }
 
+// .PlayerSkillListPBComp skill_list = 4;
+inline bool player_database::has_skill_list() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.skill_list_ != nullptr);
+  return value;
+}
+inline const ::PlayerSkillListPBComp& player_database::_internal_skill_list() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::PlayerSkillListPBComp* p = _impl_.skill_list_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSkillListPBComp&>(::_PlayerSkillListPBComp_default_instance_);
+}
+inline const ::PlayerSkillListPBComp& player_database::skill_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.skill_list)
+  return _internal_skill_list();
+}
+inline void player_database::unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComp* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.skill_list_);
+  }
+  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.skill_list)
+}
+inline ::PlayerSkillListPBComp* player_database::release_skill_list() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::PlayerSkillListPBComp* released = _impl_.skill_list_;
+  _impl_.skill_list_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::PlayerSkillListPBComp* player_database::unsafe_arena_release_skill_list() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:player_database.skill_list)
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::PlayerSkillListPBComp* temp = _impl_.skill_list_;
+  _impl_.skill_list_ = nullptr;
+  return temp;
+}
+inline ::PlayerSkillListPBComp* player_database::_internal_mutable_skill_list() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.skill_list_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSkillListPBComp>(GetArena());
+    _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(p);
+  }
+  return _impl_.skill_list_;
+}
+inline ::PlayerSkillListPBComp* player_database::mutable_skill_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000002u;
+  ::PlayerSkillListPBComp* _msg = _internal_mutable_skill_list();
+  // @@protoc_insertion_point(field_mutable:player_database.skill_list)
+  return _msg;
+}
+inline void player_database::set_allocated_skill_list(::PlayerSkillListPBComp* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.skill_list_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+
+  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.skill_list)
+}
+
 // -------------------------------------------------------------------
 
-// player_unimportance_database
+// player_database1
 
 // uint64 player_id = 1;
-inline void player_unimportance_database::clear_player_id() {
+inline void player_database1::clear_player_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.player_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t player_unimportance_database::player_id() const {
-  // @@protoc_insertion_point(field_get:player_unimportance_database.player_id)
+inline ::uint64_t player_database1::player_id() const {
+  // @@protoc_insertion_point(field_get:player_database1.player_id)
   return _internal_player_id();
 }
-inline void player_unimportance_database::set_player_id(::uint64_t value) {
+inline void player_database1::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  // @@protoc_insertion_point(field_set:player_unimportance_database.player_id)
+  // @@protoc_insertion_point(field_set:player_database1.player_id)
 }
-inline ::uint64_t player_unimportance_database::_internal_player_id() const {
+inline ::uint64_t player_database1::_internal_player_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.player_id_;
 }
-inline void player_unimportance_database::_internal_set_player_id(::uint64_t value) {
+inline void player_database1::_internal_set_player_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.player_id_ = value;
 }

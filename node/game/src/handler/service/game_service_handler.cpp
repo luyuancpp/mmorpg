@@ -10,7 +10,7 @@
 #include "network/rpc_session.h"
 #include "service_info/service_info.h"
 #include "game_logic/player/util/player_node_util.h"
-#include "game_logic/player/util/player_util.h"
+#include "game_logic/player/util/player_scene_util.h"
 #include "game_logic/network/message_util.h"
 #include "scene/util/scene_util.h"
 #include "thread_local/storage_common_logic.h"
