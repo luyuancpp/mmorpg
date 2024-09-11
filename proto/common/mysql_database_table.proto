@@ -7,6 +7,7 @@ import "common/user_accounts.proto";
 import "common/comp.proto";
 import "logic/component/player_scene_comp.proto";
 import "logic/component/actor_comp.proto";
+import "logic/component/player_skill_comp.proto";
 
 /////////////         game
 message user_accounts
@@ -40,12 +41,13 @@ message player_database
   uint64 player_id = 1;
   Transform transform = 2;
   int64 register_time = 3;
+  PlayerSkillListPBComp skill_list = 4;
 }
 
-//玩家数据库表2,不重要数据放这里，不会马上加载
-message player_unimportance_database
+message player_database1
 {
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
 }
+

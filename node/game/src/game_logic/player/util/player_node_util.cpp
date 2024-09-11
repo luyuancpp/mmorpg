@@ -49,6 +49,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	tls.registry.emplace<Velocity>(player, velocity);
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
 	tls.registry.emplace<PlayerNodeInfoPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
+	tls.registry.emplace<PlayerSkillListPBComp>(player, message.skill_list());
 
 	// todo onload complete
 

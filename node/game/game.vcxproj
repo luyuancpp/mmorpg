@@ -138,6 +138,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
+    <ClCompile Include="src\game_logic\player\util\player_skill_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\grid_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp" />
     <ClCompile Include="src\handler\event\buff_event_handler.cpp" />
@@ -174,7 +175,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\scene\system\movement_acceleration_system.cpp" />
     <ClCompile Include="src\game_logic\scene\util\game_node_scene_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_node_util.cpp" />
-    <ClCompile Include="src\game_logic\player\util\player_util.cpp" />
+    <ClCompile Include="src\game_logic\player\util\player_scene_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_session_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_tip_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\recast_util.cpp" />
@@ -194,6 +195,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_util.h" />
     <ClInclude Include="src\game_logic\common\constants\fps_constants.h" />
     <ClInclude Include="src\game_logic\common\sequence\node_sequence_generator.h" />
+    <ClInclude Include="src\game_logic\player\util\player_skill_util.h" />
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h" />
     <ClInclude Include="src\game_logic\scene\comp\nav_comp.h" />
     <ClInclude Include="src\game_logic\scene\comp\grid_comp.h" />
@@ -236,7 +238,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\scene\system\movement_acceleration_system.h" />
     <ClInclude Include="src\game_logic\scene\util\game_node_scene_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_node_util.h" />
-    <ClInclude Include="src\game_logic\player\util\player_util.h" />
+    <ClInclude Include="src\game_logic\player\util\player_scene_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_session_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_tip_util.h" />
     <ClInclude Include="src\game_logic\scene\util\recast_util.h" />

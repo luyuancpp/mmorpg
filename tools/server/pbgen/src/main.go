@@ -46,6 +46,8 @@ func MakeProjectDir() {
 }
 
 func MakeMd5Dir() {
+	os.MkdirAll(config.BinDirectory, os.FileMode(0777))
+	os.MkdirAll(config.DBDescDirectory, os.FileMode(0777))
 	os.MkdirAll(config.Md5Dir, os.FileMode(0777))
 
 	for i := 0; i < len(config.SourceDirectories); i++ {
@@ -92,5 +94,6 @@ func main() {
 	//gen.WriteClientServiceHeadHandlerFile()
 	gen.GoRobotHandlerGenerator()
 	gen.GoRobotTotalHandlerGenerator()
+	gen.CppPlayerDataLoadGenerator()
 	util.Wg.Wait()
 }

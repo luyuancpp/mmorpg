@@ -353,6 +353,78 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 	return err
 }
 
+func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
+	// Read directory entries
+	var fds []os.DirEntry
+	if fds, err = os.ReadDir(protoPath); err != nil {
+		return err
+	}
+
+	// Process each protobuf file in the directory
+	for _, fd := range fds {
+		// Skip non-protobuf files
+		if !util.IsProtoFile(fd) {
+			continue
+		}
+
+		// Add a goroutine for each protobuf file processing
+		util.Wg.Add(1)
+		go func(fd os.DirEntry) {
+			defer util.Wg.Done()
+
+			// Construct file paths
+			fileName := protoPath + fd.Name()
+			md5FileName := protoMd5Path + fd.Name() + config.DBGoMd5Ex + config.Md5Ex
+			dstFileName := config.DbGoGameDirectory + fd.Name()
+			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
+
+			// Determine the operating system type
+			sysType := runtime.GOOS
+			var cmd *exec.Cmd
+
+			if sysType == `linux` {
+				// Command for Linux
+				cmd = exec.Command("protoc",
+					"--descriptor_set_out="+config.DBDescDirectory+fd.Name()+config.ProtoDescExtension,
+					fileName,
+					"--proto_path="+config.ProtoDir,
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
+					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+			} else {
+				// Command for other systems (presumably Windows)
+				cmd = exec.Command("./protoc.exe",
+					"--descriptor_set_out="+config.DBDescDirectory+fd.Name()+config.ProtoDescExtension,
+					fileName,
+					"--proto_path="+config.ProtoDir,
+					"-I="+config.ProtoDir+"common/",
+					"-I="+config.ProtoDir+"logic/",
+					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+			}
+
+			// Execute the command and capture output/error
+			var out bytes.Buffer
+			var stderr bytes.Buffer
+			cmd.Stdout = &out
+			cmd.Stderr = &stderr
+			err = cmd.Run()
+			fmt.Println(cmd.String())
+			if err != nil {
+				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+				log.Fatal(err)
+			}
+
+			// Write MD5 data to file upon successful generation
+			err = util.WriteToMd5ExFile(fileName, md5FileName)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(fd)
+	}
+
+	return err
+}
+
 func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 	// Read directory entries
 	var fds []os.DirEntry
@@ -469,6 +541,13 @@ func BuildAllProtoc() {
 
 		go func(i int) {
 			err := BuildProtoGoDb(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(i)
+
+		go func(i int) {
+			err := BuildProtoDesc(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message PlayerSkillPBComp {
+  uint64 skill_table_id = 1; 
+}
+
+message PlayerSkillListPBComp {
+  repeated PlayerSkillPBComp skill_list = 1;
+}

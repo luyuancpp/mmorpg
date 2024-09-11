@@ -3,24 +3,24 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2player_skill()
 {
-tls_lua_state.new_usertype<UseSkillRequest>("UseSkillRequest",
+tls_lua_state.new_usertype<ReleaseSkillSkillRequest>("ReleaseSkillSkillRequest",
 "skill_table_id",
-sol::property(&UseSkillRequest::skill_table_id, &UseSkillRequest::set_skill_table_id),
+sol::property(&ReleaseSkillSkillRequest::skill_table_id, &ReleaseSkillSkillRequest::set_skill_table_id),
 "target_id",
-sol::property(&UseSkillRequest::target_id, &UseSkillRequest::set_target_id),
+sol::property(&ReleaseSkillSkillRequest::target_id, &ReleaseSkillSkillRequest::set_target_id),
 "position",
-[](UseSkillRequest& pb) ->decltype(auto){ return pb.position();},
+[](ReleaseSkillSkillRequest& pb) ->decltype(auto){ return pb.position();},
 "mutable_position",
-[](UseSkillRequest& pb) ->decltype(auto){ return pb.mutable_position();},
+[](ReleaseSkillSkillRequest& pb) ->decltype(auto){ return pb.mutable_position();},
 "rotation",
-[](UseSkillRequest& pb) ->decltype(auto){ return pb.rotation();},
+[](ReleaseSkillSkillRequest& pb) ->decltype(auto){ return pb.rotation();},
 "mutable_rotation",
-[](UseSkillRequest& pb) ->decltype(auto){ return pb.mutable_rotation();},
+[](ReleaseSkillSkillRequest& pb) ->decltype(auto){ return pb.mutable_rotation();},
 "DebugString",
-&UseSkillRequest::DebugString,
+&ReleaseSkillSkillRequest::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<UseSkillResponse>("UseSkillResponse",
+tls_lua_state.new_usertype<ReleaseSkillSkillResponse>("ReleaseSkillSkillResponse",
 tls_lua_state.new_usertype<>("",
 "DebugString",
 &::DebugString,
@@ -62,6 +62,17 @@ sol::property(&SkillUsedS2C::skill_table_id, &SkillUsedS2C::set_skill_table_id),
 sol::property(&SkillUsedS2C::time_stamp, &SkillUsedS2C::set_time_stamp),
 "DebugString",
 &SkillUsedS2C::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
+tls_lua_state.new_usertype<GetSkillListRequest>("GetSkillListRequest",
+"DebugString",
+&GetSkillListRequest::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
+tls_lua_state.new_usertype<GetSkillListResponse>("GetSkillListResponse",
+tls_lua_state.new_usertype<>("",
+"DebugString",
+&::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

@@ -4,7 +4,7 @@
 #include "game_node.h"
 #include "game_logic/network/message_util.h"
 #include "service_info/centre_scene_service_info.h"
-#include "game_logic/player/util/player_util.h"
+#include "game_logic/player/util/player_scene_util.h"
 #include "scene/util/scene_util.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"

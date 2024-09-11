@@ -87,7 +87,7 @@
     <ClCompile Include="src\game_logic\scene\util\game_node_scene_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_scene_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\player\util\player_session_util.cpp">
@@ -165,6 +165,9 @@
     <ClCompile Include="src\handler\service_replied\gate_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\player\util\player_skill_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -233,7 +236,7 @@
     <ClInclude Include="src\game_logic\scene\util\game_node_scene_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_scene_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\player\util\player_session_util.h">
@@ -354,6 +357,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service_replied\gate_service_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\player\util\player_skill_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

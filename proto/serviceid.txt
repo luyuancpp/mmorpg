@@ -16,7 +16,7 @@
 15=GateServiceRoutePlayerMessage
 16=ClientPlayerSceneServiceNotifyActorListCreate
 17=ClientPlayerSceneServiceNotifySceneInfo
-18=PlayerSkillServiceUseSkill
+18=PlayerSkillServiceReleaseSkill
 19=CentreServiceLoginNodeAccountLogin
 20=GamePlayerServiceCentre2GsLogin
 21=ClientPlayerSceneServiceNotifyActorDestroy
@@ -55,6 +55,7 @@
 54=CentreServiceRegisterGameNode
 55=LoginServiceDisconnect
 56=GamePlayerSceneServiceLeaveScene
+57=PlayerSkillServiceGetSkillList
 58=PlayerSkillServiceNotifySkillInterrupted
 59=GameServiceInvokePlayerService
 60=ClientPlayerSceneServiceNotifyEnterScene
