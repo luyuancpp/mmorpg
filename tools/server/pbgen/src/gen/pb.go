@@ -408,7 +408,6 @@ func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
 			cmd.Stdout = &out
 			cmd.Stderr = &stderr
 			err = cmd.Run()
-			fmt.Println(cmd.String())
 			if err != nil {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
