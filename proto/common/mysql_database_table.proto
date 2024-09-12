@@ -44,7 +44,7 @@ message player_database
   PlayerSkillListPBComp skill_list = 4;
 }
 
-message player_database1
+message player_database_1
 {
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";

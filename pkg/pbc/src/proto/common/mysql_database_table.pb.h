@@ -64,9 +64,9 @@ extern player_centre_databaseDefaultTypeInternal _player_centre_database_default
 class player_database;
 struct player_databaseDefaultTypeInternal;
 extern player_databaseDefaultTypeInternal _player_database_default_instance_;
-class player_database1;
-struct player_database1DefaultTypeInternal;
-extern player_database1DefaultTypeInternal _player_database1_default_instance_;
+class player_database_1;
+struct player_database_1DefaultTypeInternal;
+extern player_database_1DefaultTypeInternal _player_database_1_default_instance_;
 class user_accounts;
 struct user_accountsDefaultTypeInternal;
 extern user_accountsDefaultTypeInternal _user_accounts_default_instance_;
@@ -81,23 +81,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class player_database1 final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:player_database1) */ {
+class player_database_1 final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:player_database_1) */ {
  public:
-  inline player_database1() : player_database1(nullptr) {}
-  ~player_database1() override;
+  inline player_database_1() : player_database_1(nullptr) {}
+  ~player_database_1() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR player_database1(
+  explicit PROTOBUF_CONSTEXPR player_database_1(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline player_database1(const player_database1& from) : player_database1(nullptr, from) {}
-  inline player_database1(player_database1&& from) noexcept
-      : player_database1(nullptr, std::move(from)) {}
-  inline player_database1& operator=(const player_database1& from) {
+  inline player_database_1(const player_database_1& from) : player_database_1(nullptr, from) {}
+  inline player_database_1(player_database_1&& from) noexcept
+      : player_database_1(nullptr, std::move(from)) {}
+  inline player_database_1& operator=(const player_database_1& from) {
     CopyFrom(from);
     return *this;
   }
-  inline player_database1& operator=(player_database1&& from) noexcept {
+  inline player_database_1& operator=(player_database_1&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -129,16 +129,16 @@ class player_database1 final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const player_database1& default_instance() {
+  static const player_database_1& default_instance() {
     return *internal_default_instance();
   }
-  static inline const player_database1* internal_default_instance() {
-    return reinterpret_cast<const player_database1*>(
-        &_player_database1_default_instance_);
+  static inline const player_database_1* internal_default_instance() {
+    return reinterpret_cast<const player_database_1*>(
+        &_player_database_1_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 4;
-  friend void swap(player_database1& a, player_database1& b) { a.Swap(&b); }
-  inline void Swap(player_database1* other) {
+  friend void swap(player_database_1& a, player_database_1& b) { a.Swap(&b); }
+  inline void Swap(player_database_1* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -150,7 +150,7 @@ class player_database1 final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(player_database1* other) {
+  void UnsafeArenaSwap(player_database_1* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -158,13 +158,13 @@ class player_database1 final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  player_database1* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<player_database1>(arena);
+  player_database_1* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<player_database_1>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const player_database1& from);
+  void CopyFrom(const player_database_1& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const player_database1& from) { player_database1::MergeImpl(*this, from); }
+  void MergeFrom(const player_database_1& from) { player_database_1::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -185,16 +185,16 @@ class player_database1 final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(player_database1* other);
+  void InternalSwap(player_database_1* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "player_database1"; }
+  static ::absl::string_view FullMessageName() { return "player_database_1"; }
 
  protected:
-  explicit player_database1(::google::protobuf::Arena* arena);
-  player_database1(::google::protobuf::Arena* arena, const player_database1& from);
-  player_database1(::google::protobuf::Arena* arena, player_database1&& from) noexcept
-      : player_database1(arena) {
+  explicit player_database_1(::google::protobuf::Arena* arena);
+  player_database_1(::google::protobuf::Arena* arena, const player_database_1& from);
+  player_database_1(::google::protobuf::Arena* arena, player_database_1&& from) noexcept
+      : player_database_1(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -218,7 +218,7 @@ class player_database1 final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:player_database1)
+  // @@protoc_insertion_point(class_scope:player_database_1)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1638,26 +1638,26 @@ inline void player_database::set_allocated_skill_list(::PlayerSkillListPBComp* v
 
 // -------------------------------------------------------------------
 
-// player_database1
+// player_database_1
 
 // uint64 player_id = 1;
-inline void player_database1::clear_player_id() {
+inline void player_database_1::clear_player_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.player_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t player_database1::player_id() const {
-  // @@protoc_insertion_point(field_get:player_database1.player_id)
+inline ::uint64_t player_database_1::player_id() const {
+  // @@protoc_insertion_point(field_get:player_database_1.player_id)
   return _internal_player_id();
 }
-inline void player_database1::set_player_id(::uint64_t value) {
+inline void player_database_1::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  // @@protoc_insertion_point(field_set:player_database1.player_id)
+  // @@protoc_insertion_point(field_set:player_database_1.player_id)
 }
-inline ::uint64_t player_database1::_internal_player_id() const {
+inline ::uint64_t player_database_1::_internal_player_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.player_id_;
 }
-inline void player_database1::_internal_set_player_id(::uint64_t value) {
+inline void player_database_1::_internal_set_player_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.player_id_ = value;
 }

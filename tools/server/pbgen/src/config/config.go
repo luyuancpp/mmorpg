@@ -32,6 +32,7 @@ const (
 	CppSol2Extension              = "_sol2.cpp"
 	MessageIdName                 = "MessageId"
 	MethodIndexName               = "Index"
+	CppUtilExtension              = "util.cpp"
 )
 
 // 常量：目录路径
@@ -86,6 +87,7 @@ const (
 	ClientLuaServiceFilePath         = ProjectDir + "client/src/handler/service_lua.cpp"
 	ClientServiceInstanceFilePath    = ProjectDir + "client/src/handler/player_service.cpp"
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
+	PlayerStorageUtilDirectory       = ProjectDir + GameNodeDirectory + "src/game_logic/player/util/"
 )
 
 // 常量：文件名
@@ -176,4 +178,9 @@ const (
 const (
 	GameNodeEventHandlerDirectory   = ProjectDir + GameNodeDirectory + EventHandlerSourceDirectory
 	CentreNodeEventHandlerDirectory = ProjectDir + CentreNodeDirectory + EventHandlerSourceDirectory
+)
+
+const (
+	PlayerDatabaseName  = "player_database"
+	PlayerDatabaseName1 = "player_database_1"
 )
