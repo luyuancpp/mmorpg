@@ -17,7 +17,10 @@ import (
 )
 
 func {{.HandlerName}}(player *logic.Player, response *game.{{.ResponseType}}) {
-
+	{{- range .Cases }}
+	case game.{{.MessageID}}:
+		{{.HandlerFunction}}(player, response.Body)
+	{{- end }}
 }
 `
 
