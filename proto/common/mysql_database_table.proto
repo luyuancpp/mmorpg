@@ -40,7 +40,6 @@ message player_database
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
   Transform transform = 2;
-  int64 register_time = 3;
   PlayerSkillListPBComp skill_list = 4;
 }
 

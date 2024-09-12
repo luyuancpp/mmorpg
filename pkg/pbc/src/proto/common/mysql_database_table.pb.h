@@ -758,7 +758,6 @@ class player_database final : public ::google::protobuf::Message
     kTransformFieldNumber = 2,
     kSkillListFieldNumber = 4,
     kPlayerIdFieldNumber = 1,
-    kRegisterTimeFieldNumber = 3,
   };
   // .Transform transform = 2;
   bool has_transform() const;
@@ -800,22 +799,12 @@ class player_database final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // int64 register_time = 3;
-  void clear_register_time() ;
-  ::int64_t register_time() const;
-  void set_register_time(::int64_t value);
-
-  private:
-  ::int64_t _internal_register_time() const;
-  void _internal_set_register_time(::int64_t value);
-
-  public:
   // @@protoc_insertion_point(class_scope:player_database)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 2,
+      2, 3, 2,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -836,7 +825,6 @@ class player_database final : public ::google::protobuf::Message
     ::Transform* transform_;
     ::PlayerSkillListPBComp* skill_list_;
     ::uint64_t player_id_;
-    ::int64_t register_time_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1521,28 +1509,6 @@ inline void player_database::set_allocated_transform(::Transform* value) {
 
   _impl_.transform_ = reinterpret_cast<::Transform*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database.transform)
-}
-
-// int64 register_time = 3;
-inline void player_database::clear_register_time() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.register_time_ = ::int64_t{0};
-}
-inline ::int64_t player_database::register_time() const {
-  // @@protoc_insertion_point(field_get:player_database.register_time)
-  return _internal_register_time();
-}
-inline void player_database::set_register_time(::int64_t value) {
-  _internal_set_register_time(value);
-  // @@protoc_insertion_point(field_set:player_database.register_time)
-}
-inline ::int64_t player_database::_internal_register_time() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.register_time_;
-}
-inline void player_database::_internal_set_register_time(::int64_t value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.register_time_ = value;
 }
 
 // .PlayerSkillListPBComp skill_list = 4;

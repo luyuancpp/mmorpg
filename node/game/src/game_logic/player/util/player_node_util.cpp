@@ -40,8 +40,9 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 
 	// Populate player data from database message
 	tls.registry.emplace<Player>(player);
-	tls.registry.emplace<Guid>(player, playerId);
+	tls.registry.emplace<Guid>(player, message.player_id());
 	tls.registry.emplace<Transform>(player, message.transform());
+	tls.registry.emplace<PlayerSkillListPBComp>(player, message.skill_list());
 	Velocity velocity;
 	velocity.set_x(1);
 	velocity.set_y(1);
@@ -49,7 +50,6 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	tls.registry.emplace<Velocity>(player, velocity);
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
 	tls.registry.emplace<PlayerNodeInfoPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
-	tls.registry.emplace<PlayerSkillListPBComp>(player, message.skill_list());
 
 	// todo onload complete
 
