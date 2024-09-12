@@ -38,31 +38,38 @@ func IncludeName(path string, protoName string) string {
 	return config.IncludeBegin + strings.Replace(path, config.ProtoDir, "", 1) + pbcHeadName + "\"\n"
 }
 
-func Copy(dst string, src string) (written int64, err error) {
-	sourceFileStat, err := os.Stat(src)
+func Copy(dstFile string, srcFile string) (written int64, err error) {
+	sourceFileStat, err := os.Stat(srcFile)
+
 	if err != nil {
-		return 0, fmt.Errorf("failed to get file info for %s: %v", src, err)
+		return 0, fmt.Errorf("failed to get file info for %s: %v", srcFile, err)
 	}
+
 	if !sourceFileStat.Mode().IsRegular() {
-		return 0, fmt.Errorf("%s is not a regular file", src)
+		return 0, fmt.Errorf("%s is not a regular file", srcFile)
 	}
-	source, err := os.Open(src)
+
+	source, err := os.Open(srcFile)
+
 	if err != nil {
-		return 0, fmt.Errorf("failed to open source file %s: %v", src, err)
+		return 0, fmt.Errorf("failed to open source file %s: %v", srcFile, err)
 	}
 	defer source.Close()
 
-	destination, err := os.Create(dst)
+	destination, err := os.Create(dstFile)
+
 	if err != nil {
-		return 0, fmt.Errorf("failed to create destination file %s: %v", dst, err)
+		return 0, fmt.Errorf("failed to create destination file %s: %v", dstFile, err)
 	}
 	defer destination.Close()
 
 	nBytes, err := io.Copy(destination, source)
 	if err != nil {
-		return nBytes, fmt.Errorf("failed to copy data from %s to %s: %v", src, dst, err)
+		return nBytes, fmt.Errorf("failed to copy data from %s to %s: %v", srcFile, dstFile, err)
 	}
-	log.Default().Println("Copied %s -> %s\n", src, dst)
+
+	log.Default().Println("Copied %s -> %s\n", srcFile, dstFile)
+
 	return nBytes, nil
 }
 

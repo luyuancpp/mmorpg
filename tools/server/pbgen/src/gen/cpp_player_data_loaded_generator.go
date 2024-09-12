@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"pbgen/util"
 	"strings"
 	"text/template"
 
@@ -58,20 +59,32 @@ func CppPlayerDataLoadGenerator() {
 
 	// 遍历文件描述符集合并打印消息字段
 	for _, fileDesc := range fdSet.GetFile() {
-		if !(*fileDesc.Name == config.PlayerDatabaseName || config.PlayerDatabaseName1 == *fileDesc.Name) {
-			continue
-		}
 		for _, messageDesc := range fileDesc.GetMessageType() {
-			fileDescName := strings.ToLower(*fileDesc.Name)
+			messageDescName := strings.ToLower(*messageDesc.Name)
+			if !(strings.Contains(messageDescName, config.PlayerDatabaseName) || strings.Contains(messageDescName, config.PlayerDatabaseName1)) {
+				continue
+			}
+
+			md5FilePath := config.PlayerStorageMd5Directory + "player_" + messageDescName + config.CppUtilExtension
+
 			err := generateCppDeserializeFromDatabase(
-				config.PlayerStorageUtilDirectory+"player_"+fileDescName+config.CppUtilExtension,
-				fileDescName,
+				md5FilePath,
+				messageDescName,
 				messageDesc.GetField())
 
 			if err != nil {
 				log.Fatal(err)
 				return
 			}
+
+			destFilePath := config.PlayerStorageUtilDirectory + "player_" + messageDescName + config.CppUtilExtension
+
+			_, err = util.CopyFileByMd5(destFilePath, md5FilePath)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+
 		}
 	}
 }
