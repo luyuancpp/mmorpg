@@ -14,26 +14,34 @@ import (
 	"pbgen/config"
 )
 
-const playerLoaderTemplate = `package handler
-
+const playerLoaderTemplate = `
 #include "thread_local/storage.h"
 #include "proto/common/mysql_database_table.pb.h"
 
-void Player{{.HandlerName}}Unmarshal(entt::entity player, const player_database& message){
+void {{.HandlerName}}Unmarshal(entt::entity player, const player_database& message){
 	{{- range .Fields }}
-	tls.registry.emplace<{{.Type}}>(player, message.{{.Name}});
+	{{- if .TypeName }}
+	tls.registry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
+	{{- end }}
 	{{- end }}
 }
 
-void Player{{.HandlerName}}Marshal(entt::entity player, const player_database& message){
+void {{.HandlerName}}Marshal(entt::entity player, const player_database& message){
 	{{- range .Fields }}
-	tls.registry.emplace<{{.Type}}>(player, message.{{.Name}});
+	{{- if .TypeName }}
+	tls.registry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
+	{{- end }}
 	{{- end }}
 }
 `
 
+type PlayerDBProtoFieldData struct {
+	Name     string
+	TypeName string
+}
+
 type DescData struct {
-	Fields      []*descriptorpb.FieldDescriptorProto
+	Fields      []PlayerDBProtoFieldData
 	HandlerName string
 }
 
@@ -65,12 +73,18 @@ func CppPlayerDataLoadGenerator() {
 				continue
 			}
 
+			//printMessageFields(messageDesc)
+
+			handleName := util.CapitalizeWords(*messageDesc.Name)
+
 			md5FilePath := config.PlayerStorageMd5Directory + "player_" + messageDescName + config.CppUtilExtension
+
+			filedList := generateDatabaseFiles(messageDesc)
 
 			err := generateCppDeserializeFromDatabase(
 				md5FilePath,
-				messageDescName,
-				messageDesc.GetField())
+				handleName,
+				filedList)
 
 			if err != nil {
 				log.Fatal(err)
@@ -89,8 +103,33 @@ func CppPlayerDataLoadGenerator() {
 	}
 }
 
+// 打印消息字段信息
+func printMessageFields(descriptor *descriptorpb.DescriptorProto) {
+	fmt.Printf("Message Type: %s\n", descriptor.GetName())
+	for _, field := range descriptor.GetField() {
+		fieldName := field.GetName()
+		fieldType := field.GetType()
+		fieldLabel := field.GetLabel()
+		fieldTypeName := field.GetTypeName()
+
+		fmt.Printf("Field %s: %s (Type: %s, Label: %s)\n", fieldTypeName, fieldName, fieldType, fieldLabel)
+	}
+}
+
+// generateHandlerCases creates the cases for the switch statement based on the method.
+func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBProtoFieldData {
+	result := make([]PlayerDBProtoFieldData, len(descriptor.GetField()))
+
+	for i, field := range descriptor.GetField() {
+		result[i].Name = field.GetName()
+		result[i].TypeName = strings.ReplaceAll(field.GetTypeName(), ".", "")
+	}
+
+	return result
+}
+
 // generateHandlerFile creates a new handler file with the specified parameters.
-func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []*descriptorpb.FieldDescriptorProto) error {
+func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData) error {
 	file, err := os.Create(fileName)
 	if err != nil {
 		return fmt.Errorf("could not create file %s: %w", fileName, err)

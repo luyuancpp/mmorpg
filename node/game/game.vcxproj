@@ -138,6 +138,8 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
+    <ClCompile Include="src\game_logic\player\util\player_player_database_1_util.cpp" />
+    <ClCompile Include="src\game_logic\player\util\player_player_database_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_skill_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\grid_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp" />
