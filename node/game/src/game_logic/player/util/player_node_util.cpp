@@ -18,6 +18,12 @@
 
 #include "game_node.h"
 
+void Player_databaseUnmarshal(entt::entity player, const player_database& message);
+void Player_databaseMarshal(entt::entity player, const player_database& message);
+
+void Player_database_1Unmarshal(entt::entity player, const player_database& message);
+void Player_database_1Marshal(entt::entity player, const player_database& message);
+
 void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
 {
 	LOG_INFO << "Player loaded: " << playerId;
@@ -41,8 +47,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	// Populate player data from database message
 	tls.registry.emplace<Player>(player);
 	tls.registry.emplace<Guid>(player, message.player_id());
-	tls.registry.emplace<Transform>(player, message.transform());
-	tls.registry.emplace<PlayerSkillListPBComp>(player, message.skill_list());
+	Player_databaseUnmarshal(player, message);
 	Velocity velocity;
 	velocity.set_x(1);
 	velocity.set_y(1);
@@ -81,7 +86,7 @@ void PlayerNodeUtil::SavePlayer(entt::entity player)
 	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
 
 	pb->set_player_id(tls.registry.get<Guid>(player));
-	pb->mutable_transform()->CopyFrom(tls.registry.get<Transform>(player));
+	Player_databaseMarshal(player, *pb);
 	tlsGame.playerRedis->Save(pb, tls.registry.get<Guid>(player));
 }
 
