@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+message RegisterPlayer
+{
+  uint64 entity = 1;
+}
+
+message PlayerUpgrade
+{
+  uint64 entity = 1;
+  uint32 new_level = 2;
+}
+

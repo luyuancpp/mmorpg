@@ -18,7 +18,7 @@ const playerLoaderTemplate = `
 #include "thread_local/storage.h"
 #include "proto/common/mysql_database_table.pb.h"
 
-void {{.HandlerName}}Unmarshal(entt::entity player, const player_database& message){
+void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const player_database& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
 	tls.registry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
@@ -26,10 +26,10 @@ void {{.HandlerName}}Unmarshal(entt::entity player, const player_database& messa
 	{{- end }}
 }
 
-void {{.HandlerName}}Marshal(entt::entity player, const player_database& message){
+void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, player_database& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
-	tls.registry.emplace<{{.TypeName}}>(player, message.{{.Name}}());
+	message.mutable_{{.Name}}()->CopyFrom(tls.registry.emplace<{{.TypeName}}>(player));
 	{{- end }}
 	{{- end }}
 }

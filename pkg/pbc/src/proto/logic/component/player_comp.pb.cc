@@ -33,6 +33,25 @@ struct UnregisterPlayerDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UnregisterPlayerDefaultTypeInternal _UnregisterPlayer_default_instance_;
+
+inline constexpr PlayerUint64PBComp::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : registration_timestamp_{::uint64_t{0u}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerUint64PBComp::PlayerUint64PBComp(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct PlayerUint64PBCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerUint64PBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerUint64PBCompDefaultTypeInternal() {}
+  union {
+    PlayerUint64PBComp _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerUint64PBCompDefaultTypeInternal _PlayerUint64PBComp_default_instance_;
       template <typename>
 PROTOBUF_CONSTEXPR PlayerUInt64Array::PlayerUInt64Array(::_pbi::ConstantInitialized) {}
 struct PlayerUInt64ArrayDefaultTypeInternal {
@@ -154,7 +173,7 @@ struct AccountDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AccountDefaultTypeInternal _Account_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[9];
+static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[10];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fplayer_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -222,6 +241,15 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::PlayerUInt32Array, _impl_.uint32_valuse_),
         ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::PlayerUint64PBComp, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::PlayerUint64PBComp, _impl_.registration_timestamp_),
+        ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::PlayerInt64Array, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -248,8 +276,9 @@ static const ::_pbi::MigrationSchema
         {33, -1, -1, sizeof(::UnregisterPlayer)},
         {41, -1, -1, sizeof(::PlayerInt32Array)},
         {50, -1, -1, sizeof(::PlayerUInt32Array)},
-        {59, -1, -1, sizeof(::PlayerInt64Array)},
-        {67, -1, -1, sizeof(::PlayerUInt64Array)},
+        {59, -1, -1, sizeof(::PlayerUint64PBComp)},
+        {68, -1, -1, sizeof(::PlayerInt64Array)},
+        {76, -1, -1, sizeof(::PlayerUInt64Array)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_NormalLogin_default_instance_._instance,
@@ -259,6 +288,7 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_UnregisterPlayer_default_instance_._instance,
     &::_PlayerInt32Array_default_instance_._instance,
     &::_PlayerUInt32Array_default_instance_._instance,
+    &::_PlayerUint64PBComp_default_instance_._instance,
     &::_PlayerInt64Array_default_instance_._instance,
     &::_PlayerUInt64Array_default_instance_._instance,
 };
@@ -269,20 +299,22 @@ const char descriptor_table_protodef_logic_2fcomponent_2fplayer_5fcomp_2eproto[]
     "count\022\017\n\007account\030\001 \001(\t\"\022\n\020UnregisterPlay"
     "er\"(\n\020PlayerInt32Array\022\024\n\014int32_valuse\030\001"
     " \003(\005\"*\n\021PlayerUInt32Array\022\025\n\ruint32_valu"
-    "se\030\002 \003(\r\"\022\n\020PlayerInt64Array\"\023\n\021PlayerUI"
-    "nt64ArrayB\tZ\007pb/gameb\006proto3"
+    "se\030\002 \003(\r\"4\n\022PlayerUint64PBComp\022\036\n\026regist"
+    "ration_timestamp\030\001 \001(\004\"\022\n\020PlayerInt64Arr"
+    "ay\"\023\n\021PlayerUInt64ArrayB\tZ\007pb/gameb\006prot"
+    "o3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto = {
     false,
     false,
-    268,
+    322,
     descriptor_table_protodef_logic_2fcomponent_2fplayer_5fcomp_2eproto,
     "logic/component/player_comp.proto",
     &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
     nullptr,
     0,
-    9,
+    10,
     schemas,
     file_default_instances,
     TableStruct_logic_2fcomponent_2fplayer_5fcomp_2eproto::offsets,
@@ -1042,6 +1074,183 @@ void PlayerUInt32Array::InternalSwap(PlayerUInt32Array* PROTOBUF_RESTRICT other)
 }
 // ===================================================================
 
+class PlayerUint64PBComp::_Internal {
+ public:
+};
+
+PlayerUint64PBComp::PlayerUint64PBComp(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:PlayerUint64PBComp)
+}
+PlayerUint64PBComp::PlayerUint64PBComp(
+    ::google::protobuf::Arena* arena, const PlayerUint64PBComp& from)
+    : PlayerUint64PBComp(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE PlayerUint64PBComp::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void PlayerUint64PBComp::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.registration_timestamp_ = {};
+}
+PlayerUint64PBComp::~PlayerUint64PBComp() {
+  // @@protoc_insertion_point(destructor:PlayerUint64PBComp)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void PlayerUint64PBComp::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+PlayerUint64PBComp::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(PlayerUint64PBComp, _impl_._cached_size_),
+              false,
+          },
+          &PlayerUint64PBComp::MergeImpl,
+          &PlayerUint64PBComp::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void PlayerUint64PBComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerUint64PBComp)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.registration_timestamp_ = ::uint64_t{0u};
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* PlayerUint64PBComp::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerUint64PBComp::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_PlayerUint64PBComp_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::PlayerUint64PBComp>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 registration_timestamp = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerUint64PBComp, _impl_.registration_timestamp_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerUint64PBComp, _impl_.registration_timestamp_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 registration_timestamp = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerUint64PBComp, _impl_.registration_timestamp_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* PlayerUint64PBComp::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerUint64PBComp)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 registration_timestamp = 1;
+  if (this->_internal_registration_timestamp() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_registration_timestamp(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerUint64PBComp)
+  return target;
+}
+
+::size_t PlayerUint64PBComp::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:PlayerUint64PBComp)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 registration_timestamp = 1;
+  if (this->_internal_registration_timestamp() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_registration_timestamp());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void PlayerUint64PBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerUint64PBComp*>(&to_msg);
+  auto& from = static_cast<const PlayerUint64PBComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerUint64PBComp)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_registration_timestamp() != 0) {
+    _this->_impl_.registration_timestamp_ = from._impl_.registration_timestamp_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerUint64PBComp::CopyFrom(const PlayerUint64PBComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerUint64PBComp)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool PlayerUint64PBComp::IsInitialized() const {
+  return true;
+}
+
+void PlayerUint64PBComp::InternalSwap(PlayerUint64PBComp* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.registration_timestamp_, other->_impl_.registration_timestamp_);
+}
+
+::google::protobuf::Metadata PlayerUint64PBComp::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[7]);
+}
+// ===================================================================
+
 class PlayerInt64Array::_Internal {
  public:
 };
@@ -1073,7 +1282,7 @@ PlayerInt64Array::PlayerInt64Array(
 ::google::protobuf::Metadata PlayerInt64Array::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[7]);
+                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[8]);
 }
 // ===================================================================
 
@@ -1108,7 +1317,7 @@ PlayerUInt64Array::PlayerUInt64Array(
 ::google::protobuf::Metadata PlayerUInt64Array::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[8]);
+                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[9]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

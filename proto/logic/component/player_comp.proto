@@ -35,6 +35,11 @@ message PlayerUInt32Array
 	repeated uint32 uint32_valuse = 2;
 }
 
+message PlayerUint64PBComp
+{
+	uint64 registration_timestamp  = 1;
+}
+
 message PlayerInt64Array
 {
 	

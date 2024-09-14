@@ -15,14 +15,16 @@
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
+#include "proto/logic/event/player_event.pb.h"
 
 #include "game_node.h"
 
-void Player_databaseUnmarshal(entt::entity player, const player_database& message);
-void Player_databaseMarshal(entt::entity player, const player_database& message);
+void Player_databaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
+void Player_databaseMessageFieldsMarshal(entt::entity player, player_database& message);
 
-void Player_database_1Unmarshal(entt::entity player, const player_database& message);
-void Player_database_1Marshal(entt::entity player, const player_database& message);
+void Player_database_1MessageFieldsUnmarshal(entt::entity player, const player_database& message);
+void Player_database_1MessageFieldsMarshal(entt::entity player, player_database& message);
+
 
 void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
 {
@@ -47,7 +49,16 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	// Populate player data from database message
 	tls.registry.emplace<Player>(player);
 	tls.registry.emplace<Guid>(player, message.player_id());
-	Player_databaseUnmarshal(player, message);
+	Player_databaseMessageFieldsUnmarshal(player, message);
+
+	if (message.uint64_pb_comp().registration_timestamp() <= 0)
+	{
+		tls.registry.get<PlayerUint64PBComp>(player).set_registration_timestamp(Timestamp::now().secondsSinceEpoch());
+
+		RegisterPlayer registerPlayer;
+		tls.dispatcher.trigger(registerPlayer);
+	}
+
 	Velocity velocity;
 	velocity.set_x(1);
 	velocity.set_y(1);
@@ -86,7 +97,7 @@ void PlayerNodeUtil::SavePlayer(entt::entity player)
 	SaveMessage pb = std::make_shared<SaveMessage::element_type>();
 
 	pb->set_player_id(tls.registry.get<Guid>(player));
-	Player_databaseMarshal(player, *pb);
+	Player_databaseMessageFieldsMarshal(player, *pb);
 	tlsGame.playerRedis->Save(pb, tls.registry.get<Guid>(player));
 }
 

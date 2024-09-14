@@ -7,6 +7,7 @@ import "common/user_accounts.proto";
 import "common/comp.proto";
 import "logic/component/player_scene_comp.proto";
 import "logic/component/actor_comp.proto";
+import "logic/component/player_comp.proto";
 import "logic/component/player_skill_comp.proto";
 
 /////////////         game
@@ -40,6 +41,7 @@ message player_database
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
   Transform transform = 2;
+  PlayerUint64PBComp uint64_pb_comp = 3;
   PlayerSkillListPBComp skill_list = 4;
 }
 
