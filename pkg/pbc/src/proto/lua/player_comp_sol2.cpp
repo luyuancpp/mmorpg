@@ -60,6 +60,13 @@ tls_lua_state.new_usertype<PlayerUInt32Array>("PlayerUInt32Array",
 &PlayerUInt32Array::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<PlayerUint64PBComp>("PlayerUint64PBComp",
+"registration_timestamp",
+sol::property(&PlayerUint64PBComp::registration_timestamp, &PlayerUint64PBComp::set_registration_timestamp),
+"DebugString",
+&PlayerUint64PBComp::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 tls_lua_state.new_usertype<PlayerInt64Array>("PlayerInt64Array",
 "DebugString",
 &PlayerInt64Array::DebugString,

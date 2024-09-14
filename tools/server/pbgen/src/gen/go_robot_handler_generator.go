@@ -13,10 +13,10 @@ const handlerTemplate = `package handler
 
 import (
 	"robot/pb/game"
-	"robot/logic"
+	"robot/logic/gameobject"
 )
 
-func {{.HandlerName}}(player *logic.Player, response *game.{{.ResponseType}}) {
+func {{.HandlerName}}(player *gameobject.Player, response *game.{{.ResponseType}}) {
 	{{- range .Cases }}
 	case game.{{.MessageID}}:
 		{{.HandlerFunction}}(player, response.Body)

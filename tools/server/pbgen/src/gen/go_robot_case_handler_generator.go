@@ -14,7 +14,7 @@ const handlerTotalTemplate = `package handler
 import (
 	"github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
-	"robot/logic"
+	"robot/logic/gameobject"
 	"robot/pb/game"
 	"robot/pkg"
 )
@@ -24,7 +24,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 	zap.L().Debug("Received message body", zap.String("response", response.String()))
 
 	// Retrieve the player from the player list
-	player, ok := logic.PlayerList.Get(client.PlayerId)
+	player, ok := gameobject.PlayerList.Get(client.PlayerId)
 	if !ok {
 		zap.L().Error("Player not found", zap.Uint64("player_id", client.PlayerId))
 		return
@@ -43,7 +43,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 }
 
 {{- range .Cases }}
-func {{.HandlerFunction}}(player *logic.Player, body []byte) {
+func {{.HandlerFunction}}(player *gameobject.Player, body []byte) {
 	message := &game.{{.MessageType}}{}
 	if err := proto.Unmarshal(body, message); err != nil {
 		zap.L().Error("Failed to unmarshal {{.MessageType}}", zap.Error(err))
