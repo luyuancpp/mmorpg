@@ -172,6 +172,7 @@
     <ClCompile Include="src\time\comp\time_ measurement.cpp" />
     <ClCompile Include="src\log\util\console_log_util.cpp" />
     <ClCompile Include="src\game_common_logic\util\session_util.cpp" />
+    <ClCompile Include="src\time\util\time_util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cooldown\util\cooldown_util.h" />

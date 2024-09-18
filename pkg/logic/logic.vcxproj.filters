@@ -14,6 +14,7 @@
     <ClCompile Include="src\time\comp\timer_task_comp.cpp" />
     <ClCompile Include="src\log\util\console_log_util.cpp" />
     <ClCompile Include="src\time\comp\time_ measurement.cpp" />
+    <ClCompile Include="src\time\util\time_util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\mission\comp\mission_comp.h" />
