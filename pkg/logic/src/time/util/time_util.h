@@ -5,6 +5,8 @@
 class TimeUtil
 {
 public:
+	static uint64_t NowMicroseconds();
+
 	static uint64_t NowMilliseconds();
 
 	static uint64_t NowSeconds();

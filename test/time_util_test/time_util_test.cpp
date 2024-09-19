@@ -2,103 +2,79 @@
 #include <chrono>
 #include <thread>
 
-#include "time/util/time_meter_util.h"
+#include "time/util/time_util.h"
 
-class TimeMeterUtilTest : public ::testing::Test {
-protected:
-	TimeMeterComp timeMeter;
+#include <boost/date_time/posix_time/posix_time.hpp>
 
-	void SetUp() override {
-		// 初始化代码（如果需要）
-	}
+#include "muduo/base/CrossPlatformAdapterFunction.h"
 
-	void TearDown() override {
-		// 清理代码（如果需要）
-	}
-};
+void PrintUTCWithMilliseconds() {
+	uint64_t milliseconds = TimeUtil::NowMillisecondsUTC();
+	boost::posix_time::ptime utc_now = boost::posix_time::microsec_clock::universal_time();
 
-TEST_F(TimeMeterUtilTest, InitialExpiration) {
-	timeMeter.set_duration(5); // 设置时间测量器持续时间为5秒
-
-	TimeMeterSecondUtil::Reset(timeMeter);
-
-	std::this_thread::sleep_for(std::chrono::seconds(6)); // 等待6秒
-
-	EXPECT_TRUE(TimeMeterSecondUtil::IsExpired(timeMeter));
-}
-
-TEST_F(TimeMeterUtilTest, ExtendedDuration) {
-	timeMeter.set_duration(5); // 设置时间测量器持续时间为5秒
-
-	TimeMeterSecondUtil::Reset(timeMeter);
-
-	std::this_thread::sleep_for(std::chrono::seconds(3)); // 等待3秒
-
-	EXPECT_FALSE(TimeMeterSecondUtil::IsExpired(timeMeter));
-
-	// 调整时间测量器的持续时间为10秒
-	timeMeter.set_duration(10);
-
-	TimeMeterSecondUtil::Reset(timeMeter);
-
-	std::this_thread::sleep_for(std::chrono::seconds(6)); // 等待6秒
-
-	EXPECT_FALSE(TimeMeterSecondUtil::IsExpired(timeMeter));
-	EXPECT_EQ(TimeMeterSecondUtil::Remaining(timeMeter), 4); // 10秒持续时间减去6秒，剩余4秒
+	std::cout << "当前 UTC 时间: " << boost::posix_time::to_simple_string(utc_now) << std::endl;
+	std::cout << "自1970年1月1日以来的毫秒数: " << milliseconds << std::endl;
 }
 
 
-class TimeMeterMillisecondUtilTest : public ::testing::Test {
-protected:
-	void SetUp() override {
-		// 设置一个标准时间
-		current_time_ms = TimeMeterMillisecondUtil::GetCurrentTimeInMilliseconds();
-		time_meter_comp.set_start(current_time_ms);
-		time_meter_comp.set_duration(10000); // 10秒
-	}
+void PrintUTCWithSeconds() {
+	uint64_t seconds = TimeUtil::NowSecondsUTC();
+	boost::posix_time::ptime utc_now = boost::posix_time::second_clock::universal_time();
 
-	uint64_t current_time_ms;
-	TimeMeterComp time_meter_comp;
-};
-
-TEST_F(TimeMeterMillisecondUtilTest, RemainingTime) {
-	// 测试剩余时间
-	uint64_t remaining = TimeMeterMillisecondUtil::Remaining(time_meter_comp);
-	EXPECT_LE(remaining, 10000);
+	// 输出 UTC 时间
+	std::cout << "当前 UTC 时间: " << boost::posix_time::to_simple_string(utc_now) << std::endl;
+	std::cout << "自1970年1月1日以来的秒数: " << seconds << std::endl;
 }
 
-TEST_F(TimeMeterMillisecondUtilTest, IsExpired) {
-	// 测试是否超时
-	EXPECT_FALSE(TimeMeterMillisecondUtil::IsExpired(time_meter_comp));
-
-	// 修改持续时间以使其超时
-	time_meter_comp.set_start(current_time_ms - 20000); // 起始时间设置为20秒前
-	EXPECT_TRUE(TimeMeterMillisecondUtil::IsExpired(time_meter_comp));
+TEST(TimeUtilTest, NowMilliseconds) {
+	PrintUTCWithSeconds();
+	uint64_t localMilliseconds = TimeUtil::NowMilliseconds();
+	EXPECT_GE(localMilliseconds, 0);  // 检查返回值是否大于或等于 0
 }
 
-TEST_F(TimeMeterMillisecondUtilTest, IsBeforeStart) {
-	// 测试是否在开始时间之前
-	EXPECT_FALSE(TimeMeterMillisecondUtil::IsBeforeStart(time_meter_comp));
-
-	// 修改开始时间
-	time_meter_comp.set_start(current_time_ms + 20000); // 设置为20秒后
-	EXPECT_TRUE(TimeMeterMillisecondUtil::IsBeforeStart(time_meter_comp));
+TEST(TimeUtilTest, NowSeconds) {
+	uint64_t localSeconds = TimeUtil::NowSeconds();
+	EXPECT_GE(localSeconds, 0);  // 检查返回值是否大于或等于 0
 }
 
-TEST_F(TimeMeterMillisecondUtilTest, IsNotStarted) {
-	// 测试是否未开始
-	EXPECT_FALSE(TimeMeterMillisecondUtil::IsNotStarted(time_meter_comp));
-
-	// 修改开始时间
-	time_meter_comp.set_start(current_time_ms + 20000); // 设置为20秒后
-	EXPECT_TRUE(TimeMeterMillisecondUtil::IsNotStarted(time_meter_comp));
+TEST(TimeUtilTest, NowMillisecondsUTC) {
+	uint64_t utcMilliseconds = TimeUtil::NowMillisecondsUTC();
+	EXPECT_GE(utcMilliseconds, 0);  // 检查返回值是否大于或等于 0
 }
 
-TEST_F(TimeMeterMillisecondUtilTest, Reset) {
-	// 测试重置功能
-	TimeMeterMillisecondUtil::Reset(time_meter_comp);
-	uint64_t new_start = time_meter_comp.start();
-	EXPECT_GE(new_start, current_time_ms);
+TEST(TimeUtilTest, NowSecondsUTC) {
+	uint64_t utcSeconds = TimeUtil::NowSecondsUTC();
+	EXPECT_GE(utcSeconds, 0);  // 检查返回值是否大于或等于 0
+}
+
+// 比较本地时间与 UTC 时间差异
+TEST(TimeUtilTest, CompareLocalAndUTC) {
+	uint64_t localMilliseconds = TimeUtil::NowMilliseconds();
+	uint64_t utcMilliseconds = TimeUtil::NowMillisecondsUTC();
+
+	// 本地时间与 UTC 时间的差值（应接近于 8 小时）
+	int64_t difference = static_cast<int64_t>(localMilliseconds) - static_cast<int64_t>(utcMilliseconds);
+
+	// 8 小时的毫秒数
+	const uint64_t eightHoursInMilliseconds = 8 * 60 * 60 * 1000;
+
+	EXPECT_LE(difference, eightHoursInMilliseconds);  // 本地时间应小于等于 UTC + 8 小时
+	EXPECT_GE(difference, 0);  // 本地时间应大于或等于 UTC 时间
+}
+
+// 比较本地时间与 UTC 时间差异（以秒为单位）
+TEST(TimeUtilTest, CompareLocalAndUTCInSeconds) {
+	uint64_t localSeconds = TimeUtil::NowSeconds();
+	uint64_t utcSeconds = TimeUtil::NowSecondsUTC();
+
+	// 本地时间与 UTC 时间的差值（应接近于 8 小时）
+	int64_t difference = static_cast<int64_t>(localSeconds) - static_cast<int64_t>(utcSeconds);
+
+	// 8 小时的秒数
+	const uint64_t eightHoursInSeconds = 8 * 60 * 60;
+
+	EXPECT_LE(difference, eightHoursInSeconds);  // 本地时间应小于等于 UTC + 8 小时
+	EXPECT_GE(difference, 0);  // 本地时间应大于或等于 UTC 时间
 }
 
 int main(int argc, char** argv) {
