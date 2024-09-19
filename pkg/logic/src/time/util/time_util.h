@@ -11,5 +11,7 @@ public:
 
 	static uint64_t NowMillisecondsUTC();
 
+	static uint64_t NowMicrosecondsUTC();
+
 	static uint64_t NowSecondsUTC();
 };
