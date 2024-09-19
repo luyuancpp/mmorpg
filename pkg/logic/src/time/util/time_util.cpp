@@ -23,46 +23,32 @@ uint64_t PTimeToMicroseconds(const boost::posix_time::ptime& pt) {
 	return (pt - epoch).total_microseconds();  // 返回自1970年以来的微秒数
 }
 
-uint64_t TimeUtil::NowMicroseconds()
-{
-	// 获取当前 UTC 时间
+uint64_t TimeUtil::NowMicroseconds(){
 	boost::posix_time::ptime utc_now = boost::posix_time::second_clock::universal_time();
-
 	return PTimeToMicroseconds(utc_now);
 }
 
 uint64_t TimeUtil::NowMilliseconds() {
-	// 获取当前 UTC 时间
 	boost::posix_time::ptime utc_now = boost::posix_time::microsec_clock::universal_time();
-
 	return PTimeToMilliseconds(utc_now);
 }
 
 uint64_t TimeUtil::NowSeconds() {
-	// 获取当前 UTC 时间
 	boost::posix_time::ptime utc_now = boost::posix_time::microsec_clock::universal_time();
-
-	return PTimeToMilliseconds(utc_now);
+	return PTimeToSeconds(utc_now);
 }
 
 uint64_t TimeUtil::NowMillisecondsUTC() {
-	// 获取当前 UTC 时间
 	boost::posix_time::ptime utc_now = boost::posix_time::microsec_clock::universal_time();
-
 	return PTimeToMilliseconds(utc_now);
 }
 
-uint64_t TimeUtil::NowMicrosecondsUTC()
-{
-	// 获取当前 UTC 时间
+uint64_t TimeUtil::NowMicrosecondsUTC(){
 	boost::posix_time::ptime utc_now = boost::posix_time::second_clock::universal_time();
-
 	return PTimeToMicroseconds(utc_now);
 }
 
 uint64_t TimeUtil::NowSecondsUTC() {
-	// 获取当前 UTC 时间
 	boost::posix_time::ptime utc_now = boost::posix_time::second_clock::universal_time();
-
 	return PTimeToSeconds(utc_now);
 }
