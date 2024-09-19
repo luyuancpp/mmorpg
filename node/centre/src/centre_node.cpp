@@ -22,6 +22,7 @@
 #include "log/util/console_log_util.h"
 #include "grpc/request/deploy_grpc_requst.h"
 #include "game_logic/player/util/player_session_util.h"
+#include "time/util/time_util.h"
 
 using namespace muduo;
 using namespace net;
@@ -62,7 +63,7 @@ void CentreNode::Init()
 	InitNodeConfig();
 
 	nodeInfo.set_node_type(kCentreNode);
-	nodeInfo.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
+	nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
 	muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
 		ZoneConfig::GetSingleton().config_info().loglevel()));
 	InitGameConfig();

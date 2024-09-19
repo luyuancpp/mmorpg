@@ -1,7 +1,8 @@
 #include "timer_task_comp.h"
 
-#include "muduo/net/TimerId.h"
 #include "muduo/net/Timer.h"
+#include "muduo/net/TimerId.h"
+#include "time/util/time_util.h"
 
 #define  tlsEventLoop EventLoop::getEventLoopOfCurrentThread()
 
@@ -72,13 +73,13 @@ bool TimerTaskComp::IsActive() const
     return !(endTime.invalid() == endTime);
 }
 
-int32_t TimerTaskComp::GetEndTime()
+uint64_t TimerTaskComp::GetEndTime()
 {
-    if (endTime < Timestamp::now() )
+    if (endTime < Timestamp(TimeUtil::NowSecondsUTC()))
     {
         return 0;
     }
-    return (int32_t)id_.GetTimer()->expiration().secondsSinceEpoch();
+    return id_.GetTimer()->expiration().secondsSinceEpoch();
 }
 
 void TimerTaskComp::UpdateEndStamp()

@@ -1,13 +1,14 @@
 #include "timer_duration.h"
 
 #include "duration_funtion.h"
+#include "time/util/time_util.h"
 
-TimerDuration::TimerDuration(time_t nBeginTime, time_t nEndTime)
+TimerDuration::TimerDuration(uint64_t nBeginTime, uint64_t nEndTime)
     : TimerDuration(nBeginTime, nEndTime, kEmptyCallBack, kEmptyCallBack)
 {
 }
 
-TimerDuration::TimerDuration(time_t nBeginTime, time_t nEndTime, 
+TimerDuration::TimerDuration(uint64_t nBeginTime, uint64_t nEndTime, 
     const  muduo::net::TimerCallback & bCb, 
     const  muduo::net::TimerCallback & eCb)
     : begin_time_(nBeginTime),
@@ -26,10 +27,10 @@ TimerDuration::TimerDuration(const std::string & sBeginTime, const std::string &
 
 void TimerDuration::CalcBeginEndTime()
 {
-    CalcBeginEndTime(muduo::Timestamp::now().secondsSinceEpoch());
+    CalcBeginEndTime(TimeUtil::NowSecondsUTC());
 }
 
-void TimerDuration::CalcBeginEndTime(time_t tNow)
+void TimerDuration::CalcBeginEndTime(uint64_t tNow)
 {
     if (tNow <= end_time_)
     {
@@ -55,7 +56,7 @@ void TimerDuration::InitTimer()
 }
 
 TimerDuration::TimerDurationPtr TimerDuration::CreateDuration(int32_t nType,
-    time_t now,
+    uint64_t now,
     const std::string & sBeginTime,
     const std::string & sEndTime,
     const  muduo::net::TimerCallback & bCb,
@@ -90,9 +91,9 @@ TimerDuration::TimerDurationPtr TimerDuration::CreateDuration(int32_t nType,
 }
 
 TimerDuration::TimerDurationPtr TimerDuration::CreateDuration(int32_t nType,
-    time_t now,
-    time_t nBeginTime,
-    time_t nEndTime,
+    uint64_t now,
+    uint64_t nBeginTime,
+    uint64_t nEndTime,
     const  muduo::net::TimerCallback & bCb,
     const  muduo::net::TimerCallback & eCb
 )

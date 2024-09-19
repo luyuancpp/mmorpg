@@ -9,14 +9,13 @@
 #include "thread_local/storage_game.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
-
 #include "proto/common/centre_service.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/event/player_event.pb.h"
-
+#include "time/util/time_util.h"
 #include "game_node.h"
 
 void Player_databaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
@@ -53,7 +52,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 
 	if (message.uint64_pb_comp().registration_timestamp() <= 0)
 	{
-		tls.registry.get<PlayerUint64PBComp>(player).set_registration_timestamp(Timestamp::now().secondsSinceEpoch());
+		tls.registry.get<PlayerUint64PBComp>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
 
 		RegisterPlayer registerPlayer;
 		tls.dispatcher.trigger(registerPlayer);
