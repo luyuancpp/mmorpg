@@ -3,28 +3,29 @@
 #include <ranges>
 
 #include "all_config.h"
-#include "proto/common/deploy_service.grpc.pb.h"
-#include "log/constants/log_constants.h"
-#include "proto/logic/constants/node.pb.h"
-#include "handler/event/event_handler.h"
-#include "proto/logic/event/server_event.pb.h"
 #include "game_config/deploy_json.h"
+#include "game_logic/world.h"
+#include "game_logic/config/config_util.h"
 #include "grpc/deploy/deploy_client.h"
-#include "handler/service/player/player_service.h"
+#include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
+#include "handler/service/player/player_service.h"
+#include "handler/service_replied/player/player_service_replied.h"
+#include "log/constants/log_constants.h"
+#include "log/util/console_log_util.h"
 #include "muduo/base/Logging.h"
 #include "muduo/base/TimeZone.h"
 #include "muduo/net/InetAddress.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"
-#include "handler/service_replied/player/player_service_replied.h"
+#include "proto/common/deploy_service.grpc.pb.h"
+#include "proto/logic/constants/node.pb.h"
+#include "proto/logic/event/server_event.pb.h"
 #include "service_info/service_info.h"
-#include "game_logic/config/config_util.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
-#include "log/util/console_log_util.h"
+#include "time/util/time_util.h"
 #include "util/game_registry.h"
-#include "game_logic/world.h"
 
 GameNode* gGameNode = nullptr;
 
@@ -123,7 +124,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
 
     nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
     nodeInfo.set_node_type(eNodeType::kGameNode);
-    nodeInfo.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
+    nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
     InetAddress service_addr(GetNodeConf().ip(), GetNodeConf().port());
     rpcServer = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);

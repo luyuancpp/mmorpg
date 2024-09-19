@@ -30,28 +30,28 @@
          E_OVER,
      };
 
-     TimerDuration(time_t nBeginTime, time_t nEndTime);
+     TimerDuration(uint64_t nBeginTime, uint64_t nEndTime);
 
-     TimerDuration(time_t nBeginTime, time_t nEndTime, 
+     TimerDuration(uint64_t nBeginTime, uint64_t nEndTime, 
          const muduo::net::TimerCallback & bCb, const muduo::net::TimerCallback & eCb);
      TimerDuration(const std::string & sBeginTime, 
          const std::string & sEndTime, 
          const  muduo::net::TimerCallback & bCb, const  muduo::net::TimerCallback & eCb);
 
      void CalcBeginEndTime();
-     void CalcBeginEndTime(time_t tNow);
+     void CalcBeginEndTime(uint64_t tNow);
 
-     bool InDuration(time_t t)
+     bool InDuration(uint64_t t)
      {
          return begin_time_ <= t && t <= end_time_;
      }
 
-     bool IsOpen(time_t t)
+     bool IsOpen(uint64_t t)
      {
          return InDuration(t);
      }
 
-     time_t GetRemainTime(time_t t)
+     uint64_t GetRemainTime(uint64_t t)
      {
          if (end_time_ < t)
          {
@@ -60,17 +60,17 @@
          return end_time_ - t;
      }
 
-     void SetBeginTime(time_t nBeginTime)
+     void SetBeginTime(uint64_t nBeginTime)
      {
          begin_time_ = nBeginTime;
      }
 
-     time_t GetEndTime()
+     uint64_t GetEndTime()
      {
          return end_time_;
      }
 
-     time_t GetBeginTime()
+     uint64_t GetBeginTime()
      {
          return begin_time_;
      }
@@ -103,7 +103,7 @@
 	 void InitTimer();
 
      static TimerDurationPtr CreateDuration(int32_t nType,
-         time_t now,
+         uint64_t now,
                                              const std::string & sBeginTime,
                                              const std::string & sEndTime,
                                              const  muduo::net::TimerCallback & bCb,
@@ -111,16 +111,16 @@
                                              );
 
      static TimerDurationPtr CreateDuration(int32_t nType,
-         time_t now,
-         time_t nBeginTime,
-         time_t nEndTime,
+         uint64_t now,
+         uint64_t nBeginTime,
+         uint64_t nEndTime,
          const  muduo::net::TimerCallback & bCb,
          const  muduo::net::TimerCallback & eCb
      );
 
  protected:
-     time_t begin_time_{0};
-     time_t end_time_{ 0 };
+     uint64_t begin_time_{0};
+     uint64_t end_time_{ 0 };
      TimerTaskComp begin_timer_;
      TimerTaskComp end_timer_;
       muduo::net::TimerCallback begin_callback_;

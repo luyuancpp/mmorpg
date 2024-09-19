@@ -2,19 +2,20 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "proto/common/deploy_service.grpc.pb.h"
-#include "proto/common/login_service.grpc.pb.h"
-#include "log/constants/log_constants.h"
-#include "proto/logic/constants/node.pb.h"
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
+#include "log/constants/log_constants.h"
+#include "log/util/console_log_util.h"
 #include "muduo/base/TimeZone.h"
 #include "network/rpc_session.h"
+#include "proto/common/deploy_service.grpc.pb.h"
+#include "proto/common/login_service.grpc.pb.h"
+#include "proto/logic/constants/node.pb.h"
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_gate.h"
-#include "log/util/console_log_util.h"
+#include "time/util/time_util.h"
 
 GateNode* g_gate_node = nullptr; 
 
@@ -52,7 +53,7 @@ void GateNode::Init()
         ZoneConfig::GetSingleton().config_info().loglevel()));
     InitNodeByReqInfo();
 
-    node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
+    node_info_.set_launch_time(TimeUtil::NowSecondsUTC());
 
     InitMessageInfo();
 

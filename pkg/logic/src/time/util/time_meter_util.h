@@ -1,14 +1,14 @@
 ﻿#pragma once
 
 #include <chrono>
-#include <muduo/base/Timestamp.h>
+#include "time_util.h"
 #include "logic/component/time_comp.pb.h"
 
 class TimeMeterSecondUtil {
 public:
     // 返回剩余时间（秒）
     static uint64_t Remaining(const TimeMeterComp& timeMeterComp) {
-        uint64_t currentSeconds = GetCurrentTimeInSeconds();
+        uint64_t currentSeconds = TimeUtil::NowSecondsUTC();
         uint64_t elapsed = (currentSeconds > timeMeterComp.start())
             ? currentSeconds - timeMeterComp.start()
             : 0;
@@ -24,7 +24,7 @@ public:
 
     // 检查当前时间是否在开始时间之前
     static bool IsBeforeStart(const TimeMeterComp& timeMeterComp) {
-        return GetCurrentTimeInSeconds() < timeMeterComp.start();
+        return TimeUtil::NowSecondsUTC() < timeMeterComp.start();
     }
 
     // 检查当前时间是否未开始（即是否在开始时间之前）
@@ -34,13 +34,9 @@ public:
 
     // 重置时间测量器
     static void Reset(TimeMeterComp& timeMeterComp) {
-        timeMeterComp.set_start(GetCurrentTimeInSeconds());
+        timeMeterComp.set_start(TimeUtil::NowSecondsUTC());
     }
 
-    // 获取当前时间（秒）
-    inline static uint64_t GetCurrentTimeInSeconds() {
-        return muduo::Timestamp::now().secondsSinceEpoch();
-    }
 
     // 备用时间获取实现
     /*

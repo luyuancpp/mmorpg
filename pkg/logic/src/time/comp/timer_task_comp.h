@@ -30,7 +30,7 @@ public:
 
     bool IsActive() const;
 
-    int32_t GetEndTime();
+    uint64_t GetEndTime();
     void UpdateEndStamp();
 
     void SetCallBack(const TimerCallback& cb);

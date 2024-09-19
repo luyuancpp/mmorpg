@@ -6,6 +6,7 @@
 #include "thread_local/storage.h"
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"
+#include "time/util/time_util.h"
 
 //todo 各种服务器崩溃// 初始化场景切换队列
 void PlayerChangeSceneUtil::InitChangeSceneQueue(entt::entity player) {
@@ -23,7 +24,7 @@ uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const C
 	}
 
 	changeSceneQueue->changeSceneQueue.push_back(changeInfo);
-	changeSceneQueue->changeSceneQueue.back().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());
+	changeSceneQueue->changeSceneQueue.back().set_change_time(TimeUtil::NowSecondsUTC());
 	return kOK;
 }
 
