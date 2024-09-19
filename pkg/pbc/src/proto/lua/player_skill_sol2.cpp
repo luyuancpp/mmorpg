@@ -71,6 +71,10 @@ sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<GetSkillListResponse>("GetSkillListResponse",
 tls_lua_state.new_usertype<>("",
+"skill_list",
+[](& pb) ->decltype(auto){ return pb.skill_list();},
+"mutable_skill_list",
+[](& pb) ->decltype(auto){ return pb.mutable_skill_list();},
 "DebugString",
 &::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

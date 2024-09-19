@@ -759,6 +759,7 @@ class player_database final : public ::google::protobuf::Message
     kTransformFieldNumber = 2,
     kUint64PbCompFieldNumber = 3,
     kSkillListFieldNumber = 4,
+    kUint32PbCompFieldNumber = 5,
     kPlayerIdFieldNumber = 1,
   };
   // .Transform transform = 2;
@@ -806,6 +807,21 @@ class player_database final : public ::google::protobuf::Message
   ::PlayerSkillListPBComp* _internal_mutable_skill_list();
 
   public:
+  // .PlayerUint32PBComp uint32_pb_comp = 5;
+  bool has_uint32_pb_comp() const;
+  void clear_uint32_pb_comp() ;
+  const ::PlayerUint32PBComp& uint32_pb_comp() const;
+  PROTOBUF_NODISCARD ::PlayerUint32PBComp* release_uint32_pb_comp();
+  ::PlayerUint32PBComp* mutable_uint32_pb_comp();
+  void set_allocated_uint32_pb_comp(::PlayerUint32PBComp* value);
+  void unsafe_arena_set_allocated_uint32_pb_comp(::PlayerUint32PBComp* value);
+  ::PlayerUint32PBComp* unsafe_arena_release_uint32_pb_comp();
+
+  private:
+  const ::PlayerUint32PBComp& _internal_uint32_pb_comp() const;
+  ::PlayerUint32PBComp* _internal_mutable_uint32_pb_comp();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   ::uint64_t player_id() const;
@@ -821,7 +837,7 @@ class player_database final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 3,
+      3, 5, 4,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -842,6 +858,7 @@ class player_database final : public ::google::protobuf::Message
     ::Transform* transform_;
     ::PlayerUint64PBComp* uint64_pb_comp_;
     ::PlayerSkillListPBComp* skill_list_;
+    ::PlayerUint32PBComp* uint32_pb_comp_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1709,6 +1726,97 @@ inline void player_database::set_allocated_skill_list(::PlayerSkillListPBComp* v
 
   _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database.skill_list)
+}
+
+// .PlayerUint32PBComp uint32_pb_comp = 5;
+inline bool player_database::has_uint32_pb_comp() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000008u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.uint32_pb_comp_ != nullptr);
+  return value;
+}
+inline const ::PlayerUint32PBComp& player_database::_internal_uint32_pb_comp() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::PlayerUint32PBComp* p = _impl_.uint32_pb_comp_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerUint32PBComp&>(::_PlayerUint32PBComp_default_instance_);
+}
+inline const ::PlayerUint32PBComp& player_database::uint32_pb_comp() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.uint32_pb_comp)
+  return _internal_uint32_pb_comp();
+}
+inline void player_database::unsafe_arena_set_allocated_uint32_pb_comp(::PlayerUint32PBComp* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint32_pb_comp_);
+  }
+  _impl_.uint32_pb_comp_ = reinterpret_cast<::PlayerUint32PBComp*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000008u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000008u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.uint32_pb_comp)
+}
+inline ::PlayerUint32PBComp* player_database::release_uint32_pb_comp() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000008u;
+  ::PlayerUint32PBComp* released = _impl_.uint32_pb_comp_;
+  _impl_.uint32_pb_comp_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::PlayerUint32PBComp* player_database::unsafe_arena_release_uint32_pb_comp() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:player_database.uint32_pb_comp)
+
+  _impl_._has_bits_[0] &= ~0x00000008u;
+  ::PlayerUint32PBComp* temp = _impl_.uint32_pb_comp_;
+  _impl_.uint32_pb_comp_ = nullptr;
+  return temp;
+}
+inline ::PlayerUint32PBComp* player_database::_internal_mutable_uint32_pb_comp() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.uint32_pb_comp_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerUint32PBComp>(GetArena());
+    _impl_.uint32_pb_comp_ = reinterpret_cast<::PlayerUint32PBComp*>(p);
+  }
+  return _impl_.uint32_pb_comp_;
+}
+inline ::PlayerUint32PBComp* player_database::mutable_uint32_pb_comp() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000008u;
+  ::PlayerUint32PBComp* _msg = _internal_mutable_uint32_pb_comp();
+  // @@protoc_insertion_point(field_mutable:player_database.uint32_pb_comp)
+  return _msg;
+}
+inline void player_database::set_allocated_uint32_pb_comp(::PlayerUint32PBComp* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint32_pb_comp_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000008u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000008u;
+  }
+
+  _impl_.uint32_pb_comp_ = reinterpret_cast<::PlayerUint32PBComp*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.uint32_pb_comp)
 }
 
 // -------------------------------------------------------------------

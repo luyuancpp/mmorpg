@@ -52,70 +52,25 @@ struct PlayerUint64PBCompDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerUint64PBCompDefaultTypeInternal _PlayerUint64PBComp_default_instance_;
-      template <typename>
-PROTOBUF_CONSTEXPR PlayerUInt64Array::PlayerUInt64Array(::_pbi::ConstantInitialized) {}
-struct PlayerUInt64ArrayDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerUInt64ArrayDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerUInt64ArrayDefaultTypeInternal() {}
-  union {
-    PlayerUInt64Array _instance;
-  };
-};
 
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerUInt64ArrayDefaultTypeInternal _PlayerUInt64Array_default_instance_;
-
-inline constexpr PlayerUInt32Array::Impl_::Impl_(
+inline constexpr PlayerUint32PBComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : uint32_valuse_{},
-        _uint32_valuse_cached_byte_size_{0},
+      : class__{0u},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR PlayerUInt32Array::PlayerUInt32Array(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR PlayerUint32PBComp::PlayerUint32PBComp(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct PlayerUInt32ArrayDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerUInt32ArrayDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerUInt32ArrayDefaultTypeInternal() {}
+struct PlayerUint32PBCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerUint32PBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerUint32PBCompDefaultTypeInternal() {}
   union {
-    PlayerUInt32Array _instance;
+    PlayerUint32PBComp _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerUInt32ArrayDefaultTypeInternal _PlayerUInt32Array_default_instance_;
-      template <typename>
-PROTOBUF_CONSTEXPR PlayerInt64Array::PlayerInt64Array(::_pbi::ConstantInitialized) {}
-struct PlayerInt64ArrayDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerInt64ArrayDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerInt64ArrayDefaultTypeInternal() {}
-  union {
-    PlayerInt64Array _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerInt64ArrayDefaultTypeInternal _PlayerInt64Array_default_instance_;
-
-inline constexpr PlayerInt32Array::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : int32_valuse_{},
-        _int32_valuse_cached_byte_size_{0},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR PlayerInt32Array::PlayerInt32Array(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct PlayerInt32ArrayDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerInt32ArrayDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerInt32ArrayDefaultTypeInternal() {}
-  union {
-    PlayerInt32Array _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerInt32ArrayDefaultTypeInternal _PlayerInt32Array_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerUint32PBCompDefaultTypeInternal _PlayerUint32PBComp_default_instance_;
       template <typename>
 PROTOBUF_CONSTEXPR Player::Player(::_pbi::ConstantInitialized) {}
 struct PlayerDefaultTypeInternal {
@@ -173,7 +128,7 @@ struct AccountDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AccountDefaultTypeInternal _Account_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[10];
+static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[7];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fplayer_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -223,24 +178,6 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::PlayerInt32Array, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::PlayerInt32Array, _impl_.int32_valuse_),
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::PlayerUInt32Array, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::PlayerUInt32Array, _impl_.uint32_valuse_),
-        ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::PlayerUint64PBComp, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -250,21 +187,14 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::PlayerUint64PBComp, _impl_.registration_timestamp_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::PlayerInt64Array, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::PlayerUint32PBComp, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::PlayerUInt64Array, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::PlayerUint32PBComp, _impl_.class__),
 };
 
 static const ::_pbi::MigrationSchema
@@ -274,11 +204,8 @@ static const ::_pbi::MigrationSchema
         {16, -1, -1, sizeof(::Player)},
         {24, -1, -1, sizeof(::Account)},
         {33, -1, -1, sizeof(::UnregisterPlayer)},
-        {41, -1, -1, sizeof(::PlayerInt32Array)},
-        {50, -1, -1, sizeof(::PlayerUInt32Array)},
-        {59, -1, -1, sizeof(::PlayerUint64PBComp)},
-        {68, -1, -1, sizeof(::PlayerInt64Array)},
-        {76, -1, -1, sizeof(::PlayerUInt64Array)},
+        {41, -1, -1, sizeof(::PlayerUint64PBComp)},
+        {50, -1, -1, sizeof(::PlayerUint32PBComp)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_NormalLogin_default_instance_._instance,
@@ -286,35 +213,29 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_Player_default_instance_._instance,
     &::_Account_default_instance_._instance,
     &::_UnregisterPlayer_default_instance_._instance,
-    &::_PlayerInt32Array_default_instance_._instance,
-    &::_PlayerUInt32Array_default_instance_._instance,
     &::_PlayerUint64PBComp_default_instance_._instance,
-    &::_PlayerInt64Array_default_instance_._instance,
-    &::_PlayerUInt64Array_default_instance_._instance,
+    &::_PlayerUint32PBComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fplayer_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n!logic/component/player_comp.proto\"\r\n\013N"
     "ormalLogin\"\014\n\nCoverLogin\"\010\n\006Player\"\032\n\007Ac"
     "count\022\017\n\007account\030\001 \001(\t\"\022\n\020UnregisterPlay"
-    "er\"(\n\020PlayerInt32Array\022\024\n\014int32_valuse\030\001"
-    " \003(\005\"*\n\021PlayerUInt32Array\022\025\n\ruint32_valu"
-    "se\030\002 \003(\r\"4\n\022PlayerUint64PBComp\022\036\n\026regist"
-    "ration_timestamp\030\001 \001(\004\"\022\n\020PlayerInt64Arr"
-    "ay\"\023\n\021PlayerUInt64ArrayB\tZ\007pb/gameb\006prot"
-    "o3"
+    "er\"4\n\022PlayerUint64PBComp\022\036\n\026registration"
+    "_timestamp\030\001 \001(\004\"#\n\022PlayerUint32PBComp\022\r"
+    "\n\005class\030\001 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto = {
     false,
     false,
-    322,
+    232,
     descriptor_table_protodef_logic_2fcomponent_2fplayer_5fcomp_2eproto,
     "logic/component/player_comp.proto",
     &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
     nullptr,
     0,
-    10,
+    7,
     schemas,
     file_default_instances,
     TableStruct_logic_2fcomponent_2fplayer_5fcomp_2eproto::offsets,
@@ -676,404 +597,6 @@ UnregisterPlayer::UnregisterPlayer(
 }
 // ===================================================================
 
-class PlayerInt32Array::_Internal {
- public:
-};
-
-PlayerInt32Array::PlayerInt32Array(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:PlayerInt32Array)
-}
-inline PROTOBUF_NDEBUG_INLINE PlayerInt32Array::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from)
-      : int32_valuse_{visibility, arena, from.int32_valuse_},
-        _int32_valuse_cached_byte_size_{0},
-        _cached_size_{0} {}
-
-PlayerInt32Array::PlayerInt32Array(
-    ::google::protobuf::Arena* arena,
-    const PlayerInt32Array& from)
-    : ::google::protobuf::Message(arena) {
-  PlayerInt32Array* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-
-  // @@protoc_insertion_point(copy_constructor:PlayerInt32Array)
-}
-inline PROTOBUF_NDEBUG_INLINE PlayerInt32Array::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : int32_valuse_{visibility, arena},
-        _int32_valuse_cached_byte_size_{0},
-        _cached_size_{0} {}
-
-inline void PlayerInt32Array::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-}
-PlayerInt32Array::~PlayerInt32Array() {
-  // @@protoc_insertion_point(destructor:PlayerInt32Array)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void PlayerInt32Array::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.~Impl_();
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-PlayerInt32Array::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(PlayerInt32Array, _impl_._cached_size_),
-              false,
-          },
-          &PlayerInt32Array::MergeImpl,
-          &PlayerInt32Array::kDescriptorMethods,
-      };
-  return &_data_;
-}
-PROTOBUF_NOINLINE void PlayerInt32Array::Clear() {
-// @@protoc_insertion_point(message_clear_start:PlayerInt32Array)
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.int32_valuse_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-const char* PlayerInt32Array::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
-  return ptr;
-}
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerInt32Array::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_PlayerInt32Array_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::PlayerInt32Array>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // repeated int32 int32_valuse = 1;
-    {::_pbi::TcParser::FastV32P1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerInt32Array, _impl_.int32_valuse_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // repeated int32 int32_valuse = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerInt32Array, _impl_.int32_valuse_), 0, 0,
-    (0 | ::_fl::kFcRepeated | ::_fl::kPackedInt32)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
-
-::uint8_t* PlayerInt32Array::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:PlayerInt32Array)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // repeated int32 int32_valuse = 1;
-  {
-    int byte_size = _impl_._int32_valuse_cached_byte_size_.Get();
-    if (byte_size > 0) {
-      target = stream->WriteInt32Packed(
-          1, _internal_int32_valuse(), byte_size, target);
-    }
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:PlayerInt32Array)
-  return target;
-}
-
-::size_t PlayerInt32Array::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:PlayerInt32Array)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  // repeated int32 int32_valuse = 1;
-  {
-    std::size_t data_size = ::_pbi::WireFormatLite::Int32Size(
-        this->_internal_int32_valuse())
-    ;
-    _impl_._int32_valuse_cached_byte_size_.Set(::_pbi::ToCachedSize(data_size));
-    std::size_t tag_size = data_size == 0
-        ? 0
-        : 1 + ::_pbi::WireFormatLite::Int32Size(
-                            static_cast<int32_t>(data_size))
-    ;
-    total_size += tag_size + data_size;
-  }
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void PlayerInt32Array::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<PlayerInt32Array*>(&to_msg);
-  auto& from = static_cast<const PlayerInt32Array&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerInt32Array)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  _this->_internal_mutable_int32_valuse()->MergeFrom(from._internal_int32_valuse());
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void PlayerInt32Array::CopyFrom(const PlayerInt32Array& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:PlayerInt32Array)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-PROTOBUF_NOINLINE bool PlayerInt32Array::IsInitialized() const {
-  return true;
-}
-
-void PlayerInt32Array::InternalSwap(PlayerInt32Array* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  _impl_.int32_valuse_.InternalSwap(&other->_impl_.int32_valuse_);
-}
-
-::google::protobuf::Metadata PlayerInt32Array::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_getter,
-                                   &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[5]);
-}
-// ===================================================================
-
-class PlayerUInt32Array::_Internal {
- public:
-};
-
-PlayerUInt32Array::PlayerUInt32Array(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:PlayerUInt32Array)
-}
-inline PROTOBUF_NDEBUG_INLINE PlayerUInt32Array::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from)
-      : uint32_valuse_{visibility, arena, from.uint32_valuse_},
-        _uint32_valuse_cached_byte_size_{0},
-        _cached_size_{0} {}
-
-PlayerUInt32Array::PlayerUInt32Array(
-    ::google::protobuf::Arena* arena,
-    const PlayerUInt32Array& from)
-    : ::google::protobuf::Message(arena) {
-  PlayerUInt32Array* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-
-  // @@protoc_insertion_point(copy_constructor:PlayerUInt32Array)
-}
-inline PROTOBUF_NDEBUG_INLINE PlayerUInt32Array::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : uint32_valuse_{visibility, arena},
-        _uint32_valuse_cached_byte_size_{0},
-        _cached_size_{0} {}
-
-inline void PlayerUInt32Array::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-}
-PlayerUInt32Array::~PlayerUInt32Array() {
-  // @@protoc_insertion_point(destructor:PlayerUInt32Array)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void PlayerUInt32Array::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.~Impl_();
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-PlayerUInt32Array::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(PlayerUInt32Array, _impl_._cached_size_),
-              false,
-          },
-          &PlayerUInt32Array::MergeImpl,
-          &PlayerUInt32Array::kDescriptorMethods,
-      };
-  return &_data_;
-}
-PROTOBUF_NOINLINE void PlayerUInt32Array::Clear() {
-// @@protoc_insertion_point(message_clear_start:PlayerUInt32Array)
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.uint32_valuse_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-const char* PlayerUInt32Array::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
-  return ptr;
-}
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerUInt32Array::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    2, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967293,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_PlayerUInt32Array_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::PlayerUInt32Array>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // repeated uint32 uint32_valuse = 2;
-    {::_pbi::TcParser::FastV32P1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerUInt32Array, _impl_.uint32_valuse_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // repeated uint32 uint32_valuse = 2;
-    {PROTOBUF_FIELD_OFFSET(PlayerUInt32Array, _impl_.uint32_valuse_), 0, 0,
-    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
-
-::uint8_t* PlayerUInt32Array::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:PlayerUInt32Array)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // repeated uint32 uint32_valuse = 2;
-  {
-    int byte_size = _impl_._uint32_valuse_cached_byte_size_.Get();
-    if (byte_size > 0) {
-      target = stream->WriteUInt32Packed(
-          2, _internal_uint32_valuse(), byte_size, target);
-    }
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:PlayerUInt32Array)
-  return target;
-}
-
-::size_t PlayerUInt32Array::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:PlayerUInt32Array)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  // repeated uint32 uint32_valuse = 2;
-  {
-    std::size_t data_size = ::_pbi::WireFormatLite::UInt32Size(
-        this->_internal_uint32_valuse())
-    ;
-    _impl_._uint32_valuse_cached_byte_size_.Set(::_pbi::ToCachedSize(data_size));
-    std::size_t tag_size = data_size == 0
-        ? 0
-        : 1 + ::_pbi::WireFormatLite::Int32Size(
-                            static_cast<int32_t>(data_size))
-    ;
-    total_size += tag_size + data_size;
-  }
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void PlayerUInt32Array::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<PlayerUInt32Array*>(&to_msg);
-  auto& from = static_cast<const PlayerUInt32Array&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerUInt32Array)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  _this->_internal_mutable_uint32_valuse()->MergeFrom(from._internal_uint32_valuse());
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void PlayerUInt32Array::CopyFrom(const PlayerUInt32Array& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:PlayerUInt32Array)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-PROTOBUF_NOINLINE bool PlayerUInt32Array::IsInitialized() const {
-  return true;
-}
-
-void PlayerUInt32Array::InternalSwap(PlayerUInt32Array* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  _impl_.uint32_valuse_.InternalSwap(&other->_impl_.uint32_valuse_);
-}
-
-::google::protobuf::Metadata PlayerUInt32Array::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_getter,
-                                   &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[6]);
-}
-// ===================================================================
-
 class PlayerUint64PBComp::_Internal {
  public:
 };
@@ -1247,77 +770,184 @@ void PlayerUint64PBComp::InternalSwap(PlayerUint64PBComp* PROTOBUF_RESTRICT othe
 ::google::protobuf::Metadata PlayerUint64PBComp::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[7]);
+                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[5]);
 }
 // ===================================================================
 
-class PlayerInt64Array::_Internal {
+class PlayerUint32PBComp::_Internal {
  public:
 };
 
-PlayerInt64Array::PlayerInt64Array(::google::protobuf::Arena* arena)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-  // @@protoc_insertion_point(arena_constructor:PlayerInt64Array)
+PlayerUint32PBComp::PlayerUint32PBComp(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:PlayerUint32PBComp)
 }
-PlayerInt64Array::PlayerInt64Array(
-    ::google::protobuf::Arena* arena,
-    const PlayerInt64Array& from)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-  PlayerInt64Array* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
+PlayerUint32PBComp::PlayerUint32PBComp(
+    ::google::protobuf::Arena* arena, const PlayerUint32PBComp& from)
+    : PlayerUint32PBComp(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE PlayerUint32PBComp::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
 
-  // @@protoc_insertion_point(copy_constructor:PlayerInt64Array)
+inline void PlayerUint32PBComp::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.class__ = {};
+}
+PlayerUint32PBComp::~PlayerUint32PBComp() {
+  // @@protoc_insertion_point(destructor:PlayerUint32PBComp)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void PlayerUint32PBComp::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+PlayerUint32PBComp::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(PlayerUint32PBComp, _impl_._cached_size_),
+              false,
+          },
+          &PlayerUint32PBComp::MergeImpl,
+          &PlayerUint32PBComp::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void PlayerUint32PBComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerUint32PBComp)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.class__ = 0u;
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* PlayerUint32PBComp::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
 }
 
 
-
-
-
-
-
-
-
-::google::protobuf::Metadata PlayerInt64Array::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_getter,
-                                   &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[8]);
-}
-// ===================================================================
-
-class PlayerUInt64Array::_Internal {
- public:
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerUint32PBComp::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_PlayerUint32PBComp_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::PlayerUint32PBComp>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 class = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerUint32PBComp, _impl_.class__), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerUint32PBComp, _impl_.class__)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 class = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerUint32PBComp, _impl_.class__), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
 };
 
-PlayerUInt64Array::PlayerUInt64Array(::google::protobuf::Arena* arena)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-  // @@protoc_insertion_point(arena_constructor:PlayerUInt64Array)
+::uint8_t* PlayerUint32PBComp::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerUint32PBComp)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 class = 1;
+  if (this->_internal_class_() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        1, this->_internal_class_(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerUint32PBComp)
+  return target;
 }
-PlayerUInt64Array::PlayerUInt64Array(
-    ::google::protobuf::Arena* arena,
-    const PlayerUInt64Array& from)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-  PlayerUInt64Array* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
 
-  // @@protoc_insertion_point(copy_constructor:PlayerUInt64Array)
+::size_t PlayerUint32PBComp::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:PlayerUint32PBComp)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint32 class = 1;
+  if (this->_internal_class_() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_class_());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
 
+void PlayerUint32PBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerUint32PBComp*>(&to_msg);
+  auto& from = static_cast<const PlayerUint32PBComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerUint32PBComp)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
 
+  if (from._internal_class_() != 0) {
+    _this->_impl_.class__ = from._impl_.class__;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
 
+void PlayerUint32PBComp::CopyFrom(const PlayerUint32PBComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerUint32PBComp)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
 
+PROTOBUF_NOINLINE bool PlayerUint32PBComp::IsInitialized() const {
+  return true;
+}
 
+void PlayerUint32PBComp::InternalSwap(PlayerUint32PBComp* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.class__, other->_impl_.class__);
+}
 
-
-
-::google::protobuf::Metadata PlayerUInt64Array::GetMetadata() const {
+::google::protobuf::Metadata PlayerUint32PBComp::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fplayer_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[9]);
+                                   file_level_metadata_logic_2fcomponent_2fplayer_5fcomp_2eproto[6]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

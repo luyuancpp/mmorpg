@@ -1,11 +1,11 @@
 #include "game_player_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "muduo/base/Logging.h"
-#include "game_logic/player/util/player_scene_util.h"
 #include "game_logic/player/util/player_node_util.h"
-#include "scene/util/scene_util.h"
+#include "game_logic/player/util/player_scene_util.h"
+#include "muduo/base/Logging.h"
 #include "proto/logic/component/player_login_comp.pb.h"
+#include "scene/util/scene_util.h"
 ///<<< END WRITING YOUR CODE
 void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,const ::Centre2GsLoginRequest* request,
 	     google::protobuf::Empty* response)

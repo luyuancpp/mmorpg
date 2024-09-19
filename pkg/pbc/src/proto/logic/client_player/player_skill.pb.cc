@@ -124,7 +124,8 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr GetSkillListResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        error_message_{nullptr} {}
+        error_message_{nullptr},
+        skill_list_{nullptr} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR GetSkillListResponse::GetSkillListResponse(::_pbi::ConstantInitialized)
@@ -220,7 +221,9 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::GetSkillListResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::GetSkillListResponse, _impl_.skill_list_),
         0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
@@ -230,7 +233,7 @@ static const ::_pbi::MigrationSchema
         {26, -1, -1, sizeof(::SkillInterruptedS2C)},
         {38, 51, -1, sizeof(::SkillUsedS2C)},
         {56, -1, -1, sizeof(::GetSkillListRequest)},
-        {64, 73, -1, sizeof(::GetSkillListResponse)},
+        {64, 74, -1, sizeof(::GetSkillListResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_ReleaseSkillSkillRequest_default_instance_._instance,
@@ -244,47 +247,51 @@ const char descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fskill_2e
     protodesc_cold) = {
     "\n&logic/client_player/player_skill.proto"
     "\032\020common/tip.proto\032\021common/comp.proto\032\022c"
-    "ommon/empty.proto\032 logic/component/skill"
-    "_comp.proto\032 logic/component/actor_comp."
-    "proto\"~\n\030ReleaseSkillSkillRequest\022\026\n\016ski"
-    "ll_table_id\030\001 \001(\r\022\021\n\ttarget_id\030\002 \001(\004\022\032\n\010"
-    "position\030\003 \001(\0132\010.Vector3\022\033\n\010rotation\030\004 \001"
-    "(\0132\t.Rotation\"C\n\031ReleaseSkillSkillRespon"
-    "se\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessa"
-    "ge\"i\n\023SkillInterruptedS2C\022\016\n\006entity\030\001 \001("
-    "\004\022\025\n\rtarget_entity\030\002 \001(\004\022\026\n\016skill_table_"
-    "id\030\003 \001(\r\022\023\n\013reason_code\030\004 \001(\r\"}\n\014SkillUs"
-    "edS2C\022\016\n\006entity\030\001 \001(\004\022\025\n\rtarget_entity\030\002"
-    " \003(\004\022\026\n\016skill_table_id\030\003 \001(\r\022\032\n\010position"
-    "\030\004 \001(\0132\010.Vector3\022\022\n\ntime_stamp\030\005 \001(\004\"\025\n\023"
-    "GetSkillListRequest\">\n\024GetSkillListRespo"
+    "ommon/empty.proto\032\'logic/component/playe"
+    "r_skill_comp.proto\032 logic/component/skil"
+    "l_comp.proto\032 logic/component/actor_comp"
+    ".proto\"~\n\030ReleaseSkillSkillRequest\022\026\n\016sk"
+    "ill_table_id\030\001 \001(\r\022\021\n\ttarget_id\030\002 \001(\004\022\032\n"
+    "\010position\030\003 \001(\0132\010.Vector3\022\033\n\010rotation\030\004 "
+    "\001(\0132\t.Rotation\"C\n\031ReleaseSkillSkillRespo"
     "nse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMess"
-    "age2\372\001\n\022PlayerSkillService\022E\n\014ReleaseSki"
-    "ll\022\031.ReleaseSkillSkillRequest\032\032.ReleaseS"
-    "killSkillResponse\022(\n\017NotifySkillUsed\022\r.S"
-    "killUsedS2C\032\006.Empty\0226\n\026NotifySkillInterr"
-    "upted\022\024.SkillInterruptedS2C\032\006.Empty\022;\n\014G"
-    "etSkillList\022\024.GetSkillListRequest\032\025.GetS"
-    "killListResponseB\014Z\007pb/game\200\001\001b\006proto3"
+    "age\"i\n\023SkillInterruptedS2C\022\016\n\006entity\030\001 \001"
+    "(\004\022\025\n\rtarget_entity\030\002 \001(\004\022\026\n\016skill_table"
+    "_id\030\003 \001(\r\022\023\n\013reason_code\030\004 \001(\r\"}\n\014SkillU"
+    "sedS2C\022\016\n\006entity\030\001 \001(\004\022\025\n\rtarget_entity\030"
+    "\002 \003(\004\022\026\n\016skill_table_id\030\003 \001(\r\022\032\n\010positio"
+    "n\030\004 \001(\0132\010.Vector3\022\022\n\ntime_stamp\030\005 \001(\004\"\025\n"
+    "\023GetSkillListRequest\"j\n\024GetSkillListResp"
+    "onse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMes"
+    "sage\022*\n\nskill_list\030\002 \001(\0132\026.PlayerSkillLi"
+    "stPBComp2\372\001\n\022PlayerSkillService\022E\n\014Relea"
+    "seSkill\022\031.ReleaseSkillSkillRequest\032\032.Rel"
+    "easeSkillSkillResponse\022(\n\017NotifySkillUse"
+    "d\022\r.SkillUsedS2C\032\006.Empty\0226\n\026NotifySkillI"
+    "nterrupted\022\024.SkillInterruptedS2C\032\006.Empty"
+    "\022;\n\014GetSkillList\022\024.GetSkillListRequest\032\025"
+    ".GetSkillListResponseB\014Z\007pb/game\200\001\001b\006pro"
+    "to3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_deps[5] =
+static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_deps[6] =
     {
         &::descriptor_table_common_2fcomp_2eproto,
         &::descriptor_table_common_2fempty_2eproto,
         &::descriptor_table_common_2ftip_2eproto,
         &::descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto,
+        &::descriptor_table_logic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
         &::descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto = {
     false,
     false,
-    958,
+    1043,
     descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto,
     "logic/client_player/player_skill.proto",
     &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_once,
     descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_deps,
-    5,
+    6,
     6,
     schemas,
     file_default_instances,
@@ -1504,6 +1511,11 @@ void GetSkillListResponse::clear_error_message() {
   if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
+void GetSkillListResponse::clear_skill_list() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.skill_list_ != nullptr) _impl_.skill_list_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
 GetSkillListResponse::GetSkillListResponse(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
@@ -1528,6 +1540,9 @@ GetSkillListResponse::GetSkillListResponse(
   _impl_.error_message_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::TipInfoMessage>(
                               arena, *from._impl_.error_message_)
                         : nullptr;
+  _impl_.skill_list_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComp>(
+                              arena, *from._impl_.skill_list_)
+                        : nullptr;
 
   // @@protoc_insertion_point(copy_constructor:GetSkillListResponse)
 }
@@ -1538,7 +1553,12 @@ inline PROTOBUF_NDEBUG_INLINE GetSkillListResponse::Impl_::Impl_(
 
 inline void GetSkillListResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.error_message_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, skill_list_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::skill_list_));
 }
 GetSkillListResponse::~GetSkillListResponse() {
   // @@protoc_insertion_point(destructor:GetSkillListResponse)
@@ -1548,6 +1568,7 @@ GetSkillListResponse::~GetSkillListResponse() {
 inline void GetSkillListResponse::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   delete _impl_.error_message_;
+  delete _impl_.skill_list_;
   _impl_.~Impl_();
 }
 
@@ -1573,9 +1594,15 @@ PROTOBUF_NOINLINE void GetSkillListResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.error_message_ != nullptr);
-    _impl_.error_message_->Clear();
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(_impl_.error_message_ != nullptr);
+      _impl_.error_message_->Clear();
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(_impl_.skill_list_ != nullptr);
+      _impl_.skill_list_->Clear();
+    }
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1589,16 +1616,16 @@ const char* GetSkillListResponse::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 1, 0, 2> GetSkillListResponse::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 2, 0, 2> GetSkillListResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(GetSkillListResponse, _impl_._has_bits_),
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    1,  // num_aux_entries
+    2,  // num_field_entries
+    2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_GetSkillListResponse_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -1606,6 +1633,9 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> GetSkillListResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::GetSkillListResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // .PlayerSkillListPBComp skill_list = 2;
+    {::_pbi::TcParser::FastMtS1,
+     {18, 1, 1, PROTOBUF_FIELD_OFFSET(GetSkillListResponse, _impl_.skill_list_)}},
     // .TipInfoMessage error_message = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(GetSkillListResponse, _impl_.error_message_)}},
@@ -1615,8 +1645,12 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> GetSkillListResponse::_table_ = {
     // .TipInfoMessage error_message = 1;
     {PROTOBUF_FIELD_OFFSET(GetSkillListResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .PlayerSkillListPBComp skill_list = 2;
+    {PROTOBUF_FIELD_OFFSET(GetSkillListResponse, _impl_.skill_list_), _Internal::kHasBitsOffset + 1, 1,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+    {::_pbi::TcParser::GetTable<::PlayerSkillListPBComp>()},
   }}, {{
   }},
 };
@@ -1633,6 +1667,12 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> GetSkillListResponse::_table_ = {
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.error_message_, _impl_.error_message_->GetCachedSize(), target, stream);
+  }
+
+  // .PlayerSkillListPBComp skill_list = 2;
+  if (cached_has_bits & 0x00000002u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *_impl_.skill_list_, _impl_.skill_list_->GetCachedSize(), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1652,13 +1692,21 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> GetSkillListResponse::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .TipInfoMessage error_message = 1;
   cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.error_message_);
-  }
+  if (cached_has_bits & 0x00000003u) {
+    // .TipInfoMessage error_message = 1;
+    if (cached_has_bits & 0x00000001u) {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.error_message_);
+    }
 
+    // .PlayerSkillListPBComp skill_list = 2;
+    if (cached_has_bits & 0x00000002u) {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.skill_list_);
+    }
+
+  }
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -1673,13 +1721,24 @@ void GetSkillListResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, co
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.error_message_ != nullptr);
-    if (_this->_impl_.error_message_ == nullptr) {
-      _this->_impl_.error_message_ =
-          ::google::protobuf::Message::CopyConstruct<::TipInfoMessage>(arena, *from._impl_.error_message_);
-    } else {
-      _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ =
+            ::google::protobuf::Message::CopyConstruct<::TipInfoMessage>(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(from._impl_.skill_list_ != nullptr);
+      if (_this->_impl_.skill_list_ == nullptr) {
+        _this->_impl_.skill_list_ =
+            ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComp>(arena, *from._impl_.skill_list_);
+      } else {
+        _this->_impl_.skill_list_->MergeFrom(*from._impl_.skill_list_);
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -1701,7 +1760,12 @@ void GetSkillListResponse::InternalSwap(GetSkillListResponse* PROTOBUF_RESTRICT 
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.error_message_, other->_impl_.error_message_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetSkillListResponse, _impl_.skill_list_)
+      + sizeof(GetSkillListResponse::_impl_.skill_list_)
+      - PROTOBUF_FIELD_OFFSET(GetSkillListResponse, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
 }
 
 ::google::protobuf::Metadata GetSkillListResponse::GetMetadata() const {

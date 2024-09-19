@@ -16,7 +16,6 @@ void PrintUTCWithMilliseconds() {
 	std::cout << "自1970年1月1日以来的毫秒数: " << milliseconds << std::endl;
 }
 
-
 void PrintUTCWithSeconds() {
 	uint64_t seconds = TimeUtil::NowSecondsUTC();
 	boost::posix_time::ptime utc_now = boost::posix_time::second_clock::universal_time();
@@ -27,7 +26,6 @@ void PrintUTCWithSeconds() {
 }
 
 TEST(TimeUtilTest, NowMilliseconds) {
-	PrintUTCWithSeconds();
 	uint64_t localMilliseconds = TimeUtil::NowMilliseconds();
 	EXPECT_GE(localMilliseconds, 0);  // 检查返回值是否大于或等于 0
 }

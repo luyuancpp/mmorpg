@@ -1,12 +1,12 @@
 #include "player_scene_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "pbc/scene_error_tip.pb.h"
-#include "scene/comp/scene_comp.h"
-#include "service_info/centre_player_scene_service_info.h"
-#include "proto/logic/server_player/centre_player_scene.pb.h"
 #include "game_node.h"
 #include "game_logic/network/message_util.h"
+#include "pbc/scene_error_tip.pb.h"
+#include "proto/logic/server_player/centre_player_scene.pb.h"
+#include "scene/comp/scene_comp.h"
+#include "service_info/centre_player_scene_service_info.h"
 
 #include "proto/logic/constants/node.pb.h"
 ///<<< END WRITING YOUR CODE

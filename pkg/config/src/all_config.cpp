@@ -13,6 +13,7 @@
 #include "globalvariable_config.h"
 #include "mainscene_config.h"
 #include "scene_config.h"
+#include "class_config.h"
 #include "monsterbase_config.h"
 #include "cooldown_config.h"
 void LoadAllConfig()
@@ -27,13 +28,14 @@ void LoadAllConfig()
     GlobalVariableConfigurationTable::GetSingleton().Load();
     MainSceneConfigurationTable::GetSingleton().Load();
     SceneConfigurationTable::GetSingleton().Load();
+    ClassConfigurationTable::GetSingleton().Load();
     MonsterBaseConfigurationTable::GetSingleton().Load();
     CooldownConfigurationTable::GetSingleton().Load();
 }
 
 void LoadAllConfigAsyncWhenServerLaunch()
 {
-    static muduo::CountDownLatch latch_(12);
+    static muduo::CountDownLatch latch_(13);
 
     /// Begin
     {
@@ -139,6 +141,17 @@ void LoadAllConfigAsyncWhenServerLaunch()
         std::thread t([&]() {
 
     SceneConfigurationTable::GetSingleton().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    /// End
+
+    /// Begin
+    {
+        std::thread t([&]() {
+
+    ClassConfigurationTable::GetSingleton().Load();
             latch_.countDown();
         });
         t.detach();
