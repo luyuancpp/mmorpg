@@ -16,7 +16,6 @@
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"
 #include "type_alias/player_session_type_alias.h"
-#include "util/defer.h"
 #include "util/pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"

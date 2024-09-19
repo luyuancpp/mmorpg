@@ -4,6 +4,8 @@
 #include "common/tip.pb.h"
 #include "game_logic/combat/skill/util/skill_util.h"
 #include "macros/return_define.h"
+#include "proto/logic/component/player_skill_comp.pb.h"
+#include "thread_local/storage.h"
 ///<<< END WRITING YOUR CODE
 void PlayerSkillServiceHandler::ReleaseSkill(entt::entity player,const ::ReleaseSkillSkillRequest* request,
 	     ReleaseSkillSkillResponse* response)
@@ -31,6 +33,7 @@ void PlayerSkillServiceHandler::GetSkillList(entt::entity player,const ::GetSkil
 	     GetSkillListResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	response->mutable_skill_list()->CopyFrom(tls.registry.get<PlayerSkillListPBComp>(player));
 ///<<< END WRITING YOUR CODE
 }
 

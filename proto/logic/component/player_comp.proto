@@ -25,27 +25,13 @@ message UnregisterPlayer
 {
 }
 
-message PlayerInt32Array
-{
-	repeated int32 int32_valuse = 1;
-}
-
-message PlayerUInt32Array
-{
-	repeated uint32 uint32_valuse = 2;
-}
-
 message PlayerUint64PBComp
 {
 	uint64 registration_timestamp  = 1;
 }
 
-message PlayerInt64Array
+message PlayerUint32PBComp
 {
-	
+	uint32 class  = 1;
 }
 
-message PlayerUInt64Array
-{
-	
-}

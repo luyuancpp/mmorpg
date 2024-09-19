@@ -123,6 +123,12 @@
     <ClCompile Include="src\pbc\testmultikey_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\class_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\class_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\all_config.h">
@@ -237,6 +243,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\cpp_table_id_bit_index\mission_table_id_bit_index.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\class_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\class_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

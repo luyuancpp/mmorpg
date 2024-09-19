@@ -62,18 +62,9 @@ extern NormalLoginDefaultTypeInternal _NormalLogin_default_instance_;
 class Player;
 struct PlayerDefaultTypeInternal;
 extern PlayerDefaultTypeInternal _Player_default_instance_;
-class PlayerInt32Array;
-struct PlayerInt32ArrayDefaultTypeInternal;
-extern PlayerInt32ArrayDefaultTypeInternal _PlayerInt32Array_default_instance_;
-class PlayerInt64Array;
-struct PlayerInt64ArrayDefaultTypeInternal;
-extern PlayerInt64ArrayDefaultTypeInternal _PlayerInt64Array_default_instance_;
-class PlayerUInt32Array;
-struct PlayerUInt32ArrayDefaultTypeInternal;
-extern PlayerUInt32ArrayDefaultTypeInternal _PlayerUInt32Array_default_instance_;
-class PlayerUInt64Array;
-struct PlayerUInt64ArrayDefaultTypeInternal;
-extern PlayerUInt64ArrayDefaultTypeInternal _PlayerUInt64Array_default_instance_;
+class PlayerUint32PBComp;
+struct PlayerUint32PBCompDefaultTypeInternal;
+extern PlayerUint32PBCompDefaultTypeInternal _PlayerUint32PBComp_default_instance_;
 class PlayerUint64PBComp;
 struct PlayerUint64PBCompDefaultTypeInternal;
 extern PlayerUint64PBCompDefaultTypeInternal _PlayerUint64PBComp_default_instance_;
@@ -274,7 +265,7 @@ class PlayerUint64PBComp final : public ::google::protobuf::Message
     return reinterpret_cast<const PlayerUint64PBComp*>(
         &_PlayerUint64PBComp_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(PlayerUint64PBComp& a, PlayerUint64PBComp& b) { a.Swap(&b); }
   inline void Swap(PlayerUint64PBComp* other) {
     if (other == this) return;
@@ -386,22 +377,23 @@ class PlayerUint64PBComp final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class PlayerUInt64Array final : public ::google::protobuf::internal::ZeroFieldsBase
-/* @@protoc_insertion_point(class_definition:PlayerUInt64Array) */ {
+class PlayerUint32PBComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerUint32PBComp) */ {
  public:
-  inline PlayerUInt64Array() : PlayerUInt64Array(nullptr) {}
+  inline PlayerUint32PBComp() : PlayerUint32PBComp(nullptr) {}
+  ~PlayerUint32PBComp() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerUInt64Array(
+  explicit PROTOBUF_CONSTEXPR PlayerUint32PBComp(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerUInt64Array(const PlayerUInt64Array& from) : PlayerUInt64Array(nullptr, from) {}
-  inline PlayerUInt64Array(PlayerUInt64Array&& from) noexcept
-      : PlayerUInt64Array(nullptr, std::move(from)) {}
-  inline PlayerUInt64Array& operator=(const PlayerUInt64Array& from) {
+  inline PlayerUint32PBComp(const PlayerUint32PBComp& from) : PlayerUint32PBComp(nullptr, from) {}
+  inline PlayerUint32PBComp(PlayerUint32PBComp&& from) noexcept
+      : PlayerUint32PBComp(nullptr, std::move(from)) {}
+  inline PlayerUint32PBComp& operator=(const PlayerUint32PBComp& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerUInt64Array& operator=(PlayerUInt64Array&& from) noexcept {
+  inline PlayerUint32PBComp& operator=(PlayerUint32PBComp&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -433,145 +425,16 @@ class PlayerUInt64Array final : public ::google::protobuf::internal::ZeroFieldsB
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerUInt64Array& default_instance() {
+  static const PlayerUint32PBComp& default_instance() {
     return *internal_default_instance();
   }
-  static inline const PlayerUInt64Array* internal_default_instance() {
-    return reinterpret_cast<const PlayerUInt64Array*>(
-        &_PlayerUInt64Array_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 9;
-  friend void swap(PlayerUInt64Array& a, PlayerUInt64Array& b) { a.Swap(&b); }
-  inline void Swap(PlayerUInt64Array* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(PlayerUInt64Array* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  PlayerUInt64Array* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<PlayerUInt64Array>(arena);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
-  inline void CopyFrom(const PlayerUInt64Array& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
-  void MergeFrom(const PlayerUInt64Array& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
-  }
-
-  public:
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "PlayerUInt64Array"; }
-
- protected:
-  explicit PlayerUInt64Array(::google::protobuf::Arena* arena);
-  PlayerUInt64Array(::google::protobuf::Arena* arena, const PlayerUInt64Array& from);
-  PlayerUInt64Array(::google::protobuf::Arena* arena, PlayerUInt64Array&& from) noexcept
-      : PlayerUInt64Array(arena) {
-    *this = ::std::move(from);
-  }
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  // @@protoc_insertion_point(class_scope:PlayerUInt64Array)
- private:
-  class _Internal;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  friend struct ::TableStruct_logic_2fcomponent_2fplayer_5fcomp_2eproto;
-};
-// -------------------------------------------------------------------
-
-class PlayerUInt32Array final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerUInt32Array) */ {
- public:
-  inline PlayerUInt32Array() : PlayerUInt32Array(nullptr) {}
-  ~PlayerUInt32Array() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerUInt32Array(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline PlayerUInt32Array(const PlayerUInt32Array& from) : PlayerUInt32Array(nullptr, from) {}
-  inline PlayerUInt32Array(PlayerUInt32Array&& from) noexcept
-      : PlayerUInt32Array(nullptr, std::move(from)) {}
-  inline PlayerUInt32Array& operator=(const PlayerUInt32Array& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline PlayerUInt32Array& operator=(PlayerUInt32Array&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const PlayerUInt32Array& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const PlayerUInt32Array* internal_default_instance() {
-    return reinterpret_cast<const PlayerUInt32Array*>(
-        &_PlayerUInt32Array_default_instance_);
+  static inline const PlayerUint32PBComp* internal_default_instance() {
+    return reinterpret_cast<const PlayerUint32PBComp*>(
+        &_PlayerUint32PBComp_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 6;
-  friend void swap(PlayerUInt32Array& a, PlayerUInt32Array& b) { a.Swap(&b); }
-  inline void Swap(PlayerUInt32Array* other) {
+  friend void swap(PlayerUint32PBComp& a, PlayerUint32PBComp& b) { a.Swap(&b); }
+  inline void Swap(PlayerUint32PBComp* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -583,7 +446,7 @@ class PlayerUInt32Array final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerUInt32Array* other) {
+  void UnsafeArenaSwap(PlayerUint32PBComp* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -591,13 +454,13 @@ class PlayerUInt32Array final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerUInt32Array* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerUInt32Array>(arena);
+  PlayerUint32PBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerUint32PBComp>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerUInt32Array& from);
+  void CopyFrom(const PlayerUint32PBComp& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerUInt32Array& from) { PlayerUInt32Array::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerUint32PBComp& from) { PlayerUint32PBComp::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -618,16 +481,16 @@ class PlayerUInt32Array final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(PlayerUInt32Array* other);
+  void InternalSwap(PlayerUint32PBComp* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "PlayerUInt32Array"; }
+  static ::absl::string_view FullMessageName() { return "PlayerUint32PBComp"; }
 
  protected:
-  explicit PlayerUInt32Array(::google::protobuf::Arena* arena);
-  PlayerUInt32Array(::google::protobuf::Arena* arena, const PlayerUInt32Array& from);
-  PlayerUInt32Array(::google::protobuf::Arena* arena, PlayerUInt32Array&& from) noexcept
-      : PlayerUInt32Array(arena) {
+  explicit PlayerUint32PBComp(::google::protobuf::Arena* arena);
+  PlayerUint32PBComp(::google::protobuf::Arena* arena, const PlayerUint32PBComp& from);
+  PlayerUint32PBComp(::google::protobuf::Arena* arena, PlayerUint32PBComp&& from) noexcept
+      : PlayerUint32PBComp(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -639,27 +502,19 @@ class PlayerUInt32Array final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kUint32ValuseFieldNumber = 2,
+    kClassFieldNumber = 1,
   };
-  // repeated uint32 uint32_valuse = 2;
-  int uint32_valuse_size() const;
-  private:
-  int _internal_uint32_valuse_size() const;
-
-  public:
-  void clear_uint32_valuse() ;
-  ::uint32_t uint32_valuse(int index) const;
-  void set_uint32_valuse(int index, ::uint32_t value);
-  void add_uint32_valuse(::uint32_t value);
-  const ::google::protobuf::RepeatedField<::uint32_t>& uint32_valuse() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* mutable_uint32_valuse();
+  // uint32 class = 1;
+  void clear_class_() ;
+  ::uint32_t class_() const;
+  void set_class_(::uint32_t value);
 
   private:
-  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_uint32_valuse() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_uint32_valuse();
+  ::uint32_t _internal_class_() const;
+  void _internal_set_class_(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerUInt32Array)
+  // @@protoc_insertion_point(class_scope:PlayerUint32PBComp)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -680,312 +535,7 @@ class PlayerUInt32Array final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::RepeatedField<::uint32_t> uint32_valuse_;
-    mutable ::google::protobuf::internal::CachedSize _uint32_valuse_cached_byte_size_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_logic_2fcomponent_2fplayer_5fcomp_2eproto;
-};
-// -------------------------------------------------------------------
-
-class PlayerInt64Array final : public ::google::protobuf::internal::ZeroFieldsBase
-/* @@protoc_insertion_point(class_definition:PlayerInt64Array) */ {
- public:
-  inline PlayerInt64Array() : PlayerInt64Array(nullptr) {}
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerInt64Array(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline PlayerInt64Array(const PlayerInt64Array& from) : PlayerInt64Array(nullptr, from) {}
-  inline PlayerInt64Array(PlayerInt64Array&& from) noexcept
-      : PlayerInt64Array(nullptr, std::move(from)) {}
-  inline PlayerInt64Array& operator=(const PlayerInt64Array& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline PlayerInt64Array& operator=(PlayerInt64Array&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const PlayerInt64Array& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const PlayerInt64Array* internal_default_instance() {
-    return reinterpret_cast<const PlayerInt64Array*>(
-        &_PlayerInt64Array_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 8;
-  friend void swap(PlayerInt64Array& a, PlayerInt64Array& b) { a.Swap(&b); }
-  inline void Swap(PlayerInt64Array* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(PlayerInt64Array* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  PlayerInt64Array* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<PlayerInt64Array>(arena);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
-  inline void CopyFrom(const PlayerInt64Array& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
-  void MergeFrom(const PlayerInt64Array& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
-  }
-
-  public:
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "PlayerInt64Array"; }
-
- protected:
-  explicit PlayerInt64Array(::google::protobuf::Arena* arena);
-  PlayerInt64Array(::google::protobuf::Arena* arena, const PlayerInt64Array& from);
-  PlayerInt64Array(::google::protobuf::Arena* arena, PlayerInt64Array&& from) noexcept
-      : PlayerInt64Array(arena) {
-    *this = ::std::move(from);
-  }
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  // @@protoc_insertion_point(class_scope:PlayerInt64Array)
- private:
-  class _Internal;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  friend struct ::TableStruct_logic_2fcomponent_2fplayer_5fcomp_2eproto;
-};
-// -------------------------------------------------------------------
-
-class PlayerInt32Array final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerInt32Array) */ {
- public:
-  inline PlayerInt32Array() : PlayerInt32Array(nullptr) {}
-  ~PlayerInt32Array() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerInt32Array(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline PlayerInt32Array(const PlayerInt32Array& from) : PlayerInt32Array(nullptr, from) {}
-  inline PlayerInt32Array(PlayerInt32Array&& from) noexcept
-      : PlayerInt32Array(nullptr, std::move(from)) {}
-  inline PlayerInt32Array& operator=(const PlayerInt32Array& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline PlayerInt32Array& operator=(PlayerInt32Array&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const PlayerInt32Array& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const PlayerInt32Array* internal_default_instance() {
-    return reinterpret_cast<const PlayerInt32Array*>(
-        &_PlayerInt32Array_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 5;
-  friend void swap(PlayerInt32Array& a, PlayerInt32Array& b) { a.Swap(&b); }
-  inline void Swap(PlayerInt32Array* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(PlayerInt32Array* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  PlayerInt32Array* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerInt32Array>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerInt32Array& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerInt32Array& from) { PlayerInt32Array::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(PlayerInt32Array* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "PlayerInt32Array"; }
-
- protected:
-  explicit PlayerInt32Array(::google::protobuf::Arena* arena);
-  PlayerInt32Array(::google::protobuf::Arena* arena, const PlayerInt32Array& from);
-  PlayerInt32Array(::google::protobuf::Arena* arena, PlayerInt32Array&& from) noexcept
-      : PlayerInt32Array(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kInt32ValuseFieldNumber = 1,
-  };
-  // repeated int32 int32_valuse = 1;
-  int int32_valuse_size() const;
-  private:
-  int _internal_int32_valuse_size() const;
-
-  public:
-  void clear_int32_valuse() ;
-  ::int32_t int32_valuse(int index) const;
-  void set_int32_valuse(int index, ::int32_t value);
-  void add_int32_valuse(::int32_t value);
-  const ::google::protobuf::RepeatedField<::int32_t>& int32_valuse() const;
-  ::google::protobuf::RepeatedField<::int32_t>* mutable_int32_valuse();
-
-  private:
-  const ::google::protobuf::RepeatedField<::int32_t>& _internal_int32_valuse() const;
-  ::google::protobuf::RepeatedField<::int32_t>* _internal_mutable_int32_valuse();
-
-  public:
-  // @@protoc_insertion_point(class_scope:PlayerInt32Array)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::RepeatedField<::int32_t> int32_valuse_;
-    mutable ::google::protobuf::internal::CachedSize _int32_valuse_cached_byte_size_;
+    ::uint32_t class__;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1634,104 +1184,6 @@ inline void Account::set_allocated_account(std::string* value) {
 
 // -------------------------------------------------------------------
 
-// PlayerInt32Array
-
-// repeated int32 int32_valuse = 1;
-inline int PlayerInt32Array::_internal_int32_valuse_size() const {
-  return _internal_int32_valuse().size();
-}
-inline int PlayerInt32Array::int32_valuse_size() const {
-  return _internal_int32_valuse_size();
-}
-inline void PlayerInt32Array::clear_int32_valuse() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.int32_valuse_.Clear();
-}
-inline ::int32_t PlayerInt32Array::int32_valuse(int index) const {
-  // @@protoc_insertion_point(field_get:PlayerInt32Array.int32_valuse)
-  return _internal_int32_valuse().Get(index);
-}
-inline void PlayerInt32Array::set_int32_valuse(int index, ::int32_t value) {
-  _internal_mutable_int32_valuse()->Set(index, value);
-  // @@protoc_insertion_point(field_set:PlayerInt32Array.int32_valuse)
-}
-inline void PlayerInt32Array::add_int32_valuse(::int32_t value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _internal_mutable_int32_valuse()->Add(value);
-  // @@protoc_insertion_point(field_add:PlayerInt32Array.int32_valuse)
-}
-inline const ::google::protobuf::RepeatedField<::int32_t>& PlayerInt32Array::int32_valuse() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:PlayerInt32Array.int32_valuse)
-  return _internal_int32_valuse();
-}
-inline ::google::protobuf::RepeatedField<::int32_t>* PlayerInt32Array::mutable_int32_valuse()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:PlayerInt32Array.int32_valuse)
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _internal_mutable_int32_valuse();
-}
-inline const ::google::protobuf::RepeatedField<::int32_t>&
-PlayerInt32Array::_internal_int32_valuse() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.int32_valuse_;
-}
-inline ::google::protobuf::RepeatedField<::int32_t>* PlayerInt32Array::_internal_mutable_int32_valuse() {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return &_impl_.int32_valuse_;
-}
-
-// -------------------------------------------------------------------
-
-// PlayerUInt32Array
-
-// repeated uint32 uint32_valuse = 2;
-inline int PlayerUInt32Array::_internal_uint32_valuse_size() const {
-  return _internal_uint32_valuse().size();
-}
-inline int PlayerUInt32Array::uint32_valuse_size() const {
-  return _internal_uint32_valuse_size();
-}
-inline void PlayerUInt32Array::clear_uint32_valuse() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.uint32_valuse_.Clear();
-}
-inline ::uint32_t PlayerUInt32Array::uint32_valuse(int index) const {
-  // @@protoc_insertion_point(field_get:PlayerUInt32Array.uint32_valuse)
-  return _internal_uint32_valuse().Get(index);
-}
-inline void PlayerUInt32Array::set_uint32_valuse(int index, ::uint32_t value) {
-  _internal_mutable_uint32_valuse()->Set(index, value);
-  // @@protoc_insertion_point(field_set:PlayerUInt32Array.uint32_valuse)
-}
-inline void PlayerUInt32Array::add_uint32_valuse(::uint32_t value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _internal_mutable_uint32_valuse()->Add(value);
-  // @@protoc_insertion_point(field_add:PlayerUInt32Array.uint32_valuse)
-}
-inline const ::google::protobuf::RepeatedField<::uint32_t>& PlayerUInt32Array::uint32_valuse() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:PlayerUInt32Array.uint32_valuse)
-  return _internal_uint32_valuse();
-}
-inline ::google::protobuf::RepeatedField<::uint32_t>* PlayerUInt32Array::mutable_uint32_valuse()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:PlayerUInt32Array.uint32_valuse)
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _internal_mutable_uint32_valuse();
-}
-inline const ::google::protobuf::RepeatedField<::uint32_t>&
-PlayerUInt32Array::_internal_uint32_valuse() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.uint32_valuse_;
-}
-inline ::google::protobuf::RepeatedField<::uint32_t>* PlayerUInt32Array::_internal_mutable_uint32_valuse() {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return &_impl_.uint32_valuse_;
-}
-
-// -------------------------------------------------------------------
-
 // PlayerUint64PBComp
 
 // uint64 registration_timestamp = 1;
@@ -1758,11 +1210,29 @@ inline void PlayerUint64PBComp::_internal_set_registration_timestamp(::uint64_t 
 
 // -------------------------------------------------------------------
 
-// PlayerInt64Array
+// PlayerUint32PBComp
 
-// -------------------------------------------------------------------
-
-// PlayerUInt64Array
+// uint32 class = 1;
+inline void PlayerUint32PBComp::clear_class_() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.class__ = 0u;
+}
+inline ::uint32_t PlayerUint32PBComp::class_() const {
+  // @@protoc_insertion_point(field_get:PlayerUint32PBComp.class)
+  return _internal_class_();
+}
+inline void PlayerUint32PBComp::set_class_(::uint32_t value) {
+  _internal_set_class_(value);
+  // @@protoc_insertion_point(field_set:PlayerUint32PBComp.class)
+}
+inline ::uint32_t PlayerUint32PBComp::_internal_class_() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.class__;
+}
+inline void PlayerUint32PBComp::_internal_set_class_(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.class__ = value;
+}
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

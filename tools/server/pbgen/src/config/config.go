@@ -119,7 +119,6 @@ const (
 	YourCodePair             = YourCodeBegin + "\n" + YourCodeEnd + "\n"
 	CcGenericServices        = "cc_generic_services"
 	EmptyResponseName        = "Empty"
-	C2SMethodContainsName    = "C2S"
 	MysqlName                = "mysql"
 	PlayerServiceName        = "player_service.cpp"
 	PlayerRepliedServiceName = "player_service_replied.cpp"
