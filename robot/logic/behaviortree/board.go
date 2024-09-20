@@ -30,21 +30,6 @@ func (b *BoardEqualConst) OnTick(tick *Tick) b3.Status {
 	return b3.SUCCESS
 }
 
-type GetHatredTarget struct {
-	Action
-	TargetIDBoard string
-}
-
-func (b *GetHatredTarget) Initialize(setting *BTNodeCfg) {
-	b.Action.Initialize(setting)
-	b.TargetIDBoard = setting.GetPropertyAsString("TargetIDBoard")
-}
-
-func (b *GetHatredTarget) OnTick(tick *Tick) b3.Status {
-
-	return b3.SUCCESS
-}
-
 type SetBoardTargetPos struct {
 	Action
 	targetIDBoard string

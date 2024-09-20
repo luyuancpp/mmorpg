@@ -64,9 +64,9 @@ func (s *GetSkillID) Initialize(setting *BTNodeCfg) {
 
 func (s *GetSkillID) OnTick(tick *Tick) b3.Status {
 
-	playerSkillListPBComp, ok := tick.Blackboard.GetMem(SkillListBoardKey).([]*game.PlayerSkillListPBComp)
+	playerSkillListPBComp, ok := tick.Blackboard.GetMem(s.SkillListBoard).([]*game.PlayerSkillListPBComp)
 	if !ok {
-		zap.L().Debug("Failed to retrieve skill list from blackboard", zap.String("Key", SkillListBoardKey), zap.Any("Value", tick.Blackboard.GetMem(SkillListBoardKey)))
+		zap.L().Debug("Failed to retrieve skill list from blackboard", zap.String("Key", s.SkillListBoard), zap.Any("Value", tick.Blackboard.GetMem(SkillListBoardKey)))
 		return b3.FAILURE
 	}
 
@@ -100,6 +100,7 @@ func (s *ReleaseSkill) OnTick(tick *Tick) b3.Status {
 
 	rq := &game.ReleaseSkillSkillRequest{}
 	rq.SkillTableId = uint32(tick.Blackboard.GetInt32(s.SkillIDBoard, "", ""))
+	rq.TargetId = tick.Blackboard.GetUInt64(HatredTargetBoardKey, "", "")
 
 	zap.L().Info("Sending skill release request", zap.Uint32("SkillTableId", rq.SkillTableId))
 	client.Send(rq, game.PlayerSkillServiceReleaseSkillMessageId)
