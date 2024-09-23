@@ -49,6 +49,9 @@ struct TableStruct_logic_2fevent_2fplayer_5fevent_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fevent_2fplayer_5fevent_2eproto;
+class InitializePlayerComponents;
+struct InitializePlayerComponentsDefaultTypeInternal;
+extern InitializePlayerComponentsDefaultTypeInternal _InitializePlayerComponents_default_instance_;
 class PlayerUpgrade;
 struct PlayerUpgradeDefaultTypeInternal;
 extern PlayerUpgradeDefaultTypeInternal _PlayerUpgrade_default_instance_;
@@ -410,6 +413,173 @@ class PlayerUpgrade final : public ::google::protobuf::Message
   union { Impl_ _impl_; };
   friend struct ::TableStruct_logic_2fevent_2fplayer_5fevent_2eproto;
 };
+// -------------------------------------------------------------------
+
+class InitializePlayerComponents final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:InitializePlayerComponents) */ {
+ public:
+  inline InitializePlayerComponents() : InitializePlayerComponents(nullptr) {}
+  ~InitializePlayerComponents() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR InitializePlayerComponents(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline InitializePlayerComponents(const InitializePlayerComponents& from) : InitializePlayerComponents(nullptr, from) {}
+  inline InitializePlayerComponents(InitializePlayerComponents&& from) noexcept
+      : InitializePlayerComponents(nullptr, std::move(from)) {}
+  inline InitializePlayerComponents& operator=(const InitializePlayerComponents& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline InitializePlayerComponents& operator=(InitializePlayerComponents&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const InitializePlayerComponents& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const InitializePlayerComponents* internal_default_instance() {
+    return reinterpret_cast<const InitializePlayerComponents*>(
+        &_InitializePlayerComponents_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(InitializePlayerComponents& a, InitializePlayerComponents& b) { a.Swap(&b); }
+  inline void Swap(InitializePlayerComponents* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(InitializePlayerComponents* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  InitializePlayerComponents* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<InitializePlayerComponents>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const InitializePlayerComponents& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const InitializePlayerComponents& from) { InitializePlayerComponents::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(InitializePlayerComponents* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "InitializePlayerComponents"; }
+
+ protected:
+  explicit InitializePlayerComponents(::google::protobuf::Arena* arena);
+  InitializePlayerComponents(::google::protobuf::Arena* arena, const InitializePlayerComponents& from);
+  InitializePlayerComponents(::google::protobuf::Arena* arena, InitializePlayerComponents&& from) noexcept
+      : InitializePlayerComponents(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kEntityFieldNumber = 1,
+  };
+  // uint64 entity = 1;
+  void clear_entity() ;
+  ::uint64_t entity() const;
+  void set_entity(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_entity() const;
+  void _internal_set_entity(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:InitializePlayerComponents)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t entity_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fevent_2fplayer_5fevent_2eproto;
+};
 
 // ===================================================================
 
@@ -495,6 +665,32 @@ inline ::uint32_t PlayerUpgrade::_internal_new_level() const {
 inline void PlayerUpgrade::_internal_set_new_level(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.new_level_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// InitializePlayerComponents
+
+// uint64 entity = 1;
+inline void InitializePlayerComponents::clear_entity() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.entity_ = ::uint64_t{0u};
+}
+inline ::uint64_t InitializePlayerComponents::entity() const {
+  // @@protoc_insertion_point(field_get:InitializePlayerComponents.entity)
+  return _internal_entity();
+}
+inline void InitializePlayerComponents::set_entity(::uint64_t value) {
+  _internal_set_entity(value);
+  // @@protoc_insertion_point(field_set:InitializePlayerComponents.entity)
+}
+inline ::uint64_t InitializePlayerComponents::_internal_entity() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.entity_;
+}
+inline void InitializePlayerComponents::_internal_set_entity(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.entity_ = value;
 }
 
 #ifdef __GNUC__

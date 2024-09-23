@@ -19,4 +19,11 @@ sol::property(&PlayerUpgrade::new_level, &PlayerUpgrade::set_new_level),
 &PlayerUpgrade::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<InitializePlayerComponents>("InitializePlayerComponents",
+"entity",
+sol::property(&InitializePlayerComponents::entity, &InitializePlayerComponents::set_entity),
+"DebugString",
+&InitializePlayerComponents::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 }

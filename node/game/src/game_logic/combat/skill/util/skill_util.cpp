@@ -27,7 +27,7 @@ uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const 
 }
 
 // Initialize an entity with a SkillContextMap
-void SkillUtil::InitEntity(entt::entity entity) {
+void SkillUtil::InitializePlayerComponentsHandler(entt::entity entity) {
 	tls.registry.emplace<SkillContextCompMap>(entity);
 }
 
@@ -318,12 +318,12 @@ void SkillUtil::BroadcastSkillUsedMessage(const entt::entity caster, const ::Rel
 
 void SkillUtil::SetupCastingTimer(entt::entity caster, const SkillTable* skillTable, uint64_t skillId) {
 	auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(caster).timer;
-	if (IsSkillOfType(skillId, kGeneralSkill)) {
+	if (IsSkillOfType(skillTable->id(), kGeneralSkill)) {
 		castingTimer.RunAfter(skillTable->castpoint(), [caster, skillId] {
 			return HandleGeneralSkillSpell(caster, skillId);
 			});
 	}
-	else if (IsSkillOfType(skillId, kChannelSkill)) {
+	else if (IsSkillOfType(skillTable->id(), kChannelSkill)) {
 		castingTimer.RunAfter(skillTable->castpoint(), [caster, skillId] {
 			return HandleChannelSkillSpell(caster, skillId);
 			});

@@ -11,7 +11,7 @@ class SkillTable;
 class SkillUtil
 {
 public:
-	static void InitEntity(entt::entity entity);
+	static void InitializePlayerComponentsHandler(entt::entity entity);
 
 	static uint32_t ReleaseSkill(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
 	static uint32_t CheckSkillPrerequisites(entt::entity caster, const ::ReleaseSkillSkillRequest* request);

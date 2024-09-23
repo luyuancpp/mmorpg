@@ -4,7 +4,7 @@
 #include "proto/logic/component/player_skill_comp.pb.h"
 #include "thread_local/storage.h"
 
-void PlayerSkillUtil::InitializeAfterDBLoad(entt::entity player)
+void PlayerSkillUtil::InitializePlayerComponentsHandler(entt::entity player)
 {
 
 }
