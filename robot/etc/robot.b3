@@ -357,7 +357,7 @@
             "description": "获取技能ID",
             "properties": {
               "SkillListBoard": "SkillList",
-              "SkillIndex": 1,
+              "SkillIndex": 0,
               "SkillIDBoard": "SkillID"
             },
             "display": {
