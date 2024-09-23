@@ -104,7 +104,6 @@ func createDBTable() {
 		&game.AccountShareDatabase{},
 		&game.PlayerCentreDatabase{},
 		&game.PlayerDatabase{},
-		&game.PlayerUnimportanceDatabase{},
 	}
 
 	for _, table := range tables {
@@ -124,7 +123,6 @@ func alterDBTable() {
 		&game.AccountShareDatabase{},
 		&game.PlayerCentreDatabase{},
 		&game.PlayerDatabase{},
-		&game.PlayerUnimportanceDatabase{},
 	}
 
 	for _, table := range tables {

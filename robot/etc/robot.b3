@@ -436,6 +436,137 @@
         "description": null,
         "properties": {},
         "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "GetHatredTarget",
+        "category": "action",
+        "title": "GetHatredTarget(<TargetIDBoard>)",
+        "description": "获取仇恨目标",
+        "properties": {
+          "TargetIDBoard": "HatredTarget"
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "BoardEqualConst",
+        "category": "condition",
+        "title": "BoardEqualConst(<key>,<value>)",
+        "description": "黑板等于固定值  uint64类型",
+        "properties": {
+          "key": "key",
+          "value": 1
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "BoardEqualConstInt",
+        "category": "condition",
+        "title": "BoardEqualConstInt(<key>,<value>)",
+        "description": "黑板等于固定值  int64类型",
+        "properties": {
+          "key": "key",
+          "value": 1
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "SetBoardTargetPos",
+        "category": "action",
+        "title": "SetBoardTargetPos(<targetIDBoard>,<storeBoard>)",
+        "description": "目标的坐标写入自己黑板",
+        "properties": {
+          "targetIDBoard": "needset",
+          "storeBoard": "needset"
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "MoveToEntity",
+        "category": "action",
+        "title": "MoveToEntity(<targetBoard>,<originalPosBoard>,<origMaxDistance>)",
+        "description": "移动到目标单位",
+        "properties": {
+          "origMaxDistance": 1000,
+          "targetBoard": "needset",
+          "originalPosBoard": "needset"
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "GetTargetDistance",
+        "category": "action",
+        "title": "GetTargetDistance(<TargetBoard>,<DistanceBoard>)",
+        "description": "获取与目标距离",
+        "properties": {
+          "TargetBoard": "target",
+          "DistanceBoard": "targetDistance"
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "GetReleasableSkillList",
+        "category": "action",
+        "title": "GetReleasableSkillList(<SkillGroupIndex>,<ReleasableSkillBoard>)",
+        "description": "获取可用的技能列表",
+        "properties": {
+          "SkillGroupIndex": 1,
+          "ReleasableSkillBoard": "relaseableSkillBoard"
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "CheckSkillByDistance",
+        "category": "action",
+        "title": "CheckSkillByDistance(<DistanceBoard>,<ReleasableSkillBoard>,<AfterCheckReleasableSkillBoard>)",
+        "description": "根据距离检查可用技能",
+        "properties": {
+          "DistanceBoard": "distance",
+          "ReleasableSkillBoard": "relableSkill",
+          "AfterCheckReleasableSkillBoard": "afterCheckSkill"
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "GetSkillID",
+        "category": "action",
+        "title": "GetSkillID(<SkillListBoard>,<SkillIndex>,<SkillIDBoard>)",
+        "description": "获取技能ID",
+        "properties": {
+          "SkillListBoard": "skillList",
+          "SkillIndex": 0,
+          "SkillIDBoard": "idBoard"
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "ReleaseSkill",
+        "category": "action",
+        "title": "ReleaseSkill(<skillIDBoard>)",
+        "description": "释放技能",
+        "properties": {
+          "skillIDBoard": "skillID"
+        },
+        "parent": null
       }
     ],
     "custom_folders": []
