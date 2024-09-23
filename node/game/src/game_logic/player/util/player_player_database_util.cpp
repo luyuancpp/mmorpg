@@ -10,8 +10,8 @@ void Player_databaseMessageFieldsUnmarshal(entt::entity player, const player_dat
 }
 
 void Player_databaseMessageFieldsMarshal(entt::entity player, player_database& message){
-	message.mutable_transform()->CopyFrom(tls.registry.emplace<Transform>(player));
-	message.mutable_uint64_pb_comp()->CopyFrom(tls.registry.emplace<PlayerUint64PBComp>(player));
-	message.mutable_skill_list()->CopyFrom(tls.registry.emplace<PlayerSkillListPBComp>(player));
-	message.mutable_uint32_pb_comp()->CopyFrom(tls.registry.emplace<PlayerUint32PBComp>(player));
+	message.mutable_transform()->CopyFrom(tls.registry.get<Transform>(player));
+	message.mutable_uint64_pb_comp()->CopyFrom(tls.registry.get<PlayerUint64PBComp>(player));
+	message.mutable_skill_list()->CopyFrom(tls.registry.get<PlayerSkillListPBComp>(player));
+	message.mutable_uint32_pb_comp()->CopyFrom(tls.registry.get<PlayerUint32PBComp>(player));
 }
