@@ -4,7 +4,7 @@
   "data": {
     "version": "0.3.0",
     "scope": "project",
-    "selectedTree": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
+    "selectedTree": "3961d49d-3426-410b-bc92-6fe8f3b1dee2",
     "trees": [
       {
         "version": "0.3.0",
@@ -303,6 +303,9 @@
             },
             "children": [
               "2035daba-5c13-44d6-8a43-6a656e64e55e",
+              "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
+              "b0a180ad-cf77-4557-a901-8dd32c8d00b2",
+              "ebddc966-a998-4ab0-87c0-a9910f54805a",
               "0a77f22e-efd3-45ca-8f47-43c7b2e06f95"
             ]
           },
@@ -316,8 +319,8 @@
               "count": 1000000
             },
             "display": {
-              "x": 396,
-              "y": -108
+              "x": 384,
+              "y": -180
             }
           },
           "0a77f22e-efd3-45ca-8f47-43c7b2e06f95": {
@@ -329,7 +332,51 @@
             "properties": {},
             "display": {
               "x": 372,
-              "y": 0
+              "y": 156
+            }
+          },
+          "b8a8446b-0d0d-433b-ba87-26ae75d4b12b": {
+            "id": "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
+            "name": "GetHatredTarget",
+            "category": "action",
+            "title": "GetHatredTarget(<TargetIDBoard>)",
+            "description": "获取仇恨目标",
+            "properties": {
+              "TargetIDBoard": "HatredTarget"
+            },
+            "display": {
+              "x": 396,
+              "y": -84
+            }
+          },
+          "b0a180ad-cf77-4557-a901-8dd32c8d00b2": {
+            "id": "b0a180ad-cf77-4557-a901-8dd32c8d00b2",
+            "name": "GetSkillID",
+            "category": "action",
+            "title": "GetSkillID(<SkillListBoard>,<SkillIndex>,<SkillIDBoard>)",
+            "description": "获取技能ID",
+            "properties": {
+              "SkillListBoard": "skillList",
+              "SkillIndex": 0,
+              "SkillIDBoard": "idBoard"
+            },
+            "display": {
+              "x": 384,
+              "y": -12
+            }
+          },
+          "ebddc966-a998-4ab0-87c0-a9910f54805a": {
+            "id": "ebddc966-a998-4ab0-87c0-a9910f54805a",
+            "name": "ReleaseSkill",
+            "category": "action",
+            "title": "ReleaseSkill(<skillIDBoard>)",
+            "description": "释放技能",
+            "properties": {
+              "skillIDBoard": "skillID"
+            },
+            "display": {
+              "x": 360,
+              "y": 72
             }
           }
         },
