@@ -57,15 +57,14 @@ inline constexpr SkillTable::Impl_::Impl_(
         castpoint_{0u},
         recoverytime_{0u},
         immediately_{0u},
-        postcastrecoverytime_{0u},
         channelthink_{0u},
         channelfinish_{0u},
         thinkinterval_{0u},
-        range_{0},
         channeltime_{0u},
-        self_status_{0u},
+        range_{0},
         max_range_{0},
         mmin_range_{0},
+        self_status_{0u},
         required_status_{0u},
         cooldown_id_{0u},
         _cached_size_{0} {}
@@ -137,7 +136,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.recoverytime_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.immediately_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.effect_),
-        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.postcastrecoverytime_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.channelthink_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.channelfinish_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.thinkinterval_),
@@ -164,7 +162,7 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::requestresource)},
         {10, -1, -1, sizeof(::SkillTable)},
-        {39, -1, -1, sizeof(::SkillTabledData)},
+        {38, -1, -1, sizeof(::SkillTabledData)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_requestresource_default_instance_._instance,
@@ -175,26 +173,26 @@ const char descriptor_table_protodef_skill_5fconfig_2eproto[] ABSL_ATTRIBUTE_SEC
     protodesc_cold) = {
     "\n\022skill_config.proto\"K\n\017requestresource\022"
     "\032\n\022requestresource_id\030\001 \001(\r\022\034\n\024requestre"
-    "source_cost\030\002 \001(\r\"\330\003\n\nSkillTable\022\n\n\002id\030\001"
+    "source_cost\030\002 \001(\r\"\272\003\n\nSkillTable\022\n\n\002id\030\001"
     " \001(\r\022\022\n\nskill_type\030\002 \003(\r\022\023\n\013target_type\030"
     "\003 \003(\r\022\025\n\rrquest_target\030\004 \001(\r\022\025\n\rtarget_s"
     "tatus\030\005 \001(\r\022\021\n\tcastpoint\030\006 \001(\r\022\024\n\014recove"
     "rytime\030\007 \001(\r\022\023\n\013immediately\030\010 \001(\r\022\016\n\006eff"
-    "ect\030\t \003(\r\022\034\n\024postcastrecoverytime\030\n \001(\r\022"
-    "\024\n\014channelthink\030\013 \001(\r\022\025\n\rchannelfinish\030\014"
-    " \001(\r\022\025\n\rthinkinterval\030\r \001(\r\022\023\n\013channelti"
-    "me\030\016 \001(\r\022)\n\017requestresource\030\017 \003(\0132\020.requ"
-    "estresource\022\r\n\005range\030\020 \001(\001\022\021\n\tmax_range\030"
-    "\021 \001(\001\022\022\n\nmmin_range\030\022 \001(\001\022\023\n\013self_status"
-    "\030\023 \001(\r\022\027\n\017required_status\030\024 \001(\r\022\023\n\013coold"
-    "own_id\030\025 \001(\r\",\n\017SkillTabledData\022\031\n\004data\030"
-    "\001 \003(\0132\013.SkillTableB\tZ\007pb/gameb\006proto3"
+    "ect\030\t \003(\r\022\024\n\014channelthink\030\n \001(\r\022\025\n\rchann"
+    "elfinish\030\013 \001(\r\022\025\n\rthinkinterval\030\014 \001(\r\022\023\n"
+    "\013channeltime\030\r \001(\r\022)\n\017requestresource\030\016 "
+    "\003(\0132\020.requestresource\022\r\n\005range\030\017 \001(\001\022\021\n\t"
+    "max_range\030\020 \001(\001\022\022\n\nmmin_range\030\021 \001(\001\022\023\n\013s"
+    "elf_status\030\022 \001(\r\022\027\n\017required_status\030\023 \001("
+    "\r\022\023\n\013cooldown_id\030\024 \001(\r\",\n\017SkillTabledDat"
+    "a\022\031\n\004data\030\001 \003(\0132\013.SkillTableB\tZ\007pb/gameb"
+    "\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_skill_5fconfig_2eproto = {
     false,
     false,
-    637,
+    607,
     descriptor_table_protodef_skill_5fconfig_2eproto,
     "skill_config.proto",
     &descriptor_table_skill_5fconfig_2eproto_once,
@@ -546,15 +544,15 @@ const char* SkillTable::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
+const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    21, 248,  // max_field_number, fast_idx_mask
+    20, 248,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4292870144,  // skipmap
+    4293918720,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    21,  // num_field_entries
+    20,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_SkillTable_default_instance_._instance,
@@ -591,42 +589,40 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
     // repeated uint32 effect = 9;
     {::_pbi::TcParser::FastV32P1,
      {74, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_)}},
-    // uint32 postcastrecoverytime = 10;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.postcastrecoverytime_), 63>(),
-     {80, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.postcastrecoverytime_)}},
-    // uint32 channelthink = 11;
+    // uint32 channelthink = 10;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channelthink_), 63>(),
-     {88, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_)}},
-    // uint32 channelfinish = 12;
+     {80, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_)}},
+    // uint32 channelfinish = 11;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channelfinish_), 63>(),
-     {96, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_)}},
-    // uint32 thinkinterval = 13;
+     {88, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_)}},
+    // uint32 thinkinterval = 12;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.thinkinterval_), 63>(),
-     {104, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_)}},
-    // uint32 channeltime = 14;
+     {96, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_)}},
+    // uint32 channeltime = 13;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channeltime_), 63>(),
-     {112, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_)}},
-    // repeated .requestresource requestresource = 15;
+     {104, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_)}},
+    // repeated .requestresource requestresource = 14;
     {::_pbi::TcParser::FastMtR1,
-     {122, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_)}},
-    // double range = 16;
+     {114, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_)}},
+    // double range = 15;
+    {::_pbi::TcParser::FastF64S1,
+     {121, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_)}},
+    // double max_range = 16;
     {::_pbi::TcParser::FastF64S2,
-     {385, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_)}},
-    // double max_range = 17;
+     {385, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_)}},
+    // double mmin_range = 17;
     {::_pbi::TcParser::FastF64S2,
-     {393, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_)}},
-    // double mmin_range = 18;
-    {::_pbi::TcParser::FastF64S2,
-     {401, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mmin_range_)}},
-    // uint32 self_status = 19;
+     {393, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mmin_range_)}},
+    // uint32 self_status = 18;
     {::_pbi::TcParser::FastV32S2,
-     {408, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_)}},
-    // uint32 required_status = 20;
+     {400, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_)}},
+    // uint32 required_status = 19;
     {::_pbi::TcParser::FastV32S2,
-     {416, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_)}},
-    // uint32 cooldown_id = 21;
+     {408, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_)}},
+    // uint32 cooldown_id = 20;
     {::_pbi::TcParser::FastV32S2,
-     {424, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)}},
+     {416, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -667,40 +663,37 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
     // repeated uint32 effect = 9;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
-    // uint32 postcastrecoverytime = 10;
-    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.postcastrecoverytime_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 channelthink = 11;
+    // uint32 channelthink = 10;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 channelfinish = 12;
+    // uint32 channelfinish = 11;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 thinkinterval = 13;
+    // uint32 thinkinterval = 12;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 channeltime = 14;
+    // uint32 channeltime = 13;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // repeated .requestresource requestresource = 15;
+    // repeated .requestresource requestresource = 14;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // double range = 16;
+    // double range = 15;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // double max_range = 17;
+    // double max_range = 16;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // double mmin_range = 18;
+    // double mmin_range = 17;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mmin_range_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // uint32 self_status = 19;
+    // uint32 self_status = 18;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 required_status = 20;
+    // uint32 required_status = 19;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 cooldown_id = 21;
+    // uint32 cooldown_id = 20;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }}, {{
@@ -785,53 +778,46 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
     }
   }
 
-  // uint32 postcastrecoverytime = 10;
-  if (this->_internal_postcastrecoverytime() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        10, this->_internal_postcastrecoverytime(), target);
-  }
-
-  // uint32 channelthink = 11;
+  // uint32 channelthink = 10;
   if (this->_internal_channelthink() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        11, this->_internal_channelthink(), target);
+        10, this->_internal_channelthink(), target);
   }
 
-  // uint32 channelfinish = 12;
+  // uint32 channelfinish = 11;
   if (this->_internal_channelfinish() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        12, this->_internal_channelfinish(), target);
+        11, this->_internal_channelfinish(), target);
   }
 
-  // uint32 thinkinterval = 13;
+  // uint32 thinkinterval = 12;
   if (this->_internal_thinkinterval() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        13, this->_internal_thinkinterval(), target);
+        12, this->_internal_thinkinterval(), target);
   }
 
-  // uint32 channeltime = 14;
+  // uint32 channeltime = 13;
   if (this->_internal_channeltime() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        14, this->_internal_channeltime(), target);
+        13, this->_internal_channeltime(), target);
   }
 
-  // repeated .requestresource requestresource = 15;
+  // repeated .requestresource requestresource = 14;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this->_internal_requestresource_size());
        i < n; i++) {
     const auto& repfield = this->_internal_requestresource().Get(i);
     target =
         ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-            15, repfield, repfield.GetCachedSize(),
+            14, repfield, repfield.GetCachedSize(),
             target, stream);
   }
 
-  // double range = 16;
+  // double range = 15;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_range = this->_internal_range();
@@ -840,10 +826,10 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
   if (raw_range != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        16, this->_internal_range(), target);
+        15, this->_internal_range(), target);
   }
 
-  // double max_range = 17;
+  // double max_range = 16;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_max_range = this->_internal_max_range();
@@ -852,10 +838,10 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
   if (raw_max_range != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        17, this->_internal_max_range(), target);
+        16, this->_internal_max_range(), target);
   }
 
-  // double mmin_range = 18;
+  // double mmin_range = 17;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_mmin_range = this->_internal_mmin_range();
@@ -864,28 +850,28 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
   if (raw_mmin_range != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        18, this->_internal_mmin_range(), target);
+        17, this->_internal_mmin_range(), target);
   }
 
-  // uint32 self_status = 19;
+  // uint32 self_status = 18;
   if (this->_internal_self_status() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        19, this->_internal_self_status(), target);
+        18, this->_internal_self_status(), target);
   }
 
-  // uint32 required_status = 20;
+  // uint32 required_status = 19;
   if (this->_internal_required_status() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        20, this->_internal_required_status(), target);
+        19, this->_internal_required_status(), target);
   }
 
-  // uint32 cooldown_id = 21;
+  // uint32 cooldown_id = 20;
   if (this->_internal_cooldown_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        21, this->_internal_cooldown_id(), target);
+        20, this->_internal_cooldown_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -944,7 +930,7 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
     ;
     total_size += tag_size + data_size;
   }
-  // repeated .requestresource requestresource = 15;
+  // repeated .requestresource requestresource = 14;
   total_size += 1UL * this->_internal_requestresource_size();
   for (const auto& msg : this->_internal_requestresource()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
@@ -985,53 +971,41 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
         this->_internal_immediately());
   }
 
-  // uint32 postcastrecoverytime = 10;
-  if (this->_internal_postcastrecoverytime() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_postcastrecoverytime());
-  }
-
-  // uint32 channelthink = 11;
+  // uint32 channelthink = 10;
   if (this->_internal_channelthink() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_channelthink());
   }
 
-  // uint32 channelfinish = 12;
+  // uint32 channelfinish = 11;
   if (this->_internal_channelfinish() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_channelfinish());
   }
 
-  // uint32 thinkinterval = 13;
+  // uint32 thinkinterval = 12;
   if (this->_internal_thinkinterval() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_thinkinterval());
   }
 
-  // double range = 16;
+  // uint32 channeltime = 13;
+  if (this->_internal_channeltime() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_channeltime());
+  }
+
+  // double range = 15;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_range = this->_internal_range();
   ::uint64_t raw_range;
   memcpy(&raw_range, &tmp_range, sizeof(tmp_range));
   if (raw_range != 0) {
-    total_size += 10;
+    total_size += 9;
   }
 
-  // uint32 channeltime = 14;
-  if (this->_internal_channeltime() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_channeltime());
-  }
-
-  // uint32 self_status = 19;
-  if (this->_internal_self_status() != 0) {
-    total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
-                                    this->_internal_self_status());
-  }
-
-  // double max_range = 17;
+  // double max_range = 16;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_max_range = this->_internal_max_range();
@@ -1041,7 +1015,7 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
     total_size += 10;
   }
 
-  // double mmin_range = 18;
+  // double mmin_range = 17;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_mmin_range = this->_internal_mmin_range();
@@ -1051,13 +1025,19 @@ const ::_pbi::TcParseTable<5, 21, 1, 0, 2> SkillTable::_table_ = {
     total_size += 10;
   }
 
-  // uint32 required_status = 20;
+  // uint32 self_status = 18;
+  if (this->_internal_self_status() != 0) {
+    total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                    this->_internal_self_status());
+  }
+
+  // uint32 required_status = 19;
   if (this->_internal_required_status() != 0) {
     total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                     this->_internal_required_status());
   }
 
-  // uint32 cooldown_id = 21;
+  // uint32 cooldown_id = 20;
   if (this->_internal_cooldown_id() != 0) {
     total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                     this->_internal_cooldown_id());
@@ -1098,9 +1078,6 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   if (from._internal_immediately() != 0) {
     _this->_impl_.immediately_ = from._impl_.immediately_;
   }
-  if (from._internal_postcastrecoverytime() != 0) {
-    _this->_impl_.postcastrecoverytime_ = from._impl_.postcastrecoverytime_;
-  }
   if (from._internal_channelthink() != 0) {
     _this->_impl_.channelthink_ = from._impl_.channelthink_;
   }
@@ -1110,6 +1087,9 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   if (from._internal_thinkinterval() != 0) {
     _this->_impl_.thinkinterval_ = from._impl_.thinkinterval_;
   }
+  if (from._internal_channeltime() != 0) {
+    _this->_impl_.channeltime_ = from._impl_.channeltime_;
+  }
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_range = from._internal_range();
@@ -1117,12 +1097,6 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   memcpy(&raw_range, &tmp_range, sizeof(tmp_range));
   if (raw_range != 0) {
     _this->_impl_.range_ = from._impl_.range_;
-  }
-  if (from._internal_channeltime() != 0) {
-    _this->_impl_.channeltime_ = from._impl_.channeltime_;
-  }
-  if (from._internal_self_status() != 0) {
-    _this->_impl_.self_status_ = from._impl_.self_status_;
   }
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
@@ -1139,6 +1113,9 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   memcpy(&raw_mmin_range, &tmp_mmin_range, sizeof(tmp_mmin_range));
   if (raw_mmin_range != 0) {
     _this->_impl_.mmin_range_ = from._impl_.mmin_range_;
+  }
+  if (from._internal_self_status() != 0) {
+    _this->_impl_.self_status_ = from._impl_.self_status_;
   }
   if (from._internal_required_status() != 0) {
     _this->_impl_.required_status_ = from._impl_.required_status_;

@@ -79,6 +79,7 @@ func registerNodes(maps *b3.RegisterStructMaps) {
 	maps.Register("CheckSkillByDistance", new(behaviortree.CheckSkillByDistance))
 	maps.Register("GetSkillID", new(behaviortree.GetSkillID))
 	maps.Register("ReleaseSkill", new(behaviortree.ReleaseSkill))
+	maps.Register("SleepNode", new(behaviortree.SleepNode))
 }
 
 // initializeBehaviorTrees initializes behavior trees from configuration.

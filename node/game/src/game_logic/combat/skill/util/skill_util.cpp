@@ -79,8 +79,8 @@ uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::R
 	return kOK;
 }
 
-bool SkillUtil::IsSkillOfType(const uint64_t skillId, const uint32_t skillType) {
-	auto [skillTable, result] = GetSkillTable(skillId);
+bool SkillUtil::IsSkillOfType(const uint64_t skillTableID, const uint32_t skillType) {
+	auto [skillTable, result] = GetSkillTable(skillTableID);
 	if (skillTable == nullptr) {
 		return false;
 	}

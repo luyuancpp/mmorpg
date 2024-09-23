@@ -298,14 +298,15 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 120,
-              "y": 0
+              "x": 132,
+              "y": 24
             },
             "children": [
               "2035daba-5c13-44d6-8a43-6a656e64e55e",
               "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
               "b0a180ad-cf77-4557-a901-8dd32c8d00b2",
               "abd46049-6b99-47d8-a417-0f6d3ef95bf4",
+              "7d65533d-959b-4e43-b195-7ce3ae4cfbcc",
               "0a77f22e-efd3-45ca-8f47-43c7b2e06f95"
             ]
           },
@@ -316,7 +317,7 @@
             "title": "CheckTestCount(<count>)",
             "description": "",
             "properties": {
-              "count": 1000000
+              "count": 100000000
             },
             "display": {
               "x": 384,
@@ -331,8 +332,8 @@
             "description": "",
             "properties": {},
             "display": {
-              "x": 372,
-              "y": 156
+              "x": 384,
+              "y": 228
             }
           },
           "b8a8446b-0d0d-433b-ba87-26ae75d4b12b": {
@@ -377,6 +378,20 @@
             "display": {
               "x": 384,
               "y": 72
+            }
+          },
+          "7d65533d-959b-4e43-b195-7ce3ae4cfbcc": {
+            "id": "7d65533d-959b-4e43-b195-7ce3ae4cfbcc",
+            "name": "SleepNode",
+            "category": "action",
+            "title": "SleepNode(<Duration>)",
+            "description": "",
+            "properties": {
+              "Duration": 3000
+            },
+            "display": {
+              "x": 372,
+              "y": 144
             }
           }
         },
@@ -612,6 +627,18 @@
         "description": "释放技能",
         "properties": {
           "SkillIDBoard": "SkillID"
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "SleepNode",
+        "category": "action",
+        "title": "SleepNode(<Duration>)",
+        "description": null,
+        "properties": {
+          "Duration": 1000
         },
         "parent": null
       }
