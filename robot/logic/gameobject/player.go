@@ -11,7 +11,7 @@ import (
 
 type Player struct {
 	Client  interfaces.GameClientInterface
-	SceneId uint32
+	SceneID uint32
 }
 
 var PlayerList cmap.ConcurrentMap[uint64, *Player]

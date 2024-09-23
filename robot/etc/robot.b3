@@ -356,7 +356,7 @@
             "title": "GetSkillID(<SkillListBoard>,<SkillIndex>,<SkillIDBoard>)",
             "description": "获取技能ID",
             "properties": {
-              "SkillListBoard": "skillList",
+              "SkillListBoard": "SkillList",
               "SkillIndex": 0,
               "SkillIDBoard": "idBoard"
             },

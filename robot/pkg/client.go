@@ -106,7 +106,8 @@ func initializeBehaviorTrees(config *RawProjectCfg, maps *b3.RegisterStructMaps)
 func (client *GameClient) InitializeBehaviorTreeBlackboard() {
 	client.Blackboard = NewBlackboard()
 	client.Blackboard.SetMem(behaviortree.ClientBoardKey, client)
-	client.Blackboard.SetMem(behaviortree.ActorListBoardKey, &gameobject.ActorList{})
+	client.Blackboard.SetMem(behaviortree.ActorListBoardKey, gameobject.NewActorList())
+	client.Blackboard.SetMem(behaviortree.SkillListBoardKey, &game.PlayerSkillListPBComp{})
 	zap.L().Info("Behavior tree blackboard initialized")
 }
 

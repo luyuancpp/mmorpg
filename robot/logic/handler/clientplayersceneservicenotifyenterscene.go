@@ -6,8 +6,15 @@ import (
 )
 
 func ClientPlayerSceneServiceNotifyEnterSceneHandler(player *gameobject.Player, response *game.EnterSceneS2C) {
-	player.SceneId = response.SceneInfo.Guid
+
+	oldSceneID := player.SceneID
+
+	player.SceneID = response.SceneInfo.Guid
 	player.Client.Send(&game.SceneInfoRequest{}, game.ClientPlayerSceneServiceSceneInfoC2SMessageId)
 
 	player.HandleServerSceneTransitionSuccess()
+
+	if oldSceneID <= 0 {
+		player.SetupPlayerSkillsOnLogin()
+	}
 }
