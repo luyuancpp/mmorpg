@@ -222,12 +222,21 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 
 	auto session_id = request->session_info().session_id();
 
-	const auto playerEntity = GetPlayerEntityBySessionId(session_id);
-	if (playerEntity == entt::null)
+
+	auto player_id = GetPlayerIDBySessionId(session_id);
+
+	LOG_TRACE << "Getting player entity for session ID: " << session_id << ", player ID: " << player_id;
+
+	const auto player_it = tlsCommonLogic.GetPlayerList().find(player_id);
+	if (player_it == tlsCommonLogic.GetPlayerList().end())
 	{
-		LOG_ERROR << "Player entity not found for session ID: " << session_id;
-		return;
+		LOG_TRACE << "Player not found for session ID: " << session_id << ", player ID: " << player_id;
+		return ;
 	}
+
+	LOG_TRACE << "Player entity found for session ID: " << session_id << ", player ID: " << player_id;
+
+	auto playerEntity =  player_it->second;
 
 	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
 	if (playerNodeInfo == nullptr)
