@@ -376,24 +376,23 @@ class SkillTable final : public ::google::protobuf::Message
     kSkillTypeFieldNumber = 2,
     kTargetTypeFieldNumber = 3,
     kEffectFieldNumber = 9,
-    kRequestresourceFieldNumber = 15,
+    kRequestresourceFieldNumber = 14,
     kIdFieldNumber = 1,
     kRquestTargetFieldNumber = 4,
     kTargetStatusFieldNumber = 5,
     kCastpointFieldNumber = 6,
     kRecoverytimeFieldNumber = 7,
     kImmediatelyFieldNumber = 8,
-    kPostcastrecoverytimeFieldNumber = 10,
-    kChannelthinkFieldNumber = 11,
-    kChannelfinishFieldNumber = 12,
-    kThinkintervalFieldNumber = 13,
-    kRangeFieldNumber = 16,
-    kChanneltimeFieldNumber = 14,
-    kSelfStatusFieldNumber = 19,
-    kMaxRangeFieldNumber = 17,
-    kMminRangeFieldNumber = 18,
-    kRequiredStatusFieldNumber = 20,
-    kCooldownIdFieldNumber = 21,
+    kChannelthinkFieldNumber = 10,
+    kChannelfinishFieldNumber = 11,
+    kThinkintervalFieldNumber = 12,
+    kChanneltimeFieldNumber = 13,
+    kRangeFieldNumber = 15,
+    kMaxRangeFieldNumber = 16,
+    kMminRangeFieldNumber = 17,
+    kSelfStatusFieldNumber = 18,
+    kRequiredStatusFieldNumber = 19,
+    kCooldownIdFieldNumber = 20,
   };
   // repeated uint32 skill_type = 2;
   int skill_type_size() const;
@@ -449,7 +448,7 @@ class SkillTable final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_effect();
 
   public:
-  // repeated .requestresource requestresource = 15;
+  // repeated .requestresource requestresource = 14;
   int requestresource_size() const;
   private:
   int _internal_requestresource_size() const;
@@ -526,17 +525,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_immediately(::uint32_t value);
 
   public:
-  // uint32 postcastrecoverytime = 10;
-  void clear_postcastrecoverytime() ;
-  ::uint32_t postcastrecoverytime() const;
-  void set_postcastrecoverytime(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_postcastrecoverytime() const;
-  void _internal_set_postcastrecoverytime(::uint32_t value);
-
-  public:
-  // uint32 channelthink = 11;
+  // uint32 channelthink = 10;
   void clear_channelthink() ;
   ::uint32_t channelthink() const;
   void set_channelthink(::uint32_t value);
@@ -546,7 +535,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_channelthink(::uint32_t value);
 
   public:
-  // uint32 channelfinish = 12;
+  // uint32 channelfinish = 11;
   void clear_channelfinish() ;
   ::uint32_t channelfinish() const;
   void set_channelfinish(::uint32_t value);
@@ -556,7 +545,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_channelfinish(::uint32_t value);
 
   public:
-  // uint32 thinkinterval = 13;
+  // uint32 thinkinterval = 12;
   void clear_thinkinterval() ;
   ::uint32_t thinkinterval() const;
   void set_thinkinterval(::uint32_t value);
@@ -566,17 +555,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_thinkinterval(::uint32_t value);
 
   public:
-  // double range = 16;
-  void clear_range() ;
-  double range() const;
-  void set_range(double value);
-
-  private:
-  double _internal_range() const;
-  void _internal_set_range(double value);
-
-  public:
-  // uint32 channeltime = 14;
+  // uint32 channeltime = 13;
   void clear_channeltime() ;
   ::uint32_t channeltime() const;
   void set_channeltime(::uint32_t value);
@@ -586,17 +565,17 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_channeltime(::uint32_t value);
 
   public:
-  // uint32 self_status = 19;
-  void clear_self_status() ;
-  ::uint32_t self_status() const;
-  void set_self_status(::uint32_t value);
+  // double range = 15;
+  void clear_range() ;
+  double range() const;
+  void set_range(double value);
 
   private:
-  ::uint32_t _internal_self_status() const;
-  void _internal_set_self_status(::uint32_t value);
+  double _internal_range() const;
+  void _internal_set_range(double value);
 
   public:
-  // double max_range = 17;
+  // double max_range = 16;
   void clear_max_range() ;
   double max_range() const;
   void set_max_range(double value);
@@ -606,7 +585,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_max_range(double value);
 
   public:
-  // double mmin_range = 18;
+  // double mmin_range = 17;
   void clear_mmin_range() ;
   double mmin_range() const;
   void set_mmin_range(double value);
@@ -616,7 +595,17 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_mmin_range(double value);
 
   public:
-  // uint32 required_status = 20;
+  // uint32 self_status = 18;
+  void clear_self_status() ;
+  ::uint32_t self_status() const;
+  void set_self_status(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_self_status() const;
+  void _internal_set_self_status(::uint32_t value);
+
+  public:
+  // uint32 required_status = 19;
   void clear_required_status() ;
   ::uint32_t required_status() const;
   void set_required_status(::uint32_t value);
@@ -626,7 +615,7 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_required_status(::uint32_t value);
 
   public:
-  // uint32 cooldown_id = 21;
+  // uint32 cooldown_id = 20;
   void clear_cooldown_id() ;
   ::uint32_t cooldown_id() const;
   void set_cooldown_id(::uint32_t value);
@@ -641,7 +630,7 @@ class SkillTable final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 21, 1,
+      5, 20, 1,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -670,15 +659,14 @@ class SkillTable final : public ::google::protobuf::Message
     ::uint32_t castpoint_;
     ::uint32_t recoverytime_;
     ::uint32_t immediately_;
-    ::uint32_t postcastrecoverytime_;
     ::uint32_t channelthink_;
     ::uint32_t channelfinish_;
     ::uint32_t thinkinterval_;
-    double range_;
     ::uint32_t channeltime_;
-    ::uint32_t self_status_;
+    double range_;
     double max_range_;
     double mmin_range_;
+    ::uint32_t self_status_;
     ::uint32_t required_status_;
     ::uint32_t cooldown_id_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
@@ -1193,29 +1181,7 @@ inline ::google::protobuf::RepeatedField<::uint32_t>* SkillTable::_internal_muta
   return &_impl_.effect_;
 }
 
-// uint32 postcastrecoverytime = 10;
-inline void SkillTable::clear_postcastrecoverytime() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.postcastrecoverytime_ = 0u;
-}
-inline ::uint32_t SkillTable::postcastrecoverytime() const {
-  // @@protoc_insertion_point(field_get:SkillTable.postcastrecoverytime)
-  return _internal_postcastrecoverytime();
-}
-inline void SkillTable::set_postcastrecoverytime(::uint32_t value) {
-  _internal_set_postcastrecoverytime(value);
-  // @@protoc_insertion_point(field_set:SkillTable.postcastrecoverytime)
-}
-inline ::uint32_t SkillTable::_internal_postcastrecoverytime() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.postcastrecoverytime_;
-}
-inline void SkillTable::_internal_set_postcastrecoverytime(::uint32_t value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.postcastrecoverytime_ = value;
-}
-
-// uint32 channelthink = 11;
+// uint32 channelthink = 10;
 inline void SkillTable::clear_channelthink() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.channelthink_ = 0u;
@@ -1237,7 +1203,7 @@ inline void SkillTable::_internal_set_channelthink(::uint32_t value) {
   _impl_.channelthink_ = value;
 }
 
-// uint32 channelfinish = 12;
+// uint32 channelfinish = 11;
 inline void SkillTable::clear_channelfinish() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.channelfinish_ = 0u;
@@ -1259,7 +1225,7 @@ inline void SkillTable::_internal_set_channelfinish(::uint32_t value) {
   _impl_.channelfinish_ = value;
 }
 
-// uint32 thinkinterval = 13;
+// uint32 thinkinterval = 12;
 inline void SkillTable::clear_thinkinterval() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.thinkinterval_ = 0u;
@@ -1281,7 +1247,7 @@ inline void SkillTable::_internal_set_thinkinterval(::uint32_t value) {
   _impl_.thinkinterval_ = value;
 }
 
-// uint32 channeltime = 14;
+// uint32 channeltime = 13;
 inline void SkillTable::clear_channeltime() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.channeltime_ = 0u;
@@ -1303,7 +1269,7 @@ inline void SkillTable::_internal_set_channeltime(::uint32_t value) {
   _impl_.channeltime_ = value;
 }
 
-// repeated .requestresource requestresource = 15;
+// repeated .requestresource requestresource = 14;
 inline int SkillTable::_internal_requestresource_size() const {
   return _internal_requestresource().size();
 }
@@ -1352,7 +1318,7 @@ SkillTable::_internal_mutable_requestresource() {
   return &_impl_.requestresource_;
 }
 
-// double range = 16;
+// double range = 15;
 inline void SkillTable::clear_range() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.range_ = 0;
@@ -1374,7 +1340,7 @@ inline void SkillTable::_internal_set_range(double value) {
   _impl_.range_ = value;
 }
 
-// double max_range = 17;
+// double max_range = 16;
 inline void SkillTable::clear_max_range() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.max_range_ = 0;
@@ -1396,7 +1362,7 @@ inline void SkillTable::_internal_set_max_range(double value) {
   _impl_.max_range_ = value;
 }
 
-// double mmin_range = 18;
+// double mmin_range = 17;
 inline void SkillTable::clear_mmin_range() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mmin_range_ = 0;
@@ -1418,7 +1384,7 @@ inline void SkillTable::_internal_set_mmin_range(double value) {
   _impl_.mmin_range_ = value;
 }
 
-// uint32 self_status = 19;
+// uint32 self_status = 18;
 inline void SkillTable::clear_self_status() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.self_status_ = 0u;
@@ -1440,7 +1406,7 @@ inline void SkillTable::_internal_set_self_status(::uint32_t value) {
   _impl_.self_status_ = value;
 }
 
-// uint32 required_status = 20;
+// uint32 required_status = 19;
 inline void SkillTable::clear_required_status() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.required_status_ = 0u;
@@ -1462,7 +1428,7 @@ inline void SkillTable::_internal_set_required_status(::uint32_t value) {
   _impl_.required_status_ = value;
 }
 
-// uint32 cooldown_id = 21;
+// uint32 cooldown_id = 20;
 inline void SkillTable::clear_cooldown_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.cooldown_id_ = 0u;
