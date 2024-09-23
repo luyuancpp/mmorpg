@@ -65,7 +65,7 @@ bool ViewUtil::ShouldUpdateView(entt::entity observer, entt::entity entrant)
 	}
 
 	// 如果需要刷新视图，返回false
-	if (ShouldRefreshView()) {
+	if (!ShouldRefreshView()) {
 		return false;
 	}
 
