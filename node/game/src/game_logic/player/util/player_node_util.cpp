@@ -67,8 +67,10 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
 	tls.registry.emplace<PlayerNodeInfoPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
-	// todo onload complete
-
+	InitializePlayerComponents initializePlayerComponents;
+	initializePlayerComponents.set_entity(entt::to_integral(player));
+	tls.dispatcher.trigger(initializePlayerComponents);
+	
 	// Notify game node about player entering
 	EnterGs(player, asyncIt->second);
 }

@@ -13,3 +13,7 @@ message PlayerUpgrade
   uint32 new_level = 2;
 }
 
+message InitializePlayerComponents
+{
+  uint64 entity = 1;
+}
