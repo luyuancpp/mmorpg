@@ -64,18 +64,22 @@ func (s *GetSkillID) Initialize(setting *BTNodeCfg) {
 
 func (s *GetSkillID) OnTick(tick *Tick) b3.Status {
 
-	playerSkillListPBComp, ok := tick.Blackboard.GetMem(s.SkillListBoard).([]*game.PlayerSkillListPBComp)
+	playerSkillListPBComp, ok := tick.Blackboard.GetMem(s.SkillListBoard).(*game.PlayerSkillListPBComp)
 	if !ok {
-		zap.L().Debug("Failed to retrieve skill list from blackboard", zap.String("Key", s.SkillListBoard), zap.Any("Value", tick.Blackboard.GetMem(SkillListBoardKey)))
+		zap.L().Debug("Failed to retrieve skill list from blackboard",
+			zap.String("Key", s.SkillListBoard),
+			zap.Any("Value", tick.Blackboard.GetMem(SkillListBoardKey)))
 		return b3.FAILURE
 	}
 
-	if s.SkillIndex >= len(playerSkillListPBComp) {
-		zap.L().Debug("Invalid skill index", zap.Int("SkillIndex", s.SkillIndex), zap.Int("SkillListLength", len(playerSkillListPBComp)))
+	if s.SkillIndex >= len(playerSkillListPBComp.SkillList) {
+		zap.L().Debug("Invalid skill index",
+			zap.Int("SkillIndex", s.SkillIndex),
+			zap.Int("SkillListLength", len(playerSkillListPBComp.SkillList)))
 		return b3.FAILURE
 	}
 
-	tick.Blackboard.Set(s.SkillIDBoard, playerSkillListPBComp[s.SkillIndex], "", "")
+	tick.Blackboard.Set(s.SkillIDBoard, playerSkillListPBComp.SkillList[s.SkillIndex], "", "")
 
 	return b3.SUCCESS
 }

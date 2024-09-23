@@ -42,7 +42,7 @@ func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 	rq := &game.EnterSceneC2SRequest{}
 	randomIndex := rand.Intn(len(sceneInfo))
 	rq.SceneInfo = sceneInfo[randomIndex]
-	for player.SceneId == rq.SceneInfo.Guid {
+	for player.SceneID == rq.SceneInfo.Guid {
 		randomIndex := rand.Intn(len(sceneInfo))
 		rq.SceneInfo = sceneInfo[randomIndex]
 	}
