@@ -4,6 +4,8 @@
 void Pb2sol2player_skill_comp()
 {
 tls_lua_state.new_usertype<PlayerSkillPBComp>("PlayerSkillPBComp",
+"id",
+sol::property(&PlayerSkillPBComp::id, &PlayerSkillPBComp::set_id),
 "skill_table_id",
 sol::property(&PlayerSkillPBComp::skill_table_id, &PlayerSkillPBComp::set_skill_table_id),
 "DebugString",

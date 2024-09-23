@@ -191,16 +191,27 @@ class PlayerSkillPBComp final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kSkillTableIdFieldNumber = 1,
+    kIdFieldNumber = 1,
+    kSkillTableIdFieldNumber = 2,
   };
-  // uint64 skill_table_id = 1;
-  void clear_skill_table_id() ;
-  ::uint64_t skill_table_id() const;
-  void set_skill_table_id(::uint64_t value);
+  // uint64 id = 1;
+  void clear_id() ;
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
 
   private:
-  ::uint64_t _internal_skill_table_id() const;
-  void _internal_set_skill_table_id(::uint64_t value);
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
+
+  public:
+  // uint32 skill_table_id = 2;
+  void clear_skill_table_id() ;
+  ::uint32_t skill_table_id() const;
+  void set_skill_table_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_skill_table_id() const;
+  void _internal_set_skill_table_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:PlayerSkillPBComp)
@@ -208,7 +219,7 @@ class PlayerSkillPBComp final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
+      1, 2, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -224,7 +235,8 @@ class PlayerSkillPBComp final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t skill_table_id_;
+    ::uint64_t id_;
+    ::uint32_t skill_table_id_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -422,24 +434,46 @@ class PlayerSkillListPBComp final : public ::google::protobuf::Message
 
 // PlayerSkillPBComp
 
-// uint64 skill_table_id = 1;
+// uint64 id = 1;
+inline void PlayerSkillPBComp::clear_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.id_ = ::uint64_t{0u};
+}
+inline ::uint64_t PlayerSkillPBComp::id() const {
+  // @@protoc_insertion_point(field_get:PlayerSkillPBComp.id)
+  return _internal_id();
+}
+inline void PlayerSkillPBComp::set_id(::uint64_t value) {
+  _internal_set_id(value);
+  // @@protoc_insertion_point(field_set:PlayerSkillPBComp.id)
+}
+inline ::uint64_t PlayerSkillPBComp::_internal_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.id_;
+}
+inline void PlayerSkillPBComp::_internal_set_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.id_ = value;
+}
+
+// uint32 skill_table_id = 2;
 inline void PlayerSkillPBComp::clear_skill_table_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.skill_table_id_ = ::uint64_t{0u};
+  _impl_.skill_table_id_ = 0u;
 }
-inline ::uint64_t PlayerSkillPBComp::skill_table_id() const {
+inline ::uint32_t PlayerSkillPBComp::skill_table_id() const {
   // @@protoc_insertion_point(field_get:PlayerSkillPBComp.skill_table_id)
   return _internal_skill_table_id();
 }
-inline void PlayerSkillPBComp::set_skill_table_id(::uint64_t value) {
+inline void PlayerSkillPBComp::set_skill_table_id(::uint32_t value) {
   _internal_set_skill_table_id(value);
   // @@protoc_insertion_point(field_set:PlayerSkillPBComp.skill_table_id)
 }
-inline ::uint64_t PlayerSkillPBComp::_internal_skill_table_id() const {
+inline ::uint32_t PlayerSkillPBComp::_internal_skill_table_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.skill_table_id_;
 }
-inline void PlayerSkillPBComp::_internal_set_skill_table_id(::uint64_t value) {
+inline void PlayerSkillPBComp::_internal_set_skill_table_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.skill_table_id_ = value;
 }

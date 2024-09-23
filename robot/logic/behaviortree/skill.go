@@ -63,7 +63,6 @@ func (s *GetSkillID) Initialize(setting *BTNodeCfg) {
 }
 
 func (s *GetSkillID) OnTick(tick *Tick) b3.Status {
-
 	playerSkillListPBComp, ok := tick.Blackboard.GetMem(s.SkillListBoard).(*game.PlayerSkillListPBComp)
 	if !ok {
 		zap.L().Debug("Failed to retrieve skill list from blackboard",
@@ -79,7 +78,7 @@ func (s *GetSkillID) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	tick.Blackboard.Set(s.SkillIDBoard, playerSkillListPBComp.SkillList[s.SkillIndex], "", "")
+	tick.Blackboard.Set(s.SkillIDBoard, playerSkillListPBComp.SkillList[s.SkillIndex].SkillTableId, "", "")
 
 	return b3.SUCCESS
 }
@@ -91,7 +90,7 @@ type ReleaseSkill struct {
 
 func (s *ReleaseSkill) Initialize(setting *BTNodeCfg) {
 	s.Action.Initialize(setting)
-	s.SkillIDBoard = setting.GetPropertyAsString("skillIDBoard")
+	s.SkillIDBoard = setting.GetPropertyAsString("SkillIDBoard")
 }
 
 func (s *ReleaseSkill) OnTick(tick *Tick) b3.Status {
@@ -103,7 +102,15 @@ func (s *ReleaseSkill) OnTick(tick *Tick) b3.Status {
 	}
 
 	rq := &game.ReleaseSkillSkillRequest{}
-	rq.SkillTableId = uint32(tick.Blackboard.GetInt32(s.SkillIDBoard, "", ""))
+
+	rq.SkillTableId, ok = tick.Blackboard.Get(s.SkillIDBoard, "", "").(uint32)
+	if !ok {
+		zap.L().Error("Failed to cast skill id from blackboard",
+			zap.String("Key", s.SkillIDBoard),
+			zap.Any("Value", tick.Blackboard.GetMem(s.SkillIDBoard)))
+		return b3.FAILURE
+	}
+
 	rq.TargetId = tick.Blackboard.GetUInt64(HatredTargetBoardKey, "", "")
 
 	zap.L().Info("Sending skill release request", zap.Uint32("SkillTableId", rq.SkillTableId))

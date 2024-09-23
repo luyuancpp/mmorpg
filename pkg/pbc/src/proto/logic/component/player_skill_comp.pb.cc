@@ -24,7 +24,8 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 
 inline constexpr PlayerSkillPBComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : skill_table_id_{::uint64_t{0u}},
+      : id_{::uint64_t{0u}},
+        skill_table_id_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -75,6 +76,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::PlayerSkillPBComp, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::PlayerSkillPBComp, _impl_.skill_table_id_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::PlayerSkillListPBComp, _internal_metadata_),
@@ -90,7 +92,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::PlayerSkillPBComp)},
-        {9, -1, -1, sizeof(::PlayerSkillListPBComp)},
+        {10, -1, -1, sizeof(::PlayerSkillListPBComp)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_PlayerSkillPBComp_default_instance_._instance,
@@ -99,16 +101,16 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_logic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'logic/component/player_skill_comp.prot"
-    "o\"+\n\021PlayerSkillPBComp\022\026\n\016skill_table_id"
-    "\030\001 \001(\004\"\?\n\025PlayerSkillListPBComp\022&\n\nskill"
-    "_list\030\001 \003(\0132\022.PlayerSkillPBCompB\tZ\007pb/ga"
-    "meb\006proto3"
+    "o\"7\n\021PlayerSkillPBComp\022\n\n\002id\030\001 \001(\004\022\026\n\016sk"
+    "ill_table_id\030\002 \001(\r\"\?\n\025PlayerSkillListPBC"
+    "omp\022&\n\nskill_list\030\001 \003(\0132\022.PlayerSkillPBC"
+    "ompB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto = {
     false,
     false,
-    170,
+    182,
     descriptor_table_protodef_logic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto,
     "logic/component/player_skill_comp.proto",
     &descriptor_table_logic_2fcomponent_2fplayer_5fskill_5fcomp_2eproto_once,
@@ -160,7 +162,12 @@ inline PROTOBUF_NDEBUG_INLINE PlayerSkillPBComp::Impl_::Impl_(
 
 inline void PlayerSkillPBComp::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.skill_table_id_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           0,
+           offsetof(Impl_, skill_table_id_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::skill_table_id_));
 }
 PlayerSkillPBComp::~PlayerSkillPBComp() {
   // @@protoc_insertion_point(destructor:PlayerSkillPBComp)
@@ -193,7 +200,9 @@ PROTOBUF_NOINLINE void PlayerSkillPBComp::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.skill_table_id_ = ::uint64_t{0u};
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.skill_table_id_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.skill_table_id_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -205,15 +214,15 @@ const char* PlayerSkillPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSkillPBComp::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerSkillPBComp::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     &_PlayerSkillPBComp_default_instance_._instance,
@@ -222,15 +231,21 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSkillPBComp::_table_ = {
     ::_pbi::TcParser::GetTable<::PlayerSkillPBComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 skill_table_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSkillPBComp, _impl_.skill_table_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSkillPBComp, _impl_.skill_table_id_)}},
+    // uint32 skill_table_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSkillPBComp, _impl_.skill_table_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSkillPBComp, _impl_.skill_table_id_)}},
+    // uint64 id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSkillPBComp, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSkillPBComp, _impl_.id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 skill_table_id = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerSkillPBComp, _impl_.skill_table_id_), 0, 0,
+    // uint64 id = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerSkillPBComp, _impl_.id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint32 skill_table_id = 2;
+    {PROTOBUF_FIELD_OFFSET(PlayerSkillPBComp, _impl_.skill_table_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -244,11 +259,18 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSkillPBComp::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 skill_table_id = 1;
-  if (this->_internal_skill_table_id() != 0) {
+  // uint64 id = 1;
+  if (this->_internal_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_skill_table_id(), target);
+        1, this->_internal_id(), target);
+  }
+
+  // uint32 skill_table_id = 2;
+  if (this->_internal_skill_table_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        2, this->_internal_skill_table_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -268,9 +290,15 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSkillPBComp::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 skill_table_id = 1;
-  if (this->_internal_skill_table_id() != 0) {
+  // uint64 id = 1;
+  if (this->_internal_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_id());
+  }
+
+  // uint32 skill_table_id = 2;
+  if (this->_internal_skill_table_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_skill_table_id());
   }
 
@@ -286,6 +314,9 @@ void PlayerSkillPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
   if (from._internal_skill_table_id() != 0) {
     _this->_impl_.skill_table_id_ = from._impl_.skill_table_id_;
   }
@@ -306,7 +337,12 @@ PROTOBUF_NOINLINE bool PlayerSkillPBComp::IsInitialized() const {
 void PlayerSkillPBComp::InternalSwap(PlayerSkillPBComp* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.skill_table_id_, other->_impl_.skill_table_id_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PlayerSkillPBComp, _impl_.skill_table_id_)
+      + sizeof(PlayerSkillPBComp::_impl_.skill_table_id_)
+      - PROTOBUF_FIELD_OFFSET(PlayerSkillPBComp, _impl_.id_)>(
+          reinterpret_cast<char*>(&_impl_.id_),
+          reinterpret_cast<char*>(&other->_impl_.id_));
 }
 
 ::google::protobuf::Metadata PlayerSkillPBComp::GetMetadata() const {
