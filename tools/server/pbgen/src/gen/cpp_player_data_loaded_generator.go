@@ -29,7 +29,7 @@ void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const player_da
 void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, player_database& message){
 	{{- range .Fields }}
 	{{- if .TypeName }}
-	message.mutable_{{.Name}}()->CopyFrom(tls.registry.emplace<{{.TypeName}}>(player));
+	message.mutable_{{.Name}}()->CopyFrom(tls.registry.get<{{.TypeName}}>(player));
 	{{- end }}
 	{{- end }}
 }

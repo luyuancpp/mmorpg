@@ -33,7 +33,10 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 	resp.PlayerId = in.PlayerId
 
 	msgPlayer := &game.PlayerDatabase{}
+	msgPlayer.PlayerId = in.PlayerId
+
 	msgCentrePlayer := &game.PlayerCentreDatabase{}
+	msgCentrePlayer.PlayerId = in.PlayerId
 
 	playerIdStr := strconv.FormatUint(in.PlayerId, 10)
 	keyPlayer := string(proto.MessageReflect(msgPlayer).Descriptor().FullName()) + playerIdStr
