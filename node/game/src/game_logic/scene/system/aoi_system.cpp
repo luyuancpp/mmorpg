@@ -108,9 +108,16 @@ void AoiSystem::Update(double deltaTime) {
 			}
 		}
 
-		SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListCreateMessageId, actorListCreateMessage, entity);
-		BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServiceNotifyActorCreateMessageId, actorCreateMessage);
+		if (!actorListCreateMessage.actor_list().empty()) {
+			SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListCreateMessageId, actorListCreateMessage, entity);
+		}
+
+		if (actorCreateMessage.entity() > 0) {
+			BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServiceNotifyActorCreateMessageId, actorCreateMessage);
+		}
+
 		BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
+
 	}
 }
 

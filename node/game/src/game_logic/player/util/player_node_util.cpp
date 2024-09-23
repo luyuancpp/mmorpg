@@ -60,9 +60,9 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	}
 
 	Velocity velocity;
-	velocity.set_x(1);
-	velocity.set_y(1);
-	velocity.set_z(1);
+	velocity.set_x(0);
+	velocity.set_y(0);
+	velocity.set_z(0);
 	tls.registry.emplace<Velocity>(player, velocity);
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
 	tls.registry.emplace<PlayerNodeInfoPBComp>(player).set_centre_node_id(asyncIt->second.centre_node_id());
