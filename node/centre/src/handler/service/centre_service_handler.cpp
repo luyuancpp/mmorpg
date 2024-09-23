@@ -344,7 +344,9 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 			beKickTip.set_id(kLoginBeKickByAnOtherAccount);
 			SendMessageToPlayer(PlayerClientCommonServiceKickPlayerMessageId, beKickTip, clientMsgBody.player_id());
 
-			defer(tlsSessions.erase(playerNodeInfo->gate_session_id()));
+			auto oldSessionId = playerNodeInfo->gate_session_id();
+
+			defer(tlsSessions.erase(oldSessionId));
 
 			KickSessionRequest message;
 			message.set_session_id(sessionId);
