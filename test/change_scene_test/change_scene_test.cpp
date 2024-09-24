@@ -26,17 +26,17 @@ entt::entity CreatePlayerEntity()
 	return playerEntity;
 }
 
-CentreChangeSceneInfoPBComp& GetPlayerFrontChangeSceneInfo(entt::entity playerEntity)
+ChangeSceneInfoPBComponent& GetPlayerFrontChangeSceneInfo(entt::entity playerEntity)
 {
 	// Get the front change scene info for the player
-	return tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.front();
+	return tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.front();
 }
 
 TEST(PlayerChangeScene, CreateMainScene)
 {
 	// Test creating main scene nodes
 	const auto mainSceneNode = CreateMainSceneNodeEntity();
-	SceneInfoPBComp sceneInfo;
+	SceneInfoPBComponent sceneInfo;
 	for (uint32_t i = 0; i < 10; ++i)
 	{
 		sceneInfo.set_scene_confid(i);
@@ -53,10 +53,10 @@ TEST(PlayerChangeScene, QueueFull)
 	const auto playerEntity = CreatePlayerEntity();
 	for (uint8_t i = 0; i < kMaxChangeSceneQueue; ++i)
 	{
-		CentreChangeSceneInfoPBComp changeInfo;
+		ChangeSceneInfoPBComponent changeInfo;
 		EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	}
-	CentreChangeSceneInfoPBComp changeInfo;
+	ChangeSceneInfoPBComponent changeInfo;
 	EXPECT_EQ(kEnterSceneChangingGs, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 }
 
@@ -65,92 +65,92 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComp>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
-	CentreChangeSceneInfoPBComp changeInfo;
+	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eSameGs); // todo scene logic
+	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs); // todo scene logic
 	EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 }
 
 TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComp>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
-	CentreChangeSceneInfoPBComp changeInfo;
+	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eDifferentGs); // todo scene logic
-	changeInfo.set_change_gs_status(CentreChangeSceneInfoPBComp::eLeaveGsScene);
+	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs); // todo scene logic
+	changeInfo.set_change_gs_status(ChangeSceneInfoPBComponent::eLeaveGsScene);
 	EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(!tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(!tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfoPBComp::eEnterGsSceneSucceed);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(ChangeSceneInfoPBComponent::eEnterGsSceneSucceed);
 
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(!tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(!tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfoPBComp::eGateEnterGsSceneSucceed);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 }
 
 TEST(PlayerChangeScene, DiffGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComp>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
-	CentreChangeSceneInfoPBComp changeInfo;
+	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eDifferentGs);
+	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs);
 	EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(!tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(!tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfoPBComp::eGateEnterGsSceneSucceed);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 }
 
 TEST(PlayerChangeScene, SameGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComp>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
-	CentreChangeSceneInfoPBComp changeInfo;
+	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eSameGs); // todo scene logic
+	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eSameGs); // todo scene logic
 	EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 }
 
 TEST(PlayerChangeScene, CrossServerDiffGs)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComp>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
-	CentreChangeSceneInfoPBComp changeInfo;
+	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eDifferentGs); // todo scene logic
+	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs); // todo scene logic
 	EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_FALSE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfoPBComp::eGateEnterGsSceneSucceed);
+	EXPECT_FALSE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 }
 
 // Test various states
@@ -158,27 +158,27 @@ TEST(PlayerChangeScene, ServerCrush)
 {
 	const auto playerEntity = CreatePlayerEntity();
 	const auto fromSceneEntity = *(globalSceneList.begin()++);
-	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComp>(fromSceneEntity).guid();
+	const auto sceneId = tls.sceneRegistry.get<SceneInfoPBComponent>(fromSceneEntity).guid();
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
 
-	CentreChangeSceneInfoPBComp changeInfo;
+	ChangeSceneInfoPBComponent changeInfo;
 	changeInfo.set_guid(sceneId);
-	changeInfo.set_change_gs_type(CentreChangeSceneInfoPBComp::eDifferentGs); // todo scene logic
+	changeInfo.set_change_gs_type(ChangeSceneInfoPBComponent::eDifferentGs); // todo scene logic
 	EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_FALSE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfoPBComp::eLeaveGsScene);
+	EXPECT_FALSE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(ChangeSceneInfoPBComponent::eLeaveGsScene);
 	PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity); // crash
-	EXPECT_TRUE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 
 	SceneUtil::EnterScene({ fromSceneEntity, playerEntity });
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfoPBComp::eLeaveGsScene);
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(ChangeSceneInfoPBComponent::eLeaveGsScene);
 	EXPECT_EQ(kOK, PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeInfo));
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_FALSE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
-	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(CentreChangeSceneInfoPBComp::eGateEnterGsSceneSucceed);
+	EXPECT_FALSE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
+	GetPlayerFrontChangeSceneInfo(playerEntity).set_change_gs_status(ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
-	EXPECT_TRUE(tls.registry.get<CentrePlayerChangeSceneQueueComp>(playerEntity).changeSceneQueue.empty());
+	EXPECT_TRUE(tls.registry.get<ChangeSceneQueuePBComponent>(playerEntity).changeSceneQueue.empty());
 }
 
 int32_t main(int argc, char** argv)

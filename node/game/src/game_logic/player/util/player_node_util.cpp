@@ -50,9 +50,9 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	tls.registry.emplace<Guid>(player, message.player_id());
 	Player_databaseMessageFieldsUnmarshal(player, message);
 
-	if (message.uint64_pb_comp().registration_timestamp() <= 0)
+	if (message.uint64_pb_component().registration_timestamp() <= 0)
 	{
-		tls.registry.get<PlayerUint64PBComp>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
+		tls.registry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
 
 		RegisterPlayer registerPlayer;
 		registerPlayer.set_entity(entt::to_integral(player));
@@ -104,7 +104,7 @@ void PlayerNodeUtil::SavePlayer(entt::entity player)
 }
 
 //考虑: 没load 完再次进入别的gs
-void PlayerNodeUtil::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComp& enterInfo)
+void PlayerNodeUtil::EnterGs(const entt::entity player, const PlayerGameNodeEnteryInfoPBComponent& enterInfo)
 {
 	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
 	if (playerNodeInfo == nullptr)

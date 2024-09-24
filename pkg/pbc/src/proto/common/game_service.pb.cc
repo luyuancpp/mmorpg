@@ -347,28 +347,28 @@ const char descriptor_table_protodef_common_2fgame_5fservice_2eproto[] ABSL_ATTR
     "yer_id\030\002 \001(\004\"A\n\032Centre2GsEnterSceneReque"
     "st\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\""
     "\'\n\022CreateSceneRequest\022\021\n\tconfig_id\030\001 \001(\r"
-    "\";\n\023CreateSceneResponse\022$\n\nscene_info\030\001 "
-    "\001(\0132\020.SceneInfoPBComp2\205\006\n\013GameService\022:\n"
-    "\023PlayerEnterGameNode\022\033.PlayerEnterGameNo"
-    "deRequest\032\006.Empty\022J\n\023SendMessageToPlayer"
-    "\022\030.NodeRouteMessageRequest\032\031.NodeRouteMe"
-    "ssageResponse\022b\n\031ClientSendMessageToPlay"
-    "er\022!.ClientSendMessageToPlayerRequest\032\"."
-    "ClientSendMessageToPlayerResponse\0224\n\020Reg"
-    "isterGateNode\022\030.RegisterGateNodeRequest\032"
-    "\006.Empty\022A\n\035CentreSendToPlayerViaGameNode"
-    "\022\030.NodeRouteMessageRequest\032\006.Empty\022J\n\023In"
-    "vokePlayerService\022\030.NodeRouteMessageRequ"
-    "est\032\031.NodeRouteMessageResponse\022E\n\022RouteN"
-    "odeStringMsg\022\026.RouteMsgStringRequest\032\027.R"
-    "outeMsgStringResponse\022S\n\024RoutePlayerStri"
-    "ngMsg\022\034.RoutePlayerMsgStringRequest\032\035.Ro"
-    "utePlayerMsgStringResponse\022<\n\023UpdateSess"
-    "ionDetail\022\035.RegisterPlayerSessionRequest"
-    "\032\006.Empty\0221\n\nEnterScene\022\033.Centre2GsEnterS"
-    "ceneRequest\032\006.Empty\0228\n\013CreateScene\022\023.Cre"
-    "ateSceneRequest\032\024.CreateSceneResponseB\014Z"
-    "\007pb/game\200\001\001b\006proto3"
+    "\"@\n\023CreateSceneResponse\022)\n\nscene_info\030\001 "
+    "\001(\0132\025.SceneInfoPBComponent2\205\006\n\013GameServi"
+    "ce\022:\n\023PlayerEnterGameNode\022\033.PlayerEnterG"
+    "ameNodeRequest\032\006.Empty\022J\n\023SendMessageToP"
+    "layer\022\030.NodeRouteMessageRequest\032\031.NodeRo"
+    "uteMessageResponse\022b\n\031ClientSendMessageT"
+    "oPlayer\022!.ClientSendMessageToPlayerReque"
+    "st\032\".ClientSendMessageToPlayerResponse\0224"
+    "\n\020RegisterGateNode\022\030.RegisterGateNodeReq"
+    "uest\032\006.Empty\022A\n\035CentreSendToPlayerViaGam"
+    "eNode\022\030.NodeRouteMessageRequest\032\006.Empty\022"
+    "J\n\023InvokePlayerService\022\030.NodeRouteMessag"
+    "eRequest\032\031.NodeRouteMessageResponse\022E\n\022R"
+    "outeNodeStringMsg\022\026.RouteMsgStringReques"
+    "t\032\027.RouteMsgStringResponse\022S\n\024RoutePlaye"
+    "rStringMsg\022\034.RoutePlayerMsgStringRequest"
+    "\032\035.RoutePlayerMsgStringResponse\022<\n\023Updat"
+    "eSessionDetail\022\035.RegisterPlayerSessionRe"
+    "quest\032\006.Empty\0221\n\nEnterScene\022\033.Centre2GsE"
+    "nterSceneRequest\032\006.Empty\0228\n\013CreateScene\022"
+    "\023.CreateSceneRequest\032\024.CreateSceneRespon"
+    "seB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_common_2fgame_5fservice_2eproto_deps[4] =
     {
@@ -381,7 +381,7 @@ static ::absl::once_flag descriptor_table_common_2fgame_5fservice_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_common_2fgame_5fservice_2eproto = {
     false,
     false,
-    1579,
+    1584,
     descriptor_table_protodef_common_2fgame_5fservice_2eproto,
     "common/game_service.proto",
     &descriptor_table_common_2fgame_5fservice_2eproto_once,
@@ -2214,7 +2214,7 @@ CreateSceneResponse::CreateSceneResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComp>(
+  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(
                               arena, *from._impl_.scene_info_)
                         : nullptr;
 
@@ -2295,17 +2295,17 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> CreateSceneResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::CreateSceneResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .SceneInfoPBComp scene_info = 1;
+    // .SceneInfoPBComponent scene_info = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.scene_info_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .SceneInfoPBComp scene_info = 1;
+    // .SceneInfoPBComponent scene_info = 1;
     {PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComp>()},
+    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
   }}, {{
   }},
 };
@@ -2318,7 +2318,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> CreateSceneResponse::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .SceneInfoPBComp scene_info = 1;
+  // .SceneInfoPBComponent scene_info = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.scene_info_, _impl_.scene_info_->GetCachedSize(), target, stream);
@@ -2341,7 +2341,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> CreateSceneResponse::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .SceneInfoPBComp scene_info = 1;
+  // .SceneInfoPBComponent scene_info = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
@@ -2366,7 +2366,7 @@ void CreateSceneResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, con
     ABSL_DCHECK(from._impl_.scene_info_ != nullptr);
     if (_this->_impl_.scene_info_ == nullptr) {
       _this->_impl_.scene_info_ =
-          ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComp>(arena, *from._impl_.scene_info_);
+          ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(arena, *from._impl_.scene_info_);
     } else {
       _this->_impl_.scene_info_->MergeFrom(*from._impl_.scene_info_);
     }

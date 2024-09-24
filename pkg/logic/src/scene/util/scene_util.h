@@ -44,7 +44,7 @@ struct CreateGameNodeSceneParam
     }
 
     entt::entity node{ entt::null };
-    SceneInfoPBComp sceneInfo;
+    SceneInfoPBComponent sceneInfo;
 };
 
 struct DestroySceneParam

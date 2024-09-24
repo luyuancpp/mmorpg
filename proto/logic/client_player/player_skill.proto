@@ -46,7 +46,7 @@ message GetSkillListRequest {
 // 获取技能列表响应
 message GetSkillListResponse {
   TipInfoMessage error_message = 1;  
-  PlayerSkillListPBComp skill_list = 2;
+  PlayerSkillListPBComponent skill_list = 2;
 }
 
 service PlayerSkillService { 

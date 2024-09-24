@@ -28,7 +28,7 @@ struct ChannelIntervalTimerComp
 
 
 
-using SkillContextPtrComp = std::shared_ptr<SkillContextPBComp>;
+using SkillContextPtrComp = std::shared_ptr<SkillContextPBComponent>;
 
 // 存储技能上下文信息的容器
 using  SkillContextCompMap = std::unordered_map<uint32_t, SkillContextPtrComp>;

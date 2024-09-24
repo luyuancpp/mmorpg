@@ -22,38 +22,38 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr SkillPBComp::Impl_::Impl_(
+inline constexpr SkillPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : skill_table_id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR SkillPBComp::SkillPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR SkillPBComponent::SkillPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct SkillPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SkillPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SkillPBCompDefaultTypeInternal() {}
+struct SkillPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SkillPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SkillPBComponentDefaultTypeInternal() {}
   union {
-    SkillPBComp _instance;
+    SkillPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillPBCompDefaultTypeInternal _SkillPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillPBComponentDefaultTypeInternal _SkillPBComponent_default_instance_;
       template <typename>
-PROTOBUF_CONSTEXPR SkillContextPBComp_AdditionalDataEntry_DoNotUse::SkillContextPBComp_AdditionalDataEntry_DoNotUse(::_pbi::ConstantInitialized) {}
-struct SkillContextPBComp_AdditionalDataEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SkillContextPBComp_AdditionalDataEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SkillContextPBComp_AdditionalDataEntry_DoNotUseDefaultTypeInternal() {}
+PROTOBUF_CONSTEXPR SkillContextPBComponent_AdditionalDataEntry_DoNotUse::SkillContextPBComponent_AdditionalDataEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct SkillContextPBComponent_AdditionalDataEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SkillContextPBComponent_AdditionalDataEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SkillContextPBComponent_AdditionalDataEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    SkillContextPBComp_AdditionalDataEntry_DoNotUse _instance;
+    SkillContextPBComponent_AdditionalDataEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillContextPBComp_AdditionalDataEntry_DoNotUseDefaultTypeInternal _SkillContextPBComp_AdditionalDataEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillContextPBComponent_AdditionalDataEntry_DoNotUseDefaultTypeInternal _SkillContextPBComponent_AdditionalDataEntry_DoNotUse_default_instance_;
 
-inline constexpr SkillContextPBComp::Impl_::Impl_(
+inline constexpr SkillContextPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         additionaldata_{},
@@ -68,18 +68,18 @@ inline constexpr SkillContextPBComp::Impl_::Impl_(
         casttime_{::uint64_t{0u}} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR SkillContextPBComp::SkillContextPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR SkillContextPBComponent::SkillContextPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct SkillContextPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SkillContextPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SkillContextPBCompDefaultTypeInternal() {}
+struct SkillContextPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SkillContextPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SkillContextPBComponentDefaultTypeInternal() {}
   union {
-    SkillContextPBComp _instance;
+    SkillContextPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillContextPBCompDefaultTypeInternal _SkillContextPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillContextPBComponentDefaultTypeInternal _SkillContextPBComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fskill_5fcomp_2eproto[3];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fskill_5fcomp_2eproto = nullptr;
@@ -89,42 +89,42 @@ const ::uint32_t
     TableStruct_logic_2fcomponent_2fskill_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::SkillPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::SkillPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::SkillPBComp, _impl_.skill_table_id_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp_AdditionalDataEntry_DoNotUse, _has_bits_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp_AdditionalDataEntry_DoNotUse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::SkillPBComponent, _impl_.skill_table_id_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent_AdditionalDataEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent_AdditionalDataEntry_DoNotUse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp_AdditionalDataEntry_DoNotUse, key_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp_AdditionalDataEntry_DoNotUse, value_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent_AdditionalDataEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent_AdditionalDataEntry_DoNotUse, value_),
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_.caster_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_.target_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_.skillid_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_.skilltableid_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_.castposition_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_.casttime_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_.state_),
-        PROTOBUF_FIELD_OFFSET(::SkillContextPBComp, _impl_.additionaldata_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_.caster_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_.target_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_.skillid_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_.skilltableid_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_.castposition_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_.casttime_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_.state_),
+        PROTOBUF_FIELD_OFFSET(::SkillContextPBComponent, _impl_.additionaldata_),
         ~0u,
         ~0u,
         ~0u,
@@ -137,28 +137,28 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::SkillPBComp)},
-        {9, 19, -1, sizeof(::SkillContextPBComp_AdditionalDataEntry_DoNotUse)},
-        {21, 37, -1, sizeof(::SkillContextPBComp)},
+        {0, -1, -1, sizeof(::SkillPBComponent)},
+        {9, 19, -1, sizeof(::SkillContextPBComponent_AdditionalDataEntry_DoNotUse)},
+        {21, 37, -1, sizeof(::SkillContextPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_SkillPBComp_default_instance_._instance,
-    &::_SkillContextPBComp_AdditionalDataEntry_DoNotUse_default_instance_._instance,
-    &::_SkillContextPBComp_default_instance_._instance,
+    &::_SkillPBComponent_default_instance_._instance,
+    &::_SkillContextPBComponent_AdditionalDataEntry_DoNotUse_default_instance_._instance,
+    &::_SkillContextPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fskill_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n logic/component/skill_comp.proto\032 logi"
-    "c/component/actor_comp.proto\"%\n\013SkillPBC"
-    "omp\022\026\n\016skill_table_id\030\001 \001(\004\"\226\002\n\022SkillCon"
-    "textPBComp\022\016\n\006caster\030\001 \001(\004\022\016\n\006target\030\002 \001"
-    "(\004\022\017\n\007SkillId\030\003 \001(\r\022\024\n\014skillTableId\030\004 \001("
-    "\r\022 \n\014castPosition\030\005 \001(\0132\n.Transform\022\020\n\010c"
-    "astTime\030\006 \001(\004\022\r\n\005state\030\007 \001(\t\022\?\n\016addition"
-    "alData\030\010 \003(\0132\'.SkillContextPBComp.Additi"
-    "onalDataEntry\0325\n\023AdditionalDataEntry\022\013\n\003"
-    "key\030\001 \001(\t\022\r\n\005value\030\002 \001(\r:\0028\001B\tZ\007pb/gameb"
-    "\006proto3"
+    "c/component/actor_comp.proto\"*\n\020SkillPBC"
+    "omponent\022\026\n\016skill_table_id\030\001 \001(\004\"\240\002\n\027Ski"
+    "llContextPBComponent\022\016\n\006caster\030\001 \001(\004\022\016\n\006"
+    "target\030\002 \001(\004\022\017\n\007SkillId\030\003 \001(\r\022\024\n\014skillTa"
+    "bleId\030\004 \001(\r\022 \n\014castPosition\030\005 \001(\0132\n.Tran"
+    "sform\022\020\n\010castTime\030\006 \001(\004\022\r\n\005state\030\007 \001(\t\022D"
+    "\n\016additionalData\030\010 \003(\0132,.SkillContextPBC"
+    "omponent.AdditionalDataEntry\0325\n\023Addition"
+    "alDataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\r:"
+    "\0028\001B\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto_deps[1] =
     {
@@ -168,7 +168,7 @@ static ::absl::once_flag descriptor_table_logic_2fcomponent_2fskill_5fcomp_2epro
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto = {
     false,
     false,
-    407,
+    422,
     descriptor_table_protodef_logic_2fcomponent_2fskill_5fcomp_2eproto,
     "logic/component/skill_comp.proto",
     &descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto_once,
@@ -199,55 +199,55 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2f
 }
 // ===================================================================
 
-class SkillPBComp::_Internal {
+class SkillPBComponent::_Internal {
  public:
 };
 
-SkillPBComp::SkillPBComp(::google::protobuf::Arena* arena)
+SkillPBComponent::SkillPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:SkillPBComp)
+  // @@protoc_insertion_point(arena_constructor:SkillPBComponent)
 }
-SkillPBComp::SkillPBComp(
-    ::google::protobuf::Arena* arena, const SkillPBComp& from)
-    : SkillPBComp(arena) {
+SkillPBComponent::SkillPBComponent(
+    ::google::protobuf::Arena* arena, const SkillPBComponent& from)
+    : SkillPBComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE SkillPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE SkillPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void SkillPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void SkillPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.skill_table_id_ = {};
 }
-SkillPBComp::~SkillPBComp() {
-  // @@protoc_insertion_point(destructor:SkillPBComp)
+SkillPBComponent::~SkillPBComponent() {
+  // @@protoc_insertion_point(destructor:SkillPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void SkillPBComp::SharedDtor() {
+inline void SkillPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-SkillPBComp::GetClassData() const {
+SkillPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(SkillPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(SkillPBComponent, _impl_._cached_size_),
               false,
           },
-          &SkillPBComp::MergeImpl,
-          &SkillPBComp::kDescriptorMethods,
+          &SkillPBComponent::MergeImpl,
+          &SkillPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void SkillPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:SkillPBComp)
+PROTOBUF_NOINLINE void SkillPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:SkillPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -257,7 +257,7 @@ PROTOBUF_NOINLINE void SkillPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* SkillPBComp::_InternalParse(
+const char* SkillPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -265,7 +265,7 @@ const char* SkillPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SkillPBComp::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SkillPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -276,20 +276,20 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SkillPBComp::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_SkillPBComp_default_instance_._instance,
+    &_SkillPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::SkillPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::SkillPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 skill_table_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillPBComp, _impl_.skill_table_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SkillPBComp, _impl_.skill_table_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillPBComponent, _impl_.skill_table_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SkillPBComponent, _impl_.skill_table_id_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 skill_table_id = 1;
-    {PROTOBUF_FIELD_OFFSET(SkillPBComp, _impl_.skill_table_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillPBComponent, _impl_.skill_table_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -297,10 +297,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SkillPBComp::_table_ = {
   }},
 };
 
-::uint8_t* SkillPBComp::_InternalSerialize(
+::uint8_t* SkillPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:SkillPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:SkillPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -316,12 +316,12 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SkillPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:SkillPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:SkillPBComponent)
   return target;
 }
 
-::size_t SkillPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:SkillPBComp)
+::size_t SkillPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:SkillPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -338,10 +338,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> SkillPBComp::_table_ = {
 }
 
 
-void SkillPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<SkillPBComp*>(&to_msg);
-  auto& from = static_cast<const SkillPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:SkillPBComp)
+void SkillPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<SkillPBComponent*>(&to_msg);
+  auto& from = static_cast<const SkillPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:SkillPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -352,58 +352,58 @@ void SkillPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void SkillPBComp::CopyFrom(const SkillPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:SkillPBComp)
+void SkillPBComponent::CopyFrom(const SkillPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:SkillPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool SkillPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool SkillPBComponent::IsInitialized() const {
   return true;
 }
 
-void SkillPBComp::InternalSwap(SkillPBComp* PROTOBUF_RESTRICT other) {
+void SkillPBComponent::InternalSwap(SkillPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
         swap(_impl_.skill_table_id_, other->_impl_.skill_table_id_);
 }
 
-::google::protobuf::Metadata SkillPBComp::GetMetadata() const {
+::google::protobuf::Metadata SkillPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fskill_5fcomp_2eproto[0]);
 }
 // ===================================================================
 
-SkillContextPBComp_AdditionalDataEntry_DoNotUse::SkillContextPBComp_AdditionalDataEntry_DoNotUse() {}
-SkillContextPBComp_AdditionalDataEntry_DoNotUse::SkillContextPBComp_AdditionalDataEntry_DoNotUse(::google::protobuf::Arena* arena)
+SkillContextPBComponent_AdditionalDataEntry_DoNotUse::SkillContextPBComponent_AdditionalDataEntry_DoNotUse() {}
+SkillContextPBComponent_AdditionalDataEntry_DoNotUse::SkillContextPBComponent_AdditionalDataEntry_DoNotUse(::google::protobuf::Arena* arena)
     : SuperType(arena) {}
-::google::protobuf::Metadata SkillContextPBComp_AdditionalDataEntry_DoNotUse::GetMetadata() const {
+::google::protobuf::Metadata SkillContextPBComponent_AdditionalDataEntry_DoNotUse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fskill_5fcomp_2eproto[1]);
 }
 // ===================================================================
 
-class SkillContextPBComp::_Internal {
+class SkillContextPBComponent::_Internal {
  public:
-  using HasBits = decltype(std::declval<SkillContextPBComp>()._impl_._has_bits_);
+  using HasBits = decltype(std::declval<SkillContextPBComponent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_._has_bits_);
+    8 * PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_._has_bits_);
 };
 
-void SkillContextPBComp::clear_castposition() {
+void SkillContextPBComponent::clear_castposition() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.castposition_ != nullptr) _impl_.castposition_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-SkillContextPBComp::SkillContextPBComp(::google::protobuf::Arena* arena)
+SkillContextPBComponent::SkillContextPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:SkillContextPBComp)
+  // @@protoc_insertion_point(arena_constructor:SkillContextPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE SkillContextPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE SkillContextPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : _has_bits_{from._has_bits_},
@@ -411,11 +411,11 @@ inline PROTOBUF_NDEBUG_INLINE SkillContextPBComp::Impl_::Impl_(
         additionaldata_{visibility, arena, from.additionaldata_},
         state_(arena, from.state_) {}
 
-SkillContextPBComp::SkillContextPBComp(
+SkillContextPBComponent::SkillContextPBComponent(
     ::google::protobuf::Arena* arena,
-    const SkillContextPBComp& from)
+    const SkillContextPBComponent& from)
     : ::google::protobuf::Message(arena) {
-  SkillContextPBComp* const _this = this;
+  SkillContextPBComponent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -432,16 +432,16 @@ SkillContextPBComp::SkillContextPBComp(
                offsetof(Impl_, caster_) +
                sizeof(Impl_::casttime_));
 
-  // @@protoc_insertion_point(copy_constructor:SkillContextPBComp)
+  // @@protoc_insertion_point(copy_constructor:SkillContextPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE SkillContextPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE SkillContextPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0},
         additionaldata_{visibility, arena},
         state_(arena) {}
 
-inline void SkillContextPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void SkillContextPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, castposition_),
@@ -450,12 +450,12 @@ inline void SkillContextPBComp::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, castposition_) +
                sizeof(Impl_::casttime_));
 }
-SkillContextPBComp::~SkillContextPBComp() {
-  // @@protoc_insertion_point(destructor:SkillContextPBComp)
+SkillContextPBComponent::~SkillContextPBComponent() {
+  // @@protoc_insertion_point(destructor:SkillContextPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void SkillContextPBComp::SharedDtor() {
+inline void SkillContextPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.state_.Destroy();
   delete _impl_.castposition_;
@@ -463,21 +463,21 @@ inline void SkillContextPBComp::SharedDtor() {
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-SkillContextPBComp::GetClassData() const {
+SkillContextPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_._cached_size_),
               false,
           },
-          &SkillContextPBComp::MergeImpl,
-          &SkillContextPBComp::kDescriptorMethods,
+          &SkillContextPBComponent::MergeImpl,
+          &SkillContextPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void SkillContextPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:SkillContextPBComp)
+PROTOBUF_NOINLINE void SkillContextPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:SkillContextPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -497,7 +497,7 @@ PROTOBUF_NOINLINE void SkillContextPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* SkillContextPBComp::_InternalParse(
+const char* SkillContextPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -505,9 +505,9 @@ const char* SkillContextPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 8, 2, 54, 2> SkillContextPBComp::_table_ = {
+const ::_pbi::TcParseTable<3, 8, 2, 59, 2> SkillContextPBComponent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_._has_bits_),
     0, // no _extensions_
     8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -516,79 +516,79 @@ const ::_pbi::TcParseTable<3, 8, 2, 54, 2> SkillContextPBComp::_table_ = {
     8,  // num_field_entries
     2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    &_SkillContextPBComp_default_instance_._instance,
+    &_SkillContextPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::SkillContextPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::SkillContextPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 caster = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillContextPBComp, _impl_.caster_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.caster_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillContextPBComponent, _impl_.caster_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.caster_)}},
     // uint64 target = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillContextPBComp, _impl_.target_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.target_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillContextPBComponent, _impl_.target_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.target_)}},
     // uint32 SkillId = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillContextPBComp, _impl_.skillid_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.skillid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillContextPBComponent, _impl_.skillid_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.skillid_)}},
     // uint32 skillTableId = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillContextPBComp, _impl_.skilltableid_), 63>(),
-     {32, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.skilltableid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillContextPBComponent, _impl_.skilltableid_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.skilltableid_)}},
     // .Transform castPosition = 5;
     {::_pbi::TcParser::FastMtS1,
-     {42, 0, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.castposition_)}},
+     {42, 0, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.castposition_)}},
     // uint64 castTime = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillContextPBComp, _impl_.casttime_), 63>(),
-     {48, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.casttime_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillContextPBComponent, _impl_.casttime_), 63>(),
+     {48, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.casttime_)}},
     // string state = 7;
     {::_pbi::TcParser::FastUS1,
-     {58, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.state_)}},
+     {58, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.state_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 caster = 1;
-    {PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.caster_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.caster_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 target = 2;
-    {PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.target_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.target_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint32 SkillId = 3;
-    {PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.skillid_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.skillid_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 skillTableId = 4;
-    {PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.skilltableid_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.skilltableid_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // .Transform castPosition = 5;
-    {PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.castposition_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.castposition_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 castTime = 6;
-    {PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.casttime_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.casttime_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // string state = 7;
-    {PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.state_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.state_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // map<string, uint32> additionalData = 8;
-    {PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.additionaldata_), -1, 1,
+    {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.additionaldata_), -1, 1,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }}, {{
     {::_pbi::TcParser::GetTable<::Transform>()},
     {::_pbi::TcParser::GetMapAuxInfo<
-        decltype(SkillContextPBComp()._impl_.additionaldata_)>(
+        decltype(SkillContextPBComponent()._impl_.additionaldata_)>(
         1, 0, 0, 9,
         13)},
   }}, {{
-    "\22\0\0\0\0\0\0\5\16\0\0\0\0\0\0\0"
-    "SkillContextPBComp"
+    "\27\0\0\0\0\0\0\5\16\0\0\0\0\0\0\0"
+    "SkillContextPBComponent"
     "state"
     "additionalData"
   }},
 };
 
-::uint8_t* SkillContextPBComp::_InternalSerialize(
+::uint8_t* SkillContextPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:SkillContextPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:SkillContextPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -638,7 +638,7 @@ const ::_pbi::TcParseTable<3, 8, 2, 54, 2> SkillContextPBComp::_table_ = {
   if (!this->_internal_state().empty()) {
     const std::string& _s = this->_internal_state();
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillContextPBComp.state");
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillContextPBComponent.state");
     target = stream->WriteStringMaybeAliased(7, _s, target);
   }
 
@@ -656,7 +656,7 @@ const ::_pbi::TcParseTable<3, 8, 2, 54, 2> SkillContextPBComp::_table_ = {
             8, entry.first, entry.second, target, stream);
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.first.data(), static_cast<int>(entry.first.length()),
- ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillContextPBComp.additionalData");
+ ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillContextPBComponent.additionalData");
       }
     } else {
       for (const auto& entry : field) {
@@ -664,7 +664,7 @@ const ::_pbi::TcParseTable<3, 8, 2, 54, 2> SkillContextPBComp::_table_ = {
             8, entry.first, entry.second, target, stream);
         ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
             entry.first.data(), static_cast<int>(entry.first.length()),
- ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillContextPBComp.additionalData");
+ ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillContextPBComponent.additionalData");
       }
     }
   }
@@ -674,12 +674,12 @@ const ::_pbi::TcParseTable<3, 8, 2, 54, 2> SkillContextPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:SkillContextPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:SkillContextPBComponent)
   return target;
 }
 
-::size_t SkillContextPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:SkillContextPBComp)
+::size_t SkillContextPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:SkillContextPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -740,11 +740,11 @@ const ::_pbi::TcParseTable<3, 8, 2, 54, 2> SkillContextPBComp::_table_ = {
 }
 
 
-void SkillContextPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<SkillContextPBComp*>(&to_msg);
-  auto& from = static_cast<const SkillContextPBComp&>(from_msg);
+void SkillContextPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<SkillContextPBComponent*>(&to_msg);
+  auto& from = static_cast<const SkillContextPBComponent&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:SkillContextPBComp)
+  // @@protoc_insertion_point(class_specific_merge_from_start:SkillContextPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -782,18 +782,18 @@ void SkillContextPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void SkillContextPBComp::CopyFrom(const SkillContextPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:SkillContextPBComp)
+void SkillContextPBComponent::CopyFrom(const SkillContextPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:SkillContextPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool SkillContextPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool SkillContextPBComponent::IsInitialized() const {
   return true;
 }
 
-void SkillContextPBComp::InternalSwap(SkillContextPBComp* PROTOBUF_RESTRICT other) {
+void SkillContextPBComponent::InternalSwap(SkillContextPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -802,14 +802,14 @@ void SkillContextPBComp::InternalSwap(SkillContextPBComp* PROTOBUF_RESTRICT othe
   _impl_.additionaldata_.InternalSwap(&other->_impl_.additionaldata_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.state_, &other->_impl_.state_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.casttime_)
-      + sizeof(SkillContextPBComp::_impl_.casttime_)
-      - PROTOBUF_FIELD_OFFSET(SkillContextPBComp, _impl_.castposition_)>(
+      PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.casttime_)
+      + sizeof(SkillContextPBComponent::_impl_.casttime_)
+      - PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.castposition_)>(
           reinterpret_cast<char*>(&_impl_.castposition_),
           reinterpret_cast<char*>(&other->_impl_.castposition_));
 }
 
-::google::protobuf::Metadata SkillContextPBComp::GetMetadata() const {
+::google::protobuf::Metadata SkillContextPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fskill_5fcomp_2eproto[2]);

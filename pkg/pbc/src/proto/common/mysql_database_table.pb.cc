@@ -91,9 +91,9 @@ inline constexpr player_database::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         transform_{nullptr},
-        uint64_pb_comp_{nullptr},
+        uint64_pb_component_{nullptr},
         skill_list_{nullptr},
-        uint32_pb_comp_{nullptr},
+        uint32_pb_component_{nullptr},
         player_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -182,9 +182,9 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.transform_),
-        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint64_pb_comp_),
+        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint64_pb_component_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.skill_list_),
-        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint32_pb_comp_),
+        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint32_pb_component_),
         ~0u,
         0,
         1,
@@ -228,18 +228,19 @@ const char descriptor_table_protodef_common_2fmysql_5fdatabase_5ftable_2eproto[]
     "unt\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\0220\n\016simple_pl"
     "ayers\030\003 \001(\0132\030.AccountSimplePlayerList:\013\222"
     "\265\030\007account\"6\n\026account_share_database\022\017\n\007"
-    "account\030\001 \001(\t:\013\222\265\030\007account\"v\n\026player_cen"
-    "tre_database\022\021\n\tplayer_id\030\001 \001(\004\022-\n\nscene"
-    "_info\030\002 \001(\0132\031.PlayerSceneContextPBComp:\032"
-    "\222\265\030\tplayer_id\262\265\030\tplayer_id\"\345\001\n\017player_da"
-    "tabase\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttransform\030\002"
-    " \001(\0132\n.Transform\022+\n\016uint64_pb_comp\030\003 \001(\013"
-    "2\023.PlayerUint64PBComp\022*\n\nskill_list\030\004 \001("
-    "\0132\026.PlayerSkillListPBComp\022+\n\016uint32_pb_c"
-    "omp\030\005 \001(\0132\023.PlayerUint32PBComp:\032\222\265\030\tplay"
-    "er_id\262\265\030\tplayer_id\"B\n\021player_database_1\022"
-    "\021\n\tplayer_id\030\001 \001(\004:\032\222\265\030\tplayer_id\262\265\030\tpla"
-    "yer_idB\tZ\007pb/gameb\006proto3"
+    "account\030\001 \001(\t:\013\222\265\030\007account\"{\n\026player_cen"
+    "tre_database\022\021\n\tplayer_id\030\001 \001(\004\0222\n\nscene"
+    "_info\030\002 \001(\0132\036.PlayerSceneContextPBCompon"
+    "ent:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"\376\001\n\017play"
+    "er_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttransf"
+    "orm\030\002 \001(\0132\n.Transform\0225\n\023uint64_pb_compo"
+    "nent\030\003 \001(\0132\030.PlayerUint64PBComponent\022/\n\n"
+    "skill_list\030\004 \001(\0132\033.PlayerSkillListPBComp"
+    "onent\0225\n\023uint32_pb_component\030\005 \001(\0132\030.Pla"
+    "yerUint32PBComponent:\032\222\265\030\tplayer_id\262\265\030\tp"
+    "layer_id\"B\n\021player_database_1\022\021\n\tplayer_"
+    "id\030\001 \001(\004:\032\222\265\030\tplayer_id\262\265\030\tplayer_idB\tZ\007"
+    "pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_deps[7] =
     {
@@ -255,7 +256,7 @@ static ::absl::once_flag descriptor_table_common_2fmysql_5fdatabase_5ftable_2epr
 const ::_pbi::DescriptorTable descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    865,
+    895,
     descriptor_table_protodef_common_2fmysql_5fdatabase_5ftable_2eproto,
     "common/mysql_database_table.proto",
     &descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_once,
@@ -798,7 +799,7 @@ player_centre_database::player_centre_database(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSceneContextPBComp>(
+  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSceneContextPBComponent>(
                               arena, *from._impl_.scene_info_)
                         : nullptr;
   _impl_.player_id_ = from._impl_.player_id_;
@@ -886,7 +887,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> player_centre_database::_table_ = {
     ::_pbi::TcParser::GetTable<::player_centre_database>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .PlayerSceneContextPBComp scene_info = 2;
+    // .PlayerSceneContextPBComponent scene_info = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(player_centre_database, _impl_.scene_info_)}},
     // uint64 player_id = 1;
@@ -898,11 +899,11 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> player_centre_database::_table_ = {
     // uint64 player_id = 1;
     {PROTOBUF_FIELD_OFFSET(player_centre_database, _impl_.player_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // .PlayerSceneContextPBComp scene_info = 2;
+    // .PlayerSceneContextPBComponent scene_info = 2;
     {PROTOBUF_FIELD_OFFSET(player_centre_database, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::PlayerSceneContextPBComp>()},
+    {::_pbi::TcParser::GetTable<::PlayerSceneContextPBComponent>()},
   }}, {{
   }},
 };
@@ -922,7 +923,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> player_centre_database::_table_ = {
   }
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .PlayerSceneContextPBComp scene_info = 2;
+  // .PlayerSceneContextPBComponent scene_info = 2;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *_impl_.scene_info_, _impl_.scene_info_->GetCachedSize(), target, stream);
@@ -945,7 +946,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> player_centre_database::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .PlayerSceneContextPBComp scene_info = 2;
+  // .PlayerSceneContextPBComponent scene_info = 2;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
@@ -976,7 +977,7 @@ void player_centre_database::MergeImpl(::google::protobuf::MessageLite& to_msg, 
     ABSL_DCHECK(from._impl_.scene_info_ != nullptr);
     if (_this->_impl_.scene_info_ == nullptr) {
       _this->_impl_.scene_info_ =
-          ::google::protobuf::Message::CopyConstruct<::PlayerSceneContextPBComp>(arena, *from._impl_.scene_info_);
+          ::google::protobuf::Message::CopyConstruct<::PlayerSceneContextPBComponent>(arena, *from._impl_.scene_info_);
     } else {
       _this->_impl_.scene_info_->MergeFrom(*from._impl_.scene_info_);
     }
@@ -1030,9 +1031,9 @@ void player_database::clear_transform() {
   if (_impl_.transform_ != nullptr) _impl_.transform_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-void player_database::clear_uint64_pb_comp() {
+void player_database::clear_uint64_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.uint64_pb_comp_ != nullptr) _impl_.uint64_pb_comp_->Clear();
+  if (_impl_.uint64_pb_component_ != nullptr) _impl_.uint64_pb_component_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
 void player_database::clear_skill_list() {
@@ -1040,9 +1041,9 @@ void player_database::clear_skill_list() {
   if (_impl_.skill_list_ != nullptr) _impl_.skill_list_->Clear();
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-void player_database::clear_uint32_pb_comp() {
+void player_database::clear_uint32_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.uint32_pb_comp_ != nullptr) _impl_.uint32_pb_comp_->Clear();
+  if (_impl_.uint32_pb_component_ != nullptr) _impl_.uint32_pb_component_->Clear();
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
 player_database::player_database(::google::protobuf::Arena* arena)
@@ -1069,14 +1070,14 @@ player_database::player_database(
   _impl_.transform_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::Transform>(
                               arena, *from._impl_.transform_)
                         : nullptr;
-  _impl_.uint64_pb_comp_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerUint64PBComp>(
-                              arena, *from._impl_.uint64_pb_comp_)
+  _impl_.uint64_pb_component_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerUint64PBComponent>(
+                              arena, *from._impl_.uint64_pb_component_)
                         : nullptr;
-  _impl_.skill_list_ = (cached_has_bits & 0x00000004u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComp>(
+  _impl_.skill_list_ = (cached_has_bits & 0x00000004u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComponent>(
                               arena, *from._impl_.skill_list_)
                         : nullptr;
-  _impl_.uint32_pb_comp_ = (cached_has_bits & 0x00000008u) ? ::google::protobuf::Message::CopyConstruct<::PlayerUint32PBComp>(
-                              arena, *from._impl_.uint32_pb_comp_)
+  _impl_.uint32_pb_component_ = (cached_has_bits & 0x00000008u) ? ::google::protobuf::Message::CopyConstruct<::PlayerUint32PBComponent>(
+                              arena, *from._impl_.uint32_pb_component_)
                         : nullptr;
   _impl_.player_id_ = from._impl_.player_id_;
 
@@ -1104,9 +1105,9 @@ player_database::~player_database() {
 inline void player_database::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   delete _impl_.transform_;
-  delete _impl_.uint64_pb_comp_;
+  delete _impl_.uint64_pb_component_;
   delete _impl_.skill_list_;
-  delete _impl_.uint32_pb_comp_;
+  delete _impl_.uint32_pb_component_;
   _impl_.~Impl_();
 }
 
@@ -1138,16 +1139,16 @@ PROTOBUF_NOINLINE void player_database::Clear() {
       _impl_.transform_->Clear();
     }
     if (cached_has_bits & 0x00000002u) {
-      ABSL_DCHECK(_impl_.uint64_pb_comp_ != nullptr);
-      _impl_.uint64_pb_comp_->Clear();
+      ABSL_DCHECK(_impl_.uint64_pb_component_ != nullptr);
+      _impl_.uint64_pb_component_->Clear();
     }
     if (cached_has_bits & 0x00000004u) {
       ABSL_DCHECK(_impl_.skill_list_ != nullptr);
       _impl_.skill_list_->Clear();
     }
     if (cached_has_bits & 0x00000008u) {
-      ABSL_DCHECK(_impl_.uint32_pb_comp_ != nullptr);
-      _impl_.uint32_pb_comp_->Clear();
+      ABSL_DCHECK(_impl_.uint32_pb_component_ != nullptr);
+      _impl_.uint32_pb_component_->Clear();
     }
   }
   _impl_.player_id_ = ::uint64_t{0u};
@@ -1187,15 +1188,15 @@ const ::_pbi::TcParseTable<3, 5, 4, 0, 2> player_database::_table_ = {
     // .Transform transform = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_)}},
-    // .PlayerUint64PBComp uint64_pb_comp = 3;
+    // .PlayerUint64PBComponent uint64_pb_component = 3;
     {::_pbi::TcParser::FastMtS1,
-     {26, 1, 1, PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint64_pb_comp_)}},
-    // .PlayerSkillListPBComp skill_list = 4;
+     {26, 1, 1, PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint64_pb_component_)}},
+    // .PlayerSkillListPBComponent skill_list = 4;
     {::_pbi::TcParser::FastMtS1,
      {34, 2, 2, PROTOBUF_FIELD_OFFSET(player_database, _impl_.skill_list_)}},
-    // .PlayerUint32PBComp uint32_pb_comp = 5;
+    // .PlayerUint32PBComponent uint32_pb_component = 5;
     {::_pbi::TcParser::FastMtS1,
-     {42, 3, 3, PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint32_pb_comp_)}},
+     {42, 3, 3, PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint32_pb_component_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
@@ -1207,20 +1208,20 @@ const ::_pbi::TcParseTable<3, 5, 4, 0, 2> player_database::_table_ = {
     // .Transform transform = 2;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .PlayerUint64PBComp uint64_pb_comp = 3;
-    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint64_pb_comp_), _Internal::kHasBitsOffset + 1, 1,
+    // .PlayerUint64PBComponent uint64_pb_component = 3;
+    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint64_pb_component_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .PlayerSkillListPBComp skill_list = 4;
+    // .PlayerSkillListPBComponent skill_list = 4;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.skill_list_), _Internal::kHasBitsOffset + 2, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .PlayerUint32PBComp uint32_pb_comp = 5;
-    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint32_pb_comp_), _Internal::kHasBitsOffset + 3, 3,
+    // .PlayerUint32PBComponent uint32_pb_component = 5;
+    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint32_pb_component_), _Internal::kHasBitsOffset + 3, 3,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::Transform>()},
-    {::_pbi::TcParser::GetTable<::PlayerUint64PBComp>()},
-    {::_pbi::TcParser::GetTable<::PlayerSkillListPBComp>()},
-    {::_pbi::TcParser::GetTable<::PlayerUint32PBComp>()},
+    {::_pbi::TcParser::GetTable<::PlayerUint64PBComponent>()},
+    {::_pbi::TcParser::GetTable<::PlayerSkillListPBComponent>()},
+    {::_pbi::TcParser::GetTable<::PlayerUint32PBComponent>()},
   }}, {{
   }},
 };
@@ -1246,22 +1247,22 @@ const ::_pbi::TcParseTable<3, 5, 4, 0, 2> player_database::_table_ = {
         2, *_impl_.transform_, _impl_.transform_->GetCachedSize(), target, stream);
   }
 
-  // .PlayerUint64PBComp uint64_pb_comp = 3;
+  // .PlayerUint64PBComponent uint64_pb_component = 3;
   if (cached_has_bits & 0x00000002u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        3, *_impl_.uint64_pb_comp_, _impl_.uint64_pb_comp_->GetCachedSize(), target, stream);
+        3, *_impl_.uint64_pb_component_, _impl_.uint64_pb_component_->GetCachedSize(), target, stream);
   }
 
-  // .PlayerSkillListPBComp skill_list = 4;
+  // .PlayerSkillListPBComponent skill_list = 4;
   if (cached_has_bits & 0x00000004u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         4, *_impl_.skill_list_, _impl_.skill_list_->GetCachedSize(), target, stream);
   }
 
-  // .PlayerUint32PBComp uint32_pb_comp = 5;
+  // .PlayerUint32PBComponent uint32_pb_component = 5;
   if (cached_has_bits & 0x00000008u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        5, *_impl_.uint32_pb_comp_, _impl_.uint32_pb_comp_->GetCachedSize(), target, stream);
+        5, *_impl_.uint32_pb_component_, _impl_.uint32_pb_component_->GetCachedSize(), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1289,22 +1290,22 @@ const ::_pbi::TcParseTable<3, 5, 4, 0, 2> player_database::_table_ = {
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.transform_);
     }
 
-    // .PlayerUint64PBComp uint64_pb_comp = 3;
+    // .PlayerUint64PBComponent uint64_pb_component = 3;
     if (cached_has_bits & 0x00000002u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.uint64_pb_comp_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.uint64_pb_component_);
     }
 
-    // .PlayerSkillListPBComp skill_list = 4;
+    // .PlayerSkillListPBComponent skill_list = 4;
     if (cached_has_bits & 0x00000004u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.skill_list_);
     }
 
-    // .PlayerUint32PBComp uint32_pb_comp = 5;
+    // .PlayerUint32PBComponent uint32_pb_component = 5;
     if (cached_has_bits & 0x00000008u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.uint32_pb_comp_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.uint32_pb_component_);
     }
 
   }
@@ -1339,30 +1340,30 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
       }
     }
     if (cached_has_bits & 0x00000002u) {
-      ABSL_DCHECK(from._impl_.uint64_pb_comp_ != nullptr);
-      if (_this->_impl_.uint64_pb_comp_ == nullptr) {
-        _this->_impl_.uint64_pb_comp_ =
-            ::google::protobuf::Message::CopyConstruct<::PlayerUint64PBComp>(arena, *from._impl_.uint64_pb_comp_);
+      ABSL_DCHECK(from._impl_.uint64_pb_component_ != nullptr);
+      if (_this->_impl_.uint64_pb_component_ == nullptr) {
+        _this->_impl_.uint64_pb_component_ =
+            ::google::protobuf::Message::CopyConstruct<::PlayerUint64PBComponent>(arena, *from._impl_.uint64_pb_component_);
       } else {
-        _this->_impl_.uint64_pb_comp_->MergeFrom(*from._impl_.uint64_pb_comp_);
+        _this->_impl_.uint64_pb_component_->MergeFrom(*from._impl_.uint64_pb_component_);
       }
     }
     if (cached_has_bits & 0x00000004u) {
       ABSL_DCHECK(from._impl_.skill_list_ != nullptr);
       if (_this->_impl_.skill_list_ == nullptr) {
         _this->_impl_.skill_list_ =
-            ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComp>(arena, *from._impl_.skill_list_);
+            ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComponent>(arena, *from._impl_.skill_list_);
       } else {
         _this->_impl_.skill_list_->MergeFrom(*from._impl_.skill_list_);
       }
     }
     if (cached_has_bits & 0x00000008u) {
-      ABSL_DCHECK(from._impl_.uint32_pb_comp_ != nullptr);
-      if (_this->_impl_.uint32_pb_comp_ == nullptr) {
-        _this->_impl_.uint32_pb_comp_ =
-            ::google::protobuf::Message::CopyConstruct<::PlayerUint32PBComp>(arena, *from._impl_.uint32_pb_comp_);
+      ABSL_DCHECK(from._impl_.uint32_pb_component_ != nullptr);
+      if (_this->_impl_.uint32_pb_component_ == nullptr) {
+        _this->_impl_.uint32_pb_component_ =
+            ::google::protobuf::Message::CopyConstruct<::PlayerUint32PBComponent>(arena, *from._impl_.uint32_pb_component_);
       } else {
-        _this->_impl_.uint32_pb_comp_->MergeFrom(*from._impl_.uint32_pb_comp_);
+        _this->_impl_.uint32_pb_component_->MergeFrom(*from._impl_.uint32_pb_component_);
       }
     }
   }

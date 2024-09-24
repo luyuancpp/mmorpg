@@ -457,19 +457,19 @@ class CentreEnterSceneRequest final : public ::google::protobuf::Message
   enum : int {
     kSceneInfoFieldNumber = 1,
   };
-  // .SceneInfoPBComp scene_info = 1;
+  // .SceneInfoPBComponent scene_info = 1;
   bool has_scene_info() const;
   void clear_scene_info() ;
-  const ::SceneInfoPBComp& scene_info() const;
-  PROTOBUF_NODISCARD ::SceneInfoPBComp* release_scene_info();
-  ::SceneInfoPBComp* mutable_scene_info();
-  void set_allocated_scene_info(::SceneInfoPBComp* value);
-  void unsafe_arena_set_allocated_scene_info(::SceneInfoPBComp* value);
-  ::SceneInfoPBComp* unsafe_arena_release_scene_info();
+  const ::SceneInfoPBComponent& scene_info() const;
+  PROTOBUF_NODISCARD ::SceneInfoPBComponent* release_scene_info();
+  ::SceneInfoPBComponent* mutable_scene_info();
+  void set_allocated_scene_info(::SceneInfoPBComponent* value);
+  void unsafe_arena_set_allocated_scene_info(::SceneInfoPBComponent* value);
+  ::SceneInfoPBComponent* unsafe_arena_release_scene_info();
 
   private:
-  const ::SceneInfoPBComp& _internal_scene_info() const;
-  ::SceneInfoPBComp* _internal_mutable_scene_info();
+  const ::SceneInfoPBComponent& _internal_scene_info() const;
+  ::SceneInfoPBComponent* _internal_mutable_scene_info();
 
   public:
   // @@protoc_insertion_point(class_scope:CentreEnterSceneRequest)
@@ -495,7 +495,7 @@ class CentreEnterSceneRequest final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::SceneInfoPBComp* scene_info_;
+    ::SceneInfoPBComponent* scene_info_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -604,27 +604,27 @@ class CentrePlayerSceneService_Stub final : public CentrePlayerSceneService {
 
 // CentreEnterSceneRequest
 
-// .SceneInfoPBComp scene_info = 1;
+// .SceneInfoPBComponent scene_info = 1;
 inline bool CentreEnterSceneRequest::has_scene_info() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);
   return value;
 }
-inline const ::SceneInfoPBComp& CentreEnterSceneRequest::_internal_scene_info() const {
+inline const ::SceneInfoPBComponent& CentreEnterSceneRequest::_internal_scene_info() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::SceneInfoPBComp* p = _impl_.scene_info_;
-  return p != nullptr ? *p : reinterpret_cast<const ::SceneInfoPBComp&>(::_SceneInfoPBComp_default_instance_);
+  const ::SceneInfoPBComponent* p = _impl_.scene_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::SceneInfoPBComponent&>(::_SceneInfoPBComponent_default_instance_);
 }
-inline const ::SceneInfoPBComp& CentreEnterSceneRequest::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::SceneInfoPBComponent& CentreEnterSceneRequest::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:CentreEnterSceneRequest.scene_info)
   return _internal_scene_info();
 }
-inline void CentreEnterSceneRequest::unsafe_arena_set_allocated_scene_info(::SceneInfoPBComp* value) {
+inline void CentreEnterSceneRequest::unsafe_arena_set_allocated_scene_info(::SceneInfoPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.scene_info_);
   }
-  _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComp*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -632,11 +632,11 @@ inline void CentreEnterSceneRequest::unsafe_arena_set_allocated_scene_info(::Sce
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:CentreEnterSceneRequest.scene_info)
 }
-inline ::SceneInfoPBComp* CentreEnterSceneRequest::release_scene_info() {
+inline ::SceneInfoPBComponent* CentreEnterSceneRequest::release_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::SceneInfoPBComp* released = _impl_.scene_info_;
+  ::SceneInfoPBComponent* released = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -651,30 +651,30 @@ inline ::SceneInfoPBComp* CentreEnterSceneRequest::release_scene_info() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::SceneInfoPBComp* CentreEnterSceneRequest::unsafe_arena_release_scene_info() {
+inline ::SceneInfoPBComponent* CentreEnterSceneRequest::unsafe_arena_release_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:CentreEnterSceneRequest.scene_info)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::SceneInfoPBComp* temp = _impl_.scene_info_;
+  ::SceneInfoPBComponent* temp = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   return temp;
 }
-inline ::SceneInfoPBComp* CentreEnterSceneRequest::_internal_mutable_scene_info() {
+inline ::SceneInfoPBComponent* CentreEnterSceneRequest::_internal_mutable_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.scene_info_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::SceneInfoPBComp>(GetArena());
-    _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComp*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::SceneInfoPBComponent>(GetArena());
+    _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(p);
   }
   return _impl_.scene_info_;
 }
-inline ::SceneInfoPBComp* CentreEnterSceneRequest::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::SceneInfoPBComponent* CentreEnterSceneRequest::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::SceneInfoPBComp* _msg = _internal_mutable_scene_info();
+  ::SceneInfoPBComponent* _msg = _internal_mutable_scene_info();
   // @@protoc_insertion_point(field_mutable:CentreEnterSceneRequest.scene_info)
   return _msg;
 }
-inline void CentreEnterSceneRequest::set_allocated_scene_info(::SceneInfoPBComp* value) {
+inline void CentreEnterSceneRequest::set_allocated_scene_info(::SceneInfoPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -691,7 +691,7 @@ inline void CentreEnterSceneRequest::set_allocated_scene_info(::SceneInfoPBComp*
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComp*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::SceneInfoPBComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:CentreEnterSceneRequest.scene_info)
 }
 

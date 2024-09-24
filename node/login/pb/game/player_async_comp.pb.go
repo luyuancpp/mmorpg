@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PlayerGameNodeEnteryInfoPBComp struct {
+type PlayerGameNodeEnteryInfoPBComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type PlayerGameNodeEnteryInfoPBComp struct {
 	CentreNodeId uint32 `protobuf:"varint,1,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`
 }
 
-func (x *PlayerGameNodeEnteryInfoPBComp) Reset() {
-	*x = PlayerGameNodeEnteryInfoPBComp{}
+func (x *PlayerGameNodeEnteryInfoPBComponent) Reset() {
+	*x = PlayerGameNodeEnteryInfoPBComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_player_async_comp_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *PlayerGameNodeEnteryInfoPBComp) Reset() {
 	}
 }
 
-func (x *PlayerGameNodeEnteryInfoPBComp) String() string {
+func (x *PlayerGameNodeEnteryInfoPBComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerGameNodeEnteryInfoPBComp) ProtoMessage() {}
+func (*PlayerGameNodeEnteryInfoPBComponent) ProtoMessage() {}
 
-func (x *PlayerGameNodeEnteryInfoPBComp) ProtoReflect() protoreflect.Message {
+func (x *PlayerGameNodeEnteryInfoPBComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_player_async_comp_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,12 +55,12 @@ func (x *PlayerGameNodeEnteryInfoPBComp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerGameNodeEnteryInfoPBComp.ProtoReflect.Descriptor instead.
-func (*PlayerGameNodeEnteryInfoPBComp) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerGameNodeEnteryInfoPBComponent.ProtoReflect.Descriptor instead.
+func (*PlayerGameNodeEnteryInfoPBComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_player_async_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerGameNodeEnteryInfoPBComp) GetCentreNodeId() uint32 {
+func (x *PlayerGameNodeEnteryInfoPBComponent) GetCentreNodeId() uint32 {
 	if x != nil {
 		return x.CentreNodeId
 	}
@@ -72,13 +72,13 @@ var File_logic_component_player_async_comp_proto protoreflect.FileDescriptor
 var file_logic_component_player_async_comp_proto_rawDesc = []byte{
 	0x0a, 0x27, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e,
 	0x74, 0x2f, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x5f, 0x61, 0x73, 0x79, 0x6e, 0x63, 0x5f, 0x63,
-	0x6f, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x46, 0x0a, 0x1e, 0x50, 0x6c, 0x61,
+	0x6f, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x4b, 0x0a, 0x23, 0x50, 0x6c, 0x61,
 	0x79, 0x65, 0x72, 0x47, 0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x45, 0x6e, 0x74, 0x65, 0x72,
-	0x79, 0x49, 0x6e, 0x66, 0x6f, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x12, 0x24, 0x0a, 0x0e, 0x63,
-	0x65, 0x6e, 0x74, 0x72, 0x65, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0d, 0x52, 0x0c, 0x63, 0x65, 0x6e, 0x74, 0x72, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x49,
-	0x64, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x79, 0x49, 0x6e, 0x66, 0x6f, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
+	0x12, 0x24, 0x0a, 0x0e, 0x63, 0x65, 0x6e, 0x74, 0x72, 0x65, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x5f,
+	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0c, 0x63, 0x65, 0x6e, 0x74, 0x72, 0x65,
+	0x4e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d,
+	0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -95,7 +95,7 @@ func file_logic_component_player_async_comp_proto_rawDescGZIP() []byte {
 
 var file_logic_component_player_async_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_logic_component_player_async_comp_proto_goTypes = []any{
-	(*PlayerGameNodeEnteryInfoPBComp)(nil), // 0: PlayerGameNodeEnteryInfoPBComp
+	(*PlayerGameNodeEnteryInfoPBComponent)(nil), // 0: PlayerGameNodeEnteryInfoPBComponent
 }
 var file_logic_component_player_async_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -112,7 +112,7 @@ func file_logic_component_player_async_comp_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_logic_component_player_async_comp_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*PlayerGameNodeEnteryInfoPBComp); i {
+			switch v := v.(*PlayerGameNodeEnteryInfoPBComponent); i {
 			case 0:
 				return &v.state
 			case 1:

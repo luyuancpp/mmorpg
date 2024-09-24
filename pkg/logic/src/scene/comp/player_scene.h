@@ -8,7 +8,7 @@
 
 static const uint8_t  kMaxChangeSceneQueue = 3;
 
-struct CentrePlayerChangeSceneQueueComp
+struct ChangeSceneQueuePBComponent
 {
-	boost::circular_buffer<CentreChangeSceneInfoPBComp> changeSceneQueue{ kMaxChangeSceneQueue };
+	boost::circular_buffer<ChangeSceneInfoPBComponent> changeSceneQueue{ kMaxChangeSceneQueue };
 };

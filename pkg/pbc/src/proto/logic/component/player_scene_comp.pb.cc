@@ -22,45 +22,45 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr PlayerSceneInfoPBComp::Impl_::Impl_(
+inline constexpr PlayerSceneInfoPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : scene_confid_{0u},
         guid_{0u},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR PlayerSceneInfoPBComp::PlayerSceneInfoPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR PlayerSceneInfoPBComponent::PlayerSceneInfoPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct PlayerSceneInfoPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerSceneInfoPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerSceneInfoPBCompDefaultTypeInternal() {}
+struct PlayerSceneInfoPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerSceneInfoPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerSceneInfoPBComponentDefaultTypeInternal() {}
   union {
-    PlayerSceneInfoPBComp _instance;
+    PlayerSceneInfoPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerSceneInfoPBCompDefaultTypeInternal _PlayerSceneInfoPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerSceneInfoPBComponentDefaultTypeInternal _PlayerSceneInfoPBComponent_default_instance_;
 
-inline constexpr PlayerSceneContextPBComp::Impl_::Impl_(
+inline constexpr PlayerSceneContextPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         scene_info_{nullptr},
         scene_info_last_time_{nullptr} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR PlayerSceneContextPBComp::PlayerSceneContextPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR PlayerSceneContextPBComponent::PlayerSceneContextPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct PlayerSceneContextPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerSceneContextPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerSceneContextPBCompDefaultTypeInternal() {}
+struct PlayerSceneContextPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerSceneContextPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerSceneContextPBComponentDefaultTypeInternal() {}
   union {
-    PlayerSceneContextPBComp _instance;
+    PlayerSceneContextPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerSceneContextPBCompDefaultTypeInternal _PlayerSceneContextPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerSceneContextPBComponentDefaultTypeInternal _PlayerSceneContextPBComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto[2];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto = nullptr;
@@ -70,53 +70,53 @@ const ::uint32_t
     TableStruct_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoPBComp, _impl_.scene_confid_),
-        PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoPBComp, _impl_.guid_),
-        PROTOBUF_FIELD_OFFSET(::PlayerSceneContextPBComp, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::PlayerSceneContextPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoPBComponent, _impl_.scene_confid_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSceneInfoPBComponent, _impl_.guid_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSceneContextPBComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSceneContextPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::PlayerSceneContextPBComp, _impl_.scene_info_),
-        PROTOBUF_FIELD_OFFSET(::PlayerSceneContextPBComp, _impl_.scene_info_last_time_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSceneContextPBComponent, _impl_.scene_info_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSceneContextPBComponent, _impl_.scene_info_last_time_),
         0,
         1,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::PlayerSceneInfoPBComp)},
-        {10, 20, -1, sizeof(::PlayerSceneContextPBComp)},
+        {0, -1, -1, sizeof(::PlayerSceneInfoPBComponent)},
+        {10, 20, -1, sizeof(::PlayerSceneContextPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_PlayerSceneInfoPBComp_default_instance_._instance,
-    &::_PlayerSceneContextPBComp_default_instance_._instance,
+    &::_PlayerSceneInfoPBComponent_default_instance_._instance,
+    &::_PlayerSceneContextPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'logic/component/player_scene_comp.prot"
-    "o\";\n\025PlayerSceneInfoPBComp\022\024\n\014scene_conf"
-    "id\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\"|\n\030PlayerSceneCon"
-    "textPBComp\022*\n\nscene_info\030\001 \001(\0132\026.PlayerS"
-    "ceneInfoPBComp\0224\n\024scene_info_last_time\030\002"
-    " \001(\0132\026.PlayerSceneInfoPBCompB\tZ\007pb/gameb"
-    "\006proto3"
+    "o\"@\n\032PlayerSceneInfoPBComponent\022\024\n\014scene"
+    "_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\"\213\001\n\035PlayerSc"
+    "eneContextPBComponent\022/\n\nscene_info\030\001 \001("
+    "\0132\033.PlayerSceneInfoPBComponent\0229\n\024scene_"
+    "info_last_time\030\002 \001(\0132\033.PlayerSceneInfoPB"
+    "ComponentB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto = {
     false,
     false,
-    247,
+    268,
     descriptor_table_protodef_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto,
     "logic/component/player_scene_comp.proto",
     &descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once,
@@ -147,26 +147,26 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2f
 }
 // ===================================================================
 
-class PlayerSceneInfoPBComp::_Internal {
+class PlayerSceneInfoPBComponent::_Internal {
  public:
 };
 
-PlayerSceneInfoPBComp::PlayerSceneInfoPBComp(::google::protobuf::Arena* arena)
+PlayerSceneInfoPBComponent::PlayerSceneInfoPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:PlayerSceneInfoPBComp)
+  // @@protoc_insertion_point(arena_constructor:PlayerSceneInfoPBComponent)
 }
-PlayerSceneInfoPBComp::PlayerSceneInfoPBComp(
-    ::google::protobuf::Arena* arena, const PlayerSceneInfoPBComp& from)
-    : PlayerSceneInfoPBComp(arena) {
+PlayerSceneInfoPBComponent::PlayerSceneInfoPBComponent(
+    ::google::protobuf::Arena* arena, const PlayerSceneInfoPBComponent& from)
+    : PlayerSceneInfoPBComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE PlayerSceneInfoPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE PlayerSceneInfoPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void PlayerSceneInfoPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void PlayerSceneInfoPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, scene_confid_),
@@ -175,32 +175,32 @@ inline void PlayerSceneInfoPBComp::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, scene_confid_) +
                sizeof(Impl_::guid_));
 }
-PlayerSceneInfoPBComp::~PlayerSceneInfoPBComp() {
-  // @@protoc_insertion_point(destructor:PlayerSceneInfoPBComp)
+PlayerSceneInfoPBComponent::~PlayerSceneInfoPBComponent() {
+  // @@protoc_insertion_point(destructor:PlayerSceneInfoPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void PlayerSceneInfoPBComp::SharedDtor() {
+inline void PlayerSceneInfoPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-PlayerSceneInfoPBComp::GetClassData() const {
+PlayerSceneInfoPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComponent, _impl_._cached_size_),
               false,
           },
-          &PlayerSceneInfoPBComp::MergeImpl,
-          &PlayerSceneInfoPBComp::kDescriptorMethods,
+          &PlayerSceneInfoPBComponent::MergeImpl,
+          &PlayerSceneInfoPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void PlayerSceneInfoPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:PlayerSceneInfoPBComp)
+PROTOBUF_NOINLINE void PlayerSceneInfoPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerSceneInfoPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -212,7 +212,7 @@ PROTOBUF_NOINLINE void PlayerSceneInfoPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* PlayerSceneInfoPBComp::_InternalParse(
+const char* PlayerSceneInfoPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -220,7 +220,7 @@ const char* PlayerSceneInfoPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerSceneInfoPBComp::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerSceneInfoPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -231,26 +231,26 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerSceneInfoPBComp::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_PlayerSceneInfoPBComp_default_instance_._instance,
+    &_PlayerSceneInfoPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::PlayerSceneInfoPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::PlayerSceneInfoPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 guid = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSceneInfoPBComp, _impl_.guid_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComp, _impl_.guid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSceneInfoPBComponent, _impl_.guid_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComponent, _impl_.guid_)}},
     // uint32 scene_confid = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSceneInfoPBComp, _impl_.scene_confid_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComp, _impl_.scene_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSceneInfoPBComponent, _impl_.scene_confid_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComponent, _impl_.scene_confid_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 scene_confid = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComp, _impl_.scene_confid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComponent, _impl_.scene_confid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 guid = 2;
-    {PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComp, _impl_.guid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComponent, _impl_.guid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -258,10 +258,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerSceneInfoPBComp::_table_ = {
   }},
 };
 
-::uint8_t* PlayerSceneInfoPBComp::_InternalSerialize(
+::uint8_t* PlayerSceneInfoPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:PlayerSceneInfoPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerSceneInfoPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -284,12 +284,12 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerSceneInfoPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:PlayerSceneInfoPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerSceneInfoPBComponent)
   return target;
 }
 
-::size_t PlayerSceneInfoPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:PlayerSceneInfoPBComp)
+::size_t PlayerSceneInfoPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:PlayerSceneInfoPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -312,10 +312,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerSceneInfoPBComp::_table_ = {
 }
 
 
-void PlayerSceneInfoPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<PlayerSceneInfoPBComp*>(&to_msg);
-  auto& from = static_cast<const PlayerSceneInfoPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerSceneInfoPBComp)
+void PlayerSceneInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerSceneInfoPBComponent*>(&to_msg);
+  auto& from = static_cast<const PlayerSceneInfoPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerSceneInfoPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -329,78 +329,78 @@ void PlayerSceneInfoPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void PlayerSceneInfoPBComp::CopyFrom(const PlayerSceneInfoPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:PlayerSceneInfoPBComp)
+void PlayerSceneInfoPBComponent::CopyFrom(const PlayerSceneInfoPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerSceneInfoPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool PlayerSceneInfoPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool PlayerSceneInfoPBComponent::IsInitialized() const {
   return true;
 }
 
-void PlayerSceneInfoPBComp::InternalSwap(PlayerSceneInfoPBComp* PROTOBUF_RESTRICT other) {
+void PlayerSceneInfoPBComponent::InternalSwap(PlayerSceneInfoPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComp, _impl_.guid_)
-      + sizeof(PlayerSceneInfoPBComp::_impl_.guid_)
-      - PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComp, _impl_.scene_confid_)>(
+      PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComponent, _impl_.guid_)
+      + sizeof(PlayerSceneInfoPBComponent::_impl_.guid_)
+      - PROTOBUF_FIELD_OFFSET(PlayerSceneInfoPBComponent, _impl_.scene_confid_)>(
           reinterpret_cast<char*>(&_impl_.scene_confid_),
           reinterpret_cast<char*>(&other->_impl_.scene_confid_));
 }
 
-::google::protobuf::Metadata PlayerSceneInfoPBComp::GetMetadata() const {
+::google::protobuf::Metadata PlayerSceneInfoPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto[0]);
 }
 // ===================================================================
 
-class PlayerSceneContextPBComp::_Internal {
+class PlayerSceneContextPBComponent::_Internal {
  public:
-  using HasBits = decltype(std::declval<PlayerSceneContextPBComp>()._impl_._has_bits_);
+  using HasBits = decltype(std::declval<PlayerSceneContextPBComponent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_._has_bits_);
+    8 * PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_._has_bits_);
 };
 
-PlayerSceneContextPBComp::PlayerSceneContextPBComp(::google::protobuf::Arena* arena)
+PlayerSceneContextPBComponent::PlayerSceneContextPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:PlayerSceneContextPBComp)
+  // @@protoc_insertion_point(arena_constructor:PlayerSceneContextPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE PlayerSceneContextPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE PlayerSceneContextPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
-PlayerSceneContextPBComp::PlayerSceneContextPBComp(
+PlayerSceneContextPBComponent::PlayerSceneContextPBComponent(
     ::google::protobuf::Arena* arena,
-    const PlayerSceneContextPBComp& from)
+    const PlayerSceneContextPBComponent& from)
     : ::google::protobuf::Message(arena) {
-  PlayerSceneContextPBComp* const _this = this;
+  PlayerSceneContextPBComponent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSceneInfoPBComp>(
+  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSceneInfoPBComponent>(
                               arena, *from._impl_.scene_info_)
                         : nullptr;
-  _impl_.scene_info_last_time_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSceneInfoPBComp>(
+  _impl_.scene_info_last_time_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSceneInfoPBComponent>(
                               arena, *from._impl_.scene_info_last_time_)
                         : nullptr;
 
-  // @@protoc_insertion_point(copy_constructor:PlayerSceneContextPBComp)
+  // @@protoc_insertion_point(copy_constructor:PlayerSceneContextPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE PlayerSceneContextPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE PlayerSceneContextPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void PlayerSceneContextPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void PlayerSceneContextPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, scene_info_),
@@ -409,12 +409,12 @@ inline void PlayerSceneContextPBComp::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, scene_info_) +
                sizeof(Impl_::scene_info_last_time_));
 }
-PlayerSceneContextPBComp::~PlayerSceneContextPBComp() {
-  // @@protoc_insertion_point(destructor:PlayerSceneContextPBComp)
+PlayerSceneContextPBComponent::~PlayerSceneContextPBComponent() {
+  // @@protoc_insertion_point(destructor:PlayerSceneContextPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void PlayerSceneContextPBComp::SharedDtor() {
+inline void PlayerSceneContextPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   delete _impl_.scene_info_;
   delete _impl_.scene_info_last_time_;
@@ -422,21 +422,21 @@ inline void PlayerSceneContextPBComp::SharedDtor() {
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-PlayerSceneContextPBComp::GetClassData() const {
+PlayerSceneContextPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_._cached_size_),
               false,
           },
-          &PlayerSceneContextPBComp::MergeImpl,
-          &PlayerSceneContextPBComp::kDescriptorMethods,
+          &PlayerSceneContextPBComponent::MergeImpl,
+          &PlayerSceneContextPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void PlayerSceneContextPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:PlayerSceneContextPBComp)
+PROTOBUF_NOINLINE void PlayerSceneContextPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerSceneContextPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -457,7 +457,7 @@ PROTOBUF_NOINLINE void PlayerSceneContextPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* PlayerSceneContextPBComp::_InternalParse(
+const char* PlayerSceneContextPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -465,9 +465,9 @@ const char* PlayerSceneContextPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerSceneContextPBComp::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerSceneContextPBComponent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -476,49 +476,49 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerSceneContextPBComp::_table_ = {
     2,  // num_field_entries
     2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    &_PlayerSceneContextPBComp_default_instance_._instance,
+    &_PlayerSceneContextPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::PlayerSceneContextPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::PlayerSceneContextPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .PlayerSceneInfoPBComp scene_info_last_time = 2;
+    // .PlayerSceneInfoPBComponent scene_info_last_time = 2;
     {::_pbi::TcParser::FastMtS1,
-     {18, 1, 1, PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_.scene_info_last_time_)}},
-    // .PlayerSceneInfoPBComp scene_info = 1;
+     {18, 1, 1, PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_.scene_info_last_time_)}},
+    // .PlayerSceneInfoPBComponent scene_info = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_.scene_info_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_.scene_info_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .PlayerSceneInfoPBComp scene_info = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
+    // .PlayerSceneInfoPBComponent scene_info = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .PlayerSceneInfoPBComp scene_info_last_time = 2;
-    {PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_.scene_info_last_time_), _Internal::kHasBitsOffset + 1, 1,
+    // .PlayerSceneInfoPBComponent scene_info_last_time = 2;
+    {PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_.scene_info_last_time_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::PlayerSceneInfoPBComp>()},
-    {::_pbi::TcParser::GetTable<::PlayerSceneInfoPBComp>()},
+    {::_pbi::TcParser::GetTable<::PlayerSceneInfoPBComponent>()},
+    {::_pbi::TcParser::GetTable<::PlayerSceneInfoPBComponent>()},
   }}, {{
   }},
 };
 
-::uint8_t* PlayerSceneContextPBComp::_InternalSerialize(
+::uint8_t* PlayerSceneContextPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:PlayerSceneContextPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerSceneContextPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .PlayerSceneInfoPBComp scene_info = 1;
+  // .PlayerSceneInfoPBComponent scene_info = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.scene_info_, _impl_.scene_info_->GetCachedSize(), target, stream);
   }
 
-  // .PlayerSceneInfoPBComp scene_info_last_time = 2;
+  // .PlayerSceneInfoPBComponent scene_info_last_time = 2;
   if (cached_has_bits & 0x00000002u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *_impl_.scene_info_last_time_, _impl_.scene_info_last_time_->GetCachedSize(), target, stream);
@@ -529,12 +529,12 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerSceneContextPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:PlayerSceneContextPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerSceneContextPBComponent)
   return target;
 }
 
-::size_t PlayerSceneContextPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:PlayerSceneContextPBComp)
+::size_t PlayerSceneContextPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:PlayerSceneContextPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -543,13 +543,13 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerSceneContextPBComp::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .PlayerSceneInfoPBComp scene_info = 1;
+    // .PlayerSceneInfoPBComponent scene_info = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.scene_info_);
     }
 
-    // .PlayerSceneInfoPBComp scene_info_last_time = 2;
+    // .PlayerSceneInfoPBComponent scene_info_last_time = 2;
     if (cached_has_bits & 0x00000002u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.scene_info_last_time_);
@@ -560,11 +560,11 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerSceneContextPBComp::_table_ = {
 }
 
 
-void PlayerSceneContextPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<PlayerSceneContextPBComp*>(&to_msg);
-  auto& from = static_cast<const PlayerSceneContextPBComp&>(from_msg);
+void PlayerSceneContextPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerSceneContextPBComponent*>(&to_msg);
+  auto& from = static_cast<const PlayerSceneContextPBComponent&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerSceneContextPBComp)
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerSceneContextPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -575,7 +575,7 @@ void PlayerSceneContextPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg
       ABSL_DCHECK(from._impl_.scene_info_ != nullptr);
       if (_this->_impl_.scene_info_ == nullptr) {
         _this->_impl_.scene_info_ =
-            ::google::protobuf::Message::CopyConstruct<::PlayerSceneInfoPBComp>(arena, *from._impl_.scene_info_);
+            ::google::protobuf::Message::CopyConstruct<::PlayerSceneInfoPBComponent>(arena, *from._impl_.scene_info_);
       } else {
         _this->_impl_.scene_info_->MergeFrom(*from._impl_.scene_info_);
       }
@@ -584,7 +584,7 @@ void PlayerSceneContextPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg
       ABSL_DCHECK(from._impl_.scene_info_last_time_ != nullptr);
       if (_this->_impl_.scene_info_last_time_ == nullptr) {
         _this->_impl_.scene_info_last_time_ =
-            ::google::protobuf::Message::CopyConstruct<::PlayerSceneInfoPBComp>(arena, *from._impl_.scene_info_last_time_);
+            ::google::protobuf::Message::CopyConstruct<::PlayerSceneInfoPBComponent>(arena, *from._impl_.scene_info_last_time_);
       } else {
         _this->_impl_.scene_info_last_time_->MergeFrom(*from._impl_.scene_info_last_time_);
       }
@@ -594,30 +594,30 @@ void PlayerSceneContextPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void PlayerSceneContextPBComp::CopyFrom(const PlayerSceneContextPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:PlayerSceneContextPBComp)
+void PlayerSceneContextPBComponent::CopyFrom(const PlayerSceneContextPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerSceneContextPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool PlayerSceneContextPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool PlayerSceneContextPBComponent::IsInitialized() const {
   return true;
 }
 
-void PlayerSceneContextPBComp::InternalSwap(PlayerSceneContextPBComp* PROTOBUF_RESTRICT other) {
+void PlayerSceneContextPBComponent::InternalSwap(PlayerSceneContextPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_.scene_info_last_time_)
-      + sizeof(PlayerSceneContextPBComp::_impl_.scene_info_last_time_)
-      - PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComp, _impl_.scene_info_)>(
+      PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_.scene_info_last_time_)
+      + sizeof(PlayerSceneContextPBComponent::_impl_.scene_info_last_time_)
+      - PROTOBUF_FIELD_OFFSET(PlayerSceneContextPBComponent, _impl_.scene_info_)>(
           reinterpret_cast<char*>(&_impl_.scene_info_),
           reinterpret_cast<char*>(&other->_impl_.scene_info_));
 }
 
-::google::protobuf::Metadata PlayerSceneContextPBComp::GetMetadata() const {
+::google::protobuf::Metadata PlayerSceneContextPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto[1]);

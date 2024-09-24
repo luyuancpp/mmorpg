@@ -1177,19 +1177,19 @@ class GetSkillListResponse final : public ::google::protobuf::Message
   ::TipInfoMessage* _internal_mutable_error_message();
 
   public:
-  // .PlayerSkillListPBComp skill_list = 2;
+  // .PlayerSkillListPBComponent skill_list = 2;
   bool has_skill_list() const;
   void clear_skill_list() ;
-  const ::PlayerSkillListPBComp& skill_list() const;
-  PROTOBUF_NODISCARD ::PlayerSkillListPBComp* release_skill_list();
-  ::PlayerSkillListPBComp* mutable_skill_list();
-  void set_allocated_skill_list(::PlayerSkillListPBComp* value);
-  void unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComp* value);
-  ::PlayerSkillListPBComp* unsafe_arena_release_skill_list();
+  const ::PlayerSkillListPBComponent& skill_list() const;
+  PROTOBUF_NODISCARD ::PlayerSkillListPBComponent* release_skill_list();
+  ::PlayerSkillListPBComponent* mutable_skill_list();
+  void set_allocated_skill_list(::PlayerSkillListPBComponent* value);
+  void unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComponent* value);
+  ::PlayerSkillListPBComponent* unsafe_arena_release_skill_list();
 
   private:
-  const ::PlayerSkillListPBComp& _internal_skill_list() const;
-  ::PlayerSkillListPBComp* _internal_mutable_skill_list();
+  const ::PlayerSkillListPBComponent& _internal_skill_list() const;
+  ::PlayerSkillListPBComponent* _internal_mutable_skill_list();
 
   public:
   // @@protoc_insertion_point(class_scope:GetSkillListResponse)
@@ -1216,7 +1216,7 @@ class GetSkillListResponse final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::TipInfoMessage* error_message_;
-    ::PlayerSkillListPBComp* skill_list_;
+    ::PlayerSkillListPBComponent* skill_list_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2043,27 +2043,27 @@ inline void GetSkillListResponse::set_allocated_error_message(::TipInfoMessage* 
   // @@protoc_insertion_point(field_set_allocated:GetSkillListResponse.error_message)
 }
 
-// .PlayerSkillListPBComp skill_list = 2;
+// .PlayerSkillListPBComponent skill_list = 2;
 inline bool GetSkillListResponse::has_skill_list() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.skill_list_ != nullptr);
   return value;
 }
-inline const ::PlayerSkillListPBComp& GetSkillListResponse::_internal_skill_list() const {
+inline const ::PlayerSkillListPBComponent& GetSkillListResponse::_internal_skill_list() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::PlayerSkillListPBComp* p = _impl_.skill_list_;
-  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSkillListPBComp&>(::_PlayerSkillListPBComp_default_instance_);
+  const ::PlayerSkillListPBComponent* p = _impl_.skill_list_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSkillListPBComponent&>(::_PlayerSkillListPBComponent_default_instance_);
 }
-inline const ::PlayerSkillListPBComp& GetSkillListResponse::skill_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::PlayerSkillListPBComponent& GetSkillListResponse::skill_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:GetSkillListResponse.skill_list)
   return _internal_skill_list();
 }
-inline void GetSkillListResponse::unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComp* value) {
+inline void GetSkillListResponse::unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.skill_list_);
   }
-  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(value);
+  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
@@ -2071,11 +2071,11 @@ inline void GetSkillListResponse::unsafe_arena_set_allocated_skill_list(::Player
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:GetSkillListResponse.skill_list)
 }
-inline ::PlayerSkillListPBComp* GetSkillListResponse::release_skill_list() {
+inline ::PlayerSkillListPBComponent* GetSkillListResponse::release_skill_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::PlayerSkillListPBComp* released = _impl_.skill_list_;
+  ::PlayerSkillListPBComponent* released = _impl_.skill_list_;
   _impl_.skill_list_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -2090,30 +2090,30 @@ inline ::PlayerSkillListPBComp* GetSkillListResponse::release_skill_list() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerSkillListPBComp* GetSkillListResponse::unsafe_arena_release_skill_list() {
+inline ::PlayerSkillListPBComponent* GetSkillListResponse::unsafe_arena_release_skill_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:GetSkillListResponse.skill_list)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::PlayerSkillListPBComp* temp = _impl_.skill_list_;
+  ::PlayerSkillListPBComponent* temp = _impl_.skill_list_;
   _impl_.skill_list_ = nullptr;
   return temp;
 }
-inline ::PlayerSkillListPBComp* GetSkillListResponse::_internal_mutable_skill_list() {
+inline ::PlayerSkillListPBComponent* GetSkillListResponse::_internal_mutable_skill_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.skill_list_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSkillListPBComp>(GetArena());
-    _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSkillListPBComponent>(GetArena());
+    _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComponent*>(p);
   }
   return _impl_.skill_list_;
 }
-inline ::PlayerSkillListPBComp* GetSkillListResponse::mutable_skill_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerSkillListPBComponent* GetSkillListResponse::mutable_skill_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
-  ::PlayerSkillListPBComp* _msg = _internal_mutable_skill_list();
+  ::PlayerSkillListPBComponent* _msg = _internal_mutable_skill_list();
   // @@protoc_insertion_point(field_mutable:GetSkillListResponse.skill_list)
   return _msg;
 }
-inline void GetSkillListResponse::set_allocated_skill_list(::PlayerSkillListPBComp* value) {
+inline void GetSkillListResponse::set_allocated_skill_list(::PlayerSkillListPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -2130,7 +2130,7 @@ inline void GetSkillListResponse::set_allocated_skill_list(::PlayerSkillListPBCo
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
 
-  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(value);
+  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:GetSkillListResponse.skill_list)
 }
 

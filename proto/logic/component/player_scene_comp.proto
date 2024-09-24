@@ -2,15 +2,15 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message PlayerSceneInfoPBComp
+message PlayerSceneInfoPBComponent
 {
   uint32 scene_confid = 1;
   uint32 guid = 2;
 }
 
-message PlayerSceneContextPBComp
+message PlayerSceneContextPBComponent
 {
-	PlayerSceneInfoPBComp scene_info = 1;
-	PlayerSceneInfoPBComp scene_info_last_time = 2;
+	PlayerSceneInfoPBComponent scene_info = 1;
+	PlayerSceneInfoPBComponent scene_info_last_time = 2;
 }
 

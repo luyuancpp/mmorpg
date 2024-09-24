@@ -50,9 +50,9 @@ struct TableStruct_logic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2fplayer_5flogin_5fcomp_2eproto;
-class EnterGameNodeInfoPBComp;
-struct EnterGameNodeInfoPBCompDefaultTypeInternal;
-extern EnterGameNodeInfoPBCompDefaultTypeInternal _EnterGameNodeInfoPBComp_default_instance_;
+class EnterGameNodeInfoPBComponent;
+struct EnterGameNodeInfoPBComponentDefaultTypeInternal;
+extern EnterGameNodeInfoPBComponentDefaultTypeInternal _EnterGameNodeInfoPBComponent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -99,23 +99,23 @@ inline bool EnterGsType_Parse(absl::string_view name, EnterGsType* value) {
 
 // -------------------------------------------------------------------
 
-class EnterGameNodeInfoPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:EnterGameNodeInfoPBComp) */ {
+class EnterGameNodeInfoPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:EnterGameNodeInfoPBComponent) */ {
  public:
-  inline EnterGameNodeInfoPBComp() : EnterGameNodeInfoPBComp(nullptr) {}
-  ~EnterGameNodeInfoPBComp() override;
+  inline EnterGameNodeInfoPBComponent() : EnterGameNodeInfoPBComponent(nullptr) {}
+  ~EnterGameNodeInfoPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR EnterGameNodeInfoPBComp(
+  explicit PROTOBUF_CONSTEXPR EnterGameNodeInfoPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline EnterGameNodeInfoPBComp(const EnterGameNodeInfoPBComp& from) : EnterGameNodeInfoPBComp(nullptr, from) {}
-  inline EnterGameNodeInfoPBComp(EnterGameNodeInfoPBComp&& from) noexcept
-      : EnterGameNodeInfoPBComp(nullptr, std::move(from)) {}
-  inline EnterGameNodeInfoPBComp& operator=(const EnterGameNodeInfoPBComp& from) {
+  inline EnterGameNodeInfoPBComponent(const EnterGameNodeInfoPBComponent& from) : EnterGameNodeInfoPBComponent(nullptr, from) {}
+  inline EnterGameNodeInfoPBComponent(EnterGameNodeInfoPBComponent&& from) noexcept
+      : EnterGameNodeInfoPBComponent(nullptr, std::move(from)) {}
+  inline EnterGameNodeInfoPBComponent& operator=(const EnterGameNodeInfoPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline EnterGameNodeInfoPBComp& operator=(EnterGameNodeInfoPBComp&& from) noexcept {
+  inline EnterGameNodeInfoPBComponent& operator=(EnterGameNodeInfoPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -147,16 +147,16 @@ class EnterGameNodeInfoPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const EnterGameNodeInfoPBComp& default_instance() {
+  static const EnterGameNodeInfoPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const EnterGameNodeInfoPBComp* internal_default_instance() {
-    return reinterpret_cast<const EnterGameNodeInfoPBComp*>(
-        &_EnterGameNodeInfoPBComp_default_instance_);
+  static inline const EnterGameNodeInfoPBComponent* internal_default_instance() {
+    return reinterpret_cast<const EnterGameNodeInfoPBComponent*>(
+        &_EnterGameNodeInfoPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(EnterGameNodeInfoPBComp& a, EnterGameNodeInfoPBComp& b) { a.Swap(&b); }
-  inline void Swap(EnterGameNodeInfoPBComp* other) {
+  friend void swap(EnterGameNodeInfoPBComponent& a, EnterGameNodeInfoPBComponent& b) { a.Swap(&b); }
+  inline void Swap(EnterGameNodeInfoPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -168,7 +168,7 @@ class EnterGameNodeInfoPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(EnterGameNodeInfoPBComp* other) {
+  void UnsafeArenaSwap(EnterGameNodeInfoPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -176,13 +176,13 @@ class EnterGameNodeInfoPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  EnterGameNodeInfoPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<EnterGameNodeInfoPBComp>(arena);
+  EnterGameNodeInfoPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<EnterGameNodeInfoPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const EnterGameNodeInfoPBComp& from);
+  void CopyFrom(const EnterGameNodeInfoPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const EnterGameNodeInfoPBComp& from) { EnterGameNodeInfoPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const EnterGameNodeInfoPBComponent& from) { EnterGameNodeInfoPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -203,16 +203,16 @@ class EnterGameNodeInfoPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(EnterGameNodeInfoPBComp* other);
+  void InternalSwap(EnterGameNodeInfoPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "EnterGameNodeInfoPBComp"; }
+  static ::absl::string_view FullMessageName() { return "EnterGameNodeInfoPBComponent"; }
 
  protected:
-  explicit EnterGameNodeInfoPBComp(::google::protobuf::Arena* arena);
-  EnterGameNodeInfoPBComp(::google::protobuf::Arena* arena, const EnterGameNodeInfoPBComp& from);
-  EnterGameNodeInfoPBComp(::google::protobuf::Arena* arena, EnterGameNodeInfoPBComp&& from) noexcept
-      : EnterGameNodeInfoPBComp(arena) {
+  explicit EnterGameNodeInfoPBComponent(::google::protobuf::Arena* arena);
+  EnterGameNodeInfoPBComponent(::google::protobuf::Arena* arena, const EnterGameNodeInfoPBComponent& from);
+  EnterGameNodeInfoPBComponent(::google::protobuf::Arena* arena, EnterGameNodeInfoPBComponent&& from) noexcept
+      : EnterGameNodeInfoPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -236,7 +236,7 @@ class EnterGameNodeInfoPBComp final : public ::google::protobuf::Message
   void _internal_set_enter_gs_type(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:EnterGameNodeInfoPBComp)
+  // @@protoc_insertion_point(class_scope:EnterGameNodeInfoPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -279,26 +279,26 @@ class EnterGameNodeInfoPBComp final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// EnterGameNodeInfoPBComp
+// EnterGameNodeInfoPBComponent
 
 // uint32 enter_gs_type = 1;
-inline void EnterGameNodeInfoPBComp::clear_enter_gs_type() {
+inline void EnterGameNodeInfoPBComponent::clear_enter_gs_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.enter_gs_type_ = 0u;
 }
-inline ::uint32_t EnterGameNodeInfoPBComp::enter_gs_type() const {
-  // @@protoc_insertion_point(field_get:EnterGameNodeInfoPBComp.enter_gs_type)
+inline ::uint32_t EnterGameNodeInfoPBComponent::enter_gs_type() const {
+  // @@protoc_insertion_point(field_get:EnterGameNodeInfoPBComponent.enter_gs_type)
   return _internal_enter_gs_type();
 }
-inline void EnterGameNodeInfoPBComp::set_enter_gs_type(::uint32_t value) {
+inline void EnterGameNodeInfoPBComponent::set_enter_gs_type(::uint32_t value) {
   _internal_set_enter_gs_type(value);
-  // @@protoc_insertion_point(field_set:EnterGameNodeInfoPBComp.enter_gs_type)
+  // @@protoc_insertion_point(field_set:EnterGameNodeInfoPBComponent.enter_gs_type)
 }
-inline ::uint32_t EnterGameNodeInfoPBComp::_internal_enter_gs_type() const {
+inline ::uint32_t EnterGameNodeInfoPBComponent::_internal_enter_gs_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.enter_gs_type_;
 }
-inline void EnterGameNodeInfoPBComp::_internal_set_enter_gs_type(::uint32_t value) {
+inline void EnterGameNodeInfoPBComponent::_internal_set_enter_gs_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.enter_gs_type_ = value;
 }
