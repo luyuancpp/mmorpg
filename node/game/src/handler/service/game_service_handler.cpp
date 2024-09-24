@@ -346,9 +346,9 @@ void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* 
 	sessionInfo.set_player_id(request->player_id());
 	tlsSessions.emplace(request->session_id(), sessionInfo);
 
-	if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player); nullptr == playerNodeInfo)
+	if (auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player); nullptr == playerNodeInfo)
 	{
-		tls.registry.emplace_or_replace<PlayerNodeInfoPBComp>(player).set_gate_session_id(request->session_id());
+		tls.registry.emplace_or_replace<PlayerNodeInfoPBComponent>(player).set_gate_session_id(request->session_id());
 	}
 	else
 	{

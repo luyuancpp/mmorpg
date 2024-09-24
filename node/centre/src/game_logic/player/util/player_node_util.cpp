@@ -42,7 +42,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_
 		return;
 	}
 
-	tls.registry.emplace_or_replace<PlayerNodeInfoPBComp>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
+	tls.registry.emplace_or_replace<PlayerNodeInfoPBComponent>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
 	tls.registry.emplace<Player>(playerEntity);
 	tls.registry.emplace<Guid>(playerEntity, playerId);
 	tls.registry.emplace<PlayerSceneContextPBComp>(playerEntity, playerData.scene_info());
@@ -99,7 +99,7 @@ void PlayerNodeUtil::HandlePlayerReconnection(entt::entity player)
 
 void PlayerNodeUtil::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 {
-	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
+	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "Player session not found for player: " << tls.registry.try_get<Guid>(playerEntity);
@@ -128,7 +128,7 @@ void PlayerNodeUtil::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 
 void PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
 {
-	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
+	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "Invalid player session";

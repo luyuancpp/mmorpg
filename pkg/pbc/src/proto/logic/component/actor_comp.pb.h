@@ -52,9 +52,15 @@ extern const ::google::protobuf::internal::DescriptorTable
 class Acceleration;
 struct AccelerationDefaultTypeInternal;
 extern AccelerationDefaultTypeInternal _Acceleration_default_instance_;
+class HealthPBComponent;
+struct HealthPBComponentDefaultTypeInternal;
+extern HealthPBComponentDefaultTypeInternal _HealthPBComponent_default_instance_;
 class Location;
 struct LocationDefaultTypeInternal;
 extern LocationDefaultTypeInternal _Location_default_instance_;
+class ManaPBComponent;
+struct ManaPBComponentDefaultTypeInternal;
+extern ManaPBComponentDefaultTypeInternal _ManaPBComponent_default_instance_;
 class Rotation;
 struct RotationDefaultTypeInternal;
 extern RotationDefaultTypeInternal _Rotation_default_instance_;
@@ -821,6 +827,185 @@ class Rotation final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class ManaPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ManaPBComponent) */ {
+ public:
+  inline ManaPBComponent() : ManaPBComponent(nullptr) {}
+  ~ManaPBComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ManaPBComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ManaPBComponent(const ManaPBComponent& from) : ManaPBComponent(nullptr, from) {}
+  inline ManaPBComponent(ManaPBComponent&& from) noexcept
+      : ManaPBComponent(nullptr, std::move(from)) {}
+  inline ManaPBComponent& operator=(const ManaPBComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ManaPBComponent& operator=(ManaPBComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ManaPBComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ManaPBComponent* internal_default_instance() {
+    return reinterpret_cast<const ManaPBComponent*>(
+        &_ManaPBComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 8;
+  friend void swap(ManaPBComponent& a, ManaPBComponent& b) { a.Swap(&b); }
+  inline void Swap(ManaPBComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ManaPBComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ManaPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ManaPBComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ManaPBComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ManaPBComponent& from) { ManaPBComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ManaPBComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ManaPBComponent"; }
+
+ protected:
+  explicit ManaPBComponent(::google::protobuf::Arena* arena);
+  ManaPBComponent(::google::protobuf::Arena* arena, const ManaPBComponent& from);
+  ManaPBComponent(::google::protobuf::Arena* arena, ManaPBComponent&& from) noexcept
+      : ManaPBComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kCurrentManaFieldNumber = 1,
+    kMaxManaFieldNumber = 2,
+  };
+  // uint64 current_mana = 1;
+  void clear_current_mana() ;
+  ::uint64_t current_mana() const;
+  void set_current_mana(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_current_mana() const;
+  void _internal_set_current_mana(::uint64_t value);
+
+  public:
+  // uint64 max_mana = 2;
+  void clear_max_mana() ;
+  ::uint64_t max_mana() const;
+  void set_max_mana(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_max_mana() const;
+  void _internal_set_max_mana(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:ManaPBComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t current_mana_;
+    ::uint64_t max_mana_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
 class Location final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:Location) */ {
  public:
@@ -1004,6 +1189,185 @@ class Location final : public ::google::protobuf::Message
     double x_;
     double y_;
     double z_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
+class HealthPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:HealthPBComponent) */ {
+ public:
+  inline HealthPBComponent() : HealthPBComponent(nullptr) {}
+  ~HealthPBComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR HealthPBComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline HealthPBComponent(const HealthPBComponent& from) : HealthPBComponent(nullptr, from) {}
+  inline HealthPBComponent(HealthPBComponent&& from) noexcept
+      : HealthPBComponent(nullptr, std::move(from)) {}
+  inline HealthPBComponent& operator=(const HealthPBComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline HealthPBComponent& operator=(HealthPBComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const HealthPBComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const HealthPBComponent* internal_default_instance() {
+    return reinterpret_cast<const HealthPBComponent*>(
+        &_HealthPBComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 7;
+  friend void swap(HealthPBComponent& a, HealthPBComponent& b) { a.Swap(&b); }
+  inline void Swap(HealthPBComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(HealthPBComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  HealthPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<HealthPBComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const HealthPBComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const HealthPBComponent& from) { HealthPBComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(HealthPBComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "HealthPBComponent"; }
+
+ protected:
+  explicit HealthPBComponent(::google::protobuf::Arena* arena);
+  HealthPBComponent(::google::protobuf::Arena* arena, const HealthPBComponent& from);
+  HealthPBComponent(::google::protobuf::Arena* arena, HealthPBComponent&& from) noexcept
+      : HealthPBComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kCurrentHealthFieldNumber = 1,
+    kMaxHealthFieldNumber = 2,
+  };
+  // uint64 current_health = 1;
+  void clear_current_health() ;
+  ::uint64_t current_health() const;
+  void set_current_health(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_current_health() const;
+  void _internal_set_current_health(::uint64_t value);
+
+  public:
+  // uint64 max_health = 2;
+  void clear_max_health() ;
+  ::uint64_t max_health() const;
+  void set_max_health(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_max_health() const;
+  void _internal_set_max_health(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:HealthPBComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t current_health_;
+    ::uint64_t max_health_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2087,6 +2451,102 @@ inline double ViewRadius::_internal_radius() const {
 inline void ViewRadius::_internal_set_radius(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.radius_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// HealthPBComponent
+
+// uint64 current_health = 1;
+inline void HealthPBComponent::clear_current_health() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.current_health_ = ::uint64_t{0u};
+}
+inline ::uint64_t HealthPBComponent::current_health() const {
+  // @@protoc_insertion_point(field_get:HealthPBComponent.current_health)
+  return _internal_current_health();
+}
+inline void HealthPBComponent::set_current_health(::uint64_t value) {
+  _internal_set_current_health(value);
+  // @@protoc_insertion_point(field_set:HealthPBComponent.current_health)
+}
+inline ::uint64_t HealthPBComponent::_internal_current_health() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.current_health_;
+}
+inline void HealthPBComponent::_internal_set_current_health(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.current_health_ = value;
+}
+
+// uint64 max_health = 2;
+inline void HealthPBComponent::clear_max_health() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.max_health_ = ::uint64_t{0u};
+}
+inline ::uint64_t HealthPBComponent::max_health() const {
+  // @@protoc_insertion_point(field_get:HealthPBComponent.max_health)
+  return _internal_max_health();
+}
+inline void HealthPBComponent::set_max_health(::uint64_t value) {
+  _internal_set_max_health(value);
+  // @@protoc_insertion_point(field_set:HealthPBComponent.max_health)
+}
+inline ::uint64_t HealthPBComponent::_internal_max_health() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.max_health_;
+}
+inline void HealthPBComponent::_internal_set_max_health(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.max_health_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// ManaPBComponent
+
+// uint64 current_mana = 1;
+inline void ManaPBComponent::clear_current_mana() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.current_mana_ = ::uint64_t{0u};
+}
+inline ::uint64_t ManaPBComponent::current_mana() const {
+  // @@protoc_insertion_point(field_get:ManaPBComponent.current_mana)
+  return _internal_current_mana();
+}
+inline void ManaPBComponent::set_current_mana(::uint64_t value) {
+  _internal_set_current_mana(value);
+  // @@protoc_insertion_point(field_set:ManaPBComponent.current_mana)
+}
+inline ::uint64_t ManaPBComponent::_internal_current_mana() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.current_mana_;
+}
+inline void ManaPBComponent::_internal_set_current_mana(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.current_mana_ = value;
+}
+
+// uint64 max_mana = 2;
+inline void ManaPBComponent::clear_max_mana() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.max_mana_ = ::uint64_t{0u};
+}
+inline ::uint64_t ManaPBComponent::max_mana() const {
+  // @@protoc_insertion_point(field_get:ManaPBComponent.max_mana)
+  return _internal_max_mana();
+}
+inline void ManaPBComponent::set_max_mana(::uint64_t value) {
+  _internal_set_max_mana(value);
+  // @@protoc_insertion_point(field_set:ManaPBComponent.max_mana)
+}
+inline ::uint64_t ManaPBComponent::_internal_max_mana() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.max_mana_;
+}
+inline void ManaPBComponent::_internal_set_max_mana(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.max_mana_ = value;
 }
 
 #ifdef __GNUC__
