@@ -108,7 +108,7 @@ func (client *GameClient) InitializeBehaviorTreeBlackboard() {
 	client.Blackboard = NewBlackboard()
 	client.Blackboard.SetMem(behaviortree.ClientBoardKey, client)
 	client.Blackboard.SetMem(behaviortree.ActorListBoardKey, gameobject.NewActorList())
-	client.Blackboard.SetMem(behaviortree.SkillListBoardKey, &game.PlayerSkillListPBComp{})
+	client.Blackboard.SetMem(behaviortree.SkillListBoardKey, &game.PlayerSkillListPBComponent{})
 	zap.L().Info("Behavior tree blackboard initialized")
 }
 

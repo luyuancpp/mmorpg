@@ -63,7 +63,7 @@ func (s *GetSkillID) Initialize(setting *BTNodeCfg) {
 }
 
 func (s *GetSkillID) OnTick(tick *Tick) b3.Status {
-	playerSkillListPBComp, ok := tick.Blackboard.GetMem(s.SkillListBoard).(*game.PlayerSkillListPBComp)
+	playerSkillListPBComp, ok := tick.Blackboard.GetMem(s.SkillListBoard).(*game.PlayerSkillListPBComponent)
 	if !ok {
 		zap.L().Debug("Failed to retrieve skill list from blackboard",
 			zap.String("Key", s.SkillListBoard),

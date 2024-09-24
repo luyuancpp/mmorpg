@@ -27,7 +27,7 @@ func (res *RandomEnterScene) OnTick(tick *Tick) b3.Status {
 		return b3.FAILURE
 	}
 
-	sceneInfo, ok := tick.Blackboard.GetMem(SceneInformationBoardKey).([]*game.SceneInfoPBComp)
+	sceneInfo, ok := tick.Blackboard.GetMem(SceneInformationBoardKey).([]*game.SceneInfoPBComponent)
 	if !ok {
 		zap.L().Debug("Failed to cast scene info  from blackboard", zap.Any(PlayerListBoardKey, tick.Blackboard.GetMem(PlayerListBoardKey)))
 		return b3.FAILURE
