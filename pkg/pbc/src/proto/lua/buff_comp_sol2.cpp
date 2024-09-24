@@ -3,30 +3,30 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2buff_comp()
 {
-tls_lua_state.new_usertype<BuffContextPBComp>("BuffContextPBComp",
+tls_lua_state.new_usertype<BuffContextPBComponent>("BuffContextPBComponent",
 "damage_value",
-sol::property(&BuffContextPBComp::damage_value, &BuffContextPBComp::set_damage_value),
+sol::property(&BuffContextPBComponent::damage_value, &BuffContextPBComponent::set_damage_value),
 "DebugString",
-&BuffContextPBComp::DebugString,
+&BuffContextPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<BuffPBComp>("BuffPBComp",
+tls_lua_state.new_usertype<BuffPBComponent>("BuffPBComponent",
 "buff_id",
-sol::property(&BuffPBComp::buff_id, &BuffPBComp::set_buff_id),
+sol::property(&BuffPBComponent::buff_id, &BuffPBComponent::set_buff_id),
 "buff_table_id",
-sol::property(&BuffPBComp::buff_table_id, &BuffPBComp::set_buff_table_id),
+sol::property(&BuffPBComponent::buff_table_id, &BuffPBComponent::set_buff_table_id),
 "ability_id",
-sol::property(&BuffPBComp::ability_id, &BuffPBComp::set_ability_id),
+sol::property(&BuffPBComponent::ability_id, &BuffPBComponent::set_ability_id),
 "parent_entity",
-sol::property(&BuffPBComp::parent_entity, &BuffPBComp::set_parent_entity),
+sol::property(&BuffPBComponent::parent_entity, &BuffPBComponent::set_parent_entity),
 "layer",
-sol::property(&BuffPBComp::layer, &BuffPBComp::set_layer),
+sol::property(&BuffPBComponent::layer, &BuffPBComponent::set_layer),
 "caster",
-sol::property(&BuffPBComp::caster, &BuffPBComp::set_caster),
+sol::property(&BuffPBComponent::caster, &BuffPBComponent::set_caster),
 "triggerdamage",
-sol::property(&BuffPBComp::triggerdamage, &BuffPBComp::set_triggerdamage),
+sol::property(&BuffPBComponent::triggerdamage, &BuffPBComponent::set_triggerdamage),
 "DebugString",
-&BuffPBComp::DebugString,
+&BuffPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

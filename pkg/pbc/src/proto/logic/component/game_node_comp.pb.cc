@@ -22,24 +22,24 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr GameNodePlayerInfoPBComp::Impl_::Impl_(
+inline constexpr GameNodePlayerInfoPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : player_size_{0u},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR GameNodePlayerInfoPBComp::GameNodePlayerInfoPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR GameNodePlayerInfoPBComponent::GameNodePlayerInfoPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct GameNodePlayerInfoPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR GameNodePlayerInfoPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~GameNodePlayerInfoPBCompDefaultTypeInternal() {}
+struct GameNodePlayerInfoPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GameNodePlayerInfoPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GameNodePlayerInfoPBComponentDefaultTypeInternal() {}
   union {
-    GameNodePlayerInfoPBComp _instance;
+    GameNodePlayerInfoPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameNodePlayerInfoPBCompDefaultTypeInternal _GameNodePlayerInfoPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameNodePlayerInfoPBComponentDefaultTypeInternal _GameNodePlayerInfoPBComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto[1];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto = nullptr;
@@ -49,34 +49,34 @@ const ::uint32_t
     TableStruct_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::GameNodePlayerInfoPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::GameNodePlayerInfoPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::GameNodePlayerInfoPBComp, _impl_.player_size_),
+        PROTOBUF_FIELD_OFFSET(::GameNodePlayerInfoPBComponent, _impl_.player_size_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::GameNodePlayerInfoPBComp)},
+        {0, -1, -1, sizeof(::GameNodePlayerInfoPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_GameNodePlayerInfoPBComp_default_instance_._instance,
+    &::_GameNodePlayerInfoPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n$logic/component/game_node_comp.proto\"/"
-    "\n\030GameNodePlayerInfoPBComp\022\023\n\013player_siz"
-    "e\030\001 \001(\rB\tZ\007pb/gameb\006proto3"
+    "\n$logic/component/game_node_comp.proto\"4"
+    "\n\035GameNodePlayerInfoPBComponent\022\023\n\013playe"
+    "r_size\030\001 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto = {
     false,
     false,
-    106,
+    111,
     descriptor_table_protodef_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto,
     "logic/component/game_node_comp.proto",
     &descriptor_table_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto_once,
@@ -107,55 +107,55 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2f
 }
 // ===================================================================
 
-class GameNodePlayerInfoPBComp::_Internal {
+class GameNodePlayerInfoPBComponent::_Internal {
  public:
 };
 
-GameNodePlayerInfoPBComp::GameNodePlayerInfoPBComp(::google::protobuf::Arena* arena)
+GameNodePlayerInfoPBComponent::GameNodePlayerInfoPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:GameNodePlayerInfoPBComp)
+  // @@protoc_insertion_point(arena_constructor:GameNodePlayerInfoPBComponent)
 }
-GameNodePlayerInfoPBComp::GameNodePlayerInfoPBComp(
-    ::google::protobuf::Arena* arena, const GameNodePlayerInfoPBComp& from)
-    : GameNodePlayerInfoPBComp(arena) {
+GameNodePlayerInfoPBComponent::GameNodePlayerInfoPBComponent(
+    ::google::protobuf::Arena* arena, const GameNodePlayerInfoPBComponent& from)
+    : GameNodePlayerInfoPBComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE GameNodePlayerInfoPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE GameNodePlayerInfoPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void GameNodePlayerInfoPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void GameNodePlayerInfoPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.player_size_ = {};
 }
-GameNodePlayerInfoPBComp::~GameNodePlayerInfoPBComp() {
-  // @@protoc_insertion_point(destructor:GameNodePlayerInfoPBComp)
+GameNodePlayerInfoPBComponent::~GameNodePlayerInfoPBComponent() {
+  // @@protoc_insertion_point(destructor:GameNodePlayerInfoPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void GameNodePlayerInfoPBComp::SharedDtor() {
+inline void GameNodePlayerInfoPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-GameNodePlayerInfoPBComp::GetClassData() const {
+GameNodePlayerInfoPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(GameNodePlayerInfoPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(GameNodePlayerInfoPBComponent, _impl_._cached_size_),
               false,
           },
-          &GameNodePlayerInfoPBComp::MergeImpl,
-          &GameNodePlayerInfoPBComp::kDescriptorMethods,
+          &GameNodePlayerInfoPBComponent::MergeImpl,
+          &GameNodePlayerInfoPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void GameNodePlayerInfoPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:GameNodePlayerInfoPBComp)
+PROTOBUF_NOINLINE void GameNodePlayerInfoPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:GameNodePlayerInfoPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -165,7 +165,7 @@ PROTOBUF_NOINLINE void GameNodePlayerInfoPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* GameNodePlayerInfoPBComp::_InternalParse(
+const char* GameNodePlayerInfoPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -173,7 +173,7 @@ const char* GameNodePlayerInfoPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GameNodePlayerInfoPBComp::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GameNodePlayerInfoPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -184,20 +184,20 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GameNodePlayerInfoPBComp::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_GameNodePlayerInfoPBComp_default_instance_._instance,
+    &_GameNodePlayerInfoPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::GameNodePlayerInfoPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::GameNodePlayerInfoPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 player_size = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameNodePlayerInfoPBComp, _impl_.player_size_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(GameNodePlayerInfoPBComp, _impl_.player_size_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameNodePlayerInfoPBComponent, _impl_.player_size_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(GameNodePlayerInfoPBComponent, _impl_.player_size_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 player_size = 1;
-    {PROTOBUF_FIELD_OFFSET(GameNodePlayerInfoPBComp, _impl_.player_size_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(GameNodePlayerInfoPBComponent, _impl_.player_size_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -205,10 +205,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GameNodePlayerInfoPBComp::_table_ = {
   }},
 };
 
-::uint8_t* GameNodePlayerInfoPBComp::_InternalSerialize(
+::uint8_t* GameNodePlayerInfoPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:GameNodePlayerInfoPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:GameNodePlayerInfoPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -224,12 +224,12 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GameNodePlayerInfoPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:GameNodePlayerInfoPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:GameNodePlayerInfoPBComponent)
   return target;
 }
 
-::size_t GameNodePlayerInfoPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:GameNodePlayerInfoPBComp)
+::size_t GameNodePlayerInfoPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:GameNodePlayerInfoPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -246,10 +246,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GameNodePlayerInfoPBComp::_table_ = {
 }
 
 
-void GameNodePlayerInfoPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<GameNodePlayerInfoPBComp*>(&to_msg);
-  auto& from = static_cast<const GameNodePlayerInfoPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:GameNodePlayerInfoPBComp)
+void GameNodePlayerInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GameNodePlayerInfoPBComponent*>(&to_msg);
+  auto& from = static_cast<const GameNodePlayerInfoPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:GameNodePlayerInfoPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -260,24 +260,24 @@ void GameNodePlayerInfoPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void GameNodePlayerInfoPBComp::CopyFrom(const GameNodePlayerInfoPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:GameNodePlayerInfoPBComp)
+void GameNodePlayerInfoPBComponent::CopyFrom(const GameNodePlayerInfoPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:GameNodePlayerInfoPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool GameNodePlayerInfoPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool GameNodePlayerInfoPBComponent::IsInitialized() const {
   return true;
 }
 
-void GameNodePlayerInfoPBComp::InternalSwap(GameNodePlayerInfoPBComp* PROTOBUF_RESTRICT other) {
+void GameNodePlayerInfoPBComponent::InternalSwap(GameNodePlayerInfoPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
         swap(_impl_.player_size_, other->_impl_.player_size_);
 }
 
-::google::protobuf::Metadata GameNodePlayerInfoPBComp::GetMetadata() const {
+::google::protobuf::Metadata GameNodePlayerInfoPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fgame_5fnode_5fcomp_2eproto[0]);

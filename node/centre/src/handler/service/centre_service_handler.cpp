@@ -308,9 +308,9 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 	LOG_INFO << "Player login attempt: Player ID " << clientMsgBody.player_id() << ", Session ID " << sessionId;
 
-	PlayerSessionPBComp sessionInfo;
-	sessionInfo.set_player_id(clientMsgBody.player_id());
-	tlsSessions.emplace(sessionId, sessionInfo);
+	PlayerSessionPBComponent playerSessionPBComponent;
+	playerSessionPBComponent.set_player_id(clientMsgBody.player_id());
+	tlsSessions.emplace(sessionId, playerSessionPBComponent);
 
 	// TODO: Disconnect old connection
 	// todo 快速登录两次

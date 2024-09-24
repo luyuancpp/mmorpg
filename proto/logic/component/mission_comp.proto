@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message MissionPBComp
+message MissionPBComponent
 {
 	enum eMissionStatus
 	{
@@ -17,7 +17,7 @@ message MissionPBComp
 	repeated uint32 progress = 3;
 }
 
-message MissionListPBComp
+message MissionListPBComponent
 {
 	enum eMissionType
 	{
@@ -26,13 +26,13 @@ message MissionListPBComp
 		kPlayerDailyActivity = 2;//每日活动
 		kPlayerMissionSize = 3;//最大值
 	}
-	map<uint32, MissionPBComp> missions = 1;
+	map<uint32, MissionPBComponent> missions = 1;
 	map<uint32, bool> complete_missions = 2;
 	map<uint32, uint64> mission_begin_time = 3;
 	uint32 type = 4;
 }
 
-message RewardListPBComp
+message RewardListPBComponent
 {
 	map<uint32, bool> can_reward_mission_id = 2;
 }

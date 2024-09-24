@@ -52,9 +52,9 @@ extern const ::google::protobuf::internal::DescriptorTable
 class PlayerNodeInfoPBComponent;
 struct PlayerNodeInfoPBComponentDefaultTypeInternal;
 extern PlayerNodeInfoPBComponentDefaultTypeInternal _PlayerNodeInfoPBComponent_default_instance_;
-class PlayerSessionPBComp;
-struct PlayerSessionPBCompDefaultTypeInternal;
-extern PlayerSessionPBCompDefaultTypeInternal _PlayerSessionPBComp_default_instance_;
+class PlayerSessionPBComponent;
+struct PlayerSessionPBComponentDefaultTypeInternal;
+extern PlayerSessionPBComponentDefaultTypeInternal _PlayerSessionPBComponent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -66,23 +66,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class PlayerSessionPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerSessionPBComp) */ {
+class PlayerSessionPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerSessionPBComponent) */ {
  public:
-  inline PlayerSessionPBComp() : PlayerSessionPBComp(nullptr) {}
-  ~PlayerSessionPBComp() override;
+  inline PlayerSessionPBComponent() : PlayerSessionPBComponent(nullptr) {}
+  ~PlayerSessionPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerSessionPBComp(
+  explicit PROTOBUF_CONSTEXPR PlayerSessionPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerSessionPBComp(const PlayerSessionPBComp& from) : PlayerSessionPBComp(nullptr, from) {}
-  inline PlayerSessionPBComp(PlayerSessionPBComp&& from) noexcept
-      : PlayerSessionPBComp(nullptr, std::move(from)) {}
-  inline PlayerSessionPBComp& operator=(const PlayerSessionPBComp& from) {
+  inline PlayerSessionPBComponent(const PlayerSessionPBComponent& from) : PlayerSessionPBComponent(nullptr, from) {}
+  inline PlayerSessionPBComponent(PlayerSessionPBComponent&& from) noexcept
+      : PlayerSessionPBComponent(nullptr, std::move(from)) {}
+  inline PlayerSessionPBComponent& operator=(const PlayerSessionPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerSessionPBComp& operator=(PlayerSessionPBComp&& from) noexcept {
+  inline PlayerSessionPBComponent& operator=(PlayerSessionPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -114,16 +114,16 @@ class PlayerSessionPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerSessionPBComp& default_instance() {
+  static const PlayerSessionPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const PlayerSessionPBComp* internal_default_instance() {
-    return reinterpret_cast<const PlayerSessionPBComp*>(
-        &_PlayerSessionPBComp_default_instance_);
+  static inline const PlayerSessionPBComponent* internal_default_instance() {
+    return reinterpret_cast<const PlayerSessionPBComponent*>(
+        &_PlayerSessionPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(PlayerSessionPBComp& a, PlayerSessionPBComp& b) { a.Swap(&b); }
-  inline void Swap(PlayerSessionPBComp* other) {
+  friend void swap(PlayerSessionPBComponent& a, PlayerSessionPBComponent& b) { a.Swap(&b); }
+  inline void Swap(PlayerSessionPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -135,7 +135,7 @@ class PlayerSessionPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerSessionPBComp* other) {
+  void UnsafeArenaSwap(PlayerSessionPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -143,13 +143,13 @@ class PlayerSessionPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerSessionPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerSessionPBComp>(arena);
+  PlayerSessionPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerSessionPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerSessionPBComp& from);
+  void CopyFrom(const PlayerSessionPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerSessionPBComp& from) { PlayerSessionPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerSessionPBComponent& from) { PlayerSessionPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -170,16 +170,16 @@ class PlayerSessionPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(PlayerSessionPBComp* other);
+  void InternalSwap(PlayerSessionPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "PlayerSessionPBComp"; }
+  static ::absl::string_view FullMessageName() { return "PlayerSessionPBComponent"; }
 
  protected:
-  explicit PlayerSessionPBComp(::google::protobuf::Arena* arena);
-  PlayerSessionPBComp(::google::protobuf::Arena* arena, const PlayerSessionPBComp& from);
-  PlayerSessionPBComp(::google::protobuf::Arena* arena, PlayerSessionPBComp&& from) noexcept
-      : PlayerSessionPBComp(arena) {
+  explicit PlayerSessionPBComponent(::google::protobuf::Arena* arena);
+  PlayerSessionPBComponent(::google::protobuf::Arena* arena, const PlayerSessionPBComponent& from);
+  PlayerSessionPBComponent(::google::protobuf::Arena* arena, PlayerSessionPBComponent&& from) noexcept
+      : PlayerSessionPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -203,7 +203,7 @@ class PlayerSessionPBComp final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerSessionPBComp)
+  // @@protoc_insertion_point(class_scope:PlayerSessionPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -507,26 +507,26 @@ inline void PlayerNodeInfoPBComponent::_internal_set_game_node_id(::uint32_t val
 
 // -------------------------------------------------------------------
 
-// PlayerSessionPBComp
+// PlayerSessionPBComponent
 
 // uint64 player_id = 1;
-inline void PlayerSessionPBComp::clear_player_id() {
+inline void PlayerSessionPBComponent::clear_player_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.player_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t PlayerSessionPBComp::player_id() const {
-  // @@protoc_insertion_point(field_get:PlayerSessionPBComp.player_id)
+inline ::uint64_t PlayerSessionPBComponent::player_id() const {
+  // @@protoc_insertion_point(field_get:PlayerSessionPBComponent.player_id)
   return _internal_player_id();
 }
-inline void PlayerSessionPBComp::set_player_id(::uint64_t value) {
+inline void PlayerSessionPBComponent::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  // @@protoc_insertion_point(field_set:PlayerSessionPBComp.player_id)
+  // @@protoc_insertion_point(field_set:PlayerSessionPBComponent.player_id)
 }
-inline ::uint64_t PlayerSessionPBComp::_internal_player_id() const {
+inline ::uint64_t PlayerSessionPBComponent::_internal_player_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.player_id_;
 }
-inline void PlayerSessionPBComp::_internal_set_player_id(::uint64_t value) {
+inline void PlayerSessionPBComponent::_internal_set_player_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.player_id_ = value;
 }

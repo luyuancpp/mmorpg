@@ -10,7 +10,7 @@
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "proto/logic/component/scene_comp.pb.h"
 
-using GameNodeInfoPtr = std::shared_ptr<GameNodePlayerInfoPBComp>;
+using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
 const std::size_t kConfigSceneListSize = 50;
 const std::size_t kPerSceneConfigSize = 2;
@@ -216,8 +216,8 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		EXPECT_TRUE(tls.registry.get<SceneEntityComp>(playerEntity).sceneEntity == scene2);
 	}
 
-	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodeInfoPtr>(node1)->player_size(), playerSize / 2);
-	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodeInfoPtr>(node2)->player_size(), playerSize / 2);
+	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(node1)->player_size(), playerSize / 2);
+	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(node2)->player_size(), playerSize / 2);
 
 	LeaveSceneParam leaveParam1;
 	for (const auto& playerEntity : playerEntitySet1)
@@ -228,7 +228,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		EXPECT_EQ(tls.registry.try_get<SceneEntityComp>(playerEntity), nullptr);
 	}
 
-	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodeInfoPtr>(node1)->player_size(), 0);
+	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(node1)->player_size(), 0);
 
 	LeaveSceneParam leaveParam2;
 	for (const auto& playerEntity : playerEntitiesSet2)
@@ -239,7 +239,7 @@ TEST(SceneSystemTests, PlayerLeaveEnterScene)
 		EXPECT_EQ(tls.registry.try_get<SceneEntityComp>(playerEntity), nullptr);
 	}
 
-	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodeInfoPtr>(node2)->player_size(), 0);
+	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(node2)->player_size(), 0);
 
 	auto& scenesPlayers11 = tls.sceneRegistry.get<ScenePlayers>(scene1);
 	auto& scenesPlayers22 = tls.sceneRegistry.get<ScenePlayers>(scene2);
@@ -361,8 +361,8 @@ TEST(GS, CompelToChangeScene)
 		sm.CompelPlayerChangeScene(compelChangeParam1);
 		EXPECT_TRUE(tls.registry.try_get<SceneEntityComp>(it)->sceneEntity == scene2);
 	}
-	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodeInfoPtr>(node1)->player_size(), 0);
-	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodeInfoPtr>(node2)->player_size(), playerList1.size());
+	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(node1)->player_size(), 0);
+	EXPECT_EQ(tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(node2)->player_size(), playerList1.size());
 	auto& scenesPlayers11 = tls.sceneRegistry.get<ScenePlayers>(scene1);
 	auto& scenesPlayers22 = tls.sceneRegistry.get<ScenePlayers>(scene2);
 	EXPECT_TRUE(scenesPlayers11.empty());
@@ -578,7 +578,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
 			for (auto& it : node_list)
 			{
-				auto& ps = tls.gameNodeRegistry.get<GameNodeInfoPtr>(it);
+				auto& ps = tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(it);
 				EXPECT_EQ((*ps).player_size(), server_player_size);
 			}
 			EXPECT_EQ(scene_sets.size(), std::size_t(2 * per_server_scene));
@@ -598,7 +598,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			}
 			for (auto& it : node_list)
 			{
-				auto& ps = tls.gameNodeRegistry.get<GameNodeInfoPtr>(it);
+				auto& ps = tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(it);
 				EXPECT_EQ((*ps).player_size(), 0);
 			}
 			for (auto& it : player_scene1)
@@ -823,7 +823,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Verify player distribution across server entities
 			for (auto& it : serverEntities)
 			{
-				auto& ps = tls.gameNodeRegistry.get<GameNodeInfoPtr>(it);
+				auto& ps = tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(it);
 				if (tls.gameNodeRegistry.get<TestNodeId>(it).node_id_ == 9)
 				{
 					EXPECT_EQ((*ps).player_size(), kMaxServerPlayerSize);
@@ -859,7 +859,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			// Verify all server entities have no players after leaving scenes
 			for (auto& it : serverEntities)
 			{
-				auto& ps = tls.gameNodeRegistry.get<GameNodeInfoPtr>(it);
+				auto& ps = tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(it);
 				EXPECT_EQ((*ps).player_size(), 0);
 			}
 

@@ -49,9 +49,9 @@ struct TableStruct_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto;
-class ItemPBComp;
-struct ItemPBCompDefaultTypeInternal;
-extern ItemPBCompDefaultTypeInternal _ItemPBComp_default_instance_;
+class ItemPBComponent;
+struct ItemPBComponentDefaultTypeInternal;
+extern ItemPBComponentDefaultTypeInternal _ItemPBComponent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -63,23 +63,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class ItemPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ItemPBComp) */ {
+class ItemPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ItemPBComponent) */ {
  public:
-  inline ItemPBComp() : ItemPBComp(nullptr) {}
-  ~ItemPBComp() override;
+  inline ItemPBComponent() : ItemPBComponent(nullptr) {}
+  ~ItemPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ItemPBComp(
+  explicit PROTOBUF_CONSTEXPR ItemPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline ItemPBComp(const ItemPBComp& from) : ItemPBComp(nullptr, from) {}
-  inline ItemPBComp(ItemPBComp&& from) noexcept
-      : ItemPBComp(nullptr, std::move(from)) {}
-  inline ItemPBComp& operator=(const ItemPBComp& from) {
+  inline ItemPBComponent(const ItemPBComponent& from) : ItemPBComponent(nullptr, from) {}
+  inline ItemPBComponent(ItemPBComponent&& from) noexcept
+      : ItemPBComponent(nullptr, std::move(from)) {}
+  inline ItemPBComponent& operator=(const ItemPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline ItemPBComp& operator=(ItemPBComp&& from) noexcept {
+  inline ItemPBComponent& operator=(ItemPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -111,16 +111,16 @@ class ItemPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const ItemPBComp& default_instance() {
+  static const ItemPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const ItemPBComp* internal_default_instance() {
-    return reinterpret_cast<const ItemPBComp*>(
-        &_ItemPBComp_default_instance_);
+  static inline const ItemPBComponent* internal_default_instance() {
+    return reinterpret_cast<const ItemPBComponent*>(
+        &_ItemPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(ItemPBComp& a, ItemPBComp& b) { a.Swap(&b); }
-  inline void Swap(ItemPBComp* other) {
+  friend void swap(ItemPBComponent& a, ItemPBComponent& b) { a.Swap(&b); }
+  inline void Swap(ItemPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -132,7 +132,7 @@ class ItemPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(ItemPBComp* other) {
+  void UnsafeArenaSwap(ItemPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -140,13 +140,13 @@ class ItemPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  ItemPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<ItemPBComp>(arena);
+  ItemPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ItemPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ItemPBComp& from);
+  void CopyFrom(const ItemPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ItemPBComp& from) { ItemPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const ItemPBComponent& from) { ItemPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -167,16 +167,16 @@ class ItemPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(ItemPBComp* other);
+  void InternalSwap(ItemPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "ItemPBComp"; }
+  static ::absl::string_view FullMessageName() { return "ItemPBComponent"; }
 
  protected:
-  explicit ItemPBComp(::google::protobuf::Arena* arena);
-  ItemPBComp(::google::protobuf::Arena* arena, const ItemPBComp& from);
-  ItemPBComp(::google::protobuf::Arena* arena, ItemPBComp&& from) noexcept
-      : ItemPBComp(arena) {
+  explicit ItemPBComponent(::google::protobuf::Arena* arena);
+  ItemPBComponent(::google::protobuf::Arena* arena, const ItemPBComponent& from);
+  ItemPBComponent(::google::protobuf::Arena* arena, ItemPBComponent&& from) noexcept
+      : ItemPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -222,7 +222,7 @@ class ItemPBComp final : public ::google::protobuf::Message
   void _internal_set_size(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:ItemPBComp)
+  // @@protoc_insertion_point(class_scope:ItemPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -267,70 +267,70 @@ class ItemPBComp final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// ItemPBComp
+// ItemPBComponent
 
 // uint64 item_id = 1;
-inline void ItemPBComp::clear_item_id() {
+inline void ItemPBComponent::clear_item_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.item_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t ItemPBComp::item_id() const {
-  // @@protoc_insertion_point(field_get:ItemPBComp.item_id)
+inline ::uint64_t ItemPBComponent::item_id() const {
+  // @@protoc_insertion_point(field_get:ItemPBComponent.item_id)
   return _internal_item_id();
 }
-inline void ItemPBComp::set_item_id(::uint64_t value) {
+inline void ItemPBComponent::set_item_id(::uint64_t value) {
   _internal_set_item_id(value);
-  // @@protoc_insertion_point(field_set:ItemPBComp.item_id)
+  // @@protoc_insertion_point(field_set:ItemPBComponent.item_id)
 }
-inline ::uint64_t ItemPBComp::_internal_item_id() const {
+inline ::uint64_t ItemPBComponent::_internal_item_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.item_id_;
 }
-inline void ItemPBComp::_internal_set_item_id(::uint64_t value) {
+inline void ItemPBComponent::_internal_set_item_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.item_id_ = value;
 }
 
 // uint32 config_id = 2;
-inline void ItemPBComp::clear_config_id() {
+inline void ItemPBComponent::clear_config_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.config_id_ = 0u;
 }
-inline ::uint32_t ItemPBComp::config_id() const {
-  // @@protoc_insertion_point(field_get:ItemPBComp.config_id)
+inline ::uint32_t ItemPBComponent::config_id() const {
+  // @@protoc_insertion_point(field_get:ItemPBComponent.config_id)
   return _internal_config_id();
 }
-inline void ItemPBComp::set_config_id(::uint32_t value) {
+inline void ItemPBComponent::set_config_id(::uint32_t value) {
   _internal_set_config_id(value);
-  // @@protoc_insertion_point(field_set:ItemPBComp.config_id)
+  // @@protoc_insertion_point(field_set:ItemPBComponent.config_id)
 }
-inline ::uint32_t ItemPBComp::_internal_config_id() const {
+inline ::uint32_t ItemPBComponent::_internal_config_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.config_id_;
 }
-inline void ItemPBComp::_internal_set_config_id(::uint32_t value) {
+inline void ItemPBComponent::_internal_set_config_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.config_id_ = value;
 }
 
 // uint32 size = 3;
-inline void ItemPBComp::clear_size() {
+inline void ItemPBComponent::clear_size() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.size_ = 0u;
 }
-inline ::uint32_t ItemPBComp::size() const {
-  // @@protoc_insertion_point(field_get:ItemPBComp.size)
+inline ::uint32_t ItemPBComponent::size() const {
+  // @@protoc_insertion_point(field_get:ItemPBComponent.size)
   return _internal_size();
 }
-inline void ItemPBComp::set_size(::uint32_t value) {
+inline void ItemPBComponent::set_size(::uint32_t value) {
   _internal_set_size(value);
-  // @@protoc_insertion_point(field_set:ItemPBComp.size)
+  // @@protoc_insertion_point(field_set:ItemPBComponent.size)
 }
-inline ::uint32_t ItemPBComp::_internal_size() const {
+inline ::uint32_t ItemPBComponent::_internal_size() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.size_;
 }
-inline void ItemPBComp::_internal_set_size(::uint32_t value) {
+inline void ItemPBComponent::_internal_set_size(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.size_ = value;
 }

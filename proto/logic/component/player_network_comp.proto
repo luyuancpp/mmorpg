@@ -9,7 +9,7 @@ message PlayerNodeInfoPBComponent
 	uint32 game_node_id = 3;
 }
 
-message PlayerSessionPBComp
+message PlayerSessionPBComponent
 {
 	uint64 player_id = 1;
 }

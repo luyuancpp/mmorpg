@@ -9,7 +9,7 @@ using EntityVector = std::vector<entt::entity>;
 struct InitItemParam
 {
 	InitItemParam() { itemPBComp.set_size(1); itemPBComp.set_item_id(kInvalidGuid); }
-	ItemPBComp itemPBComp;
+	ItemPBComponent itemPBComp;
 };
 
 //todo 放装备列表，装备有一堆自己的guild

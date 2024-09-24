@@ -12,7 +12,7 @@
 #include "proto/logic/component/mission_comp.pb.h"
 #include "proto/logic/event/mission_event.pb.h"
 
-MissionsComp::MissionsComp()
+MissionsComponent::MissionsComponent()
 	: missionConfig(&MissionConfig::GetSingleton()),
 	missionTypeNotRepeated(missionConfig->CheckTypeRepeated())
 {
@@ -23,10 +23,10 @@ MissionsComp::MissionsComp()
 	}
 }
 
-std::size_t MissionsComp::CanGetRewardSize() const
+std::size_t MissionsComponent::CanGetRewardSize() const
 {
 	// Retrieve mission reward component
-	const auto* const missionReward = tls.registry.try_get<RewardListPBComp>(EventOwner());
+	const auto* const missionReward = tls.registry.try_get<RewardListPBComponent>(EventOwner());
 	if (nullptr == missionReward)
 	{
 		return 0; // Return 0 if reward component is not found
@@ -34,7 +34,7 @@ std::size_t MissionsComp::CanGetRewardSize() const
 	return static_cast<std::size_t>(missionReward->can_reward_mission_id_size()); // Return the number of missions eligible for reward
 }
 
-uint32_t MissionsComp::IsMissionUnaccepted(const uint32_t missionId) const
+uint32_t MissionsComponent::IsMissionUnaccepted(const uint32_t missionId) const
 {
 	// Check if the mission has been accepted
 	if (missionsComp.missions().find(missionId) != missionsComp.missions().end())
@@ -44,7 +44,7 @@ uint32_t MissionsComp::IsMissionUnaccepted(const uint32_t missionId) const
 	return kOK; // Return kOK if mission is not accepted
 }
 
-uint32_t MissionsComp::IsMissionUncompleted(const uint32_t missionId) const
+uint32_t MissionsComponent::IsMissionUncompleted(const uint32_t missionId) const
 {
 	// Check if the mission is completed
 	if (missionsComp.complete_missions().count(missionId) > 0)

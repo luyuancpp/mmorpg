@@ -39,7 +39,7 @@ uint32_t MissionUtil::GetMissionReward(const GetRewardParam& param) {
 	}
 
 	// Retrieve mission reward component for the player
-	auto* const missionRewardComp = tls.registry.try_get<RewardListPBComp>(param.playerId);
+	auto* const missionRewardComp = tls.registry.try_get<RewardListPBComponent>(param.playerId);
 	if (nullptr == missionRewardComp) {
 		LOG_ERROR << "Mission reward component not found: playerId = " << tls.registry.get<Guid>(param.playerId);
 		return kPlayerMissionComponentNotFound;
@@ -59,7 +59,7 @@ uint32_t MissionUtil::GetMissionReward(const GetRewardParam& param) {
 }
 
 // Function to check conditions before accepting a mission
-uint32_t MissionUtil::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp* missionComp) {
+uint32_t MissionUtil::CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComponent* missionComp) {
 	// Check if mission is unaccepted and uncompleted
 	CHECK_RETURN_IF_NOT_OK(missionComp->IsMissionUnaccepted(acceptEvent.mission_id()));
 	CHECK_RETURN_IF_NOT_OK(missionComp->IsMissionUncompleted(acceptEvent.mission_id()));
@@ -86,7 +86,7 @@ uint32_t MissionUtil::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
 
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	auto* const missionComp = tls.registry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
 		LOG_ERROR << "Missions component not found for playerEntity = " << tls.registry.get<Guid>(playerEntity);
 		return kPlayerMissionComponentNotFound;
@@ -111,7 +111,7 @@ uint32_t MissionUtil::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 	}
 
 	// Create mission protobuf component
-	MissionPBComp missionPb;
+	MissionPBComponent missionPb;
 	missionPb.set_id(acceptEvent.mission_id());
 
 	// Initialize mission progress based on conditions
@@ -142,7 +142,7 @@ uint32_t MissionUtil::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 // Function to abandon a mission
 uint32_t MissionUtil::AbandonMission(const AbandonParam& param) {
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.registry.try_get<MissionsComp>(param.playerId);
+	auto* const missionComp = tls.registry.try_get<MissionsComponent>(param.playerId);
 	if (nullptr == missionComp) {
 		LOG_ERROR << "Missions component not found for playerId = " << tls.registry.get<Guid>(param.playerId);
 		return kPlayerMissionComponentNotFound;
@@ -155,7 +155,7 @@ uint32_t MissionUtil::AbandonMission(const AbandonParam& param) {
 	}
 
 	// Remove mission ID from reward list if applicable
-	auto* const missionReward = tls.registry.try_get<RewardListPBComp>(param.playerId);
+	auto* const missionReward = tls.registry.try_get<RewardListPBComponent>(param.playerId);
 	if (nullptr != missionReward) {
 		missionReward->mutable_can_reward_mission_id()->erase(param.missionId);
 	}
@@ -174,7 +174,7 @@ uint32_t MissionUtil::AbandonMission(const AbandonParam& param) {
 // Function to complete all missions for a player
 void MissionUtil::CompleteAllMissions(entt::entity playerEntity, uint32_t operation) {
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	auto* const missionComp = tls.registry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
 		return;
 	}
@@ -199,7 +199,7 @@ bool IsConditionFulfilled(uint32_t conditionId, uint32_t progressValue) {
 
 
 // Check if all conditions of a mission are fulfilled
-bool MissionUtil::AreAllConditionsFulfilled(const MissionPBComp& mission, uint32_t missionId, MissionsComp* missionComp) {
+bool MissionUtil::AreAllConditionsFulfilled(const MissionPBComponent& mission, uint32_t missionId, MissionsComponent* missionComp) {
 	// Retrieve mission conditions from configuration
 	const auto& conditions = missionComp->GetMissionConfig()->GetConditionIds(missionId);
 
@@ -230,7 +230,7 @@ void MissionUtil::HandleMissionConditionEvent(const MissionConditionEvent& condi
 	const entt::entity playerEntity = entt::to_entity(conditionEvent.entity());
 
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	auto* const missionComp = tls.registry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
 		LOG_ERROR << "HandleMissionConditionEvent: Missions component not found for playerEntity = " << tls.registry.get<Guid>(playerEntity);
 		return;
@@ -265,7 +265,7 @@ void MissionUtil::HandleMissionConditionEvent(const MissionConditionEvent& condi
 			continue;
 		}
 
-		mission.set_status(MissionPBComp::E_MISSION_COMPLETE);
+		mission.set_status(MissionPBComponent::E_MISSION_COMPLETE);
 		completedMissionsThisTime.emplace(missionId);
 		missionComp->GetMissionsComp().mutable_missions()->erase(missionIter);
 	}
@@ -275,7 +275,7 @@ void MissionUtil::HandleMissionConditionEvent(const MissionConditionEvent& condi
 }
 
 // Remove mission classification
-void MissionUtil::RemoveMissionClassification(MissionsComp* missionComp, uint32_t missionId) {
+void MissionUtil::RemoveMissionClassification(MissionsComponent* missionComp, uint32_t missionId) {
 	// Retrieve conditions from mission configuration
 	const auto& configConditions = missionComp->GetMissionConfig()->GetConditionIds(missionId);
 
@@ -292,7 +292,7 @@ void MissionUtil::RemoveMissionClassification(MissionsComp* missionComp, uint32_
 // Delete mission classification
 void MissionUtil::DeleteMissionClassification(entt::entity playerEntity, uint32_t missionId) {
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	auto* const missionComp = tls.registry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
 		return;
 	}
@@ -309,14 +309,14 @@ void MissionUtil::DeleteMissionClassification(entt::entity playerEntity, uint32_
 }
 
 // Update mission progress based on event
-bool MissionUtil::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComp& mission) {
+bool MissionUtil::UpdateMissionProgress(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission) {
 	// Ignore if no conditions are provided
 	if (conditionEvent.condtion_ids().empty()) {
 		return false;
 	}
 
 	// Retrieve mission component for the player
-	const auto* const missionComp = tls.registry.try_get<MissionsComp>(entt::to_entity(conditionEvent.entity()));
+	const auto* const missionComp = tls.registry.try_get<MissionsComponent>(entt::to_entity(conditionEvent.entity()));
 	if (nullptr == missionComp) {
 		return false;
 	}
@@ -348,7 +348,7 @@ bool MissionUtil::UpdateMissionProgress(const MissionConditionEvent& conditionEv
 }
 
 // Update mission progress if conditions match the event
-bool MissionUtil::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComp& mission, int index, const ConditionTable* conditionRow) {
+bool MissionUtil::UpdateProgressIfConditionMatches(const MissionConditionEvent& conditionEvent, MissionPBComponent& mission, int index, const ConditionTable* conditionRow) {
 	// Retrieve old progress value
 	const auto oldProgress = mission.progress(index);
 
@@ -403,7 +403,7 @@ bool MissionUtil::UpdateProgressIfConditionMatches(const MissionConditionEvent& 
 
 
 // Update mission status based on progress
-void MissionUtil::UpdateMissionStatus(MissionPBComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
+void MissionUtil::UpdateMissionStatus(MissionPBComponent& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions) {
 	// Iterate through mission conditions and update progress
 	for (int32_t i = 0; i < mission.progress_size() && i < missionConditions.size(); ++i) {
 		auto [conditionTable, result] = GetConditionTable(missionConditions.at(i));
@@ -430,7 +430,7 @@ void MissionUtil::OnMissionCompletion(entt::entity playerEntity, const std::unor
 	}
 
 	// Retrieve mission component for the player
-	auto* const missionComp = tls.registry.try_get<MissionsComp>(playerEntity);
+	auto* const missionComp = tls.registry.try_get<MissionsComponent>(playerEntity);
 	if (nullptr == missionComp) {
 		return;
 	}
@@ -441,7 +441,7 @@ void MissionUtil::OnMissionCompletion(entt::entity playerEntity, const std::unor
 		DeleteMissionClassification(playerEntity, missionId);
 
 		// Retrieve mission reward component for the player
-		auto* const missionReward = tls.registry.try_get<RewardListPBComp>(playerEntity);
+		auto* const missionReward = tls.registry.try_get<RewardListPBComponent>(playerEntity);
 
 		// Create mission condition event
 		MissionConditionEvent missionConditionEvent;

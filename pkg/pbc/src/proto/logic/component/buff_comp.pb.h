@@ -49,12 +49,12 @@ struct TableStruct_logic_2fcomponent_2fbuff_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto;
-class BuffContextPBComp;
-struct BuffContextPBCompDefaultTypeInternal;
-extern BuffContextPBCompDefaultTypeInternal _BuffContextPBComp_default_instance_;
-class BuffPBComp;
-struct BuffPBCompDefaultTypeInternal;
-extern BuffPBCompDefaultTypeInternal _BuffPBComp_default_instance_;
+class BuffContextPBComponent;
+struct BuffContextPBComponentDefaultTypeInternal;
+extern BuffContextPBComponentDefaultTypeInternal _BuffContextPBComponent_default_instance_;
+class BuffPBComponent;
+struct BuffPBComponentDefaultTypeInternal;
+extern BuffPBComponentDefaultTypeInternal _BuffPBComponent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -66,23 +66,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class BuffPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BuffPBComp) */ {
+class BuffPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BuffPBComponent) */ {
  public:
-  inline BuffPBComp() : BuffPBComp(nullptr) {}
-  ~BuffPBComp() override;
+  inline BuffPBComponent() : BuffPBComponent(nullptr) {}
+  ~BuffPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BuffPBComp(
+  explicit PROTOBUF_CONSTEXPR BuffPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline BuffPBComp(const BuffPBComp& from) : BuffPBComp(nullptr, from) {}
-  inline BuffPBComp(BuffPBComp&& from) noexcept
-      : BuffPBComp(nullptr, std::move(from)) {}
-  inline BuffPBComp& operator=(const BuffPBComp& from) {
+  inline BuffPBComponent(const BuffPBComponent& from) : BuffPBComponent(nullptr, from) {}
+  inline BuffPBComponent(BuffPBComponent&& from) noexcept
+      : BuffPBComponent(nullptr, std::move(from)) {}
+  inline BuffPBComponent& operator=(const BuffPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BuffPBComp& operator=(BuffPBComp&& from) noexcept {
+  inline BuffPBComponent& operator=(BuffPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -114,16 +114,16 @@ class BuffPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BuffPBComp& default_instance() {
+  static const BuffPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const BuffPBComp* internal_default_instance() {
-    return reinterpret_cast<const BuffPBComp*>(
-        &_BuffPBComp_default_instance_);
+  static inline const BuffPBComponent* internal_default_instance() {
+    return reinterpret_cast<const BuffPBComponent*>(
+        &_BuffPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(BuffPBComp& a, BuffPBComp& b) { a.Swap(&b); }
-  inline void Swap(BuffPBComp* other) {
+  friend void swap(BuffPBComponent& a, BuffPBComponent& b) { a.Swap(&b); }
+  inline void Swap(BuffPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -135,7 +135,7 @@ class BuffPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BuffPBComp* other) {
+  void UnsafeArenaSwap(BuffPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -143,13 +143,13 @@ class BuffPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BuffPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<BuffPBComp>(arena);
+  BuffPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<BuffPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BuffPBComp& from);
+  void CopyFrom(const BuffPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BuffPBComp& from) { BuffPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const BuffPBComponent& from) { BuffPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -170,16 +170,16 @@ class BuffPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(BuffPBComp* other);
+  void InternalSwap(BuffPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "BuffPBComp"; }
+  static ::absl::string_view FullMessageName() { return "BuffPBComponent"; }
 
  protected:
-  explicit BuffPBComp(::google::protobuf::Arena* arena);
-  BuffPBComp(::google::protobuf::Arena* arena, const BuffPBComp& from);
-  BuffPBComp(::google::protobuf::Arena* arena, BuffPBComp&& from) noexcept
-      : BuffPBComp(arena) {
+  explicit BuffPBComponent(::google::protobuf::Arena* arena);
+  BuffPBComponent(::google::protobuf::Arena* arena, const BuffPBComponent& from);
+  BuffPBComponent(::google::protobuf::Arena* arena, BuffPBComponent&& from) noexcept
+      : BuffPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -269,7 +269,7 @@ class BuffPBComp final : public ::google::protobuf::Message
   void _internal_set_triggerdamage(bool value);
 
   public:
-  // @@protoc_insertion_point(class_scope:BuffPBComp)
+  // @@protoc_insertion_point(class_scope:BuffPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -305,23 +305,23 @@ class BuffPBComp final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class BuffContextPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BuffContextPBComp) */ {
+class BuffContextPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BuffContextPBComponent) */ {
  public:
-  inline BuffContextPBComp() : BuffContextPBComp(nullptr) {}
-  ~BuffContextPBComp() override;
+  inline BuffContextPBComponent() : BuffContextPBComponent(nullptr) {}
+  ~BuffContextPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BuffContextPBComp(
+  explicit PROTOBUF_CONSTEXPR BuffContextPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline BuffContextPBComp(const BuffContextPBComp& from) : BuffContextPBComp(nullptr, from) {}
-  inline BuffContextPBComp(BuffContextPBComp&& from) noexcept
-      : BuffContextPBComp(nullptr, std::move(from)) {}
-  inline BuffContextPBComp& operator=(const BuffContextPBComp& from) {
+  inline BuffContextPBComponent(const BuffContextPBComponent& from) : BuffContextPBComponent(nullptr, from) {}
+  inline BuffContextPBComponent(BuffContextPBComponent&& from) noexcept
+      : BuffContextPBComponent(nullptr, std::move(from)) {}
+  inline BuffContextPBComponent& operator=(const BuffContextPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BuffContextPBComp& operator=(BuffContextPBComp&& from) noexcept {
+  inline BuffContextPBComponent& operator=(BuffContextPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -353,16 +353,16 @@ class BuffContextPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BuffContextPBComp& default_instance() {
+  static const BuffContextPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const BuffContextPBComp* internal_default_instance() {
-    return reinterpret_cast<const BuffContextPBComp*>(
-        &_BuffContextPBComp_default_instance_);
+  static inline const BuffContextPBComponent* internal_default_instance() {
+    return reinterpret_cast<const BuffContextPBComponent*>(
+        &_BuffContextPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(BuffContextPBComp& a, BuffContextPBComp& b) { a.Swap(&b); }
-  inline void Swap(BuffContextPBComp* other) {
+  friend void swap(BuffContextPBComponent& a, BuffContextPBComponent& b) { a.Swap(&b); }
+  inline void Swap(BuffContextPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -374,7 +374,7 @@ class BuffContextPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BuffContextPBComp* other) {
+  void UnsafeArenaSwap(BuffContextPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -382,13 +382,13 @@ class BuffContextPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BuffContextPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<BuffContextPBComp>(arena);
+  BuffContextPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<BuffContextPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BuffContextPBComp& from);
+  void CopyFrom(const BuffContextPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BuffContextPBComp& from) { BuffContextPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const BuffContextPBComponent& from) { BuffContextPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -409,16 +409,16 @@ class BuffContextPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(BuffContextPBComp* other);
+  void InternalSwap(BuffContextPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "BuffContextPBComp"; }
+  static ::absl::string_view FullMessageName() { return "BuffContextPBComponent"; }
 
  protected:
-  explicit BuffContextPBComp(::google::protobuf::Arena* arena);
-  BuffContextPBComp(::google::protobuf::Arena* arena, const BuffContextPBComp& from);
-  BuffContextPBComp(::google::protobuf::Arena* arena, BuffContextPBComp&& from) noexcept
-      : BuffContextPBComp(arena) {
+  explicit BuffContextPBComponent(::google::protobuf::Arena* arena);
+  BuffContextPBComponent(::google::protobuf::Arena* arena, const BuffContextPBComponent& from);
+  BuffContextPBComponent(::google::protobuf::Arena* arena, BuffContextPBComponent&& from) noexcept
+      : BuffContextPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -442,7 +442,7 @@ class BuffContextPBComp final : public ::google::protobuf::Message
   void _internal_set_damage_value(float value);
 
   public:
-  // @@protoc_insertion_point(class_scope:BuffContextPBComp)
+  // @@protoc_insertion_point(class_scope:BuffContextPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -485,184 +485,184 @@ class BuffContextPBComp final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// BuffContextPBComp
+// BuffContextPBComponent
 
 // float damage_value = 1;
-inline void BuffContextPBComp::clear_damage_value() {
+inline void BuffContextPBComponent::clear_damage_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.damage_value_ = 0;
 }
-inline float BuffContextPBComp::damage_value() const {
-  // @@protoc_insertion_point(field_get:BuffContextPBComp.damage_value)
+inline float BuffContextPBComponent::damage_value() const {
+  // @@protoc_insertion_point(field_get:BuffContextPBComponent.damage_value)
   return _internal_damage_value();
 }
-inline void BuffContextPBComp::set_damage_value(float value) {
+inline void BuffContextPBComponent::set_damage_value(float value) {
   _internal_set_damage_value(value);
-  // @@protoc_insertion_point(field_set:BuffContextPBComp.damage_value)
+  // @@protoc_insertion_point(field_set:BuffContextPBComponent.damage_value)
 }
-inline float BuffContextPBComp::_internal_damage_value() const {
+inline float BuffContextPBComponent::_internal_damage_value() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.damage_value_;
 }
-inline void BuffContextPBComp::_internal_set_damage_value(float value) {
+inline void BuffContextPBComponent::_internal_set_damage_value(float value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.damage_value_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// BuffPBComp
+// BuffPBComponent
 
 // uint64 buff_id = 1;
-inline void BuffPBComp::clear_buff_id() {
+inline void BuffPBComponent::clear_buff_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.buff_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t BuffPBComp::buff_id() const {
-  // @@protoc_insertion_point(field_get:BuffPBComp.buff_id)
+inline ::uint64_t BuffPBComponent::buff_id() const {
+  // @@protoc_insertion_point(field_get:BuffPBComponent.buff_id)
   return _internal_buff_id();
 }
-inline void BuffPBComp::set_buff_id(::uint64_t value) {
+inline void BuffPBComponent::set_buff_id(::uint64_t value) {
   _internal_set_buff_id(value);
-  // @@protoc_insertion_point(field_set:BuffPBComp.buff_id)
+  // @@protoc_insertion_point(field_set:BuffPBComponent.buff_id)
 }
-inline ::uint64_t BuffPBComp::_internal_buff_id() const {
+inline ::uint64_t BuffPBComponent::_internal_buff_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.buff_id_;
 }
-inline void BuffPBComp::_internal_set_buff_id(::uint64_t value) {
+inline void BuffPBComponent::_internal_set_buff_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.buff_id_ = value;
 }
 
 // uint32 buff_table_id = 2;
-inline void BuffPBComp::clear_buff_table_id() {
+inline void BuffPBComponent::clear_buff_table_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.buff_table_id_ = 0u;
 }
-inline ::uint32_t BuffPBComp::buff_table_id() const {
-  // @@protoc_insertion_point(field_get:BuffPBComp.buff_table_id)
+inline ::uint32_t BuffPBComponent::buff_table_id() const {
+  // @@protoc_insertion_point(field_get:BuffPBComponent.buff_table_id)
   return _internal_buff_table_id();
 }
-inline void BuffPBComp::set_buff_table_id(::uint32_t value) {
+inline void BuffPBComponent::set_buff_table_id(::uint32_t value) {
   _internal_set_buff_table_id(value);
-  // @@protoc_insertion_point(field_set:BuffPBComp.buff_table_id)
+  // @@protoc_insertion_point(field_set:BuffPBComponent.buff_table_id)
 }
-inline ::uint32_t BuffPBComp::_internal_buff_table_id() const {
+inline ::uint32_t BuffPBComponent::_internal_buff_table_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.buff_table_id_;
 }
-inline void BuffPBComp::_internal_set_buff_table_id(::uint32_t value) {
+inline void BuffPBComponent::_internal_set_buff_table_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.buff_table_id_ = value;
 }
 
 // uint32 ability_id = 3;
-inline void BuffPBComp::clear_ability_id() {
+inline void BuffPBComponent::clear_ability_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.ability_id_ = 0u;
 }
-inline ::uint32_t BuffPBComp::ability_id() const {
-  // @@protoc_insertion_point(field_get:BuffPBComp.ability_id)
+inline ::uint32_t BuffPBComponent::ability_id() const {
+  // @@protoc_insertion_point(field_get:BuffPBComponent.ability_id)
   return _internal_ability_id();
 }
-inline void BuffPBComp::set_ability_id(::uint32_t value) {
+inline void BuffPBComponent::set_ability_id(::uint32_t value) {
   _internal_set_ability_id(value);
-  // @@protoc_insertion_point(field_set:BuffPBComp.ability_id)
+  // @@protoc_insertion_point(field_set:BuffPBComponent.ability_id)
 }
-inline ::uint32_t BuffPBComp::_internal_ability_id() const {
+inline ::uint32_t BuffPBComponent::_internal_ability_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.ability_id_;
 }
-inline void BuffPBComp::_internal_set_ability_id(::uint32_t value) {
+inline void BuffPBComponent::_internal_set_ability_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.ability_id_ = value;
 }
 
 // uint64 parent_entity = 4;
-inline void BuffPBComp::clear_parent_entity() {
+inline void BuffPBComponent::clear_parent_entity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.parent_entity_ = ::uint64_t{0u};
 }
-inline ::uint64_t BuffPBComp::parent_entity() const {
-  // @@protoc_insertion_point(field_get:BuffPBComp.parent_entity)
+inline ::uint64_t BuffPBComponent::parent_entity() const {
+  // @@protoc_insertion_point(field_get:BuffPBComponent.parent_entity)
   return _internal_parent_entity();
 }
-inline void BuffPBComp::set_parent_entity(::uint64_t value) {
+inline void BuffPBComponent::set_parent_entity(::uint64_t value) {
   _internal_set_parent_entity(value);
-  // @@protoc_insertion_point(field_set:BuffPBComp.parent_entity)
+  // @@protoc_insertion_point(field_set:BuffPBComponent.parent_entity)
 }
-inline ::uint64_t BuffPBComp::_internal_parent_entity() const {
+inline ::uint64_t BuffPBComponent::_internal_parent_entity() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.parent_entity_;
 }
-inline void BuffPBComp::_internal_set_parent_entity(::uint64_t value) {
+inline void BuffPBComponent::_internal_set_parent_entity(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.parent_entity_ = value;
 }
 
 // uint32 layer = 5;
-inline void BuffPBComp::clear_layer() {
+inline void BuffPBComponent::clear_layer() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.layer_ = 0u;
 }
-inline ::uint32_t BuffPBComp::layer() const {
-  // @@protoc_insertion_point(field_get:BuffPBComp.layer)
+inline ::uint32_t BuffPBComponent::layer() const {
+  // @@protoc_insertion_point(field_get:BuffPBComponent.layer)
   return _internal_layer();
 }
-inline void BuffPBComp::set_layer(::uint32_t value) {
+inline void BuffPBComponent::set_layer(::uint32_t value) {
   _internal_set_layer(value);
-  // @@protoc_insertion_point(field_set:BuffPBComp.layer)
+  // @@protoc_insertion_point(field_set:BuffPBComponent.layer)
 }
-inline ::uint32_t BuffPBComp::_internal_layer() const {
+inline ::uint32_t BuffPBComponent::_internal_layer() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.layer_;
 }
-inline void BuffPBComp::_internal_set_layer(::uint32_t value) {
+inline void BuffPBComponent::_internal_set_layer(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.layer_ = value;
 }
 
 // uint64 caster = 6;
-inline void BuffPBComp::clear_caster() {
+inline void BuffPBComponent::clear_caster() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.caster_ = ::uint64_t{0u};
 }
-inline ::uint64_t BuffPBComp::caster() const {
-  // @@protoc_insertion_point(field_get:BuffPBComp.caster)
+inline ::uint64_t BuffPBComponent::caster() const {
+  // @@protoc_insertion_point(field_get:BuffPBComponent.caster)
   return _internal_caster();
 }
-inline void BuffPBComp::set_caster(::uint64_t value) {
+inline void BuffPBComponent::set_caster(::uint64_t value) {
   _internal_set_caster(value);
-  // @@protoc_insertion_point(field_set:BuffPBComp.caster)
+  // @@protoc_insertion_point(field_set:BuffPBComponent.caster)
 }
-inline ::uint64_t BuffPBComp::_internal_caster() const {
+inline ::uint64_t BuffPBComponent::_internal_caster() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.caster_;
 }
-inline void BuffPBComp::_internal_set_caster(::uint64_t value) {
+inline void BuffPBComponent::_internal_set_caster(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.caster_ = value;
 }
 
 // bool triggerdamage = 7;
-inline void BuffPBComp::clear_triggerdamage() {
+inline void BuffPBComponent::clear_triggerdamage() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.triggerdamage_ = false;
 }
-inline bool BuffPBComp::triggerdamage() const {
-  // @@protoc_insertion_point(field_get:BuffPBComp.triggerdamage)
+inline bool BuffPBComponent::triggerdamage() const {
+  // @@protoc_insertion_point(field_get:BuffPBComponent.triggerdamage)
   return _internal_triggerdamage();
 }
-inline void BuffPBComp::set_triggerdamage(bool value) {
+inline void BuffPBComponent::set_triggerdamage(bool value) {
   _internal_set_triggerdamage(value);
-  // @@protoc_insertion_point(field_set:BuffPBComp.triggerdamage)
+  // @@protoc_insertion_point(field_set:BuffPBComponent.triggerdamage)
 }
-inline bool BuffPBComp::_internal_triggerdamage() const {
+inline bool BuffPBComponent::_internal_triggerdamage() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.triggerdamage_;
 }
-inline void BuffPBComp::_internal_set_triggerdamage(bool value) {
+inline void BuffPBComponent::_internal_set_triggerdamage(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.triggerdamage_ = value;
 }

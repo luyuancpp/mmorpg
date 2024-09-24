@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type GameNodePlayerInfoPBComp struct {
+type GameNodePlayerInfoPBComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type GameNodePlayerInfoPBComp struct {
 	PlayerSize uint32 `protobuf:"varint,1,opt,name=player_size,json=playerSize,proto3" json:"player_size,omitempty"`
 }
 
-func (x *GameNodePlayerInfoPBComp) Reset() {
-	*x = GameNodePlayerInfoPBComp{}
+func (x *GameNodePlayerInfoPBComponent) Reset() {
+	*x = GameNodePlayerInfoPBComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_game_node_comp_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *GameNodePlayerInfoPBComp) Reset() {
 	}
 }
 
-func (x *GameNodePlayerInfoPBComp) String() string {
+func (x *GameNodePlayerInfoPBComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GameNodePlayerInfoPBComp) ProtoMessage() {}
+func (*GameNodePlayerInfoPBComponent) ProtoMessage() {}
 
-func (x *GameNodePlayerInfoPBComp) ProtoReflect() protoreflect.Message {
+func (x *GameNodePlayerInfoPBComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_game_node_comp_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,12 +55,12 @@ func (x *GameNodePlayerInfoPBComp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GameNodePlayerInfoPBComp.ProtoReflect.Descriptor instead.
-func (*GameNodePlayerInfoPBComp) Descriptor() ([]byte, []int) {
+// Deprecated: Use GameNodePlayerInfoPBComponent.ProtoReflect.Descriptor instead.
+func (*GameNodePlayerInfoPBComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_game_node_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GameNodePlayerInfoPBComp) GetPlayerSize() uint32 {
+func (x *GameNodePlayerInfoPBComponent) GetPlayerSize() uint32 {
 	if x != nil {
 		return x.PlayerSize
 	}
@@ -72,12 +72,12 @@ var File_logic_component_game_node_comp_proto protoreflect.FileDescriptor
 var file_logic_component_game_node_comp_proto_rawDesc = []byte{
 	0x0a, 0x24, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e,
 	0x74, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x63, 0x6f, 0x6d, 0x70,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3b, 0x0a, 0x18, 0x47, 0x61, 0x6d, 0x65, 0x4e, 0x6f,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x40, 0x0a, 0x1d, 0x47, 0x61, 0x6d, 0x65, 0x4e, 0x6f,
 	0x64, 0x65, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x50, 0x42, 0x43, 0x6f,
-	0x6d, 0x70, 0x12, 0x1f, 0x0a, 0x0b, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x5f, 0x73, 0x69, 0x7a,
-	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0a, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x53,
-	0x69, 0x7a, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x70, 0x6c, 0x61, 0x79, 0x65,
+	0x72, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0a, 0x70, 0x6c,
+	0x61, 0x79, 0x65, 0x72, 0x53, 0x69, 0x7a, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67,
+	0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -94,7 +94,7 @@ func file_logic_component_game_node_comp_proto_rawDescGZIP() []byte {
 
 var file_logic_component_game_node_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_logic_component_game_node_comp_proto_goTypes = []any{
-	(*GameNodePlayerInfoPBComp)(nil), // 0: GameNodePlayerInfoPBComp
+	(*GameNodePlayerInfoPBComponent)(nil), // 0: GameNodePlayerInfoPBComponent
 }
 var file_logic_component_game_node_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -111,7 +111,7 @@ func file_logic_component_game_node_comp_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_logic_component_game_node_comp_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*GameNodePlayerInfoPBComp); i {
+			switch v := v.(*GameNodePlayerInfoPBComponent); i {
 			case 0:
 				return &v.state
 			case 1:

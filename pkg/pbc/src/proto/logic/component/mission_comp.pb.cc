@@ -22,19 +22,19 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
       template <typename>
-PROTOBUF_CONSTEXPR RewardListPBComp_CanRewardMissionIdEntry_DoNotUse::RewardListPBComp_CanRewardMissionIdEntry_DoNotUse(::_pbi::ConstantInitialized) {}
-struct RewardListPBComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RewardListPBComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RewardListPBComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal() {}
+PROTOBUF_CONSTEXPR RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    RewardListPBComp_CanRewardMissionIdEntry_DoNotUse _instance;
+    RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardListPBComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal _RewardListPBComp_CanRewardMissionIdEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal _RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_default_instance_;
 
-inline constexpr MissionPBComp::Impl_::Impl_(
+inline constexpr MissionPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : progress_{},
         _progress_cached_byte_size_{0},
@@ -43,75 +43,75 @@ inline constexpr MissionPBComp::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR MissionPBComp::MissionPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR MissionPBComponent::MissionPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct MissionPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionPBCompDefaultTypeInternal() {}
+struct MissionPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionPBComponentDefaultTypeInternal() {}
   union {
-    MissionPBComp _instance;
+    MissionPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionPBCompDefaultTypeInternal _MissionPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionPBComponentDefaultTypeInternal _MissionPBComponent_default_instance_;
       template <typename>
-PROTOBUF_CONSTEXPR MissionListPBComp_MissionBeginTimeEntry_DoNotUse::MissionListPBComp_MissionBeginTimeEntry_DoNotUse(::_pbi::ConstantInitialized) {}
-struct MissionListPBComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionListPBComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionListPBComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal() {}
+PROTOBUF_CONSTEXPR MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    MissionListPBComp_MissionBeginTimeEntry_DoNotUse _instance;
+    MissionListPBComponent_MissionBeginTimeEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal _MissionListPBComp_MissionBeginTimeEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_default_instance_;
       template <typename>
-PROTOBUF_CONSTEXPR MissionListPBComp_CompleteMissionsEntry_DoNotUse::MissionListPBComp_CompleteMissionsEntry_DoNotUse(::_pbi::ConstantInitialized) {}
-struct MissionListPBComp_CompleteMissionsEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionListPBComp_CompleteMissionsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionListPBComp_CompleteMissionsEntry_DoNotUseDefaultTypeInternal() {}
+PROTOBUF_CONSTEXPR MissionListPBComponent_CompleteMissionsEntry_DoNotUse::MissionListPBComponent_CompleteMissionsEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct MissionListPBComponent_CompleteMissionsEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionListPBComponent_CompleteMissionsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionListPBComponent_CompleteMissionsEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    MissionListPBComp_CompleteMissionsEntry_DoNotUse _instance;
+    MissionListPBComponent_CompleteMissionsEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComp_CompleteMissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComp_CompleteMissionsEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComponent_CompleteMissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_CompleteMissionsEntry_DoNotUse_default_instance_;
 
-inline constexpr RewardListPBComp::Impl_::Impl_(
+inline constexpr RewardListPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : can_reward_mission_id_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR RewardListPBComp::RewardListPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR RewardListPBComponent::RewardListPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct RewardListPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RewardListPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RewardListPBCompDefaultTypeInternal() {}
+struct RewardListPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RewardListPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RewardListPBComponentDefaultTypeInternal() {}
   union {
-    RewardListPBComp _instance;
+    RewardListPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardListPBCompDefaultTypeInternal _RewardListPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RewardListPBComponentDefaultTypeInternal _RewardListPBComponent_default_instance_;
       template <typename>
-PROTOBUF_CONSTEXPR MissionListPBComp_MissionsEntry_DoNotUse::MissionListPBComp_MissionsEntry_DoNotUse(::_pbi::ConstantInitialized) {}
-struct MissionListPBComp_MissionsEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionListPBComp_MissionsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionListPBComp_MissionsEntry_DoNotUseDefaultTypeInternal() {}
+PROTOBUF_CONSTEXPR MissionListPBComponent_MissionsEntry_DoNotUse::MissionListPBComponent_MissionsEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    MissionListPBComp_MissionsEntry_DoNotUse _instance;
+    MissionListPBComponent_MissionsEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComp_MissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComp_MissionsEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_MissionsEntry_DoNotUse_default_instance_;
 
-inline constexpr MissionListPBComp::Impl_::Impl_(
+inline constexpr MissionListPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : missions_{},
         complete_missions_{},
@@ -120,18 +120,18 @@ inline constexpr MissionListPBComp::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR MissionListPBComp::MissionListPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR MissionListPBComponent::MissionListPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct MissionListPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MissionListPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MissionListPBCompDefaultTypeInternal() {}
+struct MissionListPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MissionListPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MissionListPBComponentDefaultTypeInternal() {}
   union {
-    MissionListPBComp _instance;
+    MissionListPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBCompDefaultTypeInternal _MissionListPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MissionListPBComponentDefaultTypeInternal _MissionListPBComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fmission_5fcomp_2eproto[7];
 static const ::_pb::EnumDescriptor* file_level_enum_descriptors_logic_2fcomponent_2fmission_5fcomp_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor**
@@ -140,129 +140,130 @@ const ::uint32_t
     TableStruct_logic_2fcomponent_2fmission_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::MissionPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::MissionPBComp, _impl_.id_),
-        PROTOBUF_FIELD_OFFSET(::MissionPBComp, _impl_.status_),
-        PROTOBUF_FIELD_OFFSET(::MissionPBComp, _impl_.progress_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_MissionsEntry_DoNotUse, _has_bits_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_MissionsEntry_DoNotUse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.status_),
+        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.progress_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_MissionsEntry_DoNotUse, key_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_MissionsEntry_DoNotUse, value_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, value_),
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_CompleteMissionsEntry_DoNotUse, _has_bits_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_CompleteMissionsEntry_DoNotUse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_CompleteMissionsEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_CompleteMissionsEntry_DoNotUse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_CompleteMissionsEntry_DoNotUse, key_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_CompleteMissionsEntry_DoNotUse, value_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_CompleteMissionsEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_CompleteMissionsEntry_DoNotUse, value_),
         0,
         1,
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_MissionBeginTimeEntry_DoNotUse, _has_bits_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_MissionBeginTimeEntry_DoNotUse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_MissionBeginTimeEntry_DoNotUse, key_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp_MissionBeginTimeEntry_DoNotUse, value_),
-        0,
-        1,
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp, _impl_.missions_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp, _impl_.complete_missions_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp, _impl_.mission_begin_time_),
-        PROTOBUF_FIELD_OFFSET(::MissionListPBComp, _impl_.type_),
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComp_CanRewardMissionIdEntry_DoNotUse, _has_bits_),
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComp_CanRewardMissionIdEntry_DoNotUse, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComp_CanRewardMissionIdEntry_DoNotUse, key_),
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComp_CanRewardMissionIdEntry_DoNotUse, value_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, value_),
         0,
         1,
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::RewardListPBComp, _impl_.can_reward_mission_id_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_.missions_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_.complete_missions_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_.mission_begin_time_),
+        PROTOBUF_FIELD_OFFSET(::MissionListPBComponent, _impl_.type_),
+        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, value_),
+        0,
+        1,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::RewardListPBComponent, _impl_.can_reward_mission_id_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::MissionPBComp)},
-        {11, 21, -1, sizeof(::MissionListPBComp_MissionsEntry_DoNotUse)},
-        {23, 33, -1, sizeof(::MissionListPBComp_CompleteMissionsEntry_DoNotUse)},
-        {35, 45, -1, sizeof(::MissionListPBComp_MissionBeginTimeEntry_DoNotUse)},
-        {47, -1, -1, sizeof(::MissionListPBComp)},
-        {59, 69, -1, sizeof(::RewardListPBComp_CanRewardMissionIdEntry_DoNotUse)},
-        {71, -1, -1, sizeof(::RewardListPBComp)},
+        {0, -1, -1, sizeof(::MissionPBComponent)},
+        {11, 21, -1, sizeof(::MissionListPBComponent_MissionsEntry_DoNotUse)},
+        {23, 33, -1, sizeof(::MissionListPBComponent_CompleteMissionsEntry_DoNotUse)},
+        {35, 45, -1, sizeof(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse)},
+        {47, -1, -1, sizeof(::MissionListPBComponent)},
+        {59, 69, -1, sizeof(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse)},
+        {71, -1, -1, sizeof(::RewardListPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_MissionPBComp_default_instance_._instance,
-    &::_MissionListPBComp_MissionsEntry_DoNotUse_default_instance_._instance,
-    &::_MissionListPBComp_CompleteMissionsEntry_DoNotUse_default_instance_._instance,
-    &::_MissionListPBComp_MissionBeginTimeEntry_DoNotUse_default_instance_._instance,
-    &::_MissionListPBComp_default_instance_._instance,
-    &::_RewardListPBComp_CanRewardMissionIdEntry_DoNotUse_default_instance_._instance,
-    &::_RewardListPBComp_default_instance_._instance,
+    &::_MissionPBComponent_default_instance_._instance,
+    &::_MissionListPBComponent_MissionsEntry_DoNotUse_default_instance_._instance,
+    &::_MissionListPBComponent_CompleteMissionsEntry_DoNotUse_default_instance_._instance,
+    &::_MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_default_instance_._instance,
+    &::_MissionListPBComponent_default_instance_._instance,
+    &::_RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_default_instance_._instance,
+    &::_RewardListPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fmission_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\"logic/component/mission_comp.proto\"\306\001\n"
-    "\rMissionPBComp\022\n\n\002id\030\001 \001(\r\022\016\n\006status\030\002 \001"
-    "(\r\022\020\n\010progress\030\003 \003(\r\"\206\001\n\016eMissionStatus\022"
-    "\024\n\020E_MISSION_NORMAL\020\000\022\031\n\025E_MISSION_ACHIE"
-    "VEMENT\020\001\022\026\n\022E_MISSION_COMPLETE\020\002\022\026\n\022E_MI"
-    "SSION_TIME_OUT\020\003\022\023\n\017E_MISSION_FAILD\020\004\"\200\004"
-    "\n\021MissionListPBComp\0222\n\010missions\030\001 \003(\0132 ."
-    "MissionListPBComp.MissionsEntry\022C\n\021compl"
-    "ete_missions\030\002 \003(\0132(.MissionListPBComp.C"
-    "ompleteMissionsEntry\022D\n\022mission_begin_ti"
-    "me\030\003 \003(\0132(.MissionListPBComp.MissionBegi"
-    "nTimeEntry\022\014\n\004type\030\004 \001(\r\032\?\n\rMissionsEntr"
-    "y\022\013\n\003key\030\001 \001(\r\022\035\n\005value\030\002 \001(\0132\016.MissionP"
-    "BComp:\0028\001\0327\n\025CompleteMissionsEntry\022\013\n\003ke"
-    "y\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001\0327\n\025MissionBeg"
-    "inTimeEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\004:"
-    "\0028\001\"k\n\014eMissionType\022\022\n\016kPlayerMission\020\000\022"
-    "\025\n\021kPlayerAchievment\020\001\022\030\n\024kPlayerDailyAc"
-    "tivity\020\002\022\026\n\022kPlayerMissionSize\020\003\"\227\001\n\020Rew"
-    "ardListPBComp\022H\n\025can_reward_mission_id\030\002"
-    " \003(\0132).RewardListPBComp.CanRewardMission"
+    "\n\"logic/component/mission_comp.proto\"\313\001\n"
+    "\022MissionPBComponent\022\n\n\002id\030\001 \001(\r\022\016\n\006statu"
+    "s\030\002 \001(\r\022\020\n\010progress\030\003 \003(\r\"\206\001\n\016eMissionSt"
+    "atus\022\024\n\020E_MISSION_NORMAL\020\000\022\031\n\025E_MISSION_"
+    "ACHIEVEMENT\020\001\022\026\n\022E_MISSION_COMPLETE\020\002\022\026\n"
+    "\022E_MISSION_TIME_OUT\020\003\022\023\n\017E_MISSION_FAILD"
+    "\020\004\"\231\004\n\026MissionListPBComponent\0227\n\010mission"
+    "s\030\001 \003(\0132%.MissionListPBComponent.Mission"
+    "sEntry\022H\n\021complete_missions\030\002 \003(\0132-.Miss"
+    "ionListPBComponent.CompleteMissionsEntry"
+    "\022I\n\022mission_begin_time\030\003 \003(\0132-.MissionLi"
+    "stPBComponent.MissionBeginTimeEntry\022\014\n\004t"
+    "ype\030\004 \001(\r\032D\n\rMissionsEntry\022\013\n\003key\030\001 \001(\r\022"
+    "\"\n\005value\030\002 \001(\0132\023.MissionPBComponent:\0028\001\032"
+    "7\n\025CompleteMissionsEntry\022\013\n\003key\030\001 \001(\r\022\r\n"
+    "\005value\030\002 \001(\010:\0028\001\0327\n\025MissionBeginTimeEntr"
+    "y\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\004:\0028\001\"k\n\014eMi"
+    "ssionType\022\022\n\016kPlayerMission\020\000\022\025\n\021kPlayer"
+    "Achievment\020\001\022\030\n\024kPlayerDailyActivity\020\002\022\026"
+    "\n\022kPlayerMissionSize\020\003\"\241\001\n\025RewardListPBC"
+    "omponent\022M\n\025can_reward_mission_id\030\002 \003(\0132"
+    "..RewardListPBComponent.CanRewardMission"
     "IdEntry\0329\n\027CanRewardMissionIdEntry\022\013\n\003ke"
     "y\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001B\tZ\007pb/gameb\006p"
     "roto3"
@@ -271,7 +272,7 @@ static ::absl::once_flag descriptor_table_logic_2fcomponent_2fmission_5fcomp_2ep
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto = {
     false,
     false,
-    925,
+    965,
     descriptor_table_protodef_logic_2fcomponent_2fmission_5fcomp_2eproto,
     "logic/component/mission_comp.proto",
     &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
@@ -300,74 +301,74 @@ const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fmission_5fcom
 PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_getter() {
   return &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto;
 }
-const ::google::protobuf::EnumDescriptor* MissionPBComp_eMissionStatus_descriptor() {
+const ::google::protobuf::EnumDescriptor* MissionPBComponent_eMissionStatus_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto);
   return file_level_enum_descriptors_logic_2fcomponent_2fmission_5fcomp_2eproto[0];
 }
-PROTOBUF_CONSTINIT const uint32_t MissionPBComp_eMissionStatus_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t MissionPBComponent_eMissionStatus_internal_data_[] = {
     327680u, 0u, };
-bool MissionPBComp_eMissionStatus_IsValid(int value) {
+bool MissionPBComponent_eMissionStatus_IsValid(int value) {
   return 0 <= value && value <= 4;
 }
 #if (__cplusplus < 201703) && \
   (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 
-constexpr MissionPBComp_eMissionStatus MissionPBComp::E_MISSION_NORMAL;
-constexpr MissionPBComp_eMissionStatus MissionPBComp::E_MISSION_ACHIEVEMENT;
-constexpr MissionPBComp_eMissionStatus MissionPBComp::E_MISSION_COMPLETE;
-constexpr MissionPBComp_eMissionStatus MissionPBComp::E_MISSION_TIME_OUT;
-constexpr MissionPBComp_eMissionStatus MissionPBComp::E_MISSION_FAILD;
-constexpr MissionPBComp_eMissionStatus MissionPBComp::eMissionStatus_MIN;
-constexpr MissionPBComp_eMissionStatus MissionPBComp::eMissionStatus_MAX;
-constexpr int MissionPBComp::eMissionStatus_ARRAYSIZE;
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent::E_MISSION_NORMAL;
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent::E_MISSION_ACHIEVEMENT;
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent::E_MISSION_COMPLETE;
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent::E_MISSION_TIME_OUT;
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent::E_MISSION_FAILD;
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent::eMissionStatus_MIN;
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent::eMissionStatus_MAX;
+constexpr int MissionPBComponent::eMissionStatus_ARRAYSIZE;
 
 #endif  // (__cplusplus < 201703) &&
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
-const ::google::protobuf::EnumDescriptor* MissionListPBComp_eMissionType_descriptor() {
+const ::google::protobuf::EnumDescriptor* MissionListPBComponent_eMissionType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto);
   return file_level_enum_descriptors_logic_2fcomponent_2fmission_5fcomp_2eproto[1];
 }
-PROTOBUF_CONSTINIT const uint32_t MissionListPBComp_eMissionType_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t MissionListPBComponent_eMissionType_internal_data_[] = {
     262144u, 0u, };
-bool MissionListPBComp_eMissionType_IsValid(int value) {
+bool MissionListPBComponent_eMissionType_IsValid(int value) {
   return 0 <= value && value <= 3;
 }
 #if (__cplusplus < 201703) && \
   (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 
-constexpr MissionListPBComp_eMissionType MissionListPBComp::kPlayerMission;
-constexpr MissionListPBComp_eMissionType MissionListPBComp::kPlayerAchievment;
-constexpr MissionListPBComp_eMissionType MissionListPBComp::kPlayerDailyActivity;
-constexpr MissionListPBComp_eMissionType MissionListPBComp::kPlayerMissionSize;
-constexpr MissionListPBComp_eMissionType MissionListPBComp::eMissionType_MIN;
-constexpr MissionListPBComp_eMissionType MissionListPBComp::eMissionType_MAX;
-constexpr int MissionListPBComp::eMissionType_ARRAYSIZE;
+constexpr MissionListPBComponent_eMissionType MissionListPBComponent::kPlayerMission;
+constexpr MissionListPBComponent_eMissionType MissionListPBComponent::kPlayerAchievment;
+constexpr MissionListPBComponent_eMissionType MissionListPBComponent::kPlayerDailyActivity;
+constexpr MissionListPBComponent_eMissionType MissionListPBComponent::kPlayerMissionSize;
+constexpr MissionListPBComponent_eMissionType MissionListPBComponent::eMissionType_MIN;
+constexpr MissionListPBComponent_eMissionType MissionListPBComponent::eMissionType_MAX;
+constexpr int MissionListPBComponent::eMissionType_ARRAYSIZE;
 
 #endif  // (__cplusplus < 201703) &&
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 // ===================================================================
 
-class MissionPBComp::_Internal {
+class MissionPBComponent::_Internal {
  public:
 };
 
-MissionPBComp::MissionPBComp(::google::protobuf::Arena* arena)
+MissionPBComponent::MissionPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:MissionPBComp)
+  // @@protoc_insertion_point(arena_constructor:MissionPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE MissionPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE MissionPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : progress_{visibility, arena, from.progress_},
         _progress_cached_byte_size_{0},
         _cached_size_{0} {}
 
-MissionPBComp::MissionPBComp(
+MissionPBComponent::MissionPBComponent(
     ::google::protobuf::Arena* arena,
-    const MissionPBComp& from)
+    const MissionPBComponent& from)
     : ::google::protobuf::Message(arena) {
-  MissionPBComp* const _this = this;
+  MissionPBComponent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -380,16 +381,16 @@ MissionPBComp::MissionPBComp(
                offsetof(Impl_, id_) +
                sizeof(Impl_::status_));
 
-  // @@protoc_insertion_point(copy_constructor:MissionPBComp)
+  // @@protoc_insertion_point(copy_constructor:MissionPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE MissionPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE MissionPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : progress_{visibility, arena},
         _progress_cached_byte_size_{0},
         _cached_size_{0} {}
 
-inline void MissionPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void MissionPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
@@ -398,32 +399,32 @@ inline void MissionPBComp::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, id_) +
                sizeof(Impl_::status_));
 }
-MissionPBComp::~MissionPBComp() {
-  // @@protoc_insertion_point(destructor:MissionPBComp)
+MissionPBComponent::~MissionPBComponent() {
+  // @@protoc_insertion_point(destructor:MissionPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void MissionPBComp::SharedDtor() {
+inline void MissionPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-MissionPBComp::GetClassData() const {
+MissionPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_._cached_size_),
               false,
           },
-          &MissionPBComp::MergeImpl,
-          &MissionPBComp::kDescriptorMethods,
+          &MissionPBComponent::MergeImpl,
+          &MissionPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void MissionPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:MissionPBComp)
+PROTOBUF_NOINLINE void MissionPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:MissionPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -436,7 +437,7 @@ PROTOBUF_NOINLINE void MissionPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* MissionPBComp::_InternalParse(
+const char* MissionPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -444,7 +445,7 @@ const char* MissionPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComp::_table_ = {
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -455,33 +456,33 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComp::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_MissionPBComp_default_instance_._instance,
+    &_MissionPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MissionPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MissionPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint32 id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionPBComp, _impl_.id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_.id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionPBComponent, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.id_)}},
     // uint32 status = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionPBComp, _impl_.status_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_.status_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionPBComponent, _impl_.status_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.status_)}},
     // repeated uint32 progress = 3;
     {::_pbi::TcParser::FastV32P1,
-     {26, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_.progress_)}},
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.progress_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 id = 1;
-    {PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_.id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 status = 2;
-    {PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_.status_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.status_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // repeated uint32 progress = 3;
-    {PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_.progress_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.progress_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
   }},
   // no aux_entries
@@ -489,10 +490,10 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComp::_table_ = {
   }},
 };
 
-::uint8_t* MissionPBComp::_InternalSerialize(
+::uint8_t* MissionPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:MissionPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:MissionPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -524,12 +525,12 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:MissionPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:MissionPBComponent)
   return target;
 }
 
-::size_t MissionPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:MissionPBComp)
+::size_t MissionPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:MissionPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -565,10 +566,10 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComp::_table_ = {
 }
 
 
-void MissionPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<MissionPBComp*>(&to_msg);
-  auto& from = static_cast<const MissionPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:MissionPBComp)
+void MissionPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MissionPBComponent*>(&to_msg);
+  auto& from = static_cast<const MissionPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:MissionPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -583,76 +584,76 @@ void MissionPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MissionPBComp::CopyFrom(const MissionPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:MissionPBComp)
+void MissionPBComponent::CopyFrom(const MissionPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:MissionPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool MissionPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool MissionPBComponent::IsInitialized() const {
   return true;
 }
 
-void MissionPBComp::InternalSwap(MissionPBComp* PROTOBUF_RESTRICT other) {
+void MissionPBComponent::InternalSwap(MissionPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.progress_.InternalSwap(&other->_impl_.progress_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_.status_)
-      + sizeof(MissionPBComp::_impl_.status_)
-      - PROTOBUF_FIELD_OFFSET(MissionPBComp, _impl_.id_)>(
+      PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.status_)
+      + sizeof(MissionPBComponent::_impl_.status_)
+      - PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));
 }
 
-::google::protobuf::Metadata MissionPBComp::GetMetadata() const {
+::google::protobuf::Metadata MissionPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fmission_5fcomp_2eproto[0]);
 }
 // ===================================================================
 
-MissionListPBComp_MissionsEntry_DoNotUse::MissionListPBComp_MissionsEntry_DoNotUse() {}
-MissionListPBComp_MissionsEntry_DoNotUse::MissionListPBComp_MissionsEntry_DoNotUse(::google::protobuf::Arena* arena)
+MissionListPBComponent_MissionsEntry_DoNotUse::MissionListPBComponent_MissionsEntry_DoNotUse() {}
+MissionListPBComponent_MissionsEntry_DoNotUse::MissionListPBComponent_MissionsEntry_DoNotUse(::google::protobuf::Arena* arena)
     : SuperType(arena) {}
-::google::protobuf::Metadata MissionListPBComp_MissionsEntry_DoNotUse::GetMetadata() const {
+::google::protobuf::Metadata MissionListPBComponent_MissionsEntry_DoNotUse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fmission_5fcomp_2eproto[1]);
 }
 // ===================================================================
 
-MissionListPBComp_CompleteMissionsEntry_DoNotUse::MissionListPBComp_CompleteMissionsEntry_DoNotUse() {}
-MissionListPBComp_CompleteMissionsEntry_DoNotUse::MissionListPBComp_CompleteMissionsEntry_DoNotUse(::google::protobuf::Arena* arena)
+MissionListPBComponent_CompleteMissionsEntry_DoNotUse::MissionListPBComponent_CompleteMissionsEntry_DoNotUse() {}
+MissionListPBComponent_CompleteMissionsEntry_DoNotUse::MissionListPBComponent_CompleteMissionsEntry_DoNotUse(::google::protobuf::Arena* arena)
     : SuperType(arena) {}
-::google::protobuf::Metadata MissionListPBComp_CompleteMissionsEntry_DoNotUse::GetMetadata() const {
+::google::protobuf::Metadata MissionListPBComponent_CompleteMissionsEntry_DoNotUse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fmission_5fcomp_2eproto[2]);
 }
 // ===================================================================
 
-MissionListPBComp_MissionBeginTimeEntry_DoNotUse::MissionListPBComp_MissionBeginTimeEntry_DoNotUse() {}
-MissionListPBComp_MissionBeginTimeEntry_DoNotUse::MissionListPBComp_MissionBeginTimeEntry_DoNotUse(::google::protobuf::Arena* arena)
+MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse() {}
+MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse(::google::protobuf::Arena* arena)
     : SuperType(arena) {}
-::google::protobuf::Metadata MissionListPBComp_MissionBeginTimeEntry_DoNotUse::GetMetadata() const {
+::google::protobuf::Metadata MissionListPBComponent_MissionBeginTimeEntry_DoNotUse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fmission_5fcomp_2eproto[3]);
 }
 // ===================================================================
 
-class MissionListPBComp::_Internal {
+class MissionListPBComponent::_Internal {
  public:
 };
 
-MissionListPBComp::MissionListPBComp(::google::protobuf::Arena* arena)
+MissionListPBComponent::MissionListPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:MissionListPBComp)
+  // @@protoc_insertion_point(arena_constructor:MissionListPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE MissionListPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE MissionListPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : missions_{visibility, arena, from.missions_},
@@ -660,20 +661,20 @@ inline PROTOBUF_NDEBUG_INLINE MissionListPBComp::Impl_::Impl_(
         mission_begin_time_{visibility, arena, from.mission_begin_time_},
         _cached_size_{0} {}
 
-MissionListPBComp::MissionListPBComp(
+MissionListPBComponent::MissionListPBComponent(
     ::google::protobuf::Arena* arena,
-    const MissionListPBComp& from)
+    const MissionListPBComponent& from)
     : ::google::protobuf::Message(arena) {
-  MissionListPBComp* const _this = this;
+  MissionListPBComponent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   _impl_.type_ = from._impl_.type_;
 
-  // @@protoc_insertion_point(copy_constructor:MissionListPBComp)
+  // @@protoc_insertion_point(copy_constructor:MissionListPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE MissionListPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE MissionListPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : missions_{visibility, arena},
@@ -681,36 +682,36 @@ inline PROTOBUF_NDEBUG_INLINE MissionListPBComp::Impl_::Impl_(
         mission_begin_time_{visibility, arena},
         _cached_size_{0} {}
 
-inline void MissionListPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void MissionListPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.type_ = {};
 }
-MissionListPBComp::~MissionListPBComp() {
-  // @@protoc_insertion_point(destructor:MissionListPBComp)
+MissionListPBComponent::~MissionListPBComponent() {
+  // @@protoc_insertion_point(destructor:MissionListPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void MissionListPBComp::SharedDtor() {
+inline void MissionListPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-MissionListPBComp::GetClassData() const {
+MissionListPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(MissionListPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_._cached_size_),
               false,
           },
-          &MissionListPBComp::MergeImpl,
-          &MissionListPBComp::kDescriptorMethods,
+          &MissionListPBComponent::MergeImpl,
+          &MissionListPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void MissionListPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:MissionListPBComp)
+PROTOBUF_NOINLINE void MissionListPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:MissionListPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -723,7 +724,7 @@ PROTOBUF_NOINLINE void MissionListPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* MissionListPBComp::_InternalParse(
+const char* MissionListPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -731,7 +732,7 @@ const char* MissionListPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 4, 4, 0, 2> MissionListPBComp::_table_ = {
+const ::_pbi::TcParseTable<0, 4, 4, 0, 2> MissionListPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -742,59 +743,59 @@ const ::_pbi::TcParseTable<0, 4, 4, 0, 2> MissionListPBComp::_table_ = {
     4,  // num_field_entries
     4,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    &_MissionListPBComp_default_instance_._instance,
+    &_MissionListPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MissionListPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MissionListPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 type = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionListPBComp, _impl_.type_), 63>(),
-     {32, 63, 0, PROTOBUF_FIELD_OFFSET(MissionListPBComp, _impl_.type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionListPBComponent, _impl_.type_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.type_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // map<uint32, .MissionPBComp> missions = 1;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComp, _impl_.missions_), 0, 0,
+    // map<uint32, .MissionPBComponent> missions = 1;
+    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.missions_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
     // map<uint32, bool> complete_missions = 2;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComp, _impl_.complete_missions_), 0, 2,
+    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.complete_missions_), 0, 2,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
     // map<uint32, uint64> mission_begin_time = 3;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComp, _impl_.mission_begin_time_), 0, 3,
+    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.mission_begin_time_), 0, 3,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
     // uint32 type = 4;
-    {PROTOBUF_FIELD_OFFSET(MissionListPBComp, _impl_.type_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MissionListPBComponent, _impl_.type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }}, {{
     {::_pbi::TcParser::GetMapAuxInfo<
-        decltype(MissionListPBComp()._impl_.missions_)>(
+        decltype(MissionListPBComponent()._impl_.missions_)>(
         0, 0, 0, 13,
         11)},
-    {::_pbi::TcParser::CreateInArenaStorageCb<::MissionPBComp>},
+    {::_pbi::TcParser::CreateInArenaStorageCb<::MissionPBComponent>},
     {::_pbi::TcParser::GetMapAuxInfo<
-        decltype(MissionListPBComp()._impl_.complete_missions_)>(
+        decltype(MissionListPBComponent()._impl_.complete_missions_)>(
         0, 0, 0, 13,
         8)},
     {::_pbi::TcParser::GetMapAuxInfo<
-        decltype(MissionListPBComp()._impl_.mission_begin_time_)>(
+        decltype(MissionListPBComponent()._impl_.mission_begin_time_)>(
         0, 0, 0, 13,
         4)},
   }}, {{
   }},
 };
 
-::uint8_t* MissionListPBComp::_InternalSerialize(
+::uint8_t* MissionListPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:MissionListPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:MissionListPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // map<uint32, .MissionPBComp> missions = 1;
+  // map<uint32, .MissionPBComponent> missions = 1;
   if (!_internal_missions().empty()) {
-    using MapType = ::google::protobuf::Map<::uint32_t, ::MissionPBComp>;
-    using WireHelper = _pbi::MapEntryFuncs<::uint32_t, ::MissionPBComp,
+    using MapType = ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>;
+    using WireHelper = _pbi::MapEntryFuncs<::uint32_t, ::MissionPBComponent,
                                    _pbi::WireFormatLite::TYPE_UINT32,
                                    _pbi::WireFormatLite::TYPE_MESSAGE>;
     const auto& field = _internal_missions();
@@ -866,22 +867,22 @@ const ::_pbi::TcParseTable<0, 4, 4, 0, 2> MissionListPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:MissionListPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:MissionListPBComponent)
   return target;
 }
 
-::size_t MissionListPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:MissionListPBComp)
+::size_t MissionListPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:MissionListPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // map<uint32, .MissionPBComp> missions = 1;
+  // map<uint32, .MissionPBComponent> missions = 1;
   total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_missions_size());
   for (const auto& entry : _internal_missions()) {
-    total_size += _pbi::MapEntryFuncs<::uint32_t, ::MissionPBComp,
+    total_size += _pbi::MapEntryFuncs<::uint32_t, ::MissionPBComponent,
                                    _pbi::WireFormatLite::TYPE_UINT32,
                                    _pbi::WireFormatLite::TYPE_MESSAGE>::ByteSizeLong(entry.first, entry.second);
   }
@@ -909,10 +910,10 @@ const ::_pbi::TcParseTable<0, 4, 4, 0, 2> MissionListPBComp::_table_ = {
 }
 
 
-void MissionListPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<MissionListPBComp*>(&to_msg);
-  auto& from = static_cast<const MissionListPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:MissionListPBComp)
+void MissionListPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MissionListPBComponent*>(&to_msg);
+  auto& from = static_cast<const MissionListPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:MissionListPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -926,18 +927,18 @@ void MissionListPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MissionListPBComp::CopyFrom(const MissionListPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:MissionListPBComp)
+void MissionListPBComponent::CopyFrom(const MissionListPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:MissionListPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool MissionListPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool MissionListPBComponent::IsInitialized() const {
   return true;
 }
 
-void MissionListPBComp::InternalSwap(MissionListPBComp* PROTOBUF_RESTRICT other) {
+void MissionListPBComponent::InternalSwap(MissionListPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.missions_.InternalSwap(&other->_impl_.missions_);
@@ -946,85 +947,85 @@ void MissionListPBComp::InternalSwap(MissionListPBComp* PROTOBUF_RESTRICT other)
         swap(_impl_.type_, other->_impl_.type_);
 }
 
-::google::protobuf::Metadata MissionListPBComp::GetMetadata() const {
+::google::protobuf::Metadata MissionListPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fmission_5fcomp_2eproto[4]);
 }
 // ===================================================================
 
-RewardListPBComp_CanRewardMissionIdEntry_DoNotUse::RewardListPBComp_CanRewardMissionIdEntry_DoNotUse() {}
-RewardListPBComp_CanRewardMissionIdEntry_DoNotUse::RewardListPBComp_CanRewardMissionIdEntry_DoNotUse(::google::protobuf::Arena* arena)
+RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse() {}
+RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse(::google::protobuf::Arena* arena)
     : SuperType(arena) {}
-::google::protobuf::Metadata RewardListPBComp_CanRewardMissionIdEntry_DoNotUse::GetMetadata() const {
+::google::protobuf::Metadata RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fmission_5fcomp_2eproto[5]);
 }
 // ===================================================================
 
-class RewardListPBComp::_Internal {
+class RewardListPBComponent::_Internal {
  public:
 };
 
-RewardListPBComp::RewardListPBComp(::google::protobuf::Arena* arena)
+RewardListPBComponent::RewardListPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:RewardListPBComp)
+  // @@protoc_insertion_point(arena_constructor:RewardListPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE RewardListPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE RewardListPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : can_reward_mission_id_{visibility, arena, from.can_reward_mission_id_},
         _cached_size_{0} {}
 
-RewardListPBComp::RewardListPBComp(
+RewardListPBComponent::RewardListPBComponent(
     ::google::protobuf::Arena* arena,
-    const RewardListPBComp& from)
+    const RewardListPBComponent& from)
     : ::google::protobuf::Message(arena) {
-  RewardListPBComp* const _this = this;
+  RewardListPBComponent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
 
-  // @@protoc_insertion_point(copy_constructor:RewardListPBComp)
+  // @@protoc_insertion_point(copy_constructor:RewardListPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE RewardListPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE RewardListPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : can_reward_mission_id_{visibility, arena},
         _cached_size_{0} {}
 
-inline void RewardListPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void RewardListPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-RewardListPBComp::~RewardListPBComp() {
-  // @@protoc_insertion_point(destructor:RewardListPBComp)
+RewardListPBComponent::~RewardListPBComponent() {
+  // @@protoc_insertion_point(destructor:RewardListPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void RewardListPBComp::SharedDtor() {
+inline void RewardListPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-RewardListPBComp::GetClassData() const {
+RewardListPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(RewardListPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(RewardListPBComponent, _impl_._cached_size_),
               false,
           },
-          &RewardListPBComp::MergeImpl,
-          &RewardListPBComp::kDescriptorMethods,
+          &RewardListPBComponent::MergeImpl,
+          &RewardListPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void RewardListPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:RewardListPBComp)
+PROTOBUF_NOINLINE void RewardListPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:RewardListPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1034,7 +1035,7 @@ PROTOBUF_NOINLINE void RewardListPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* RewardListPBComp::_InternalParse(
+const char* RewardListPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -1042,7 +1043,7 @@ const char* RewardListPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComp::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -1053,10 +1054,10 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComp::_table_ = {
     1,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    &_RewardListPBComp_default_instance_._instance,
+    &_RewardListPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::RewardListPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::RewardListPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -1064,21 +1065,21 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComp::_table_ = {
     65535, 65535
   }}, {{
     // map<uint32, bool> can_reward_mission_id = 2;
-    {PROTOBUF_FIELD_OFFSET(RewardListPBComp, _impl_.can_reward_mission_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(RewardListPBComponent, _impl_.can_reward_mission_id_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }}, {{
     {::_pbi::TcParser::GetMapAuxInfo<
-        decltype(RewardListPBComp()._impl_.can_reward_mission_id_)>(
+        decltype(RewardListPBComponent()._impl_.can_reward_mission_id_)>(
         0, 0, 0, 13,
         8)},
   }}, {{
   }},
 };
 
-::uint8_t* RewardListPBComp::_InternalSerialize(
+::uint8_t* RewardListPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:RewardListPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:RewardListPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1108,12 +1109,12 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:RewardListPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:RewardListPBComponent)
   return target;
 }
 
-::size_t RewardListPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:RewardListPBComp)
+::size_t RewardListPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:RewardListPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1131,10 +1132,10 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComp::_table_ = {
 }
 
 
-void RewardListPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<RewardListPBComp*>(&to_msg);
-  auto& from = static_cast<const RewardListPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:RewardListPBComp)
+void RewardListPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RewardListPBComponent*>(&to_msg);
+  auto& from = static_cast<const RewardListPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:RewardListPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1143,24 +1144,24 @@ void RewardListPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void RewardListPBComp::CopyFrom(const RewardListPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:RewardListPBComp)
+void RewardListPBComponent::CopyFrom(const RewardListPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:RewardListPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool RewardListPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool RewardListPBComponent::IsInitialized() const {
   return true;
 }
 
-void RewardListPBComp::InternalSwap(RewardListPBComp* PROTOBUF_RESTRICT other) {
+void RewardListPBComponent::InternalSwap(RewardListPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.can_reward_mission_id_.InternalSwap(&other->_impl_.can_reward_mission_id_);
 }
 
-::google::protobuf::Metadata RewardListPBComp::GetMetadata() const {
+::google::protobuf::Metadata RewardListPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fmission_5fcomp_2eproto[6]);

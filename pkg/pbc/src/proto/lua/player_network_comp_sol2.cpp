@@ -14,11 +14,11 @@ sol::property(&PlayerNodeInfoPBComponent::game_node_id, &PlayerNodeInfoPBCompone
 &PlayerNodeInfoPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<PlayerSessionPBComp>("PlayerSessionPBComp",
+tls_lua_state.new_usertype<PlayerSessionPBComponent>("PlayerSessionPBComponent",
 "player_id",
-sol::property(&PlayerSessionPBComp::player_id, &PlayerSessionPBComp::set_player_id),
+sol::property(&PlayerSessionPBComponent::player_id, &PlayerSessionPBComponent::set_player_id),
 "DebugString",
-&PlayerSessionPBComp::DebugString,
+&PlayerSessionPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }
