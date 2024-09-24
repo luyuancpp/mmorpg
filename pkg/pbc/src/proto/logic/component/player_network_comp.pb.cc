@@ -22,24 +22,24 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr PlayerSessionPBComp::Impl_::Impl_(
+inline constexpr PlayerSessionPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : player_id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR PlayerSessionPBComp::PlayerSessionPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR PlayerSessionPBComponent::PlayerSessionPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct PlayerSessionPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR PlayerSessionPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~PlayerSessionPBCompDefaultTypeInternal() {}
+struct PlayerSessionPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerSessionPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerSessionPBComponentDefaultTypeInternal() {}
   union {
-    PlayerSessionPBComp _instance;
+    PlayerSessionPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerSessionPBCompDefaultTypeInternal _PlayerSessionPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerSessionPBComponentDefaultTypeInternal _PlayerSessionPBComponent_default_instance_;
 
 inline constexpr PlayerNodeInfoPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -81,39 +81,39 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::PlayerNodeInfoPBComponent, _impl_.centre_node_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerNodeInfoPBComponent, _impl_.game_node_id_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::PlayerSessionPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSessionPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::PlayerSessionPBComp, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::PlayerSessionPBComponent, _impl_.player_id_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::PlayerNodeInfoPBComponent)},
-        {11, -1, -1, sizeof(::PlayerSessionPBComp)},
+        {11, -1, -1, sizeof(::PlayerSessionPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_PlayerNodeInfoPBComponent_default_instance_._instance,
-    &::_PlayerSessionPBComp_default_instance_._instance,
+    &::_PlayerSessionPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n)logic/component/player_network_comp.pr"
     "oto\"b\n\031PlayerNodeInfoPBComponent\022\027\n\017gate"
     "_session_id\030\001 \001(\004\022\026\n\016centre_node_id\030\002 \001("
-    "\r\022\024\n\014game_node_id\030\003 \001(\r\"(\n\023PlayerSession"
-    "PBComp\022\021\n\tplayer_id\030\001 \001(\004B\tZ\007pb/gameb\006pr"
-    "oto3"
+    "\r\022\024\n\014game_node_id\030\003 \001(\r\"-\n\030PlayerSession"
+    "PBComponent\022\021\n\tplayer_id\030\001 \001(\004B\tZ\007pb/gam"
+    "eb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto = {
     false,
     false,
-    204,
+    209,
     descriptor_table_protodef_logic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto,
     "logic/component/player_network_comp.proto",
     &descriptor_table_logic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once,
@@ -378,55 +378,55 @@ void PlayerNodeInfoPBComponent::InternalSwap(PlayerNodeInfoPBComponent* PROTOBUF
 }
 // ===================================================================
 
-class PlayerSessionPBComp::_Internal {
+class PlayerSessionPBComponent::_Internal {
  public:
 };
 
-PlayerSessionPBComp::PlayerSessionPBComp(::google::protobuf::Arena* arena)
+PlayerSessionPBComponent::PlayerSessionPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:PlayerSessionPBComp)
+  // @@protoc_insertion_point(arena_constructor:PlayerSessionPBComponent)
 }
-PlayerSessionPBComp::PlayerSessionPBComp(
-    ::google::protobuf::Arena* arena, const PlayerSessionPBComp& from)
-    : PlayerSessionPBComp(arena) {
+PlayerSessionPBComponent::PlayerSessionPBComponent(
+    ::google::protobuf::Arena* arena, const PlayerSessionPBComponent& from)
+    : PlayerSessionPBComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE PlayerSessionPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE PlayerSessionPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void PlayerSessionPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void PlayerSessionPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.player_id_ = {};
 }
-PlayerSessionPBComp::~PlayerSessionPBComp() {
-  // @@protoc_insertion_point(destructor:PlayerSessionPBComp)
+PlayerSessionPBComponent::~PlayerSessionPBComponent() {
+  // @@protoc_insertion_point(destructor:PlayerSessionPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void PlayerSessionPBComp::SharedDtor() {
+inline void PlayerSessionPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-PlayerSessionPBComp::GetClassData() const {
+PlayerSessionPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(PlayerSessionPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(PlayerSessionPBComponent, _impl_._cached_size_),
               false,
           },
-          &PlayerSessionPBComp::MergeImpl,
-          &PlayerSessionPBComp::kDescriptorMethods,
+          &PlayerSessionPBComponent::MergeImpl,
+          &PlayerSessionPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void PlayerSessionPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:PlayerSessionPBComp)
+PROTOBUF_NOINLINE void PlayerSessionPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerSessionPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -436,7 +436,7 @@ PROTOBUF_NOINLINE void PlayerSessionPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* PlayerSessionPBComp::_InternalParse(
+const char* PlayerSessionPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -444,7 +444,7 @@ const char* PlayerSessionPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSessionPBComp::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSessionPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -455,20 +455,20 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSessionPBComp::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_PlayerSessionPBComp_default_instance_._instance,
+    &_PlayerSessionPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::PlayerSessionPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::PlayerSessionPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 player_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionPBComp, _impl_.player_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionPBComp, _impl_.player_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionPBComponent, _impl_.player_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionPBComponent, _impl_.player_id_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 player_id = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerSessionPBComp, _impl_.player_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerSessionPBComponent, _impl_.player_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -476,10 +476,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSessionPBComp::_table_ = {
   }},
 };
 
-::uint8_t* PlayerSessionPBComp::_InternalSerialize(
+::uint8_t* PlayerSessionPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:PlayerSessionPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerSessionPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -495,12 +495,12 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSessionPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:PlayerSessionPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerSessionPBComponent)
   return target;
 }
 
-::size_t PlayerSessionPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:PlayerSessionPBComp)
+::size_t PlayerSessionPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:PlayerSessionPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -517,10 +517,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> PlayerSessionPBComp::_table_ = {
 }
 
 
-void PlayerSessionPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<PlayerSessionPBComp*>(&to_msg);
-  auto& from = static_cast<const PlayerSessionPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerSessionPBComp)
+void PlayerSessionPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerSessionPBComponent*>(&to_msg);
+  auto& from = static_cast<const PlayerSessionPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerSessionPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -531,24 +531,24 @@ void PlayerSessionPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void PlayerSessionPBComp::CopyFrom(const PlayerSessionPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:PlayerSessionPBComp)
+void PlayerSessionPBComponent::CopyFrom(const PlayerSessionPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerSessionPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool PlayerSessionPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool PlayerSessionPBComponent::IsInitialized() const {
   return true;
 }
 
-void PlayerSessionPBComp::InternalSwap(PlayerSessionPBComp* PROTOBUF_RESTRICT other) {
+void PlayerSessionPBComponent::InternalSwap(PlayerSessionPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
         swap(_impl_.player_id_, other->_impl_.player_id_);
 }
 
-::google::protobuf::Metadata PlayerSessionPBComp::GetMetadata() const {
+::google::protobuf::Metadata PlayerSessionPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fplayer_5fnetwork_5fcomp_2eproto[1]);

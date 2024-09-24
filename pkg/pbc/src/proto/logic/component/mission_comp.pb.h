@@ -53,102 +53,102 @@ struct TableStruct_logic_2fcomponent_2fmission_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto;
-class MissionListPBComp;
-struct MissionListPBCompDefaultTypeInternal;
-extern MissionListPBCompDefaultTypeInternal _MissionListPBComp_default_instance_;
-class MissionListPBComp_CompleteMissionsEntry_DoNotUse;
-struct MissionListPBComp_CompleteMissionsEntry_DoNotUseDefaultTypeInternal;
-extern MissionListPBComp_CompleteMissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComp_CompleteMissionsEntry_DoNotUse_default_instance_;
-class MissionListPBComp_MissionBeginTimeEntry_DoNotUse;
-struct MissionListPBComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal;
-extern MissionListPBComp_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal _MissionListPBComp_MissionBeginTimeEntry_DoNotUse_default_instance_;
-class MissionListPBComp_MissionsEntry_DoNotUse;
-struct MissionListPBComp_MissionsEntry_DoNotUseDefaultTypeInternal;
-extern MissionListPBComp_MissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComp_MissionsEntry_DoNotUse_default_instance_;
-class MissionPBComp;
-struct MissionPBCompDefaultTypeInternal;
-extern MissionPBCompDefaultTypeInternal _MissionPBComp_default_instance_;
-class RewardListPBComp;
-struct RewardListPBCompDefaultTypeInternal;
-extern RewardListPBCompDefaultTypeInternal _RewardListPBComp_default_instance_;
-class RewardListPBComp_CanRewardMissionIdEntry_DoNotUse;
-struct RewardListPBComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal;
-extern RewardListPBComp_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal _RewardListPBComp_CanRewardMissionIdEntry_DoNotUse_default_instance_;
+class MissionListPBComponent;
+struct MissionListPBComponentDefaultTypeInternal;
+extern MissionListPBComponentDefaultTypeInternal _MissionListPBComponent_default_instance_;
+class MissionListPBComponent_CompleteMissionsEntry_DoNotUse;
+struct MissionListPBComponent_CompleteMissionsEntry_DoNotUseDefaultTypeInternal;
+extern MissionListPBComponent_CompleteMissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_CompleteMissionsEntry_DoNotUse_default_instance_;
+class MissionListPBComponent_MissionBeginTimeEntry_DoNotUse;
+struct MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal;
+extern MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_default_instance_;
+class MissionListPBComponent_MissionsEntry_DoNotUse;
+struct MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal;
+extern MissionListPBComponent_MissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_MissionsEntry_DoNotUse_default_instance_;
+class MissionPBComponent;
+struct MissionPBComponentDefaultTypeInternal;
+extern MissionPBComponentDefaultTypeInternal _MissionPBComponent_default_instance_;
+class RewardListPBComponent;
+struct RewardListPBComponentDefaultTypeInternal;
+extern RewardListPBComponentDefaultTypeInternal _RewardListPBComponent_default_instance_;
+class RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse;
+struct RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal;
+extern RewardListPBComponent_CanRewardMissionIdEntry_DoNotUseDefaultTypeInternal _RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
 }  // namespace google
 
-enum MissionPBComp_eMissionStatus : int {
-  MissionPBComp_eMissionStatus_E_MISSION_NORMAL = 0,
-  MissionPBComp_eMissionStatus_E_MISSION_ACHIEVEMENT = 1,
-  MissionPBComp_eMissionStatus_E_MISSION_COMPLETE = 2,
-  MissionPBComp_eMissionStatus_E_MISSION_TIME_OUT = 3,
-  MissionPBComp_eMissionStatus_E_MISSION_FAILD = 4,
-  MissionPBComp_eMissionStatus_MissionPBComp_eMissionStatus_INT_MIN_SENTINEL_DO_NOT_USE_ =
+enum MissionPBComponent_eMissionStatus : int {
+  MissionPBComponent_eMissionStatus_E_MISSION_NORMAL = 0,
+  MissionPBComponent_eMissionStatus_E_MISSION_ACHIEVEMENT = 1,
+  MissionPBComponent_eMissionStatus_E_MISSION_COMPLETE = 2,
+  MissionPBComponent_eMissionStatus_E_MISSION_TIME_OUT = 3,
+  MissionPBComponent_eMissionStatus_E_MISSION_FAILD = 4,
+  MissionPBComponent_eMissionStatus_MissionPBComponent_eMissionStatus_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
-  MissionPBComp_eMissionStatus_MissionPBComp_eMissionStatus_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  MissionPBComponent_eMissionStatus_MissionPBComponent_eMissionStatus_INT_MAX_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::max(),
 };
 
-bool MissionPBComp_eMissionStatus_IsValid(int value);
-extern const uint32_t MissionPBComp_eMissionStatus_internal_data_[];
-constexpr MissionPBComp_eMissionStatus MissionPBComp_eMissionStatus_eMissionStatus_MIN = static_cast<MissionPBComp_eMissionStatus>(0);
-constexpr MissionPBComp_eMissionStatus MissionPBComp_eMissionStatus_eMissionStatus_MAX = static_cast<MissionPBComp_eMissionStatus>(4);
-constexpr int MissionPBComp_eMissionStatus_eMissionStatus_ARRAYSIZE = 4 + 1;
+bool MissionPBComponent_eMissionStatus_IsValid(int value);
+extern const uint32_t MissionPBComponent_eMissionStatus_internal_data_[];
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent_eMissionStatus_eMissionStatus_MIN = static_cast<MissionPBComponent_eMissionStatus>(0);
+constexpr MissionPBComponent_eMissionStatus MissionPBComponent_eMissionStatus_eMissionStatus_MAX = static_cast<MissionPBComponent_eMissionStatus>(4);
+constexpr int MissionPBComponent_eMissionStatus_eMissionStatus_ARRAYSIZE = 4 + 1;
 const ::google::protobuf::EnumDescriptor*
-MissionPBComp_eMissionStatus_descriptor();
+MissionPBComponent_eMissionStatus_descriptor();
 template <typename T>
-const std::string& MissionPBComp_eMissionStatus_Name(T value) {
-  static_assert(std::is_same<T, MissionPBComp_eMissionStatus>::value ||
+const std::string& MissionPBComponent_eMissionStatus_Name(T value) {
+  static_assert(std::is_same<T, MissionPBComponent_eMissionStatus>::value ||
                     std::is_integral<T>::value,
                 "Incorrect type passed to eMissionStatus_Name().");
-  return MissionPBComp_eMissionStatus_Name(static_cast<MissionPBComp_eMissionStatus>(value));
+  return MissionPBComponent_eMissionStatus_Name(static_cast<MissionPBComponent_eMissionStatus>(value));
 }
 template <>
-inline const std::string& MissionPBComp_eMissionStatus_Name(MissionPBComp_eMissionStatus value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<MissionPBComp_eMissionStatus_descriptor,
+inline const std::string& MissionPBComponent_eMissionStatus_Name(MissionPBComponent_eMissionStatus value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<MissionPBComponent_eMissionStatus_descriptor,
                                                  0, 4>(
       static_cast<int>(value));
 }
-inline bool MissionPBComp_eMissionStatus_Parse(absl::string_view name, MissionPBComp_eMissionStatus* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<MissionPBComp_eMissionStatus>(
-      MissionPBComp_eMissionStatus_descriptor(), name, value);
+inline bool MissionPBComponent_eMissionStatus_Parse(absl::string_view name, MissionPBComponent_eMissionStatus* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<MissionPBComponent_eMissionStatus>(
+      MissionPBComponent_eMissionStatus_descriptor(), name, value);
 }
-enum MissionListPBComp_eMissionType : int {
-  MissionListPBComp_eMissionType_kPlayerMission = 0,
-  MissionListPBComp_eMissionType_kPlayerAchievment = 1,
-  MissionListPBComp_eMissionType_kPlayerDailyActivity = 2,
-  MissionListPBComp_eMissionType_kPlayerMissionSize = 3,
-  MissionListPBComp_eMissionType_MissionListPBComp_eMissionType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+enum MissionListPBComponent_eMissionType : int {
+  MissionListPBComponent_eMissionType_kPlayerMission = 0,
+  MissionListPBComponent_eMissionType_kPlayerAchievment = 1,
+  MissionListPBComponent_eMissionType_kPlayerDailyActivity = 2,
+  MissionListPBComponent_eMissionType_kPlayerMissionSize = 3,
+  MissionListPBComponent_eMissionType_MissionListPBComponent_eMissionType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
-  MissionListPBComp_eMissionType_MissionListPBComp_eMissionType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  MissionListPBComponent_eMissionType_MissionListPBComponent_eMissionType_INT_MAX_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::max(),
 };
 
-bool MissionListPBComp_eMissionType_IsValid(int value);
-extern const uint32_t MissionListPBComp_eMissionType_internal_data_[];
-constexpr MissionListPBComp_eMissionType MissionListPBComp_eMissionType_eMissionType_MIN = static_cast<MissionListPBComp_eMissionType>(0);
-constexpr MissionListPBComp_eMissionType MissionListPBComp_eMissionType_eMissionType_MAX = static_cast<MissionListPBComp_eMissionType>(3);
-constexpr int MissionListPBComp_eMissionType_eMissionType_ARRAYSIZE = 3 + 1;
+bool MissionListPBComponent_eMissionType_IsValid(int value);
+extern const uint32_t MissionListPBComponent_eMissionType_internal_data_[];
+constexpr MissionListPBComponent_eMissionType MissionListPBComponent_eMissionType_eMissionType_MIN = static_cast<MissionListPBComponent_eMissionType>(0);
+constexpr MissionListPBComponent_eMissionType MissionListPBComponent_eMissionType_eMissionType_MAX = static_cast<MissionListPBComponent_eMissionType>(3);
+constexpr int MissionListPBComponent_eMissionType_eMissionType_ARRAYSIZE = 3 + 1;
 const ::google::protobuf::EnumDescriptor*
-MissionListPBComp_eMissionType_descriptor();
+MissionListPBComponent_eMissionType_descriptor();
 template <typename T>
-const std::string& MissionListPBComp_eMissionType_Name(T value) {
-  static_assert(std::is_same<T, MissionListPBComp_eMissionType>::value ||
+const std::string& MissionListPBComponent_eMissionType_Name(T value) {
+  static_assert(std::is_same<T, MissionListPBComponent_eMissionType>::value ||
                     std::is_integral<T>::value,
                 "Incorrect type passed to eMissionType_Name().");
-  return MissionListPBComp_eMissionType_Name(static_cast<MissionListPBComp_eMissionType>(value));
+  return MissionListPBComponent_eMissionType_Name(static_cast<MissionListPBComponent_eMissionType>(value));
 }
 template <>
-inline const std::string& MissionListPBComp_eMissionType_Name(MissionListPBComp_eMissionType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<MissionListPBComp_eMissionType_descriptor,
+inline const std::string& MissionListPBComponent_eMissionType_Name(MissionListPBComponent_eMissionType value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<MissionListPBComponent_eMissionType_descriptor,
                                                  0, 3>(
       static_cast<int>(value));
 }
-inline bool MissionListPBComp_eMissionType_Parse(absl::string_view name, MissionListPBComp_eMissionType* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<MissionListPBComp_eMissionType>(
-      MissionListPBComp_eMissionType_descriptor(), name, value);
+inline bool MissionListPBComponent_eMissionType_Parse(absl::string_view name, MissionListPBComponent_eMissionType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<MissionListPBComponent_eMissionType>(
+      MissionListPBComponent_eMissionType_descriptor(), name, value);
 }
 
 // ===================================================================
@@ -156,24 +156,24 @@ inline bool MissionListPBComp_eMissionType_Parse(absl::string_view name, Mission
 
 // -------------------------------------------------------------------
 
-class RewardListPBComp_CanRewardMissionIdEntry_DoNotUse final
+class RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<
-          RewardListPBComp_CanRewardMissionIdEntry_DoNotUse, ::uint32_t, bool,
+          RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, ::uint32_t, bool,
           ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
           ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
  public:
   using SuperType = ::google::protobuf::internal::MapEntry<
-      RewardListPBComp_CanRewardMissionIdEntry_DoNotUse, ::uint32_t, bool,
+      RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, ::uint32_t, bool,
       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
-  RewardListPBComp_CanRewardMissionIdEntry_DoNotUse();
+  RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RewardListPBComp_CanRewardMissionIdEntry_DoNotUse(
+  explicit PROTOBUF_CONSTEXPR RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse(
       ::google::protobuf::internal::ConstantInitialized);
-  explicit RewardListPBComp_CanRewardMissionIdEntry_DoNotUse(::google::protobuf::Arena* arena);
-  static const RewardListPBComp_CanRewardMissionIdEntry_DoNotUse* internal_default_instance() {
-    return reinterpret_cast<const RewardListPBComp_CanRewardMissionIdEntry_DoNotUse*>(
-        &_RewardListPBComp_CanRewardMissionIdEntry_DoNotUse_default_instance_);
+  explicit RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse*>(
+        &_RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse_default_instance_);
   }
   static bool ValidateKey(void*) { return true; }
   static bool ValidateValue(void*) { return true; }
@@ -182,23 +182,23 @@ class RewardListPBComp_CanRewardMissionIdEntry_DoNotUse final
 };
 // -------------------------------------------------------------------
 
-class MissionPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:MissionPBComp) */ {
+class MissionPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:MissionPBComponent) */ {
  public:
-  inline MissionPBComp() : MissionPBComp(nullptr) {}
-  ~MissionPBComp() override;
+  inline MissionPBComponent() : MissionPBComponent(nullptr) {}
+  ~MissionPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MissionPBComp(
+  explicit PROTOBUF_CONSTEXPR MissionPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline MissionPBComp(const MissionPBComp& from) : MissionPBComp(nullptr, from) {}
-  inline MissionPBComp(MissionPBComp&& from) noexcept
-      : MissionPBComp(nullptr, std::move(from)) {}
-  inline MissionPBComp& operator=(const MissionPBComp& from) {
+  inline MissionPBComponent(const MissionPBComponent& from) : MissionPBComponent(nullptr, from) {}
+  inline MissionPBComponent(MissionPBComponent&& from) noexcept
+      : MissionPBComponent(nullptr, std::move(from)) {}
+  inline MissionPBComponent& operator=(const MissionPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline MissionPBComp& operator=(MissionPBComp&& from) noexcept {
+  inline MissionPBComponent& operator=(MissionPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -230,16 +230,16 @@ class MissionPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const MissionPBComp& default_instance() {
+  static const MissionPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const MissionPBComp* internal_default_instance() {
-    return reinterpret_cast<const MissionPBComp*>(
-        &_MissionPBComp_default_instance_);
+  static inline const MissionPBComponent* internal_default_instance() {
+    return reinterpret_cast<const MissionPBComponent*>(
+        &_MissionPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(MissionPBComp& a, MissionPBComp& b) { a.Swap(&b); }
-  inline void Swap(MissionPBComp* other) {
+  friend void swap(MissionPBComponent& a, MissionPBComponent& b) { a.Swap(&b); }
+  inline void Swap(MissionPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -251,7 +251,7 @@ class MissionPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(MissionPBComp* other) {
+  void UnsafeArenaSwap(MissionPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -259,13 +259,13 @@ class MissionPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  MissionPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<MissionPBComp>(arena);
+  MissionPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<MissionPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MissionPBComp& from);
+  void CopyFrom(const MissionPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MissionPBComp& from) { MissionPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const MissionPBComponent& from) { MissionPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -286,16 +286,16 @@ class MissionPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(MissionPBComp* other);
+  void InternalSwap(MissionPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "MissionPBComp"; }
+  static ::absl::string_view FullMessageName() { return "MissionPBComponent"; }
 
  protected:
-  explicit MissionPBComp(::google::protobuf::Arena* arena);
-  MissionPBComp(::google::protobuf::Arena* arena, const MissionPBComp& from);
-  MissionPBComp(::google::protobuf::Arena* arena, MissionPBComp&& from) noexcept
-      : MissionPBComp(arena) {
+  explicit MissionPBComponent(::google::protobuf::Arena* arena);
+  MissionPBComponent(::google::protobuf::Arena* arena, const MissionPBComponent& from);
+  MissionPBComponent(::google::protobuf::Arena* arena, MissionPBComponent&& from) noexcept
+      : MissionPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -304,27 +304,27 @@ class MissionPBComp final : public ::google::protobuf::Message
  public:
   ::google::protobuf::Metadata GetMetadata() const final;
   // nested types ----------------------------------------------------
-  using eMissionStatus = MissionPBComp_eMissionStatus;
-  static constexpr eMissionStatus E_MISSION_NORMAL = MissionPBComp_eMissionStatus_E_MISSION_NORMAL;
-  static constexpr eMissionStatus E_MISSION_ACHIEVEMENT = MissionPBComp_eMissionStatus_E_MISSION_ACHIEVEMENT;
-  static constexpr eMissionStatus E_MISSION_COMPLETE = MissionPBComp_eMissionStatus_E_MISSION_COMPLETE;
-  static constexpr eMissionStatus E_MISSION_TIME_OUT = MissionPBComp_eMissionStatus_E_MISSION_TIME_OUT;
-  static constexpr eMissionStatus E_MISSION_FAILD = MissionPBComp_eMissionStatus_E_MISSION_FAILD;
+  using eMissionStatus = MissionPBComponent_eMissionStatus;
+  static constexpr eMissionStatus E_MISSION_NORMAL = MissionPBComponent_eMissionStatus_E_MISSION_NORMAL;
+  static constexpr eMissionStatus E_MISSION_ACHIEVEMENT = MissionPBComponent_eMissionStatus_E_MISSION_ACHIEVEMENT;
+  static constexpr eMissionStatus E_MISSION_COMPLETE = MissionPBComponent_eMissionStatus_E_MISSION_COMPLETE;
+  static constexpr eMissionStatus E_MISSION_TIME_OUT = MissionPBComponent_eMissionStatus_E_MISSION_TIME_OUT;
+  static constexpr eMissionStatus E_MISSION_FAILD = MissionPBComponent_eMissionStatus_E_MISSION_FAILD;
   static inline bool eMissionStatus_IsValid(int value) {
-    return MissionPBComp_eMissionStatus_IsValid(value);
+    return MissionPBComponent_eMissionStatus_IsValid(value);
   }
-  static constexpr eMissionStatus eMissionStatus_MIN = MissionPBComp_eMissionStatus_eMissionStatus_MIN;
-  static constexpr eMissionStatus eMissionStatus_MAX = MissionPBComp_eMissionStatus_eMissionStatus_MAX;
-  static constexpr int eMissionStatus_ARRAYSIZE = MissionPBComp_eMissionStatus_eMissionStatus_ARRAYSIZE;
+  static constexpr eMissionStatus eMissionStatus_MIN = MissionPBComponent_eMissionStatus_eMissionStatus_MIN;
+  static constexpr eMissionStatus eMissionStatus_MAX = MissionPBComponent_eMissionStatus_eMissionStatus_MAX;
+  static constexpr int eMissionStatus_ARRAYSIZE = MissionPBComponent_eMissionStatus_eMissionStatus_ARRAYSIZE;
   static inline const ::google::protobuf::EnumDescriptor* eMissionStatus_descriptor() {
-    return MissionPBComp_eMissionStatus_descriptor();
+    return MissionPBComponent_eMissionStatus_descriptor();
   }
   template <typename T>
   static inline const std::string& eMissionStatus_Name(T value) {
-    return MissionPBComp_eMissionStatus_Name(value);
+    return MissionPBComponent_eMissionStatus_Name(value);
   }
   static inline bool eMissionStatus_Parse(absl::string_view name, eMissionStatus* value) {
-    return MissionPBComp_eMissionStatus_Parse(name, value);
+    return MissionPBComponent_eMissionStatus_Parse(name, value);
   }
 
   // accessors -------------------------------------------------------
@@ -371,7 +371,7 @@ class MissionPBComp final : public ::google::protobuf::Message
   void _internal_set_status(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:MissionPBComp)
+  // @@protoc_insertion_point(class_scope:MissionPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -404,24 +404,24 @@ class MissionPBComp final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class MissionListPBComp_MissionBeginTimeEntry_DoNotUse final
+class MissionListPBComponent_MissionBeginTimeEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<
-          MissionListPBComp_MissionBeginTimeEntry_DoNotUse, ::uint32_t, ::uint64_t,
+          MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, ::uint32_t, ::uint64_t,
           ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
           ::google::protobuf::internal::WireFormatLite::TYPE_UINT64> {
  public:
   using SuperType = ::google::protobuf::internal::MapEntry<
-      MissionListPBComp_MissionBeginTimeEntry_DoNotUse, ::uint32_t, ::uint64_t,
+      MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, ::uint32_t, ::uint64_t,
       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>;
-  MissionListPBComp_MissionBeginTimeEntry_DoNotUse();
+  MissionListPBComponent_MissionBeginTimeEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MissionListPBComp_MissionBeginTimeEntry_DoNotUse(
+  explicit PROTOBUF_CONSTEXPR MissionListPBComponent_MissionBeginTimeEntry_DoNotUse(
       ::google::protobuf::internal::ConstantInitialized);
-  explicit MissionListPBComp_MissionBeginTimeEntry_DoNotUse(::google::protobuf::Arena* arena);
-  static const MissionListPBComp_MissionBeginTimeEntry_DoNotUse* internal_default_instance() {
-    return reinterpret_cast<const MissionListPBComp_MissionBeginTimeEntry_DoNotUse*>(
-        &_MissionListPBComp_MissionBeginTimeEntry_DoNotUse_default_instance_);
+  explicit MissionListPBComponent_MissionBeginTimeEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const MissionListPBComponent_MissionBeginTimeEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const MissionListPBComponent_MissionBeginTimeEntry_DoNotUse*>(
+        &_MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_default_instance_);
   }
   static bool ValidateKey(void*) { return true; }
   static bool ValidateValue(void*) { return true; }
@@ -430,24 +430,24 @@ class MissionListPBComp_MissionBeginTimeEntry_DoNotUse final
 };
 // -------------------------------------------------------------------
 
-class MissionListPBComp_CompleteMissionsEntry_DoNotUse final
+class MissionListPBComponent_CompleteMissionsEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<
-          MissionListPBComp_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
+          MissionListPBComponent_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
           ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
           ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
  public:
   using SuperType = ::google::protobuf::internal::MapEntry<
-      MissionListPBComp_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
+      MissionListPBComponent_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
-  MissionListPBComp_CompleteMissionsEntry_DoNotUse();
+  MissionListPBComponent_CompleteMissionsEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MissionListPBComp_CompleteMissionsEntry_DoNotUse(
+  explicit PROTOBUF_CONSTEXPR MissionListPBComponent_CompleteMissionsEntry_DoNotUse(
       ::google::protobuf::internal::ConstantInitialized);
-  explicit MissionListPBComp_CompleteMissionsEntry_DoNotUse(::google::protobuf::Arena* arena);
-  static const MissionListPBComp_CompleteMissionsEntry_DoNotUse* internal_default_instance() {
-    return reinterpret_cast<const MissionListPBComp_CompleteMissionsEntry_DoNotUse*>(
-        &_MissionListPBComp_CompleteMissionsEntry_DoNotUse_default_instance_);
+  explicit MissionListPBComponent_CompleteMissionsEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const MissionListPBComponent_CompleteMissionsEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const MissionListPBComponent_CompleteMissionsEntry_DoNotUse*>(
+        &_MissionListPBComponent_CompleteMissionsEntry_DoNotUse_default_instance_);
   }
   static bool ValidateKey(void*) { return true; }
   static bool ValidateValue(void*) { return true; }
@@ -456,23 +456,23 @@ class MissionListPBComp_CompleteMissionsEntry_DoNotUse final
 };
 // -------------------------------------------------------------------
 
-class RewardListPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:RewardListPBComp) */ {
+class RewardListPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:RewardListPBComponent) */ {
  public:
-  inline RewardListPBComp() : RewardListPBComp(nullptr) {}
-  ~RewardListPBComp() override;
+  inline RewardListPBComponent() : RewardListPBComponent(nullptr) {}
+  ~RewardListPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RewardListPBComp(
+  explicit PROTOBUF_CONSTEXPR RewardListPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline RewardListPBComp(const RewardListPBComp& from) : RewardListPBComp(nullptr, from) {}
-  inline RewardListPBComp(RewardListPBComp&& from) noexcept
-      : RewardListPBComp(nullptr, std::move(from)) {}
-  inline RewardListPBComp& operator=(const RewardListPBComp& from) {
+  inline RewardListPBComponent(const RewardListPBComponent& from) : RewardListPBComponent(nullptr, from) {}
+  inline RewardListPBComponent(RewardListPBComponent&& from) noexcept
+      : RewardListPBComponent(nullptr, std::move(from)) {}
+  inline RewardListPBComponent& operator=(const RewardListPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RewardListPBComp& operator=(RewardListPBComp&& from) noexcept {
+  inline RewardListPBComponent& operator=(RewardListPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -504,16 +504,16 @@ class RewardListPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const RewardListPBComp& default_instance() {
+  static const RewardListPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const RewardListPBComp* internal_default_instance() {
-    return reinterpret_cast<const RewardListPBComp*>(
-        &_RewardListPBComp_default_instance_);
+  static inline const RewardListPBComponent* internal_default_instance() {
+    return reinterpret_cast<const RewardListPBComponent*>(
+        &_RewardListPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 6;
-  friend void swap(RewardListPBComp& a, RewardListPBComp& b) { a.Swap(&b); }
-  inline void Swap(RewardListPBComp* other) {
+  friend void swap(RewardListPBComponent& a, RewardListPBComponent& b) { a.Swap(&b); }
+  inline void Swap(RewardListPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -525,7 +525,7 @@ class RewardListPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RewardListPBComp* other) {
+  void UnsafeArenaSwap(RewardListPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -533,13 +533,13 @@ class RewardListPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  RewardListPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<RewardListPBComp>(arena);
+  RewardListPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<RewardListPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RewardListPBComp& from);
+  void CopyFrom(const RewardListPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RewardListPBComp& from) { RewardListPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const RewardListPBComponent& from) { RewardListPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -560,16 +560,16 @@ class RewardListPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(RewardListPBComp* other);
+  void InternalSwap(RewardListPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "RewardListPBComp"; }
+  static ::absl::string_view FullMessageName() { return "RewardListPBComponent"; }
 
  protected:
-  explicit RewardListPBComp(::google::protobuf::Arena* arena);
-  RewardListPBComp(::google::protobuf::Arena* arena, const RewardListPBComp& from);
-  RewardListPBComp(::google::protobuf::Arena* arena, RewardListPBComp&& from) noexcept
-      : RewardListPBComp(arena) {
+  explicit RewardListPBComponent(::google::protobuf::Arena* arena);
+  RewardListPBComponent(::google::protobuf::Arena* arena, const RewardListPBComponent& from);
+  RewardListPBComponent(::google::protobuf::Arena* arena, RewardListPBComponent&& from) noexcept
+      : RewardListPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -598,7 +598,7 @@ class RewardListPBComp final : public ::google::protobuf::Message
   ::google::protobuf::Map<::uint32_t, bool>* _internal_mutable_can_reward_mission_id();
 
   public:
-  // @@protoc_insertion_point(class_scope:RewardListPBComp)
+  // @@protoc_insertion_point(class_scope:RewardListPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -619,7 +619,7 @@ class RewardListPBComp final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::MapField<RewardListPBComp_CanRewardMissionIdEntry_DoNotUse, ::uint32_t, bool,
+    ::google::protobuf::internal::MapField<RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse, ::uint32_t, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         can_reward_mission_id_;
@@ -631,24 +631,24 @@ class RewardListPBComp final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class MissionListPBComp_MissionsEntry_DoNotUse final
+class MissionListPBComponent_MissionsEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<
-          MissionListPBComp_MissionsEntry_DoNotUse, ::uint32_t, ::MissionPBComp,
+          MissionListPBComponent_MissionsEntry_DoNotUse, ::uint32_t, ::MissionPBComponent,
           ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
           ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE> {
  public:
   using SuperType = ::google::protobuf::internal::MapEntry<
-      MissionListPBComp_MissionsEntry_DoNotUse, ::uint32_t, ::MissionPBComp,
+      MissionListPBComponent_MissionsEntry_DoNotUse, ::uint32_t, ::MissionPBComponent,
       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
       ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE>;
-  MissionListPBComp_MissionsEntry_DoNotUse();
+  MissionListPBComponent_MissionsEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MissionListPBComp_MissionsEntry_DoNotUse(
+  explicit PROTOBUF_CONSTEXPR MissionListPBComponent_MissionsEntry_DoNotUse(
       ::google::protobuf::internal::ConstantInitialized);
-  explicit MissionListPBComp_MissionsEntry_DoNotUse(::google::protobuf::Arena* arena);
-  static const MissionListPBComp_MissionsEntry_DoNotUse* internal_default_instance() {
-    return reinterpret_cast<const MissionListPBComp_MissionsEntry_DoNotUse*>(
-        &_MissionListPBComp_MissionsEntry_DoNotUse_default_instance_);
+  explicit MissionListPBComponent_MissionsEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const MissionListPBComponent_MissionsEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const MissionListPBComponent_MissionsEntry_DoNotUse*>(
+        &_MissionListPBComponent_MissionsEntry_DoNotUse_default_instance_);
   }
   static bool ValidateKey(void*) { return true; }
   static bool ValidateValue(void*) { return true; }
@@ -657,23 +657,23 @@ class MissionListPBComp_MissionsEntry_DoNotUse final
 };
 // -------------------------------------------------------------------
 
-class MissionListPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:MissionListPBComp) */ {
+class MissionListPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:MissionListPBComponent) */ {
  public:
-  inline MissionListPBComp() : MissionListPBComp(nullptr) {}
-  ~MissionListPBComp() override;
+  inline MissionListPBComponent() : MissionListPBComponent(nullptr) {}
+  ~MissionListPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MissionListPBComp(
+  explicit PROTOBUF_CONSTEXPR MissionListPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline MissionListPBComp(const MissionListPBComp& from) : MissionListPBComp(nullptr, from) {}
-  inline MissionListPBComp(MissionListPBComp&& from) noexcept
-      : MissionListPBComp(nullptr, std::move(from)) {}
-  inline MissionListPBComp& operator=(const MissionListPBComp& from) {
+  inline MissionListPBComponent(const MissionListPBComponent& from) : MissionListPBComponent(nullptr, from) {}
+  inline MissionListPBComponent(MissionListPBComponent&& from) noexcept
+      : MissionListPBComponent(nullptr, std::move(from)) {}
+  inline MissionListPBComponent& operator=(const MissionListPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline MissionListPBComp& operator=(MissionListPBComp&& from) noexcept {
+  inline MissionListPBComponent& operator=(MissionListPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -705,16 +705,16 @@ class MissionListPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const MissionListPBComp& default_instance() {
+  static const MissionListPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const MissionListPBComp* internal_default_instance() {
-    return reinterpret_cast<const MissionListPBComp*>(
-        &_MissionListPBComp_default_instance_);
+  static inline const MissionListPBComponent* internal_default_instance() {
+    return reinterpret_cast<const MissionListPBComponent*>(
+        &_MissionListPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 4;
-  friend void swap(MissionListPBComp& a, MissionListPBComp& b) { a.Swap(&b); }
-  inline void Swap(MissionListPBComp* other) {
+  friend void swap(MissionListPBComponent& a, MissionListPBComponent& b) { a.Swap(&b); }
+  inline void Swap(MissionListPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -726,7 +726,7 @@ class MissionListPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(MissionListPBComp* other) {
+  void UnsafeArenaSwap(MissionListPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -734,13 +734,13 @@ class MissionListPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  MissionListPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<MissionListPBComp>(arena);
+  MissionListPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<MissionListPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MissionListPBComp& from);
+  void CopyFrom(const MissionListPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MissionListPBComp& from) { MissionListPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const MissionListPBComponent& from) { MissionListPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -761,16 +761,16 @@ class MissionListPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(MissionListPBComp* other);
+  void InternalSwap(MissionListPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "MissionListPBComp"; }
+  static ::absl::string_view FullMessageName() { return "MissionListPBComponent"; }
 
  protected:
-  explicit MissionListPBComp(::google::protobuf::Arena* arena);
-  MissionListPBComp(::google::protobuf::Arena* arena, const MissionListPBComp& from);
-  MissionListPBComp(::google::protobuf::Arena* arena, MissionListPBComp&& from) noexcept
-      : MissionListPBComp(arena) {
+  explicit MissionListPBComponent(::google::protobuf::Arena* arena);
+  MissionListPBComponent(::google::protobuf::Arena* arena, const MissionListPBComponent& from);
+  MissionListPBComponent(::google::protobuf::Arena* arena, MissionListPBComponent&& from) noexcept
+      : MissionListPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -779,26 +779,26 @@ class MissionListPBComp final : public ::google::protobuf::Message
  public:
   ::google::protobuf::Metadata GetMetadata() const final;
   // nested types ----------------------------------------------------
-  using eMissionType = MissionListPBComp_eMissionType;
-  static constexpr eMissionType kPlayerMission = MissionListPBComp_eMissionType_kPlayerMission;
-  static constexpr eMissionType kPlayerAchievment = MissionListPBComp_eMissionType_kPlayerAchievment;
-  static constexpr eMissionType kPlayerDailyActivity = MissionListPBComp_eMissionType_kPlayerDailyActivity;
-  static constexpr eMissionType kPlayerMissionSize = MissionListPBComp_eMissionType_kPlayerMissionSize;
+  using eMissionType = MissionListPBComponent_eMissionType;
+  static constexpr eMissionType kPlayerMission = MissionListPBComponent_eMissionType_kPlayerMission;
+  static constexpr eMissionType kPlayerAchievment = MissionListPBComponent_eMissionType_kPlayerAchievment;
+  static constexpr eMissionType kPlayerDailyActivity = MissionListPBComponent_eMissionType_kPlayerDailyActivity;
+  static constexpr eMissionType kPlayerMissionSize = MissionListPBComponent_eMissionType_kPlayerMissionSize;
   static inline bool eMissionType_IsValid(int value) {
-    return MissionListPBComp_eMissionType_IsValid(value);
+    return MissionListPBComponent_eMissionType_IsValid(value);
   }
-  static constexpr eMissionType eMissionType_MIN = MissionListPBComp_eMissionType_eMissionType_MIN;
-  static constexpr eMissionType eMissionType_MAX = MissionListPBComp_eMissionType_eMissionType_MAX;
-  static constexpr int eMissionType_ARRAYSIZE = MissionListPBComp_eMissionType_eMissionType_ARRAYSIZE;
+  static constexpr eMissionType eMissionType_MIN = MissionListPBComponent_eMissionType_eMissionType_MIN;
+  static constexpr eMissionType eMissionType_MAX = MissionListPBComponent_eMissionType_eMissionType_MAX;
+  static constexpr int eMissionType_ARRAYSIZE = MissionListPBComponent_eMissionType_eMissionType_ARRAYSIZE;
   static inline const ::google::protobuf::EnumDescriptor* eMissionType_descriptor() {
-    return MissionListPBComp_eMissionType_descriptor();
+    return MissionListPBComponent_eMissionType_descriptor();
   }
   template <typename T>
   static inline const std::string& eMissionType_Name(T value) {
-    return MissionListPBComp_eMissionType_Name(value);
+    return MissionListPBComponent_eMissionType_Name(value);
   }
   static inline bool eMissionType_Parse(absl::string_view name, eMissionType* value) {
-    return MissionListPBComp_eMissionType_Parse(name, value);
+    return MissionListPBComponent_eMissionType_Parse(name, value);
   }
 
   // accessors -------------------------------------------------------
@@ -808,19 +808,19 @@ class MissionListPBComp final : public ::google::protobuf::Message
     kMissionBeginTimeFieldNumber = 3,
     kTypeFieldNumber = 4,
   };
-  // map<uint32, .MissionPBComp> missions = 1;
+  // map<uint32, .MissionPBComponent> missions = 1;
   int missions_size() const;
   private:
   int _internal_missions_size() const;
 
   public:
   void clear_missions() ;
-  const ::google::protobuf::Map<::uint32_t, ::MissionPBComp>& missions() const;
-  ::google::protobuf::Map<::uint32_t, ::MissionPBComp>* mutable_missions();
+  const ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>& missions() const;
+  ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>* mutable_missions();
 
   private:
-  const ::google::protobuf::Map<::uint32_t, ::MissionPBComp>& _internal_missions() const;
-  ::google::protobuf::Map<::uint32_t, ::MissionPBComp>* _internal_mutable_missions();
+  const ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>& _internal_missions() const;
+  ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>* _internal_mutable_missions();
 
   public:
   // map<uint32, bool> complete_missions = 2;
@@ -863,7 +863,7 @@ class MissionListPBComp final : public ::google::protobuf::Message
   void _internal_set_type(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:MissionListPBComp)
+  // @@protoc_insertion_point(class_scope:MissionListPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -884,15 +884,15 @@ class MissionListPBComp final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::MapField<MissionListPBComp_MissionsEntry_DoNotUse, ::uint32_t, ::MissionPBComp,
+    ::google::protobuf::internal::MapField<MissionListPBComponent_MissionsEntry_DoNotUse, ::uint32_t, ::MissionPBComponent,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE>
         missions_;
-    ::google::protobuf::internal::MapField<MissionListPBComp_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
+    ::google::protobuf::internal::MapField<MissionListPBComponent_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         complete_missions_;
-    ::google::protobuf::internal::MapField<MissionListPBComp_MissionBeginTimeEntry_DoNotUse, ::uint32_t, ::uint64_t,
+    ::google::protobuf::internal::MapField<MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, ::uint32_t, ::uint64_t,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>
         mission_begin_time_;
@@ -918,93 +918,93 @@ class MissionListPBComp final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// MissionPBComp
+// MissionPBComponent
 
 // uint32 id = 1;
-inline void MissionPBComp::clear_id() {
+inline void MissionPBComponent::clear_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = 0u;
 }
-inline ::uint32_t MissionPBComp::id() const {
-  // @@protoc_insertion_point(field_get:MissionPBComp.id)
+inline ::uint32_t MissionPBComponent::id() const {
+  // @@protoc_insertion_point(field_get:MissionPBComponent.id)
   return _internal_id();
 }
-inline void MissionPBComp::set_id(::uint32_t value) {
+inline void MissionPBComponent::set_id(::uint32_t value) {
   _internal_set_id(value);
-  // @@protoc_insertion_point(field_set:MissionPBComp.id)
+  // @@protoc_insertion_point(field_set:MissionPBComponent.id)
 }
-inline ::uint32_t MissionPBComp::_internal_id() const {
+inline ::uint32_t MissionPBComponent::_internal_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.id_;
 }
-inline void MissionPBComp::_internal_set_id(::uint32_t value) {
+inline void MissionPBComponent::_internal_set_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = value;
 }
 
 // uint32 status = 2;
-inline void MissionPBComp::clear_status() {
+inline void MissionPBComponent::clear_status() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.status_ = 0u;
 }
-inline ::uint32_t MissionPBComp::status() const {
-  // @@protoc_insertion_point(field_get:MissionPBComp.status)
+inline ::uint32_t MissionPBComponent::status() const {
+  // @@protoc_insertion_point(field_get:MissionPBComponent.status)
   return _internal_status();
 }
-inline void MissionPBComp::set_status(::uint32_t value) {
+inline void MissionPBComponent::set_status(::uint32_t value) {
   _internal_set_status(value);
-  // @@protoc_insertion_point(field_set:MissionPBComp.status)
+  // @@protoc_insertion_point(field_set:MissionPBComponent.status)
 }
-inline ::uint32_t MissionPBComp::_internal_status() const {
+inline ::uint32_t MissionPBComponent::_internal_status() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.status_;
 }
-inline void MissionPBComp::_internal_set_status(::uint32_t value) {
+inline void MissionPBComponent::_internal_set_status(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.status_ = value;
 }
 
 // repeated uint32 progress = 3;
-inline int MissionPBComp::_internal_progress_size() const {
+inline int MissionPBComponent::_internal_progress_size() const {
   return _internal_progress().size();
 }
-inline int MissionPBComp::progress_size() const {
+inline int MissionPBComponent::progress_size() const {
   return _internal_progress_size();
 }
-inline void MissionPBComp::clear_progress() {
+inline void MissionPBComponent::clear_progress() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.progress_.Clear();
 }
-inline ::uint32_t MissionPBComp::progress(int index) const {
-  // @@protoc_insertion_point(field_get:MissionPBComp.progress)
+inline ::uint32_t MissionPBComponent::progress(int index) const {
+  // @@protoc_insertion_point(field_get:MissionPBComponent.progress)
   return _internal_progress().Get(index);
 }
-inline void MissionPBComp::set_progress(int index, ::uint32_t value) {
+inline void MissionPBComponent::set_progress(int index, ::uint32_t value) {
   _internal_mutable_progress()->Set(index, value);
-  // @@protoc_insertion_point(field_set:MissionPBComp.progress)
+  // @@protoc_insertion_point(field_set:MissionPBComponent.progress)
 }
-inline void MissionPBComp::add_progress(::uint32_t value) {
+inline void MissionPBComponent::add_progress(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _internal_mutable_progress()->Add(value);
-  // @@protoc_insertion_point(field_add:MissionPBComp.progress)
+  // @@protoc_insertion_point(field_add:MissionPBComponent.progress)
 }
-inline const ::google::protobuf::RepeatedField<::uint32_t>& MissionPBComp::progress() const
+inline const ::google::protobuf::RepeatedField<::uint32_t>& MissionPBComponent::progress() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:MissionPBComp.progress)
+  // @@protoc_insertion_point(field_list:MissionPBComponent.progress)
   return _internal_progress();
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* MissionPBComp::mutable_progress()
+inline ::google::protobuf::RepeatedField<::uint32_t>* MissionPBComponent::mutable_progress()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:MissionPBComp.progress)
+  // @@protoc_insertion_point(field_mutable_list:MissionPBComponent.progress)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_progress();
 }
 inline const ::google::protobuf::RepeatedField<::uint32_t>&
-MissionPBComp::_internal_progress() const {
+MissionPBComponent::_internal_progress() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.progress_;
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* MissionPBComp::_internal_mutable_progress() {
+inline ::google::protobuf::RepeatedField<::uint32_t>* MissionPBComponent::_internal_mutable_progress() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.progress_;
 }
@@ -1017,110 +1017,110 @@ inline ::google::protobuf::RepeatedField<::uint32_t>* MissionPBComp::_internal_m
 
 // -------------------------------------------------------------------
 
-// MissionListPBComp
+// MissionListPBComponent
 
-// map<uint32, .MissionPBComp> missions = 1;
-inline int MissionListPBComp::_internal_missions_size() const {
+// map<uint32, .MissionPBComponent> missions = 1;
+inline int MissionListPBComponent::_internal_missions_size() const {
   return _internal_missions().size();
 }
-inline int MissionListPBComp::missions_size() const {
+inline int MissionListPBComponent::missions_size() const {
   return _internal_missions_size();
 }
-inline void MissionListPBComp::clear_missions() {
+inline void MissionListPBComponent::clear_missions() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.missions_.Clear();
 }
-inline const ::google::protobuf::Map<::uint32_t, ::MissionPBComp>& MissionListPBComp::_internal_missions() const {
+inline const ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>& MissionListPBComponent::_internal_missions() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.missions_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint32_t, ::MissionPBComp>& MissionListPBComp::missions() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:MissionListPBComp.missions)
+inline const ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>& MissionListPBComponent::missions() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:MissionListPBComponent.missions)
   return _internal_missions();
 }
-inline ::google::protobuf::Map<::uint32_t, ::MissionPBComp>* MissionListPBComp::_internal_mutable_missions() {
+inline ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>* MissionListPBComponent::_internal_mutable_missions() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.missions_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint32_t, ::MissionPBComp>* MissionListPBComp::mutable_missions() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:MissionListPBComp.missions)
+inline ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>* MissionListPBComponent::mutable_missions() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:MissionListPBComponent.missions)
   return _internal_mutable_missions();
 }
 
 // map<uint32, bool> complete_missions = 2;
-inline int MissionListPBComp::_internal_complete_missions_size() const {
+inline int MissionListPBComponent::_internal_complete_missions_size() const {
   return _internal_complete_missions().size();
 }
-inline int MissionListPBComp::complete_missions_size() const {
+inline int MissionListPBComponent::complete_missions_size() const {
   return _internal_complete_missions_size();
 }
-inline void MissionListPBComp::clear_complete_missions() {
+inline void MissionListPBComponent::clear_complete_missions() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.complete_missions_.Clear();
 }
-inline const ::google::protobuf::Map<::uint32_t, bool>& MissionListPBComp::_internal_complete_missions() const {
+inline const ::google::protobuf::Map<::uint32_t, bool>& MissionListPBComponent::_internal_complete_missions() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.complete_missions_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint32_t, bool>& MissionListPBComp::complete_missions() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:MissionListPBComp.complete_missions)
+inline const ::google::protobuf::Map<::uint32_t, bool>& MissionListPBComponent::complete_missions() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:MissionListPBComponent.complete_missions)
   return _internal_complete_missions();
 }
-inline ::google::protobuf::Map<::uint32_t, bool>* MissionListPBComp::_internal_mutable_complete_missions() {
+inline ::google::protobuf::Map<::uint32_t, bool>* MissionListPBComponent::_internal_mutable_complete_missions() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.complete_missions_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint32_t, bool>* MissionListPBComp::mutable_complete_missions() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:MissionListPBComp.complete_missions)
+inline ::google::protobuf::Map<::uint32_t, bool>* MissionListPBComponent::mutable_complete_missions() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:MissionListPBComponent.complete_missions)
   return _internal_mutable_complete_missions();
 }
 
 // map<uint32, uint64> mission_begin_time = 3;
-inline int MissionListPBComp::_internal_mission_begin_time_size() const {
+inline int MissionListPBComponent::_internal_mission_begin_time_size() const {
   return _internal_mission_begin_time().size();
 }
-inline int MissionListPBComp::mission_begin_time_size() const {
+inline int MissionListPBComponent::mission_begin_time_size() const {
   return _internal_mission_begin_time_size();
 }
-inline void MissionListPBComp::clear_mission_begin_time() {
+inline void MissionListPBComponent::clear_mission_begin_time() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mission_begin_time_.Clear();
 }
-inline const ::google::protobuf::Map<::uint32_t, ::uint64_t>& MissionListPBComp::_internal_mission_begin_time() const {
+inline const ::google::protobuf::Map<::uint32_t, ::uint64_t>& MissionListPBComponent::_internal_mission_begin_time() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.mission_begin_time_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint32_t, ::uint64_t>& MissionListPBComp::mission_begin_time() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:MissionListPBComp.mission_begin_time)
+inline const ::google::protobuf::Map<::uint32_t, ::uint64_t>& MissionListPBComponent::mission_begin_time() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:MissionListPBComponent.mission_begin_time)
   return _internal_mission_begin_time();
 }
-inline ::google::protobuf::Map<::uint32_t, ::uint64_t>* MissionListPBComp::_internal_mutable_mission_begin_time() {
+inline ::google::protobuf::Map<::uint32_t, ::uint64_t>* MissionListPBComponent::_internal_mutable_mission_begin_time() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.mission_begin_time_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint32_t, ::uint64_t>* MissionListPBComp::mutable_mission_begin_time() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:MissionListPBComp.mission_begin_time)
+inline ::google::protobuf::Map<::uint32_t, ::uint64_t>* MissionListPBComponent::mutable_mission_begin_time() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:MissionListPBComponent.mission_begin_time)
   return _internal_mutable_mission_begin_time();
 }
 
 // uint32 type = 4;
-inline void MissionListPBComp::clear_type() {
+inline void MissionListPBComponent::clear_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.type_ = 0u;
 }
-inline ::uint32_t MissionListPBComp::type() const {
-  // @@protoc_insertion_point(field_get:MissionListPBComp.type)
+inline ::uint32_t MissionListPBComponent::type() const {
+  // @@protoc_insertion_point(field_get:MissionListPBComponent.type)
   return _internal_type();
 }
-inline void MissionListPBComp::set_type(::uint32_t value) {
+inline void MissionListPBComponent::set_type(::uint32_t value) {
   _internal_set_type(value);
-  // @@protoc_insertion_point(field_set:MissionListPBComp.type)
+  // @@protoc_insertion_point(field_set:MissionListPBComponent.type)
 }
-inline ::uint32_t MissionListPBComp::_internal_type() const {
+inline ::uint32_t MissionListPBComponent::_internal_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.type_;
 }
-inline void MissionListPBComp::_internal_set_type(::uint32_t value) {
+inline void MissionListPBComponent::_internal_set_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.type_ = value;
 }
@@ -1129,33 +1129,33 @@ inline void MissionListPBComp::_internal_set_type(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// RewardListPBComp
+// RewardListPBComponent
 
 // map<uint32, bool> can_reward_mission_id = 2;
-inline int RewardListPBComp::_internal_can_reward_mission_id_size() const {
+inline int RewardListPBComponent::_internal_can_reward_mission_id_size() const {
   return _internal_can_reward_mission_id().size();
 }
-inline int RewardListPBComp::can_reward_mission_id_size() const {
+inline int RewardListPBComponent::can_reward_mission_id_size() const {
   return _internal_can_reward_mission_id_size();
 }
-inline void RewardListPBComp::clear_can_reward_mission_id() {
+inline void RewardListPBComponent::clear_can_reward_mission_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.can_reward_mission_id_.Clear();
 }
-inline const ::google::protobuf::Map<::uint32_t, bool>& RewardListPBComp::_internal_can_reward_mission_id() const {
+inline const ::google::protobuf::Map<::uint32_t, bool>& RewardListPBComponent::_internal_can_reward_mission_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.can_reward_mission_id_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint32_t, bool>& RewardListPBComp::can_reward_mission_id() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:RewardListPBComp.can_reward_mission_id)
+inline const ::google::protobuf::Map<::uint32_t, bool>& RewardListPBComponent::can_reward_mission_id() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:RewardListPBComponent.can_reward_mission_id)
   return _internal_can_reward_mission_id();
 }
-inline ::google::protobuf::Map<::uint32_t, bool>* RewardListPBComp::_internal_mutable_can_reward_mission_id() {
+inline ::google::protobuf::Map<::uint32_t, bool>* RewardListPBComponent::_internal_mutable_can_reward_mission_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.can_reward_mission_id_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint32_t, bool>* RewardListPBComp::mutable_can_reward_mission_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:RewardListPBComp.can_reward_mission_id)
+inline ::google::protobuf::Map<::uint32_t, bool>* RewardListPBComponent::mutable_can_reward_mission_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:RewardListPBComponent.can_reward_mission_id)
   return _internal_mutable_can_reward_mission_id();
 }
 
@@ -1170,16 +1170,16 @@ namespace google {
 namespace protobuf {
 
 template <>
-struct is_proto_enum<::MissionPBComp_eMissionStatus> : std::true_type {};
+struct is_proto_enum<::MissionPBComponent_eMissionStatus> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::MissionPBComp_eMissionStatus>() {
-  return ::MissionPBComp_eMissionStatus_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::MissionPBComponent_eMissionStatus>() {
+  return ::MissionPBComponent_eMissionStatus_descriptor();
 }
 template <>
-struct is_proto_enum<::MissionListPBComp_eMissionType> : std::true_type {};
+struct is_proto_enum<::MissionListPBComponent_eMissionType> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::MissionListPBComp_eMissionType>() {
-  return ::MissionListPBComp_eMissionType_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::MissionListPBComponent_eMissionType>() {
+  return ::MissionListPBComponent_eMissionType_descriptor();
 }
 
 }  // namespace protobuf

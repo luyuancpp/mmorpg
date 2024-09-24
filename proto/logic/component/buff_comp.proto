@@ -2,12 +2,12 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message BuffContextPBComp
+message BuffContextPBComponent
 {
   float damage_value = 1;
 }
 
-message BuffPBComp
+message BuffPBComponent
 {
   uint64 buff_id = 1;
   uint32 buff_table_id = 2;

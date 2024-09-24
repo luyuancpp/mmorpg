@@ -11,14 +11,14 @@
 class AcceptMissionEvent;
 class MissionConditionEvent;
 
-class MissionsComp : public EventOwner
+class MissionsComponent : public EventOwner
 {
 public:
     using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
-    MissionsComp();
+    MissionsComponent();
 	
     [[nodiscard]] const auto& classify_for_unittest() const { return eventMissionsClassify; }
-    [[nodiscard]] const MissionListPBComp& GetMissionsComp() const { return missionsComp; }
+    [[nodiscard]] const MissionListPBComponent& GetMissionsComp() const { return missionsComp; }
     [[nodiscard]] std::size_t MissionSize() const { return missionsComp.missions().size(); }
     [[nodiscard]] std::size_t CompleteSize() const { return static_cast<std::size_t>(missionsComp.complete_missions_size()); }
     [[nodiscard]] std::size_t TypeSetSize() const { return typeFilter.size(); }
@@ -34,7 +34,7 @@ public:
 	    missionConfig = mission_config;
     }
 
-    [[nodiscard]] MissionListPBComp& GetMissionsComp()
+    [[nodiscard]] MissionListPBComponent& GetMissionsComp()
     {
 	    return missionsComp;
     }
@@ -68,13 +68,13 @@ public:
 	
 private:
 	const IMissionConfig* missionConfig{ nullptr };
-	MissionListPBComp missionsComp;
+	MissionListPBComponent missionsComp;
 	event_mission_classify_type eventMissionsClassify; //key : classify mission by event type  , value :  mission list
 	UInt32PairSet typeFilter;
 	bool missionTypeNotRepeated{ true }; //任务类型不能重复
 };
 
-using PlayerMissionList = std::array<MissionsComp, MissionListPBComp::kPlayerMissionSize>;
+using PlayerMissionList = std::array<MissionsComponent, MissionListPBComponent::kPlayerMissionSize>;
 
 
 

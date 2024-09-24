@@ -3,11 +3,11 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2game_node_comp()
 {
-tls_lua_state.new_usertype<GameNodePlayerInfoPBComp>("GameNodePlayerInfoPBComp",
+tls_lua_state.new_usertype<GameNodePlayerInfoPBComponent>("GameNodePlayerInfoPBComponent",
 "player_size",
-sol::property(&GameNodePlayerInfoPBComp::player_size, &GameNodePlayerInfoPBComp::set_player_size),
+sol::property(&GameNodePlayerInfoPBComponent::player_size, &GameNodePlayerInfoPBComponent::set_player_size),
 "DebugString",
-&GameNodePlayerInfoPBComp::DebugString,
+&GameNodePlayerInfoPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

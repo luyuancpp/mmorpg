@@ -3,87 +3,87 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2mission_comp()
 {
-tls_lua_state.new_usertype<MissionPBComp>("MissionPBComp",
+tls_lua_state.new_usertype<MissionPBComponent>("MissionPBComponent",
 "id",
-sol::property(&MissionPBComp::id, &MissionPBComp::set_id),
+sol::property(&MissionPBComponent::id, &MissionPBComponent::set_id),
 "status",
-sol::property(&MissionPBComp::status, &MissionPBComp::set_status),
+sol::property(&MissionPBComponent::status, &MissionPBComponent::set_status),
 "add_progress",
-&MissionPBComp::add_progress,
+&MissionPBComponent::add_progress,
 "progress",
-[](const MissionPBComp& pb, int index) ->decltype(auto){ return pb.progress(index);},
+[](const MissionPBComponent& pb, int index) ->decltype(auto){ return pb.progress(index);},
 "set_progress",
-[](MissionPBComp& pb, int index, uint32_t value) ->decltype(auto){ return pb.set_progress(index, value);},
+[](MissionPBComponent& pb, int index, uint32_t value) ->decltype(auto){ return pb.set_progress(index, value);},
 "progress_size",
-&MissionPBComp::progress_size,
+&MissionPBComponent::progress_size,
 "clear_progress",
-&MissionPBComp::clear_progress,
+&MissionPBComponent::clear_progress,
 "DebugString",
-&MissionPBComp::DebugString,
+&MissionPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<MissionListPBComp>("MissionListPBComp",
+tls_lua_state.new_usertype<MissionListPBComponent>("MissionListPBComponent",
 "count_missions",
-[](MissionListPBComp& pb, uint32_t key) ->decltype(auto){ return pb.missions().count(key);},
+[](MissionListPBComponent& pb, uint32_t key) ->decltype(auto){ return pb.missions().count(key);},
 "insert_missions",
-[](MissionListPBComp& pb, uint32_t key, MissionPBComp& value) ->decltype(auto){ return pb.mutable_missions()->emplace(key, value).second;},
+[](MissionListPBComponent& pb, uint32_t key, MissionPBComponent& value) ->decltype(auto){ return pb.mutable_missions()->emplace(key, value).second;},
 "missions",
-[](MissionListPBComp& pb, uint32_t key) ->decltype(auto){
+[](MissionListPBComponent& pb, uint32_t key) ->decltype(auto){
  auto it =  pb.mutable_missions()->find(key);
- if (it == pb.mutable_missions()->end()){ static MissionPBComp instance; return instance; }
+ if (it == pb.mutable_missions()->end()){ static MissionPBComponent instance; return instance; }
  return it->second;},
 "missions_size",
-&MissionListPBComp::missions_size,
+&MissionListPBComponent::missions_size,
 "clear_missions",
-&MissionListPBComp::clear_missions,
+&MissionListPBComponent::clear_missions,
 "count_complete_missions",
-[](MissionListPBComp& pb, uint32_t key) ->decltype(auto){ return pb.complete_missions().count(key);},
+[](MissionListPBComponent& pb, uint32_t key) ->decltype(auto){ return pb.complete_missions().count(key);},
 "insert_complete_missions",
-[](MissionListPBComp& pb, uint32_t key, bool value) ->decltype(auto){ return pb.mutable_complete_missions()->emplace(key, value).second;},
+[](MissionListPBComponent& pb, uint32_t key, bool value) ->decltype(auto){ return pb.mutable_complete_missions()->emplace(key, value).second;},
 "complete_missions",
-[](MissionListPBComp& pb, uint32_t key) ->decltype(auto){
+[](MissionListPBComponent& pb, uint32_t key) ->decltype(auto){
  auto it =  pb.mutable_complete_missions()->find(key);
  if (it == pb.mutable_complete_missions()->end()){ return bool(); }
  return it->second;},
 "complete_missions_size",
-&MissionListPBComp::complete_missions_size,
+&MissionListPBComponent::complete_missions_size,
 "clear_complete_missions",
-&MissionListPBComp::clear_complete_missions,
+&MissionListPBComponent::clear_complete_missions,
 "count_mission_begin_time",
-[](MissionListPBComp& pb, uint32_t key) ->decltype(auto){ return pb.mission_begin_time().count(key);},
+[](MissionListPBComponent& pb, uint32_t key) ->decltype(auto){ return pb.mission_begin_time().count(key);},
 "insert_mission_begin_time",
-[](MissionListPBComp& pb, uint32_t key, uint64_t value) ->decltype(auto){ return pb.mutable_mission_begin_time()->emplace(key, value).second;},
+[](MissionListPBComponent& pb, uint32_t key, uint64_t value) ->decltype(auto){ return pb.mutable_mission_begin_time()->emplace(key, value).second;},
 "mission_begin_time",
-[](MissionListPBComp& pb, uint32_t key) ->decltype(auto){
+[](MissionListPBComponent& pb, uint32_t key) ->decltype(auto){
  auto it =  pb.mutable_mission_begin_time()->find(key);
  if (it == pb.mutable_mission_begin_time()->end()){ return uint64_t(); }
  return it->second;},
 "mission_begin_time_size",
-&MissionListPBComp::mission_begin_time_size,
+&MissionListPBComponent::mission_begin_time_size,
 "clear_mission_begin_time",
-&MissionListPBComp::clear_mission_begin_time,
+&MissionListPBComponent::clear_mission_begin_time,
 "type",
-sol::property(&MissionListPBComp::type, &MissionListPBComp::set_type),
+sol::property(&MissionListPBComponent::type, &MissionListPBComponent::set_type),
 "DebugString",
-&MissionListPBComp::DebugString,
+&MissionListPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<RewardListPBComp>("RewardListPBComp",
+tls_lua_state.new_usertype<RewardListPBComponent>("RewardListPBComponent",
 "count_can_reward_mission_id",
-[](RewardListPBComp& pb, uint32_t key) ->decltype(auto){ return pb.can_reward_mission_id().count(key);},
+[](RewardListPBComponent& pb, uint32_t key) ->decltype(auto){ return pb.can_reward_mission_id().count(key);},
 "insert_can_reward_mission_id",
-[](RewardListPBComp& pb, uint32_t key, bool value) ->decltype(auto){ return pb.mutable_can_reward_mission_id()->emplace(key, value).second;},
+[](RewardListPBComponent& pb, uint32_t key, bool value) ->decltype(auto){ return pb.mutable_can_reward_mission_id()->emplace(key, value).second;},
 "can_reward_mission_id",
-[](RewardListPBComp& pb, uint32_t key) ->decltype(auto){
+[](RewardListPBComponent& pb, uint32_t key) ->decltype(auto){
  auto it =  pb.mutable_can_reward_mission_id()->find(key);
  if (it == pb.mutable_can_reward_mission_id()->end()){ return bool(); }
  return it->second;},
 "can_reward_mission_id_size",
-&RewardListPBComp::can_reward_mission_id_size,
+&RewardListPBComponent::can_reward_mission_id_size,
 "clear_can_reward_mission_id",
-&RewardListPBComp::clear_can_reward_mission_id,
+&RewardListPBComponent::clear_can_reward_mission_id,
 "DebugString",
-&RewardListPBComp::DebugString,
+&RewardListPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

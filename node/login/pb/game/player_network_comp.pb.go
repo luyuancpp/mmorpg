@@ -83,7 +83,7 @@ func (x *PlayerNodeInfoPBComponent) GetGameNodeId() uint32 {
 	return 0
 }
 
-type PlayerSessionPBComp struct {
+type PlayerSessionPBComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -91,8 +91,8 @@ type PlayerSessionPBComp struct {
 	PlayerId uint64 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 }
 
-func (x *PlayerSessionPBComp) Reset() {
-	*x = PlayerSessionPBComp{}
+func (x *PlayerSessionPBComponent) Reset() {
+	*x = PlayerSessionPBComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_player_network_comp_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -100,13 +100,13 @@ func (x *PlayerSessionPBComp) Reset() {
 	}
 }
 
-func (x *PlayerSessionPBComp) String() string {
+func (x *PlayerSessionPBComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerSessionPBComp) ProtoMessage() {}
+func (*PlayerSessionPBComponent) ProtoMessage() {}
 
-func (x *PlayerSessionPBComp) ProtoReflect() protoreflect.Message {
+func (x *PlayerSessionPBComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_player_network_comp_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -118,12 +118,12 @@ func (x *PlayerSessionPBComp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerSessionPBComp.ProtoReflect.Descriptor instead.
-func (*PlayerSessionPBComp) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerSessionPBComponent.ProtoReflect.Descriptor instead.
+func (*PlayerSessionPBComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_player_network_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PlayerSessionPBComp) GetPlayerId() uint64 {
+func (x *PlayerSessionPBComponent) GetPlayerId() uint64 {
 	if x != nil {
 		return x.PlayerId
 	}
@@ -144,11 +144,12 @@ var file_logic_component_player_network_comp_proto_rawDesc = []byte{
 	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0c, 0x63, 0x65, 0x6e, 0x74, 0x72,
 	0x65, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x67, 0x61, 0x6d, 0x65, 0x5f,
 	0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0a, 0x67,
-	0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x22, 0x32, 0x0a, 0x13, 0x50, 0x6c, 0x61,
+	0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x22, 0x37, 0x0a, 0x18, 0x50, 0x6c, 0x61,
 	0x79, 0x65, 0x72, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70,
-	0x12, 0x1b, 0x0a, 0x09, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x08, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x49, 0x64, 0x42, 0x09, 0x5a,
-	0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x5f,
+	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x72,
+	0x49, 0x64, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -166,7 +167,7 @@ func file_logic_component_player_network_comp_proto_rawDescGZIP() []byte {
 var file_logic_component_player_network_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_logic_component_player_network_comp_proto_goTypes = []any{
 	(*PlayerNodeInfoPBComponent)(nil), // 0: PlayerNodeInfoPBComponent
-	(*PlayerSessionPBComp)(nil),       // 1: PlayerSessionPBComp
+	(*PlayerSessionPBComponent)(nil),  // 1: PlayerSessionPBComponent
 }
 var file_logic_component_player_network_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -195,7 +196,7 @@ func file_logic_component_player_network_comp_proto_init() {
 			}
 		}
 		file_logic_component_player_network_comp_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*PlayerSessionPBComp); i {
+			switch v := v.(*PlayerSessionPBComponent); i {
 			case 0:
 				return &v.state
 			case 1:

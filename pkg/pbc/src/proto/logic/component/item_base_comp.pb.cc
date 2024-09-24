@@ -22,7 +22,7 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr ItemPBComp::Impl_::Impl_(
+inline constexpr ItemPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : item_id_{::uint64_t{0u}},
         config_id_{0u},
@@ -30,18 +30,18 @@ inline constexpr ItemPBComp::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR ItemPBComp::ItemPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ItemPBComponent::ItemPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct ItemPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ItemPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ItemPBCompDefaultTypeInternal() {}
+struct ItemPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ItemPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ItemPBComponentDefaultTypeInternal() {}
   union {
-    ItemPBComp _instance;
+    ItemPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ItemPBCompDefaultTypeInternal _ItemPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ItemPBComponentDefaultTypeInternal _ItemPBComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto[1];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto = nullptr;
@@ -51,37 +51,37 @@ const ::uint32_t
     TableStruct_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::ItemPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::ItemPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::ItemPBComp, _impl_.item_id_),
-        PROTOBUF_FIELD_OFFSET(::ItemPBComp, _impl_.config_id_),
-        PROTOBUF_FIELD_OFFSET(::ItemPBComp, _impl_.size_),
+        PROTOBUF_FIELD_OFFSET(::ItemPBComponent, _impl_.item_id_),
+        PROTOBUF_FIELD_OFFSET(::ItemPBComponent, _impl_.config_id_),
+        PROTOBUF_FIELD_OFFSET(::ItemPBComponent, _impl_.size_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::ItemPBComp)},
+        {0, -1, -1, sizeof(::ItemPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_ItemPBComp_default_instance_._instance,
+    &::_ItemPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n$logic/component/item_base_comp.proto\">"
-    "\n\nItemPBComp\022\017\n\007item_id\030\001 \001(\004\022\021\n\tconfig_"
-    "id\030\002 \001(\r\022\014\n\004size\030\003 \001(\rB\tZ\007pb/gameb\006proto"
-    "3"
+    "\n$logic/component/item_base_comp.proto\"C"
+    "\n\017ItemPBComponent\022\017\n\007item_id\030\001 \001(\004\022\021\n\tco"
+    "nfig_id\030\002 \001(\r\022\014\n\004size\030\003 \001(\rB\tZ\007pb/gameb\006"
+    "proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto = {
     false,
     false,
-    121,
+    126,
     descriptor_table_protodef_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto,
     "logic/component/item_base_comp.proto",
     &descriptor_table_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once,
@@ -112,26 +112,26 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2f
 }
 // ===================================================================
 
-class ItemPBComp::_Internal {
+class ItemPBComponent::_Internal {
  public:
 };
 
-ItemPBComp::ItemPBComp(::google::protobuf::Arena* arena)
+ItemPBComponent::ItemPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ItemPBComp)
+  // @@protoc_insertion_point(arena_constructor:ItemPBComponent)
 }
-ItemPBComp::ItemPBComp(
-    ::google::protobuf::Arena* arena, const ItemPBComp& from)
-    : ItemPBComp(arena) {
+ItemPBComponent::ItemPBComponent(
+    ::google::protobuf::Arena* arena, const ItemPBComponent& from)
+    : ItemPBComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE ItemPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ItemPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void ItemPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void ItemPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, item_id_),
@@ -140,32 +140,32 @@ inline void ItemPBComp::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, item_id_) +
                sizeof(Impl_::size_));
 }
-ItemPBComp::~ItemPBComp() {
-  // @@protoc_insertion_point(destructor:ItemPBComp)
+ItemPBComponent::~ItemPBComponent() {
+  // @@protoc_insertion_point(destructor:ItemPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void ItemPBComp::SharedDtor() {
+inline void ItemPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-ItemPBComp::GetClassData() const {
+ItemPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_._cached_size_),
               false,
           },
-          &ItemPBComp::MergeImpl,
-          &ItemPBComp::kDescriptorMethods,
+          &ItemPBComponent::MergeImpl,
+          &ItemPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void ItemPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:ItemPBComp)
+PROTOBUF_NOINLINE void ItemPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:ItemPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -177,7 +177,7 @@ PROTOBUF_NOINLINE void ItemPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* ItemPBComp::_InternalParse(
+const char* ItemPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -185,7 +185,7 @@ const char* ItemPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2> ItemPBComp::_table_ = {
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2> ItemPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -196,33 +196,33 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> ItemPBComp::_table_ = {
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_ItemPBComp_default_instance_._instance,
+    &_ItemPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ItemPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ItemPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 item_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ItemPBComp, _impl_.item_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_.item_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ItemPBComponent, _impl_.item_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.item_id_)}},
     // uint32 config_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemPBComp, _impl_.config_id_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_.config_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemPBComponent, _impl_.config_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.config_id_)}},
     // uint32 size = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemPBComp, _impl_.size_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_.size_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ItemPBComponent, _impl_.size_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.size_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 item_id = 1;
-    {PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_.item_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.item_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint32 config_id = 2;
-    {PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_.config_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.config_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 size = 3;
-    {PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_.size_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.size_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -230,10 +230,10 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> ItemPBComp::_table_ = {
   }},
 };
 
-::uint8_t* ItemPBComp::_InternalSerialize(
+::uint8_t* ItemPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:ItemPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:ItemPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -263,12 +263,12 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> ItemPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ItemPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:ItemPBComponent)
   return target;
 }
 
-::size_t ItemPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:ItemPBComp)
+::size_t ItemPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:ItemPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -297,10 +297,10 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> ItemPBComp::_table_ = {
 }
 
 
-void ItemPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ItemPBComp*>(&to_msg);
-  auto& from = static_cast<const ItemPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:ItemPBComp)
+void ItemPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ItemPBComponent*>(&to_msg);
+  auto& from = static_cast<const ItemPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ItemPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -317,29 +317,29 @@ void ItemPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ItemPBComp::CopyFrom(const ItemPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ItemPBComp)
+void ItemPBComponent::CopyFrom(const ItemPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ItemPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool ItemPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool ItemPBComponent::IsInitialized() const {
   return true;
 }
 
-void ItemPBComp::InternalSwap(ItemPBComp* PROTOBUF_RESTRICT other) {
+void ItemPBComponent::InternalSwap(ItemPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_.size_)
-      + sizeof(ItemPBComp::_impl_.size_)
-      - PROTOBUF_FIELD_OFFSET(ItemPBComp, _impl_.item_id_)>(
+      PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.size_)
+      + sizeof(ItemPBComponent::_impl_.size_)
+      - PROTOBUF_FIELD_OFFSET(ItemPBComponent, _impl_.item_id_)>(
           reinterpret_cast<char*>(&_impl_.item_id_),
           reinterpret_cast<char*>(&other->_impl_.item_id_));
 }
 
-::google::protobuf::Metadata ItemPBComp::GetMetadata() const {
+::google::protobuf::Metadata ItemPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fitem_5fbase_5fcomp_2eproto[0]);

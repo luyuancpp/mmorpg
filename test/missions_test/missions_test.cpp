@@ -18,17 +18,17 @@ decltype(auto) CreatePlayerEntityWithMissionComponent()
 {
     const auto playerEntity = tls.registry.create();
     tls.registry.emplace<Guid>(playerEntity);
-    auto& missionsComponent = tls.registry.emplace<MissionsComp>(playerEntity);
+    auto& missionsComponent = tls.registry.emplace<MissionsComponent>(playerEntity);
     missionsComponent.set_event_owner(playerEntity);
     MissionEventHandler::Register();
     return playerEntity;
 }
 
-TEST(MissionsComp, AcceptMission)
+TEST(MissionsComponent, AcceptMission)
 {
 	constexpr uint32_t testMissionId = 1;
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+	auto& missionsComponent = tls.registry.get<MissionsComponent>(playerEntity);
 	missionsComponent.SetMissionTypeNotRepeated(false);
 
 	// Simulating accepting missions from a list
@@ -53,10 +53,10 @@ TEST(MissionsComp, AcceptMission)
 	EXPECT_EQ(acceptedMissionCount, missionsComponent.CompleteSize());
 }
 
-TEST(MissionsComp, RepeatedMissionId)
+TEST(MissionsComponent, RepeatedMissionId)
 {
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+	auto& missionsComponent = tls.registry.get<MissionsComponent>(playerEntity);
 
 	// Test case : Repeating mission_id = 1
 	{
@@ -73,10 +73,10 @@ TEST(MissionsComp, RepeatedMissionId)
 	}
 }
 
-TEST(MissionsComp, RepeatedMissionType)
+TEST(MissionsComponent, RepeatedMissionType)
 {
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+	auto& missionsComponent = tls.registry.get<MissionsComponent>(playerEntity);
 
 	// Test case : Repeating different mission types
 	{
@@ -99,11 +99,11 @@ TEST(MissionsComp, RepeatedMissionType)
 	}
 }
 
-TEST(MissionsComp, TriggerMissionCondition)
+TEST(MissionsComponent, TriggerMissionCondition)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+	auto& missionsComponent = tls.registry.get<MissionsComponent>(playerEntity);
 
 	constexpr uint32_t mission_id = 1;
 	AcceptMissionEvent acceptMissionEvent;
@@ -157,11 +157,11 @@ TEST(MissionsComp, TriggerMissionCondition)
 	EXPECT_EQ(0, missionsComponent.TypeSetSize());
 }
 
-TEST(MissionsComp, ConditionTypeSize)
+TEST(MissionsComponent, ConditionTypeSize)
 {
 	// Create a player entity with a mission component
 	auto playerEntity = CreatePlayerEntityWithMissionComponent();
-	auto& missionsComponent = tls.registry.get<MissionsComp>(playerEntity);
+	auto& missionsComponent = tls.registry.get<MissionsComponent>(playerEntity);
 
 	// Trigger update to handle any pending mission events
 	tls.dispatcher.update<AcceptMissionEvent>();
@@ -263,12 +263,12 @@ TEST(MissionsComp, ConditionTypeSize)
 }
 
 
-MissionsComp& GetMissionsComponent(entt::entity playerEntity)
+MissionsComponent& GetMissionsComponent(entt::entity playerEntity)
 {
-	return tls.registry.get<MissionsComp>(playerEntity);
+	return tls.registry.get<MissionsComponent>(playerEntity);
 }
 
-TEST(MissionsComp, CompleteAcceptMission)
+TEST(MissionsComponent, CompleteAcceptMission)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
@@ -304,7 +304,7 @@ TEST(MissionsComp, CompleteAcceptMission)
 	EXPECT_EQ(kMissionAlreadyCompleted, MissionUtil::AcceptMission(acceptMissionEvent));
 }
 
-TEST(MissionsComp, EventTriggerMutableMission)
+TEST(MissionsComponent, EventTriggerMutableMission)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
@@ -344,7 +344,7 @@ TEST(MissionsComp, EventTriggerMutableMission)
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId2));
 }
 
-TEST(MissionsComp, OnCompleteMission)
+TEST(MissionsComponent, OnCompleteMission)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
@@ -394,7 +394,7 @@ TEST(MissionsComp, OnCompleteMission)
 	}
 }
 
-TEST(MissionsComp, AcceptNextMirroMission)
+TEST(MissionsComponent, AcceptNextMirroMission)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
@@ -428,7 +428,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
 	EXPECT_FALSE(missionsComponent.IsComplete(nextMissionId));
 }
 
-TEST(MissionsComp, MissionCondition)
+TEST(MissionsComponent, MissionCondition)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
@@ -480,7 +480,7 @@ TEST(MissionsComp, MissionCondition)
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId2));
 }
 
-TEST(MissionsComp, ConditionAmount)
+TEST(MissionsComponent, ConditionAmount)
 {
 	// Create a player entity with a mission component
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
@@ -515,12 +515,12 @@ TEST(MissionsComp, ConditionAmount)
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId));
 }
 
-TEST(MissionsComp, MissionRewardList)
+TEST(MissionsComponent, MissionRewardList)
 {
 	// Create a player entity with mission and mission reward components
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
 	auto& missionsComponent = GetMissionsComponent(playerEntity);
-	tls.registry.emplace<RewardListPBComp>(playerEntity);
+	tls.registry.emplace<RewardListPBComponent>(playerEntity);
 
 	// Accept mission
 	uint32_t missionId = 12;
@@ -559,7 +559,7 @@ TEST(MissionsComp, MissionRewardList)
 	EXPECT_EQ(0, missionsComponent.CanGetRewardSize());
 }
 
-TEST(MissionsComp, AbandonMission)
+TEST(MissionsComponent, AbandonMission)
 {
 	// Create a player entity with mission and mission reward components
 	const auto playerEntity = CreatePlayerEntityWithMissionComponent();
@@ -581,7 +581,7 @@ TEST(MissionsComp, AbandonMission)
 	EXPECT_EQ(1, typeMissions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
 
 	// Set mission as rewardable
-	tls.registry.emplace_or_replace<RewardListPBComp>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
+	tls.registry.emplace_or_replace<RewardListPBComponent>(playerEntity).mutable_can_reward_mission_id()->insert({ missionId, true });
 
 	// Prepare abandon mission parameters
 	AbandonParam abandonParam;
@@ -599,11 +599,11 @@ TEST(MissionsComp, AbandonMission)
 }
 
 
-TEST(MissionsComp, MissionAutoReward)
+TEST(MissionsComponent, MissionAutoReward)
 {
 }
 
-TEST(MissionsComp, MissionTimeOut)
+TEST(MissionsComponent, MissionTimeOut)
 {
 
 }

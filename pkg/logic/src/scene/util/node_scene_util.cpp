@@ -5,7 +5,7 @@
 #include "proto/logic/component/game_node_comp.pb.h"
 #include "muduo/base/Logging.h"
 
-using GameNodePlayerInfoPtrComp = std::shared_ptr<GameNodePlayerInfoPBComp>;
+using GameNodePlayerInfoPtrPBComponent = std::shared_ptr<GameNodePlayerInfoPBComponent>;
 
 template <typename ServerType>
 entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, const GetSceneFilterParam& filterStateParam) {
@@ -22,7 +22,7 @@ entt::entity FindSceneWithMinPlayerCountTemplate(const GetSceneParams& param, co
 			continue;
 		}
 
-		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtrComp>(entity)).player_size();
+		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(entity)).player_size();
 		if (nodePlayerSize == 0) {
 			bestNode = entity;
 			minServerPlayerSize = nodePlayerSize;
@@ -65,7 +65,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 			continue;
 		}
 
-		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtrComp>(entity)).player_size();
+		auto nodePlayerSize = (*tls.gameNodeRegistry.get<GameNodePlayerInfoPtrPBComponent>(entity)).player_size();
 
 		if (nodePlayerSize >= kMaxServerPlayerSize) {
 			continue;

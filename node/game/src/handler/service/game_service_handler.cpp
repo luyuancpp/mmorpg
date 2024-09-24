@@ -342,7 +342,7 @@ void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* 
 		return;
 	}
 
-	PlayerSessionPBComp sessionInfo;
+	PlayerSessionPBComponent sessionInfo;
 	sessionInfo.set_player_id(request->player_id());
 	tlsSessions.emplace(request->session_id(), sessionInfo);
 
