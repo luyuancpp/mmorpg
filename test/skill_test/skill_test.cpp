@@ -168,7 +168,7 @@ TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
     entt::entity caster = tls.registry.create();
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
-    tableSkill->set_castpoint(1000); // Set cast point to 1000ms
+    tableSkill->set_castpoint(1); // Set cast point to 1000ms
 
     EXPECT_CALL(*mockSkillTable, GetSkillTable(_))
         .WillRepeatedly(Return(tableSkill.get()));
