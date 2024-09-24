@@ -128,15 +128,16 @@ const char descriptor_table_protodef_logic_2fserver_2fcentre_5fscene_2eproto[] A
     protodesc_cold) = {
     "\n\037logic/server/centre_scene.proto\032\022commo"
     "n/empty.proto\032 logic/component/scene_com"
-    "p.proto\"S\n\024RegisterSceneRequest\022\024\n\014game_"
-    "node_id\030\001 \001(\r\022%\n\013scenes_info\030\002 \003(\0132\020.Sce"
-    "neInfoPBComp\"\027\n\025RegisterSceneResponse\"M\n"
-    "\026UnRegisterSceneRequest\022\024\n\014game_node_id\030"
-    "\001 \001(\r\022\r\n\005scene\030\002 \001(\r\022\016\n\006reason\030\003 \001(\r2\210\001\n"
-    "\022CentreSceneService\022>\n\rRegisterScene\022\025.R"
-    "egisterSceneRequest\032\026.RegisterSceneRespo"
-    "nse\0222\n\017UnRegisterScene\022\027.UnRegisterScene"
-    "Request\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "p.proto\"X\n\024RegisterSceneRequest\022\024\n\014game_"
+    "node_id\030\001 \001(\r\022*\n\013scenes_info\030\002 \003(\0132\025.Sce"
+    "neInfoPBComponent\"\027\n\025RegisterSceneRespon"
+    "se\"M\n\026UnRegisterSceneRequest\022\024\n\014game_nod"
+    "e_id\030\001 \001(\r\022\r\n\005scene\030\002 \001(\r\022\016\n\006reason\030\003 \001("
+    "\r2\210\001\n\022CentreSceneService\022>\n\rRegisterScen"
+    "e\022\025.RegisterSceneRequest\032\026.RegisterScene"
+    "Response\0222\n\017UnRegisterScene\022\027.UnRegister"
+    "SceneRequest\032\006.EmptyB\014Z\007pb/game\200\001\001b\006prot"
+    "o3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fserver_2fcentre_5fscene_2eproto_deps[2] =
     {
@@ -147,7 +148,7 @@ static ::absl::once_flag descriptor_table_logic_2fserver_2fcentre_5fscene_2eprot
 const ::_pbi::DescriptorTable descriptor_table_logic_2fserver_2fcentre_5fscene_2eproto = {
     false,
     false,
-    437,
+    442,
     descriptor_table_protodef_logic_2fserver_2fcentre_5fscene_2eproto,
     "logic/server/centre_scene.proto",
     &descriptor_table_logic_2fserver_2fcentre_5fscene_2eproto_once,
@@ -281,7 +282,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::RegisterSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // repeated .SceneInfoPBComp scenes_info = 2;
+    // repeated .SceneInfoPBComponent scenes_info = 2;
     {::_pbi::TcParser::FastMtR1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterSceneRequest, _impl_.scenes_info_)}},
     // uint32 game_node_id = 1;
@@ -293,11 +294,11 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterSceneRequest::_table_ = {
     // uint32 game_node_id = 1;
     {PROTOBUF_FIELD_OFFSET(RegisterSceneRequest, _impl_.game_node_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // repeated .SceneInfoPBComp scenes_info = 2;
+    // repeated .SceneInfoPBComponent scenes_info = 2;
     {PROTOBUF_FIELD_OFFSET(RegisterSceneRequest, _impl_.scenes_info_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComp>()},
+    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
   }}, {{
   }},
 };
@@ -316,7 +317,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterSceneRequest::_table_ = {
         1, this->_internal_game_node_id(), target);
   }
 
-  // repeated .SceneInfoPBComp scenes_info = 2;
+  // repeated .SceneInfoPBComponent scenes_info = 2;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this->_internal_scenes_info_size());
        i < n; i++) {
@@ -344,7 +345,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterSceneRequest::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated .SceneInfoPBComp scenes_info = 2;
+  // repeated .SceneInfoPBComponent scenes_info = 2;
   total_size += 1UL * this->_internal_scenes_info_size();
   for (const auto& msg : this->_internal_scenes_info()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);

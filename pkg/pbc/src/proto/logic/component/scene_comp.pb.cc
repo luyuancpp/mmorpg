@@ -22,19 +22,19 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
       template <typename>
-PROTOBUF_CONSTEXPR SceneInfoPBComp_CreatorsEntry_DoNotUse::SceneInfoPBComp_CreatorsEntry_DoNotUse(::_pbi::ConstantInitialized) {}
-struct SceneInfoPBComp_CreatorsEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SceneInfoPBComp_CreatorsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SceneInfoPBComp_CreatorsEntry_DoNotUseDefaultTypeInternal() {}
+PROTOBUF_CONSTEXPR SceneInfoPBComponent_CreatorsEntry_DoNotUse::SceneInfoPBComponent_CreatorsEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct SceneInfoPBComponent_CreatorsEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SceneInfoPBComponent_CreatorsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SceneInfoPBComponent_CreatorsEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    SceneInfoPBComp_CreatorsEntry_DoNotUse _instance;
+    SceneInfoPBComponent_CreatorsEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SceneInfoPBComp_CreatorsEntry_DoNotUseDefaultTypeInternal _SceneInfoPBComp_CreatorsEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SceneInfoPBComponent_CreatorsEntry_DoNotUseDefaultTypeInternal _SceneInfoPBComponent_CreatorsEntry_DoNotUse_default_instance_;
 
-inline constexpr CentreChangeSceneInfoPBComp::Impl_::Impl_(
+inline constexpr ChangeSceneInfoPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : scene_confid_{0u},
         guid_{0u},
@@ -49,20 +49,20 @@ inline constexpr CentreChangeSceneInfoPBComp::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CentreChangeSceneInfoPBComp::CentreChangeSceneInfoPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR ChangeSceneInfoPBComponent::ChangeSceneInfoPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct CentreChangeSceneInfoPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CentreChangeSceneInfoPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CentreChangeSceneInfoPBCompDefaultTypeInternal() {}
+struct ChangeSceneInfoPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ChangeSceneInfoPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ChangeSceneInfoPBComponentDefaultTypeInternal() {}
   union {
-    CentreChangeSceneInfoPBComp _instance;
+    ChangeSceneInfoPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CentreChangeSceneInfoPBCompDefaultTypeInternal _CentreChangeSceneInfoPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChangeSceneInfoPBComponentDefaultTypeInternal _ChangeSceneInfoPBComponent_default_instance_;
 
-inline constexpr SceneInfoPBComp::Impl_::Impl_(
+inline constexpr SceneInfoPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : creators_{},
         scene_confid_{0u},
@@ -72,18 +72,18 @@ inline constexpr SceneInfoPBComp::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR SceneInfoPBComp::SceneInfoPBComp(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR SceneInfoPBComponent::SceneInfoPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct SceneInfoPBCompDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SceneInfoPBCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SceneInfoPBCompDefaultTypeInternal() {}
+struct SceneInfoPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SceneInfoPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SceneInfoPBComponentDefaultTypeInternal() {}
   union {
-    SceneInfoPBComp _instance;
+    SceneInfoPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SceneInfoPBCompDefaultTypeInternal _SceneInfoPBComp_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SceneInfoPBComponentDefaultTypeInternal _SceneInfoPBComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fscene_5fcomp_2eproto[3];
 static const ::_pb::EnumDescriptor* file_level_enum_descriptors_logic_2fcomponent_2fscene_5fcomp_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor**
@@ -91,87 +91,87 @@ static constexpr const ::_pb::ServiceDescriptor**
 const ::uint32_t
     TableStruct_logic_2fcomponent_2fscene_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp_CreatorsEntry_DoNotUse, _has_bits_),
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp_CreatorsEntry_DoNotUse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent_CreatorsEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent_CreatorsEntry_DoNotUse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp_CreatorsEntry_DoNotUse, key_),
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp_CreatorsEntry_DoNotUse, value_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent_CreatorsEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent_CreatorsEntry_DoNotUse, value_),
         0,
         1,
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp, _impl_.scene_confid_),
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp, _impl_.guid_),
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp, _impl_.mirror_confid_),
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp, _impl_.dungen_confid_),
-        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComp, _impl_.creators_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent, _impl_.scene_confid_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent, _impl_.guid_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent, _impl_.mirror_confid_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent, _impl_.dungen_confid_),
+        PROTOBUF_FIELD_OFFSET(::SceneInfoPBComponent, _impl_.creators_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.scene_confid_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.guid_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.dungen_confid_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.mirror_confid_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.change_sequence_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.change_gs_type_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.change_gs_status_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.change_time_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.ignore_full_),
-        PROTOBUF_FIELD_OFFSET(::CentreChangeSceneInfoPBComp, _impl_.processing_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.scene_confid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.guid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.dungen_confid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.mirror_confid_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_sequence_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_gs_type_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_gs_status_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.change_time_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.ignore_full_),
+        PROTOBUF_FIELD_OFFSET(::ChangeSceneInfoPBComponent, _impl_.processing_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, 10, -1, sizeof(::SceneInfoPBComp_CreatorsEntry_DoNotUse)},
-        {12, -1, -1, sizeof(::SceneInfoPBComp)},
-        {25, -1, -1, sizeof(::CentreChangeSceneInfoPBComp)},
+        {0, 10, -1, sizeof(::SceneInfoPBComponent_CreatorsEntry_DoNotUse)},
+        {12, -1, -1, sizeof(::SceneInfoPBComponent)},
+        {25, -1, -1, sizeof(::ChangeSceneInfoPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_SceneInfoPBComp_CreatorsEntry_DoNotUse_default_instance_._instance,
-    &::_SceneInfoPBComp_default_instance_._instance,
-    &::_CentreChangeSceneInfoPBComp_default_instance_._instance,
+    &::_SceneInfoPBComponent_CreatorsEntry_DoNotUse_default_instance_._instance,
+    &::_SceneInfoPBComponent_default_instance_._instance,
+    &::_ChangeSceneInfoPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fscene_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n logic/component/scene_comp.proto\"\306\001\n\017S"
-    "ceneInfoPBComp\022\024\n\014scene_confid\030\001 \001(\r\022\014\n\004"
-    "guid\030\002 \001(\r\022\025\n\rmirror_confid\030\003 \001(\r\022\025\n\rdun"
-    "gen_confid\030\004 \001(\r\0220\n\010creators\030\005 \003(\0132\036.Sce"
-    "neInfoPBComp.CreatorsEntry\032/\n\rCreatorsEn"
-    "try\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\010:\0028\001\"\206\003\n\033"
-    "CentreChangeSceneInfoPBComp\022\024\n\014scene_con"
-    "fid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rdungen_confid"
-    "\030\003 \001(\r\022\025\n\rmirror_confid\030\004 \001(\r\022\027\n\017change_"
-    "sequence\030\005 \001(\r\022\026\n\016change_gs_type\030\006 \001(\r\022\030"
-    "\n\020change_gs_status\030\007 \001(\r\022\023\n\013change_time\030"
-    "\010 \001(\004\022\023\n\013ignore_full\030\t \001(\010\022\022\n\nprocessing"
-    "\030\n \001(\010\"\\\n\017eChangeGsStatus\022\021\n\reLeaveGsSce"
-    "ne\020\000\022\030\n\024eEnterGsSceneSucceed\020\001\022\034\n\030eGateE"
-    "nterGsSceneSucceed\020\002\".\n\reChangeGsType\022\013\n"
-    "\007eSameGs\020\000\022\020\n\014eDifferentGs\020\001B\tZ\007pb/gameb"
-    "\006proto3"
+    "\n logic/component/scene_comp.proto\"\320\001\n\024S"
+    "ceneInfoPBComponent\022\024\n\014scene_confid\030\001 \001("
+    "\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rmirror_confid\030\003 \001(\r\022\025"
+    "\n\rdungen_confid\030\004 \001(\r\0225\n\010creators\030\005 \003(\0132"
+    "#.SceneInfoPBComponent.CreatorsEntry\032/\n\r"
+    "CreatorsEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001("
+    "\010:\0028\001\"\205\003\n\032ChangeSceneInfoPBComponent\022\024\n\014"
+    "scene_confid\030\001 \001(\r\022\014\n\004guid\030\002 \001(\r\022\025\n\rdung"
+    "en_confid\030\003 \001(\r\022\025\n\rmirror_confid\030\004 \001(\r\022\027"
+    "\n\017change_sequence\030\005 \001(\r\022\026\n\016change_gs_typ"
+    "e\030\006 \001(\r\022\030\n\020change_gs_status\030\007 \001(\r\022\023\n\013cha"
+    "nge_time\030\010 \001(\004\022\023\n\013ignore_full\030\t \001(\010\022\022\n\np"
+    "rocessing\030\n \001(\010\"\\\n\017eChangeGsStatus\022\021\n\reL"
+    "eaveGsScene\020\000\022\030\n\024eEnterGsSceneSucceed\020\001\022"
+    "\034\n\030eGateEnterGsSceneSucceed\020\002\".\n\reChange"
+    "GsType\022\013\n\007eSameGs\020\000\022\020\n\014eDifferentGs\020\001B\tZ"
+    "\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto = {
     false,
     false,
-    647,
+    656,
     descriptor_table_protodef_logic_2fcomponent_2fscene_5fcomp_2eproto,
     "logic/component/scene_comp.proto",
     &descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_once,
@@ -200,79 +200,79 @@ const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fscene_5fcomp_
 PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_getter() {
   return &descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto;
 }
-const ::google::protobuf::EnumDescriptor* CentreChangeSceneInfoPBComp_eChangeGsStatus_descriptor() {
+const ::google::protobuf::EnumDescriptor* ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto);
   return file_level_enum_descriptors_logic_2fcomponent_2fscene_5fcomp_2eproto[0];
 }
-PROTOBUF_CONSTINIT const uint32_t CentreChangeSceneInfoPBComp_eChangeGsStatus_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t ChangeSceneInfoPBComponent_eChangeGsStatus_internal_data_[] = {
     196608u, 0u, };
-bool CentreChangeSceneInfoPBComp_eChangeGsStatus_IsValid(int value) {
+bool ChangeSceneInfoPBComponent_eChangeGsStatus_IsValid(int value) {
   return 0 <= value && value <= 2;
 }
 #if (__cplusplus < 201703) && \
   (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 
-constexpr CentreChangeSceneInfoPBComp_eChangeGsStatus CentreChangeSceneInfoPBComp::eLeaveGsScene;
-constexpr CentreChangeSceneInfoPBComp_eChangeGsStatus CentreChangeSceneInfoPBComp::eEnterGsSceneSucceed;
-constexpr CentreChangeSceneInfoPBComp_eChangeGsStatus CentreChangeSceneInfoPBComp::eGateEnterGsSceneSucceed;
-constexpr CentreChangeSceneInfoPBComp_eChangeGsStatus CentreChangeSceneInfoPBComp::eChangeGsStatus_MIN;
-constexpr CentreChangeSceneInfoPBComp_eChangeGsStatus CentreChangeSceneInfoPBComp::eChangeGsStatus_MAX;
-constexpr int CentreChangeSceneInfoPBComp::eChangeGsStatus_ARRAYSIZE;
+constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eLeaveGsScene;
+constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eEnterGsSceneSucceed;
+constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed;
+constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eChangeGsStatus_MIN;
+constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent::eChangeGsStatus_MAX;
+constexpr int ChangeSceneInfoPBComponent::eChangeGsStatus_ARRAYSIZE;
 
 #endif  // (__cplusplus < 201703) &&
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
-const ::google::protobuf::EnumDescriptor* CentreChangeSceneInfoPBComp_eChangeGsType_descriptor() {
+const ::google::protobuf::EnumDescriptor* ChangeSceneInfoPBComponent_eChangeGsType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto);
   return file_level_enum_descriptors_logic_2fcomponent_2fscene_5fcomp_2eproto[1];
 }
-PROTOBUF_CONSTINIT const uint32_t CentreChangeSceneInfoPBComp_eChangeGsType_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t ChangeSceneInfoPBComponent_eChangeGsType_internal_data_[] = {
     131072u, 0u, };
-bool CentreChangeSceneInfoPBComp_eChangeGsType_IsValid(int value) {
+bool ChangeSceneInfoPBComponent_eChangeGsType_IsValid(int value) {
   return 0 <= value && value <= 1;
 }
 #if (__cplusplus < 201703) && \
   (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 
-constexpr CentreChangeSceneInfoPBComp_eChangeGsType CentreChangeSceneInfoPBComp::eSameGs;
-constexpr CentreChangeSceneInfoPBComp_eChangeGsType CentreChangeSceneInfoPBComp::eDifferentGs;
-constexpr CentreChangeSceneInfoPBComp_eChangeGsType CentreChangeSceneInfoPBComp::eChangeGsType_MIN;
-constexpr CentreChangeSceneInfoPBComp_eChangeGsType CentreChangeSceneInfoPBComp::eChangeGsType_MAX;
-constexpr int CentreChangeSceneInfoPBComp::eChangeGsType_ARRAYSIZE;
+constexpr ChangeSceneInfoPBComponent_eChangeGsType ChangeSceneInfoPBComponent::eSameGs;
+constexpr ChangeSceneInfoPBComponent_eChangeGsType ChangeSceneInfoPBComponent::eDifferentGs;
+constexpr ChangeSceneInfoPBComponent_eChangeGsType ChangeSceneInfoPBComponent::eChangeGsType_MIN;
+constexpr ChangeSceneInfoPBComponent_eChangeGsType ChangeSceneInfoPBComponent::eChangeGsType_MAX;
+constexpr int ChangeSceneInfoPBComponent::eChangeGsType_ARRAYSIZE;
 
 #endif  // (__cplusplus < 201703) &&
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 // ===================================================================
 
-SceneInfoPBComp_CreatorsEntry_DoNotUse::SceneInfoPBComp_CreatorsEntry_DoNotUse() {}
-SceneInfoPBComp_CreatorsEntry_DoNotUse::SceneInfoPBComp_CreatorsEntry_DoNotUse(::google::protobuf::Arena* arena)
+SceneInfoPBComponent_CreatorsEntry_DoNotUse::SceneInfoPBComponent_CreatorsEntry_DoNotUse() {}
+SceneInfoPBComponent_CreatorsEntry_DoNotUse::SceneInfoPBComponent_CreatorsEntry_DoNotUse(::google::protobuf::Arena* arena)
     : SuperType(arena) {}
-::google::protobuf::Metadata SceneInfoPBComp_CreatorsEntry_DoNotUse::GetMetadata() const {
+::google::protobuf::Metadata SceneInfoPBComponent_CreatorsEntry_DoNotUse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fscene_5fcomp_2eproto[0]);
 }
 // ===================================================================
 
-class SceneInfoPBComp::_Internal {
+class SceneInfoPBComponent::_Internal {
  public:
 };
 
-SceneInfoPBComp::SceneInfoPBComp(::google::protobuf::Arena* arena)
+SceneInfoPBComponent::SceneInfoPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:SceneInfoPBComp)
+  // @@protoc_insertion_point(arena_constructor:SceneInfoPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE SceneInfoPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE SceneInfoPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : creators_{visibility, arena, from.creators_},
         _cached_size_{0} {}
 
-SceneInfoPBComp::SceneInfoPBComp(
+SceneInfoPBComponent::SceneInfoPBComponent(
     ::google::protobuf::Arena* arena,
-    const SceneInfoPBComp& from)
+    const SceneInfoPBComponent& from)
     : ::google::protobuf::Message(arena) {
-  SceneInfoPBComp* const _this = this;
+  SceneInfoPBComponent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -285,15 +285,15 @@ SceneInfoPBComp::SceneInfoPBComp(
                offsetof(Impl_, scene_confid_) +
                sizeof(Impl_::dungen_confid_));
 
-  // @@protoc_insertion_point(copy_constructor:SceneInfoPBComp)
+  // @@protoc_insertion_point(copy_constructor:SceneInfoPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE SceneInfoPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE SceneInfoPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : creators_{visibility, arena},
         _cached_size_{0} {}
 
-inline void SceneInfoPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void SceneInfoPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, scene_confid_),
@@ -302,32 +302,32 @@ inline void SceneInfoPBComp::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, scene_confid_) +
                sizeof(Impl_::dungen_confid_));
 }
-SceneInfoPBComp::~SceneInfoPBComp() {
-  // @@protoc_insertion_point(destructor:SceneInfoPBComp)
+SceneInfoPBComponent::~SceneInfoPBComponent() {
+  // @@protoc_insertion_point(destructor:SceneInfoPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void SceneInfoPBComp::SharedDtor() {
+inline void SceneInfoPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-SceneInfoPBComp::GetClassData() const {
+SceneInfoPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_._cached_size_),
               false,
           },
-          &SceneInfoPBComp::MergeImpl,
-          &SceneInfoPBComp::kDescriptorMethods,
+          &SceneInfoPBComponent::MergeImpl,
+          &SceneInfoPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void SceneInfoPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:SceneInfoPBComp)
+PROTOBUF_NOINLINE void SceneInfoPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:SceneInfoPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -340,7 +340,7 @@ PROTOBUF_NOINLINE void SceneInfoPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* SceneInfoPBComp::_InternalParse(
+const char* SceneInfoPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -348,7 +348,7 @@ const char* SceneInfoPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 5, 1, 0, 2> SceneInfoPBComp::_table_ = {
+const ::_pbi::TcParseTable<2, 5, 1, 0, 2> SceneInfoPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -359,55 +359,55 @@ const ::_pbi::TcParseTable<2, 5, 1, 0, 2> SceneInfoPBComp::_table_ = {
     5,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    &_SceneInfoPBComp_default_instance_._instance,
+    &_SceneInfoPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::SceneInfoPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::SceneInfoPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 dungen_confid = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoPBComp, _impl_.dungen_confid_), 63>(),
-     {32, 63, 0, PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.dungen_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoPBComponent, _impl_.dungen_confid_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.dungen_confid_)}},
     // uint32 scene_confid = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoPBComp, _impl_.scene_confid_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.scene_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoPBComponent, _impl_.scene_confid_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.scene_confid_)}},
     // uint32 guid = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoPBComp, _impl_.guid_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.guid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoPBComponent, _impl_.guid_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.guid_)}},
     // uint32 mirror_confid = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoPBComp, _impl_.mirror_confid_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.mirror_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SceneInfoPBComponent, _impl_.mirror_confid_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.mirror_confid_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 scene_confid = 1;
-    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.scene_confid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.scene_confid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 guid = 2;
-    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.guid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.guid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 mirror_confid = 3;
-    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.mirror_confid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.mirror_confid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 dungen_confid = 4;
-    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.dungen_confid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.dungen_confid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // map<uint64, bool> creators = 5;
-    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.creators_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.creators_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }}, {{
     {::_pbi::TcParser::GetMapAuxInfo<
-        decltype(SceneInfoPBComp()._impl_.creators_)>(
+        decltype(SceneInfoPBComponent()._impl_.creators_)>(
         0, 0, 0, 4,
         8)},
   }}, {{
   }},
 };
 
-::uint8_t* SceneInfoPBComp::_InternalSerialize(
+::uint8_t* SceneInfoPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:SceneInfoPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:SceneInfoPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -465,12 +465,12 @@ const ::_pbi::TcParseTable<2, 5, 1, 0, 2> SceneInfoPBComp::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:SceneInfoPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:SceneInfoPBComponent)
   return target;
 }
 
-::size_t SceneInfoPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:SceneInfoPBComp)
+::size_t SceneInfoPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:SceneInfoPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -512,10 +512,10 @@ const ::_pbi::TcParseTable<2, 5, 1, 0, 2> SceneInfoPBComp::_table_ = {
 }
 
 
-void SceneInfoPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<SceneInfoPBComp*>(&to_msg);
-  auto& from = static_cast<const SceneInfoPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:SceneInfoPBComp)
+void SceneInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<SceneInfoPBComponent*>(&to_msg);
+  auto& from = static_cast<const SceneInfoPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:SceneInfoPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -536,56 +536,56 @@ void SceneInfoPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void SceneInfoPBComp::CopyFrom(const SceneInfoPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:SceneInfoPBComp)
+void SceneInfoPBComponent::CopyFrom(const SceneInfoPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:SceneInfoPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool SceneInfoPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool SceneInfoPBComponent::IsInitialized() const {
   return true;
 }
 
-void SceneInfoPBComp::InternalSwap(SceneInfoPBComp* PROTOBUF_RESTRICT other) {
+void SceneInfoPBComponent::InternalSwap(SceneInfoPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.creators_.InternalSwap(&other->_impl_.creators_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.dungen_confid_)
-      + sizeof(SceneInfoPBComp::_impl_.dungen_confid_)
-      - PROTOBUF_FIELD_OFFSET(SceneInfoPBComp, _impl_.scene_confid_)>(
+      PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.dungen_confid_)
+      + sizeof(SceneInfoPBComponent::_impl_.dungen_confid_)
+      - PROTOBUF_FIELD_OFFSET(SceneInfoPBComponent, _impl_.scene_confid_)>(
           reinterpret_cast<char*>(&_impl_.scene_confid_),
           reinterpret_cast<char*>(&other->_impl_.scene_confid_));
 }
 
-::google::protobuf::Metadata SceneInfoPBComp::GetMetadata() const {
+::google::protobuf::Metadata SceneInfoPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fscene_5fcomp_2eproto[1]);
 }
 // ===================================================================
 
-class CentreChangeSceneInfoPBComp::_Internal {
+class ChangeSceneInfoPBComponent::_Internal {
  public:
 };
 
-CentreChangeSceneInfoPBComp::CentreChangeSceneInfoPBComp(::google::protobuf::Arena* arena)
+ChangeSceneInfoPBComponent::ChangeSceneInfoPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CentreChangeSceneInfoPBComp)
+  // @@protoc_insertion_point(arena_constructor:ChangeSceneInfoPBComponent)
 }
-CentreChangeSceneInfoPBComp::CentreChangeSceneInfoPBComp(
-    ::google::protobuf::Arena* arena, const CentreChangeSceneInfoPBComp& from)
-    : CentreChangeSceneInfoPBComp(arena) {
+ChangeSceneInfoPBComponent::ChangeSceneInfoPBComponent(
+    ::google::protobuf::Arena* arena, const ChangeSceneInfoPBComponent& from)
+    : ChangeSceneInfoPBComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE CentreChangeSceneInfoPBComp::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ChangeSceneInfoPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void CentreChangeSceneInfoPBComp::SharedCtor(::_pb::Arena* arena) {
+inline void ChangeSceneInfoPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, scene_confid_),
@@ -594,32 +594,32 @@ inline void CentreChangeSceneInfoPBComp::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, scene_confid_) +
                sizeof(Impl_::processing_));
 }
-CentreChangeSceneInfoPBComp::~CentreChangeSceneInfoPBComp() {
-  // @@protoc_insertion_point(destructor:CentreChangeSceneInfoPBComp)
+ChangeSceneInfoPBComponent::~ChangeSceneInfoPBComponent() {
+  // @@protoc_insertion_point(destructor:ChangeSceneInfoPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void CentreChangeSceneInfoPBComp::SharedDtor() {
+inline void ChangeSceneInfoPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-CentreChangeSceneInfoPBComp::GetClassData() const {
+ChangeSceneInfoPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_._cached_size_),
               false,
           },
-          &CentreChangeSceneInfoPBComp::MergeImpl,
-          &CentreChangeSceneInfoPBComp::kDescriptorMethods,
+          &ChangeSceneInfoPBComponent::MergeImpl,
+          &ChangeSceneInfoPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void CentreChangeSceneInfoPBComp::Clear() {
-// @@protoc_insertion_point(message_clear_start:CentreChangeSceneInfoPBComp)
+PROTOBUF_NOINLINE void ChangeSceneInfoPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:ChangeSceneInfoPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -631,7 +631,7 @@ PROTOBUF_NOINLINE void CentreChangeSceneInfoPBComp::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* CentreChangeSceneInfoPBComp::_InternalParse(
+const char* ChangeSceneInfoPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -639,7 +639,7 @@ const char* CentreChangeSceneInfoPBComp::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 10, 0, 0, 2> CentreChangeSceneInfoPBComp::_table_ = {
+const ::_pbi::TcParseTable<4, 10, 0, 0, 2> ChangeSceneInfoPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -650,43 +650,43 @@ const ::_pbi::TcParseTable<4, 10, 0, 0, 2> CentreChangeSceneInfoPBComp::_table_ 
     10,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_CentreChangeSceneInfoPBComp_default_instance_._instance,
+    &_ChangeSceneInfoPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CentreChangeSceneInfoPBComp>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ChangeSceneInfoPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint32 scene_confid = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CentreChangeSceneInfoPBComp, _impl_.scene_confid_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.scene_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.scene_confid_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.scene_confid_)}},
     // uint32 guid = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CentreChangeSceneInfoPBComp, _impl_.guid_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.guid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.guid_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.guid_)}},
     // uint32 dungen_confid = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CentreChangeSceneInfoPBComp, _impl_.dungen_confid_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.dungen_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.dungen_confid_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.dungen_confid_)}},
     // uint32 mirror_confid = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CentreChangeSceneInfoPBComp, _impl_.mirror_confid_), 63>(),
-     {32, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.mirror_confid_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.mirror_confid_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.mirror_confid_)}},
     // uint32 change_sequence = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CentreChangeSceneInfoPBComp, _impl_.change_sequence_), 63>(),
-     {40, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.change_sequence_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_sequence_), 63>(),
+     {40, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_sequence_)}},
     // uint32 change_gs_type = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CentreChangeSceneInfoPBComp, _impl_.change_gs_type_), 63>(),
-     {48, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.change_gs_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_gs_type_), 63>(),
+     {48, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_type_)}},
     // uint32 change_gs_status = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CentreChangeSceneInfoPBComp, _impl_.change_gs_status_), 63>(),
-     {56, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.change_gs_status_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_gs_status_), 63>(),
+     {56, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_status_)}},
     // uint64 change_time = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CentreChangeSceneInfoPBComp, _impl_.change_time_), 63>(),
-     {64, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.change_time_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ChangeSceneInfoPBComponent, _impl_.change_time_), 63>(),
+     {64, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_time_)}},
     // bool ignore_full = 9;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CentreChangeSceneInfoPBComp, _impl_.ignore_full_), 63>(),
-     {72, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.ignore_full_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeSceneInfoPBComponent, _impl_.ignore_full_), 63>(),
+     {72, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.ignore_full_)}},
     // bool processing = 10;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CentreChangeSceneInfoPBComp, _impl_.processing_), 63>(),
-     {80, 63, 0, PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.processing_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChangeSceneInfoPBComponent, _impl_.processing_), 63>(),
+     {80, 63, 0, PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.processing_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -696,34 +696,34 @@ const ::_pbi::TcParseTable<4, 10, 0, 0, 2> CentreChangeSceneInfoPBComp::_table_ 
     65535, 65535
   }}, {{
     // uint32 scene_confid = 1;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.scene_confid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.scene_confid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 guid = 2;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.guid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.guid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 dungen_confid = 3;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.dungen_confid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.dungen_confid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 mirror_confid = 4;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.mirror_confid_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.mirror_confid_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 change_sequence = 5;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.change_sequence_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_sequence_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 change_gs_type = 6;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.change_gs_type_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 change_gs_status = 7;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.change_gs_status_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_gs_status_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint64 change_time = 8;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.change_time_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.change_time_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // bool ignore_full = 9;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.ignore_full_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.ignore_full_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
     // bool processing = 10;
-    {PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.processing_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.processing_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
   }},
   // no aux_entries
@@ -731,10 +731,10 @@ const ::_pbi::TcParseTable<4, 10, 0, 0, 2> CentreChangeSceneInfoPBComp::_table_ 
   }},
 };
 
-::uint8_t* CentreChangeSceneInfoPBComp::_InternalSerialize(
+::uint8_t* ChangeSceneInfoPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:CentreChangeSceneInfoPBComp)
+  // @@protoc_insertion_point(serialize_to_array_start:ChangeSceneInfoPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -813,12 +813,12 @@ const ::_pbi::TcParseTable<4, 10, 0, 0, 2> CentreChangeSceneInfoPBComp::_table_ 
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:CentreChangeSceneInfoPBComp)
+  // @@protoc_insertion_point(serialize_to_array_end:ChangeSceneInfoPBComponent)
   return target;
 }
 
-::size_t CentreChangeSceneInfoPBComp::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:CentreChangeSceneInfoPBComp)
+::size_t ChangeSceneInfoPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:ChangeSceneInfoPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -887,10 +887,10 @@ const ::_pbi::TcParseTable<4, 10, 0, 0, 2> CentreChangeSceneInfoPBComp::_table_ 
 }
 
 
-void CentreChangeSceneInfoPBComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CentreChangeSceneInfoPBComp*>(&to_msg);
-  auto& from = static_cast<const CentreChangeSceneInfoPBComp&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CentreChangeSceneInfoPBComp)
+void ChangeSceneInfoPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ChangeSceneInfoPBComponent*>(&to_msg);
+  auto& from = static_cast<const ChangeSceneInfoPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ChangeSceneInfoPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -928,29 +928,29 @@ void CentreChangeSceneInfoPBComp::MergeImpl(::google::protobuf::MessageLite& to_
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CentreChangeSceneInfoPBComp::CopyFrom(const CentreChangeSceneInfoPBComp& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CentreChangeSceneInfoPBComp)
+void ChangeSceneInfoPBComponent::CopyFrom(const ChangeSceneInfoPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ChangeSceneInfoPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool CentreChangeSceneInfoPBComp::IsInitialized() const {
+PROTOBUF_NOINLINE bool ChangeSceneInfoPBComponent::IsInitialized() const {
   return true;
 }
 
-void CentreChangeSceneInfoPBComp::InternalSwap(CentreChangeSceneInfoPBComp* PROTOBUF_RESTRICT other) {
+void ChangeSceneInfoPBComponent::InternalSwap(ChangeSceneInfoPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.processing_)
-      + sizeof(CentreChangeSceneInfoPBComp::_impl_.processing_)
-      - PROTOBUF_FIELD_OFFSET(CentreChangeSceneInfoPBComp, _impl_.scene_confid_)>(
+      PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.processing_)
+      + sizeof(ChangeSceneInfoPBComponent::_impl_.processing_)
+      - PROTOBUF_FIELD_OFFSET(ChangeSceneInfoPBComponent, _impl_.scene_confid_)>(
           reinterpret_cast<char*>(&_impl_.scene_confid_),
           reinterpret_cast<char*>(&other->_impl_.scene_confid_));
 }
 
-::google::protobuf::Metadata CentreChangeSceneInfoPBComp::GetMetadata() const {
+::google::protobuf::Metadata ChangeSceneInfoPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fscene_5fcomp_2eproto[2]);

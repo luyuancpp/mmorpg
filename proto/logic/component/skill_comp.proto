@@ -4,13 +4,12 @@ option go_package = "pb/game";
 import "logic/component/actor_comp.proto";
 
 
-message SkillPBComp
+message SkillPBComponent
 {
   uint64 skill_table_id = 1;
 }
 
-
-message SkillContextPBComp
+message SkillContextPBComponent
 {
 	uint64 caster = 1; // 施法者
 	uint64 target = 2; // 目标（如果有）

@@ -757,9 +757,9 @@ class player_database final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kTransformFieldNumber = 2,
-    kUint64PbCompFieldNumber = 3,
+    kUint64PbComponentFieldNumber = 3,
     kSkillListFieldNumber = 4,
-    kUint32PbCompFieldNumber = 5,
+    kUint32PbComponentFieldNumber = 5,
     kPlayerIdFieldNumber = 1,
   };
   // .Transform transform = 2;
@@ -777,49 +777,49 @@ class player_database final : public ::google::protobuf::Message
   ::Transform* _internal_mutable_transform();
 
   public:
-  // .PlayerUint64PBComp uint64_pb_comp = 3;
-  bool has_uint64_pb_comp() const;
-  void clear_uint64_pb_comp() ;
-  const ::PlayerUint64PBComp& uint64_pb_comp() const;
-  PROTOBUF_NODISCARD ::PlayerUint64PBComp* release_uint64_pb_comp();
-  ::PlayerUint64PBComp* mutable_uint64_pb_comp();
-  void set_allocated_uint64_pb_comp(::PlayerUint64PBComp* value);
-  void unsafe_arena_set_allocated_uint64_pb_comp(::PlayerUint64PBComp* value);
-  ::PlayerUint64PBComp* unsafe_arena_release_uint64_pb_comp();
+  // .PlayerUint64PBComponent uint64_pb_component = 3;
+  bool has_uint64_pb_component() const;
+  void clear_uint64_pb_component() ;
+  const ::PlayerUint64PBComponent& uint64_pb_component() const;
+  PROTOBUF_NODISCARD ::PlayerUint64PBComponent* release_uint64_pb_component();
+  ::PlayerUint64PBComponent* mutable_uint64_pb_component();
+  void set_allocated_uint64_pb_component(::PlayerUint64PBComponent* value);
+  void unsafe_arena_set_allocated_uint64_pb_component(::PlayerUint64PBComponent* value);
+  ::PlayerUint64PBComponent* unsafe_arena_release_uint64_pb_component();
 
   private:
-  const ::PlayerUint64PBComp& _internal_uint64_pb_comp() const;
-  ::PlayerUint64PBComp* _internal_mutable_uint64_pb_comp();
+  const ::PlayerUint64PBComponent& _internal_uint64_pb_component() const;
+  ::PlayerUint64PBComponent* _internal_mutable_uint64_pb_component();
 
   public:
-  // .PlayerSkillListPBComp skill_list = 4;
+  // .PlayerSkillListPBComponent skill_list = 4;
   bool has_skill_list() const;
   void clear_skill_list() ;
-  const ::PlayerSkillListPBComp& skill_list() const;
-  PROTOBUF_NODISCARD ::PlayerSkillListPBComp* release_skill_list();
-  ::PlayerSkillListPBComp* mutable_skill_list();
-  void set_allocated_skill_list(::PlayerSkillListPBComp* value);
-  void unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComp* value);
-  ::PlayerSkillListPBComp* unsafe_arena_release_skill_list();
+  const ::PlayerSkillListPBComponent& skill_list() const;
+  PROTOBUF_NODISCARD ::PlayerSkillListPBComponent* release_skill_list();
+  ::PlayerSkillListPBComponent* mutable_skill_list();
+  void set_allocated_skill_list(::PlayerSkillListPBComponent* value);
+  void unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComponent* value);
+  ::PlayerSkillListPBComponent* unsafe_arena_release_skill_list();
 
   private:
-  const ::PlayerSkillListPBComp& _internal_skill_list() const;
-  ::PlayerSkillListPBComp* _internal_mutable_skill_list();
+  const ::PlayerSkillListPBComponent& _internal_skill_list() const;
+  ::PlayerSkillListPBComponent* _internal_mutable_skill_list();
 
   public:
-  // .PlayerUint32PBComp uint32_pb_comp = 5;
-  bool has_uint32_pb_comp() const;
-  void clear_uint32_pb_comp() ;
-  const ::PlayerUint32PBComp& uint32_pb_comp() const;
-  PROTOBUF_NODISCARD ::PlayerUint32PBComp* release_uint32_pb_comp();
-  ::PlayerUint32PBComp* mutable_uint32_pb_comp();
-  void set_allocated_uint32_pb_comp(::PlayerUint32PBComp* value);
-  void unsafe_arena_set_allocated_uint32_pb_comp(::PlayerUint32PBComp* value);
-  ::PlayerUint32PBComp* unsafe_arena_release_uint32_pb_comp();
+  // .PlayerUint32PBComponent uint32_pb_component = 5;
+  bool has_uint32_pb_component() const;
+  void clear_uint32_pb_component() ;
+  const ::PlayerUint32PBComponent& uint32_pb_component() const;
+  PROTOBUF_NODISCARD ::PlayerUint32PBComponent* release_uint32_pb_component();
+  ::PlayerUint32PBComponent* mutable_uint32_pb_component();
+  void set_allocated_uint32_pb_component(::PlayerUint32PBComponent* value);
+  void unsafe_arena_set_allocated_uint32_pb_component(::PlayerUint32PBComponent* value);
+  ::PlayerUint32PBComponent* unsafe_arena_release_uint32_pb_component();
 
   private:
-  const ::PlayerUint32PBComp& _internal_uint32_pb_comp() const;
-  ::PlayerUint32PBComp* _internal_mutable_uint32_pb_comp();
+  const ::PlayerUint32PBComponent& _internal_uint32_pb_component() const;
+  ::PlayerUint32PBComponent* _internal_mutable_uint32_pb_component();
 
   public:
   // uint64 player_id = 1;
@@ -856,9 +856,9 @@ class player_database final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::Transform* transform_;
-    ::PlayerUint64PBComp* uint64_pb_comp_;
-    ::PlayerSkillListPBComp* skill_list_;
-    ::PlayerUint32PBComp* uint32_pb_comp_;
+    ::PlayerUint64PBComponent* uint64_pb_component_;
+    ::PlayerSkillListPBComponent* skill_list_;
+    ::PlayerUint32PBComponent* uint32_pb_component_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -995,19 +995,19 @@ class player_centre_database final : public ::google::protobuf::Message
     kSceneInfoFieldNumber = 2,
     kPlayerIdFieldNumber = 1,
   };
-  // .PlayerSceneContextPBComp scene_info = 2;
+  // .PlayerSceneContextPBComponent scene_info = 2;
   bool has_scene_info() const;
   void clear_scene_info() ;
-  const ::PlayerSceneContextPBComp& scene_info() const;
-  PROTOBUF_NODISCARD ::PlayerSceneContextPBComp* release_scene_info();
-  ::PlayerSceneContextPBComp* mutable_scene_info();
-  void set_allocated_scene_info(::PlayerSceneContextPBComp* value);
-  void unsafe_arena_set_allocated_scene_info(::PlayerSceneContextPBComp* value);
-  ::PlayerSceneContextPBComp* unsafe_arena_release_scene_info();
+  const ::PlayerSceneContextPBComponent& scene_info() const;
+  PROTOBUF_NODISCARD ::PlayerSceneContextPBComponent* release_scene_info();
+  ::PlayerSceneContextPBComponent* mutable_scene_info();
+  void set_allocated_scene_info(::PlayerSceneContextPBComponent* value);
+  void unsafe_arena_set_allocated_scene_info(::PlayerSceneContextPBComponent* value);
+  ::PlayerSceneContextPBComponent* unsafe_arena_release_scene_info();
 
   private:
-  const ::PlayerSceneContextPBComp& _internal_scene_info() const;
-  ::PlayerSceneContextPBComp* _internal_mutable_scene_info();
+  const ::PlayerSceneContextPBComponent& _internal_scene_info() const;
+  ::PlayerSceneContextPBComponent* _internal_mutable_scene_info();
 
   public:
   // uint64 player_id = 1;
@@ -1043,7 +1043,7 @@ class player_centre_database final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::PlayerSceneContextPBComp* scene_info_;
+    ::PlayerSceneContextPBComponent* scene_info_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1338,27 +1338,27 @@ inline void player_centre_database::_internal_set_player_id(::uint64_t value) {
   _impl_.player_id_ = value;
 }
 
-// .PlayerSceneContextPBComp scene_info = 2;
+// .PlayerSceneContextPBComponent scene_info = 2;
 inline bool player_centre_database::has_scene_info() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);
   return value;
 }
-inline const ::PlayerSceneContextPBComp& player_centre_database::_internal_scene_info() const {
+inline const ::PlayerSceneContextPBComponent& player_centre_database::_internal_scene_info() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::PlayerSceneContextPBComp* p = _impl_.scene_info_;
-  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSceneContextPBComp&>(::_PlayerSceneContextPBComp_default_instance_);
+  const ::PlayerSceneContextPBComponent* p = _impl_.scene_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSceneContextPBComponent&>(::_PlayerSceneContextPBComponent_default_instance_);
 }
-inline const ::PlayerSceneContextPBComp& player_centre_database::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::PlayerSceneContextPBComponent& player_centre_database::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:player_centre_database.scene_info)
   return _internal_scene_info();
 }
-inline void player_centre_database::unsafe_arena_set_allocated_scene_info(::PlayerSceneContextPBComp* value) {
+inline void player_centre_database::unsafe_arena_set_allocated_scene_info(::PlayerSceneContextPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.scene_info_);
   }
-  _impl_.scene_info_ = reinterpret_cast<::PlayerSceneContextPBComp*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::PlayerSceneContextPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -1366,11 +1366,11 @@ inline void player_centre_database::unsafe_arena_set_allocated_scene_info(::Play
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_centre_database.scene_info)
 }
-inline ::PlayerSceneContextPBComp* player_centre_database::release_scene_info() {
+inline ::PlayerSceneContextPBComponent* player_centre_database::release_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::PlayerSceneContextPBComp* released = _impl_.scene_info_;
+  ::PlayerSceneContextPBComponent* released = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1385,30 +1385,30 @@ inline ::PlayerSceneContextPBComp* player_centre_database::release_scene_info() 
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerSceneContextPBComp* player_centre_database::unsafe_arena_release_scene_info() {
+inline ::PlayerSceneContextPBComponent* player_centre_database::unsafe_arena_release_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:player_centre_database.scene_info)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::PlayerSceneContextPBComp* temp = _impl_.scene_info_;
+  ::PlayerSceneContextPBComponent* temp = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   return temp;
 }
-inline ::PlayerSceneContextPBComp* player_centre_database::_internal_mutable_scene_info() {
+inline ::PlayerSceneContextPBComponent* player_centre_database::_internal_mutable_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.scene_info_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSceneContextPBComp>(GetArena());
-    _impl_.scene_info_ = reinterpret_cast<::PlayerSceneContextPBComp*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSceneContextPBComponent>(GetArena());
+    _impl_.scene_info_ = reinterpret_cast<::PlayerSceneContextPBComponent*>(p);
   }
   return _impl_.scene_info_;
 }
-inline ::PlayerSceneContextPBComp* player_centre_database::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerSceneContextPBComponent* player_centre_database::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::PlayerSceneContextPBComp* _msg = _internal_mutable_scene_info();
+  ::PlayerSceneContextPBComponent* _msg = _internal_mutable_scene_info();
   // @@protoc_insertion_point(field_mutable:player_centre_database.scene_info)
   return _msg;
 }
-inline void player_centre_database::set_allocated_scene_info(::PlayerSceneContextPBComp* value) {
+inline void player_centre_database::set_allocated_scene_info(::PlayerSceneContextPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -1425,7 +1425,7 @@ inline void player_centre_database::set_allocated_scene_info(::PlayerSceneContex
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.scene_info_ = reinterpret_cast<::PlayerSceneContextPBComp*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::PlayerSceneContextPBComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_centre_database.scene_info)
 }
 
@@ -1546,40 +1546,40 @@ inline void player_database::set_allocated_transform(::Transform* value) {
   // @@protoc_insertion_point(field_set_allocated:player_database.transform)
 }
 
-// .PlayerUint64PBComp uint64_pb_comp = 3;
-inline bool player_database::has_uint64_pb_comp() const {
+// .PlayerUint64PBComponent uint64_pb_component = 3;
+inline bool player_database::has_uint64_pb_component() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.uint64_pb_comp_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.uint64_pb_component_ != nullptr);
   return value;
 }
-inline const ::PlayerUint64PBComp& player_database::_internal_uint64_pb_comp() const {
+inline const ::PlayerUint64PBComponent& player_database::_internal_uint64_pb_component() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::PlayerUint64PBComp* p = _impl_.uint64_pb_comp_;
-  return p != nullptr ? *p : reinterpret_cast<const ::PlayerUint64PBComp&>(::_PlayerUint64PBComp_default_instance_);
+  const ::PlayerUint64PBComponent* p = _impl_.uint64_pb_component_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerUint64PBComponent&>(::_PlayerUint64PBComponent_default_instance_);
 }
-inline const ::PlayerUint64PBComp& player_database::uint64_pb_comp() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:player_database.uint64_pb_comp)
-  return _internal_uint64_pb_comp();
+inline const ::PlayerUint64PBComponent& player_database::uint64_pb_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.uint64_pb_component)
+  return _internal_uint64_pb_component();
 }
-inline void player_database::unsafe_arena_set_allocated_uint64_pb_comp(::PlayerUint64PBComp* value) {
+inline void player_database::unsafe_arena_set_allocated_uint64_pb_component(::PlayerUint64PBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint64_pb_comp_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint64_pb_component_);
   }
-  _impl_.uint64_pb_comp_ = reinterpret_cast<::PlayerUint64PBComp*>(value);
+  _impl_.uint64_pb_component_ = reinterpret_cast<::PlayerUint64PBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.uint64_pb_comp)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.uint64_pb_component)
 }
-inline ::PlayerUint64PBComp* player_database::release_uint64_pb_comp() {
+inline ::PlayerUint64PBComponent* player_database::release_uint64_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::PlayerUint64PBComp* released = _impl_.uint64_pb_comp_;
-  _impl_.uint64_pb_comp_ = nullptr;
+  ::PlayerUint64PBComponent* released = _impl_.uint64_pb_component_;
+  _impl_.uint64_pb_component_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
   released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -1593,34 +1593,34 @@ inline ::PlayerUint64PBComp* player_database::release_uint64_pb_comp() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerUint64PBComp* player_database::unsafe_arena_release_uint64_pb_comp() {
+inline ::PlayerUint64PBComponent* player_database::unsafe_arena_release_uint64_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:player_database.uint64_pb_comp)
+  // @@protoc_insertion_point(field_release:player_database.uint64_pb_component)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::PlayerUint64PBComp* temp = _impl_.uint64_pb_comp_;
-  _impl_.uint64_pb_comp_ = nullptr;
+  ::PlayerUint64PBComponent* temp = _impl_.uint64_pb_component_;
+  _impl_.uint64_pb_component_ = nullptr;
   return temp;
 }
-inline ::PlayerUint64PBComp* player_database::_internal_mutable_uint64_pb_comp() {
+inline ::PlayerUint64PBComponent* player_database::_internal_mutable_uint64_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.uint64_pb_comp_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerUint64PBComp>(GetArena());
-    _impl_.uint64_pb_comp_ = reinterpret_cast<::PlayerUint64PBComp*>(p);
+  if (_impl_.uint64_pb_component_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerUint64PBComponent>(GetArena());
+    _impl_.uint64_pb_component_ = reinterpret_cast<::PlayerUint64PBComponent*>(p);
   }
-  return _impl_.uint64_pb_comp_;
+  return _impl_.uint64_pb_component_;
 }
-inline ::PlayerUint64PBComp* player_database::mutable_uint64_pb_comp() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerUint64PBComponent* player_database::mutable_uint64_pb_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
-  ::PlayerUint64PBComp* _msg = _internal_mutable_uint64_pb_comp();
-  // @@protoc_insertion_point(field_mutable:player_database.uint64_pb_comp)
+  ::PlayerUint64PBComponent* _msg = _internal_mutable_uint64_pb_component();
+  // @@protoc_insertion_point(field_mutable:player_database.uint64_pb_component)
   return _msg;
 }
-inline void player_database::set_allocated_uint64_pb_comp(::PlayerUint64PBComp* value) {
+inline void player_database::set_allocated_uint64_pb_component(::PlayerUint64PBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint64_pb_comp_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint64_pb_component_);
   }
 
   if (value != nullptr) {
@@ -1633,31 +1633,31 @@ inline void player_database::set_allocated_uint64_pb_comp(::PlayerUint64PBComp* 
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
 
-  _impl_.uint64_pb_comp_ = reinterpret_cast<::PlayerUint64PBComp*>(value);
-  // @@protoc_insertion_point(field_set_allocated:player_database.uint64_pb_comp)
+  _impl_.uint64_pb_component_ = reinterpret_cast<::PlayerUint64PBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.uint64_pb_component)
 }
 
-// .PlayerSkillListPBComp skill_list = 4;
+// .PlayerSkillListPBComponent skill_list = 4;
 inline bool player_database::has_skill_list() const {
   bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.skill_list_ != nullptr);
   return value;
 }
-inline const ::PlayerSkillListPBComp& player_database::_internal_skill_list() const {
+inline const ::PlayerSkillListPBComponent& player_database::_internal_skill_list() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::PlayerSkillListPBComp* p = _impl_.skill_list_;
-  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSkillListPBComp&>(::_PlayerSkillListPBComp_default_instance_);
+  const ::PlayerSkillListPBComponent* p = _impl_.skill_list_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSkillListPBComponent&>(::_PlayerSkillListPBComponent_default_instance_);
 }
-inline const ::PlayerSkillListPBComp& player_database::skill_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::PlayerSkillListPBComponent& player_database::skill_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:player_database.skill_list)
   return _internal_skill_list();
 }
-inline void player_database::unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComp* value) {
+inline void player_database::unsafe_arena_set_allocated_skill_list(::PlayerSkillListPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.skill_list_);
   }
-  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(value);
+  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000004u;
   } else {
@@ -1665,11 +1665,11 @@ inline void player_database::unsafe_arena_set_allocated_skill_list(::PlayerSkill
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.skill_list)
 }
-inline ::PlayerSkillListPBComp* player_database::release_skill_list() {
+inline ::PlayerSkillListPBComponent* player_database::release_skill_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000004u;
-  ::PlayerSkillListPBComp* released = _impl_.skill_list_;
+  ::PlayerSkillListPBComponent* released = _impl_.skill_list_;
   _impl_.skill_list_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1684,30 +1684,30 @@ inline ::PlayerSkillListPBComp* player_database::release_skill_list() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerSkillListPBComp* player_database::unsafe_arena_release_skill_list() {
+inline ::PlayerSkillListPBComponent* player_database::unsafe_arena_release_skill_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:player_database.skill_list)
 
   _impl_._has_bits_[0] &= ~0x00000004u;
-  ::PlayerSkillListPBComp* temp = _impl_.skill_list_;
+  ::PlayerSkillListPBComponent* temp = _impl_.skill_list_;
   _impl_.skill_list_ = nullptr;
   return temp;
 }
-inline ::PlayerSkillListPBComp* player_database::_internal_mutable_skill_list() {
+inline ::PlayerSkillListPBComponent* player_database::_internal_mutable_skill_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.skill_list_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSkillListPBComp>(GetArena());
-    _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSkillListPBComponent>(GetArena());
+    _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComponent*>(p);
   }
   return _impl_.skill_list_;
 }
-inline ::PlayerSkillListPBComp* player_database::mutable_skill_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerSkillListPBComponent* player_database::mutable_skill_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000004u;
-  ::PlayerSkillListPBComp* _msg = _internal_mutable_skill_list();
+  ::PlayerSkillListPBComponent* _msg = _internal_mutable_skill_list();
   // @@protoc_insertion_point(field_mutable:player_database.skill_list)
   return _msg;
 }
-inline void player_database::set_allocated_skill_list(::PlayerSkillListPBComp* value) {
+inline void player_database::set_allocated_skill_list(::PlayerSkillListPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -1724,44 +1724,44 @@ inline void player_database::set_allocated_skill_list(::PlayerSkillListPBComp* v
     _impl_._has_bits_[0] &= ~0x00000004u;
   }
 
-  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComp*>(value);
+  _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListPBComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database.skill_list)
 }
 
-// .PlayerUint32PBComp uint32_pb_comp = 5;
-inline bool player_database::has_uint32_pb_comp() const {
+// .PlayerUint32PBComponent uint32_pb_component = 5;
+inline bool player_database::has_uint32_pb_component() const {
   bool value = (_impl_._has_bits_[0] & 0x00000008u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.uint32_pb_comp_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.uint32_pb_component_ != nullptr);
   return value;
 }
-inline const ::PlayerUint32PBComp& player_database::_internal_uint32_pb_comp() const {
+inline const ::PlayerUint32PBComponent& player_database::_internal_uint32_pb_component() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::PlayerUint32PBComp* p = _impl_.uint32_pb_comp_;
-  return p != nullptr ? *p : reinterpret_cast<const ::PlayerUint32PBComp&>(::_PlayerUint32PBComp_default_instance_);
+  const ::PlayerUint32PBComponent* p = _impl_.uint32_pb_component_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerUint32PBComponent&>(::_PlayerUint32PBComponent_default_instance_);
 }
-inline const ::PlayerUint32PBComp& player_database::uint32_pb_comp() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:player_database.uint32_pb_comp)
-  return _internal_uint32_pb_comp();
+inline const ::PlayerUint32PBComponent& player_database::uint32_pb_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.uint32_pb_component)
+  return _internal_uint32_pb_component();
 }
-inline void player_database::unsafe_arena_set_allocated_uint32_pb_comp(::PlayerUint32PBComp* value) {
+inline void player_database::unsafe_arena_set_allocated_uint32_pb_component(::PlayerUint32PBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint32_pb_comp_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint32_pb_component_);
   }
-  _impl_.uint32_pb_comp_ = reinterpret_cast<::PlayerUint32PBComp*>(value);
+  _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000008u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000008u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.uint32_pb_comp)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.uint32_pb_component)
 }
-inline ::PlayerUint32PBComp* player_database::release_uint32_pb_comp() {
+inline ::PlayerUint32PBComponent* player_database::release_uint32_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000008u;
-  ::PlayerUint32PBComp* released = _impl_.uint32_pb_comp_;
-  _impl_.uint32_pb_comp_ = nullptr;
+  ::PlayerUint32PBComponent* released = _impl_.uint32_pb_component_;
+  _impl_.uint32_pb_component_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
   released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -1775,34 +1775,34 @@ inline ::PlayerUint32PBComp* player_database::release_uint32_pb_comp() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerUint32PBComp* player_database::unsafe_arena_release_uint32_pb_comp() {
+inline ::PlayerUint32PBComponent* player_database::unsafe_arena_release_uint32_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:player_database.uint32_pb_comp)
+  // @@protoc_insertion_point(field_release:player_database.uint32_pb_component)
 
   _impl_._has_bits_[0] &= ~0x00000008u;
-  ::PlayerUint32PBComp* temp = _impl_.uint32_pb_comp_;
-  _impl_.uint32_pb_comp_ = nullptr;
+  ::PlayerUint32PBComponent* temp = _impl_.uint32_pb_component_;
+  _impl_.uint32_pb_component_ = nullptr;
   return temp;
 }
-inline ::PlayerUint32PBComp* player_database::_internal_mutable_uint32_pb_comp() {
+inline ::PlayerUint32PBComponent* player_database::_internal_mutable_uint32_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.uint32_pb_comp_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerUint32PBComp>(GetArena());
-    _impl_.uint32_pb_comp_ = reinterpret_cast<::PlayerUint32PBComp*>(p);
+  if (_impl_.uint32_pb_component_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerUint32PBComponent>(GetArena());
+    _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PBComponent*>(p);
   }
-  return _impl_.uint32_pb_comp_;
+  return _impl_.uint32_pb_component_;
 }
-inline ::PlayerUint32PBComp* player_database::mutable_uint32_pb_comp() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerUint32PBComponent* player_database::mutable_uint32_pb_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000008u;
-  ::PlayerUint32PBComp* _msg = _internal_mutable_uint32_pb_comp();
-  // @@protoc_insertion_point(field_mutable:player_database.uint32_pb_comp)
+  ::PlayerUint32PBComponent* _msg = _internal_mutable_uint32_pb_component();
+  // @@protoc_insertion_point(field_mutable:player_database.uint32_pb_component)
   return _msg;
 }
-inline void player_database::set_allocated_uint32_pb_comp(::PlayerUint32PBComp* value) {
+inline void player_database::set_allocated_uint32_pb_component(::PlayerUint32PBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint32_pb_comp_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint32_pb_component_);
   }
 
   if (value != nullptr) {
@@ -1815,8 +1815,8 @@ inline void player_database::set_allocated_uint32_pb_comp(::PlayerUint32PBComp* 
     _impl_._has_bits_[0] &= ~0x00000008u;
   }
 
-  _impl_.uint32_pb_comp_ = reinterpret_cast<::PlayerUint32PBComp*>(value);
-  // @@protoc_insertion_point(field_set_allocated:player_database.uint32_pb_comp)
+  _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.uint32_pb_component)
 }
 
 // -------------------------------------------------------------------

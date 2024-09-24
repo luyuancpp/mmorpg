@@ -49,12 +49,12 @@ struct TableStruct_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2fplayer_5fscene_5fcomp_2eproto;
-class PlayerSceneContextPBComp;
-struct PlayerSceneContextPBCompDefaultTypeInternal;
-extern PlayerSceneContextPBCompDefaultTypeInternal _PlayerSceneContextPBComp_default_instance_;
-class PlayerSceneInfoPBComp;
-struct PlayerSceneInfoPBCompDefaultTypeInternal;
-extern PlayerSceneInfoPBCompDefaultTypeInternal _PlayerSceneInfoPBComp_default_instance_;
+class PlayerSceneContextPBComponent;
+struct PlayerSceneContextPBComponentDefaultTypeInternal;
+extern PlayerSceneContextPBComponentDefaultTypeInternal _PlayerSceneContextPBComponent_default_instance_;
+class PlayerSceneInfoPBComponent;
+struct PlayerSceneInfoPBComponentDefaultTypeInternal;
+extern PlayerSceneInfoPBComponentDefaultTypeInternal _PlayerSceneInfoPBComponent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -66,23 +66,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class PlayerSceneInfoPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerSceneInfoPBComp) */ {
+class PlayerSceneInfoPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerSceneInfoPBComponent) */ {
  public:
-  inline PlayerSceneInfoPBComp() : PlayerSceneInfoPBComp(nullptr) {}
-  ~PlayerSceneInfoPBComp() override;
+  inline PlayerSceneInfoPBComponent() : PlayerSceneInfoPBComponent(nullptr) {}
+  ~PlayerSceneInfoPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerSceneInfoPBComp(
+  explicit PROTOBUF_CONSTEXPR PlayerSceneInfoPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerSceneInfoPBComp(const PlayerSceneInfoPBComp& from) : PlayerSceneInfoPBComp(nullptr, from) {}
-  inline PlayerSceneInfoPBComp(PlayerSceneInfoPBComp&& from) noexcept
-      : PlayerSceneInfoPBComp(nullptr, std::move(from)) {}
-  inline PlayerSceneInfoPBComp& operator=(const PlayerSceneInfoPBComp& from) {
+  inline PlayerSceneInfoPBComponent(const PlayerSceneInfoPBComponent& from) : PlayerSceneInfoPBComponent(nullptr, from) {}
+  inline PlayerSceneInfoPBComponent(PlayerSceneInfoPBComponent&& from) noexcept
+      : PlayerSceneInfoPBComponent(nullptr, std::move(from)) {}
+  inline PlayerSceneInfoPBComponent& operator=(const PlayerSceneInfoPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerSceneInfoPBComp& operator=(PlayerSceneInfoPBComp&& from) noexcept {
+  inline PlayerSceneInfoPBComponent& operator=(PlayerSceneInfoPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -114,16 +114,16 @@ class PlayerSceneInfoPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerSceneInfoPBComp& default_instance() {
+  static const PlayerSceneInfoPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const PlayerSceneInfoPBComp* internal_default_instance() {
-    return reinterpret_cast<const PlayerSceneInfoPBComp*>(
-        &_PlayerSceneInfoPBComp_default_instance_);
+  static inline const PlayerSceneInfoPBComponent* internal_default_instance() {
+    return reinterpret_cast<const PlayerSceneInfoPBComponent*>(
+        &_PlayerSceneInfoPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(PlayerSceneInfoPBComp& a, PlayerSceneInfoPBComp& b) { a.Swap(&b); }
-  inline void Swap(PlayerSceneInfoPBComp* other) {
+  friend void swap(PlayerSceneInfoPBComponent& a, PlayerSceneInfoPBComponent& b) { a.Swap(&b); }
+  inline void Swap(PlayerSceneInfoPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -135,7 +135,7 @@ class PlayerSceneInfoPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerSceneInfoPBComp* other) {
+  void UnsafeArenaSwap(PlayerSceneInfoPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -143,13 +143,13 @@ class PlayerSceneInfoPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerSceneInfoPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerSceneInfoPBComp>(arena);
+  PlayerSceneInfoPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerSceneInfoPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerSceneInfoPBComp& from);
+  void CopyFrom(const PlayerSceneInfoPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerSceneInfoPBComp& from) { PlayerSceneInfoPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerSceneInfoPBComponent& from) { PlayerSceneInfoPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -170,16 +170,16 @@ class PlayerSceneInfoPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(PlayerSceneInfoPBComp* other);
+  void InternalSwap(PlayerSceneInfoPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "PlayerSceneInfoPBComp"; }
+  static ::absl::string_view FullMessageName() { return "PlayerSceneInfoPBComponent"; }
 
  protected:
-  explicit PlayerSceneInfoPBComp(::google::protobuf::Arena* arena);
-  PlayerSceneInfoPBComp(::google::protobuf::Arena* arena, const PlayerSceneInfoPBComp& from);
-  PlayerSceneInfoPBComp(::google::protobuf::Arena* arena, PlayerSceneInfoPBComp&& from) noexcept
-      : PlayerSceneInfoPBComp(arena) {
+  explicit PlayerSceneInfoPBComponent(::google::protobuf::Arena* arena);
+  PlayerSceneInfoPBComponent(::google::protobuf::Arena* arena, const PlayerSceneInfoPBComponent& from);
+  PlayerSceneInfoPBComponent(::google::protobuf::Arena* arena, PlayerSceneInfoPBComponent&& from) noexcept
+      : PlayerSceneInfoPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -214,7 +214,7 @@ class PlayerSceneInfoPBComp final : public ::google::protobuf::Message
   void _internal_set_guid(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerSceneInfoPBComp)
+  // @@protoc_insertion_point(class_scope:PlayerSceneInfoPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -245,23 +245,23 @@ class PlayerSceneInfoPBComp final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class PlayerSceneContextPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PlayerSceneContextPBComp) */ {
+class PlayerSceneContextPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerSceneContextPBComponent) */ {
  public:
-  inline PlayerSceneContextPBComp() : PlayerSceneContextPBComp(nullptr) {}
-  ~PlayerSceneContextPBComp() override;
+  inline PlayerSceneContextPBComponent() : PlayerSceneContextPBComponent(nullptr) {}
+  ~PlayerSceneContextPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PlayerSceneContextPBComp(
+  explicit PROTOBUF_CONSTEXPR PlayerSceneContextPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline PlayerSceneContextPBComp(const PlayerSceneContextPBComp& from) : PlayerSceneContextPBComp(nullptr, from) {}
-  inline PlayerSceneContextPBComp(PlayerSceneContextPBComp&& from) noexcept
-      : PlayerSceneContextPBComp(nullptr, std::move(from)) {}
-  inline PlayerSceneContextPBComp& operator=(const PlayerSceneContextPBComp& from) {
+  inline PlayerSceneContextPBComponent(const PlayerSceneContextPBComponent& from) : PlayerSceneContextPBComponent(nullptr, from) {}
+  inline PlayerSceneContextPBComponent(PlayerSceneContextPBComponent&& from) noexcept
+      : PlayerSceneContextPBComponent(nullptr, std::move(from)) {}
+  inline PlayerSceneContextPBComponent& operator=(const PlayerSceneContextPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline PlayerSceneContextPBComp& operator=(PlayerSceneContextPBComp&& from) noexcept {
+  inline PlayerSceneContextPBComponent& operator=(PlayerSceneContextPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -293,16 +293,16 @@ class PlayerSceneContextPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const PlayerSceneContextPBComp& default_instance() {
+  static const PlayerSceneContextPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const PlayerSceneContextPBComp* internal_default_instance() {
-    return reinterpret_cast<const PlayerSceneContextPBComp*>(
-        &_PlayerSceneContextPBComp_default_instance_);
+  static inline const PlayerSceneContextPBComponent* internal_default_instance() {
+    return reinterpret_cast<const PlayerSceneContextPBComponent*>(
+        &_PlayerSceneContextPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(PlayerSceneContextPBComp& a, PlayerSceneContextPBComp& b) { a.Swap(&b); }
-  inline void Swap(PlayerSceneContextPBComp* other) {
+  friend void swap(PlayerSceneContextPBComponent& a, PlayerSceneContextPBComponent& b) { a.Swap(&b); }
+  inline void Swap(PlayerSceneContextPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -314,7 +314,7 @@ class PlayerSceneContextPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(PlayerSceneContextPBComp* other) {
+  void UnsafeArenaSwap(PlayerSceneContextPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -322,13 +322,13 @@ class PlayerSceneContextPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  PlayerSceneContextPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<PlayerSceneContextPBComp>(arena);
+  PlayerSceneContextPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerSceneContextPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PlayerSceneContextPBComp& from);
+  void CopyFrom(const PlayerSceneContextPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PlayerSceneContextPBComp& from) { PlayerSceneContextPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const PlayerSceneContextPBComponent& from) { PlayerSceneContextPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -349,16 +349,16 @@ class PlayerSceneContextPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(PlayerSceneContextPBComp* other);
+  void InternalSwap(PlayerSceneContextPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "PlayerSceneContextPBComp"; }
+  static ::absl::string_view FullMessageName() { return "PlayerSceneContextPBComponent"; }
 
  protected:
-  explicit PlayerSceneContextPBComp(::google::protobuf::Arena* arena);
-  PlayerSceneContextPBComp(::google::protobuf::Arena* arena, const PlayerSceneContextPBComp& from);
-  PlayerSceneContextPBComp(::google::protobuf::Arena* arena, PlayerSceneContextPBComp&& from) noexcept
-      : PlayerSceneContextPBComp(arena) {
+  explicit PlayerSceneContextPBComponent(::google::protobuf::Arena* arena);
+  PlayerSceneContextPBComponent(::google::protobuf::Arena* arena, const PlayerSceneContextPBComponent& from);
+  PlayerSceneContextPBComponent(::google::protobuf::Arena* arena, PlayerSceneContextPBComponent&& from) noexcept
+      : PlayerSceneContextPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -373,37 +373,37 @@ class PlayerSceneContextPBComp final : public ::google::protobuf::Message
     kSceneInfoFieldNumber = 1,
     kSceneInfoLastTimeFieldNumber = 2,
   };
-  // .PlayerSceneInfoPBComp scene_info = 1;
+  // .PlayerSceneInfoPBComponent scene_info = 1;
   bool has_scene_info() const;
   void clear_scene_info() ;
-  const ::PlayerSceneInfoPBComp& scene_info() const;
-  PROTOBUF_NODISCARD ::PlayerSceneInfoPBComp* release_scene_info();
-  ::PlayerSceneInfoPBComp* mutable_scene_info();
-  void set_allocated_scene_info(::PlayerSceneInfoPBComp* value);
-  void unsafe_arena_set_allocated_scene_info(::PlayerSceneInfoPBComp* value);
-  ::PlayerSceneInfoPBComp* unsafe_arena_release_scene_info();
+  const ::PlayerSceneInfoPBComponent& scene_info() const;
+  PROTOBUF_NODISCARD ::PlayerSceneInfoPBComponent* release_scene_info();
+  ::PlayerSceneInfoPBComponent* mutable_scene_info();
+  void set_allocated_scene_info(::PlayerSceneInfoPBComponent* value);
+  void unsafe_arena_set_allocated_scene_info(::PlayerSceneInfoPBComponent* value);
+  ::PlayerSceneInfoPBComponent* unsafe_arena_release_scene_info();
 
   private:
-  const ::PlayerSceneInfoPBComp& _internal_scene_info() const;
-  ::PlayerSceneInfoPBComp* _internal_mutable_scene_info();
+  const ::PlayerSceneInfoPBComponent& _internal_scene_info() const;
+  ::PlayerSceneInfoPBComponent* _internal_mutable_scene_info();
 
   public:
-  // .PlayerSceneInfoPBComp scene_info_last_time = 2;
+  // .PlayerSceneInfoPBComponent scene_info_last_time = 2;
   bool has_scene_info_last_time() const;
   void clear_scene_info_last_time() ;
-  const ::PlayerSceneInfoPBComp& scene_info_last_time() const;
-  PROTOBUF_NODISCARD ::PlayerSceneInfoPBComp* release_scene_info_last_time();
-  ::PlayerSceneInfoPBComp* mutable_scene_info_last_time();
-  void set_allocated_scene_info_last_time(::PlayerSceneInfoPBComp* value);
-  void unsafe_arena_set_allocated_scene_info_last_time(::PlayerSceneInfoPBComp* value);
-  ::PlayerSceneInfoPBComp* unsafe_arena_release_scene_info_last_time();
+  const ::PlayerSceneInfoPBComponent& scene_info_last_time() const;
+  PROTOBUF_NODISCARD ::PlayerSceneInfoPBComponent* release_scene_info_last_time();
+  ::PlayerSceneInfoPBComponent* mutable_scene_info_last_time();
+  void set_allocated_scene_info_last_time(::PlayerSceneInfoPBComponent* value);
+  void unsafe_arena_set_allocated_scene_info_last_time(::PlayerSceneInfoPBComponent* value);
+  ::PlayerSceneInfoPBComponent* unsafe_arena_release_scene_info_last_time();
 
   private:
-  const ::PlayerSceneInfoPBComp& _internal_scene_info_last_time() const;
-  ::PlayerSceneInfoPBComp* _internal_mutable_scene_info_last_time();
+  const ::PlayerSceneInfoPBComponent& _internal_scene_info_last_time() const;
+  ::PlayerSceneInfoPBComponent* _internal_mutable_scene_info_last_time();
 
   public:
-  // @@protoc_insertion_point(class_scope:PlayerSceneContextPBComp)
+  // @@protoc_insertion_point(class_scope:PlayerSceneContextPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -426,8 +426,8 @@ class PlayerSceneContextPBComp final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::PlayerSceneInfoPBComp* scene_info_;
-    ::PlayerSceneInfoPBComp* scene_info_last_time_;
+    ::PlayerSceneInfoPBComponent* scene_info_;
+    ::PlayerSceneInfoPBComponent* scene_info_last_time_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -448,94 +448,94 @@ class PlayerSceneContextPBComp final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// PlayerSceneInfoPBComp
+// PlayerSceneInfoPBComponent
 
 // uint32 scene_confid = 1;
-inline void PlayerSceneInfoPBComp::clear_scene_confid() {
+inline void PlayerSceneInfoPBComponent::clear_scene_confid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.scene_confid_ = 0u;
 }
-inline ::uint32_t PlayerSceneInfoPBComp::scene_confid() const {
-  // @@protoc_insertion_point(field_get:PlayerSceneInfoPBComp.scene_confid)
+inline ::uint32_t PlayerSceneInfoPBComponent::scene_confid() const {
+  // @@protoc_insertion_point(field_get:PlayerSceneInfoPBComponent.scene_confid)
   return _internal_scene_confid();
 }
-inline void PlayerSceneInfoPBComp::set_scene_confid(::uint32_t value) {
+inline void PlayerSceneInfoPBComponent::set_scene_confid(::uint32_t value) {
   _internal_set_scene_confid(value);
-  // @@protoc_insertion_point(field_set:PlayerSceneInfoPBComp.scene_confid)
+  // @@protoc_insertion_point(field_set:PlayerSceneInfoPBComponent.scene_confid)
 }
-inline ::uint32_t PlayerSceneInfoPBComp::_internal_scene_confid() const {
+inline ::uint32_t PlayerSceneInfoPBComponent::_internal_scene_confid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.scene_confid_;
 }
-inline void PlayerSceneInfoPBComp::_internal_set_scene_confid(::uint32_t value) {
+inline void PlayerSceneInfoPBComponent::_internal_set_scene_confid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.scene_confid_ = value;
 }
 
 // uint32 guid = 2;
-inline void PlayerSceneInfoPBComp::clear_guid() {
+inline void PlayerSceneInfoPBComponent::clear_guid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.guid_ = 0u;
 }
-inline ::uint32_t PlayerSceneInfoPBComp::guid() const {
-  // @@protoc_insertion_point(field_get:PlayerSceneInfoPBComp.guid)
+inline ::uint32_t PlayerSceneInfoPBComponent::guid() const {
+  // @@protoc_insertion_point(field_get:PlayerSceneInfoPBComponent.guid)
   return _internal_guid();
 }
-inline void PlayerSceneInfoPBComp::set_guid(::uint32_t value) {
+inline void PlayerSceneInfoPBComponent::set_guid(::uint32_t value) {
   _internal_set_guid(value);
-  // @@protoc_insertion_point(field_set:PlayerSceneInfoPBComp.guid)
+  // @@protoc_insertion_point(field_set:PlayerSceneInfoPBComponent.guid)
 }
-inline ::uint32_t PlayerSceneInfoPBComp::_internal_guid() const {
+inline ::uint32_t PlayerSceneInfoPBComponent::_internal_guid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.guid_;
 }
-inline void PlayerSceneInfoPBComp::_internal_set_guid(::uint32_t value) {
+inline void PlayerSceneInfoPBComponent::_internal_set_guid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.guid_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// PlayerSceneContextPBComp
+// PlayerSceneContextPBComponent
 
-// .PlayerSceneInfoPBComp scene_info = 1;
-inline bool PlayerSceneContextPBComp::has_scene_info() const {
+// .PlayerSceneInfoPBComponent scene_info = 1;
+inline bool PlayerSceneContextPBComponent::has_scene_info() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);
   return value;
 }
-inline void PlayerSceneContextPBComp::clear_scene_info() {
+inline void PlayerSceneContextPBComponent::clear_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.scene_info_ != nullptr) _impl_.scene_info_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::PlayerSceneInfoPBComp& PlayerSceneContextPBComp::_internal_scene_info() const {
+inline const ::PlayerSceneInfoPBComponent& PlayerSceneContextPBComponent::_internal_scene_info() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::PlayerSceneInfoPBComp* p = _impl_.scene_info_;
-  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSceneInfoPBComp&>(::_PlayerSceneInfoPBComp_default_instance_);
+  const ::PlayerSceneInfoPBComponent* p = _impl_.scene_info_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSceneInfoPBComponent&>(::_PlayerSceneInfoPBComponent_default_instance_);
 }
-inline const ::PlayerSceneInfoPBComp& PlayerSceneContextPBComp::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerSceneContextPBComp.scene_info)
+inline const ::PlayerSceneInfoPBComponent& PlayerSceneContextPBComponent::scene_info() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerSceneContextPBComponent.scene_info)
   return _internal_scene_info();
 }
-inline void PlayerSceneContextPBComp::unsafe_arena_set_allocated_scene_info(::PlayerSceneInfoPBComp* value) {
+inline void PlayerSceneContextPBComponent::unsafe_arena_set_allocated_scene_info(::PlayerSceneInfoPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.scene_info_);
   }
-  _impl_.scene_info_ = reinterpret_cast<::PlayerSceneInfoPBComp*>(value);
+  _impl_.scene_info_ = reinterpret_cast<::PlayerSceneInfoPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerSceneContextPBComp.scene_info)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerSceneContextPBComponent.scene_info)
 }
-inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::release_scene_info() {
+inline ::PlayerSceneInfoPBComponent* PlayerSceneContextPBComponent::release_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::PlayerSceneInfoPBComp* released = _impl_.scene_info_;
+  ::PlayerSceneInfoPBComponent* released = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -550,30 +550,30 @@ inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::release_scene_info() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::unsafe_arena_release_scene_info() {
+inline ::PlayerSceneInfoPBComponent* PlayerSceneContextPBComponent::unsafe_arena_release_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:PlayerSceneContextPBComp.scene_info)
+  // @@protoc_insertion_point(field_release:PlayerSceneContextPBComponent.scene_info)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::PlayerSceneInfoPBComp* temp = _impl_.scene_info_;
+  ::PlayerSceneInfoPBComponent* temp = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   return temp;
 }
-inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::_internal_mutable_scene_info() {
+inline ::PlayerSceneInfoPBComponent* PlayerSceneContextPBComponent::_internal_mutable_scene_info() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.scene_info_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSceneInfoPBComp>(GetArena());
-    _impl_.scene_info_ = reinterpret_cast<::PlayerSceneInfoPBComp*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSceneInfoPBComponent>(GetArena());
+    _impl_.scene_info_ = reinterpret_cast<::PlayerSceneInfoPBComponent*>(p);
   }
   return _impl_.scene_info_;
 }
-inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerSceneInfoPBComponent* PlayerSceneContextPBComponent::mutable_scene_info() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::PlayerSceneInfoPBComp* _msg = _internal_mutable_scene_info();
-  // @@protoc_insertion_point(field_mutable:PlayerSceneContextPBComp.scene_info)
+  ::PlayerSceneInfoPBComponent* _msg = _internal_mutable_scene_info();
+  // @@protoc_insertion_point(field_mutable:PlayerSceneContextPBComponent.scene_info)
   return _msg;
 }
-inline void PlayerSceneContextPBComp::set_allocated_scene_info(::PlayerSceneInfoPBComp* value) {
+inline void PlayerSceneContextPBComponent::set_allocated_scene_info(::PlayerSceneInfoPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -590,48 +590,48 @@ inline void PlayerSceneContextPBComp::set_allocated_scene_info(::PlayerSceneInfo
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.scene_info_ = reinterpret_cast<::PlayerSceneInfoPBComp*>(value);
-  // @@protoc_insertion_point(field_set_allocated:PlayerSceneContextPBComp.scene_info)
+  _impl_.scene_info_ = reinterpret_cast<::PlayerSceneInfoPBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:PlayerSceneContextPBComponent.scene_info)
 }
 
-// .PlayerSceneInfoPBComp scene_info_last_time = 2;
-inline bool PlayerSceneContextPBComp::has_scene_info_last_time() const {
+// .PlayerSceneInfoPBComponent scene_info_last_time = 2;
+inline bool PlayerSceneContextPBComponent::has_scene_info_last_time() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.scene_info_last_time_ != nullptr);
   return value;
 }
-inline void PlayerSceneContextPBComp::clear_scene_info_last_time() {
+inline void PlayerSceneContextPBComponent::clear_scene_info_last_time() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.scene_info_last_time_ != nullptr) _impl_.scene_info_last_time_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline const ::PlayerSceneInfoPBComp& PlayerSceneContextPBComp::_internal_scene_info_last_time() const {
+inline const ::PlayerSceneInfoPBComponent& PlayerSceneContextPBComponent::_internal_scene_info_last_time() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::PlayerSceneInfoPBComp* p = _impl_.scene_info_last_time_;
-  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSceneInfoPBComp&>(::_PlayerSceneInfoPBComp_default_instance_);
+  const ::PlayerSceneInfoPBComponent* p = _impl_.scene_info_last_time_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerSceneInfoPBComponent&>(::_PlayerSceneInfoPBComponent_default_instance_);
 }
-inline const ::PlayerSceneInfoPBComp& PlayerSceneContextPBComp::scene_info_last_time() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:PlayerSceneContextPBComp.scene_info_last_time)
+inline const ::PlayerSceneInfoPBComponent& PlayerSceneContextPBComponent::scene_info_last_time() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerSceneContextPBComponent.scene_info_last_time)
   return _internal_scene_info_last_time();
 }
-inline void PlayerSceneContextPBComp::unsafe_arena_set_allocated_scene_info_last_time(::PlayerSceneInfoPBComp* value) {
+inline void PlayerSceneContextPBComponent::unsafe_arena_set_allocated_scene_info_last_time(::PlayerSceneInfoPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.scene_info_last_time_);
   }
-  _impl_.scene_info_last_time_ = reinterpret_cast<::PlayerSceneInfoPBComp*>(value);
+  _impl_.scene_info_last_time_ = reinterpret_cast<::PlayerSceneInfoPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerSceneContextPBComp.scene_info_last_time)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerSceneContextPBComponent.scene_info_last_time)
 }
-inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::release_scene_info_last_time() {
+inline ::PlayerSceneInfoPBComponent* PlayerSceneContextPBComponent::release_scene_info_last_time() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::PlayerSceneInfoPBComp* released = _impl_.scene_info_last_time_;
+  ::PlayerSceneInfoPBComponent* released = _impl_.scene_info_last_time_;
   _impl_.scene_info_last_time_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -646,30 +646,30 @@ inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::release_scene_info_las
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::unsafe_arena_release_scene_info_last_time() {
+inline ::PlayerSceneInfoPBComponent* PlayerSceneContextPBComponent::unsafe_arena_release_scene_info_last_time() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:PlayerSceneContextPBComp.scene_info_last_time)
+  // @@protoc_insertion_point(field_release:PlayerSceneContextPBComponent.scene_info_last_time)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::PlayerSceneInfoPBComp* temp = _impl_.scene_info_last_time_;
+  ::PlayerSceneInfoPBComponent* temp = _impl_.scene_info_last_time_;
   _impl_.scene_info_last_time_ = nullptr;
   return temp;
 }
-inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::_internal_mutable_scene_info_last_time() {
+inline ::PlayerSceneInfoPBComponent* PlayerSceneContextPBComponent::_internal_mutable_scene_info_last_time() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.scene_info_last_time_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSceneInfoPBComp>(GetArena());
-    _impl_.scene_info_last_time_ = reinterpret_cast<::PlayerSceneInfoPBComp*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSceneInfoPBComponent>(GetArena());
+    _impl_.scene_info_last_time_ = reinterpret_cast<::PlayerSceneInfoPBComponent*>(p);
   }
   return _impl_.scene_info_last_time_;
 }
-inline ::PlayerSceneInfoPBComp* PlayerSceneContextPBComp::mutable_scene_info_last_time() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerSceneInfoPBComponent* PlayerSceneContextPBComponent::mutable_scene_info_last_time() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
-  ::PlayerSceneInfoPBComp* _msg = _internal_mutable_scene_info_last_time();
-  // @@protoc_insertion_point(field_mutable:PlayerSceneContextPBComp.scene_info_last_time)
+  ::PlayerSceneInfoPBComponent* _msg = _internal_mutable_scene_info_last_time();
+  // @@protoc_insertion_point(field_mutable:PlayerSceneContextPBComponent.scene_info_last_time)
   return _msg;
 }
-inline void PlayerSceneContextPBComp::set_allocated_scene_info_last_time(::PlayerSceneInfoPBComp* value) {
+inline void PlayerSceneContextPBComponent::set_allocated_scene_info_last_time(::PlayerSceneInfoPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -686,8 +686,8 @@ inline void PlayerSceneContextPBComp::set_allocated_scene_info_last_time(::Playe
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
 
-  _impl_.scene_info_last_time_ = reinterpret_cast<::PlayerSceneInfoPBComp*>(value);
-  // @@protoc_insertion_point(field_set_allocated:PlayerSceneContextPBComp.scene_info_last_time)
+  _impl_.scene_info_last_time_ = reinterpret_cast<::PlayerSceneInfoPBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:PlayerSceneContextPBComponent.scene_info_last_time)
 }
 
 #ifdef __GNUC__

@@ -30,18 +30,18 @@ tls_lua_state.new_usertype<UnregisterPlayer>("UnregisterPlayer",
 &UnregisterPlayer::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<PlayerUint64PBComp>("PlayerUint64PBComp",
+tls_lua_state.new_usertype<PlayerUint64PBComponent>("PlayerUint64PBComponent",
 "registration_timestamp",
-sol::property(&PlayerUint64PBComp::registration_timestamp, &PlayerUint64PBComp::set_registration_timestamp),
+sol::property(&PlayerUint64PBComponent::registration_timestamp, &PlayerUint64PBComponent::set_registration_timestamp),
 "DebugString",
-&PlayerUint64PBComp::DebugString,
+&PlayerUint64PBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<PlayerUint32PBComp>("PlayerUint32PBComp",
+tls_lua_state.new_usertype<PlayerUint32PBComponent>("PlayerUint32PBComponent",
 "class",
-sol::property(&PlayerUint32PBComp::class, &PlayerUint32PBComp::set_class),
+sol::property(&PlayerUint32PBComponent::class, &PlayerUint32PBComponent::set_class),
 "DebugString",
-&PlayerUint32PBComp::DebugString,
+&PlayerUint32PBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

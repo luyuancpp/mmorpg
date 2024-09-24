@@ -43,13 +43,13 @@ void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 	// 2 检查玩家是否已经在线，若在线则直接进入
 	if (playerIt != playerList.end())
 	{
-		PlayerGameNodeEnteryInfoPBComp enterInfo;
+		PlayerGameNodeEnteryInfoPBComponent enterInfo;
 		enterInfo.set_centre_node_id(request->centre_node_id());
 		PlayerNodeUtil::EnterGs(playerIt->second, enterInfo);
 		return;
 	}
 
-	PlayerGameNodeEnteryInfoPBComp enterInfo;
+	PlayerGameNodeEnteryInfoPBComponent enterInfo;
 	enterInfo.set_centre_node_id(request->centre_node_id());
 	auto asyncPlayerIt = tlsGame.playerNodeEntryInfoList.emplace(request->player_id(), enterInfo);
 

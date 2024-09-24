@@ -54,7 +54,7 @@ void OnGateServicePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn
 
 	PlayerNodeUtil::ProcessPlayerSessionState(player);
 
-	PlayerChangeSceneUtil::SetChangeGsStatus(player, CentreChangeSceneInfoPBComp::eGateEnterGsSceneSucceed);
+	PlayerChangeSceneUtil::SetChangeGsStatus(player, ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }

@@ -45,12 +45,12 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_
 	tls.registry.emplace_or_replace<PlayerNodeInfoPBComponent>(playerEntity).set_gate_session_id(it->second.session_info().session_id());
 	tls.registry.emplace<Player>(playerEntity);
 	tls.registry.emplace<Guid>(playerEntity, playerId);
-	tls.registry.emplace<PlayerSceneContextPBComp>(playerEntity, playerData.scene_info());
+	tls.registry.emplace<PlayerSceneContextPBComponent>(playerEntity, playerData.scene_info());
 
 	PlayerChangeSceneUtil::InitChangeSceneQueue(playerEntity);
 
 	// Set flag for first login
-	tls.registry.emplace<EnterGameNodeInfoPBComp>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
+	tls.registry.emplace<EnterGameNodeInfoPBComponent>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
 	PlayerSceneUtil::HandleLoginEnterScene(playerEntity);
 	// On database loaded
@@ -63,7 +63,7 @@ void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_centre_databas
 
 void PlayerNodeUtil::ProcessPlayerSessionState(entt::entity player)
 {
-	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComp>(player))
+	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComponent>(player))
 	{
 		if (enterGameFlag->enter_gs_type() != LOGIN_NONE && enterGameFlag->enter_gs_type() != LOGIN_RECONNECT)
 		{
@@ -74,13 +74,13 @@ void PlayerNodeUtil::ProcessPlayerSessionState(entt::entity player)
 			PlayerNodeUtil::HandlePlayerReconnection(player);
 		}
 
-		tls.registry.remove<EnterGameNodeInfoPBComp>(player);
+		tls.registry.remove<EnterGameNodeInfoPBComponent>(player);
 	}
 }
 
 void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
 {
-	const auto enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComp>(playerEntity);
+	const auto enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComponent>(playerEntity);
 	if (!enterGameFlag)
 	{
 		return;

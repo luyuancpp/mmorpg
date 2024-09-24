@@ -58,7 +58,7 @@ message CreateSceneRequest
 
 message CreateSceneResponse
 {
-  SceneInfoPBComp scene_info = 1;
+  SceneInfoPBComponent scene_info = 1;
 }
 
 service GameService {

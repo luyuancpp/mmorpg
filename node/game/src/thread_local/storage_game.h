@@ -16,7 +16,7 @@ class ThreadLocalStorageGame
 public:
 	RedisUtil redis;
 	PlayerRedis playerRedis;
-	std::unordered_map<Guid, PlayerGameNodeEnteryInfoPBComp> playerNodeEntryInfoList;
+	std::unordered_map<Guid, PlayerGameNodeEnteryInfoPBComponent> playerNodeEntryInfoList;
 	SceneNavMapComp sceneNav;
 	FrameTime frameTime;
 	NodeIdGenerator32BitId buffIdGenerator;

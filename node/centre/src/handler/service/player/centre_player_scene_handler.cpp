@@ -22,7 +22,7 @@ void CentrePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Cen
 	LOG_INFO << "EnterScene request received for player: " << tls.registry.get<Guid>(player)
 		<< ", scene_info: " << request->scene_info().DebugString();
 
-	CentreChangeSceneInfoPBComp changeSceneInfo;
+	ChangeSceneInfoPBComponent changeSceneInfo;
 	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, request->scene_info());
 	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(player, changeSceneInfo); ret != kOK)
 	{
@@ -53,7 +53,7 @@ void CentrePlayerSceneServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 	//todo 场景崩溃了要去新的场景
 	LOG_INFO << "LeaveSceneAsyncSavePlayerComplete request received for player: " << tls.registry.get<Guid>(player);
 
-	auto* const changeSceneQueue = tls.registry.try_get<CentrePlayerChangeSceneQueueComp>(player);
+	auto* const changeSceneQueue = tls.registry.try_get<ChangeSceneQueuePBComponent>(player);
 	if (!changeSceneQueue || changeSceneQueue->changeSceneQueue.empty())
 	{
 		LOG_WARN << "Change scene queue is empty for player: " << tls.registry.get<Guid>(player);
@@ -92,7 +92,7 @@ void CentrePlayerSceneServiceHandler::SceneInfoC2S(entt::entity player,const ::S
 ///<<< BEGIN WRITING YOUR CODE
 	//给客户端发所有场景消息
 	SceneInfoS2C message;
-	for (const auto& [entity, info] : tls.sceneRegistry.view<SceneInfoPBComp>().each())
+	for (const auto& [entity, info] : tls.sceneRegistry.view<SceneInfoPBComponent>().each())
 	{
 		message.mutable_scene_info()->Add()->CopyFrom(info);
 	}

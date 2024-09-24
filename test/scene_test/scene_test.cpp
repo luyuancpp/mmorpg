@@ -550,7 +550,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			{
 				auto& pse = tls.registry.get<SceneEntityComp>(it.first);
 				EXPECT_TRUE(pse.sceneEntity == it.second);
-				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComp>(pse.sceneEntity).scene_confid(), scene_config_id0);
+				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), scene_config_id0);
 			}
 
 			std::unordered_map<entt::entity, entt::entity> player_scene2;
@@ -570,7 +570,7 @@ TEST(GS, WeightRoundRobinMainScene)
 			{
 				auto& pse = tls.registry.get<SceneEntityComp>(it.first);
 				EXPECT_TRUE(pse.sceneEntity == it.second);
-				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComp>(pse.sceneEntity).scene_confid(), scene_config_id1);
+				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), scene_config_id1);
 			}
 
 			std::size_t server_player_size = player_size * 2 / server_size;
@@ -709,7 +709,7 @@ TEST(GS, EnterDefaultScene)
 
 	// Verify the player is in the default scene
 	const auto [sceneEntity] = tls.registry.get<SceneEntityComp>(player);
-	const auto& sceneInfo = tls.sceneRegistry.get<SceneInfoPBComp>(sceneEntity);
+	const auto& sceneInfo = tls.sceneRegistry.get<SceneInfoPBComponent>(sceneEntity);
 	EXPECT_EQ(sceneInfo.scene_confid(), kDefaultSceneId);
 }
 
@@ -787,7 +787,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			{
 				auto& pse = tls.registry.get<SceneEntityComp>(it.first);
 				EXPECT_TRUE(pse.sceneEntity == it.second);
-				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComp>(pse.sceneEntity).scene_confid(), sceneConfigId0);
+				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), sceneConfigId0);
 			}
 
 			// Enter players into scenes with sceneConfigId1
@@ -813,7 +813,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 			{
 				auto& pse = tls.registry.get<SceneEntityComp>(it.first);
 				EXPECT_TRUE(pse.sceneEntity == it.second);
-				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComp>(pse.sceneEntity).scene_confid(), sceneConfigId1);
+				EXPECT_EQ(tls.sceneRegistry.get<SceneInfoPBComponent>(pse.sceneEntity).scene_confid(), sceneConfigId1);
 			}
 
 			// Calculate expected player distribution across servers
@@ -894,7 +894,7 @@ TEST(GS, Route)
 TEST(GS, CheckEnterRoomScene)
 {
 	// Create a scene with creators set
-	SceneInfoPBComp sceneInfo;
+	SceneInfoPBComponent sceneInfo;
 	for (uint64_t i = 1; i < 10; ++i)
 	{
 		sceneInfo.mutable_creators()->emplace(i, false); // Assuming creators are added with a boolean indicating creator status

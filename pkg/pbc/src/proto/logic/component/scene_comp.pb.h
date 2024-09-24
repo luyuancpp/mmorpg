@@ -53,86 +53,86 @@ struct TableStruct_logic_2fcomponent_2fscene_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2fscene_5fcomp_2eproto;
-class CentreChangeSceneInfoPBComp;
-struct CentreChangeSceneInfoPBCompDefaultTypeInternal;
-extern CentreChangeSceneInfoPBCompDefaultTypeInternal _CentreChangeSceneInfoPBComp_default_instance_;
-class SceneInfoPBComp;
-struct SceneInfoPBCompDefaultTypeInternal;
-extern SceneInfoPBCompDefaultTypeInternal _SceneInfoPBComp_default_instance_;
-class SceneInfoPBComp_CreatorsEntry_DoNotUse;
-struct SceneInfoPBComp_CreatorsEntry_DoNotUseDefaultTypeInternal;
-extern SceneInfoPBComp_CreatorsEntry_DoNotUseDefaultTypeInternal _SceneInfoPBComp_CreatorsEntry_DoNotUse_default_instance_;
+class ChangeSceneInfoPBComponent;
+struct ChangeSceneInfoPBComponentDefaultTypeInternal;
+extern ChangeSceneInfoPBComponentDefaultTypeInternal _ChangeSceneInfoPBComponent_default_instance_;
+class SceneInfoPBComponent;
+struct SceneInfoPBComponentDefaultTypeInternal;
+extern SceneInfoPBComponentDefaultTypeInternal _SceneInfoPBComponent_default_instance_;
+class SceneInfoPBComponent_CreatorsEntry_DoNotUse;
+struct SceneInfoPBComponent_CreatorsEntry_DoNotUseDefaultTypeInternal;
+extern SceneInfoPBComponent_CreatorsEntry_DoNotUseDefaultTypeInternal _SceneInfoPBComponent_CreatorsEntry_DoNotUse_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
 }  // namespace google
 
-enum CentreChangeSceneInfoPBComp_eChangeGsStatus : int {
-  CentreChangeSceneInfoPBComp_eChangeGsStatus_eLeaveGsScene = 0,
-  CentreChangeSceneInfoPBComp_eChangeGsStatus_eEnterGsSceneSucceed = 1,
-  CentreChangeSceneInfoPBComp_eChangeGsStatus_eGateEnterGsSceneSucceed = 2,
-  CentreChangeSceneInfoPBComp_eChangeGsStatus_CentreChangeSceneInfoPBComp_eChangeGsStatus_INT_MIN_SENTINEL_DO_NOT_USE_ =
+enum ChangeSceneInfoPBComponent_eChangeGsStatus : int {
+  ChangeSceneInfoPBComponent_eChangeGsStatus_eLeaveGsScene = 0,
+  ChangeSceneInfoPBComponent_eChangeGsStatus_eEnterGsSceneSucceed = 1,
+  ChangeSceneInfoPBComponent_eChangeGsStatus_eGateEnterGsSceneSucceed = 2,
+  ChangeSceneInfoPBComponent_eChangeGsStatus_ChangeSceneInfoPBComponent_eChangeGsStatus_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
-  CentreChangeSceneInfoPBComp_eChangeGsStatus_CentreChangeSceneInfoPBComp_eChangeGsStatus_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  ChangeSceneInfoPBComponent_eChangeGsStatus_ChangeSceneInfoPBComponent_eChangeGsStatus_INT_MAX_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::max(),
 };
 
-bool CentreChangeSceneInfoPBComp_eChangeGsStatus_IsValid(int value);
-extern const uint32_t CentreChangeSceneInfoPBComp_eChangeGsStatus_internal_data_[];
-constexpr CentreChangeSceneInfoPBComp_eChangeGsStatus CentreChangeSceneInfoPBComp_eChangeGsStatus_eChangeGsStatus_MIN = static_cast<CentreChangeSceneInfoPBComp_eChangeGsStatus>(0);
-constexpr CentreChangeSceneInfoPBComp_eChangeGsStatus CentreChangeSceneInfoPBComp_eChangeGsStatus_eChangeGsStatus_MAX = static_cast<CentreChangeSceneInfoPBComp_eChangeGsStatus>(2);
-constexpr int CentreChangeSceneInfoPBComp_eChangeGsStatus_eChangeGsStatus_ARRAYSIZE = 2 + 1;
+bool ChangeSceneInfoPBComponent_eChangeGsStatus_IsValid(int value);
+extern const uint32_t ChangeSceneInfoPBComponent_eChangeGsStatus_internal_data_[];
+constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_MIN = static_cast<ChangeSceneInfoPBComponent_eChangeGsStatus>(0);
+constexpr ChangeSceneInfoPBComponent_eChangeGsStatus ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_MAX = static_cast<ChangeSceneInfoPBComponent_eChangeGsStatus>(2);
+constexpr int ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_ARRAYSIZE = 2 + 1;
 const ::google::protobuf::EnumDescriptor*
-CentreChangeSceneInfoPBComp_eChangeGsStatus_descriptor();
+ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor();
 template <typename T>
-const std::string& CentreChangeSceneInfoPBComp_eChangeGsStatus_Name(T value) {
-  static_assert(std::is_same<T, CentreChangeSceneInfoPBComp_eChangeGsStatus>::value ||
+const std::string& ChangeSceneInfoPBComponent_eChangeGsStatus_Name(T value) {
+  static_assert(std::is_same<T, ChangeSceneInfoPBComponent_eChangeGsStatus>::value ||
                     std::is_integral<T>::value,
                 "Incorrect type passed to eChangeGsStatus_Name().");
-  return CentreChangeSceneInfoPBComp_eChangeGsStatus_Name(static_cast<CentreChangeSceneInfoPBComp_eChangeGsStatus>(value));
+  return ChangeSceneInfoPBComponent_eChangeGsStatus_Name(static_cast<ChangeSceneInfoPBComponent_eChangeGsStatus>(value));
 }
 template <>
-inline const std::string& CentreChangeSceneInfoPBComp_eChangeGsStatus_Name(CentreChangeSceneInfoPBComp_eChangeGsStatus value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<CentreChangeSceneInfoPBComp_eChangeGsStatus_descriptor,
+inline const std::string& ChangeSceneInfoPBComponent_eChangeGsStatus_Name(ChangeSceneInfoPBComponent_eChangeGsStatus value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor,
                                                  0, 2>(
       static_cast<int>(value));
 }
-inline bool CentreChangeSceneInfoPBComp_eChangeGsStatus_Parse(absl::string_view name, CentreChangeSceneInfoPBComp_eChangeGsStatus* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<CentreChangeSceneInfoPBComp_eChangeGsStatus>(
-      CentreChangeSceneInfoPBComp_eChangeGsStatus_descriptor(), name, value);
+inline bool ChangeSceneInfoPBComponent_eChangeGsStatus_Parse(absl::string_view name, ChangeSceneInfoPBComponent_eChangeGsStatus* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<ChangeSceneInfoPBComponent_eChangeGsStatus>(
+      ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor(), name, value);
 }
-enum CentreChangeSceneInfoPBComp_eChangeGsType : int {
-  CentreChangeSceneInfoPBComp_eChangeGsType_eSameGs = 0,
-  CentreChangeSceneInfoPBComp_eChangeGsType_eDifferentGs = 1,
-  CentreChangeSceneInfoPBComp_eChangeGsType_CentreChangeSceneInfoPBComp_eChangeGsType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+enum ChangeSceneInfoPBComponent_eChangeGsType : int {
+  ChangeSceneInfoPBComponent_eChangeGsType_eSameGs = 0,
+  ChangeSceneInfoPBComponent_eChangeGsType_eDifferentGs = 1,
+  ChangeSceneInfoPBComponent_eChangeGsType_ChangeSceneInfoPBComponent_eChangeGsType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
-  CentreChangeSceneInfoPBComp_eChangeGsType_CentreChangeSceneInfoPBComp_eChangeGsType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  ChangeSceneInfoPBComponent_eChangeGsType_ChangeSceneInfoPBComponent_eChangeGsType_INT_MAX_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::max(),
 };
 
-bool CentreChangeSceneInfoPBComp_eChangeGsType_IsValid(int value);
-extern const uint32_t CentreChangeSceneInfoPBComp_eChangeGsType_internal_data_[];
-constexpr CentreChangeSceneInfoPBComp_eChangeGsType CentreChangeSceneInfoPBComp_eChangeGsType_eChangeGsType_MIN = static_cast<CentreChangeSceneInfoPBComp_eChangeGsType>(0);
-constexpr CentreChangeSceneInfoPBComp_eChangeGsType CentreChangeSceneInfoPBComp_eChangeGsType_eChangeGsType_MAX = static_cast<CentreChangeSceneInfoPBComp_eChangeGsType>(1);
-constexpr int CentreChangeSceneInfoPBComp_eChangeGsType_eChangeGsType_ARRAYSIZE = 1 + 1;
+bool ChangeSceneInfoPBComponent_eChangeGsType_IsValid(int value);
+extern const uint32_t ChangeSceneInfoPBComponent_eChangeGsType_internal_data_[];
+constexpr ChangeSceneInfoPBComponent_eChangeGsType ChangeSceneInfoPBComponent_eChangeGsType_eChangeGsType_MIN = static_cast<ChangeSceneInfoPBComponent_eChangeGsType>(0);
+constexpr ChangeSceneInfoPBComponent_eChangeGsType ChangeSceneInfoPBComponent_eChangeGsType_eChangeGsType_MAX = static_cast<ChangeSceneInfoPBComponent_eChangeGsType>(1);
+constexpr int ChangeSceneInfoPBComponent_eChangeGsType_eChangeGsType_ARRAYSIZE = 1 + 1;
 const ::google::protobuf::EnumDescriptor*
-CentreChangeSceneInfoPBComp_eChangeGsType_descriptor();
+ChangeSceneInfoPBComponent_eChangeGsType_descriptor();
 template <typename T>
-const std::string& CentreChangeSceneInfoPBComp_eChangeGsType_Name(T value) {
-  static_assert(std::is_same<T, CentreChangeSceneInfoPBComp_eChangeGsType>::value ||
+const std::string& ChangeSceneInfoPBComponent_eChangeGsType_Name(T value) {
+  static_assert(std::is_same<T, ChangeSceneInfoPBComponent_eChangeGsType>::value ||
                     std::is_integral<T>::value,
                 "Incorrect type passed to eChangeGsType_Name().");
-  return CentreChangeSceneInfoPBComp_eChangeGsType_Name(static_cast<CentreChangeSceneInfoPBComp_eChangeGsType>(value));
+  return ChangeSceneInfoPBComponent_eChangeGsType_Name(static_cast<ChangeSceneInfoPBComponent_eChangeGsType>(value));
 }
 template <>
-inline const std::string& CentreChangeSceneInfoPBComp_eChangeGsType_Name(CentreChangeSceneInfoPBComp_eChangeGsType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<CentreChangeSceneInfoPBComp_eChangeGsType_descriptor,
+inline const std::string& ChangeSceneInfoPBComponent_eChangeGsType_Name(ChangeSceneInfoPBComponent_eChangeGsType value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<ChangeSceneInfoPBComponent_eChangeGsType_descriptor,
                                                  0, 1>(
       static_cast<int>(value));
 }
-inline bool CentreChangeSceneInfoPBComp_eChangeGsType_Parse(absl::string_view name, CentreChangeSceneInfoPBComp_eChangeGsType* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<CentreChangeSceneInfoPBComp_eChangeGsType>(
-      CentreChangeSceneInfoPBComp_eChangeGsType_descriptor(), name, value);
+inline bool ChangeSceneInfoPBComponent_eChangeGsType_Parse(absl::string_view name, ChangeSceneInfoPBComponent_eChangeGsType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<ChangeSceneInfoPBComponent_eChangeGsType>(
+      ChangeSceneInfoPBComponent_eChangeGsType_descriptor(), name, value);
 }
 
 // ===================================================================
@@ -140,24 +140,24 @@ inline bool CentreChangeSceneInfoPBComp_eChangeGsType_Parse(absl::string_view na
 
 // -------------------------------------------------------------------
 
-class SceneInfoPBComp_CreatorsEntry_DoNotUse final
+class SceneInfoPBComponent_CreatorsEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<
-          SceneInfoPBComp_CreatorsEntry_DoNotUse, ::uint64_t, bool,
+          SceneInfoPBComponent_CreatorsEntry_DoNotUse, ::uint64_t, bool,
           ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
           ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
  public:
   using SuperType = ::google::protobuf::internal::MapEntry<
-      SceneInfoPBComp_CreatorsEntry_DoNotUse, ::uint64_t, bool,
+      SceneInfoPBComponent_CreatorsEntry_DoNotUse, ::uint64_t, bool,
       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
-  SceneInfoPBComp_CreatorsEntry_DoNotUse();
+  SceneInfoPBComponent_CreatorsEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SceneInfoPBComp_CreatorsEntry_DoNotUse(
+  explicit PROTOBUF_CONSTEXPR SceneInfoPBComponent_CreatorsEntry_DoNotUse(
       ::google::protobuf::internal::ConstantInitialized);
-  explicit SceneInfoPBComp_CreatorsEntry_DoNotUse(::google::protobuf::Arena* arena);
-  static const SceneInfoPBComp_CreatorsEntry_DoNotUse* internal_default_instance() {
-    return reinterpret_cast<const SceneInfoPBComp_CreatorsEntry_DoNotUse*>(
-        &_SceneInfoPBComp_CreatorsEntry_DoNotUse_default_instance_);
+  explicit SceneInfoPBComponent_CreatorsEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const SceneInfoPBComponent_CreatorsEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const SceneInfoPBComponent_CreatorsEntry_DoNotUse*>(
+        &_SceneInfoPBComponent_CreatorsEntry_DoNotUse_default_instance_);
   }
   static bool ValidateKey(void*) { return true; }
   static bool ValidateValue(void*) { return true; }
@@ -166,23 +166,23 @@ class SceneInfoPBComp_CreatorsEntry_DoNotUse final
 };
 // -------------------------------------------------------------------
 
-class CentreChangeSceneInfoPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:CentreChangeSceneInfoPBComp) */ {
+class ChangeSceneInfoPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ChangeSceneInfoPBComponent) */ {
  public:
-  inline CentreChangeSceneInfoPBComp() : CentreChangeSceneInfoPBComp(nullptr) {}
-  ~CentreChangeSceneInfoPBComp() override;
+  inline ChangeSceneInfoPBComponent() : ChangeSceneInfoPBComponent(nullptr) {}
+  ~ChangeSceneInfoPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR CentreChangeSceneInfoPBComp(
+  explicit PROTOBUF_CONSTEXPR ChangeSceneInfoPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline CentreChangeSceneInfoPBComp(const CentreChangeSceneInfoPBComp& from) : CentreChangeSceneInfoPBComp(nullptr, from) {}
-  inline CentreChangeSceneInfoPBComp(CentreChangeSceneInfoPBComp&& from) noexcept
-      : CentreChangeSceneInfoPBComp(nullptr, std::move(from)) {}
-  inline CentreChangeSceneInfoPBComp& operator=(const CentreChangeSceneInfoPBComp& from) {
+  inline ChangeSceneInfoPBComponent(const ChangeSceneInfoPBComponent& from) : ChangeSceneInfoPBComponent(nullptr, from) {}
+  inline ChangeSceneInfoPBComponent(ChangeSceneInfoPBComponent&& from) noexcept
+      : ChangeSceneInfoPBComponent(nullptr, std::move(from)) {}
+  inline ChangeSceneInfoPBComponent& operator=(const ChangeSceneInfoPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline CentreChangeSceneInfoPBComp& operator=(CentreChangeSceneInfoPBComp&& from) noexcept {
+  inline ChangeSceneInfoPBComponent& operator=(ChangeSceneInfoPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -214,16 +214,16 @@ class CentreChangeSceneInfoPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const CentreChangeSceneInfoPBComp& default_instance() {
+  static const ChangeSceneInfoPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const CentreChangeSceneInfoPBComp* internal_default_instance() {
-    return reinterpret_cast<const CentreChangeSceneInfoPBComp*>(
-        &_CentreChangeSceneInfoPBComp_default_instance_);
+  static inline const ChangeSceneInfoPBComponent* internal_default_instance() {
+    return reinterpret_cast<const ChangeSceneInfoPBComponent*>(
+        &_ChangeSceneInfoPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(CentreChangeSceneInfoPBComp& a, CentreChangeSceneInfoPBComp& b) { a.Swap(&b); }
-  inline void Swap(CentreChangeSceneInfoPBComp* other) {
+  friend void swap(ChangeSceneInfoPBComponent& a, ChangeSceneInfoPBComponent& b) { a.Swap(&b); }
+  inline void Swap(ChangeSceneInfoPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -235,7 +235,7 @@ class CentreChangeSceneInfoPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(CentreChangeSceneInfoPBComp* other) {
+  void UnsafeArenaSwap(ChangeSceneInfoPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -243,13 +243,13 @@ class CentreChangeSceneInfoPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  CentreChangeSceneInfoPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<CentreChangeSceneInfoPBComp>(arena);
+  ChangeSceneInfoPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ChangeSceneInfoPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const CentreChangeSceneInfoPBComp& from);
+  void CopyFrom(const ChangeSceneInfoPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const CentreChangeSceneInfoPBComp& from) { CentreChangeSceneInfoPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const ChangeSceneInfoPBComponent& from) { ChangeSceneInfoPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -270,16 +270,16 @@ class CentreChangeSceneInfoPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(CentreChangeSceneInfoPBComp* other);
+  void InternalSwap(ChangeSceneInfoPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "CentreChangeSceneInfoPBComp"; }
+  static ::absl::string_view FullMessageName() { return "ChangeSceneInfoPBComponent"; }
 
  protected:
-  explicit CentreChangeSceneInfoPBComp(::google::protobuf::Arena* arena);
-  CentreChangeSceneInfoPBComp(::google::protobuf::Arena* arena, const CentreChangeSceneInfoPBComp& from);
-  CentreChangeSceneInfoPBComp(::google::protobuf::Arena* arena, CentreChangeSceneInfoPBComp&& from) noexcept
-      : CentreChangeSceneInfoPBComp(arena) {
+  explicit ChangeSceneInfoPBComponent(::google::protobuf::Arena* arena);
+  ChangeSceneInfoPBComponent(::google::protobuf::Arena* arena, const ChangeSceneInfoPBComponent& from);
+  ChangeSceneInfoPBComponent(::google::protobuf::Arena* arena, ChangeSceneInfoPBComponent&& from) noexcept
+      : ChangeSceneInfoPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -288,44 +288,44 @@ class CentreChangeSceneInfoPBComp final : public ::google::protobuf::Message
  public:
   ::google::protobuf::Metadata GetMetadata() const final;
   // nested types ----------------------------------------------------
-  using eChangeGsStatus = CentreChangeSceneInfoPBComp_eChangeGsStatus;
-  static constexpr eChangeGsStatus eLeaveGsScene = CentreChangeSceneInfoPBComp_eChangeGsStatus_eLeaveGsScene;
-  static constexpr eChangeGsStatus eEnterGsSceneSucceed = CentreChangeSceneInfoPBComp_eChangeGsStatus_eEnterGsSceneSucceed;
-  static constexpr eChangeGsStatus eGateEnterGsSceneSucceed = CentreChangeSceneInfoPBComp_eChangeGsStatus_eGateEnterGsSceneSucceed;
+  using eChangeGsStatus = ChangeSceneInfoPBComponent_eChangeGsStatus;
+  static constexpr eChangeGsStatus eLeaveGsScene = ChangeSceneInfoPBComponent_eChangeGsStatus_eLeaveGsScene;
+  static constexpr eChangeGsStatus eEnterGsSceneSucceed = ChangeSceneInfoPBComponent_eChangeGsStatus_eEnterGsSceneSucceed;
+  static constexpr eChangeGsStatus eGateEnterGsSceneSucceed = ChangeSceneInfoPBComponent_eChangeGsStatus_eGateEnterGsSceneSucceed;
   static inline bool eChangeGsStatus_IsValid(int value) {
-    return CentreChangeSceneInfoPBComp_eChangeGsStatus_IsValid(value);
+    return ChangeSceneInfoPBComponent_eChangeGsStatus_IsValid(value);
   }
-  static constexpr eChangeGsStatus eChangeGsStatus_MIN = CentreChangeSceneInfoPBComp_eChangeGsStatus_eChangeGsStatus_MIN;
-  static constexpr eChangeGsStatus eChangeGsStatus_MAX = CentreChangeSceneInfoPBComp_eChangeGsStatus_eChangeGsStatus_MAX;
-  static constexpr int eChangeGsStatus_ARRAYSIZE = CentreChangeSceneInfoPBComp_eChangeGsStatus_eChangeGsStatus_ARRAYSIZE;
+  static constexpr eChangeGsStatus eChangeGsStatus_MIN = ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_MIN;
+  static constexpr eChangeGsStatus eChangeGsStatus_MAX = ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_MAX;
+  static constexpr int eChangeGsStatus_ARRAYSIZE = ChangeSceneInfoPBComponent_eChangeGsStatus_eChangeGsStatus_ARRAYSIZE;
   static inline const ::google::protobuf::EnumDescriptor* eChangeGsStatus_descriptor() {
-    return CentreChangeSceneInfoPBComp_eChangeGsStatus_descriptor();
+    return ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor();
   }
   template <typename T>
   static inline const std::string& eChangeGsStatus_Name(T value) {
-    return CentreChangeSceneInfoPBComp_eChangeGsStatus_Name(value);
+    return ChangeSceneInfoPBComponent_eChangeGsStatus_Name(value);
   }
   static inline bool eChangeGsStatus_Parse(absl::string_view name, eChangeGsStatus* value) {
-    return CentreChangeSceneInfoPBComp_eChangeGsStatus_Parse(name, value);
+    return ChangeSceneInfoPBComponent_eChangeGsStatus_Parse(name, value);
   }
-  using eChangeGsType = CentreChangeSceneInfoPBComp_eChangeGsType;
-  static constexpr eChangeGsType eSameGs = CentreChangeSceneInfoPBComp_eChangeGsType_eSameGs;
-  static constexpr eChangeGsType eDifferentGs = CentreChangeSceneInfoPBComp_eChangeGsType_eDifferentGs;
+  using eChangeGsType = ChangeSceneInfoPBComponent_eChangeGsType;
+  static constexpr eChangeGsType eSameGs = ChangeSceneInfoPBComponent_eChangeGsType_eSameGs;
+  static constexpr eChangeGsType eDifferentGs = ChangeSceneInfoPBComponent_eChangeGsType_eDifferentGs;
   static inline bool eChangeGsType_IsValid(int value) {
-    return CentreChangeSceneInfoPBComp_eChangeGsType_IsValid(value);
+    return ChangeSceneInfoPBComponent_eChangeGsType_IsValid(value);
   }
-  static constexpr eChangeGsType eChangeGsType_MIN = CentreChangeSceneInfoPBComp_eChangeGsType_eChangeGsType_MIN;
-  static constexpr eChangeGsType eChangeGsType_MAX = CentreChangeSceneInfoPBComp_eChangeGsType_eChangeGsType_MAX;
-  static constexpr int eChangeGsType_ARRAYSIZE = CentreChangeSceneInfoPBComp_eChangeGsType_eChangeGsType_ARRAYSIZE;
+  static constexpr eChangeGsType eChangeGsType_MIN = ChangeSceneInfoPBComponent_eChangeGsType_eChangeGsType_MIN;
+  static constexpr eChangeGsType eChangeGsType_MAX = ChangeSceneInfoPBComponent_eChangeGsType_eChangeGsType_MAX;
+  static constexpr int eChangeGsType_ARRAYSIZE = ChangeSceneInfoPBComponent_eChangeGsType_eChangeGsType_ARRAYSIZE;
   static inline const ::google::protobuf::EnumDescriptor* eChangeGsType_descriptor() {
-    return CentreChangeSceneInfoPBComp_eChangeGsType_descriptor();
+    return ChangeSceneInfoPBComponent_eChangeGsType_descriptor();
   }
   template <typename T>
   static inline const std::string& eChangeGsType_Name(T value) {
-    return CentreChangeSceneInfoPBComp_eChangeGsType_Name(value);
+    return ChangeSceneInfoPBComponent_eChangeGsType_Name(value);
   }
   static inline bool eChangeGsType_Parse(absl::string_view name, eChangeGsType* value) {
-    return CentreChangeSceneInfoPBComp_eChangeGsType_Parse(name, value);
+    return ChangeSceneInfoPBComponent_eChangeGsType_Parse(name, value);
   }
 
   // accessors -------------------------------------------------------
@@ -441,7 +441,7 @@ class CentreChangeSceneInfoPBComp final : public ::google::protobuf::Message
   void _internal_set_processing(bool value);
 
   public:
-  // @@protoc_insertion_point(class_scope:CentreChangeSceneInfoPBComp)
+  // @@protoc_insertion_point(class_scope:ChangeSceneInfoPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -480,23 +480,23 @@ class CentreChangeSceneInfoPBComp final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class SceneInfoPBComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:SceneInfoPBComp) */ {
+class SceneInfoPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SceneInfoPBComponent) */ {
  public:
-  inline SceneInfoPBComp() : SceneInfoPBComp(nullptr) {}
-  ~SceneInfoPBComp() override;
+  inline SceneInfoPBComponent() : SceneInfoPBComponent(nullptr) {}
+  ~SceneInfoPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SceneInfoPBComp(
+  explicit PROTOBUF_CONSTEXPR SceneInfoPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline SceneInfoPBComp(const SceneInfoPBComp& from) : SceneInfoPBComp(nullptr, from) {}
-  inline SceneInfoPBComp(SceneInfoPBComp&& from) noexcept
-      : SceneInfoPBComp(nullptr, std::move(from)) {}
-  inline SceneInfoPBComp& operator=(const SceneInfoPBComp& from) {
+  inline SceneInfoPBComponent(const SceneInfoPBComponent& from) : SceneInfoPBComponent(nullptr, from) {}
+  inline SceneInfoPBComponent(SceneInfoPBComponent&& from) noexcept
+      : SceneInfoPBComponent(nullptr, std::move(from)) {}
+  inline SceneInfoPBComponent& operator=(const SceneInfoPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline SceneInfoPBComp& operator=(SceneInfoPBComp&& from) noexcept {
+  inline SceneInfoPBComponent& operator=(SceneInfoPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -528,16 +528,16 @@ class SceneInfoPBComp final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const SceneInfoPBComp& default_instance() {
+  static const SceneInfoPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const SceneInfoPBComp* internal_default_instance() {
-    return reinterpret_cast<const SceneInfoPBComp*>(
-        &_SceneInfoPBComp_default_instance_);
+  static inline const SceneInfoPBComponent* internal_default_instance() {
+    return reinterpret_cast<const SceneInfoPBComponent*>(
+        &_SceneInfoPBComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(SceneInfoPBComp& a, SceneInfoPBComp& b) { a.Swap(&b); }
-  inline void Swap(SceneInfoPBComp* other) {
+  friend void swap(SceneInfoPBComponent& a, SceneInfoPBComponent& b) { a.Swap(&b); }
+  inline void Swap(SceneInfoPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -549,7 +549,7 @@ class SceneInfoPBComp final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(SceneInfoPBComp* other) {
+  void UnsafeArenaSwap(SceneInfoPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -557,13 +557,13 @@ class SceneInfoPBComp final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  SceneInfoPBComp* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<SceneInfoPBComp>(arena);
+  SceneInfoPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<SceneInfoPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SceneInfoPBComp& from);
+  void CopyFrom(const SceneInfoPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SceneInfoPBComp& from) { SceneInfoPBComp::MergeImpl(*this, from); }
+  void MergeFrom(const SceneInfoPBComponent& from) { SceneInfoPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -584,16 +584,16 @@ class SceneInfoPBComp final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(SceneInfoPBComp* other);
+  void InternalSwap(SceneInfoPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "SceneInfoPBComp"; }
+  static ::absl::string_view FullMessageName() { return "SceneInfoPBComponent"; }
 
  protected:
-  explicit SceneInfoPBComp(::google::protobuf::Arena* arena);
-  SceneInfoPBComp(::google::protobuf::Arena* arena, const SceneInfoPBComp& from);
-  SceneInfoPBComp(::google::protobuf::Arena* arena, SceneInfoPBComp&& from) noexcept
-      : SceneInfoPBComp(arena) {
+  explicit SceneInfoPBComponent(::google::protobuf::Arena* arena);
+  SceneInfoPBComponent(::google::protobuf::Arena* arena, const SceneInfoPBComponent& from);
+  SceneInfoPBComponent(::google::protobuf::Arena* arena, SceneInfoPBComponent&& from) noexcept
+      : SceneInfoPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -666,7 +666,7 @@ class SceneInfoPBComp final : public ::google::protobuf::Message
   void _internal_set_dungen_confid(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:SceneInfoPBComp)
+  // @@protoc_insertion_point(class_scope:SceneInfoPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -687,7 +687,7 @@ class SceneInfoPBComp final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::MapField<SceneInfoPBComp_CreatorsEntry_DoNotUse, ::uint64_t, bool,
+    ::google::protobuf::internal::MapField<SceneInfoPBComponent_CreatorsEntry_DoNotUse, ::uint64_t, bool,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         creators_;
@@ -718,344 +718,344 @@ class SceneInfoPBComp final : public ::google::protobuf::Message
 
 // -------------------------------------------------------------------
 
-// SceneInfoPBComp
+// SceneInfoPBComponent
 
 // uint32 scene_confid = 1;
-inline void SceneInfoPBComp::clear_scene_confid() {
+inline void SceneInfoPBComponent::clear_scene_confid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.scene_confid_ = 0u;
 }
-inline ::uint32_t SceneInfoPBComp::scene_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoPBComp.scene_confid)
+inline ::uint32_t SceneInfoPBComponent::scene_confid() const {
+  // @@protoc_insertion_point(field_get:SceneInfoPBComponent.scene_confid)
   return _internal_scene_confid();
 }
-inline void SceneInfoPBComp::set_scene_confid(::uint32_t value) {
+inline void SceneInfoPBComponent::set_scene_confid(::uint32_t value) {
   _internal_set_scene_confid(value);
-  // @@protoc_insertion_point(field_set:SceneInfoPBComp.scene_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoPBComponent.scene_confid)
 }
-inline ::uint32_t SceneInfoPBComp::_internal_scene_confid() const {
+inline ::uint32_t SceneInfoPBComponent::_internal_scene_confid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.scene_confid_;
 }
-inline void SceneInfoPBComp::_internal_set_scene_confid(::uint32_t value) {
+inline void SceneInfoPBComponent::_internal_set_scene_confid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.scene_confid_ = value;
 }
 
 // uint32 guid = 2;
-inline void SceneInfoPBComp::clear_guid() {
+inline void SceneInfoPBComponent::clear_guid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.guid_ = 0u;
 }
-inline ::uint32_t SceneInfoPBComp::guid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoPBComp.guid)
+inline ::uint32_t SceneInfoPBComponent::guid() const {
+  // @@protoc_insertion_point(field_get:SceneInfoPBComponent.guid)
   return _internal_guid();
 }
-inline void SceneInfoPBComp::set_guid(::uint32_t value) {
+inline void SceneInfoPBComponent::set_guid(::uint32_t value) {
   _internal_set_guid(value);
-  // @@protoc_insertion_point(field_set:SceneInfoPBComp.guid)
+  // @@protoc_insertion_point(field_set:SceneInfoPBComponent.guid)
 }
-inline ::uint32_t SceneInfoPBComp::_internal_guid() const {
+inline ::uint32_t SceneInfoPBComponent::_internal_guid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.guid_;
 }
-inline void SceneInfoPBComp::_internal_set_guid(::uint32_t value) {
+inline void SceneInfoPBComponent::_internal_set_guid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.guid_ = value;
 }
 
 // uint32 mirror_confid = 3;
-inline void SceneInfoPBComp::clear_mirror_confid() {
+inline void SceneInfoPBComponent::clear_mirror_confid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mirror_confid_ = 0u;
 }
-inline ::uint32_t SceneInfoPBComp::mirror_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoPBComp.mirror_confid)
+inline ::uint32_t SceneInfoPBComponent::mirror_confid() const {
+  // @@protoc_insertion_point(field_get:SceneInfoPBComponent.mirror_confid)
   return _internal_mirror_confid();
 }
-inline void SceneInfoPBComp::set_mirror_confid(::uint32_t value) {
+inline void SceneInfoPBComponent::set_mirror_confid(::uint32_t value) {
   _internal_set_mirror_confid(value);
-  // @@protoc_insertion_point(field_set:SceneInfoPBComp.mirror_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoPBComponent.mirror_confid)
 }
-inline ::uint32_t SceneInfoPBComp::_internal_mirror_confid() const {
+inline ::uint32_t SceneInfoPBComponent::_internal_mirror_confid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.mirror_confid_;
 }
-inline void SceneInfoPBComp::_internal_set_mirror_confid(::uint32_t value) {
+inline void SceneInfoPBComponent::_internal_set_mirror_confid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mirror_confid_ = value;
 }
 
 // uint32 dungen_confid = 4;
-inline void SceneInfoPBComp::clear_dungen_confid() {
+inline void SceneInfoPBComponent::clear_dungen_confid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.dungen_confid_ = 0u;
 }
-inline ::uint32_t SceneInfoPBComp::dungen_confid() const {
-  // @@protoc_insertion_point(field_get:SceneInfoPBComp.dungen_confid)
+inline ::uint32_t SceneInfoPBComponent::dungen_confid() const {
+  // @@protoc_insertion_point(field_get:SceneInfoPBComponent.dungen_confid)
   return _internal_dungen_confid();
 }
-inline void SceneInfoPBComp::set_dungen_confid(::uint32_t value) {
+inline void SceneInfoPBComponent::set_dungen_confid(::uint32_t value) {
   _internal_set_dungen_confid(value);
-  // @@protoc_insertion_point(field_set:SceneInfoPBComp.dungen_confid)
+  // @@protoc_insertion_point(field_set:SceneInfoPBComponent.dungen_confid)
 }
-inline ::uint32_t SceneInfoPBComp::_internal_dungen_confid() const {
+inline ::uint32_t SceneInfoPBComponent::_internal_dungen_confid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.dungen_confid_;
 }
-inline void SceneInfoPBComp::_internal_set_dungen_confid(::uint32_t value) {
+inline void SceneInfoPBComponent::_internal_set_dungen_confid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.dungen_confid_ = value;
 }
 
 // map<uint64, bool> creators = 5;
-inline int SceneInfoPBComp::_internal_creators_size() const {
+inline int SceneInfoPBComponent::_internal_creators_size() const {
   return _internal_creators().size();
 }
-inline int SceneInfoPBComp::creators_size() const {
+inline int SceneInfoPBComponent::creators_size() const {
   return _internal_creators_size();
 }
-inline void SceneInfoPBComp::clear_creators() {
+inline void SceneInfoPBComponent::clear_creators() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.creators_.Clear();
 }
-inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoPBComp::_internal_creators() const {
+inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoPBComponent::_internal_creators() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.creators_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoPBComp::creators() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:SceneInfoPBComp.creators)
+inline const ::google::protobuf::Map<::uint64_t, bool>& SceneInfoPBComponent::creators() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:SceneInfoPBComponent.creators)
   return _internal_creators();
 }
-inline ::google::protobuf::Map<::uint64_t, bool>* SceneInfoPBComp::_internal_mutable_creators() {
+inline ::google::protobuf::Map<::uint64_t, bool>* SceneInfoPBComponent::_internal_mutable_creators() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.creators_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint64_t, bool>* SceneInfoPBComp::mutable_creators() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:SceneInfoPBComp.creators)
+inline ::google::protobuf::Map<::uint64_t, bool>* SceneInfoPBComponent::mutable_creators() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:SceneInfoPBComponent.creators)
   return _internal_mutable_creators();
 }
 
 // -------------------------------------------------------------------
 
-// CentreChangeSceneInfoPBComp
+// ChangeSceneInfoPBComponent
 
 // uint32 scene_confid = 1;
-inline void CentreChangeSceneInfoPBComp::clear_scene_confid() {
+inline void ChangeSceneInfoPBComponent::clear_scene_confid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.scene_confid_ = 0u;
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::scene_confid() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.scene_confid)
+inline ::uint32_t ChangeSceneInfoPBComponent::scene_confid() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.scene_confid)
   return _internal_scene_confid();
 }
-inline void CentreChangeSceneInfoPBComp::set_scene_confid(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::set_scene_confid(::uint32_t value) {
   _internal_set_scene_confid(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.scene_confid)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.scene_confid)
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::_internal_scene_confid() const {
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_scene_confid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.scene_confid_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_scene_confid(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_scene_confid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.scene_confid_ = value;
 }
 
 // uint32 guid = 2;
-inline void CentreChangeSceneInfoPBComp::clear_guid() {
+inline void ChangeSceneInfoPBComponent::clear_guid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.guid_ = 0u;
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::guid() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.guid)
+inline ::uint32_t ChangeSceneInfoPBComponent::guid() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.guid)
   return _internal_guid();
 }
-inline void CentreChangeSceneInfoPBComp::set_guid(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::set_guid(::uint32_t value) {
   _internal_set_guid(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.guid)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.guid)
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::_internal_guid() const {
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_guid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.guid_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_guid(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_guid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.guid_ = value;
 }
 
 // uint32 dungen_confid = 3;
-inline void CentreChangeSceneInfoPBComp::clear_dungen_confid() {
+inline void ChangeSceneInfoPBComponent::clear_dungen_confid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.dungen_confid_ = 0u;
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::dungen_confid() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.dungen_confid)
+inline ::uint32_t ChangeSceneInfoPBComponent::dungen_confid() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.dungen_confid)
   return _internal_dungen_confid();
 }
-inline void CentreChangeSceneInfoPBComp::set_dungen_confid(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::set_dungen_confid(::uint32_t value) {
   _internal_set_dungen_confid(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.dungen_confid)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.dungen_confid)
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::_internal_dungen_confid() const {
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_dungen_confid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.dungen_confid_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_dungen_confid(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_dungen_confid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.dungen_confid_ = value;
 }
 
 // uint32 mirror_confid = 4;
-inline void CentreChangeSceneInfoPBComp::clear_mirror_confid() {
+inline void ChangeSceneInfoPBComponent::clear_mirror_confid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mirror_confid_ = 0u;
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::mirror_confid() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.mirror_confid)
+inline ::uint32_t ChangeSceneInfoPBComponent::mirror_confid() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.mirror_confid)
   return _internal_mirror_confid();
 }
-inline void CentreChangeSceneInfoPBComp::set_mirror_confid(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::set_mirror_confid(::uint32_t value) {
   _internal_set_mirror_confid(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.mirror_confid)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.mirror_confid)
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::_internal_mirror_confid() const {
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_mirror_confid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.mirror_confid_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_mirror_confid(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_mirror_confid(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mirror_confid_ = value;
 }
 
 // uint32 change_sequence = 5;
-inline void CentreChangeSceneInfoPBComp::clear_change_sequence() {
+inline void ChangeSceneInfoPBComponent::clear_change_sequence() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.change_sequence_ = 0u;
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::change_sequence() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.change_sequence)
+inline ::uint32_t ChangeSceneInfoPBComponent::change_sequence() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.change_sequence)
   return _internal_change_sequence();
 }
-inline void CentreChangeSceneInfoPBComp::set_change_sequence(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::set_change_sequence(::uint32_t value) {
   _internal_set_change_sequence(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.change_sequence)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.change_sequence)
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::_internal_change_sequence() const {
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_change_sequence() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.change_sequence_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_change_sequence(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_change_sequence(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.change_sequence_ = value;
 }
 
 // uint32 change_gs_type = 6;
-inline void CentreChangeSceneInfoPBComp::clear_change_gs_type() {
+inline void ChangeSceneInfoPBComponent::clear_change_gs_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.change_gs_type_ = 0u;
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::change_gs_type() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.change_gs_type)
+inline ::uint32_t ChangeSceneInfoPBComponent::change_gs_type() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.change_gs_type)
   return _internal_change_gs_type();
 }
-inline void CentreChangeSceneInfoPBComp::set_change_gs_type(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::set_change_gs_type(::uint32_t value) {
   _internal_set_change_gs_type(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.change_gs_type)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.change_gs_type)
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::_internal_change_gs_type() const {
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_change_gs_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.change_gs_type_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_change_gs_type(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_change_gs_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.change_gs_type_ = value;
 }
 
 // uint32 change_gs_status = 7;
-inline void CentreChangeSceneInfoPBComp::clear_change_gs_status() {
+inline void ChangeSceneInfoPBComponent::clear_change_gs_status() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.change_gs_status_ = 0u;
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::change_gs_status() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.change_gs_status)
+inline ::uint32_t ChangeSceneInfoPBComponent::change_gs_status() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.change_gs_status)
   return _internal_change_gs_status();
 }
-inline void CentreChangeSceneInfoPBComp::set_change_gs_status(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::set_change_gs_status(::uint32_t value) {
   _internal_set_change_gs_status(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.change_gs_status)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.change_gs_status)
 }
-inline ::uint32_t CentreChangeSceneInfoPBComp::_internal_change_gs_status() const {
+inline ::uint32_t ChangeSceneInfoPBComponent::_internal_change_gs_status() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.change_gs_status_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_change_gs_status(::uint32_t value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_change_gs_status(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.change_gs_status_ = value;
 }
 
 // uint64 change_time = 8;
-inline void CentreChangeSceneInfoPBComp::clear_change_time() {
+inline void ChangeSceneInfoPBComponent::clear_change_time() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.change_time_ = ::uint64_t{0u};
 }
-inline ::uint64_t CentreChangeSceneInfoPBComp::change_time() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.change_time)
+inline ::uint64_t ChangeSceneInfoPBComponent::change_time() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.change_time)
   return _internal_change_time();
 }
-inline void CentreChangeSceneInfoPBComp::set_change_time(::uint64_t value) {
+inline void ChangeSceneInfoPBComponent::set_change_time(::uint64_t value) {
   _internal_set_change_time(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.change_time)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.change_time)
 }
-inline ::uint64_t CentreChangeSceneInfoPBComp::_internal_change_time() const {
+inline ::uint64_t ChangeSceneInfoPBComponent::_internal_change_time() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.change_time_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_change_time(::uint64_t value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_change_time(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.change_time_ = value;
 }
 
 // bool ignore_full = 9;
-inline void CentreChangeSceneInfoPBComp::clear_ignore_full() {
+inline void ChangeSceneInfoPBComponent::clear_ignore_full() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.ignore_full_ = false;
 }
-inline bool CentreChangeSceneInfoPBComp::ignore_full() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.ignore_full)
+inline bool ChangeSceneInfoPBComponent::ignore_full() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.ignore_full)
   return _internal_ignore_full();
 }
-inline void CentreChangeSceneInfoPBComp::set_ignore_full(bool value) {
+inline void ChangeSceneInfoPBComponent::set_ignore_full(bool value) {
   _internal_set_ignore_full(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.ignore_full)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.ignore_full)
 }
-inline bool CentreChangeSceneInfoPBComp::_internal_ignore_full() const {
+inline bool ChangeSceneInfoPBComponent::_internal_ignore_full() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.ignore_full_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_ignore_full(bool value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_ignore_full(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.ignore_full_ = value;
 }
 
 // bool processing = 10;
-inline void CentreChangeSceneInfoPBComp::clear_processing() {
+inline void ChangeSceneInfoPBComponent::clear_processing() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.processing_ = false;
 }
-inline bool CentreChangeSceneInfoPBComp::processing() const {
-  // @@protoc_insertion_point(field_get:CentreChangeSceneInfoPBComp.processing)
+inline bool ChangeSceneInfoPBComponent::processing() const {
+  // @@protoc_insertion_point(field_get:ChangeSceneInfoPBComponent.processing)
   return _internal_processing();
 }
-inline void CentreChangeSceneInfoPBComp::set_processing(bool value) {
+inline void ChangeSceneInfoPBComponent::set_processing(bool value) {
   _internal_set_processing(value);
-  // @@protoc_insertion_point(field_set:CentreChangeSceneInfoPBComp.processing)
+  // @@protoc_insertion_point(field_set:ChangeSceneInfoPBComponent.processing)
 }
-inline bool CentreChangeSceneInfoPBComp::_internal_processing() const {
+inline bool ChangeSceneInfoPBComponent::_internal_processing() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.processing_;
 }
-inline void CentreChangeSceneInfoPBComp::_internal_set_processing(bool value) {
+inline void ChangeSceneInfoPBComponent::_internal_set_processing(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.processing_ = value;
 }
@@ -1071,16 +1071,16 @@ namespace google {
 namespace protobuf {
 
 template <>
-struct is_proto_enum<::CentreChangeSceneInfoPBComp_eChangeGsStatus> : std::true_type {};
+struct is_proto_enum<::ChangeSceneInfoPBComponent_eChangeGsStatus> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::CentreChangeSceneInfoPBComp_eChangeGsStatus>() {
-  return ::CentreChangeSceneInfoPBComp_eChangeGsStatus_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::ChangeSceneInfoPBComponent_eChangeGsStatus>() {
+  return ::ChangeSceneInfoPBComponent_eChangeGsStatus_descriptor();
 }
 template <>
-struct is_proto_enum<::CentreChangeSceneInfoPBComp_eChangeGsType> : std::true_type {};
+struct is_proto_enum<::ChangeSceneInfoPBComponent_eChangeGsType> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::CentreChangeSceneInfoPBComp_eChangeGsType>() {
-  return ::CentreChangeSceneInfoPBComp_eChangeGsType_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::ChangeSceneInfoPBComponent_eChangeGsType>() {
+  return ::ChangeSceneInfoPBComponent_eChangeGsType_descriptor();
 }
 
 }  // namespace protobuf

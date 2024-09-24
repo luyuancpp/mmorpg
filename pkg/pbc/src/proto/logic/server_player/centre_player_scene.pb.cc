@@ -116,19 +116,20 @@ const char descriptor_table_protodef_logic_2fserver_5fplayer_2fcentre_5fplayer_5
     "\n-logic/server_player/centre_player_scen"
     "e.proto\032\033google/protobuf/empty.proto\032 lo"
     "gic/component/scene_comp.proto\032&logic/cl"
-    "ient_player/player_scene.proto\"\?\n\027Centre"
-    "EnterSceneRequest\022$\n\nscene_info\030\001 \001(\0132\020."
-    "SceneInfoPBComp\"\031\n\027CentreLeaveSceneReque"
-    "st\"0\n.CentreLeaveSceneAsyncSavePlayerCom"
-    "pleteRequest2\303\002\n\030CentrePlayerSceneServic"
-    "e\022>\n\nEnterScene\022\030.CentreEnterSceneReques"
-    "t\032\026.google.protobuf.Empty\022>\n\nLeaveScene\022"
-    "\030.CentreLeaveSceneRequest\032\026.google.proto"
-    "buf.Empty\022l\n!LeaveSceneAsyncSavePlayerCo"
-    "mplete\022/.CentreLeaveSceneAsyncSavePlayer"
-    "CompleteRequest\032\026.google.protobuf.Empty\022"
-    "9\n\014SceneInfoC2S\022\021.SceneInfoRequest\032\026.goo"
-    "gle.protobuf.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "ient_player/player_scene.proto\"D\n\027Centre"
+    "EnterSceneRequest\022)\n\nscene_info\030\001 \001(\0132\025."
+    "SceneInfoPBComponent\"\031\n\027CentreLeaveScene"
+    "Request\"0\n.CentreLeaveSceneAsyncSavePlay"
+    "erCompleteRequest2\303\002\n\030CentrePlayerSceneS"
+    "ervice\022>\n\nEnterScene\022\030.CentreEnterSceneR"
+    "equest\032\026.google.protobuf.Empty\022>\n\nLeaveS"
+    "cene\022\030.CentreLeaveSceneRequest\032\026.google."
+    "protobuf.Empty\022l\n!LeaveSceneAsyncSavePla"
+    "yerComplete\022/.CentreLeaveSceneAsyncSaveP"
+    "layerCompleteRequest\032\026.google.protobuf.E"
+    "mpty\0229\n\014SceneInfoC2S\022\021.SceneInfoRequest\032"
+    "\026.google.protobuf.EmptyB\014Z\007pb/game\200\001\001b\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fserver_5fplayer_2fcentre_5fplayer_5fscene_2eproto_deps[3] =
     {
@@ -140,7 +141,7 @@ static ::absl::once_flag descriptor_table_logic_2fserver_5fplayer_2fcentre_5fpla
 const ::_pbi::DescriptorTable descriptor_table_logic_2fserver_5fplayer_2fcentre_5fplayer_5fscene_2eproto = {
     false,
     false,
-    640,
+    645,
     descriptor_table_protodef_logic_2fserver_5fplayer_2fcentre_5fplayer_5fscene_2eproto,
     "logic/server_player/centre_player_scene.proto",
     &descriptor_table_logic_2fserver_5fplayer_2fcentre_5fplayer_5fscene_2eproto_once,
@@ -204,7 +205,7 @@ CentreEnterSceneRequest::CentreEnterSceneRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComp>(
+  _impl_.scene_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(
                               arena, *from._impl_.scene_info_)
                         : nullptr;
 
@@ -285,17 +286,17 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> CentreEnterSceneRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::CentreEnterSceneRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .SceneInfoPBComp scene_info = 1;
+    // .SceneInfoPBComponent scene_info = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(CentreEnterSceneRequest, _impl_.scene_info_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .SceneInfoPBComp scene_info = 1;
+    // .SceneInfoPBComponent scene_info = 1;
     {PROTOBUF_FIELD_OFFSET(CentreEnterSceneRequest, _impl_.scene_info_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::SceneInfoPBComp>()},
+    {::_pbi::TcParser::GetTable<::SceneInfoPBComponent>()},
   }}, {{
   }},
 };
@@ -308,7 +309,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> CentreEnterSceneRequest::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .SceneInfoPBComp scene_info = 1;
+  // .SceneInfoPBComponent scene_info = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.scene_info_, _impl_.scene_info_->GetCachedSize(), target, stream);
@@ -331,7 +332,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> CentreEnterSceneRequest::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .SceneInfoPBComp scene_info = 1;
+  // .SceneInfoPBComponent scene_info = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
@@ -356,7 +357,7 @@ void CentreEnterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
     ABSL_DCHECK(from._impl_.scene_info_ != nullptr);
     if (_this->_impl_.scene_info_ == nullptr) {
       _this->_impl_.scene_info_ =
-          ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComp>(arena, *from._impl_.scene_info_);
+          ::google::protobuf::Message::CopyConstruct<::SceneInfoPBComponent>(arena, *from._impl_.scene_info_);
     } else {
       _this->_impl_.scene_info_->MergeFrom(*from._impl_.scene_info_);
     }

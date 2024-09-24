@@ -362,10 +362,10 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 		}
 
 		//连续顶几次,所以用emplace_or_replace
-		LOG_INFO << "Player login type: " << (tls.registry.any_of<EnterGameNodeInfoPBComp>(player) ? "Replace" : "New");
+		LOG_INFO << "Player login type: " << (tls.registry.any_of<EnterGameNodeInfoPBComponent>(player) ? "Replace" : "New");
 
 		// Register player to gate node
-		tls.registry.emplace_or_replace<EnterGameNodeInfoPBComp>(player).set_enter_gs_type(LOGIN_REPLACE);
+		tls.registry.emplace_or_replace<EnterGameNodeInfoPBComponent>(player).set_enter_gs_type(LOGIN_REPLACE);
 		PlayerNodeUtil::AddGameNodePlayerToGateNode(player);
 
 		PlayerNodeUtil::ProcessPlayerSessionState(player);
@@ -507,7 +507,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 
 	PlayerNodeUtil::AddGameNodePlayerToGateNode(player);
 
-	PlayerChangeSceneUtil::SetChangeGsStatus(player, CentreChangeSceneInfoPBComp::eEnterGsSceneSucceed);
+	PlayerChangeSceneUtil::SetChangeGsStatus(player, ChangeSceneInfoPBComponent::eEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
 
 	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->game_node_id();
