@@ -13,7 +13,7 @@ func PlayerSkillServiceGetSkillListHandler(player *gameobject.Player, response *
 
 	actorListFromBlackboard := client.Blackboard.GetMem(behaviortree.SkillListBoardKey)
 
-	playerSkillListPBComp, ok := actorListFromBlackboard.(*game.PlayerSkillListPBComp)
+	playerSkillListPBComp, ok := actorListFromBlackboard.(*game.PlayerSkillListPBComponent)
 	if !ok {
 		zap.L().Error("Failed to cast skill list from blackboard",
 			zap.String("Key", behaviortree.SkillListBoardKey),
