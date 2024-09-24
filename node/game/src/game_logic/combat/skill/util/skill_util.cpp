@@ -110,7 +110,14 @@ void SkillUtil::HandleGeneralSkillSpell(const entt::entity caster, const uint64_
 
 // Set up a timer for skill recovery after casting
 void SkillUtil::HandleSkillRecovery(const entt::entity caster, uint64_t skillId) {
-	auto [skillTable, result] = GetSkillTable(skillId);
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+	auto skillContentIt = casterSkillContextMap.find(skillId);
+
+	if (skillContentIt == casterSkillContextMap.end()) {
+		return;
+	}
+
+	auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
 	if (skillTable == nullptr) {
 		return;
 	}
@@ -199,27 +206,47 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 		return kSkillInvalidTargetId;
 	}
 
-	// Validate target entity
-	if (!skillTable->target_type().empty()) {
-		entt::entity target{ request->target_id() };
+	uint32_t err = kOK;
 
-		if (!tls.registry.valid(target)) {
-			LOG_ERROR << "Target entity with ID: " << request->target_id()
-				<< " is invalid or does not exist for skill ID: " << request->skill_table_id();
-			return kSkillInvalidTargetId;
+	for (auto& tabSkillType : skillTable->target_type()) {
+		if ((1 << tabSkillType) == kNoTargetRequired) {
+			err = kOK;
+			break;
 		}
 
-		// Check target entity type
-		bool isValidTargetType = tls.registry.all_of<Player>(target) || tls.registry.all_of<Npc>(target);
-		if (!isValidTargetType) {
-			LOG_ERROR << "Target entity with ID: " << request->target_id()
-				<< " is of an invalid type for skill ID: " << request->skill_table_id()
-				<< ". Expected Player or Npc.";
-			return kSkillInvalidTargetId;
+		if ((1 << tabSkillType) == kTargetedSkill) {
+			// Validate target entity
+			if (!skillTable->target_type().empty()) {
+				entt::entity target{ request->target_id() };
+
+				if (!tls.registry.valid(target)) {
+					LOG_ERROR << "Target entity with ID: " << request->target_id()
+						<< " is invalid or does not exist for skill ID: " << request->skill_table_id();
+					return kSkillInvalidTargetId;
+				}
+
+				// Check target entity type
+				bool isValidTargetType = tls.registry.all_of<Player>(target) || tls.registry.all_of<Npc>(target);
+				if (!isValidTargetType) {
+					LOG_ERROR << "Target entity with ID: " << request->target_id()
+						<< " is of an invalid type for skill ID: " << request->skill_table_id()
+						<< ". Expected Player or Npc.";
+					return kSkillInvalidTargetId;
+				}
+			}
+
+			err = kOK;
+			break;
+		}
+
+		if ((1 << tabSkillType) == kAreaOfEffect) {
+
+			err = kOK;
+			break;
 		}
 	}
 
-	return kOK;
+	return err;
 }
 
 uint32_t SkillUtil::CheckCooldown(const entt::entity caster, const SkillTable* skillTable) {
@@ -343,7 +370,14 @@ void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, uint64_t 
 }
 
 void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint64_t skillId) {
-	auto [skillTable, result] = GetSkillTable(skillId);
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+	auto skillContentIt = casterSkillContextMap.find(skillId);
+
+	if (skillContentIt == casterSkillContextMap.end()) {
+		return;
+	}
+
+	auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
 	if (skillTable == nullptr) {
 		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
 		return;

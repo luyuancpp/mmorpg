@@ -54,11 +54,11 @@ message ViewRadius
 }
 
 message HealthPBComponent {
-    uint64 current_health = 1;
+    uint64 hp = 1;
     uint64 max_health = 2;
 }
 
 message ManaPBComponent {
-    uint64 current_mana = 1;
+    uint64 mp = 1;
     uint64 max_mana = 2;
 }

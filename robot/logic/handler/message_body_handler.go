@@ -21,6 +21,14 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 
 	// Handle different message types
 	switch response.MessageId {
+	case game.PlayerSkillServiceReleaseSkillMessageId:
+		handlePlayerSkillServiceReleaseSkill(player, response.Body)
+	case game.PlayerSkillServiceNotifySkillUsedMessageId:
+		handlePlayerSkillServiceNotifySkillUsed(player, response.Body)
+	case game.PlayerSkillServiceNotifySkillInterruptedMessageId:
+		handlePlayerSkillServiceNotifySkillInterrupted(player, response.Body)
+	case game.PlayerSkillServiceGetSkillListMessageId:
+		handlePlayerSkillServiceGetSkillList(player, response.Body)
 	case game.ClientPlayerSceneServiceEnterSceneMessageId:
 		handleClientPlayerSceneServiceEnterScene(player, response.Body)
 	case game.ClientPlayerSceneServiceNotifyEnterSceneMessageId:
@@ -41,18 +49,42 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 		handlePlayerClientCommonServiceSendTipToClient(player, response.Body)
 	case game.PlayerClientCommonServiceKickPlayerMessageId:
 		handlePlayerClientCommonServiceKickPlayer(player, response.Body)
-	case game.PlayerSkillServiceReleaseSkillMessageId:
-		handlePlayerSkillServiceReleaseSkill(player, response.Body)
-	case game.PlayerSkillServiceNotifySkillUsedMessageId:
-		handlePlayerSkillServiceNotifySkillUsed(player, response.Body)
-	case game.PlayerSkillServiceNotifySkillInterruptedMessageId:
-		handlePlayerSkillServiceNotifySkillInterrupted(player, response.Body)
-	case game.PlayerSkillServiceGetSkillListMessageId:
-		handlePlayerSkillServiceGetSkillList(player, response.Body)
 	default:
 		// Handle unknown message IDs
 		zap.L().Info("Unhandled message", zap.Uint32("message_id", response.MessageId), zap.String("response", response.String()))
 	}
+}
+func handlePlayerSkillServiceReleaseSkill(player *gameobject.Player, body []byte) {
+	message := &game.ReleaseSkillSkillResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal ReleaseSkillSkillResponse", zap.Error(err))
+		return
+	}
+	PlayerSkillServiceReleaseSkillHandler(player, message)
+}
+func handlePlayerSkillServiceNotifySkillUsed(player *gameobject.Player, body []byte) {
+	message := &game.SkillUsedS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal SkillUsedS2C", zap.Error(err))
+		return
+	}
+	PlayerSkillServiceNotifySkillUsedHandler(player, message)
+}
+func handlePlayerSkillServiceNotifySkillInterrupted(player *gameobject.Player, body []byte) {
+	message := &game.SkillInterruptedS2C{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal SkillInterruptedS2C", zap.Error(err))
+		return
+	}
+	PlayerSkillServiceNotifySkillInterruptedHandler(player, message)
+}
+func handlePlayerSkillServiceGetSkillList(player *gameobject.Player, body []byte) {
+	message := &game.GetSkillListResponse{}
+	if err := proto.Unmarshal(body, message); err != nil {
+		zap.L().Error("Failed to unmarshal GetSkillListResponse", zap.Error(err))
+		return
+	}
+	PlayerSkillServiceGetSkillListHandler(player, message)
 }
 func handleClientPlayerSceneServiceEnterScene(player *gameobject.Player, body []byte) {
 	message := &game.EnterSceneC2SResponse{}
@@ -133,36 +165,4 @@ func handlePlayerClientCommonServiceKickPlayer(player *gameobject.Player, body [
 		return
 	}
 	PlayerClientCommonServiceKickPlayerHandler(player, message)
-}
-func handlePlayerSkillServiceReleaseSkill(player *gameobject.Player, body []byte) {
-	message := &game.ReleaseSkillSkillResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal ReleaseSkillSkillResponse", zap.Error(err))
-		return
-	}
-	PlayerSkillServiceReleaseSkillHandler(player, message)
-}
-func handlePlayerSkillServiceNotifySkillUsed(player *gameobject.Player, body []byte) {
-	message := &game.SkillUsedS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SkillUsedS2C", zap.Error(err))
-		return
-	}
-	PlayerSkillServiceNotifySkillUsedHandler(player, message)
-}
-func handlePlayerSkillServiceNotifySkillInterrupted(player *gameobject.Player, body []byte) {
-	message := &game.SkillInterruptedS2C{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SkillInterruptedS2C", zap.Error(err))
-		return
-	}
-	PlayerSkillServiceNotifySkillInterruptedHandler(player, message)
-}
-func handlePlayerSkillServiceGetSkillList(player *gameobject.Player, body []byte) {
-	message := &game.GetSkillListResponse{}
-	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal GetSkillListResponse", zap.Error(err))
-		return
-	}
-	PlayerSkillServiceGetSkillListHandler(player, message)
 }

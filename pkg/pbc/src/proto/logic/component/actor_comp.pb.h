@@ -952,17 +952,17 @@ class ManaPBComponent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kCurrentManaFieldNumber = 1,
+    kMpFieldNumber = 1,
     kMaxManaFieldNumber = 2,
   };
-  // uint64 current_mana = 1;
-  void clear_current_mana() ;
-  ::uint64_t current_mana() const;
-  void set_current_mana(::uint64_t value);
+  // uint64 mp = 1;
+  void clear_mp() ;
+  ::uint64_t mp() const;
+  void set_mp(::uint64_t value);
 
   private:
-  ::uint64_t _internal_current_mana() const;
-  void _internal_set_current_mana(::uint64_t value);
+  ::uint64_t _internal_mp() const;
+  void _internal_set_mp(::uint64_t value);
 
   public:
   // uint64 max_mana = 2;
@@ -996,7 +996,7 @@ class ManaPBComponent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t current_mana_;
+    ::uint64_t mp_;
     ::uint64_t max_mana_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1322,17 +1322,17 @@ class HealthPBComponent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kCurrentHealthFieldNumber = 1,
+    kHpFieldNumber = 1,
     kMaxHealthFieldNumber = 2,
   };
-  // uint64 current_health = 1;
-  void clear_current_health() ;
-  ::uint64_t current_health() const;
-  void set_current_health(::uint64_t value);
+  // uint64 hp = 1;
+  void clear_hp() ;
+  ::uint64_t hp() const;
+  void set_hp(::uint64_t value);
 
   private:
-  ::uint64_t _internal_current_health() const;
-  void _internal_set_current_health(::uint64_t value);
+  ::uint64_t _internal_hp() const;
+  void _internal_set_hp(::uint64_t value);
 
   public:
   // uint64 max_health = 2;
@@ -1366,7 +1366,7 @@ class HealthPBComponent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t current_health_;
+    ::uint64_t hp_;
     ::uint64_t max_health_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -2457,26 +2457,26 @@ inline void ViewRadius::_internal_set_radius(double value) {
 
 // HealthPBComponent
 
-// uint64 current_health = 1;
-inline void HealthPBComponent::clear_current_health() {
+// uint64 hp = 1;
+inline void HealthPBComponent::clear_hp() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.current_health_ = ::uint64_t{0u};
+  _impl_.hp_ = ::uint64_t{0u};
 }
-inline ::uint64_t HealthPBComponent::current_health() const {
-  // @@protoc_insertion_point(field_get:HealthPBComponent.current_health)
-  return _internal_current_health();
+inline ::uint64_t HealthPBComponent::hp() const {
+  // @@protoc_insertion_point(field_get:HealthPBComponent.hp)
+  return _internal_hp();
 }
-inline void HealthPBComponent::set_current_health(::uint64_t value) {
-  _internal_set_current_health(value);
-  // @@protoc_insertion_point(field_set:HealthPBComponent.current_health)
+inline void HealthPBComponent::set_hp(::uint64_t value) {
+  _internal_set_hp(value);
+  // @@protoc_insertion_point(field_set:HealthPBComponent.hp)
 }
-inline ::uint64_t HealthPBComponent::_internal_current_health() const {
+inline ::uint64_t HealthPBComponent::_internal_hp() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.current_health_;
+  return _impl_.hp_;
 }
-inline void HealthPBComponent::_internal_set_current_health(::uint64_t value) {
+inline void HealthPBComponent::_internal_set_hp(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.current_health_ = value;
+  _impl_.hp_ = value;
 }
 
 // uint64 max_health = 2;
@@ -2505,26 +2505,26 @@ inline void HealthPBComponent::_internal_set_max_health(::uint64_t value) {
 
 // ManaPBComponent
 
-// uint64 current_mana = 1;
-inline void ManaPBComponent::clear_current_mana() {
+// uint64 mp = 1;
+inline void ManaPBComponent::clear_mp() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.current_mana_ = ::uint64_t{0u};
+  _impl_.mp_ = ::uint64_t{0u};
 }
-inline ::uint64_t ManaPBComponent::current_mana() const {
-  // @@protoc_insertion_point(field_get:ManaPBComponent.current_mana)
-  return _internal_current_mana();
+inline ::uint64_t ManaPBComponent::mp() const {
+  // @@protoc_insertion_point(field_get:ManaPBComponent.mp)
+  return _internal_mp();
 }
-inline void ManaPBComponent::set_current_mana(::uint64_t value) {
-  _internal_set_current_mana(value);
-  // @@protoc_insertion_point(field_set:ManaPBComponent.current_mana)
+inline void ManaPBComponent::set_mp(::uint64_t value) {
+  _internal_set_mp(value);
+  // @@protoc_insertion_point(field_set:ManaPBComponent.mp)
 }
-inline ::uint64_t ManaPBComponent::_internal_current_mana() const {
+inline ::uint64_t ManaPBComponent::_internal_mp() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.current_mana_;
+  return _impl_.mp_;
 }
-inline void ManaPBComponent::_internal_set_current_mana(::uint64_t value) {
+inline void ManaPBComponent::_internal_set_mp(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.current_mana_ = value;
+  _impl_.mp_ = value;
 }
 
 // uint64 max_mana = 2;
