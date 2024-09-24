@@ -106,7 +106,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr ManaPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : current_mana_{::uint64_t{0u}},
+      : mp_{::uint64_t{0u}},
         max_mana_{::uint64_t{0u}},
         _cached_size_{0} {}
 
@@ -147,7 +147,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr HealthPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : current_health_{::uint64_t{0u}},
+      : hp_{::uint64_t{0u}},
         max_health_{::uint64_t{0u}},
         _cached_size_{0} {}
 
@@ -300,7 +300,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _impl_.current_health_),
+        PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _impl_.hp_),
         PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _impl_.max_health_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _internal_metadata_),
@@ -310,7 +310,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _impl_.current_mana_),
+        PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _impl_.mp_),
         PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _impl_.max_mana_),
 };
 
@@ -348,17 +348,16 @@ const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto[] 
     "\005scale\030\003 \001(\0132\006.Scale\"+\n\010Velocity\022\t\n\001x\030\001 "
     "\001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Acceleratio"
     "n\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"\034\n\nVi"
-    "ewRadius\022\016\n\006radius\030\001 \001(\001\"\?\n\021HealthPBComp"
-    "onent\022\026\n\016current_health\030\001 \001(\004\022\022\n\nmax_hea"
-    "lth\030\002 \001(\004\"9\n\017ManaPBComponent\022\024\n\014current_"
-    "mana\030\001 \001(\004\022\020\n\010max_mana\030\002 \001(\004B\tZ\007pb/gameb"
-    "\006proto3"
+    "ewRadius\022\016\n\006radius\030\001 \001(\001\"3\n\021HealthPBComp"
+    "onent\022\n\n\002hp\030\001 \001(\004\022\022\n\nmax_health\030\002 \001(\004\"/\n"
+    "\017ManaPBComponent\022\n\n\002mp\030\001 \001(\004\022\020\n\010max_mana"
+    "\030\002 \001(\004B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    527,
+    505,
     descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto,
     "logic/component/actor_comp.proto",
     &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
@@ -2285,10 +2284,10 @@ inline PROTOBUF_NDEBUG_INLINE HealthPBComponent::Impl_::Impl_(
 inline void HealthPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, current_health_),
+               offsetof(Impl_, hp_),
            0,
            offsetof(Impl_, max_health_) -
-               offsetof(Impl_, current_health_) +
+               offsetof(Impl_, hp_) +
                sizeof(Impl_::max_health_));
 }
 HealthPBComponent::~HealthPBComponent() {
@@ -2322,9 +2321,9 @@ PROTOBUF_NOINLINE void HealthPBComponent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ::memset(&_impl_.current_health_, 0, static_cast<::size_t>(
+  ::memset(&_impl_.hp_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.max_health_) -
-      reinterpret_cast<char*>(&_impl_.current_health_)) + sizeof(_impl_.max_health_));
+      reinterpret_cast<char*>(&_impl_.hp_)) + sizeof(_impl_.max_health_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -2356,14 +2355,14 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
     // uint64 max_health = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(HealthPBComponent, _impl_.max_health_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_)}},
-    // uint64 current_health = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(HealthPBComponent, _impl_.current_health_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.current_health_)}},
+    // uint64 hp = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(HealthPBComponent, _impl_.hp_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.hp_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 current_health = 1;
-    {PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.current_health_), 0, 0,
+    // uint64 hp = 1;
+    {PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.hp_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 max_health = 2;
     {PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_), 0, 0,
@@ -2381,11 +2380,11 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 current_health = 1;
-  if (this->_internal_current_health() != 0) {
+  // uint64 hp = 1;
+  if (this->_internal_hp() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_current_health(), target);
+        1, this->_internal_hp(), target);
   }
 
   // uint64 max_health = 2;
@@ -2412,10 +2411,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 current_health = 1;
-  if (this->_internal_current_health() != 0) {
+  // uint64 hp = 1;
+  if (this->_internal_hp() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_current_health());
+        this->_internal_hp());
   }
 
   // uint64 max_health = 2;
@@ -2436,8 +2435,8 @@ void HealthPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_current_health() != 0) {
-    _this->_impl_.current_health_ = from._impl_.current_health_;
+  if (from._internal_hp() != 0) {
+    _this->_impl_.hp_ = from._impl_.hp_;
   }
   if (from._internal_max_health() != 0) {
     _this->_impl_.max_health_ = from._impl_.max_health_;
@@ -2462,9 +2461,9 @@ void HealthPBComponent::InternalSwap(HealthPBComponent* PROTOBUF_RESTRICT other)
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_)
       + sizeof(HealthPBComponent::_impl_.max_health_)
-      - PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.current_health_)>(
-          reinterpret_cast<char*>(&_impl_.current_health_),
-          reinterpret_cast<char*>(&other->_impl_.current_health_));
+      - PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.hp_)>(
+          reinterpret_cast<char*>(&_impl_.hp_),
+          reinterpret_cast<char*>(&other->_impl_.hp_));
 }
 
 ::google::protobuf::Metadata HealthPBComponent::GetMetadata() const {
@@ -2496,10 +2495,10 @@ inline PROTOBUF_NDEBUG_INLINE ManaPBComponent::Impl_::Impl_(
 inline void ManaPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, current_mana_),
+               offsetof(Impl_, mp_),
            0,
            offsetof(Impl_, max_mana_) -
-               offsetof(Impl_, current_mana_) +
+               offsetof(Impl_, mp_) +
                sizeof(Impl_::max_mana_));
 }
 ManaPBComponent::~ManaPBComponent() {
@@ -2533,9 +2532,9 @@ PROTOBUF_NOINLINE void ManaPBComponent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ::memset(&_impl_.current_mana_, 0, static_cast<::size_t>(
+  ::memset(&_impl_.mp_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.max_mana_) -
-      reinterpret_cast<char*>(&_impl_.current_mana_)) + sizeof(_impl_.max_mana_));
+      reinterpret_cast<char*>(&_impl_.mp_)) + sizeof(_impl_.max_mana_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -2567,14 +2566,14 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ManaPBComponent::_table_ = {
     // uint64 max_mana = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ManaPBComponent, _impl_.max_mana_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_)}},
-    // uint64 current_mana = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ManaPBComponent, _impl_.current_mana_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.current_mana_)}},
+    // uint64 mp = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ManaPBComponent, _impl_.mp_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.mp_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 current_mana = 1;
-    {PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.current_mana_), 0, 0,
+    // uint64 mp = 1;
+    {PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.mp_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 max_mana = 2;
     {PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_), 0, 0,
@@ -2592,11 +2591,11 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ManaPBComponent::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 current_mana = 1;
-  if (this->_internal_current_mana() != 0) {
+  // uint64 mp = 1;
+  if (this->_internal_mp() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_current_mana(), target);
+        1, this->_internal_mp(), target);
   }
 
   // uint64 max_mana = 2;
@@ -2623,10 +2622,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ManaPBComponent::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 current_mana = 1;
-  if (this->_internal_current_mana() != 0) {
+  // uint64 mp = 1;
+  if (this->_internal_mp() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_current_mana());
+        this->_internal_mp());
   }
 
   // uint64 max_mana = 2;
@@ -2647,8 +2646,8 @@ void ManaPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_current_mana() != 0) {
-    _this->_impl_.current_mana_ = from._impl_.current_mana_;
+  if (from._internal_mp() != 0) {
+    _this->_impl_.mp_ = from._impl_.mp_;
   }
   if (from._internal_max_mana() != 0) {
     _this->_impl_.max_mana_ = from._impl_.max_mana_;
@@ -2673,9 +2672,9 @@ void ManaPBComponent::InternalSwap(ManaPBComponent* PROTOBUF_RESTRICT other) {
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_)
       + sizeof(ManaPBComponent::_impl_.max_mana_)
-      - PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.current_mana_)>(
-          reinterpret_cast<char*>(&_impl_.current_mana_),
-          reinterpret_cast<char*>(&other->_impl_.current_mana_));
+      - PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.mp_)>(
+          reinterpret_cast<char*>(&_impl_.mp_),
+          reinterpret_cast<char*>(&other->_impl_.mp_));
 }
 
 ::google::protobuf::Metadata ManaPBComponent::GetMetadata() const {
