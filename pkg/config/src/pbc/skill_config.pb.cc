@@ -53,10 +53,10 @@ inline constexpr SkillTable::Impl_::Impl_(
         requestresource_{},
         id_{0u},
         rquest_target_{0u},
+        castpoint_{0},
         target_status_{0u},
-        castpoint_{0u},
-        recoverytime_{0u},
         immediately_{0u},
+        recoverytime_{0},
         channelthink_{0u},
         channelfinish_{0u},
         thinkinterval_{0u},
@@ -176,8 +176,8 @@ const char descriptor_table_protodef_skill_5fconfig_2eproto[] ABSL_ATTRIBUTE_SEC
     "source_cost\030\002 \001(\r\"\272\003\n\nSkillTable\022\n\n\002id\030\001"
     " \001(\r\022\022\n\nskill_type\030\002 \003(\r\022\023\n\013target_type\030"
     "\003 \003(\r\022\025\n\rrquest_target\030\004 \001(\r\022\025\n\rtarget_s"
-    "tatus\030\005 \001(\r\022\021\n\tcastpoint\030\006 \001(\r\022\024\n\014recove"
-    "rytime\030\007 \001(\r\022\023\n\013immediately\030\010 \001(\r\022\016\n\006eff"
+    "tatus\030\005 \001(\r\022\021\n\tcastpoint\030\006 \001(\001\022\024\n\014recove"
+    "rytime\030\007 \001(\001\022\023\n\013immediately\030\010 \001(\r\022\016\n\006eff"
     "ect\030\t \003(\r\022\024\n\014channelthink\030\n \001(\r\022\025\n\rchann"
     "elfinish\030\013 \001(\r\022\025\n\rthinkinterval\030\014 \001(\r\022\023\n"
     "\013channeltime\030\r \001(\r\022)\n\017requestresource\030\016 "
@@ -577,12 +577,12 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     // uint32 target_status = 5;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.target_status_), 63>(),
      {40, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.target_status_)}},
-    // uint32 castpoint = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.castpoint_), 63>(),
-     {48, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.castpoint_)}},
-    // uint32 recoverytime = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.recoverytime_), 63>(),
-     {56, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.recoverytime_)}},
+    // double castpoint = 6;
+    {::_pbi::TcParser::FastF64S1,
+     {49, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.castpoint_)}},
+    // double recoverytime = 7;
+    {::_pbi::TcParser::FastF64S1,
+     {57, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.recoverytime_)}},
     // uint32 immediately = 8;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.immediately_), 63>(),
      {64, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediately_)}},
@@ -651,12 +651,12 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     // uint32 target_status = 5;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.target_status_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 castpoint = 6;
+    // double castpoint = 6;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.castpoint_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 recoverytime = 7;
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
+    // double recoverytime = 7;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.recoverytime_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
     // uint32 immediately = 8;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediately_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
@@ -748,17 +748,27 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
         5, this->_internal_target_status(), target);
   }
 
-  // uint32 castpoint = 6;
-  if (this->_internal_castpoint() != 0) {
+  // double castpoint = 6;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_castpoint = this->_internal_castpoint();
+  ::uint64_t raw_castpoint;
+  memcpy(&raw_castpoint, &tmp_castpoint, sizeof(tmp_castpoint));
+  if (raw_castpoint != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
         6, this->_internal_castpoint(), target);
   }
 
-  // uint32 recoverytime = 7;
-  if (this->_internal_recoverytime() != 0) {
+  // double recoverytime = 7;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_recoverytime = this->_internal_recoverytime();
+  ::uint64_t raw_recoverytime;
+  memcpy(&raw_recoverytime, &tmp_recoverytime, sizeof(tmp_recoverytime));
+  if (raw_recoverytime != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
         7, this->_internal_recoverytime(), target);
   }
 
@@ -947,28 +957,36 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
         this->_internal_rquest_target());
   }
 
+  // double castpoint = 6;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_castpoint = this->_internal_castpoint();
+  ::uint64_t raw_castpoint;
+  memcpy(&raw_castpoint, &tmp_castpoint, sizeof(tmp_castpoint));
+  if (raw_castpoint != 0) {
+    total_size += 9;
+  }
+
   // uint32 target_status = 5;
   if (this->_internal_target_status() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_target_status());
   }
 
-  // uint32 castpoint = 6;
-  if (this->_internal_castpoint() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_castpoint());
-  }
-
-  // uint32 recoverytime = 7;
-  if (this->_internal_recoverytime() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_recoverytime());
-  }
-
   // uint32 immediately = 8;
   if (this->_internal_immediately() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_immediately());
+  }
+
+  // double recoverytime = 7;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_recoverytime = this->_internal_recoverytime();
+  ::uint64_t raw_recoverytime;
+  memcpy(&raw_recoverytime, &tmp_recoverytime, sizeof(tmp_recoverytime));
+  if (raw_recoverytime != 0) {
+    total_size += 9;
   }
 
   // uint32 channelthink = 10;
@@ -1066,17 +1084,27 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   if (from._internal_rquest_target() != 0) {
     _this->_impl_.rquest_target_ = from._impl_.rquest_target_;
   }
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_castpoint = from._internal_castpoint();
+  ::uint64_t raw_castpoint;
+  memcpy(&raw_castpoint, &tmp_castpoint, sizeof(tmp_castpoint));
+  if (raw_castpoint != 0) {
+    _this->_impl_.castpoint_ = from._impl_.castpoint_;
+  }
   if (from._internal_target_status() != 0) {
     _this->_impl_.target_status_ = from._impl_.target_status_;
   }
-  if (from._internal_castpoint() != 0) {
-    _this->_impl_.castpoint_ = from._impl_.castpoint_;
-  }
-  if (from._internal_recoverytime() != 0) {
-    _this->_impl_.recoverytime_ = from._impl_.recoverytime_;
-  }
   if (from._internal_immediately() != 0) {
     _this->_impl_.immediately_ = from._impl_.immediately_;
+  }
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_recoverytime = from._internal_recoverytime();
+  ::uint64_t raw_recoverytime;
+  memcpy(&raw_recoverytime, &tmp_recoverytime, sizeof(tmp_recoverytime));
+  if (raw_recoverytime != 0) {
+    _this->_impl_.recoverytime_ = from._impl_.recoverytime_;
   }
   if (from._internal_channelthink() != 0) {
     _this->_impl_.channelthink_ = from._impl_.channelthink_;

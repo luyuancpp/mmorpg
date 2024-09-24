@@ -379,10 +379,10 @@ class SkillTable final : public ::google::protobuf::Message
     kRequestresourceFieldNumber = 14,
     kIdFieldNumber = 1,
     kRquestTargetFieldNumber = 4,
-    kTargetStatusFieldNumber = 5,
     kCastpointFieldNumber = 6,
-    kRecoverytimeFieldNumber = 7,
+    kTargetStatusFieldNumber = 5,
     kImmediatelyFieldNumber = 8,
+    kRecoverytimeFieldNumber = 7,
     kChannelthinkFieldNumber = 10,
     kChannelfinishFieldNumber = 11,
     kThinkintervalFieldNumber = 12,
@@ -485,6 +485,16 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_rquest_target(::uint32_t value);
 
   public:
+  // double castpoint = 6;
+  void clear_castpoint() ;
+  double castpoint() const;
+  void set_castpoint(double value);
+
+  private:
+  double _internal_castpoint() const;
+  void _internal_set_castpoint(double value);
+
+  public:
   // uint32 target_status = 5;
   void clear_target_status() ;
   ::uint32_t target_status() const;
@@ -495,26 +505,6 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_target_status(::uint32_t value);
 
   public:
-  // uint32 castpoint = 6;
-  void clear_castpoint() ;
-  ::uint32_t castpoint() const;
-  void set_castpoint(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_castpoint() const;
-  void _internal_set_castpoint(::uint32_t value);
-
-  public:
-  // uint32 recoverytime = 7;
-  void clear_recoverytime() ;
-  ::uint32_t recoverytime() const;
-  void set_recoverytime(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_recoverytime() const;
-  void _internal_set_recoverytime(::uint32_t value);
-
-  public:
   // uint32 immediately = 8;
   void clear_immediately() ;
   ::uint32_t immediately() const;
@@ -523,6 +513,16 @@ class SkillTable final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_immediately() const;
   void _internal_set_immediately(::uint32_t value);
+
+  public:
+  // double recoverytime = 7;
+  void clear_recoverytime() ;
+  double recoverytime() const;
+  void set_recoverytime(double value);
+
+  private:
+  double _internal_recoverytime() const;
+  void _internal_set_recoverytime(double value);
 
   public:
   // uint32 channelthink = 10;
@@ -655,10 +655,10 @@ class SkillTable final : public ::google::protobuf::Message
     ::google::protobuf::RepeatedPtrField< ::requestresource > requestresource_;
     ::uint32_t id_;
     ::uint32_t rquest_target_;
+    double castpoint_;
     ::uint32_t target_status_;
-    ::uint32_t castpoint_;
-    ::uint32_t recoverytime_;
     ::uint32_t immediately_;
+    double recoverytime_;
     ::uint32_t channelthink_;
     ::uint32_t channelfinish_;
     ::uint32_t thinkinterval_;
@@ -1070,46 +1070,46 @@ inline void SkillTable::_internal_set_target_status(::uint32_t value) {
   _impl_.target_status_ = value;
 }
 
-// uint32 castpoint = 6;
+// double castpoint = 6;
 inline void SkillTable::clear_castpoint() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.castpoint_ = 0u;
+  _impl_.castpoint_ = 0;
 }
-inline ::uint32_t SkillTable::castpoint() const {
+inline double SkillTable::castpoint() const {
   // @@protoc_insertion_point(field_get:SkillTable.castpoint)
   return _internal_castpoint();
 }
-inline void SkillTable::set_castpoint(::uint32_t value) {
+inline void SkillTable::set_castpoint(double value) {
   _internal_set_castpoint(value);
   // @@protoc_insertion_point(field_set:SkillTable.castpoint)
 }
-inline ::uint32_t SkillTable::_internal_castpoint() const {
+inline double SkillTable::_internal_castpoint() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.castpoint_;
 }
-inline void SkillTable::_internal_set_castpoint(::uint32_t value) {
+inline void SkillTable::_internal_set_castpoint(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.castpoint_ = value;
 }
 
-// uint32 recoverytime = 7;
+// double recoverytime = 7;
 inline void SkillTable::clear_recoverytime() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.recoverytime_ = 0u;
+  _impl_.recoverytime_ = 0;
 }
-inline ::uint32_t SkillTable::recoverytime() const {
+inline double SkillTable::recoverytime() const {
   // @@protoc_insertion_point(field_get:SkillTable.recoverytime)
   return _internal_recoverytime();
 }
-inline void SkillTable::set_recoverytime(::uint32_t value) {
+inline void SkillTable::set_recoverytime(double value) {
   _internal_set_recoverytime(value);
   // @@protoc_insertion_point(field_set:SkillTable.recoverytime)
 }
-inline ::uint32_t SkillTable::_internal_recoverytime() const {
+inline double SkillTable::_internal_recoverytime() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.recoverytime_;
 }
-inline void SkillTable::_internal_set_recoverytime(::uint32_t value) {
+inline void SkillTable::_internal_set_recoverytime(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.recoverytime_ = value;
 }
