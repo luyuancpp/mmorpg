@@ -70,7 +70,7 @@ void CentrePlayerSceneServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 		return;
 	}
 
-	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
+	auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "PlayerNodeInfo not found for player: " << tls.registry.get<Guid>(player);

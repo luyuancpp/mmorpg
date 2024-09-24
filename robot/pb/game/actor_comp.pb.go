@@ -447,6 +447,116 @@ func (x *ViewRadius) GetRadius() float64 {
 	return 0
 }
 
+type HealthPBComponent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CurrentHealth uint64 `protobuf:"varint,1,opt,name=current_health,json=currentHealth,proto3" json:"current_health,omitempty"`
+	MaxHealth     uint64 `protobuf:"varint,2,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"`
+}
+
+func (x *HealthPBComponent) Reset() {
+	*x = HealthPBComponent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_logic_component_actor_comp_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *HealthPBComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HealthPBComponent) ProtoMessage() {}
+
+func (x *HealthPBComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_logic_component_actor_comp_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HealthPBComponent.ProtoReflect.Descriptor instead.
+func (*HealthPBComponent) Descriptor() ([]byte, []int) {
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *HealthPBComponent) GetCurrentHealth() uint64 {
+	if x != nil {
+		return x.CurrentHealth
+	}
+	return 0
+}
+
+func (x *HealthPBComponent) GetMaxHealth() uint64 {
+	if x != nil {
+		return x.MaxHealth
+	}
+	return 0
+}
+
+type ManaPBComponent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CurrentMana uint64 `protobuf:"varint,1,opt,name=current_mana,json=currentMana,proto3" json:"current_mana,omitempty"`
+	MaxMana     uint64 `protobuf:"varint,2,opt,name=max_mana,json=maxMana,proto3" json:"max_mana,omitempty"`
+}
+
+func (x *ManaPBComponent) Reset() {
+	*x = ManaPBComponent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_logic_component_actor_comp_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ManaPBComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ManaPBComponent) ProtoMessage() {}
+
+func (x *ManaPBComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_logic_component_actor_comp_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ManaPBComponent.ProtoReflect.Descriptor instead.
+func (*ManaPBComponent) Descriptor() ([]byte, []int) {
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ManaPBComponent) GetCurrentMana() uint64 {
+	if x != nil {
+		return x.CurrentMana
+	}
+	return 0
+}
+
+func (x *ManaPBComponent) GetMaxMana() uint64 {
+	if x != nil {
+		return x.MaxMana
+	}
+	return 0
+}
+
 var File_logic_component_actor_comp_proto protoreflect.FileDescriptor
 
 var file_logic_component_actor_comp_proto_rawDesc = []byte{
@@ -479,8 +589,18 @@ var file_logic_component_actor_comp_proto_rawDesc = []byte{
 	0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x24, 0x0a, 0x0a, 0x56, 0x69,
 	0x65, 0x77, 0x52, 0x61, 0x64, 0x69, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x61, 0x64, 0x69,
 	0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x72, 0x61, 0x64, 0x69, 0x75, 0x73,
-	0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x22, 0x59, 0x0a, 0x11, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70,
+	0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x25, 0x0a, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74,
+	0x5f, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0d, 0x63,
+	0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x12, 0x1d, 0x0a, 0x0a,
+	0x6d, 0x61, 0x78, 0x5f, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x09, 0x6d, 0x61, 0x78, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x22, 0x4f, 0x0a, 0x0f, 0x4d,
+	0x61, 0x6e, 0x61, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x21,
+	0x0a, 0x0c, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x5f, 0x6d, 0x61, 0x6e, 0x61, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x4d, 0x61, 0x6e,
+	0x61, 0x12, 0x19, 0x0a, 0x08, 0x6d, 0x61, 0x78, 0x5f, 0x6d, 0x61, 0x6e, 0x61, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x07, 0x6d, 0x61, 0x78, 0x4d, 0x61, 0x6e, 0x61, 0x42, 0x09, 0x5a, 0x07,
+	0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -495,15 +615,17 @@ func file_logic_component_actor_comp_proto_rawDescGZIP() []byte {
 	return file_logic_component_actor_comp_proto_rawDescData
 }
 
-var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_logic_component_actor_comp_proto_goTypes = []any{
-	(*Location)(nil),     // 0: Location
-	(*Rotation)(nil),     // 1: Rotation
-	(*Scale)(nil),        // 2: Scale
-	(*Transform)(nil),    // 3: Transform
-	(*Velocity)(nil),     // 4: Velocity
-	(*Acceleration)(nil), // 5: Acceleration
-	(*ViewRadius)(nil),   // 6: ViewRadius
+	(*Location)(nil),          // 0: Location
+	(*Rotation)(nil),          // 1: Rotation
+	(*Scale)(nil),             // 2: Scale
+	(*Transform)(nil),         // 3: Transform
+	(*Velocity)(nil),          // 4: Velocity
+	(*Acceleration)(nil),      // 5: Acceleration
+	(*ViewRadius)(nil),        // 6: ViewRadius
+	(*HealthPBComponent)(nil), // 7: HealthPBComponent
+	(*ManaPBComponent)(nil),   // 8: ManaPBComponent
 }
 var file_logic_component_actor_comp_proto_depIdxs = []int32{
 	0, // 0: Transform.location:type_name -> Location
@@ -606,6 +728,30 @@ func file_logic_component_actor_comp_proto_init() {
 				return nil
 			}
 		}
+		file_logic_component_actor_comp_proto_msgTypes[7].Exporter = func(v any, i int) any {
+			switch v := v.(*HealthPBComponent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_logic_component_actor_comp_proto_msgTypes[8].Exporter = func(v any, i int) any {
+			switch v := v.(*ManaPBComponent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -613,7 +759,7 @@ func file_logic_component_actor_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_logic_component_actor_comp_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

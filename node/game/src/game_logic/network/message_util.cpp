@@ -23,7 +23,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "Player node info not found for player entity";
@@ -64,7 +64,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 		return;
 	}
 
-	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(playerEntity);
+	const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
 	{
 		LOG_ERROR << "Player node info not found for player entity";
@@ -169,7 +169,7 @@ void BroadCastToPlayer(const EntityUnorderedSet& playerList, const uint32_t mess
 			continue;
 		}
 
-		const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComp>(player);
+		const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
 		if (!playerNodeInfo)
 		{
 			LOG_ERROR << "Player node info not found for player entity: " << tls.registry.get<Guid>(player);

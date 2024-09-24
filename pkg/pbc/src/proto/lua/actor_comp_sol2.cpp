@@ -82,4 +82,22 @@ sol::property(&ViewRadius::radius, &ViewRadius::set_radius),
 &ViewRadius::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<HealthPBComponent>("HealthPBComponent",
+"current_health",
+sol::property(&HealthPBComponent::current_health, &HealthPBComponent::set_current_health),
+"max_health",
+sol::property(&HealthPBComponent::max_health, &HealthPBComponent::set_max_health),
+"DebugString",
+&HealthPBComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
+tls_lua_state.new_usertype<ManaPBComponent>("ManaPBComponent",
+"current_mana",
+sol::property(&ManaPBComponent::current_mana, &ManaPBComponent::set_current_mana),
+"max_mana",
+sol::property(&ManaPBComponent::max_mana, &ManaPBComponent::set_max_mana),
+"DebugString",
+&ManaPBComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 }

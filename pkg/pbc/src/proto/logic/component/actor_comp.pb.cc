@@ -104,6 +104,26 @@ struct RotationDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RotationDefaultTypeInternal _Rotation_default_instance_;
 
+inline constexpr ManaPBComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : current_mana_{::uint64_t{0u}},
+        max_mana_{::uint64_t{0u}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ManaPBComponent::ManaPBComponent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct ManaPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ManaPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ManaPBComponentDefaultTypeInternal() {}
+  union {
+    ManaPBComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ManaPBComponentDefaultTypeInternal _ManaPBComponent_default_instance_;
+
 inline constexpr Location::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : x_{0},
@@ -124,6 +144,26 @@ struct LocationDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LocationDefaultTypeInternal _Location_default_instance_;
+
+inline constexpr HealthPBComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : current_health_{::uint64_t{0u}},
+        max_health_{::uint64_t{0u}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR HealthPBComponent::HealthPBComponent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct HealthPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR HealthPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~HealthPBComponentDefaultTypeInternal() {}
+  union {
+    HealthPBComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 HealthPBComponentDefaultTypeInternal _HealthPBComponent_default_instance_;
 
 inline constexpr Acceleration::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -166,7 +206,7 @@ struct TransformDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TransformDefaultTypeInternal _Transform_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[7];
+static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[9];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2factor_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -252,6 +292,26 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::ViewRadius, _impl_.radius_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _impl_.current_health_),
+        PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _impl_.max_health_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _impl_.current_mana_),
+        PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _impl_.max_mana_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -263,6 +323,8 @@ static const ::_pbi::MigrationSchema
         {47, -1, -1, sizeof(::Velocity)},
         {58, -1, -1, sizeof(::Acceleration)},
         {69, -1, -1, sizeof(::ViewRadius)},
+        {78, -1, -1, sizeof(::HealthPBComponent)},
+        {88, -1, -1, sizeof(::ManaPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_Location_default_instance_._instance,
@@ -272,6 +334,8 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_Velocity_default_instance_._instance,
     &::_Acceleration_default_instance_._instance,
     &::_ViewRadius_default_instance_._instance,
+    &::_HealthPBComponent_default_instance_._instance,
+    &::_ManaPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -284,20 +348,23 @@ const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto[] 
     "\005scale\030\003 \001(\0132\006.Scale\"+\n\010Velocity\022\t\n\001x\030\001 "
     "\001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Acceleratio"
     "n\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"\034\n\nVi"
-    "ewRadius\022\016\n\006radius\030\001 \001(\001B\tZ\007pb/gameb\006pro"
-    "to3"
+    "ewRadius\022\016\n\006radius\030\001 \001(\001\"\?\n\021HealthPBComp"
+    "onent\022\026\n\016current_health\030\001 \001(\004\022\022\n\nmax_hea"
+    "lth\030\002 \001(\004\"9\n\017ManaPBComponent\022\024\n\014current_"
+    "mana\030\001 \001(\004\022\020\n\010max_mana\030\002 \001(\004B\tZ\007pb/gameb"
+    "\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    403,
+    527,
     descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto,
     "logic/component/actor_comp.proto",
     &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
     nullptr,
     0,
-    7,
+    9,
     schemas,
     file_default_instances,
     TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto::offsets,
@@ -2193,6 +2260,428 @@ void ViewRadius::InternalSwap(ViewRadius* PROTOBUF_RESTRICT other) {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[6]);
+}
+// ===================================================================
+
+class HealthPBComponent::_Internal {
+ public:
+};
+
+HealthPBComponent::HealthPBComponent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:HealthPBComponent)
+}
+HealthPBComponent::HealthPBComponent(
+    ::google::protobuf::Arena* arena, const HealthPBComponent& from)
+    : HealthPBComponent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE HealthPBComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void HealthPBComponent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, current_health_),
+           0,
+           offsetof(Impl_, max_health_) -
+               offsetof(Impl_, current_health_) +
+               sizeof(Impl_::max_health_));
+}
+HealthPBComponent::~HealthPBComponent() {
+  // @@protoc_insertion_point(destructor:HealthPBComponent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void HealthPBComponent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+HealthPBComponent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_._cached_size_),
+              false,
+          },
+          &HealthPBComponent::MergeImpl,
+          &HealthPBComponent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void HealthPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:HealthPBComponent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.current_health_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.max_health_) -
+      reinterpret_cast<char*>(&_impl_.current_health_)) + sizeof(_impl_.max_health_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* HealthPBComponent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_HealthPBComponent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::HealthPBComponent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 max_health = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(HealthPBComponent, _impl_.max_health_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_)}},
+    // uint64 current_health = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(HealthPBComponent, _impl_.current_health_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.current_health_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 current_health = 1;
+    {PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.current_health_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 max_health = 2;
+    {PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* HealthPBComponent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:HealthPBComponent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 current_health = 1;
+  if (this->_internal_current_health() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_current_health(), target);
+  }
+
+  // uint64 max_health = 2;
+  if (this->_internal_max_health() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        2, this->_internal_max_health(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:HealthPBComponent)
+  return target;
+}
+
+::size_t HealthPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:HealthPBComponent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 current_health = 1;
+  if (this->_internal_current_health() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_current_health());
+  }
+
+  // uint64 max_health = 2;
+  if (this->_internal_max_health() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_max_health());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void HealthPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<HealthPBComponent*>(&to_msg);
+  auto& from = static_cast<const HealthPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:HealthPBComponent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_current_health() != 0) {
+    _this->_impl_.current_health_ = from._impl_.current_health_;
+  }
+  if (from._internal_max_health() != 0) {
+    _this->_impl_.max_health_ = from._impl_.max_health_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void HealthPBComponent::CopyFrom(const HealthPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:HealthPBComponent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool HealthPBComponent::IsInitialized() const {
+  return true;
+}
+
+void HealthPBComponent::InternalSwap(HealthPBComponent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_)
+      + sizeof(HealthPBComponent::_impl_.max_health_)
+      - PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.current_health_)>(
+          reinterpret_cast<char*>(&_impl_.current_health_),
+          reinterpret_cast<char*>(&other->_impl_.current_health_));
+}
+
+::google::protobuf::Metadata HealthPBComponent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[7]);
+}
+// ===================================================================
+
+class ManaPBComponent::_Internal {
+ public:
+};
+
+ManaPBComponent::ManaPBComponent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:ManaPBComponent)
+}
+ManaPBComponent::ManaPBComponent(
+    ::google::protobuf::Arena* arena, const ManaPBComponent& from)
+    : ManaPBComponent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE ManaPBComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void ManaPBComponent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, current_mana_),
+           0,
+           offsetof(Impl_, max_mana_) -
+               offsetof(Impl_, current_mana_) +
+               sizeof(Impl_::max_mana_));
+}
+ManaPBComponent::~ManaPBComponent() {
+  // @@protoc_insertion_point(destructor:ManaPBComponent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void ManaPBComponent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+ManaPBComponent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_._cached_size_),
+              false,
+          },
+          &ManaPBComponent::MergeImpl,
+          &ManaPBComponent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void ManaPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:ManaPBComponent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.current_mana_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.max_mana_) -
+      reinterpret_cast<char*>(&_impl_.current_mana_)) + sizeof(_impl_.max_mana_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* ManaPBComponent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ManaPBComponent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_ManaPBComponent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::ManaPBComponent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 max_mana = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ManaPBComponent, _impl_.max_mana_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_)}},
+    // uint64 current_mana = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ManaPBComponent, _impl_.current_mana_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.current_mana_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 current_mana = 1;
+    {PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.current_mana_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 max_mana = 2;
+    {PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* ManaPBComponent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:ManaPBComponent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 current_mana = 1;
+  if (this->_internal_current_mana() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_current_mana(), target);
+  }
+
+  // uint64 max_mana = 2;
+  if (this->_internal_max_mana() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        2, this->_internal_max_mana(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:ManaPBComponent)
+  return target;
+}
+
+::size_t ManaPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:ManaPBComponent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 current_mana = 1;
+  if (this->_internal_current_mana() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_current_mana());
+  }
+
+  // uint64 max_mana = 2;
+  if (this->_internal_max_mana() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_max_mana());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void ManaPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ManaPBComponent*>(&to_msg);
+  auto& from = static_cast<const ManaPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ManaPBComponent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_current_mana() != 0) {
+    _this->_impl_.current_mana_ = from._impl_.current_mana_;
+  }
+  if (from._internal_max_mana() != 0) {
+    _this->_impl_.max_mana_ = from._impl_.max_mana_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ManaPBComponent::CopyFrom(const ManaPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ManaPBComponent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool ManaPBComponent::IsInitialized() const {
+  return true;
+}
+
+void ManaPBComponent::InternalSwap(ManaPBComponent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_)
+      + sizeof(ManaPBComponent::_impl_.max_mana_)
+      - PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.current_mana_)>(
+          reinterpret_cast<char*>(&_impl_.current_mana_),
+          reinterpret_cast<char*>(&other->_impl_.current_mana_));
+}
+
+::google::protobuf::Metadata ManaPBComponent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[8]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
