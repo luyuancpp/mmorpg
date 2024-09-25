@@ -13,6 +13,8 @@ class SkillUtil
 public:
 	static void InitializePlayerComponentsHandler(entt::entity entity);
 
+	static void StartCooldown(const entt::entity caster, const SkillTable* skillTable);
+
 	static uint32_t ReleaseSkill(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
 	static uint32_t CheckSkillPrerequisites(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
 
