@@ -30,42 +30,42 @@ TimerTaskComp & TimerTaskComp::operator=( TimerTaskComp&& param)
 void TimerTaskComp::RunAt(const Timestamp& time, const TimerCallback& cb)
 {
 	Cancel();
-    callback_ = cb;
-	id_ = tlsEventLoop->runAt(time, std::bind(&TimerTaskComp::OnTimer, this));
+    callback = cb;
+	timerId = tlsEventLoop->runAt(time, std::bind(&TimerTaskComp::OnTimer, this));
     UpdateEndStamp();
 }
 
 void TimerTaskComp::RunAfter(double delay, const TimerCallback& cb)
 {
 	Cancel();
-    callback_ = cb;
-    id_ = tlsEventLoop->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
+    callback = cb;
+    timerId = tlsEventLoop->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
     UpdateEndStamp();
 }
 
 void TimerTaskComp::RunEvery(double interval, const TimerCallback& cb)
 {
     Cancel();	
-    callback_ = cb;
-    id_ = tlsEventLoop->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
+    callback = cb;
+    timerId = tlsEventLoop->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
     UpdateEndStamp();
 }
 
 void TimerTaskComp::Run()
 {
-    if (!callback_)
+    if (!callback)
     {
         return;
     }
-    callback_();
+    callback();
 }
 
 void TimerTaskComp::Cancel()
 {
-    tlsEventLoop->cancel(id_);
-    id_ = TimerId();
+    tlsEventLoop->cancel(timerId);
+    timerId = TimerId();
     endTime = Timestamp();
-    assert(nullptr == id_.GetTimer());
+    assert(nullptr == timerId.GetTimer());
 }
 
 bool TimerTaskComp::IsActive() const
@@ -79,30 +79,30 @@ uint64_t TimerTaskComp::GetEndTime()
     {
         return 0;
     }
-    return id_.GetTimer()->expiration().secondsSinceEpoch();
+    return timerId.GetTimer()->expiration().secondsSinceEpoch();
 }
 
 void TimerTaskComp::UpdateEndStamp()
 {
-    if (nullptr == id_.GetTimer())
+    if (nullptr == timerId.GetTimer())
     {
         return;
     }
-    endTime = id_.GetTimer()->expiration();
+    endTime = timerId.GetTimer()->expiration();
 }
 
 void TimerTaskComp::SetCallBack(const TimerCallback& cb)
 {
-    callback_ = cb;
+    callback = cb;
 }
 
 void TimerTaskComp::OnTimer()
 {
-    if (!callback_)
+    if (!callback)
     {
         return;
     }
-    TimerCallback copycb = callback_;
+    TimerCallback copycb = callback;
     copycb();
     endTime = Timestamp();
 }
