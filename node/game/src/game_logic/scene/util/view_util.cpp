@@ -1,14 +1,15 @@
 ﻿#include "view_util.h"
 
 #include "grid_util.h"
+#include "common/comp.pb.h"
+#include "Detour/DetourCommon.h"
+#include "game_logic/network/message_util.h"
 #include "game_logic/scene/constants/view_constants.h"
 #include "proto/logic/client_player/player_scene.pb.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
-#include "Detour/DetourCommon.h"
 #include "thread_local/storage.h"
 #include "type_define/type_define.h"
-#include "game_logic/network/message_util.h"
 
 void ViewUtil::Initialize()
 {
@@ -147,4 +148,35 @@ void ViewUtil::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint3
 	EntityUnorderedSet entites;
 	GridUtil::GetEntitiesInViewAndNearby(entity, entites);
 	BroadCastToPlayer(entites, message_id, message);
+}
+
+void ViewUtil::LookAtPosition(entt::entity entity, const Vector3& pos) {
+    auto transform = tls.registry.try_get<Transform>(entity);
+	if (nullptr == transform)
+	{
+		return;
+	}
+
+    // 计算目标方向
+    dtReal targetLocation[] = { pos.x(), pos.y(), pos.z() };
+    dtReal location[] = { transform->location().x(), transform->location().y(), transform->location().z() };
+    dtReal direction[3] = { 0, 0, 0 };
+    dtVsub(direction, targetLocation, location);
+
+    // 归一化方向向量
+    dtVnormalize(direction);
+
+    // 检查方向向量的有效性
+    if (direction[0] == 0.0 && direction[1] == 0.0 && direction[2] == 0.0) {
+        return; // 如果方向向量为零，退出函数
+    }
+
+    // 计算旋转的欧拉角
+    float yaw = atan2(direction[0], direction[2]); // 计算绕Y轴的旋转
+    float pitch = asin(direction[1]); // 计算绕X轴的旋转
+
+    // 更新 rotation 为欧拉角（以弧度为单位）
+    transform->mutable_rotation()->set_x(pitch);
+    transform->mutable_rotation()->set_y(yaw);
+    transform->mutable_rotation()->set_z(0); // Z轴旋转保持为0
 }
