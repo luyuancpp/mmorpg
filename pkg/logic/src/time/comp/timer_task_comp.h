@@ -37,8 +37,8 @@ public:
 private:
     void OnTimer();
 
-    TimerId  id_;
-    TimerCallback callback_;
+    TimerId  timerId;
+    TimerCallback callback;
     Timestamp endTime;
 };
 
