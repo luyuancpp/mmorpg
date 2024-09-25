@@ -271,7 +271,6 @@ uint32_t SkillUtil::CheckCasting(const entt::entity caster, const SkillTable* sk
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently casting. Sending interrupt message.";
 			SendSkillInterruptedMessage(caster, skillTable->id());
-			tls.registry.remove<CastingTimerComp>(caster);
 			return kOK;
 		}
 		if (!skillTable->immediately() && castTimerComp->timer.IsActive()) {
@@ -279,7 +278,6 @@ uint32_t SkillUtil::CheckCasting(const entt::entity caster, const SkillTable* sk
 				<< " is currently casting and cannot be interrupted.";
 			return kSkillUnInterruptible;
 		}
-		tls.registry.remove<CastingTimerComp>(caster);
 	}
 
 	return kOK;
