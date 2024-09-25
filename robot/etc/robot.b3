@@ -299,13 +299,13 @@
             "properties": {},
             "display": {
               "x": 132,
-              "y": 24
+              "y": 0
             },
             "children": [
               "2035daba-5c13-44d6-8a43-6a656e64e55e",
               "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
               "b0a180ad-cf77-4557-a901-8dd32c8d00b2",
-              "abd46049-6b99-47d8-a417-0f6d3ef95bf4",
+              "c9f9df90-9850-488c-8849-4a34d4ed8259",
               "7d65533d-959b-4e43-b195-7ce3ae4cfbcc",
               "0a77f22e-efd3-45ca-8f47-43c7b2e06f95"
             ]
@@ -366,20 +366,6 @@
               "y": -12
             }
           },
-          "abd46049-6b99-47d8-a417-0f6d3ef95bf4": {
-            "id": "abd46049-6b99-47d8-a417-0f6d3ef95bf4",
-            "name": "ReleaseSkill",
-            "category": "action",
-            "title": "ReleaseSkill(<skillIDBoard>)",
-            "description": "释放技能",
-            "properties": {
-              "SkillIDBoard": "SkillID"
-            },
-            "display": {
-              "x": 384,
-              "y": 72
-            }
-          },
           "7d65533d-959b-4e43-b195-7ce3ae4cfbcc": {
             "id": "7d65533d-959b-4e43-b195-7ce3ae4cfbcc",
             "name": "SleepNode",
@@ -392,6 +378,20 @@
             "display": {
               "x": 348,
               "y": 144
+            }
+          },
+          "c9f9df90-9850-488c-8849-4a34d4ed8259": {
+            "id": "c9f9df90-9850-488c-8849-4a34d4ed8259",
+            "name": "ReleaseSkill",
+            "category": "action",
+            "title": "ReleaseSkill(<SkillIDBoard>)",
+            "description": "释放技能",
+            "properties": {
+              "SkillIDBoard": "SkillID"
+            },
+            "display": {
+              "x": 360,
+              "y": 60
             }
           }
         },
@@ -621,24 +621,24 @@
       {
         "version": "0.3.0",
         "scope": "node",
-        "name": "ReleaseSkill",
-        "category": "action",
-        "title": "ReleaseSkill(<skillIDBoard>)",
-        "description": "释放技能",
-        "properties": {
-          "SkillIDBoard": "SkillID"
-        },
-        "parent": null
-      },
-      {
-        "version": "0.3.0",
-        "scope": "node",
         "name": "SleepNode",
         "category": "action",
         "title": "SleepNode(<Duration>)",
         "description": null,
         "properties": {
           "Duration": 1000
+        },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "ReleaseSkill",
+        "category": "action",
+        "title": "ReleaseSkill(<SkillIDBoard>)",
+        "description": "释放技能",
+        "properties": {
+          "SkillIDBoard": "SkillID"
         },
         "parent": null
       }
