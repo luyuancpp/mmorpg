@@ -7,6 +7,7 @@ namespace google::protobuf
 }
 
 class ActorCreateS2C;
+class Vector3;
 
 class ViewUtil
 {
@@ -38,6 +39,8 @@ public:
     
     // 获取观察者的最大视野半径
     static double GetMaxViewRadius(entt::entity observer);
+
+    static void LookAtPosition(entt::entity entity, const Vector3& pos);
 private:
     // 初始化Actor消息
     static void InitializeActorMessages();
