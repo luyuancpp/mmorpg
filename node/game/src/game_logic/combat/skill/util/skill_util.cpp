@@ -193,12 +193,13 @@ void SkillUtil::HandleSkillDeactivate(const entt::entity caster, const uint64_t 
 }
 
 uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
+	// 获取技能表
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kOK || skillTable == nullptr) {
 		return result;
 	}
 
-	// Check if target ID is valid
+	// 检查目标ID的有效性
 	if (!skillTable->target_type().empty() && request->target_id() <= 0) {
 		LOG_ERROR << "Invalid target ID: " << request->target_id()
 			<< " provided for skill ID: " << request->skill_table_id()
@@ -206,47 +207,46 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 		return kSkillInvalidTargetId;
 	}
 
+	// 默认错误状态
 	uint32_t err = kOK;
 
+	// 遍历技能目标类型
 	for (auto& tabSkillType : skillTable->target_type()) {
+		// 检查不需要目标的情况
 		if ((1 << tabSkillType) == kNoTargetRequired) {
-			err = kOK;
-			break;
+			return kOK;  // 无需进一步检查
 		}
 
+		// 检查是否为目标技能
 		if ((1 << tabSkillType) == kTargetedSkill) {
-			// Validate target entity
-			if (!skillTable->target_type().empty()) {
-				entt::entity target{ request->target_id() };
+			entt::entity target{ request->target_id() };
 
-				if (!tls.registry.valid(target)) {
-					LOG_ERROR << "Target entity with ID: " << request->target_id()
-						<< " is invalid or does not exist for skill ID: " << request->skill_table_id();
-					return kSkillInvalidTargetId;
-				}
-
-				// Check target entity type
-				bool isValidTargetType = tls.registry.all_of<Player>(target) || tls.registry.all_of<Npc>(target);
-				if (!isValidTargetType) {
-					LOG_ERROR << "Target entity with ID: " << request->target_id()
-						<< " is of an invalid type for skill ID: " << request->skill_table_id()
-						<< ". Expected Player or Npc.";
-					return kSkillInvalidTargetId;
-				}
+			// 验证目标实体
+			if (!tls.registry.valid(target)) {
+				LOG_ERROR << "Target entity with ID: " << request->target_id()
+					<< " is invalid or does not exist for skill ID: " << request->skill_table_id();
+				return kSkillInvalidTargetId;
 			}
 
-			err = kOK;
-			break;
+			// 检查目标实体类型
+			bool isValidTargetType = tls.registry.all_of<Player>(target) || tls.registry.all_of<Npc>(target);
+			if (!isValidTargetType) {
+				LOG_ERROR << "Target entity with ID: " << request->target_id()
+					<< " is of an invalid type for skill ID: " << request->skill_table_id()
+					<< ". Expected Player or Npc.";
+				return kSkillInvalidTargetId;
+			}
+
+			return kOK;  // 验证通过
 		}
 
+		// 检查范围技能
 		if ((1 << tabSkillType) == kAreaOfEffect) {
-
-			err = kOK;
-			break;
+			return kOK;  // 验证通过
 		}
 	}
 
-	return err;
+	return err;  // 返回错误状态（如果有）
 }
 
 uint32_t SkillUtil::CheckCooldown(const entt::entity caster, const SkillTable* skillTable) {
