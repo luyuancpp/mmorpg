@@ -51,7 +51,7 @@ void TimerTaskComp::RunEvery(double interval, const TimerCallback& cb)
     UpdateEndStamp();
 }
 
-void TimerTaskComp::Call()
+void TimerTaskComp::Run()
 {
     if (!callback_)
     {
