@@ -24,7 +24,7 @@ public:
 	void RunAt(const Timestamp& time, const TimerCallback& cb);
 	void RunAfter(double delay, const TimerCallback& cb);
 	void RunEvery(double interval, const TimerCallback& cb);
-    void Call();
+    void Run();
 
 	void Cancel();
 
