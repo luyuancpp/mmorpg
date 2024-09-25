@@ -227,6 +227,9 @@ TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
 
 TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
     entt::entity caster = tls.registry.create();
+    
+    SkillUtil::InitializePlayerComponentsHandler(caster);
+    
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
 
@@ -252,6 +255,9 @@ TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
 
 TEST_F(SkillUtilTest, HandleSkillDeactivate_RemovesEffect) {
     entt::entity caster = tls.registry.create();
+
+    SkillUtil::InitializePlayerComponentsHandler(caster);
+    
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
 

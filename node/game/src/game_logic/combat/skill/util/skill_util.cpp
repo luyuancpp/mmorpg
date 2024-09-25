@@ -29,6 +29,25 @@ uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const 
 // Initialize an entity with a SkillContextMap
 void SkillUtil::InitializePlayerComponentsHandler(entt::entity entity) {
 	tls.registry.emplace<SkillContextCompMap>(entity);
+	tls.registry.emplace<CooldownTimeListComp>(entity);
+}
+
+void SkillUtil::StartCooldown(const entt::entity caster, const SkillTable* skillTable) {
+    if (auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
+        CooldownTimeComp comp;
+        comp.set_start(TimeUtil::NowMilliseconds());
+        comp.set_cooldown_table_id(skillTable->cooldown_id());
+
+        auto coolDownList = coolDownTimeListComp->mutable_cooldown_list();
+        auto cooldownIt = coolDownList->find(skillTable->cooldown_id());
+
+        if (cooldownIt == coolDownList->end()) {
+            coolDownList->emplace(skillTable->cooldown_id(), comp);
+        }
+        else {
+            cooldownIt->second = comp;
+        }
+    }
 }
 
 // Handle the use of a skill by the caster
@@ -58,6 +77,8 @@ uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillReq
 	if (tls.registry.valid(target)) {
 		targetSkillContextMap.emplace(context->skillid(), context);
 	}
+
+	StartCooldown(caster, skillTable);
 
 	SetupCastingTimer(caster, skillTable, context->skillid());
 
@@ -393,7 +414,14 @@ void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint64_t skillId) 
 }
 
 void SkillUtil::RemoveEffect(entt::entity caster, const uint64_t skillId) {
-	auto [skillTable, result] = GetSkillTable(skillId);
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+	auto skillContentIt = casterSkillContextMap.find(skillId);
+
+	if (skillContentIt == casterSkillContextMap.end()) {
+		return;
+	}
+	
+	auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
 	if (skillTable == nullptr) {
 		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
 		return;
@@ -404,6 +432,19 @@ void SkillUtil::RemoveEffect(entt::entity caster, const uint64_t skillId) {
 	}
 }
 
+
 void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
-	// TODO: Implement skill spell handling logic here
+    auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+    auto skillContentIt = casterSkillContextMap.find(skillId);
+
+    if (skillContentIt == casterSkillContextMap.end()) {
+        return;
+    }
+
+    auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
+    if (skillTable == nullptr) {
+        LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
+        return;
+    }
 }
+
