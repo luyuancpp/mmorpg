@@ -347,7 +347,7 @@ func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
 
 			// Construct file paths
 			fileName := protoPath + fd.Name()
-			md5FileName := protoMd5Path + fd.Name() + config.DBGoMd5Ex + config.Md5Ex
+
 			dstFileName := config.DbGoGameDirectory + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
@@ -386,11 +386,6 @@ func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
 				log.Fatal(err)
 			}
 
-			// Write MD5 data to file upon successful generation
-			err = util.WriteToMd5ExFile(fileName, md5FileName)
-			if err != nil {
-				log.Fatal(err)
-			}
 		}(fd)
 	}
 
@@ -423,15 +418,8 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 
 			// Construct file paths
 			fileName := protoPath + fd.Name()
-			md5FileName := protoMd5Path + fd.Name() + config.ClientGoMd5Ex + config.Md5Ex
 			dstFileName := config.RobotGoGamePbDirectory + fd.Name()
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
-
-			// Check if files with same MD5 and destinations exist
-			fileSame, err := util.IsSameMD5(fileName, md5FileName)
-			if fileSame && util.FileExists(md5FileName) && util.FileExists(dstFileName) {
-				return
-			}
 
 			// Determine the operating system type
 			sysType := runtime.GOOS
@@ -462,17 +450,11 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 			cmd.Stdout = &out
 			cmd.Stderr = &stderr
 			err = cmd.Run()
-			fmt.Println(cmd.String())
 			if err != nil {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
 			}
 
-			// Write MD5 data to file upon successful generation
-			err = util.WriteToMd5ExFile(fileName, md5FileName)
-			if err != nil {
-				log.Fatal(err)
-			}
 		}(fd)
 	}
 
