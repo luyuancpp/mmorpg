@@ -29,91 +29,89 @@ uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const 
 }
 
 // Initialize an entity with necessary skill components
-void SkillUtil::InitializePlayerComponentsHandler(entt::entity entity) {
+void SkillUtil::InitializePlayerComponents(entt::entity entity) {
     tls.registry.emplace<SkillContextCompMap>(entity);
     tls.registry.emplace<CooldownTimeListComp>(entity);
 }
 
-// Start cooldown for the skill
 void SkillUtil::StartCooldown(entt::entity caster, const SkillTable* skillTable) {
-    if (auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
-        CooldownTimeComp comp;
-        comp.set_start(TimeUtil::NowMilliseconds());
-        comp.set_cooldown_table_id(skillTable->cooldown_id());
+	if (auto* coolDownComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
+		CooldownTimeComp comp;
+		comp.set_start(TimeUtil::NowMilliseconds());
+		comp.set_cooldown_table_id(skillTable->cooldown_id());
 
-        auto coolDownList = coolDownTimeListComp->mutable_cooldown_list();
-        (*coolDownList)[skillTable->cooldown_id()] = comp;
-    }
+		auto coolDownList = coolDownComp->mutable_cooldown_list();
+		(*coolDownList)[skillTable->cooldown_id()] = comp;
+	}
 }
 
-// Handle target position for the skill
+// Look at the target position
 void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* request) {
-    if (request->has_position()) {
-        ViewUtil::LookAtPosition(caster, request->position());
-    } else if (request->target_id() > 0) {
-        entt::entity target{ request->target_id() };
-        if (const auto transform = tls.registry.try_get<Transform>(target)) {
-            ViewUtil::LookAtPosition(caster, transform->location());
-        }
-    }
+	if (request->has_position()) {
+		ViewUtil::LookAtPosition(caster, request->position());
+	} else if (request->target_id() > 0) {
+		entt::entity target{ request->target_id() };
+		if (const auto transform = tls.registry.try_get<Transform>(target)) {
+			ViewUtil::LookAtPosition(caster, transform->location());
+		}
+	}
 }
 
 // Create skill context for the caster
 std::shared_ptr<SkillContextPBComponent> CreateSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request) {
-    auto context = std::make_shared<SkillContextPBComponent>();
-    context->set_caster(entt::to_integral(caster));
-    context->set_skilltableid(request->skill_table_id());
-    context->set_target(request->target_id());
-    context->set_casttime(TimeUtil::NowMilliseconds());
-    context->set_skillid(GenerateUniqueSkillId(tls.registry.get<SkillContextCompMap>(caster), {}));
-    return context;
+	auto context = std::make_shared<SkillContextPBComponent>();
+	context->set_caster(entt::to_integral(caster));
+	context->set_skilltableid(request->skill_table_id());
+	context->set_target(request->target_id());
+	context->set_casttime(TimeUtil::NowMilliseconds());
+	context->set_skillid(GenerateUniqueSkillId(tls.registry.get<SkillContextCompMap>(caster), {}));
+	return context;
 }
 
 // Add skill context to the caster and target maps
-void AddSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request, std::shared_ptr<SkillContextPBComponent> context, SkillContextCompMap& casterSkillContextMap) {
-    casterSkillContextMap.emplace(context->skillid(), context);
-    entt::entity target{ request->target_id() };
-    if (tls.registry.valid(target)) {
-        auto& targetSkillContextMap = tls.registry.get<SkillContextCompMap>(target);
-        targetSkillContextMap.emplace(context->skillid(), context);
-    }
+void AddSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request, std::shared_ptr<SkillContextPBComponent> context) {
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+	casterSkillContextMap.emplace(context->skillid(), context);
+
+	entt::entity target{ request->target_id() };
+	if (tls.registry.valid(target)) {
+		auto& targetSkillContextMap = tls.registry.get<SkillContextCompMap>(target);
+		targetSkillContextMap.emplace(context->skillid(), context);
+	}
 }
 
-// Consume items required for the skill
-void ConsumeItem(entt::entity caster, const SkillTable* skillTable) {
-    for (const auto& item : skillTable->requireditem()) {
-        // TODO: Implement item consumption logic
-    }
+void ConsumeItems(entt::entity caster, const SkillTable* skillTable) {
+	for (const auto& item : skillTable->requireditem()) {
+		// TODO: Implement item consumption logic
+	}
 }
 
-// Consume resources required for the skill
-void ConsumeResource(entt::entity caster, const SkillTable* skillTable) {
-    for (const auto& resource : skillTable->requestresource()) {
-        // TODO: Implement resource consumption logic
-    }
+// Consume required resources
+void ConsumeResources(entt::entity caster, const SkillTable* skillTable) {
+	for (const auto& resource : skillTable->requestresource()) {
+		// TODO: Implement resource consumption logic
+	}
 }
 
-// Release the skill and perform necessary actions
+// Release a skill and perform necessary actions
 uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillRequest* request) {
-    auto [skillTable, result] = GetSkillTable(request->skill_table_id());
-    if (result != kOK || !skillTable) return result;
+	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
+	if (result != kOK || !skillTable) return result;
 
-    CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
-    LookAtTargetPosition(caster, request);
-    BroadcastSkillUsedMessage(caster, request);
+	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
+	LookAtTargetPosition(caster, request);
+	BroadcastSkillUsedMessage(caster, request);
     
-    const auto context = CreateSkillContext(caster, request);
-    auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
-    AddSkillContext(caster, request, context, casterSkillContextMap);
+	const auto context = CreateSkillContext(caster, request);
+	AddSkillContext(caster, request, context);
     
-    ConsumeItem(caster, skillTable);
-    ConsumeResource(caster, skillTable);
-    StartCooldown(caster, skillTable);
-    SetupCastingTimer(caster, skillTable, context->skillid());
+	ConsumeItems(caster, skillTable);
+	ConsumeResources(caster, skillTable);
+	StartCooldown(caster, skillTable);
+	SetupCastingTimer(caster, skillTable, context->skillid());
 
-    return kOK;
+	return kOK;
 }
-
 
 uint32_t CheckPlayerLevel(const entt::entity caster, const SkillTable* skillTable) {
 	if (!tls.registry.any_of<Player>(caster))
