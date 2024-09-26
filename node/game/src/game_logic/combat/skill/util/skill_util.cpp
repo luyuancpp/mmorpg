@@ -8,16 +8,16 @@
 #include "game_logic/combat/skill/constants/skill_constants.h"
 #include "game_logic/scene/util/view_util.h"
 #include "macros/return_define.h"
-#include "pbc/skill_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
+#include "pbc/skill_error_tip.pb.h"
+#include "proto/logic/component/npc_comp.pb.h"
+#include "proto/logic/component/player_comp.pb.h"
 #include "service_info/player_skill_service_info.h"
 #include "thread_local/storage.h"
+#include "thread_local/storage_game.h"
 #include "time/comp/timer_task_comp.h"
 #include "time/util/cooldown_time_util.h"
 #include "time/util/time_util.h"
-#include "proto/logic/component/player_comp.pb.h"
-#include "proto/logic/component/npc_comp.pb.h"
-#include "thread_local/storage_game.h"
 
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
 	uint64_t newSkillId;
@@ -96,6 +96,31 @@ uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillReq
 	return kOK;
 }
 
+uint32_t CheckPlayerLevel(const entt::entity caster, const SkillTable* skillTable) {
+	if (!tls.registry.any_of<Player>(caster))
+	{
+		return  kOK;
+	}
+	return kOK;
+}
+
+uint32_t CheckBuff(const entt::entity caster, const SkillTable* skillTable) {
+	return kOK;
+}
+
+uint32_t CheckState(const entt::entity caster, const SkillTable* skillTable) {
+	//uint32_t CheckMana(const entt::entity caster, const SkillTable* skillTable) {
+	//	return kOK;
+	//}
+	return kOK;
+}
+
+uint32_t CheckItemUse(const entt::entity caster, const SkillTable* skillTable) {
+	//uint32_t CheckMana(const entt::entity caster, const SkillTable* skillTable) {
+	//	return kOK;
+	//}
+	return kOK;
+}
 
 uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
@@ -108,11 +133,14 @@ uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::R
 	CHECK_RETURN_IF_NOT_OK(CheckCasting(caster, skillTable));
 	CHECK_RETURN_IF_NOT_OK(CheckRecovery(caster, skillTable));
 	CHECK_RETURN_IF_NOT_OK(CheckChannel(caster, skillTable));
-
+	CHECK_RETURN_IF_NOT_OK(CheckPlayerLevel(caster, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckBuff(caster, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckState(caster, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckItemUse(caster, skillTable));
 	return kOK;
 }
 
-bool SkillUtil::IsSkillOfType(const uint64_t skillTableID, const uint32_t skillType) {
+bool SkillUtil::IsSkillOfType(const uint32_t skillTableID, const uint32_t skillType) {
 	auto [skillTable, result] = GetSkillTable(skillTableID);
 	if (skillTable == nullptr) {
 		return false;
@@ -262,7 +290,7 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 			}
 
 			// 检查目标实体类型
-			bool isValidTargetType = tls.registry.all_of<Player>(target) || tls.registry.all_of<Npc>(target);
+			bool isValidTargetType = tls.registry.any_of<Player>(target) || tls.registry.any_of<Npc>(target);
 			if (!isValidTargetType) {
 				LOG_ERROR << "Target entity with ID: " << request->target_id()
 					<< " is of an invalid type for skill ID: " << request->skill_table_id()

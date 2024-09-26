@@ -18,7 +18,7 @@ public:
 	static uint32_t ReleaseSkill(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
 	static uint32_t CheckSkillPrerequisites(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
 
-	static bool IsSkillOfType(uint64_t skillId, uint32_t skillType);
+	static bool IsSkillOfType(uint32_t skillId, uint32_t skillType);
 
 	static void HandleSkillInitialize();
 	static void HandleGeneralSkillSpell(const entt::entity caster, uint64_t skillId);
