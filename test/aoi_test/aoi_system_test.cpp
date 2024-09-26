@@ -53,7 +53,7 @@ protected:
 
 // Test GetGridId for Location
 TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
-    Location location;
+    Vector3 location;
     location.set_x(10);
     location.set_y(20);
     auto grid_id = GridUtil::GetGridId(location);

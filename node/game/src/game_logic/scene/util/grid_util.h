@@ -7,12 +7,12 @@
 
 class Transform;
 struct Hex;
-class Location;
+class Vector3;
 
 class GridUtil
 {
 public:
-    static absl::uint128 GetGridId(const Location& l);
+    static absl::uint128 GetGridId(const Vector3& pos);
     static absl::uint128 GetGridId(const Hex& hex);
     static Hex CalculateHexPosition(const Transform& transform);
     static void GetNeighborGridIds(const Hex& hex, GridSet& gridSet);

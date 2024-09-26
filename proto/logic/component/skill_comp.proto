@@ -13,7 +13,7 @@ message SkillContextPBComponent
 {
 	uint64 caster = 1; // 施法者
 	uint64 target = 2; // 目标（如果有）
-	uint32 SkillId = 3; // 技能唯一id
+	uint64 SkillId = 3; // 技能唯一id
 	uint32 skillTableId = 4;//技能表id
 	Transform castPosition =5 ;//施法位置
 	uint64 castTime = 6; // 施法时间

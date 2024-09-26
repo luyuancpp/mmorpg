@@ -399,8 +399,8 @@ class SkillContextPBComponent final : public ::google::protobuf::Message
     kCasterFieldNumber = 1,
     kTargetFieldNumber = 2,
     kSkillIdFieldNumber = 3,
-    kSkillTableIdFieldNumber = 4,
     kCastTimeFieldNumber = 6,
+    kSkillTableIdFieldNumber = 4,
   };
   // map<string, uint32> additionalData = 8;
   int additionaldata_size() const;
@@ -468,24 +468,14 @@ class SkillContextPBComponent final : public ::google::protobuf::Message
   void _internal_set_target(::uint64_t value);
 
   public:
-  // uint32 SkillId = 3;
+  // uint64 SkillId = 3;
   void clear_skillid() ;
-  ::uint32_t skillid() const;
-  void set_skillid(::uint32_t value);
+  ::uint64_t skillid() const;
+  void set_skillid(::uint64_t value);
 
   private:
-  ::uint32_t _internal_skillid() const;
-  void _internal_set_skillid(::uint32_t value);
-
-  public:
-  // uint32 skillTableId = 4;
-  void clear_skilltableid() ;
-  ::uint32_t skilltableid() const;
-  void set_skilltableid(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_skilltableid() const;
-  void _internal_set_skilltableid(::uint32_t value);
+  ::uint64_t _internal_skillid() const;
+  void _internal_set_skillid(::uint64_t value);
 
   public:
   // uint64 castTime = 6;
@@ -496,6 +486,16 @@ class SkillContextPBComponent final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_casttime() const;
   void _internal_set_casttime(::uint64_t value);
+
+  public:
+  // uint32 skillTableId = 4;
+  void clear_skilltableid() ;
+  ::uint32_t skilltableid() const;
+  void set_skilltableid(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_skilltableid() const;
+  void _internal_set_skilltableid(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:SkillContextPBComponent)
@@ -529,9 +529,9 @@ class SkillContextPBComponent final : public ::google::protobuf::Message
     ::Transform* castposition_;
     ::uint64_t caster_;
     ::uint64_t target_;
-    ::uint32_t skillid_;
-    ::uint32_t skilltableid_;
+    ::uint64_t skillid_;
     ::uint64_t casttime_;
+    ::uint32_t skilltableid_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -626,24 +626,24 @@ inline void SkillContextPBComponent::_internal_set_target(::uint64_t value) {
   _impl_.target_ = value;
 }
 
-// uint32 SkillId = 3;
+// uint64 SkillId = 3;
 inline void SkillContextPBComponent::clear_skillid() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.skillid_ = 0u;
+  _impl_.skillid_ = ::uint64_t{0u};
 }
-inline ::uint32_t SkillContextPBComponent::skillid() const {
+inline ::uint64_t SkillContextPBComponent::skillid() const {
   // @@protoc_insertion_point(field_get:SkillContextPBComponent.SkillId)
   return _internal_skillid();
 }
-inline void SkillContextPBComponent::set_skillid(::uint32_t value) {
+inline void SkillContextPBComponent::set_skillid(::uint64_t value) {
   _internal_set_skillid(value);
   // @@protoc_insertion_point(field_set:SkillContextPBComponent.SkillId)
 }
-inline ::uint32_t SkillContextPBComponent::_internal_skillid() const {
+inline ::uint64_t SkillContextPBComponent::_internal_skillid() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.skillid_;
 }
-inline void SkillContextPBComponent::_internal_set_skillid(::uint32_t value) {
+inline void SkillContextPBComponent::_internal_set_skillid(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.skillid_ = value;
 }

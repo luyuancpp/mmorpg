@@ -74,7 +74,7 @@ type SkillContextPBComponent struct {
 
 	Caster         uint64            `protobuf:"varint,1,opt,name=caster,proto3" json:"caster,omitempty"`                                                                                                         // 施法者
 	Target         uint64            `protobuf:"varint,2,opt,name=target,proto3" json:"target,omitempty"`                                                                                                         // 目标（如果有）
-	SkillId        uint32            `protobuf:"varint,3,opt,name=SkillId,proto3" json:"SkillId,omitempty"`                                                                                                       // 技能唯一id
+	SkillId        uint64            `protobuf:"varint,3,opt,name=SkillId,proto3" json:"SkillId,omitempty"`                                                                                                       // 技能唯一id
 	SkillTableId   uint32            `protobuf:"varint,4,opt,name=skillTableId,proto3" json:"skillTableId,omitempty"`                                                                                             //技能表id
 	CastPosition   *Transform        `protobuf:"bytes,5,opt,name=castPosition,proto3" json:"castPosition,omitempty"`                                                                                              //施法位置
 	CastTime       uint64            `protobuf:"varint,6,opt,name=castTime,proto3" json:"castTime,omitempty"`                                                                                                     // 施法时间
@@ -128,7 +128,7 @@ func (x *SkillContextPBComponent) GetTarget() uint64 {
 	return 0
 }
 
-func (x *SkillContextPBComponent) GetSkillId() uint32 {
+func (x *SkillContextPBComponent) GetSkillId() uint64 {
 	if x != nil {
 		return x.SkillId
 	}
@@ -186,7 +186,7 @@ var file_logic_component_skill_comp_proto_rawDesc = []byte{
 	0x73, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x63, 0x61, 0x73, 0x74,
 	0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01,
 	0x28, 0x04, 0x52, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x53, 0x6b,
-	0x69, 0x6c, 0x6c, 0x49, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x53, 0x6b, 0x69,
+	0x69, 0x6c, 0x6c, 0x49, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x53, 0x6b, 0x69,
 	0x6c, 0x6c, 0x49, 0x64, 0x12, 0x22, 0x0a, 0x0c, 0x73, 0x6b, 0x69, 0x6c, 0x6c, 0x54, 0x61, 0x62,
 	0x6c, 0x65, 0x49, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0c, 0x73, 0x6b, 0x69, 0x6c,
 	0x6c, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x49, 0x64, 0x12, 0x2e, 0x0a, 0x0c, 0x63, 0x61, 0x73, 0x74,

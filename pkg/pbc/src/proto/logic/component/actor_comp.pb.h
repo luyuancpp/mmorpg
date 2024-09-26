@@ -28,6 +28,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
+#include "common/comp.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -1696,19 +1697,19 @@ class Transform final : public ::google::protobuf::Message
     kRotationFieldNumber = 2,
     kScaleFieldNumber = 3,
   };
-  // .Location location = 1;
+  // .Vector3 location = 1;
   bool has_location() const;
   void clear_location() ;
-  const ::Location& location() const;
-  PROTOBUF_NODISCARD ::Location* release_location();
-  ::Location* mutable_location();
-  void set_allocated_location(::Location* value);
-  void unsafe_arena_set_allocated_location(::Location* value);
-  ::Location* unsafe_arena_release_location();
+  const ::Vector3& location() const;
+  PROTOBUF_NODISCARD ::Vector3* release_location();
+  ::Vector3* mutable_location();
+  void set_allocated_location(::Vector3* value);
+  void unsafe_arena_set_allocated_location(::Vector3* value);
+  ::Vector3* unsafe_arena_release_location();
 
   private:
-  const ::Location& _internal_location() const;
-  ::Location* _internal_mutable_location();
+  const ::Vector3& _internal_location() const;
+  ::Vector3* _internal_mutable_location();
 
   public:
   // .Rotation rotation = 2;
@@ -1764,7 +1765,7 @@ class Transform final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::Location* location_;
+    ::Vector3* location_;
     ::Rotation* rotation_;
     ::Scale* scale_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1999,32 +2000,27 @@ inline void Scale::_internal_set_z(double value) {
 
 // Transform
 
-// .Location location = 1;
+// .Vector3 location = 1;
 inline bool Transform::has_location() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.location_ != nullptr);
   return value;
 }
-inline void Transform::clear_location() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.location_ != nullptr) _impl_.location_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-inline const ::Location& Transform::_internal_location() const {
+inline const ::Vector3& Transform::_internal_location() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::Location* p = _impl_.location_;
-  return p != nullptr ? *p : reinterpret_cast<const ::Location&>(::_Location_default_instance_);
+  const ::Vector3* p = _impl_.location_;
+  return p != nullptr ? *p : reinterpret_cast<const ::Vector3&>(::_Vector3_default_instance_);
 }
-inline const ::Location& Transform::location() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::Vector3& Transform::location() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:Transform.location)
   return _internal_location();
 }
-inline void Transform::unsafe_arena_set_allocated_location(::Location* value) {
+inline void Transform::unsafe_arena_set_allocated_location(::Vector3* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.location_);
   }
-  _impl_.location_ = reinterpret_cast<::Location*>(value);
+  _impl_.location_ = reinterpret_cast<::Vector3*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -2032,11 +2028,11 @@ inline void Transform::unsafe_arena_set_allocated_location(::Location* value) {
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:Transform.location)
 }
-inline ::Location* Transform::release_location() {
+inline ::Vector3* Transform::release_location() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::Location* released = _impl_.location_;
+  ::Vector3* released = _impl_.location_;
   _impl_.location_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -2051,38 +2047,38 @@ inline ::Location* Transform::release_location() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::Location* Transform::unsafe_arena_release_location() {
+inline ::Vector3* Transform::unsafe_arena_release_location() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:Transform.location)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::Location* temp = _impl_.location_;
+  ::Vector3* temp = _impl_.location_;
   _impl_.location_ = nullptr;
   return temp;
 }
-inline ::Location* Transform::_internal_mutable_location() {
+inline ::Vector3* Transform::_internal_mutable_location() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.location_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::Location>(GetArena());
-    _impl_.location_ = reinterpret_cast<::Location*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::Vector3>(GetArena());
+    _impl_.location_ = reinterpret_cast<::Vector3*>(p);
   }
   return _impl_.location_;
 }
-inline ::Location* Transform::mutable_location() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::Vector3* Transform::mutable_location() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::Location* _msg = _internal_mutable_location();
+  ::Vector3* _msg = _internal_mutable_location();
   // @@protoc_insertion_point(field_mutable:Transform.location)
   return _msg;
 }
-inline void Transform::set_allocated_location(::Location* value) {
+inline void Transform::set_allocated_location(::Vector3* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
-    delete (_impl_.location_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.location_);
   }
 
   if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
@@ -2091,7 +2087,7 @@ inline void Transform::set_allocated_location(::Location* value) {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.location_ = reinterpret_cast<::Location*>(value);
+  _impl_.location_ = reinterpret_cast<::Vector3*>(value);
   // @@protoc_insertion_point(field_set_allocated:Transform.location)
 }
 

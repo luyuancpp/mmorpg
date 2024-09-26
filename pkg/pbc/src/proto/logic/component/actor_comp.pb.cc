@@ -339,30 +339,35 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n logic/component/actor_comp.proto\"+\n\010Lo"
-    "cation\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\""
-    "+\n\010Rotation\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003"
-    " \001(\001\"(\n\005Scale\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z"
-    "\030\003 \001(\001\"\\\n\tTransform\022\033\n\010location\030\001 \001(\0132\t."
-    "Location\022\033\n\010rotation\030\002 \001(\0132\t.Rotation\022\025\n"
-    "\005scale\030\003 \001(\0132\006.Scale\"+\n\010Velocity\022\t\n\001x\030\001 "
-    "\001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Acceleratio"
-    "n\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"\034\n\nVi"
-    "ewRadius\022\016\n\006radius\030\001 \001(\001\"3\n\021HealthPBComp"
-    "onent\022\n\n\002hp\030\001 \001(\004\022\022\n\nmax_health\030\002 \001(\004\"/\n"
-    "\017ManaPBComponent\022\n\n\002mp\030\001 \001(\004\022\020\n\010max_mana"
-    "\030\002 \001(\004B\tZ\007pb/gameb\006proto3"
+    "\n logic/component/actor_comp.proto\032\021comm"
+    "on/comp.proto\"+\n\010Location\022\t\n\001x\030\001 \001(\001\022\t\n\001"
+    "y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"+\n\010Rotation\022\t\n\001x\030\001 \001("
+    "\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"(\n\005Scale\022\t\n\001x\030\001 "
+    "\001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"[\n\tTransform\022\032"
+    "\n\010location\030\001 \001(\0132\010.Vector3\022\033\n\010rotation\030\002"
+    " \001(\0132\t.Rotation\022\025\n\005scale\030\003 \001(\0132\006.Scale\"+"
+    "\n\010Velocity\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 "
+    "\001(\001\"/\n\014Acceleration\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001("
+    "\001\022\t\n\001z\030\003 \001(\001\"\034\n\nViewRadius\022\016\n\006radius\030\001 \001"
+    "(\001\"3\n\021HealthPBComponent\022\n\n\002hp\030\001 \001(\004\022\022\n\nm"
+    "ax_health\030\002 \001(\004\"/\n\017ManaPBComponent\022\n\n\002mp"
+    "\030\001 \001(\004\022\020\n\010max_mana\030\002 \001(\004B\tZ\007pb/gameb\006pro"
+    "to3"
+};
+static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_deps[1] =
+    {
+        &::descriptor_table_common_2fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    505,
+    523,
     descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto,
     "logic/component/actor_comp.proto",
     &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
-    nullptr,
-    0,
+    descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_deps,
+    1,
     9,
     schemas,
     file_default_instances,
@@ -1223,6 +1228,11 @@ class Transform::_Internal {
     8 * PROTOBUF_FIELD_OFFSET(Transform, _impl_._has_bits_);
 };
 
+void Transform::clear_location() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.location_ != nullptr) _impl_.location_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
 Transform::Transform(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
@@ -1244,7 +1254,7 @@ Transform::Transform(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.location_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::Location>(
+  _impl_.location_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::Vector3>(
                               arena, *from._impl_.location_)
                         : nullptr;
   _impl_.rotation_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::Rotation>(
@@ -1349,7 +1359,7 @@ const ::_pbi::TcParseTable<2, 3, 3, 0, 2> Transform::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // .Location location = 1;
+    // .Vector3 location = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(Transform, _impl_.location_)}},
     // .Rotation rotation = 2;
@@ -1361,7 +1371,7 @@ const ::_pbi::TcParseTable<2, 3, 3, 0, 2> Transform::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // .Location location = 1;
+    // .Vector3 location = 1;
     {PROTOBUF_FIELD_OFFSET(Transform, _impl_.location_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .Rotation rotation = 2;
@@ -1371,7 +1381,7 @@ const ::_pbi::TcParseTable<2, 3, 3, 0, 2> Transform::_table_ = {
     {PROTOBUF_FIELD_OFFSET(Transform, _impl_.scale_), _Internal::kHasBitsOffset + 2, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::Location>()},
+    {::_pbi::TcParser::GetTable<::Vector3>()},
     {::_pbi::TcParser::GetTable<::Rotation>()},
     {::_pbi::TcParser::GetTable<::Scale>()},
   }}, {{
@@ -1386,7 +1396,7 @@ const ::_pbi::TcParseTable<2, 3, 3, 0, 2> Transform::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .Location location = 1;
+  // .Vector3 location = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.location_, _impl_.location_->GetCachedSize(), target, stream);
@@ -1423,7 +1433,7 @@ const ::_pbi::TcParseTable<2, 3, 3, 0, 2> Transform::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
-    // .Location location = 1;
+    // .Vector3 location = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.location_);
@@ -1461,7 +1471,7 @@ void Transform::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
       ABSL_DCHECK(from._impl_.location_ != nullptr);
       if (_this->_impl_.location_ == nullptr) {
         _this->_impl_.location_ =
-            ::google::protobuf::Message::CopyConstruct<::Location>(arena, *from._impl_.location_);
+            ::google::protobuf::Message::CopyConstruct<::Vector3>(arena, *from._impl_.location_);
       } else {
         _this->_impl_.location_->MergeFrom(*from._impl_.location_);
       }
