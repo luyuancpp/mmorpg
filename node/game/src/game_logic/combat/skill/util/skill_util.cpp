@@ -51,8 +51,7 @@ void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* r
 		ViewUtil::LookAtPosition(caster, request->position());
 	} else if (request->target_id() > 0) {
 		entt::entity target{ request->target_id() };
-		const auto transform = tls.registry.try_get<Transform>(target);
-		if (transform) {
+		if (const auto transform = tls.registry.try_get<Transform>(target)) {
 			ViewUtil::LookAtPosition(caster, transform->location());
 		}
 	}
