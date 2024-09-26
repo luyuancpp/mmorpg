@@ -78,6 +78,18 @@ void AddSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* reques
 	}
 }
 
+void ConsumeItem(const entt::entity caster, const SkillTable* skillTable) {
+	for (auto& item : skillTable->requireditem()){
+		
+	}
+}
+
+void ConsumeResource(const entt::entity caster, const SkillTable* skillTable) {
+	for (auto& resource : skillTable->requestresource()){
+		
+	}
+}
+
 uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kOK || !skillTable) return result;
@@ -85,8 +97,10 @@ uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillReq
 	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
 	LookAtTargetPosition(caster, request);
 	BroadcastSkillUsedMessage(caster, request);
+	ConsumeItem(caster, skillTable);
+	ConsumeResource(caster, skillTable);
 
-	auto context = CreateSkillContext(caster, request);
+	const auto context = CreateSkillContext(caster, request);
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
 	AddSkillContext(caster, request, context, casterSkillContextMap);
     
@@ -109,16 +123,17 @@ uint32_t CheckBuff(const entt::entity caster, const SkillTable* skillTable) {
 }
 
 uint32_t CheckState(const entt::entity caster, const SkillTable* skillTable) {
-	//uint32_t CheckMana(const entt::entity caster, const SkillTable* skillTable) {
-	//	return kOK;
-	//}
+	for (auto& resource : skillTable->requestresource()){
+		
+	}
+	
 	return kOK;
 }
 
 uint32_t CheckItemUse(const entt::entity caster, const SkillTable* skillTable) {
-	//uint32_t CheckMana(const entt::entity caster, const SkillTable* skillTable) {
-	//	return kOK;
-	//}
+	for (auto& item : skillTable->requireditem()){
+		
+	}
 	return kOK;
 }
 
