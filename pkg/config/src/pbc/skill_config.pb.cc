@@ -22,6 +22,46 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
+inline constexpr requiredresource::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : requiredresource_type_{0u},
+        requiredresource_value_{0u},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR requiredresource::requiredresource(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct requiredresourceDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR requiredresourceDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~requiredresourceDefaultTypeInternal() {}
+  union {
+    requiredresource _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 requiredresourceDefaultTypeInternal _requiredresource_default_instance_;
+
+inline constexpr requireditem::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : requireditem_value_{::uint64_t{0u}},
+        requireditem_type_{0u},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR requireditem::requireditem(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct requireditemDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR requireditemDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~requireditemDefaultTypeInternal() {}
+  union {
+    requireditem _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 requireditemDefaultTypeInternal _requireditem_default_instance_;
+
 inline constexpr requestresource::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : requestresource_id_{0u},
@@ -48,6 +88,8 @@ inline constexpr SkillTable::Impl_::Impl_(
         _skill_type_cached_byte_size_{0},
         target_type_{},
         _target_type_cached_byte_size_{0},
+        requireditem_{},
+        requiredresource_{},
         effect_{},
         _effect_cached_byte_size_{0},
         requestresource_{},
@@ -101,7 +143,7 @@ struct SkillTabledDataDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillTabledDataDefaultTypeInternal _SkillTabledData_default_instance_;
-static ::_pb::Metadata file_level_metadata_skill_5fconfig_2eproto[3];
+static ::_pb::Metadata file_level_metadata_skill_5fconfig_2eproto[5];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_skill_5fconfig_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -109,6 +151,26 @@ static constexpr const ::_pb::ServiceDescriptor**
 const ::uint32_t
     TableStruct_skill_5fconfig_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::requireditem, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::requireditem, _impl_.requireditem_type_),
+        PROTOBUF_FIELD_OFFSET(::requireditem, _impl_.requireditem_value_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::requiredresource, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::requiredresource, _impl_.requiredresource_type_),
+        PROTOBUF_FIELD_OFFSET(::requiredresource, _impl_.requiredresource_value_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::requestresource, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -135,6 +197,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.castpoint_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.recoverytime_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.immediately_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requireditem_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requiredresource_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.effect_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.channelthink_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.channelfinish_),
@@ -160,45 +224,55 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::requestresource)},
-        {10, -1, -1, sizeof(::SkillTable)},
-        {38, -1, -1, sizeof(::SkillTabledData)},
+        {0, -1, -1, sizeof(::requireditem)},
+        {10, -1, -1, sizeof(::requiredresource)},
+        {20, -1, -1, sizeof(::requestresource)},
+        {30, -1, -1, sizeof(::SkillTable)},
+        {60, -1, -1, sizeof(::SkillTabledData)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
+    &::_requireditem_default_instance_._instance,
+    &::_requiredresource_default_instance_._instance,
     &::_requestresource_default_instance_._instance,
     &::_SkillTable_default_instance_._instance,
     &::_SkillTabledData_default_instance_._instance,
 };
 const char descriptor_table_protodef_skill_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\022skill_config.proto\"K\n\017requestresource\022"
-    "\032\n\022requestresource_id\030\001 \001(\r\022\034\n\024requestre"
-    "source_cost\030\002 \001(\r\"\272\003\n\nSkillTable\022\n\n\002id\030\001"
-    " \001(\r\022\022\n\nskill_type\030\002 \003(\r\022\023\n\013target_type\030"
-    "\003 \003(\r\022\025\n\rrquest_target\030\004 \001(\r\022\025\n\rtarget_s"
-    "tatus\030\005 \001(\r\022\021\n\tcastpoint\030\006 \001(\001\022\024\n\014recove"
-    "rytime\030\007 \001(\001\022\023\n\013immediately\030\010 \001(\r\022\016\n\006eff"
-    "ect\030\t \003(\r\022\024\n\014channelthink\030\n \001(\r\022\025\n\rchann"
-    "elfinish\030\013 \001(\r\022\025\n\rthinkinterval\030\014 \001(\r\022\023\n"
-    "\013channeltime\030\r \001(\r\022)\n\017requestresource\030\016 "
-    "\003(\0132\020.requestresource\022\r\n\005range\030\017 \001(\001\022\021\n\t"
-    "max_range\030\020 \001(\001\022\022\n\nmmin_range\030\021 \001(\001\022\023\n\013s"
-    "elf_status\030\022 \001(\r\022\027\n\017required_status\030\023 \001("
-    "\r\022\023\n\013cooldown_id\030\024 \001(\r\",\n\017SkillTabledDat"
-    "a\022\031\n\004data\030\001 \003(\0132\013.SkillTableB\tZ\007pb/gameb"
-    "\006proto3"
+    "\n\022skill_config.proto\"E\n\014requireditem\022\031\n\021"
+    "requireditem_type\030\001 \001(\r\022\032\n\022requireditem_"
+    "value\030\002 \001(\004\"Q\n\020requiredresource\022\035\n\025requi"
+    "redresource_type\030\001 \001(\r\022\036\n\026requiredresour"
+    "ce_value\030\002 \001(\r\"K\n\017requestresource\022\032\n\022req"
+    "uestresource_id\030\001 \001(\r\022\034\n\024requestresource"
+    "_cost\030\002 \001(\r\"\214\004\n\nSkillTable\022\n\n\002id\030\001 \001(\r\022\022"
+    "\n\nskill_type\030\002 \003(\r\022\023\n\013target_type\030\003 \003(\r\022"
+    "\025\n\rrquest_target\030\004 \001(\r\022\025\n\rtarget_status\030"
+    "\005 \001(\r\022\021\n\tcastpoint\030\006 \001(\001\022\024\n\014recoverytime"
+    "\030\007 \001(\001\022\023\n\013immediately\030\010 \001(\r\022#\n\014requiredi"
+    "tem\030\t \003(\0132\r.requireditem\022+\n\020requiredreso"
+    "urce\030\n \003(\0132\021.requiredresource\022\016\n\006effect\030"
+    "\013 \003(\r\022\024\n\014channelthink\030\014 \001(\r\022\025\n\rchannelfi"
+    "nish\030\r \001(\r\022\025\n\rthinkinterval\030\016 \001(\r\022\023\n\013cha"
+    "nneltime\030\017 \001(\r\022)\n\017requestresource\030\020 \003(\0132"
+    "\020.requestresource\022\r\n\005range\030\021 \001(\001\022\021\n\tmax_"
+    "range\030\022 \001(\001\022\022\n\nmmin_range\030\023 \001(\001\022\023\n\013self_"
+    "status\030\024 \001(\r\022\027\n\017required_status\030\025 \001(\r\022\023\n"
+    "\013cooldown_id\030\026 \001(\r\",\n\017SkillTabledData\022\031\n"
+    "\004data\030\001 \003(\0132\013.SkillTableB\tZ\007pb/gameb\006pro"
+    "to3"
 };
 static ::absl::once_flag descriptor_table_skill_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_skill_5fconfig_2eproto = {
     false,
     false,
-    607,
+    843,
     descriptor_table_protodef_skill_5fconfig_2eproto,
     "skill_config.proto",
     &descriptor_table_skill_5fconfig_2eproto_once,
     nullptr,
     0,
-    3,
+    5,
     schemas,
     file_default_instances,
     TableStruct_skill_5fconfig_2eproto::offsets,
@@ -220,6 +294,428 @@ const ::_pbi::DescriptorTable descriptor_table_skill_5fconfig_2eproto = {
 // individual vtables back into the descriptor table.
 PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_skill_5fconfig_2eproto_getter() {
   return &descriptor_table_skill_5fconfig_2eproto;
+}
+// ===================================================================
+
+class requireditem::_Internal {
+ public:
+};
+
+requireditem::requireditem(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:requireditem)
+}
+requireditem::requireditem(
+    ::google::protobuf::Arena* arena, const requireditem& from)
+    : requireditem(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE requireditem::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void requireditem::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, requireditem_value_),
+           0,
+           offsetof(Impl_, requireditem_type_) -
+               offsetof(Impl_, requireditem_value_) +
+               sizeof(Impl_::requireditem_type_));
+}
+requireditem::~requireditem() {
+  // @@protoc_insertion_point(destructor:requireditem)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void requireditem::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+requireditem::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(requireditem, _impl_._cached_size_),
+              false,
+          },
+          &requireditem::MergeImpl,
+          &requireditem::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void requireditem::Clear() {
+// @@protoc_insertion_point(message_clear_start:requireditem)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.requireditem_value_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.requireditem_type_) -
+      reinterpret_cast<char*>(&_impl_.requireditem_value_)) + sizeof(_impl_.requireditem_type_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* requireditem::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> requireditem::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_requireditem_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::requireditem>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 requireditem_value = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(requireditem, _impl_.requireditem_value_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(requireditem, _impl_.requireditem_value_)}},
+    // uint32 requireditem_type = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(requireditem, _impl_.requireditem_type_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(requireditem, _impl_.requireditem_type_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 requireditem_type = 1;
+    {PROTOBUF_FIELD_OFFSET(requireditem, _impl_.requireditem_type_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint64 requireditem_value = 2;
+    {PROTOBUF_FIELD_OFFSET(requireditem, _impl_.requireditem_value_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* requireditem::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:requireditem)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 requireditem_type = 1;
+  if (this->_internal_requireditem_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        1, this->_internal_requireditem_type(), target);
+  }
+
+  // uint64 requireditem_value = 2;
+  if (this->_internal_requireditem_value() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        2, this->_internal_requireditem_value(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:requireditem)
+  return target;
+}
+
+::size_t requireditem::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:requireditem)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 requireditem_value = 2;
+  if (this->_internal_requireditem_value() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_requireditem_value());
+  }
+
+  // uint32 requireditem_type = 1;
+  if (this->_internal_requireditem_type() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_requireditem_type());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void requireditem::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<requireditem*>(&to_msg);
+  auto& from = static_cast<const requireditem&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:requireditem)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_requireditem_value() != 0) {
+    _this->_impl_.requireditem_value_ = from._impl_.requireditem_value_;
+  }
+  if (from._internal_requireditem_type() != 0) {
+    _this->_impl_.requireditem_type_ = from._impl_.requireditem_type_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void requireditem::CopyFrom(const requireditem& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:requireditem)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool requireditem::IsInitialized() const {
+  return true;
+}
+
+void requireditem::InternalSwap(requireditem* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(requireditem, _impl_.requireditem_type_)
+      + sizeof(requireditem::_impl_.requireditem_type_)
+      - PROTOBUF_FIELD_OFFSET(requireditem, _impl_.requireditem_value_)>(
+          reinterpret_cast<char*>(&_impl_.requireditem_value_),
+          reinterpret_cast<char*>(&other->_impl_.requireditem_value_));
+}
+
+::google::protobuf::Metadata requireditem::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_skill_5fconfig_2eproto_getter,
+                                   &descriptor_table_skill_5fconfig_2eproto_once,
+                                   file_level_metadata_skill_5fconfig_2eproto[0]);
+}
+// ===================================================================
+
+class requiredresource::_Internal {
+ public:
+};
+
+requiredresource::requiredresource(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:requiredresource)
+}
+requiredresource::requiredresource(
+    ::google::protobuf::Arena* arena, const requiredresource& from)
+    : requiredresource(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE requiredresource::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void requiredresource::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, requiredresource_type_),
+           0,
+           offsetof(Impl_, requiredresource_value_) -
+               offsetof(Impl_, requiredresource_type_) +
+               sizeof(Impl_::requiredresource_value_));
+}
+requiredresource::~requiredresource() {
+  // @@protoc_insertion_point(destructor:requiredresource)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void requiredresource::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+requiredresource::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(requiredresource, _impl_._cached_size_),
+              false,
+          },
+          &requiredresource::MergeImpl,
+          &requiredresource::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void requiredresource::Clear() {
+// @@protoc_insertion_point(message_clear_start:requiredresource)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.requiredresource_type_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.requiredresource_value_) -
+      reinterpret_cast<char*>(&_impl_.requiredresource_type_)) + sizeof(_impl_.requiredresource_value_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* requiredresource::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> requiredresource::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_requiredresource_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::requiredresource>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 requiredresource_value = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(requiredresource, _impl_.requiredresource_value_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(requiredresource, _impl_.requiredresource_value_)}},
+    // uint32 requiredresource_type = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(requiredresource, _impl_.requiredresource_type_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(requiredresource, _impl_.requiredresource_type_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 requiredresource_type = 1;
+    {PROTOBUF_FIELD_OFFSET(requiredresource, _impl_.requiredresource_type_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint32 requiredresource_value = 2;
+    {PROTOBUF_FIELD_OFFSET(requiredresource, _impl_.requiredresource_value_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* requiredresource::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:requiredresource)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 requiredresource_type = 1;
+  if (this->_internal_requiredresource_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        1, this->_internal_requiredresource_type(), target);
+  }
+
+  // uint32 requiredresource_value = 2;
+  if (this->_internal_requiredresource_value() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        2, this->_internal_requiredresource_value(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:requiredresource)
+  return target;
+}
+
+::size_t requiredresource::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:requiredresource)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint32 requiredresource_type = 1;
+  if (this->_internal_requiredresource_type() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_requiredresource_type());
+  }
+
+  // uint32 requiredresource_value = 2;
+  if (this->_internal_requiredresource_value() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_requiredresource_value());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void requiredresource::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<requiredresource*>(&to_msg);
+  auto& from = static_cast<const requiredresource&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:requiredresource)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_requiredresource_type() != 0) {
+    _this->_impl_.requiredresource_type_ = from._impl_.requiredresource_type_;
+  }
+  if (from._internal_requiredresource_value() != 0) {
+    _this->_impl_.requiredresource_value_ = from._impl_.requiredresource_value_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void requiredresource::CopyFrom(const requiredresource& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:requiredresource)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool requiredresource::IsInitialized() const {
+  return true;
+}
+
+void requiredresource::InternalSwap(requiredresource* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(requiredresource, _impl_.requiredresource_value_)
+      + sizeof(requiredresource::_impl_.requiredresource_value_)
+      - PROTOBUF_FIELD_OFFSET(requiredresource, _impl_.requiredresource_type_)>(
+          reinterpret_cast<char*>(&_impl_.requiredresource_type_),
+          reinterpret_cast<char*>(&other->_impl_.requiredresource_type_));
+}
+
+::google::protobuf::Metadata requiredresource::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_skill_5fconfig_2eproto_getter,
+                                   &descriptor_table_skill_5fconfig_2eproto_once,
+                                   file_level_metadata_skill_5fconfig_2eproto[1]);
 }
 // ===================================================================
 
@@ -430,7 +926,7 @@ void requestresource::InternalSwap(requestresource* PROTOBUF_RESTRICT other) {
 ::google::protobuf::Metadata requestresource::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_skill_5fconfig_2eproto_getter,
                                    &descriptor_table_skill_5fconfig_2eproto_once,
-                                   file_level_metadata_skill_5fconfig_2eproto[0]);
+                                   file_level_metadata_skill_5fconfig_2eproto[2]);
 }
 // ===================================================================
 
@@ -450,6 +946,8 @@ inline PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
         _skill_type_cached_byte_size_{0},
         target_type_{visibility, arena, from.target_type_},
         _target_type_cached_byte_size_{0},
+        requireditem_{visibility, arena, from.requireditem_},
+        requiredresource_{visibility, arena, from.requiredresource_},
         effect_{visibility, arena, from.effect_},
         _effect_cached_byte_size_{0},
         requestresource_{visibility, arena, from.requestresource_},
@@ -481,6 +979,8 @@ inline PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
         _skill_type_cached_byte_size_{0},
         target_type_{visibility, arena},
         _target_type_cached_byte_size_{0},
+        requireditem_{visibility, arena},
+        requiredresource_{visibility, arena},
         effect_{visibility, arena},
         _effect_cached_byte_size_{0},
         requestresource_{visibility, arena},
@@ -528,6 +1028,8 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
 
   _impl_.skill_type_.Clear();
   _impl_.target_type_.Clear();
+  _impl_.requireditem_.Clear();
+  _impl_.requiredresource_.Clear();
   _impl_.effect_.Clear();
   _impl_.requestresource_.Clear();
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
@@ -544,16 +1046,16 @@ const char* SkillTable::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
+const ::_pbi::TcParseTable<5, 22, 3, 0, 2> SkillTable::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    20, 248,  // max_field_number, fast_idx_mask
+    22, 248,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4293918720,  // skipmap
+    4290772992,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    20,  // num_field_entries
-    1,  // num_aux_entries
+    22,  // num_field_entries
+    3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_SkillTable_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -586,44 +1088,48 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     // uint32 immediately = 8;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.immediately_), 63>(),
      {64, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediately_)}},
-    // repeated uint32 effect = 9;
-    {::_pbi::TcParser::FastV32P1,
-     {74, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_)}},
-    // uint32 channelthink = 10;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channelthink_), 63>(),
-     {80, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_)}},
-    // uint32 channelfinish = 11;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channelfinish_), 63>(),
-     {88, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_)}},
-    // uint32 thinkinterval = 12;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.thinkinterval_), 63>(),
-     {96, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_)}},
-    // uint32 channeltime = 13;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channeltime_), 63>(),
-     {104, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_)}},
-    // repeated .requestresource requestresource = 14;
+    // repeated .requireditem requireditem = 9;
     {::_pbi::TcParser::FastMtR1,
-     {114, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_)}},
-    // double range = 15;
-    {::_pbi::TcParser::FastF64S1,
-     {121, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_)}},
-    // double max_range = 16;
+     {74, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requireditem_)}},
+    // repeated .requiredresource requiredresource = 10;
+    {::_pbi::TcParser::FastMtR1,
+     {82, 63, 1, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requiredresource_)}},
+    // repeated uint32 effect = 11;
+    {::_pbi::TcParser::FastV32P1,
+     {90, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_)}},
+    // uint32 channelthink = 12;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channelthink_), 63>(),
+     {96, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_)}},
+    // uint32 channelfinish = 13;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channelfinish_), 63>(),
+     {104, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_)}},
+    // uint32 thinkinterval = 14;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.thinkinterval_), 63>(),
+     {112, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_)}},
+    // uint32 channeltime = 15;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channeltime_), 63>(),
+     {120, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_)}},
+    // repeated .requestresource requestresource = 16;
+    {::_pbi::TcParser::FastMtR2,
+     {386, 63, 2, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_)}},
+    // double range = 17;
     {::_pbi::TcParser::FastF64S2,
-     {385, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_)}},
-    // double mmin_range = 17;
+     {393, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_)}},
+    // double max_range = 18;
     {::_pbi::TcParser::FastF64S2,
-     {393, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mmin_range_)}},
-    // uint32 self_status = 18;
+     {401, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_)}},
+    // double mmin_range = 19;
+    {::_pbi::TcParser::FastF64S2,
+     {409, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mmin_range_)}},
+    // uint32 self_status = 20;
     {::_pbi::TcParser::FastV32S2,
-     {400, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_)}},
-    // uint32 required_status = 19;
+     {416, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_)}},
+    // uint32 required_status = 21;
     {::_pbi::TcParser::FastV32S2,
-     {408, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_)}},
-    // uint32 cooldown_id = 20;
+     {424, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_)}},
+    // uint32 cooldown_id = 22;
     {::_pbi::TcParser::FastV32S2,
-     {416, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
+     {432, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -660,43 +1166,51 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     // uint32 immediately = 8;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediately_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // repeated uint32 effect = 9;
+    // repeated .requireditem requireditem = 9;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requireditem_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    // repeated .requiredresource requiredresource = 10;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requiredresource_), 0, 1,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    // repeated uint32 effect = 11;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
-    // uint32 channelthink = 10;
+    // uint32 channelthink = 12;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelthink_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 channelfinish = 11;
+    // uint32 channelfinish = 13;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channelfinish_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 thinkinterval = 12;
+    // uint32 thinkinterval = 14;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.thinkinterval_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 channeltime = 13;
+    // uint32 channeltime = 15;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channeltime_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // repeated .requestresource requestresource = 14;
-    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_), 0, 0,
+    // repeated .requestresource requestresource = 16;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.requestresource_), 0, 2,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // double range = 15;
+    // double range = 17;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // double max_range = 16;
+    // double max_range = 18;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // double mmin_range = 17;
+    // double mmin_range = 19;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mmin_range_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // uint32 self_status = 18;
+    // uint32 self_status = 20;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 required_status = 19;
+    // uint32 required_status = 21;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 cooldown_id = 20;
+    // uint32 cooldown_id = 22;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }}, {{
+    {::_pbi::TcParser::GetTable<::requireditem>()},
+    {::_pbi::TcParser::GetTable<::requiredresource>()},
     {::_pbi::TcParser::GetTable<::requestresource>()},
   }}, {{
   }},
@@ -779,55 +1293,77 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
         8, this->_internal_immediately(), target);
   }
 
-  // repeated uint32 effect = 9;
+  // repeated .requireditem requireditem = 9;
+  for (unsigned i = 0, n = static_cast<unsigned>(
+                           this->_internal_requireditem_size());
+       i < n; i++) {
+    const auto& repfield = this->_internal_requireditem().Get(i);
+    target =
+        ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+            9, repfield, repfield.GetCachedSize(),
+            target, stream);
+  }
+
+  // repeated .requiredresource requiredresource = 10;
+  for (unsigned i = 0, n = static_cast<unsigned>(
+                           this->_internal_requiredresource_size());
+       i < n; i++) {
+    const auto& repfield = this->_internal_requiredresource().Get(i);
+    target =
+        ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+            10, repfield, repfield.GetCachedSize(),
+            target, stream);
+  }
+
+  // repeated uint32 effect = 11;
   {
     int byte_size = _impl_._effect_cached_byte_size_.Get();
     if (byte_size > 0) {
       target = stream->WriteUInt32Packed(
-          9, _internal_effect(), byte_size, target);
+          11, _internal_effect(), byte_size, target);
     }
   }
 
-  // uint32 channelthink = 10;
+  // uint32 channelthink = 12;
   if (this->_internal_channelthink() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        10, this->_internal_channelthink(), target);
+        12, this->_internal_channelthink(), target);
   }
 
-  // uint32 channelfinish = 11;
+  // uint32 channelfinish = 13;
   if (this->_internal_channelfinish() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        11, this->_internal_channelfinish(), target);
+        13, this->_internal_channelfinish(), target);
   }
 
-  // uint32 thinkinterval = 12;
+  // uint32 thinkinterval = 14;
   if (this->_internal_thinkinterval() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        12, this->_internal_thinkinterval(), target);
+        14, this->_internal_thinkinterval(), target);
   }
 
-  // uint32 channeltime = 13;
+  // uint32 channeltime = 15;
   if (this->_internal_channeltime() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        13, this->_internal_channeltime(), target);
+        15, this->_internal_channeltime(), target);
   }
 
-  // repeated .requestresource requestresource = 14;
+  // repeated .requestresource requestresource = 16;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this->_internal_requestresource_size());
        i < n; i++) {
     const auto& repfield = this->_internal_requestresource().Get(i);
     target =
         ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-            14, repfield, repfield.GetCachedSize(),
+            16, repfield, repfield.GetCachedSize(),
             target, stream);
   }
 
-  // double range = 15;
+  // double range = 17;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_range = this->_internal_range();
@@ -836,10 +1372,10 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
   if (raw_range != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        15, this->_internal_range(), target);
+        17, this->_internal_range(), target);
   }
 
-  // double max_range = 16;
+  // double max_range = 18;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_max_range = this->_internal_max_range();
@@ -848,10 +1384,10 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
   if (raw_max_range != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        16, this->_internal_max_range(), target);
+        18, this->_internal_max_range(), target);
   }
 
-  // double mmin_range = 17;
+  // double mmin_range = 19;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_mmin_range = this->_internal_mmin_range();
@@ -860,28 +1396,28 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
   if (raw_mmin_range != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        17, this->_internal_mmin_range(), target);
+        19, this->_internal_mmin_range(), target);
   }
 
-  // uint32 self_status = 18;
+  // uint32 self_status = 20;
   if (this->_internal_self_status() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        18, this->_internal_self_status(), target);
+        20, this->_internal_self_status(), target);
   }
 
-  // uint32 required_status = 19;
+  // uint32 required_status = 21;
   if (this->_internal_required_status() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        19, this->_internal_required_status(), target);
+        21, this->_internal_required_status(), target);
   }
 
-  // uint32 cooldown_id = 20;
+  // uint32 cooldown_id = 22;
   if (this->_internal_cooldown_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        20, this->_internal_cooldown_id(), target);
+        22, this->_internal_cooldown_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -927,7 +1463,17 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     ;
     total_size += tag_size + data_size;
   }
-  // repeated uint32 effect = 9;
+  // repeated .requireditem requireditem = 9;
+  total_size += 1UL * this->_internal_requireditem_size();
+  for (const auto& msg : this->_internal_requireditem()) {
+    total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+  }
+  // repeated .requiredresource requiredresource = 10;
+  total_size += 1UL * this->_internal_requiredresource_size();
+  for (const auto& msg : this->_internal_requiredresource()) {
+    total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+  }
+  // repeated uint32 effect = 11;
   {
     std::size_t data_size = ::_pbi::WireFormatLite::UInt32Size(
         this->_internal_effect())
@@ -940,8 +1486,8 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     ;
     total_size += tag_size + data_size;
   }
-  // repeated .requestresource requestresource = 14;
-  total_size += 1UL * this->_internal_requestresource_size();
+  // repeated .requestresource requestresource = 16;
+  total_size += 2UL * this->_internal_requestresource_size();
   for (const auto& msg : this->_internal_requestresource()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
   }
@@ -989,41 +1535,41 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     total_size += 9;
   }
 
-  // uint32 channelthink = 10;
+  // uint32 channelthink = 12;
   if (this->_internal_channelthink() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_channelthink());
   }
 
-  // uint32 channelfinish = 11;
+  // uint32 channelfinish = 13;
   if (this->_internal_channelfinish() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_channelfinish());
   }
 
-  // uint32 thinkinterval = 12;
+  // uint32 thinkinterval = 14;
   if (this->_internal_thinkinterval() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_thinkinterval());
   }
 
-  // uint32 channeltime = 13;
+  // uint32 channeltime = 15;
   if (this->_internal_channeltime() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_channeltime());
   }
 
-  // double range = 15;
+  // double range = 17;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_range = this->_internal_range();
   ::uint64_t raw_range;
   memcpy(&raw_range, &tmp_range, sizeof(tmp_range));
   if (raw_range != 0) {
-    total_size += 9;
+    total_size += 10;
   }
 
-  // double max_range = 16;
+  // double max_range = 18;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_max_range = this->_internal_max_range();
@@ -1033,7 +1579,7 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     total_size += 10;
   }
 
-  // double mmin_range = 17;
+  // double mmin_range = 19;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_mmin_range = this->_internal_mmin_range();
@@ -1043,19 +1589,19 @@ const ::_pbi::TcParseTable<5, 20, 1, 0, 2> SkillTable::_table_ = {
     total_size += 10;
   }
 
-  // uint32 self_status = 18;
+  // uint32 self_status = 20;
   if (this->_internal_self_status() != 0) {
     total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                     this->_internal_self_status());
   }
 
-  // uint32 required_status = 19;
+  // uint32 required_status = 21;
   if (this->_internal_required_status() != 0) {
     total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                     this->_internal_required_status());
   }
 
-  // uint32 cooldown_id = 20;
+  // uint32 cooldown_id = 22;
   if (this->_internal_cooldown_id() != 0) {
     total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                     this->_internal_cooldown_id());
@@ -1075,6 +1621,10 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
 
   _this->_internal_mutable_skill_type()->MergeFrom(from._internal_skill_type());
   _this->_internal_mutable_target_type()->MergeFrom(from._internal_target_type());
+  _this->_internal_mutable_requireditem()->MergeFrom(
+      from._internal_requireditem());
+  _this->_internal_mutable_requiredresource()->MergeFrom(
+      from._internal_requiredresource());
   _this->_internal_mutable_effect()->MergeFrom(from._internal_effect());
   _this->_internal_mutable_requestresource()->MergeFrom(
       from._internal_requestresource());
@@ -1170,6 +1720,8 @@ void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT other) {
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.skill_type_.InternalSwap(&other->_impl_.skill_type_);
   _impl_.target_type_.InternalSwap(&other->_impl_.target_type_);
+  _impl_.requireditem_.InternalSwap(&other->_impl_.requireditem_);
+  _impl_.requiredresource_.InternalSwap(&other->_impl_.requiredresource_);
   _impl_.effect_.InternalSwap(&other->_impl_.effect_);
   _impl_.requestresource_.InternalSwap(&other->_impl_.requestresource_);
   ::google::protobuf::internal::memswap<
@@ -1183,7 +1735,7 @@ void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT other) {
 ::google::protobuf::Metadata SkillTable::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_skill_5fconfig_2eproto_getter,
                                    &descriptor_table_skill_5fconfig_2eproto_once,
-                                   file_level_metadata_skill_5fconfig_2eproto[1]);
+                                   file_level_metadata_skill_5fconfig_2eproto[3]);
 }
 // ===================================================================
 
@@ -1375,7 +1927,7 @@ void SkillTabledData::InternalSwap(SkillTabledData* PROTOBUF_RESTRICT other) {
 ::google::protobuf::Metadata SkillTabledData::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_skill_5fconfig_2eproto_getter,
                                    &descriptor_table_skill_5fconfig_2eproto_once,
-                                   file_level_metadata_skill_5fconfig_2eproto[2]);
+                                   file_level_metadata_skill_5fconfig_2eproto[4]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
