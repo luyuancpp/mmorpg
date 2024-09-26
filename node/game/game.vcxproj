@@ -135,6 +135,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\game_logic\actor\util\actor_status_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
@@ -190,6 +191,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\thread_local\storage_game.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\game_logic\actor\util\actor_status_util.h" />
     <ClInclude Include="src\game_logic\combat\skill\comp\skill_comp.h" />
     <ClInclude Include="src\game_logic\combat\buff\comp\buff_comp.h" />
     <ClInclude Include="src\game_logic\combat\buff\constants\buff_constants.h" />
@@ -198,6 +200,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_util.h" />
     <ClInclude Include="src\game_logic\common\constants\fps_constants.h" />
     <ClInclude Include="src\game_logic\common\sequence\node_sequence_generator.h" />
+    <ClInclude Include="src\game_logic\npc\util\npc_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_skill_util.h" />
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h" />
     <ClInclude Include="src\game_logic\scene\comp\nav_comp.h" />

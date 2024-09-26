@@ -104,26 +104,6 @@ struct RotationDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RotationDefaultTypeInternal _Rotation_default_instance_;
 
-inline constexpr ManaPBComponent::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : mp_{::uint64_t{0u}},
-        max_mana_{::uint64_t{0u}},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR ManaPBComponent::ManaPBComponent(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct ManaPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ManaPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ManaPBComponentDefaultTypeInternal() {}
-  union {
-    ManaPBComponent _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ManaPBComponentDefaultTypeInternal _ManaPBComponent_default_instance_;
-
 inline constexpr Location::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : x_{0},
@@ -145,25 +125,66 @@ struct LocationDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LocationDefaultTypeInternal _Location_default_instance_;
 
-inline constexpr HealthPBComponent::Impl_::Impl_(
+inline constexpr DerivedAttributesPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : hp_{::uint64_t{0u}},
-        max_health_{::uint64_t{0u}},
+      : max_health_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR HealthPBComponent::HealthPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR DerivedAttributesPBComponent::DerivedAttributesPBComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct HealthPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR HealthPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~HealthPBComponentDefaultTypeInternal() {}
+struct DerivedAttributesPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR DerivedAttributesPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~DerivedAttributesPBComponentDefaultTypeInternal() {}
   union {
-    HealthPBComponent _instance;
+    DerivedAttributesPBComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 HealthPBComponentDefaultTypeInternal _HealthPBComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DerivedAttributesPBComponentDefaultTypeInternal _DerivedAttributesPBComponent_default_instance_;
+
+inline constexpr CalculatedAttributesPBComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : attack_power_{::uint64_t{0u}},
+        defense_power_{::uint64_t{0u}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR CalculatedAttributesPBComponent::CalculatedAttributesPBComponent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct CalculatedAttributesPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CalculatedAttributesPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CalculatedAttributesPBComponentDefaultTypeInternal() {}
+  union {
+    CalculatedAttributesPBComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CalculatedAttributesPBComponentDefaultTypeInternal _CalculatedAttributesPBComponent_default_instance_;
+
+inline constexpr BaseAttributesPBComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : strength_{::uint64_t{0u}},
+        stamina_{::uint64_t{0u}},
+        health_{::uint64_t{0u}},
+        mana_{::uint64_t{0u}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR BaseAttributesPBComponent::BaseAttributesPBComponent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct BaseAttributesPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BaseAttributesPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BaseAttributesPBComponentDefaultTypeInternal() {}
+  union {
+    BaseAttributesPBComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BaseAttributesPBComponentDefaultTypeInternal _BaseAttributesPBComponent_default_instance_;
 
 inline constexpr Acceleration::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -206,7 +227,27 @@ struct TransformDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TransformDefaultTypeInternal _Transform_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[9];
+
+inline constexpr ActorStatusPBComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        calculated_attributes_{nullptr},
+        derived_attributes_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ActorStatusPBComponent::ActorStatusPBComponent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct ActorStatusPBComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ActorStatusPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ActorStatusPBComponentDefaultTypeInternal() {}
+  union {
+    ActorStatusPBComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ActorStatusPBComponentDefaultTypeInternal _ActorStatusPBComponent_default_instance_;
+static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[11];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2factor_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -293,25 +334,48 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::ViewRadius, _impl_.radius_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _impl_.hp_),
-        PROTOBUF_FIELD_OFFSET(::HealthPBComponent, _impl_.max_health_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesPBComponent, _impl_.strength_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesPBComponent, _impl_.stamina_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesPBComponent, _impl_.health_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributesPBComponent, _impl_.mana_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPBComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _impl_.mp_),
-        PROTOBUF_FIELD_OFFSET(::ManaPBComponent, _impl_.max_mana_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPBComponent, _impl_.attack_power_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPBComponent, _impl_.defense_power_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::DerivedAttributesPBComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::DerivedAttributesPBComponent, _impl_.max_health_),
+        PROTOBUF_FIELD_OFFSET(::ActorStatusPBComponent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ActorStatusPBComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::ActorStatusPBComponent, _impl_.calculated_attributes_),
+        PROTOBUF_FIELD_OFFSET(::ActorStatusPBComponent, _impl_.derived_attributes_),
+        0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
@@ -323,8 +387,10 @@ static const ::_pbi::MigrationSchema
         {47, -1, -1, sizeof(::Velocity)},
         {58, -1, -1, sizeof(::Acceleration)},
         {69, -1, -1, sizeof(::ViewRadius)},
-        {78, -1, -1, sizeof(::HealthPBComponent)},
-        {88, -1, -1, sizeof(::ManaPBComponent)},
+        {78, -1, -1, sizeof(::BaseAttributesPBComponent)},
+        {90, -1, -1, sizeof(::CalculatedAttributesPBComponent)},
+        {100, -1, -1, sizeof(::DerivedAttributesPBComponent)},
+        {109, 119, -1, sizeof(::ActorStatusPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_Location_default_instance_._instance,
@@ -334,8 +400,10 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_Velocity_default_instance_._instance,
     &::_Acceleration_default_instance_._instance,
     &::_ViewRadius_default_instance_._instance,
-    &::_HealthPBComponent_default_instance_._instance,
-    &::_ManaPBComponent_default_instance_._instance,
+    &::_BaseAttributesPBComponent_default_instance_._instance,
+    &::_CalculatedAttributesPBComponent_default_instance_._instance,
+    &::_DerivedAttributesPBComponent_default_instance_._instance,
+    &::_ActorStatusPBComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -349,10 +417,16 @@ const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto[] 
     "\n\010Velocity\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 "
     "\001(\001\"/\n\014Acceleration\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001("
     "\001\022\t\n\001z\030\003 \001(\001\"\034\n\nViewRadius\022\016\n\006radius\030\001 \001"
-    "(\001\"3\n\021HealthPBComponent\022\n\n\002hp\030\001 \001(\004\022\022\n\nm"
-    "ax_health\030\002 \001(\004\"/\n\017ManaPBComponent\022\n\n\002mp"
-    "\030\001 \001(\004\022\020\n\010max_mana\030\002 \001(\004B\tZ\007pb/gameb\006pro"
-    "to3"
+    "(\001\"\\\n\031BaseAttributesPBComponent\022\020\n\010stren"
+    "gth\030\001 \001(\004\022\017\n\007stamina\030\002 \001(\004\022\016\n\006health\030\003 \001"
+    "(\004\022\014\n\004mana\030\004 \001(\004\"N\n\037CalculatedAttributes"
+    "PBComponent\022\024\n\014attack_power\030\001 \001(\004\022\025\n\rdef"
+    "ense_power\030\002 \001(\004\"2\n\034DerivedAttributesPBC"
+    "omponent\022\022\n\nmax_health\030\001 \001(\004\"\224\001\n\026ActorSt"
+    "atusPBComponent\022\?\n\025calculated_attributes"
+    "\030\001 \001(\0132 .CalculatedAttributesPBComponent"
+    "\0229\n\022derived_attributes\030\002 \001(\0132\035.DerivedAt"
+    "tributesPBComponentB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_deps[1] =
     {
@@ -362,13 +436,13 @@ static ::absl::once_flag descriptor_table_logic_2fcomponent_2factor_5fcomp_2epro
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    523,
+    798,
     descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto,
     "logic/component/actor_comp.proto",
     &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
     descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_deps,
     1,
-    9,
+    11,
     schemas,
     file_default_instances,
     TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto::offsets,
@@ -2272,72 +2346,72 @@ void ViewRadius::InternalSwap(ViewRadius* PROTOBUF_RESTRICT other) {
 }
 // ===================================================================
 
-class HealthPBComponent::_Internal {
+class BaseAttributesPBComponent::_Internal {
  public:
 };
 
-HealthPBComponent::HealthPBComponent(::google::protobuf::Arena* arena)
+BaseAttributesPBComponent::BaseAttributesPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:HealthPBComponent)
+  // @@protoc_insertion_point(arena_constructor:BaseAttributesPBComponent)
 }
-HealthPBComponent::HealthPBComponent(
-    ::google::protobuf::Arena* arena, const HealthPBComponent& from)
-    : HealthPBComponent(arena) {
+BaseAttributesPBComponent::BaseAttributesPBComponent(
+    ::google::protobuf::Arena* arena, const BaseAttributesPBComponent& from)
+    : BaseAttributesPBComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE HealthPBComponent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE BaseAttributesPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void HealthPBComponent::SharedCtor(::_pb::Arena* arena) {
+inline void BaseAttributesPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, hp_),
+               offsetof(Impl_, strength_),
            0,
-           offsetof(Impl_, max_health_) -
-               offsetof(Impl_, hp_) +
-               sizeof(Impl_::max_health_));
+           offsetof(Impl_, mana_) -
+               offsetof(Impl_, strength_) +
+               sizeof(Impl_::mana_));
 }
-HealthPBComponent::~HealthPBComponent() {
-  // @@protoc_insertion_point(destructor:HealthPBComponent)
+BaseAttributesPBComponent::~BaseAttributesPBComponent() {
+  // @@protoc_insertion_point(destructor:BaseAttributesPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void HealthPBComponent::SharedDtor() {
+inline void BaseAttributesPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-HealthPBComponent::GetClassData() const {
+BaseAttributesPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_._cached_size_),
               false,
           },
-          &HealthPBComponent::MergeImpl,
-          &HealthPBComponent::kDescriptorMethods,
+          &BaseAttributesPBComponent::MergeImpl,
+          &BaseAttributesPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void HealthPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:HealthPBComponent)
+PROTOBUF_NOINLINE void BaseAttributesPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:BaseAttributesPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ::memset(&_impl_.hp_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.max_health_) -
-      reinterpret_cast<char*>(&_impl_.hp_)) + sizeof(_impl_.max_health_));
+  ::memset(&_impl_.strength_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.mana_) -
+      reinterpret_cast<char*>(&_impl_.strength_)) + sizeof(_impl_.mana_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* HealthPBComponent::_InternalParse(
+const char* BaseAttributesPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -2345,7 +2419,262 @@ const char* HealthPBComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 0, 0, 2> BaseAttributesPBComponent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_BaseAttributesPBComponent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::BaseAttributesPBComponent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 mana = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPBComponent, _impl_.mana_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.mana_)}},
+    // uint64 strength = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPBComponent, _impl_.strength_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.strength_)}},
+    // uint64 stamina = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPBComponent, _impl_.stamina_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.stamina_)}},
+    // uint64 health = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributesPBComponent, _impl_.health_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.health_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 strength = 1;
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.strength_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 stamina = 2;
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.stamina_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 health = 3;
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.health_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 mana = 4;
+    {PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.mana_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* BaseAttributesPBComponent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:BaseAttributesPBComponent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 strength = 1;
+  if (this->_internal_strength() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_strength(), target);
+  }
+
+  // uint64 stamina = 2;
+  if (this->_internal_stamina() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        2, this->_internal_stamina(), target);
+  }
+
+  // uint64 health = 3;
+  if (this->_internal_health() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        3, this->_internal_health(), target);
+  }
+
+  // uint64 mana = 4;
+  if (this->_internal_mana() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        4, this->_internal_mana(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:BaseAttributesPBComponent)
+  return target;
+}
+
+::size_t BaseAttributesPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:BaseAttributesPBComponent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 strength = 1;
+  if (this->_internal_strength() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_strength());
+  }
+
+  // uint64 stamina = 2;
+  if (this->_internal_stamina() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_stamina());
+  }
+
+  // uint64 health = 3;
+  if (this->_internal_health() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_health());
+  }
+
+  // uint64 mana = 4;
+  if (this->_internal_mana() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_mana());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void BaseAttributesPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BaseAttributesPBComponent*>(&to_msg);
+  auto& from = static_cast<const BaseAttributesPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:BaseAttributesPBComponent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_strength() != 0) {
+    _this->_impl_.strength_ = from._impl_.strength_;
+  }
+  if (from._internal_stamina() != 0) {
+    _this->_impl_.stamina_ = from._impl_.stamina_;
+  }
+  if (from._internal_health() != 0) {
+    _this->_impl_.health_ = from._impl_.health_;
+  }
+  if (from._internal_mana() != 0) {
+    _this->_impl_.mana_ = from._impl_.mana_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void BaseAttributesPBComponent::CopyFrom(const BaseAttributesPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:BaseAttributesPBComponent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool BaseAttributesPBComponent::IsInitialized() const {
+  return true;
+}
+
+void BaseAttributesPBComponent::InternalSwap(BaseAttributesPBComponent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.mana_)
+      + sizeof(BaseAttributesPBComponent::_impl_.mana_)
+      - PROTOBUF_FIELD_OFFSET(BaseAttributesPBComponent, _impl_.strength_)>(
+          reinterpret_cast<char*>(&_impl_.strength_),
+          reinterpret_cast<char*>(&other->_impl_.strength_));
+}
+
+::google::protobuf::Metadata BaseAttributesPBComponent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[7]);
+}
+// ===================================================================
+
+class CalculatedAttributesPBComponent::_Internal {
+ public:
+};
+
+CalculatedAttributesPBComponent::CalculatedAttributesPBComponent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:CalculatedAttributesPBComponent)
+}
+CalculatedAttributesPBComponent::CalculatedAttributesPBComponent(
+    ::google::protobuf::Arena* arena, const CalculatedAttributesPBComponent& from)
+    : CalculatedAttributesPBComponent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE CalculatedAttributesPBComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void CalculatedAttributesPBComponent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, attack_power_),
+           0,
+           offsetof(Impl_, defense_power_) -
+               offsetof(Impl_, attack_power_) +
+               sizeof(Impl_::defense_power_));
+}
+CalculatedAttributesPBComponent::~CalculatedAttributesPBComponent() {
+  // @@protoc_insertion_point(destructor:CalculatedAttributesPBComponent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void CalculatedAttributesPBComponent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+CalculatedAttributesPBComponent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_._cached_size_),
+              false,
+          },
+          &CalculatedAttributesPBComponent::MergeImpl,
+          &CalculatedAttributesPBComponent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void CalculatedAttributesPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:CalculatedAttributesPBComponent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.attack_power_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.defense_power_) -
+      reinterpret_cast<char*>(&_impl_.attack_power_)) + sizeof(_impl_.defense_power_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* CalculatedAttributesPBComponent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> CalculatedAttributesPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -2356,26 +2685,26 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_HealthPBComponent_default_instance_._instance,
+    &_CalculatedAttributesPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::HealthPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CalculatedAttributesPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 max_health = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(HealthPBComponent, _impl_.max_health_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_)}},
-    // uint64 hp = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(HealthPBComponent, _impl_.hp_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.hp_)}},
+    // uint64 defense_power = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesPBComponent, _impl_.defense_power_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.defense_power_)}},
+    // uint64 attack_power = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesPBComponent, _impl_.attack_power_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.attack_power_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 hp = 1;
-    {PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.hp_), 0, 0,
+    // uint64 attack_power = 1;
+    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.attack_power_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // uint64 max_health = 2;
-    {PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_), 0, 0,
+    // uint64 defense_power = 2;
+    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.defense_power_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -2383,25 +2712,25 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
   }},
 };
 
-::uint8_t* HealthPBComponent::_InternalSerialize(
+::uint8_t* CalculatedAttributesPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:HealthPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:CalculatedAttributesPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 hp = 1;
-  if (this->_internal_hp() != 0) {
+  // uint64 attack_power = 1;
+  if (this->_internal_attack_power() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_hp(), target);
+        1, this->_internal_attack_power(), target);
   }
 
-  // uint64 max_health = 2;
-  if (this->_internal_max_health() != 0) {
+  // uint64 defense_power = 2;
+  if (this->_internal_defense_power() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        2, this->_internal_max_health(), target);
+        2, this->_internal_defense_power(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2409,25 +2738,210 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:HealthPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:CalculatedAttributesPBComponent)
   return target;
 }
 
-::size_t HealthPBComponent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:HealthPBComponent)
+::size_t CalculatedAttributesPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:CalculatedAttributesPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 hp = 1;
-  if (this->_internal_hp() != 0) {
+  // uint64 attack_power = 1;
+  if (this->_internal_attack_power() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_hp());
+        this->_internal_attack_power());
   }
 
-  // uint64 max_health = 2;
+  // uint64 defense_power = 2;
+  if (this->_internal_defense_power() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_defense_power());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void CalculatedAttributesPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CalculatedAttributesPBComponent*>(&to_msg);
+  auto& from = static_cast<const CalculatedAttributesPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CalculatedAttributesPBComponent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_attack_power() != 0) {
+    _this->_impl_.attack_power_ = from._impl_.attack_power_;
+  }
+  if (from._internal_defense_power() != 0) {
+    _this->_impl_.defense_power_ = from._impl_.defense_power_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void CalculatedAttributesPBComponent::CopyFrom(const CalculatedAttributesPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CalculatedAttributesPBComponent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool CalculatedAttributesPBComponent::IsInitialized() const {
+  return true;
+}
+
+void CalculatedAttributesPBComponent::InternalSwap(CalculatedAttributesPBComponent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.defense_power_)
+      + sizeof(CalculatedAttributesPBComponent::_impl_.defense_power_)
+      - PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.attack_power_)>(
+          reinterpret_cast<char*>(&_impl_.attack_power_),
+          reinterpret_cast<char*>(&other->_impl_.attack_power_));
+}
+
+::google::protobuf::Metadata CalculatedAttributesPBComponent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[8]);
+}
+// ===================================================================
+
+class DerivedAttributesPBComponent::_Internal {
+ public:
+};
+
+DerivedAttributesPBComponent::DerivedAttributesPBComponent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:DerivedAttributesPBComponent)
+}
+DerivedAttributesPBComponent::DerivedAttributesPBComponent(
+    ::google::protobuf::Arena* arena, const DerivedAttributesPBComponent& from)
+    : DerivedAttributesPBComponent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE DerivedAttributesPBComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void DerivedAttributesPBComponent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.max_health_ = {};
+}
+DerivedAttributesPBComponent::~DerivedAttributesPBComponent() {
+  // @@protoc_insertion_point(destructor:DerivedAttributesPBComponent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void DerivedAttributesPBComponent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+DerivedAttributesPBComponent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(DerivedAttributesPBComponent, _impl_._cached_size_),
+              false,
+          },
+          &DerivedAttributesPBComponent::MergeImpl,
+          &DerivedAttributesPBComponent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void DerivedAttributesPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:DerivedAttributesPBComponent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.max_health_ = ::uint64_t{0u};
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* DerivedAttributesPBComponent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> DerivedAttributesPBComponent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_DerivedAttributesPBComponent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::DerivedAttributesPBComponent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 max_health = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DerivedAttributesPBComponent, _impl_.max_health_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(DerivedAttributesPBComponent, _impl_.max_health_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 max_health = 1;
+    {PROTOBUF_FIELD_OFFSET(DerivedAttributesPBComponent, _impl_.max_health_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* DerivedAttributesPBComponent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:DerivedAttributesPBComponent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 max_health = 1;
+  if (this->_internal_max_health() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_max_health(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:DerivedAttributesPBComponent)
+  return target;
+}
+
+::size_t DerivedAttributesPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:DerivedAttributesPBComponent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 max_health = 1;
   if (this->_internal_max_health() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
         this->_internal_max_health());
@@ -2437,118 +2951,144 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HealthPBComponent::_table_ = {
 }
 
 
-void HealthPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<HealthPBComponent*>(&to_msg);
-  auto& from = static_cast<const HealthPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:HealthPBComponent)
+void DerivedAttributesPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<DerivedAttributesPBComponent*>(&to_msg);
+  auto& from = static_cast<const DerivedAttributesPBComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:DerivedAttributesPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_hp() != 0) {
-    _this->_impl_.hp_ = from._impl_.hp_;
-  }
   if (from._internal_max_health() != 0) {
     _this->_impl_.max_health_ = from._impl_.max_health_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void HealthPBComponent::CopyFrom(const HealthPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:HealthPBComponent)
+void DerivedAttributesPBComponent::CopyFrom(const DerivedAttributesPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:DerivedAttributesPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool HealthPBComponent::IsInitialized() const {
+PROTOBUF_NOINLINE bool DerivedAttributesPBComponent::IsInitialized() const {
   return true;
 }
 
-void HealthPBComponent::InternalSwap(HealthPBComponent* PROTOBUF_RESTRICT other) {
+void DerivedAttributesPBComponent::InternalSwap(DerivedAttributesPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.max_health_)
-      + sizeof(HealthPBComponent::_impl_.max_health_)
-      - PROTOBUF_FIELD_OFFSET(HealthPBComponent, _impl_.hp_)>(
-          reinterpret_cast<char*>(&_impl_.hp_),
-          reinterpret_cast<char*>(&other->_impl_.hp_));
+        swap(_impl_.max_health_, other->_impl_.max_health_);
 }
 
-::google::protobuf::Metadata HealthPBComponent::GetMetadata() const {
+::google::protobuf::Metadata DerivedAttributesPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[7]);
+                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[9]);
 }
 // ===================================================================
 
-class ManaPBComponent::_Internal {
+class ActorStatusPBComponent::_Internal {
  public:
+  using HasBits = decltype(std::declval<ActorStatusPBComponent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+    8 * PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_._has_bits_);
 };
 
-ManaPBComponent::ManaPBComponent(::google::protobuf::Arena* arena)
+ActorStatusPBComponent::ActorStatusPBComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:ManaPBComponent)
+  // @@protoc_insertion_point(arena_constructor:ActorStatusPBComponent)
 }
-ManaPBComponent::ManaPBComponent(
-    ::google::protobuf::Arena* arena, const ManaPBComponent& from)
-    : ManaPBComponent(arena) {
-  MergeFrom(from);
+inline PROTOBUF_NDEBUG_INLINE ActorStatusPBComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+ActorStatusPBComponent::ActorStatusPBComponent(
+    ::google::protobuf::Arena* arena,
+    const ActorStatusPBComponent& from)
+    : ::google::protobuf::Message(arena) {
+  ActorStatusPBComponent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.calculated_attributes_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::CalculatedAttributesPBComponent>(
+                              arena, *from._impl_.calculated_attributes_)
+                        : nullptr;
+  _impl_.derived_attributes_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::DerivedAttributesPBComponent>(
+                              arena, *from._impl_.derived_attributes_)
+                        : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:ActorStatusPBComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE ManaPBComponent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ActorStatusPBComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void ManaPBComponent::SharedCtor(::_pb::Arena* arena) {
+inline void ActorStatusPBComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, mp_),
+               offsetof(Impl_, calculated_attributes_),
            0,
-           offsetof(Impl_, max_mana_) -
-               offsetof(Impl_, mp_) +
-               sizeof(Impl_::max_mana_));
+           offsetof(Impl_, derived_attributes_) -
+               offsetof(Impl_, calculated_attributes_) +
+               sizeof(Impl_::derived_attributes_));
 }
-ManaPBComponent::~ManaPBComponent() {
-  // @@protoc_insertion_point(destructor:ManaPBComponent)
+ActorStatusPBComponent::~ActorStatusPBComponent() {
+  // @@protoc_insertion_point(destructor:ActorStatusPBComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void ManaPBComponent::SharedDtor() {
+inline void ActorStatusPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
+  delete _impl_.calculated_attributes_;
+  delete _impl_.derived_attributes_;
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-ManaPBComponent::GetClassData() const {
+ActorStatusPBComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_._cached_size_),
               false,
           },
-          &ManaPBComponent::MergeImpl,
-          &ManaPBComponent::kDescriptorMethods,
+          &ActorStatusPBComponent::MergeImpl,
+          &ActorStatusPBComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void ManaPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:ManaPBComponent)
+PROTOBUF_NOINLINE void ActorStatusPBComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:ActorStatusPBComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ::memset(&_impl_.mp_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.max_mana_) -
-      reinterpret_cast<char*>(&_impl_.mp_)) + sizeof(_impl_.max_mana_));
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(_impl_.calculated_attributes_ != nullptr);
+      _impl_.calculated_attributes_->Clear();
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(_impl_.derived_attributes_ != nullptr);
+      _impl_.derived_attributes_->Clear();
+    }
+  }
+  _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* ManaPBComponent::_InternalParse(
+const char* ActorStatusPBComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -2556,63 +3096,63 @@ const char* ManaPBComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ManaPBComponent::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 2, 0, 2> ActorStatusPBComponent::_table_ = {
   {
-    0,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_._has_bits_),
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
     4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
     2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_ManaPBComponent_default_instance_._instance,
+    2,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    &_ActorStatusPBComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::ManaPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ActorStatusPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 max_mana = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ManaPBComponent, _impl_.max_mana_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_)}},
-    // uint64 mp = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ManaPBComponent, _impl_.mp_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.mp_)}},
+    // .DerivedAttributesPBComponent derived_attributes = 2;
+    {::_pbi::TcParser::FastMtS1,
+     {18, 1, 1, PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.derived_attributes_)}},
+    // .CalculatedAttributesPBComponent calculated_attributes = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.calculated_attributes_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 mp = 1;
-    {PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.mp_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // uint64 max_mana = 2;
-    {PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-  }},
-  // no aux_entries
-  {{
+    // .CalculatedAttributesPBComponent calculated_attributes = 1;
+    {PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.calculated_attributes_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .DerivedAttributesPBComponent derived_attributes = 2;
+    {PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.derived_attributes_), _Internal::kHasBitsOffset + 1, 1,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::CalculatedAttributesPBComponent>()},
+    {::_pbi::TcParser::GetTable<::DerivedAttributesPBComponent>()},
+  }}, {{
   }},
 };
 
-::uint8_t* ManaPBComponent::_InternalSerialize(
+::uint8_t* ActorStatusPBComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:ManaPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:ActorStatusPBComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 mp = 1;
-  if (this->_internal_mp() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_mp(), target);
+  cached_has_bits = _impl_._has_bits_[0];
+  // .CalculatedAttributesPBComponent calculated_attributes = 1;
+  if (cached_has_bits & 0x00000001u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *_impl_.calculated_attributes_, _impl_.calculated_attributes_->GetCachedSize(), target, stream);
   }
 
-  // uint64 max_mana = 2;
-  if (this->_internal_max_mana() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        2, this->_internal_max_mana(), target);
+  // .DerivedAttributesPBComponent derived_attributes = 2;
+  if (cached_has_bits & 0x00000002u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *_impl_.derived_attributes_, _impl_.derived_attributes_->GetCachedSize(), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2620,77 +3160,98 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ManaPBComponent::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:ManaPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:ActorStatusPBComponent)
   return target;
 }
 
-::size_t ManaPBComponent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:ManaPBComponent)
+::size_t ActorStatusPBComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:ActorStatusPBComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 mp = 1;
-  if (this->_internal_mp() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_mp());
-  }
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000003u) {
+    // .CalculatedAttributesPBComponent calculated_attributes = 1;
+    if (cached_has_bits & 0x00000001u) {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.calculated_attributes_);
+    }
 
-  // uint64 max_mana = 2;
-  if (this->_internal_max_mana() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_max_mana());
-  }
+    // .DerivedAttributesPBComponent derived_attributes = 2;
+    if (cached_has_bits & 0x00000002u) {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.derived_attributes_);
+    }
 
+  }
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
 
-void ManaPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ManaPBComponent*>(&to_msg);
-  auto& from = static_cast<const ManaPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:ManaPBComponent)
+void ActorStatusPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ActorStatusPBComponent*>(&to_msg);
+  auto& from = static_cast<const ActorStatusPBComponent&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:ActorStatusPBComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_mp() != 0) {
-    _this->_impl_.mp_ = from._impl_.mp_;
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      ABSL_DCHECK(from._impl_.calculated_attributes_ != nullptr);
+      if (_this->_impl_.calculated_attributes_ == nullptr) {
+        _this->_impl_.calculated_attributes_ =
+            ::google::protobuf::Message::CopyConstruct<::CalculatedAttributesPBComponent>(arena, *from._impl_.calculated_attributes_);
+      } else {
+        _this->_impl_.calculated_attributes_->MergeFrom(*from._impl_.calculated_attributes_);
+      }
+    }
+    if (cached_has_bits & 0x00000002u) {
+      ABSL_DCHECK(from._impl_.derived_attributes_ != nullptr);
+      if (_this->_impl_.derived_attributes_ == nullptr) {
+        _this->_impl_.derived_attributes_ =
+            ::google::protobuf::Message::CopyConstruct<::DerivedAttributesPBComponent>(arena, *from._impl_.derived_attributes_);
+      } else {
+        _this->_impl_.derived_attributes_->MergeFrom(*from._impl_.derived_attributes_);
+      }
+    }
   }
-  if (from._internal_max_mana() != 0) {
-    _this->_impl_.max_mana_ = from._impl_.max_mana_;
-  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void ManaPBComponent::CopyFrom(const ManaPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:ManaPBComponent)
+void ActorStatusPBComponent::CopyFrom(const ActorStatusPBComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ActorStatusPBComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool ManaPBComponent::IsInitialized() const {
+PROTOBUF_NOINLINE bool ActorStatusPBComponent::IsInitialized() const {
   return true;
 }
 
-void ManaPBComponent::InternalSwap(ManaPBComponent* PROTOBUF_RESTRICT other) {
+void ActorStatusPBComponent::InternalSwap(ActorStatusPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.max_mana_)
-      + sizeof(ManaPBComponent::_impl_.max_mana_)
-      - PROTOBUF_FIELD_OFFSET(ManaPBComponent, _impl_.mp_)>(
-          reinterpret_cast<char*>(&_impl_.mp_),
-          reinterpret_cast<char*>(&other->_impl_.mp_));
+      PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.derived_attributes_)
+      + sizeof(ActorStatusPBComponent::_impl_.derived_attributes_)
+      - PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.calculated_attributes_)>(
+          reinterpret_cast<char*>(&_impl_.calculated_attributes_),
+          reinterpret_cast<char*>(&other->_impl_.calculated_attributes_));
 }
 
-::google::protobuf::Metadata ManaPBComponent::GetMetadata() const {
+::google::protobuf::Metadata ActorStatusPBComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[8]);
+                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[10]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
