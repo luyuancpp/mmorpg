@@ -52,7 +52,7 @@ void PlayerEventHandler::InitializePlayerComponentsHandler(const InitializePlaye
 		return;
 	}
 
-	SkillUtil::InitializePlayerComponentsHandler(player);
+	SkillUtil::InitializePlayerComponents(player);
 ///<<< END WRITING YOUR CODE
 }
 
