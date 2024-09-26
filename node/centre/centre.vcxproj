@@ -180,6 +180,7 @@
     <ClCompile Include="src\handler\event\buff_event_handler.cpp" />
     <ClCompile Include="src\handler\event\event_handler.cpp" />
     <ClCompile Include="src\handler\event\mission_event_handler.cpp" />
+    <ClCompile Include="src\handler\event\npc_event_handler.cpp" />
     <ClCompile Include="src\handler\event\player_event_handler.cpp" />
     <ClCompile Include="src\handler\event\scene_event_handler.cpp" />
     <ClCompile Include="src\handler\event\server_event_handler.cpp" />
@@ -216,6 +217,7 @@
     <ClInclude Include="src\handler\event\buff_event_handler.h" />
     <ClInclude Include="src\handler\event\event_handler.h" />
     <ClInclude Include="src\handler\event\mission_event_handler.h" />
+    <ClInclude Include="src\handler\event\npc_event_handler.h" />
     <ClInclude Include="src\handler\event\player_event_handler.h" />
     <ClInclude Include="src\handler\event\scene_event_handler.h" />
     <ClInclude Include="src\handler\event\server_event_handler.h" />
