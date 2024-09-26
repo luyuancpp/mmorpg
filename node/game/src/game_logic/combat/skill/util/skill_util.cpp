@@ -34,7 +34,7 @@ void SkillUtil::InitializePlayerComponentsHandler(entt::entity entity) {
 	tls.registry.emplace<CooldownTimeListComp>(entity);
 }
 
-void StartCooldown(const entt::entity caster, const SkillTable* skillTable) {
+void SkillUtil::StartCooldown(const entt::entity caster, const SkillTable* skillTable) {
 	if (auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
 		CooldownTimeComp comp;
 		comp.set_start(TimeUtil::NowMilliseconds());
