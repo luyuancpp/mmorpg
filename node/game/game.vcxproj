@@ -139,6 +139,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
+    <ClCompile Include="src\game_logic\npc\util\npc_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_player_database_1_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_player_database_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_skill_util.cpp" />
@@ -147,6 +148,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\handler\event\buff_event_handler.cpp" />
     <ClCompile Include="src\handler\event\event_handler.cpp" />
     <ClCompile Include="src\handler\event\mission_event_handler.cpp" />
+    <ClCompile Include="src\handler\event\npc_event_handler.cpp" />
     <ClCompile Include="src\handler\event\player_event_handler.cpp" />
     <ClCompile Include="src\handler\event\scene_event_handler.cpp" />
     <ClCompile Include="src\handler\event\server_event_handler.cpp" />
@@ -214,6 +216,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\handler\event\buff_event_handler.h" />
     <ClInclude Include="src\handler\event\event_handler.h" />
     <ClInclude Include="src\handler\event\mission_event_handler.h" />
+    <ClInclude Include="src\handler\event\npc_event_handler.h" />
     <ClInclude Include="src\handler\event\player_event_handler.h" />
     <ClInclude Include="src\handler\event\scene_event_handler.h" />
     <ClInclude Include="src\handler\event\server_event_handler.h" />
