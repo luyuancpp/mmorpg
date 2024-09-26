@@ -82,22 +82,46 @@ sol::property(&ViewRadius::radius, &ViewRadius::set_radius),
 &ViewRadius::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<HealthPBComponent>("HealthPBComponent",
-"hp",
-sol::property(&HealthPBComponent::hp, &HealthPBComponent::set_hp),
-"max_health",
-sol::property(&HealthPBComponent::max_health, &HealthPBComponent::set_max_health),
+tls_lua_state.new_usertype<BaseAttributesPBComponent>("BaseAttributesPBComponent",
+"strength",
+sol::property(&BaseAttributesPBComponent::strength, &BaseAttributesPBComponent::set_strength),
+"stamina",
+sol::property(&BaseAttributesPBComponent::stamina, &BaseAttributesPBComponent::set_stamina),
+"health",
+sol::property(&BaseAttributesPBComponent::health, &BaseAttributesPBComponent::set_health),
+"mana",
+sol::property(&BaseAttributesPBComponent::mana, &BaseAttributesPBComponent::set_mana),
 "DebugString",
-&HealthPBComponent::DebugString,
+&BaseAttributesPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<ManaPBComponent>("ManaPBComponent",
-"mp",
-sol::property(&ManaPBComponent::mp, &ManaPBComponent::set_mp),
-"max_mana",
-sol::property(&ManaPBComponent::max_mana, &ManaPBComponent::set_max_mana),
+tls_lua_state.new_usertype<CalculatedAttributesPBComponent>("CalculatedAttributesPBComponent",
+"attack_power",
+sol::property(&CalculatedAttributesPBComponent::attack_power, &CalculatedAttributesPBComponent::set_attack_power),
+"defense_power",
+sol::property(&CalculatedAttributesPBComponent::defense_power, &CalculatedAttributesPBComponent::set_defense_power),
 "DebugString",
-&ManaPBComponent::DebugString,
+&CalculatedAttributesPBComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
+tls_lua_state.new_usertype<DerivedAttributesPBComponent>("DerivedAttributesPBComponent",
+"max_health",
+sol::property(&DerivedAttributesPBComponent::max_health, &DerivedAttributesPBComponent::set_max_health),
+"DebugString",
+&DerivedAttributesPBComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
+tls_lua_state.new_usertype<ActorStatusPBComponent>("ActorStatusPBComponent",
+"calculated_attributes",
+[](ActorStatusPBComponent& pb) ->decltype(auto){ return pb.calculated_attributes();},
+"mutable_calculated_attributes",
+[](ActorStatusPBComponent& pb) ->decltype(auto){ return pb.mutable_calculated_attributes();},
+"derived_attributes",
+[](ActorStatusPBComponent& pb) ->decltype(auto){ return pb.derived_attributes();},
+"mutable_derived_attributes",
+[](ActorStatusPBComponent& pb) ->decltype(auto){ return pb.mutable_derived_attributes();},
+"DebugString",
+&ActorStatusPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

@@ -2,6 +2,7 @@
 #include "logic/event/player_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "game_logic/actor/util/actor_status_util.h"
 #include "game_logic/player/util/player_skill_util.h"
 #include "game_logic/combat/skill/util/skill_util.h"
 ///<<< END WRITING YOUR CODE
@@ -51,7 +52,7 @@ void PlayerEventHandler::InitializePlayerComponentsHandler(const InitializePlaye
 		LOG_ERROR << "Player Not Found :" << event.entity();
 		return;
 	}
-
+	ActorStatusUtil::InitializeActorComponents(player);
 	SkillUtil::InitializePlayerComponents(player);
 ///<<< END WRITING YOUR CODE
 }

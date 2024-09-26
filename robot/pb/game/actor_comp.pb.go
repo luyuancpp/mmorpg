@@ -447,17 +447,20 @@ func (x *ViewRadius) GetRadius() float64 {
 	return 0
 }
 
-type HealthPBComponent struct {
+// 基础属性，仅玩家自己存储
+type BaseAttributesPBComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Hp        uint64 `protobuf:"varint,1,opt,name=hp,proto3" json:"hp,omitempty"`
-	MaxHealth uint64 `protobuf:"varint,2,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"`
+	Strength uint64 `protobuf:"varint,1,opt,name=strength,proto3" json:"strength,omitempty"` // 力量
+	Stamina  uint64 `protobuf:"varint,2,opt,name=stamina,proto3" json:"stamina,omitempty"`   // 耐力
+	Health   uint64 `protobuf:"varint,3,opt,name=health,proto3" json:"health,omitempty"`     // 生命值
+	Mana     uint64 `protobuf:"varint,4,opt,name=mana,proto3" json:"mana,omitempty"`         // 法力值
 }
 
-func (x *HealthPBComponent) Reset() {
-	*x = HealthPBComponent{}
+func (x *BaseAttributesPBComponent) Reset() {
+	*x = BaseAttributesPBComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_actor_comp_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -465,13 +468,13 @@ func (x *HealthPBComponent) Reset() {
 	}
 }
 
-func (x *HealthPBComponent) String() string {
+func (x *BaseAttributesPBComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HealthPBComponent) ProtoMessage() {}
+func (*BaseAttributesPBComponent) ProtoMessage() {}
 
-func (x *HealthPBComponent) ProtoReflect() protoreflect.Message {
+func (x *BaseAttributesPBComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_actor_comp_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -483,36 +486,51 @@ func (x *HealthPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HealthPBComponent.ProtoReflect.Descriptor instead.
-func (*HealthPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use BaseAttributesPBComponent.ProtoReflect.Descriptor instead.
+func (*BaseAttributesPBComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *HealthPBComponent) GetHp() uint64 {
+func (x *BaseAttributesPBComponent) GetStrength() uint64 {
 	if x != nil {
-		return x.Hp
+		return x.Strength
 	}
 	return 0
 }
 
-func (x *HealthPBComponent) GetMaxHealth() uint64 {
+func (x *BaseAttributesPBComponent) GetStamina() uint64 {
 	if x != nil {
-		return x.MaxHealth
+		return x.Stamina
 	}
 	return 0
 }
 
-type ManaPBComponent struct {
+func (x *BaseAttributesPBComponent) GetHealth() uint64 {
+	if x != nil {
+		return x.Health
+	}
+	return 0
+}
+
+func (x *BaseAttributesPBComponent) GetMana() uint64 {
+	if x != nil {
+		return x.Mana
+	}
+	return 0
+}
+
+// 计算属性，服务器端计算
+type CalculatedAttributesPBComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Mp      uint64 `protobuf:"varint,1,opt,name=mp,proto3" json:"mp,omitempty"`
-	MaxMana uint64 `protobuf:"varint,2,opt,name=max_mana,json=maxMana,proto3" json:"max_mana,omitempty"`
+	AttackPower  uint64 `protobuf:"varint,1,opt,name=attack_power,json=attackPower,proto3" json:"attack_power,omitempty"`    // 攻击力
+	DefensePower uint64 `protobuf:"varint,2,opt,name=defense_power,json=defensePower,proto3" json:"defense_power,omitempty"` // 防御力
 }
 
-func (x *ManaPBComponent) Reset() {
-	*x = ManaPBComponent{}
+func (x *CalculatedAttributesPBComponent) Reset() {
+	*x = CalculatedAttributesPBComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_actor_comp_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -520,13 +538,13 @@ func (x *ManaPBComponent) Reset() {
 	}
 }
 
-func (x *ManaPBComponent) String() string {
+func (x *CalculatedAttributesPBComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ManaPBComponent) ProtoMessage() {}
+func (*CalculatedAttributesPBComponent) ProtoMessage() {}
 
-func (x *ManaPBComponent) ProtoReflect() protoreflect.Message {
+func (x *CalculatedAttributesPBComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_actor_comp_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -538,23 +556,127 @@ func (x *ManaPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ManaPBComponent.ProtoReflect.Descriptor instead.
-func (*ManaPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use CalculatedAttributesPBComponent.ProtoReflect.Descriptor instead.
+func (*CalculatedAttributesPBComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ManaPBComponent) GetMp() uint64 {
+func (x *CalculatedAttributesPBComponent) GetAttackPower() uint64 {
 	if x != nil {
-		return x.Mp
+		return x.AttackPower
 	}
 	return 0
 }
 
-func (x *ManaPBComponent) GetMaxMana() uint64 {
+func (x *CalculatedAttributesPBComponent) GetDefensePower() uint64 {
 	if x != nil {
-		return x.MaxMana
+		return x.DefensePower
 	}
 	return 0
+}
+
+// 衍生属性，服务器端计算
+type DerivedAttributesPBComponent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	MaxHealth uint64 `protobuf:"varint,1,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"` // 最大生命值
+}
+
+func (x *DerivedAttributesPBComponent) Reset() {
+	*x = DerivedAttributesPBComponent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_logic_component_actor_comp_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DerivedAttributesPBComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DerivedAttributesPBComponent) ProtoMessage() {}
+
+func (x *DerivedAttributesPBComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_logic_component_actor_comp_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DerivedAttributesPBComponent.ProtoReflect.Descriptor instead.
+func (*DerivedAttributesPBComponent) Descriptor() ([]byte, []int) {
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DerivedAttributesPBComponent) GetMaxHealth() uint64 {
+	if x != nil {
+		return x.MaxHealth
+	}
+	return 0
+}
+
+// 角色状态，仅包含计算和衍生属性
+type ActorStatusPBComponent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CalculatedAttributes *CalculatedAttributesPBComponent `protobuf:"bytes,1,opt,name=calculated_attributes,json=calculatedAttributes,proto3" json:"calculated_attributes,omitempty"` // 计算属性
+	DerivedAttributes    *DerivedAttributesPBComponent    `protobuf:"bytes,2,opt,name=derived_attributes,json=derivedAttributes,proto3" json:"derived_attributes,omitempty"`          // 衍生属性
+}
+
+func (x *ActorStatusPBComponent) Reset() {
+	*x = ActorStatusPBComponent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_logic_component_actor_comp_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ActorStatusPBComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActorStatusPBComponent) ProtoMessage() {}
+
+func (x *ActorStatusPBComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_logic_component_actor_comp_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActorStatusPBComponent.ProtoReflect.Descriptor instead.
+func (*ActorStatusPBComponent) Descriptor() ([]byte, []int) {
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ActorStatusPBComponent) GetCalculatedAttributes() *CalculatedAttributesPBComponent {
+	if x != nil {
+		return x.CalculatedAttributes
+	}
+	return nil
+}
+
+func (x *ActorStatusPBComponent) GetDerivedAttributes() *DerivedAttributesPBComponent {
+	if x != nil {
+		return x.DerivedAttributes
+	}
+	return nil
 }
 
 var File_logic_component_actor_comp_proto protoreflect.FileDescriptor
@@ -590,16 +712,38 @@ var file_logic_component_actor_comp_proto_rawDesc = []byte{
 	0x0a, 0x01, 0x7a, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x01, 0x7a, 0x22, 0x24, 0x0a, 0x0a,
 	0x56, 0x69, 0x65, 0x77, 0x52, 0x61, 0x64, 0x69, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x61,
 	0x64, 0x69, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x72, 0x61, 0x64, 0x69,
-	0x75, 0x73, 0x22, 0x42, 0x0a, 0x11, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x50, 0x42, 0x43, 0x6f,
-	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x68, 0x70, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x02, 0x68, 0x70, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x61, 0x78, 0x5f, 0x68,
-	0x65, 0x61, 0x6c, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x6d, 0x61, 0x78,
-	0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x22, 0x3c, 0x0a, 0x0f, 0x4d, 0x61, 0x6e, 0x61, 0x50, 0x42,
-	0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x6d, 0x70, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x6d, 0x70, 0x12, 0x19, 0x0a, 0x08, 0x6d, 0x61, 0x78,
-	0x5f, 0x6d, 0x61, 0x6e, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x6d, 0x61, 0x78,
-	0x4d, 0x61, 0x6e, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x73, 0x22, 0x7d, 0x0a, 0x19, 0x42, 0x61, 0x73, 0x65, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62,
+	0x75, 0x74, 0x65, 0x73, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12,
+	0x1a, 0x0a, 0x08, 0x73, 0x74, 0x72, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x08, 0x73, 0x74, 0x72, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x12, 0x18, 0x0a, 0x07, 0x73,
+	0x74, 0x61, 0x6d, 0x69, 0x6e, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x73, 0x74,
+	0x61, 0x6d, 0x69, 0x6e, 0x61, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x12, 0x12, 0x0a,
+	0x04, 0x6d, 0x61, 0x6e, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x6d, 0x61, 0x6e,
+	0x61, 0x22, 0x69, 0x0a, 0x1f, 0x43, 0x61, 0x6c, 0x63, 0x75, 0x6c, 0x61, 0x74, 0x65, 0x64, 0x41,
+	0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f,
+	0x6e, 0x65, 0x6e, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x61, 0x74, 0x74, 0x61, 0x63, 0x6b, 0x5f, 0x70,
+	0x6f, 0x77, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x61, 0x74, 0x74, 0x61,
+	0x63, 0x6b, 0x50, 0x6f, 0x77, 0x65, 0x72, 0x12, 0x23, 0x0a, 0x0d, 0x64, 0x65, 0x66, 0x65, 0x6e,
+	0x73, 0x65, 0x5f, 0x70, 0x6f, 0x77, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c,
+	0x64, 0x65, 0x66, 0x65, 0x6e, 0x73, 0x65, 0x50, 0x6f, 0x77, 0x65, 0x72, 0x22, 0x3d, 0x0a, 0x1c,
+	0x44, 0x65, 0x72, 0x69, 0x76, 0x65, 0x64, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65,
+	0x73, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a,
+	0x6d, 0x61, 0x78, 0x5f, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x09, 0x6d, 0x61, 0x78, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x22, 0xbd, 0x01, 0x0a, 0x16,
+	0x41, 0x63, 0x74, 0x6f, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x50, 0x42, 0x43, 0x6f, 0x6d,
+	0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x55, 0x0a, 0x15, 0x63, 0x61, 0x6c, 0x63, 0x75, 0x6c,
+	0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x43, 0x61, 0x6c, 0x63, 0x75, 0x6c, 0x61, 0x74,
+	0x65, 0x64, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x42, 0x43, 0x6f,
+	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x52, 0x14, 0x63, 0x61, 0x6c, 0x63, 0x75, 0x6c, 0x61,
+	0x74, 0x65, 0x64, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x12, 0x4c, 0x0a,
+	0x12, 0x64, 0x65, 0x72, 0x69, 0x76, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75,
+	0x74, 0x65, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x44, 0x65, 0x72, 0x69,
+	0x76, 0x65, 0x64, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x42, 0x43,
+	0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x52, 0x11, 0x64, 0x65, 0x72, 0x69, 0x76, 0x65,
+	0x64, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70,
+	0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -614,28 +758,32 @@ func file_logic_component_actor_comp_proto_rawDescGZIP() []byte {
 	return file_logic_component_actor_comp_proto_rawDescData
 }
 
-var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_logic_component_actor_comp_proto_goTypes = []any{
-	(*Location)(nil),          // 0: Location
-	(*Rotation)(nil),          // 1: Rotation
-	(*Scale)(nil),             // 2: Scale
-	(*Transform)(nil),         // 3: Transform
-	(*Velocity)(nil),          // 4: Velocity
-	(*Acceleration)(nil),      // 5: Acceleration
-	(*ViewRadius)(nil),        // 6: ViewRadius
-	(*HealthPBComponent)(nil), // 7: HealthPBComponent
-	(*ManaPBComponent)(nil),   // 8: ManaPBComponent
-	(*Vector3)(nil),           // 9: Vector3
+	(*Location)(nil),                        // 0: Location
+	(*Rotation)(nil),                        // 1: Rotation
+	(*Scale)(nil),                           // 2: Scale
+	(*Transform)(nil),                       // 3: Transform
+	(*Velocity)(nil),                        // 4: Velocity
+	(*Acceleration)(nil),                    // 5: Acceleration
+	(*ViewRadius)(nil),                      // 6: ViewRadius
+	(*BaseAttributesPBComponent)(nil),       // 7: BaseAttributesPBComponent
+	(*CalculatedAttributesPBComponent)(nil), // 8: CalculatedAttributesPBComponent
+	(*DerivedAttributesPBComponent)(nil),    // 9: DerivedAttributesPBComponent
+	(*ActorStatusPBComponent)(nil),          // 10: ActorStatusPBComponent
+	(*Vector3)(nil),                         // 11: Vector3
 }
 var file_logic_component_actor_comp_proto_depIdxs = []int32{
-	9, // 0: Transform.location:type_name -> Vector3
-	1, // 1: Transform.rotation:type_name -> Rotation
-	2, // 2: Transform.scale:type_name -> Scale
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	11, // 0: Transform.location:type_name -> Vector3
+	1,  // 1: Transform.rotation:type_name -> Rotation
+	2,  // 2: Transform.scale:type_name -> Scale
+	8,  // 3: ActorStatusPBComponent.calculated_attributes:type_name -> CalculatedAttributesPBComponent
+	9,  // 4: ActorStatusPBComponent.derived_attributes:type_name -> DerivedAttributesPBComponent
+	5,  // [5:5] is the sub-list for method output_type
+	5,  // [5:5] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_logic_component_actor_comp_proto_init() }
@@ -730,7 +878,7 @@ func file_logic_component_actor_comp_proto_init() {
 			}
 		}
 		file_logic_component_actor_comp_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*HealthPBComponent); i {
+			switch v := v.(*BaseAttributesPBComponent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -742,7 +890,31 @@ func file_logic_component_actor_comp_proto_init() {
 			}
 		}
 		file_logic_component_actor_comp_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*ManaPBComponent); i {
+			switch v := v.(*CalculatedAttributesPBComponent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_logic_component_actor_comp_proto_msgTypes[9].Exporter = func(v any, i int) any {
+			switch v := v.(*DerivedAttributesPBComponent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_logic_component_actor_comp_proto_msgTypes[10].Exporter = func(v any, i int) any {
+			switch v := v.(*ActorStatusPBComponent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -760,7 +932,7 @@ func file_logic_component_actor_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_logic_component_actor_comp_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

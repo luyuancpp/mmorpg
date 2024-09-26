@@ -53,15 +53,21 @@ extern const ::google::protobuf::internal::DescriptorTable
 class Acceleration;
 struct AccelerationDefaultTypeInternal;
 extern AccelerationDefaultTypeInternal _Acceleration_default_instance_;
-class HealthPBComponent;
-struct HealthPBComponentDefaultTypeInternal;
-extern HealthPBComponentDefaultTypeInternal _HealthPBComponent_default_instance_;
+class ActorStatusPBComponent;
+struct ActorStatusPBComponentDefaultTypeInternal;
+extern ActorStatusPBComponentDefaultTypeInternal _ActorStatusPBComponent_default_instance_;
+class BaseAttributesPBComponent;
+struct BaseAttributesPBComponentDefaultTypeInternal;
+extern BaseAttributesPBComponentDefaultTypeInternal _BaseAttributesPBComponent_default_instance_;
+class CalculatedAttributesPBComponent;
+struct CalculatedAttributesPBComponentDefaultTypeInternal;
+extern CalculatedAttributesPBComponentDefaultTypeInternal _CalculatedAttributesPBComponent_default_instance_;
+class DerivedAttributesPBComponent;
+struct DerivedAttributesPBComponentDefaultTypeInternal;
+extern DerivedAttributesPBComponentDefaultTypeInternal _DerivedAttributesPBComponent_default_instance_;
 class Location;
 struct LocationDefaultTypeInternal;
 extern LocationDefaultTypeInternal _Location_default_instance_;
-class ManaPBComponent;
-struct ManaPBComponentDefaultTypeInternal;
-extern ManaPBComponentDefaultTypeInternal _ManaPBComponent_default_instance_;
 class Rotation;
 struct RotationDefaultTypeInternal;
 extern RotationDefaultTypeInternal _Rotation_default_instance_;
@@ -828,185 +834,6 @@ class Rotation final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class ManaPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ManaPBComponent) */ {
- public:
-  inline ManaPBComponent() : ManaPBComponent(nullptr) {}
-  ~ManaPBComponent() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ManaPBComponent(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline ManaPBComponent(const ManaPBComponent& from) : ManaPBComponent(nullptr, from) {}
-  inline ManaPBComponent(ManaPBComponent&& from) noexcept
-      : ManaPBComponent(nullptr, std::move(from)) {}
-  inline ManaPBComponent& operator=(const ManaPBComponent& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline ManaPBComponent& operator=(ManaPBComponent&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const ManaPBComponent& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const ManaPBComponent* internal_default_instance() {
-    return reinterpret_cast<const ManaPBComponent*>(
-        &_ManaPBComponent_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 8;
-  friend void swap(ManaPBComponent& a, ManaPBComponent& b) { a.Swap(&b); }
-  inline void Swap(ManaPBComponent* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(ManaPBComponent* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  ManaPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<ManaPBComponent>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ManaPBComponent& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ManaPBComponent& from) { ManaPBComponent::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(ManaPBComponent* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "ManaPBComponent"; }
-
- protected:
-  explicit ManaPBComponent(::google::protobuf::Arena* arena);
-  ManaPBComponent(::google::protobuf::Arena* arena, const ManaPBComponent& from);
-  ManaPBComponent(::google::protobuf::Arena* arena, ManaPBComponent&& from) noexcept
-      : ManaPBComponent(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kMpFieldNumber = 1,
-    kMaxManaFieldNumber = 2,
-  };
-  // uint64 mp = 1;
-  void clear_mp() ;
-  ::uint64_t mp() const;
-  void set_mp(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_mp() const;
-  void _internal_set_mp(::uint64_t value);
-
-  public:
-  // uint64 max_mana = 2;
-  void clear_max_mana() ;
-  ::uint64_t max_mana() const;
-  void set_max_mana(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_max_mana() const;
-  void _internal_set_max_mana(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:ManaPBComponent)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 0,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t mp_;
-    ::uint64_t max_mana_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
-};
-// -------------------------------------------------------------------
-
 class Location final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:Location) */ {
  public:
@@ -1198,23 +1025,23 @@ class Location final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class HealthPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:HealthPBComponent) */ {
+class DerivedAttributesPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:DerivedAttributesPBComponent) */ {
  public:
-  inline HealthPBComponent() : HealthPBComponent(nullptr) {}
-  ~HealthPBComponent() override;
+  inline DerivedAttributesPBComponent() : DerivedAttributesPBComponent(nullptr) {}
+  ~DerivedAttributesPBComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR HealthPBComponent(
+  explicit PROTOBUF_CONSTEXPR DerivedAttributesPBComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline HealthPBComponent(const HealthPBComponent& from) : HealthPBComponent(nullptr, from) {}
-  inline HealthPBComponent(HealthPBComponent&& from) noexcept
-      : HealthPBComponent(nullptr, std::move(from)) {}
-  inline HealthPBComponent& operator=(const HealthPBComponent& from) {
+  inline DerivedAttributesPBComponent(const DerivedAttributesPBComponent& from) : DerivedAttributesPBComponent(nullptr, from) {}
+  inline DerivedAttributesPBComponent(DerivedAttributesPBComponent&& from) noexcept
+      : DerivedAttributesPBComponent(nullptr, std::move(from)) {}
+  inline DerivedAttributesPBComponent& operator=(const DerivedAttributesPBComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline HealthPBComponent& operator=(HealthPBComponent&& from) noexcept {
+  inline DerivedAttributesPBComponent& operator=(DerivedAttributesPBComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -1246,16 +1073,16 @@ class HealthPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const HealthPBComponent& default_instance() {
+  static const DerivedAttributesPBComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const HealthPBComponent* internal_default_instance() {
-    return reinterpret_cast<const HealthPBComponent*>(
-        &_HealthPBComponent_default_instance_);
+  static inline const DerivedAttributesPBComponent* internal_default_instance() {
+    return reinterpret_cast<const DerivedAttributesPBComponent*>(
+        &_DerivedAttributesPBComponent_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 7;
-  friend void swap(HealthPBComponent& a, HealthPBComponent& b) { a.Swap(&b); }
-  inline void Swap(HealthPBComponent* other) {
+  static constexpr int kIndexInFileMessages = 9;
+  friend void swap(DerivedAttributesPBComponent& a, DerivedAttributesPBComponent& b) { a.Swap(&b); }
+  inline void Swap(DerivedAttributesPBComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -1267,7 +1094,7 @@ class HealthPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(HealthPBComponent* other) {
+  void UnsafeArenaSwap(DerivedAttributesPBComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1275,13 +1102,13 @@ class HealthPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  HealthPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<HealthPBComponent>(arena);
+  DerivedAttributesPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<DerivedAttributesPBComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const HealthPBComponent& from);
+  void CopyFrom(const DerivedAttributesPBComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const HealthPBComponent& from) { HealthPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const DerivedAttributesPBComponent& from) { DerivedAttributesPBComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -1302,16 +1129,16 @@ class HealthPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(HealthPBComponent* other);
+  void InternalSwap(DerivedAttributesPBComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "HealthPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "DerivedAttributesPBComponent"; }
 
  protected:
-  explicit HealthPBComponent(::google::protobuf::Arena* arena);
-  HealthPBComponent(::google::protobuf::Arena* arena, const HealthPBComponent& from);
-  HealthPBComponent(::google::protobuf::Arena* arena, HealthPBComponent&& from) noexcept
-      : HealthPBComponent(arena) {
+  explicit DerivedAttributesPBComponent(::google::protobuf::Arena* arena);
+  DerivedAttributesPBComponent(::google::protobuf::Arena* arena, const DerivedAttributesPBComponent& from);
+  DerivedAttributesPBComponent(::google::protobuf::Arena* arena, DerivedAttributesPBComponent&& from) noexcept
+      : DerivedAttributesPBComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -1323,20 +1150,9 @@ class HealthPBComponent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kHpFieldNumber = 1,
-    kMaxHealthFieldNumber = 2,
+    kMaxHealthFieldNumber = 1,
   };
-  // uint64 hp = 1;
-  void clear_hp() ;
-  ::uint64_t hp() const;
-  void set_hp(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_hp() const;
-  void _internal_set_hp(::uint64_t value);
-
-  public:
-  // uint64 max_health = 2;
+  // uint64 max_health = 1;
   void clear_max_health() ;
   ::uint64_t max_health() const;
   void set_max_health(::uint64_t value);
@@ -1346,7 +1162,185 @@ class HealthPBComponent final : public ::google::protobuf::Message
   void _internal_set_max_health(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:HealthPBComponent)
+  // @@protoc_insertion_point(class_scope:DerivedAttributesPBComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t max_health_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
+class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CalculatedAttributesPBComponent) */ {
+ public:
+  inline CalculatedAttributesPBComponent() : CalculatedAttributesPBComponent(nullptr) {}
+  ~CalculatedAttributesPBComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR CalculatedAttributesPBComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline CalculatedAttributesPBComponent(const CalculatedAttributesPBComponent& from) : CalculatedAttributesPBComponent(nullptr, from) {}
+  inline CalculatedAttributesPBComponent(CalculatedAttributesPBComponent&& from) noexcept
+      : CalculatedAttributesPBComponent(nullptr, std::move(from)) {}
+  inline CalculatedAttributesPBComponent& operator=(const CalculatedAttributesPBComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline CalculatedAttributesPBComponent& operator=(CalculatedAttributesPBComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const CalculatedAttributesPBComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const CalculatedAttributesPBComponent* internal_default_instance() {
+    return reinterpret_cast<const CalculatedAttributesPBComponent*>(
+        &_CalculatedAttributesPBComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 8;
+  friend void swap(CalculatedAttributesPBComponent& a, CalculatedAttributesPBComponent& b) { a.Swap(&b); }
+  inline void Swap(CalculatedAttributesPBComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(CalculatedAttributesPBComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  CalculatedAttributesPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<CalculatedAttributesPBComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const CalculatedAttributesPBComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const CalculatedAttributesPBComponent& from) { CalculatedAttributesPBComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(CalculatedAttributesPBComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "CalculatedAttributesPBComponent"; }
+
+ protected:
+  explicit CalculatedAttributesPBComponent(::google::protobuf::Arena* arena);
+  CalculatedAttributesPBComponent(::google::protobuf::Arena* arena, const CalculatedAttributesPBComponent& from);
+  CalculatedAttributesPBComponent(::google::protobuf::Arena* arena, CalculatedAttributesPBComponent&& from) noexcept
+      : CalculatedAttributesPBComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kAttackPowerFieldNumber = 1,
+    kDefensePowerFieldNumber = 2,
+  };
+  // uint64 attack_power = 1;
+  void clear_attack_power() ;
+  ::uint64_t attack_power() const;
+  void set_attack_power(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_attack_power() const;
+  void _internal_set_attack_power(::uint64_t value);
+
+  public:
+  // uint64 defense_power = 2;
+  void clear_defense_power() ;
+  ::uint64_t defense_power() const;
+  void set_defense_power(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_defense_power() const;
+  void _internal_set_defense_power(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:CalculatedAttributesPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1367,8 +1361,211 @@ class HealthPBComponent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t hp_;
-    ::uint64_t max_health_;
+    ::uint64_t attack_power_;
+    ::uint64_t defense_power_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
+class BaseAttributesPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BaseAttributesPBComponent) */ {
+ public:
+  inline BaseAttributesPBComponent() : BaseAttributesPBComponent(nullptr) {}
+  ~BaseAttributesPBComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR BaseAttributesPBComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline BaseAttributesPBComponent(const BaseAttributesPBComponent& from) : BaseAttributesPBComponent(nullptr, from) {}
+  inline BaseAttributesPBComponent(BaseAttributesPBComponent&& from) noexcept
+      : BaseAttributesPBComponent(nullptr, std::move(from)) {}
+  inline BaseAttributesPBComponent& operator=(const BaseAttributesPBComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BaseAttributesPBComponent& operator=(BaseAttributesPBComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BaseAttributesPBComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const BaseAttributesPBComponent* internal_default_instance() {
+    return reinterpret_cast<const BaseAttributesPBComponent*>(
+        &_BaseAttributesPBComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 7;
+  friend void swap(BaseAttributesPBComponent& a, BaseAttributesPBComponent& b) { a.Swap(&b); }
+  inline void Swap(BaseAttributesPBComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BaseAttributesPBComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BaseAttributesPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<BaseAttributesPBComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const BaseAttributesPBComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const BaseAttributesPBComponent& from) { BaseAttributesPBComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(BaseAttributesPBComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "BaseAttributesPBComponent"; }
+
+ protected:
+  explicit BaseAttributesPBComponent(::google::protobuf::Arena* arena);
+  BaseAttributesPBComponent(::google::protobuf::Arena* arena, const BaseAttributesPBComponent& from);
+  BaseAttributesPBComponent(::google::protobuf::Arena* arena, BaseAttributesPBComponent&& from) noexcept
+      : BaseAttributesPBComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kStrengthFieldNumber = 1,
+    kStaminaFieldNumber = 2,
+    kHealthFieldNumber = 3,
+    kManaFieldNumber = 4,
+  };
+  // uint64 strength = 1;
+  void clear_strength() ;
+  ::uint64_t strength() const;
+  void set_strength(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_strength() const;
+  void _internal_set_strength(::uint64_t value);
+
+  public:
+  // uint64 stamina = 2;
+  void clear_stamina() ;
+  ::uint64_t stamina() const;
+  void set_stamina(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_stamina() const;
+  void _internal_set_stamina(::uint64_t value);
+
+  public:
+  // uint64 health = 3;
+  void clear_health() ;
+  ::uint64_t health() const;
+  void set_health(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_health() const;
+  void _internal_set_health(::uint64_t value);
+
+  public:
+  // uint64 mana = 4;
+  void clear_mana() ;
+  ::uint64_t mana() const;
+  void set_mana(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_mana() const;
+  void _internal_set_mana(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:BaseAttributesPBComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 4, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t strength_;
+    ::uint64_t stamina_;
+    ::uint64_t health_;
+    ::uint64_t mana_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1768,6 +1965,196 @@ class Transform final : public ::google::protobuf::Message
     ::Vector3* location_;
     ::Rotation* rotation_;
     ::Scale* scale_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ActorStatusPBComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ActorStatusPBComponent) */ {
+ public:
+  inline ActorStatusPBComponent() : ActorStatusPBComponent(nullptr) {}
+  ~ActorStatusPBComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ActorStatusPBComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ActorStatusPBComponent(const ActorStatusPBComponent& from) : ActorStatusPBComponent(nullptr, from) {}
+  inline ActorStatusPBComponent(ActorStatusPBComponent&& from) noexcept
+      : ActorStatusPBComponent(nullptr, std::move(from)) {}
+  inline ActorStatusPBComponent& operator=(const ActorStatusPBComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ActorStatusPBComponent& operator=(ActorStatusPBComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ActorStatusPBComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ActorStatusPBComponent* internal_default_instance() {
+    return reinterpret_cast<const ActorStatusPBComponent*>(
+        &_ActorStatusPBComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 10;
+  friend void swap(ActorStatusPBComponent& a, ActorStatusPBComponent& b) { a.Swap(&b); }
+  inline void Swap(ActorStatusPBComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ActorStatusPBComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ActorStatusPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ActorStatusPBComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ActorStatusPBComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ActorStatusPBComponent& from) { ActorStatusPBComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ActorStatusPBComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ActorStatusPBComponent"; }
+
+ protected:
+  explicit ActorStatusPBComponent(::google::protobuf::Arena* arena);
+  ActorStatusPBComponent(::google::protobuf::Arena* arena, const ActorStatusPBComponent& from);
+  ActorStatusPBComponent(::google::protobuf::Arena* arena, ActorStatusPBComponent&& from) noexcept
+      : ActorStatusPBComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kCalculatedAttributesFieldNumber = 1,
+    kDerivedAttributesFieldNumber = 2,
+  };
+  // .CalculatedAttributesPBComponent calculated_attributes = 1;
+  bool has_calculated_attributes() const;
+  void clear_calculated_attributes() ;
+  const ::CalculatedAttributesPBComponent& calculated_attributes() const;
+  PROTOBUF_NODISCARD ::CalculatedAttributesPBComponent* release_calculated_attributes();
+  ::CalculatedAttributesPBComponent* mutable_calculated_attributes();
+  void set_allocated_calculated_attributes(::CalculatedAttributesPBComponent* value);
+  void unsafe_arena_set_allocated_calculated_attributes(::CalculatedAttributesPBComponent* value);
+  ::CalculatedAttributesPBComponent* unsafe_arena_release_calculated_attributes();
+
+  private:
+  const ::CalculatedAttributesPBComponent& _internal_calculated_attributes() const;
+  ::CalculatedAttributesPBComponent* _internal_mutable_calculated_attributes();
+
+  public:
+  // .DerivedAttributesPBComponent derived_attributes = 2;
+  bool has_derived_attributes() const;
+  void clear_derived_attributes() ;
+  const ::DerivedAttributesPBComponent& derived_attributes() const;
+  PROTOBUF_NODISCARD ::DerivedAttributesPBComponent* release_derived_attributes();
+  ::DerivedAttributesPBComponent* mutable_derived_attributes();
+  void set_allocated_derived_attributes(::DerivedAttributesPBComponent* value);
+  void unsafe_arena_set_allocated_derived_attributes(::DerivedAttributesPBComponent* value);
+  ::DerivedAttributesPBComponent* unsafe_arena_release_derived_attributes();
+
+  private:
+  const ::DerivedAttributesPBComponent& _internal_derived_attributes() const;
+  ::DerivedAttributesPBComponent* _internal_mutable_derived_attributes();
+
+  public:
+  // @@protoc_insertion_point(class_scope:ActorStatusPBComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 2,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::CalculatedAttributesPBComponent* calculated_attributes_;
+    ::DerivedAttributesPBComponent* derived_attributes_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2451,98 +2838,364 @@ inline void ViewRadius::_internal_set_radius(double value) {
 
 // -------------------------------------------------------------------
 
-// HealthPBComponent
+// BaseAttributesPBComponent
 
-// uint64 hp = 1;
-inline void HealthPBComponent::clear_hp() {
+// uint64 strength = 1;
+inline void BaseAttributesPBComponent::clear_strength() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.hp_ = ::uint64_t{0u};
+  _impl_.strength_ = ::uint64_t{0u};
 }
-inline ::uint64_t HealthPBComponent::hp() const {
-  // @@protoc_insertion_point(field_get:HealthPBComponent.hp)
-  return _internal_hp();
+inline ::uint64_t BaseAttributesPBComponent::strength() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.strength)
+  return _internal_strength();
 }
-inline void HealthPBComponent::set_hp(::uint64_t value) {
-  _internal_set_hp(value);
-  // @@protoc_insertion_point(field_set:HealthPBComponent.hp)
+inline void BaseAttributesPBComponent::set_strength(::uint64_t value) {
+  _internal_set_strength(value);
+  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.strength)
 }
-inline ::uint64_t HealthPBComponent::_internal_hp() const {
+inline ::uint64_t BaseAttributesPBComponent::_internal_strength() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.hp_;
+  return _impl_.strength_;
 }
-inline void HealthPBComponent::_internal_set_hp(::uint64_t value) {
+inline void BaseAttributesPBComponent::_internal_set_strength(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.hp_ = value;
+  _impl_.strength_ = value;
 }
 
-// uint64 max_health = 2;
-inline void HealthPBComponent::clear_max_health() {
+// uint64 stamina = 2;
+inline void BaseAttributesPBComponent::clear_stamina() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.stamina_ = ::uint64_t{0u};
+}
+inline ::uint64_t BaseAttributesPBComponent::stamina() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.stamina)
+  return _internal_stamina();
+}
+inline void BaseAttributesPBComponent::set_stamina(::uint64_t value) {
+  _internal_set_stamina(value);
+  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.stamina)
+}
+inline ::uint64_t BaseAttributesPBComponent::_internal_stamina() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.stamina_;
+}
+inline void BaseAttributesPBComponent::_internal_set_stamina(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.stamina_ = value;
+}
+
+// uint64 health = 3;
+inline void BaseAttributesPBComponent::clear_health() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.health_ = ::uint64_t{0u};
+}
+inline ::uint64_t BaseAttributesPBComponent::health() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.health)
+  return _internal_health();
+}
+inline void BaseAttributesPBComponent::set_health(::uint64_t value) {
+  _internal_set_health(value);
+  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.health)
+}
+inline ::uint64_t BaseAttributesPBComponent::_internal_health() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.health_;
+}
+inline void BaseAttributesPBComponent::_internal_set_health(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.health_ = value;
+}
+
+// uint64 mana = 4;
+inline void BaseAttributesPBComponent::clear_mana() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.mana_ = ::uint64_t{0u};
+}
+inline ::uint64_t BaseAttributesPBComponent::mana() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.mana)
+  return _internal_mana();
+}
+inline void BaseAttributesPBComponent::set_mana(::uint64_t value) {
+  _internal_set_mana(value);
+  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.mana)
+}
+inline ::uint64_t BaseAttributesPBComponent::_internal_mana() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.mana_;
+}
+inline void BaseAttributesPBComponent::_internal_set_mana(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.mana_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// CalculatedAttributesPBComponent
+
+// uint64 attack_power = 1;
+inline void CalculatedAttributesPBComponent::clear_attack_power() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.attack_power_ = ::uint64_t{0u};
+}
+inline ::uint64_t CalculatedAttributesPBComponent::attack_power() const {
+  // @@protoc_insertion_point(field_get:CalculatedAttributesPBComponent.attack_power)
+  return _internal_attack_power();
+}
+inline void CalculatedAttributesPBComponent::set_attack_power(::uint64_t value) {
+  _internal_set_attack_power(value);
+  // @@protoc_insertion_point(field_set:CalculatedAttributesPBComponent.attack_power)
+}
+inline ::uint64_t CalculatedAttributesPBComponent::_internal_attack_power() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.attack_power_;
+}
+inline void CalculatedAttributesPBComponent::_internal_set_attack_power(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.attack_power_ = value;
+}
+
+// uint64 defense_power = 2;
+inline void CalculatedAttributesPBComponent::clear_defense_power() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.defense_power_ = ::uint64_t{0u};
+}
+inline ::uint64_t CalculatedAttributesPBComponent::defense_power() const {
+  // @@protoc_insertion_point(field_get:CalculatedAttributesPBComponent.defense_power)
+  return _internal_defense_power();
+}
+inline void CalculatedAttributesPBComponent::set_defense_power(::uint64_t value) {
+  _internal_set_defense_power(value);
+  // @@protoc_insertion_point(field_set:CalculatedAttributesPBComponent.defense_power)
+}
+inline ::uint64_t CalculatedAttributesPBComponent::_internal_defense_power() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.defense_power_;
+}
+inline void CalculatedAttributesPBComponent::_internal_set_defense_power(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.defense_power_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// DerivedAttributesPBComponent
+
+// uint64 max_health = 1;
+inline void DerivedAttributesPBComponent::clear_max_health() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.max_health_ = ::uint64_t{0u};
 }
-inline ::uint64_t HealthPBComponent::max_health() const {
-  // @@protoc_insertion_point(field_get:HealthPBComponent.max_health)
+inline ::uint64_t DerivedAttributesPBComponent::max_health() const {
+  // @@protoc_insertion_point(field_get:DerivedAttributesPBComponent.max_health)
   return _internal_max_health();
 }
-inline void HealthPBComponent::set_max_health(::uint64_t value) {
+inline void DerivedAttributesPBComponent::set_max_health(::uint64_t value) {
   _internal_set_max_health(value);
-  // @@protoc_insertion_point(field_set:HealthPBComponent.max_health)
+  // @@protoc_insertion_point(field_set:DerivedAttributesPBComponent.max_health)
 }
-inline ::uint64_t HealthPBComponent::_internal_max_health() const {
+inline ::uint64_t DerivedAttributesPBComponent::_internal_max_health() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.max_health_;
 }
-inline void HealthPBComponent::_internal_set_max_health(::uint64_t value) {
+inline void DerivedAttributesPBComponent::_internal_set_max_health(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.max_health_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// ManaPBComponent
+// ActorStatusPBComponent
 
-// uint64 mp = 1;
-inline void ManaPBComponent::clear_mp() {
+// .CalculatedAttributesPBComponent calculated_attributes = 1;
+inline bool ActorStatusPBComponent::has_calculated_attributes() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.calculated_attributes_ != nullptr);
+  return value;
+}
+inline void ActorStatusPBComponent::clear_calculated_attributes() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.mp_ = ::uint64_t{0u};
+  if (_impl_.calculated_attributes_ != nullptr) _impl_.calculated_attributes_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t ManaPBComponent::mp() const {
-  // @@protoc_insertion_point(field_get:ManaPBComponent.mp)
-  return _internal_mp();
-}
-inline void ManaPBComponent::set_mp(::uint64_t value) {
-  _internal_set_mp(value);
-  // @@protoc_insertion_point(field_set:ManaPBComponent.mp)
-}
-inline ::uint64_t ManaPBComponent::_internal_mp() const {
+inline const ::CalculatedAttributesPBComponent& ActorStatusPBComponent::_internal_calculated_attributes() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.mp_;
+  const ::CalculatedAttributesPBComponent* p = _impl_.calculated_attributes_;
+  return p != nullptr ? *p : reinterpret_cast<const ::CalculatedAttributesPBComponent&>(::_CalculatedAttributesPBComponent_default_instance_);
 }
-inline void ManaPBComponent::_internal_set_mp(::uint64_t value) {
+inline const ::CalculatedAttributesPBComponent& ActorStatusPBComponent::calculated_attributes() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ActorStatusPBComponent.calculated_attributes)
+  return _internal_calculated_attributes();
+}
+inline void ActorStatusPBComponent::unsafe_arena_set_allocated_calculated_attributes(::CalculatedAttributesPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.mp_ = value;
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.calculated_attributes_);
+  }
+  _impl_.calculated_attributes_ = reinterpret_cast<::CalculatedAttributesPBComponent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ActorStatusPBComponent.calculated_attributes)
+}
+inline ::CalculatedAttributesPBComponent* ActorStatusPBComponent::release_calculated_attributes() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::CalculatedAttributesPBComponent* released = _impl_.calculated_attributes_;
+  _impl_.calculated_attributes_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::CalculatedAttributesPBComponent* ActorStatusPBComponent::unsafe_arena_release_calculated_attributes() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:ActorStatusPBComponent.calculated_attributes)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::CalculatedAttributesPBComponent* temp = _impl_.calculated_attributes_;
+  _impl_.calculated_attributes_ = nullptr;
+  return temp;
+}
+inline ::CalculatedAttributesPBComponent* ActorStatusPBComponent::_internal_mutable_calculated_attributes() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.calculated_attributes_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::CalculatedAttributesPBComponent>(GetArena());
+    _impl_.calculated_attributes_ = reinterpret_cast<::CalculatedAttributesPBComponent*>(p);
+  }
+  return _impl_.calculated_attributes_;
+}
+inline ::CalculatedAttributesPBComponent* ActorStatusPBComponent::mutable_calculated_attributes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::CalculatedAttributesPBComponent* _msg = _internal_mutable_calculated_attributes();
+  // @@protoc_insertion_point(field_mutable:ActorStatusPBComponent.calculated_attributes)
+  return _msg;
+}
+inline void ActorStatusPBComponent::set_allocated_calculated_attributes(::CalculatedAttributesPBComponent* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete (_impl_.calculated_attributes_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.calculated_attributes_ = reinterpret_cast<::CalculatedAttributesPBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:ActorStatusPBComponent.calculated_attributes)
 }
 
-// uint64 max_mana = 2;
-inline void ManaPBComponent::clear_max_mana() {
+// .DerivedAttributesPBComponent derived_attributes = 2;
+inline bool ActorStatusPBComponent::has_derived_attributes() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.derived_attributes_ != nullptr);
+  return value;
+}
+inline void ActorStatusPBComponent::clear_derived_attributes() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.max_mana_ = ::uint64_t{0u};
+  if (_impl_.derived_attributes_ != nullptr) _impl_.derived_attributes_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t ManaPBComponent::max_mana() const {
-  // @@protoc_insertion_point(field_get:ManaPBComponent.max_mana)
-  return _internal_max_mana();
-}
-inline void ManaPBComponent::set_max_mana(::uint64_t value) {
-  _internal_set_max_mana(value);
-  // @@protoc_insertion_point(field_set:ManaPBComponent.max_mana)
-}
-inline ::uint64_t ManaPBComponent::_internal_max_mana() const {
+inline const ::DerivedAttributesPBComponent& ActorStatusPBComponent::_internal_derived_attributes() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.max_mana_;
+  const ::DerivedAttributesPBComponent* p = _impl_.derived_attributes_;
+  return p != nullptr ? *p : reinterpret_cast<const ::DerivedAttributesPBComponent&>(::_DerivedAttributesPBComponent_default_instance_);
 }
-inline void ManaPBComponent::_internal_set_max_mana(::uint64_t value) {
+inline const ::DerivedAttributesPBComponent& ActorStatusPBComponent::derived_attributes() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ActorStatusPBComponent.derived_attributes)
+  return _internal_derived_attributes();
+}
+inline void ActorStatusPBComponent::unsafe_arena_set_allocated_derived_attributes(::DerivedAttributesPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.max_mana_ = value;
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.derived_attributes_);
+  }
+  _impl_.derived_attributes_ = reinterpret_cast<::DerivedAttributesPBComponent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ActorStatusPBComponent.derived_attributes)
+}
+inline ::DerivedAttributesPBComponent* ActorStatusPBComponent::release_derived_attributes() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::DerivedAttributesPBComponent* released = _impl_.derived_attributes_;
+  _impl_.derived_attributes_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::DerivedAttributesPBComponent* ActorStatusPBComponent::unsafe_arena_release_derived_attributes() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:ActorStatusPBComponent.derived_attributes)
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::DerivedAttributesPBComponent* temp = _impl_.derived_attributes_;
+  _impl_.derived_attributes_ = nullptr;
+  return temp;
+}
+inline ::DerivedAttributesPBComponent* ActorStatusPBComponent::_internal_mutable_derived_attributes() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.derived_attributes_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::DerivedAttributesPBComponent>(GetArena());
+    _impl_.derived_attributes_ = reinterpret_cast<::DerivedAttributesPBComponent*>(p);
+  }
+  return _impl_.derived_attributes_;
+}
+inline ::DerivedAttributesPBComponent* ActorStatusPBComponent::mutable_derived_attributes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000002u;
+  ::DerivedAttributesPBComponent* _msg = _internal_mutable_derived_attributes();
+  // @@protoc_insertion_point(field_mutable:ActorStatusPBComponent.derived_attributes)
+  return _msg;
+}
+inline void ActorStatusPBComponent::set_allocated_derived_attributes(::DerivedAttributesPBComponent* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete (_impl_.derived_attributes_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+
+  _impl_.derived_attributes_ = reinterpret_cast<::DerivedAttributesPBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:ActorStatusPBComponent.derived_attributes)
 }
 
 #ifdef __GNUC__
