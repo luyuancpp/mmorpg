@@ -34,66 +34,63 @@ void SkillUtil::InitializePlayerComponentsHandler(entt::entity entity) {
 	tls.registry.emplace<CooldownTimeListComp>(entity);
 }
 
-void SkillUtil::StartCooldown(const entt::entity caster, const SkillTable* skillTable) {
-    if (auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
-        CooldownTimeComp comp;
-        comp.set_start(TimeUtil::NowMilliseconds());
-        comp.set_cooldown_table_id(skillTable->cooldown_id());
+void StartCooldown(const entt::entity caster, const SkillTable* skillTable) {
+	if (auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
+		CooldownTimeComp comp;
+		comp.set_start(TimeUtil::NowMilliseconds());
+		comp.set_cooldown_table_id(skillTable->cooldown_id());
 
-        auto coolDownList = coolDownTimeListComp->mutable_cooldown_list();
-        auto cooldownIt = coolDownList->find(skillTable->cooldown_id());
-
-        if (cooldownIt == coolDownList->end()) {
-            coolDownList->emplace(skillTable->cooldown_id(), comp);
-        }
-        else {
-            cooldownIt->second = comp;
-        }
-    }
+		auto coolDownList = coolDownTimeListComp->mutable_cooldown_list();
+		(*coolDownList)[skillTable->cooldown_id()] = comp;
+	}
 }
 
-uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillRequest* request) {
-	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
-	if (result != kOK) {
-		return result;
-	}
-
-	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
-
-	// 确定目标位置
+// Target Position Handling
+void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* request) {
 	if (request->has_position()) {
 		ViewUtil::LookAtPosition(caster, request->position());
 	} else if (request->target_id() > 0) {
 		entt::entity target{ request->target_id() };
 		const auto transform = tls.registry.try_get<Transform>(target);
-		if (nullptr == transform) {
-			return kEntityTransformNotFound;
+		if (transform) {
+			ViewUtil::LookAtPosition(caster, transform->location());
 		}
-		ViewUtil::LookAtPosition(caster, transform->location());
 	}
+}
 
-	// 广播技能使用信息
-	BroadcastSkillUsedMessage(caster, request);
-
-	// 创建技能上下文
-	auto context = std::make_shared<SkillContextPtrComp::element_type>();
+// Create Skill Context
+std::shared_ptr<SkillContextPBComponent> CreateSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request) {
+	auto context = std::make_shared<SkillContextPBComponent>();
 	context->set_caster(entt::to_integral(caster));
 	context->set_skilltableid(request->skill_table_id());
 	context->set_target(request->target_id());
 	context->set_casttime(TimeUtil::NowMilliseconds());
+	context->set_skillid(GenerateUniqueSkillId(tls.registry.get<SkillContextCompMap>(caster), {}));
+	return context;
+}
 
-	// 生成技能ID并存储上下文
-	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
-	entt::entity target = entt::to_entity(request->target_id());
-	SkillContextCompMap emptySkillContextMap;
-	auto& targetSkillContextMap = tls.registry.valid(target) ? tls.registry.get<SkillContextCompMap>(target) : emptySkillContextMap;
-
-	context->set_skillid(GenerateUniqueSkillId(casterSkillContextMap, targetSkillContextMap));
+// Add Skill Context to Maps
+void AddSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request, std::shared_ptr<SkillContextPBComponent> context, SkillContextCompMap& casterSkillContextMap) {
 	casterSkillContextMap.emplace(context->skillid(), context);
+	entt::entity target{request->target_id()};
 	if (tls.registry.valid(target)) {
+		auto& targetSkillContextMap = tls.registry.get<SkillContextCompMap>(target);
 		targetSkillContextMap.emplace(context->skillid(), context);
 	}
+}
 
+uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillRequest* request) {
+	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
+	if (result != kOK || !skillTable) return result;
+
+	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
+	LookAtTargetPosition(caster, request);
+	BroadcastSkillUsedMessage(caster, request);
+
+	auto context = CreateSkillContext(caster, request);
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+	AddSkillContext(caster, request, context, casterSkillContextMap);
+    
 	StartCooldown(caster, skillTable);
 	SetupCastingTimer(caster, skillTable, context->skillid());
 
