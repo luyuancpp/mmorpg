@@ -19,7 +19,6 @@
 #include "proto/logic/component/npc_comp.pb.h"
 #include "thread_local/storage_game.h"
 
-// Generate a unique skill ID that is not in the provided context maps
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
 	uint64_t newSkillId;
 	do {
@@ -27,6 +26,7 @@ uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const 
 	} while (casterBuffList.contains(newSkillId) || targetBuffList.contains(newSkillId));
 	return newSkillId;
 }
+
 
 // Initialize an entity with a SkillContextMap
 void SkillUtil::InitializePlayerComponentsHandler(entt::entity entity) {
@@ -52,7 +52,6 @@ void SkillUtil::StartCooldown(const entt::entity caster, const SkillTable* skill
     }
 }
 
-// Handle the use of a skill by the caster
 uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kOK) {
@@ -61,28 +60,29 @@ uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillReq
 
 	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
 
-	if (request->has_position()){
+	// 确定目标位置
+	if (request->has_position()) {
 		ViewUtil::LookAtPosition(caster, request->position());
-	}else if(request->target_id() > 0 ){
+	} else if (request->target_id() > 0) {
 		entt::entity target{ request->target_id() };
-
 		const auto transform = tls.registry.try_get<Transform>(target);
-		if (nullptr == transform)
-		{
+		if (nullptr == transform) {
 			return kEntityTransformNotFound;
 		}
-
 		ViewUtil::LookAtPosition(caster, transform->location());
 	}
-	
+
+	// 广播技能使用信息
 	BroadcastSkillUsedMessage(caster, request);
 
+	// 创建技能上下文
 	auto context = std::make_shared<SkillContextPtrComp::element_type>();
 	context->set_caster(entt::to_integral(caster));
 	context->set_skilltableid(request->skill_table_id());
 	context->set_target(request->target_id());
 	context->set_casttime(TimeUtil::NowMilliseconds());
 
+	// 生成技能ID并存储上下文
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
 	entt::entity target = entt::to_entity(request->target_id());
 	SkillContextCompMap emptySkillContextMap;
@@ -95,11 +95,11 @@ uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillReq
 	}
 
 	StartCooldown(caster, skillTable);
-
 	SetupCastingTimer(caster, skillTable, context->skillid());
 
 	return kOK;
 }
+
 
 uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
