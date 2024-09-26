@@ -12,8 +12,8 @@ const Point kDefaultSize(20.0, 20.0);
 const Point kOrigin(0.0, 0.0);
 const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
-absl::uint128 GridUtil::GetGridId(const Location& location) {
-    return GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(location.x(), location.y()))));
+absl::uint128 GridUtil::GetGridId(const Vector3& pos) {
+    return GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(pos.x(), pos.y()))));
 }
 
 absl::uint128 GridUtil::GetGridId(const Hex& hex) {

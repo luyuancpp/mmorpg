@@ -1,6 +1,8 @@
 ﻿#include "skill_util.h"
 
 #include <muduo/base/Logging.h>
+
+#include "entity_error_tip.pb.h"
 #include "skill_config.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
@@ -59,6 +61,20 @@ uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillReq
 
 	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
 
+	if (request->has_position()){
+		ViewUtil::LookAtPosition(caster, request->position());
+	}else if(request->target_id() > 0 ){
+		entt::entity target{ request->target_id() };
+
+		const auto transform = tls.registry.try_get<Transform>(target);
+		if (nullptr == transform)
+		{
+			return kEntityTransformNotFound;
+		}
+
+		ViewUtil::LookAtPosition(caster, transform->location());
+	}
+	
 	BroadcastSkillUsedMessage(caster, request);
 
 	auto context = std::make_shared<SkillContextPtrComp::element_type>();

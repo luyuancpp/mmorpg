@@ -63,9 +63,9 @@ inline constexpr SkillContextPBComponent::Impl_::Impl_(
         castposition_{nullptr},
         caster_{::uint64_t{0u}},
         target_{::uint64_t{0u}},
-        skillid_{0u},
-        skilltableid_{0u},
-        casttime_{::uint64_t{0u}} {}
+        skillid_{::uint64_t{0u}},
+        casttime_{::uint64_t{0u}},
+        skilltableid_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR SkillContextPBComponent::SkillContextPBComponent(::_pbi::ConstantInitialized)
@@ -152,7 +152,7 @@ const char descriptor_table_protodef_logic_2fcomponent_2fskill_5fcomp_2eproto[] 
     "c/component/actor_comp.proto\"*\n\020SkillPBC"
     "omponent\022\026\n\016skill_table_id\030\001 \001(\004\"\240\002\n\027Ski"
     "llContextPBComponent\022\016\n\006caster\030\001 \001(\004\022\016\n\006"
-    "target\030\002 \001(\004\022\017\n\007SkillId\030\003 \001(\r\022\024\n\014skillTa"
+    "target\030\002 \001(\004\022\017\n\007SkillId\030\003 \001(\004\022\024\n\014skillTa"
     "bleId\030\004 \001(\r\022 \n\014castPosition\030\005 \001(\0132\n.Tran"
     "sform\022\020\n\010castTime\030\006 \001(\004\022\r\n\005state\030\007 \001(\t\022D"
     "\n\016additionalData\030\010 \003(\0132,.SkillContextPBC"
@@ -428,9 +428,9 @@ SkillContextPBComponent::SkillContextPBComponent(
                offsetof(Impl_, caster_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, caster_),
-           offsetof(Impl_, casttime_) -
+           offsetof(Impl_, skilltableid_) -
                offsetof(Impl_, caster_) +
-               sizeof(Impl_::casttime_));
+               sizeof(Impl_::skilltableid_));
 
   // @@protoc_insertion_point(copy_constructor:SkillContextPBComponent)
 }
@@ -446,9 +446,9 @@ inline void SkillContextPBComponent::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, castposition_),
            0,
-           offsetof(Impl_, casttime_) -
+           offsetof(Impl_, skilltableid_) -
                offsetof(Impl_, castposition_) +
-               sizeof(Impl_::casttime_));
+               sizeof(Impl_::skilltableid_));
 }
 SkillContextPBComponent::~SkillContextPBComponent() {
   // @@protoc_insertion_point(destructor:SkillContextPBComponent)
@@ -491,8 +491,8 @@ PROTOBUF_NOINLINE void SkillContextPBComponent::Clear() {
     _impl_.castposition_->Clear();
   }
   ::memset(&_impl_.caster_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.casttime_) -
-      reinterpret_cast<char*>(&_impl_.caster_)) + sizeof(_impl_.casttime_));
+      reinterpret_cast<char*>(&_impl_.skilltableid_) -
+      reinterpret_cast<char*>(&_impl_.caster_)) + sizeof(_impl_.skilltableid_));
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -529,8 +529,8 @@ const ::_pbi::TcParseTable<3, 8, 2, 59, 2> SkillContextPBComponent::_table_ = {
     // uint64 target = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillContextPBComponent, _impl_.target_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.target_)}},
-    // uint32 SkillId = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillContextPBComponent, _impl_.skillid_), 63>(),
+    // uint64 SkillId = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillContextPBComponent, _impl_.skillid_), 63>(),
      {24, 63, 0, PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.skillid_)}},
     // uint32 skillTableId = 4;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillContextPBComponent, _impl_.skilltableid_), 63>(),
@@ -553,9 +553,9 @@ const ::_pbi::TcParseTable<3, 8, 2, 59, 2> SkillContextPBComponent::_table_ = {
     // uint64 target = 2;
     {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.target_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // uint32 SkillId = 3;
+    // uint64 SkillId = 3;
     {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.skillid_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint32 skillTableId = 4;
     {PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.skilltableid_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
@@ -606,10 +606,10 @@ const ::_pbi::TcParseTable<3, 8, 2, 59, 2> SkillContextPBComponent::_table_ = {
         2, this->_internal_target(), target);
   }
 
-  // uint32 SkillId = 3;
+  // uint64 SkillId = 3;
   if (this->_internal_skillid() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
         3, this->_internal_skillid(), target);
   }
 
@@ -718,22 +718,22 @@ const ::_pbi::TcParseTable<3, 8, 2, 59, 2> SkillContextPBComponent::_table_ = {
         this->_internal_target());
   }
 
-  // uint32 SkillId = 3;
+  // uint64 SkillId = 3;
   if (this->_internal_skillid() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
         this->_internal_skillid());
-  }
-
-  // uint32 skillTableId = 4;
-  if (this->_internal_skilltableid() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_skilltableid());
   }
 
   // uint64 castTime = 6;
   if (this->_internal_casttime() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
         this->_internal_casttime());
+  }
+
+  // uint32 skillTableId = 4;
+  if (this->_internal_skilltableid() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_skilltableid());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -772,11 +772,11 @@ void SkillContextPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg,
   if (from._internal_skillid() != 0) {
     _this->_impl_.skillid_ = from._impl_.skillid_;
   }
-  if (from._internal_skilltableid() != 0) {
-    _this->_impl_.skilltableid_ = from._impl_.skilltableid_;
-  }
   if (from._internal_casttime() != 0) {
     _this->_impl_.casttime_ = from._impl_.casttime_;
+  }
+  if (from._internal_skilltableid() != 0) {
+    _this->_impl_.skilltableid_ = from._impl_.skilltableid_;
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -802,8 +802,8 @@ void SkillContextPBComponent::InternalSwap(SkillContextPBComponent* PROTOBUF_RES
   _impl_.additionaldata_.InternalSwap(&other->_impl_.additionaldata_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.state_, &other->_impl_.state_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.casttime_)
-      + sizeof(SkillContextPBComponent::_impl_.casttime_)
+      PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.skilltableid_)
+      + sizeof(SkillContextPBComponent::_impl_.skilltableid_)
       - PROTOBUF_FIELD_OFFSET(SkillContextPBComponent, _impl_.castposition_)>(
           reinterpret_cast<char*>(&_impl_.castposition_),
           reinterpret_cast<char*>(&other->_impl_.castposition_));

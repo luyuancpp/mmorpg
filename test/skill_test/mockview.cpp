@@ -5,3 +5,8 @@ void ViewUtil::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint3
 {
 
 }
+
+void ViewUtil::LookAtPosition(entt::entity entity, const Vector3& pos)
+{
+	
+}
