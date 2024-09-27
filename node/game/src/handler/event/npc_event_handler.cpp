@@ -1,8 +1,4 @@
 #include "npc_event_handler.h"
-
-#include "game_logic/actor/util/actor_status_util.h"
-#include "game_logic/combat/skill/util/skill_util.h"
-#include "game_logic/npc/util/npc_util.h"
 #include "logic/event/npc_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
@@ -27,6 +23,7 @@ void NpcEventHandler::InitializeNpcComponentsHandler(const InitializeNpcComponen
         LOG_ERROR << "Npc Not Found :" << event.entity();
         return;
     }
+    
     ActorStatusUtil::InitializeActorComponents(npc);
     SkillUtil::InitializePlayerComponents(npc);
     NpcUtil::InitializeNpcComponents(npc);
