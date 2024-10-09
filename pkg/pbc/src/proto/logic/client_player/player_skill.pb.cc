@@ -28,6 +28,7 @@ inline constexpr SkillInterruptedS2C::Impl_::Impl_(
         target_entity_{::uint64_t{0u}},
         skill_table_id_{0u},
         reason_code_{0u},
+        skill_id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -186,6 +187,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillInterruptedS2C, _impl_.target_entity_),
         PROTOBUF_FIELD_OFFSET(::SkillInterruptedS2C, _impl_.skill_table_id_),
         PROTOBUF_FIELD_OFFSET(::SkillInterruptedS2C, _impl_.reason_code_),
+        PROTOBUF_FIELD_OFFSET(::SkillInterruptedS2C, _impl_.skill_id_),
         PROTOBUF_FIELD_OFFSET(::SkillUsedS2C, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::SkillUsedS2C, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -231,9 +233,9 @@ static const ::_pbi::MigrationSchema
         {0, 12, -1, sizeof(::ReleaseSkillSkillRequest)},
         {16, 25, -1, sizeof(::ReleaseSkillSkillResponse)},
         {26, -1, -1, sizeof(::SkillInterruptedS2C)},
-        {38, 51, -1, sizeof(::SkillUsedS2C)},
-        {56, -1, -1, sizeof(::GetSkillListRequest)},
-        {64, 74, -1, sizeof(::GetSkillListResponse)},
+        {39, 52, -1, sizeof(::SkillUsedS2C)},
+        {57, -1, -1, sizeof(::GetSkillListRequest)},
+        {65, 75, -1, sizeof(::GetSkillListResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_ReleaseSkillSkillRequest_default_instance_._instance,
@@ -255,23 +257,23 @@ const char descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fskill_2e
     "\010position\030\003 \001(\0132\010.Vector3\022\033\n\010rotation\030\004 "
     "\001(\0132\t.Rotation\"C\n\031ReleaseSkillSkillRespo"
     "nse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMess"
-    "age\"i\n\023SkillInterruptedS2C\022\016\n\006entity\030\001 \001"
+    "age\"{\n\023SkillInterruptedS2C\022\016\n\006entity\030\001 \001"
     "(\004\022\025\n\rtarget_entity\030\002 \001(\004\022\026\n\016skill_table"
-    "_id\030\003 \001(\r\022\023\n\013reason_code\030\004 \001(\r\"}\n\014SkillU"
-    "sedS2C\022\016\n\006entity\030\001 \001(\004\022\025\n\rtarget_entity\030"
-    "\002 \003(\004\022\026\n\016skill_table_id\030\003 \001(\r\022\032\n\010positio"
-    "n\030\004 \001(\0132\010.Vector3\022\022\n\ntime_stamp\030\005 \001(\004\"\025\n"
-    "\023GetSkillListRequest\"o\n\024GetSkillListResp"
-    "onse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMes"
-    "sage\022/\n\nskill_list\030\002 \001(\0132\033.PlayerSkillLi"
-    "stPBComponent2\372\001\n\022PlayerSkillService\022E\n\014"
-    "ReleaseSkill\022\031.ReleaseSkillSkillRequest\032"
-    "\032.ReleaseSkillSkillResponse\022(\n\017NotifySki"
-    "llUsed\022\r.SkillUsedS2C\032\006.Empty\0226\n\026NotifyS"
-    "killInterrupted\022\024.SkillInterruptedS2C\032\006."
-    "Empty\022;\n\014GetSkillList\022\024.GetSkillListRequ"
-    "est\032\025.GetSkillListResponseB\014Z\007pb/game\200\001\001"
-    "b\006proto3"
+    "_id\030\003 \001(\r\022\023\n\013reason_code\030\004 \001(\r\022\020\n\010skill_"
+    "id\030\005 \001(\004\"}\n\014SkillUsedS2C\022\016\n\006entity\030\001 \001(\004"
+    "\022\025\n\rtarget_entity\030\002 \003(\004\022\026\n\016skill_table_i"
+    "d\030\003 \001(\r\022\032\n\010position\030\004 \001(\0132\010.Vector3\022\022\n\nt"
+    "ime_stamp\030\005 \001(\004\"\025\n\023GetSkillListRequest\"o"
+    "\n\024GetSkillListResponse\022&\n\rerror_message\030"
+    "\001 \001(\0132\017.TipInfoMessage\022/\n\nskill_list\030\002 \001"
+    "(\0132\033.PlayerSkillListPBComponent2\372\001\n\022Play"
+    "erSkillService\022E\n\014ReleaseSkill\022\031.Release"
+    "SkillSkillRequest\032\032.ReleaseSkillSkillRes"
+    "ponse\022(\n\017NotifySkillUsed\022\r.SkillUsedS2C\032"
+    "\006.Empty\0226\n\026NotifySkillInterrupted\022\024.Skil"
+    "lInterruptedS2C\032\006.Empty\022;\n\014GetSkillList\022"
+    "\024.GetSkillListRequest\032\025.GetSkillListResp"
+    "onseB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_deps[6] =
     {
@@ -286,7 +288,7 @@ static ::absl::once_flag descriptor_table_logic_2fclient_5fplayer_2fplayer_5fski
 const ::_pbi::DescriptorTable descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto = {
     false,
     false,
-    1048,
+    1066,
     descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto,
     "logic/client_player/player_skill.proto",
     &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fskill_2eproto_once,
@@ -890,9 +892,9 @@ inline void SkillInterruptedS2C::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, entity_),
            0,
-           offsetof(Impl_, reason_code_) -
+           offsetof(Impl_, skill_id_) -
                offsetof(Impl_, entity_) +
-               sizeof(Impl_::reason_code_));
+               sizeof(Impl_::skill_id_));
 }
 SkillInterruptedS2C::~SkillInterruptedS2C() {
   // @@protoc_insertion_point(destructor:SkillInterruptedS2C)
@@ -926,8 +928,8 @@ PROTOBUF_NOINLINE void SkillInterruptedS2C::Clear() {
   (void) cached_has_bits;
 
   ::memset(&_impl_.entity_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.reason_code_) -
-      reinterpret_cast<char*>(&_impl_.entity_)) + sizeof(_impl_.reason_code_));
+      reinterpret_cast<char*>(&_impl_.skill_id_) -
+      reinterpret_cast<char*>(&_impl_.entity_)) + sizeof(_impl_.skill_id_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -939,15 +941,15 @@ const char* SkillInterruptedS2C::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 0, 2> SkillInterruptedS2C::_table_ = {
+const ::_pbi::TcParseTable<3, 5, 0, 0, 2> SkillInterruptedS2C::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    5,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     &_SkillInterruptedS2C_default_instance_._instance,
@@ -956,9 +958,7 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> SkillInterruptedS2C::_table_ = {
     ::_pbi::TcParser::GetTable<::SkillInterruptedS2C>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 reason_code = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillInterruptedS2C, _impl_.reason_code_), 63>(),
-     {32, 63, 0, PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.reason_code_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint64 entity = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillInterruptedS2C, _impl_.entity_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.entity_)}},
@@ -968,6 +968,14 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> SkillInterruptedS2C::_table_ = {
     // uint32 skill_table_id = 3;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillInterruptedS2C, _impl_.skill_table_id_), 63>(),
      {24, 63, 0, PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.skill_table_id_)}},
+    // uint32 reason_code = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillInterruptedS2C, _impl_.reason_code_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.reason_code_)}},
+    // uint64 skill_id = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillInterruptedS2C, _impl_.skill_id_), 63>(),
+     {40, 63, 0, PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.skill_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -983,6 +991,9 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> SkillInterruptedS2C::_table_ = {
     // uint32 reason_code = 4;
     {PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.reason_code_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint64 skill_id = 5;
+    {PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.skill_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
@@ -1022,6 +1033,13 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> SkillInterruptedS2C::_table_ = {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
         4, this->_internal_reason_code(), target);
+  }
+
+  // uint64 skill_id = 5;
+  if (this->_internal_skill_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        5, this->_internal_skill_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1065,6 +1083,12 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> SkillInterruptedS2C::_table_ = {
         this->_internal_reason_code());
   }
 
+  // uint64 skill_id = 5;
+  if (this->_internal_skill_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_skill_id());
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -1089,6 +1113,9 @@ void SkillInterruptedS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   if (from._internal_reason_code() != 0) {
     _this->_impl_.reason_code_ = from._impl_.reason_code_;
   }
+  if (from._internal_skill_id() != 0) {
+    _this->_impl_.skill_id_ = from._impl_.skill_id_;
+  }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -1107,8 +1134,8 @@ void SkillInterruptedS2C::InternalSwap(SkillInterruptedS2C* PROTOBUF_RESTRICT ot
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.reason_code_)
-      + sizeof(SkillInterruptedS2C::_impl_.reason_code_)
+      PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.skill_id_)
+      + sizeof(SkillInterruptedS2C::_impl_.skill_id_)
       - PROTOBUF_FIELD_OFFSET(SkillInterruptedS2C, _impl_.entity_)>(
           reinterpret_cast<char*>(&_impl_.entity_),
           reinterpret_cast<char*>(&other->_impl_.entity_));

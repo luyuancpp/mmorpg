@@ -21,74 +21,33 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
-
-inline constexpr SkillExecutedEvent::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : skill_id_{::uint64_t{0u}},
-        caster_id_{::uint64_t{0u}},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR SkillExecutedEvent::SkillExecutedEvent(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct SkillExecutedEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SkillExecutedEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SkillExecutedEventDefaultTypeInternal() {}
-  union {
-    SkillExecutedEvent _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillExecutedEventDefaultTypeInternal _SkillExecutedEvent_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[1];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fevent_2fbuff_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
     file_level_service_descriptors_logic_2fevent_2fbuff_5fevent_2eproto = nullptr;
-const ::uint32_t
-    TableStruct_logic_2fevent_2fbuff_5fevent_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
-        protodesc_cold) = {
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::SkillExecutedEvent, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::SkillExecutedEvent, _impl_.skill_id_),
-        PROTOBUF_FIELD_OFFSET(::SkillExecutedEvent, _impl_.caster_id_),
-};
-
-static const ::_pbi::MigrationSchema
-    schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::SkillExecutedEvent)},
-};
-static const ::_pb::Message* const file_default_instances[] = {
-    &::_SkillExecutedEvent_default_instance_._instance,
-};
+const ::uint32_t TableStruct_logic_2fevent_2fbuff_5fevent_2eproto::offsets[1] = {};
+static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
+static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_logic_2fevent_2fbuff_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\034logic/event/buff_event.proto\"9\n\022SkillE"
-    "xecutedEvent\022\020\n\010skill_id\030\001 \001(\004\022\021\n\tcaster"
-    "_id\030\002 \001(\004B\tZ\007pb/gameb\006proto3"
+    "\n\034logic/event/buff_event.protoB\tZ\007pb/gam"
+    "eb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto = {
     false,
     false,
-    108,
+    49,
     descriptor_table_protodef_logic_2fevent_2fbuff_5fevent_2eproto,
     "logic/event/buff_event.proto",
     &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
     nullptr,
     0,
-    1,
+    0,
     schemas,
     file_default_instances,
     TableStruct_logic_2fevent_2fbuff_5fevent_2eproto::offsets,
-    file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto,
+    nullptr,
     file_level_enum_descriptors_logic_2fevent_2fbuff_5fevent_2eproto,
     file_level_service_descriptors_logic_2fevent_2fbuff_5fevent_2eproto,
 };
@@ -106,217 +65,6 @@ const ::_pbi::DescriptorTable descriptor_table_logic_2fevent_2fbuff_5fevent_2epr
 // individual vtables back into the descriptor table.
 PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter() {
   return &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto;
-}
-// ===================================================================
-
-class SkillExecutedEvent::_Internal {
- public:
-};
-
-SkillExecutedEvent::SkillExecutedEvent(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:SkillExecutedEvent)
-}
-SkillExecutedEvent::SkillExecutedEvent(
-    ::google::protobuf::Arena* arena, const SkillExecutedEvent& from)
-    : SkillExecutedEvent(arena) {
-  MergeFrom(from);
-}
-inline PROTOBUF_NDEBUG_INLINE SkillExecutedEvent::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
-
-inline void SkillExecutedEvent::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, skill_id_),
-           0,
-           offsetof(Impl_, caster_id_) -
-               offsetof(Impl_, skill_id_) +
-               sizeof(Impl_::caster_id_));
-}
-SkillExecutedEvent::~SkillExecutedEvent() {
-  // @@protoc_insertion_point(destructor:SkillExecutedEvent)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void SkillExecutedEvent::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.~Impl_();
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-SkillExecutedEvent::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(SkillExecutedEvent, _impl_._cached_size_),
-              false,
-          },
-          &SkillExecutedEvent::MergeImpl,
-          &SkillExecutedEvent::kDescriptorMethods,
-      };
-  return &_data_;
-}
-PROTOBUF_NOINLINE void SkillExecutedEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:SkillExecutedEvent)
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  ::memset(&_impl_.skill_id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.caster_id_) -
-      reinterpret_cast<char*>(&_impl_.skill_id_)) + sizeof(_impl_.caster_id_));
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-const char* SkillExecutedEvent::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
-  return ptr;
-}
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> SkillExecutedEvent::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_SkillExecutedEvent_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::SkillExecutedEvent>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // uint64 caster_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillExecutedEvent, _impl_.caster_id_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SkillExecutedEvent, _impl_.caster_id_)}},
-    // uint64 skill_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillExecutedEvent, _impl_.skill_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SkillExecutedEvent, _impl_.skill_id_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // uint64 skill_id = 1;
-    {PROTOBUF_FIELD_OFFSET(SkillExecutedEvent, _impl_.skill_id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // uint64 caster_id = 2;
-    {PROTOBUF_FIELD_OFFSET(SkillExecutedEvent, _impl_.caster_id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
-
-::uint8_t* SkillExecutedEvent::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:SkillExecutedEvent)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // uint64 skill_id = 1;
-  if (this->_internal_skill_id() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_skill_id(), target);
-  }
-
-  // uint64 caster_id = 2;
-  if (this->_internal_caster_id() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        2, this->_internal_caster_id(), target);
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:SkillExecutedEvent)
-  return target;
-}
-
-::size_t SkillExecutedEvent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:SkillExecutedEvent)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  // uint64 skill_id = 1;
-  if (this->_internal_skill_id() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_skill_id());
-  }
-
-  // uint64 caster_id = 2;
-  if (this->_internal_caster_id() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_caster_id());
-  }
-
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void SkillExecutedEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<SkillExecutedEvent*>(&to_msg);
-  auto& from = static_cast<const SkillExecutedEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:SkillExecutedEvent)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  if (from._internal_skill_id() != 0) {
-    _this->_impl_.skill_id_ = from._impl_.skill_id_;
-  }
-  if (from._internal_caster_id() != 0) {
-    _this->_impl_.caster_id_ = from._impl_.caster_id_;
-  }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void SkillExecutedEvent::CopyFrom(const SkillExecutedEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:SkillExecutedEvent)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-PROTOBUF_NOINLINE bool SkillExecutedEvent::IsInitialized() const {
-  return true;
-}
-
-void SkillExecutedEvent::InternalSwap(SkillExecutedEvent* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SkillExecutedEvent, _impl_.caster_id_)
-      + sizeof(SkillExecutedEvent::_impl_.caster_id_)
-      - PROTOBUF_FIELD_OFFSET(SkillExecutedEvent, _impl_.skill_id_)>(
-          reinterpret_cast<char*>(&_impl_.skill_id_),
-          reinterpret_cast<char*>(&other->_impl_.skill_id_));
-}
-
-::google::protobuf::Metadata SkillExecutedEvent::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter,
-                                   &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
-                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[0]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

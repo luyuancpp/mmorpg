@@ -6,6 +6,7 @@
 #include "player_event_handler.h"
 #include "scene_event_handler.h"
 #include "server_event_handler.h"
+#include "skill_event_handler.h"
 void EventHandler::Register()
 {
 BuffEventHandler::Register();
@@ -15,6 +16,7 @@ NpcEventHandler::Register();
 PlayerEventHandler::Register();
 SceneEventHandler::Register();
 ServerEventHandler::Register();
+SkillEventHandler::Register();
 }
 void EventHandler::UnRegister()
 {
@@ -25,4 +27,5 @@ NpcEventHandler::UnRegister();
 PlayerEventHandler::UnRegister();
 SceneEventHandler::UnRegister();
 ServerEventHandler::UnRegister();
+SkillEventHandler::UnRegister();
 }

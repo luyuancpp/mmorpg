@@ -73,6 +73,7 @@
     <ClCompile Include="src\proto\logic\event\player_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\scene_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\server_event.pb.cc" />
+    <ClCompile Include="src\proto\logic\event\skill_event.pb.cc" />
     <ClCompile Include="src\proto\logic\server\centre_scene.pb.cc" />
     <ClCompile Include="src\proto\logic\server\game_scene.pb.cc" />
     <ClCompile Include="src\proto\logic\server\game_team.pb.cc" />
@@ -137,6 +138,7 @@
     <ClInclude Include="src\proto\logic\event\player_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\scene_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\server_event.pb.h" />
+    <ClInclude Include="src\proto\logic\event\skill_event.pb.h" />
     <ClInclude Include="src\proto\logic\server\centre_scene.pb.h" />
     <ClInclude Include="src\proto\logic\server\game_scene.pb.h" />
     <ClInclude Include="src\proto\logic\server\game_team.pb.h" />

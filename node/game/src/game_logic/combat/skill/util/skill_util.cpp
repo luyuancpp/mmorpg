@@ -4,15 +4,16 @@
 
 #include "entity_error_tip.pb.h"
 #include "skill_config.h"
-#include "proto/logic/component/buff_comp.pb.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
 #include "game_logic/scene/util/view_util.h"
 #include "logic/event/combat_event.pb.h"
+#include "logic/event/skill_event.pb.h"
 #include "macros/return_define.h"
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/skill_error_tip.pb.h"
+#include "proto/logic/component/buff_comp.pb.h"
 #include "proto/logic/component/npc_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "service_info/player_skill_service_info.h"
@@ -441,10 +442,11 @@ void SkillUtil::SetupCastingTimer(entt::entity caster, const SkillTable* skillTa
 	}
 }
 
-void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, const uint64_t skillId) {
+void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, const uint32_t skillTableId) {
 	SkillInterruptedS2C skillInterruptedS2C;
 	skillInterruptedS2C.set_entity(entt::to_integral(caster));
-	skillInterruptedS2C.set_skill_table_id(skillId);
+	skillInterruptedS2C.set_skill_table_id(skillTableId);
+	//skillInterruptedS2C.set_skill_id(skillTableID);
 
 	ViewUtil::BroadcastMessageToVisiblePlayers(
 		caster,
@@ -455,7 +457,7 @@ void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, const uin
 
 void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint64_t skillId) {
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
-	auto skillContextIt = casterSkillContextMap.find(skillId);
+	const auto skillContextIt = casterSkillContextMap.find(skillId);
 
 	if (skillContextIt == casterSkillContextMap.end()) {
 		return;
@@ -539,7 +541,7 @@ void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, co
 
 void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
-	auto skillContextIt = casterSkillContextMap.find(skillId);
+	const auto skillContextIt = casterSkillContextMap.find(skillId);
 
 	if (skillContextIt == casterSkillContextMap.end()) {
 		return;
@@ -552,9 +554,17 @@ void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
 		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
 		return;
 	}
+
+	entt::entity target = entt::to_entity(skillContext->target());
     
 	DamageEventComponent damageEvent;
 	CalculateSkillDamage(caster, damageEvent); // 计算伤害
-	DealDamage(damageEvent, caster, entt::to_entity(skillContext->target())); // 处理伤害
+	DealDamage(damageEvent, caster, target); // 处理伤害
+
+	// 触发技能执行事件
+	SkillExecutedEvent skillExecutedEvent;
+	skillExecutedEvent.set_caster(entt::to_integral(caster));
+	skillExecutedEvent.set_target(skillContext->target());
+	tls.dispatcher.trigger(skillExecutedEvent); // 触发事件
 }
 

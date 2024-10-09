@@ -5,20 +5,14 @@
 ///<<< END WRITING YOUR CODE
 void BuffEventHandler::Register()
 {
-		tls.dispatcher.sink<SkillExecutedEvent>().connect<&BuffEventHandler::SkillExecutedEventHandler>();
 }
 
 void BuffEventHandler::UnRegister()
 {
-		tls.dispatcher.sink<SkillExecutedEvent>().disconnect<&BuffEventHandler::SkillExecutedEventHandler>();
 }
 
-void BuffEventHandler::SkillExecutedEventHandler(const SkillExecutedEvent& event)
-{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
-
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE

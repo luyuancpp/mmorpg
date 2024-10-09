@@ -28,6 +28,7 @@ message SkillInterruptedS2C
   uint64 target_entity = 2;
   uint32 skill_table_id = 3;
   uint32 reason_code = 4;
+  uint64 skill_id = 5;
 }
 
 message SkillUsedS2C

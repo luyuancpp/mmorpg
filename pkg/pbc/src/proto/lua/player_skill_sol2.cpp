@@ -35,6 +35,8 @@ sol::property(&SkillInterruptedS2C::target_entity, &SkillInterruptedS2C::set_tar
 sol::property(&SkillInterruptedS2C::skill_table_id, &SkillInterruptedS2C::set_skill_table_id),
 "reason_code",
 sol::property(&SkillInterruptedS2C::reason_code, &SkillInterruptedS2C::set_reason_code),
+"skill_id",
+sol::property(&SkillInterruptedS2C::skill_id, &SkillInterruptedS2C::set_skill_id),
 "DebugString",
 &SkillInterruptedS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
