@@ -9,7 +9,7 @@
 #include "buff_error_tip.pb.h"
 #include "macros/return_define.h"
 #include "thread_local/storage_game.h"
-#include "proto/logic/event/buff_event.pb.h"
+#include "proto/logic/event/skill_event.pb.h"
 
 void BuffUtil::Initialize()
 {

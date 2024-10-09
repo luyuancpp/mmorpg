@@ -215,6 +215,7 @@ class SkillInterruptedS2C final : public ::google::protobuf::Message
     kTargetEntityFieldNumber = 2,
     kSkillTableIdFieldNumber = 3,
     kReasonCodeFieldNumber = 4,
+    kSkillIdFieldNumber = 5,
   };
   // uint64 entity = 1;
   void clear_entity() ;
@@ -256,12 +257,22 @@ class SkillInterruptedS2C final : public ::google::protobuf::Message
   void _internal_set_reason_code(::uint32_t value);
 
   public:
+  // uint64 skill_id = 5;
+  void clear_skill_id() ;
+  ::uint64_t skill_id() const;
+  void set_skill_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_skill_id() const;
+  void _internal_set_skill_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:SkillInterruptedS2C)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 0,
+      3, 5, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -281,6 +292,7 @@ class SkillInterruptedS2C final : public ::google::protobuf::Message
     ::uint64_t target_entity_;
     ::uint32_t skill_table_id_;
     ::uint32_t reason_code_;
+    ::uint64_t skill_id_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1736,6 +1748,28 @@ inline ::uint32_t SkillInterruptedS2C::_internal_reason_code() const {
 inline void SkillInterruptedS2C::_internal_set_reason_code(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.reason_code_ = value;
+}
+
+// uint64 skill_id = 5;
+inline void SkillInterruptedS2C::clear_skill_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.skill_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t SkillInterruptedS2C::skill_id() const {
+  // @@protoc_insertion_point(field_get:SkillInterruptedS2C.skill_id)
+  return _internal_skill_id();
+}
+inline void SkillInterruptedS2C::set_skill_id(::uint64_t value) {
+  _internal_set_skill_id(value);
+  // @@protoc_insertion_point(field_set:SkillInterruptedS2C.skill_id)
+}
+inline ::uint64_t SkillInterruptedS2C::_internal_skill_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.skill_id_;
+}
+inline void SkillInterruptedS2C::_internal_set_skill_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.skill_id_ = value;
 }
 
 // -------------------------------------------------------------------

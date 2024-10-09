@@ -55,7 +55,7 @@ public:
     static void SetupCastingTimer(entt::entity caster, const SkillTable* tableSkill, uint64_t skillId);
 
     // 发送技能中断消息
-    static void SendSkillInterruptedMessage(entt::entity caster, uint64_t skillId) ;
+    static void SendSkillInterruptedMessage(entt::entity caster, const uint32_t skillTableId) ;
 
 	static void TriggerSkillEffect(entt::entity caster, uint64_t skillId);
 
