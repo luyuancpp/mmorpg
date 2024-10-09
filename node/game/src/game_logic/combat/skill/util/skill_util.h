@@ -61,5 +61,5 @@ public:
 
 	static void RemoveEffect(entt::entity caster, uint64_t skillId);
 
-	static void HandleSkillSpell(const entt::entity caster, uint64_t skillId);
+	static void HandleSkillSpell(const entt::entity caster, const uint64_t skillId);
 };

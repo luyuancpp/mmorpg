@@ -5,7 +5,6 @@
 #include "game_logic/common/constants/fps_constants.h"
 #include "Recast/Recast.h"
 #undef TEXT
-#include "combat/buff/util/buff_util.h"
 #include "game_logic/player/util/player_session_util.h"
 #include "game_logic/scene/system/aoi_system.h"
 #include "game_logic/scene/system/movement_system.h"
@@ -30,7 +29,6 @@ void World::InitializeSystemBeforeConnect()
 
 	PlayerSessionUtil::Initialize();
 	ViewUtil::Initialize();
-	BuffUtil::Initialize();
 }
 
 void World::InitSystemAfterConnect()

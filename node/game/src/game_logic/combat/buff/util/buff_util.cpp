@@ -11,11 +11,6 @@
 #include "thread_local/storage_game.h"
 #include "proto/logic/event/skill_event.pb.h"
 
-void BuffUtil::Initialize()
-{
-    tls.dispatcher.sink<SkillExecutedEvent>().connect<&BuffUtil::OnSkillExecuted>();
-}
-
 uint64_t GenerateUniqueBuffId(const BuffList& buffList)
 {
     uint64_t newBuffId;
