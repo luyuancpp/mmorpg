@@ -42,18 +42,40 @@ struct SkillExecutedEventDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillExecutedEventDefaultTypeInternal _SkillExecutedEvent_default_instance_;
 
-inline constexpr BeforeGiveDamageEvent::Impl_::Impl_(
+inline constexpr KillEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : skill_idd_{::uint64_t{0u}},
+      : skill_id_{::uint64_t{0u}},
         attacker_id_{::uint64_t{0u}},
         receiver_id_{::uint64_t{0u}},
-        damage_amount_{0},
-        damage_flags_{0u},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR BeforeGiveDamageEvent::BeforeGiveDamageEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR KillEvent::KillEvent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
+struct KillEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR KillEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~KillEventDefaultTypeInternal() {}
+  union {
+    KillEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 KillEventDefaultTypeInternal _KillEvent_default_instance_;
+      template <typename>
+PROTOBUF_CONSTEXPR BeforeTakeDamageEvent::BeforeTakeDamageEvent(::_pbi::ConstantInitialized) {}
+struct BeforeTakeDamageEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BeforeTakeDamageEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BeforeTakeDamageEventDefaultTypeInternal() {}
+  union {
+    BeforeTakeDamageEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BeforeTakeDamageEventDefaultTypeInternal _BeforeTakeDamageEvent_default_instance_;
+      template <typename>
+PROTOBUF_CONSTEXPR BeforeGiveDamageEvent::BeforeGiveDamageEvent(::_pbi::ConstantInitialized) {}
 struct BeforeGiveDamageEventDefaultTypeInternal {
   PROTOBUF_CONSTEXPR BeforeGiveDamageEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~BeforeGiveDamageEventDefaultTypeInternal() {}
@@ -64,7 +86,73 @@ struct BeforeGiveDamageEventDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BeforeGiveDamageEventDefaultTypeInternal _BeforeGiveDamageEvent_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[2];
+
+inline constexpr BeforeDeadEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : skill_id_{::uint64_t{0u}},
+        attacker_id_{::uint64_t{0u}},
+        receiver_id_{::uint64_t{0u}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR BeforeDeadEvent::BeforeDeadEvent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct BeforeDeadEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BeforeDeadEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BeforeDeadEventDefaultTypeInternal() {}
+  union {
+    BeforeDeadEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BeforeDeadEventDefaultTypeInternal _BeforeDeadEvent_default_instance_;
+      template <typename>
+PROTOBUF_CONSTEXPR AfterTakeDamageEvent::AfterTakeDamageEvent(::_pbi::ConstantInitialized) {}
+struct AfterTakeDamageEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR AfterTakeDamageEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~AfterTakeDamageEventDefaultTypeInternal() {}
+  union {
+    AfterTakeDamageEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AfterTakeDamageEventDefaultTypeInternal _AfterTakeDamageEvent_default_instance_;
+      template <typename>
+PROTOBUF_CONSTEXPR AfterGiveDamageEvent::AfterGiveDamageEvent(::_pbi::ConstantInitialized) {}
+struct AfterGiveDamageEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR AfterGiveDamageEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~AfterGiveDamageEventDefaultTypeInternal() {}
+  union {
+    AfterGiveDamageEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AfterGiveDamageEventDefaultTypeInternal _AfterGiveDamageEvent_default_instance_;
+
+inline constexpr AfterDeadEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : skill_id_{::uint64_t{0u}},
+        attacker_id_{::uint64_t{0u}},
+        receiver_id_{::uint64_t{0u}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR AfterDeadEvent::AfterDeadEvent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct AfterDeadEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR AfterDeadEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~AfterDeadEventDefaultTypeInternal() {}
+  union {
+    AfterDeadEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AfterDeadEventDefaultTypeInternal _AfterDeadEvent_default_instance_;
+static ::_pb::Metadata file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[8];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fevent_2fbuff_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -90,42 +178,111 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::BeforeGiveDamageEvent, _impl_.skill_idd_),
-        PROTOBUF_FIELD_OFFSET(::BeforeGiveDamageEvent, _impl_.attacker_id_),
-        PROTOBUF_FIELD_OFFSET(::BeforeGiveDamageEvent, _impl_.receiver_id_),
-        PROTOBUF_FIELD_OFFSET(::BeforeGiveDamageEvent, _impl_.damage_amount_),
-        PROTOBUF_FIELD_OFFSET(::BeforeGiveDamageEvent, _impl_.damage_flags_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::AfterGiveDamageEvent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::BeforeTakeDamageEvent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::AfterTakeDamageEvent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::BeforeDeadEvent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::BeforeDeadEvent, _impl_.skill_id_),
+        PROTOBUF_FIELD_OFFSET(::BeforeDeadEvent, _impl_.attacker_id_),
+        PROTOBUF_FIELD_OFFSET(::BeforeDeadEvent, _impl_.receiver_id_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::AfterDeadEvent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::AfterDeadEvent, _impl_.skill_id_),
+        PROTOBUF_FIELD_OFFSET(::AfterDeadEvent, _impl_.attacker_id_),
+        PROTOBUF_FIELD_OFFSET(::AfterDeadEvent, _impl_.receiver_id_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::KillEvent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::KillEvent, _impl_.skill_id_),
+        PROTOBUF_FIELD_OFFSET(::KillEvent, _impl_.attacker_id_),
+        PROTOBUF_FIELD_OFFSET(::KillEvent, _impl_.receiver_id_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::SkillExecutedEvent)},
         {10, -1, -1, sizeof(::BeforeGiveDamageEvent)},
+        {18, -1, -1, sizeof(::AfterGiveDamageEvent)},
+        {26, -1, -1, sizeof(::BeforeTakeDamageEvent)},
+        {34, -1, -1, sizeof(::AfterTakeDamageEvent)},
+        {42, -1, -1, sizeof(::BeforeDeadEvent)},
+        {53, -1, -1, sizeof(::AfterDeadEvent)},
+        {64, -1, -1, sizeof(::KillEvent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_SkillExecutedEvent_default_instance_._instance,
     &::_BeforeGiveDamageEvent_default_instance_._instance,
+    &::_AfterGiveDamageEvent_default_instance_._instance,
+    &::_BeforeTakeDamageEvent_default_instance_._instance,
+    &::_AfterTakeDamageEvent_default_instance_._instance,
+    &::_BeforeDeadEvent_default_instance_._instance,
+    &::_AfterDeadEvent_default_instance_._instance,
+    &::_KillEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fevent_2fbuff_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\034logic/event/buff_event.proto\"9\n\022SkillE"
     "xecutedEvent\022\020\n\010skill_id\030\001 \001(\004\022\021\n\tcaster"
-    "_id\030\002 \001(\004\"\201\001\n\025BeforeGiveDamageEvent\022\021\n\ts"
-    "kill_idd\030\001 \001(\004\022\023\n\013attacker_id\030\002 \001(\004\022\023\n\013r"
-    "eceiver_id\030\003 \001(\004\022\025\n\rdamage_amount\030\004 \001(\001\022"
-    "\024\n\014damage_flags\030\005 \001(\rB\tZ\007pb/gameb\006proto3"
+    "_id\030\002 \001(\004\"\027\n\025BeforeGiveDamageEvent\"\026\n\024Af"
+    "terGiveDamageEvent\"\027\n\025BeforeTakeDamageEv"
+    "ent\"\026\n\024AfterTakeDamageEvent\"M\n\017BeforeDea"
+    "dEvent\022\020\n\010skill_id\030\001 \001(\004\022\023\n\013attacker_id\030"
+    "\002 \001(\004\022\023\n\013receiver_id\030\003 \001(\004\"L\n\016AfterDeadE"
+    "vent\022\020\n\010skill_id\030\001 \001(\004\022\023\n\013attacker_id\030\002 "
+    "\001(\004\022\023\n\013receiver_id\030\003 \001(\004\"G\n\tKillEvent\022\020\n"
+    "\010skill_id\030\001 \001(\004\022\023\n\013attacker_id\030\002 \001(\004\022\023\n\013"
+    "receiver_id\030\003 \001(\004B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto = {
     false,
     false,
-    240,
+    436,
     descriptor_table_protodef_logic_2fevent_2fbuff_5fevent_2eproto,
     "logic/event/buff_event.proto",
     &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
     nullptr,
     0,
-    2,
+    8,
     schemas,
     file_default_instances,
     TableStruct_logic_2fevent_2fbuff_5fevent_2eproto::offsets,
@@ -366,67 +523,207 @@ class BeforeGiveDamageEvent::_Internal {
 };
 
 BeforeGiveDamageEvent::BeforeGiveDamageEvent(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
   // @@protoc_insertion_point(arena_constructor:BeforeGiveDamageEvent)
 }
 BeforeGiveDamageEvent::BeforeGiveDamageEvent(
-    ::google::protobuf::Arena* arena, const BeforeGiveDamageEvent& from)
-    : BeforeGiveDamageEvent(arena) {
+    ::google::protobuf::Arena* arena,
+    const BeforeGiveDamageEvent& from)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  BeforeGiveDamageEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:BeforeGiveDamageEvent)
+}
+
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata BeforeGiveDamageEvent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter,
+                                   &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
+                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[1]);
+}
+// ===================================================================
+
+class AfterGiveDamageEvent::_Internal {
+ public:
+};
+
+AfterGiveDamageEvent::AfterGiveDamageEvent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  // @@protoc_insertion_point(arena_constructor:AfterGiveDamageEvent)
+}
+AfterGiveDamageEvent::AfterGiveDamageEvent(
+    ::google::protobuf::Arena* arena,
+    const AfterGiveDamageEvent& from)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  AfterGiveDamageEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:AfterGiveDamageEvent)
+}
+
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata AfterGiveDamageEvent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter,
+                                   &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
+                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[2]);
+}
+// ===================================================================
+
+class BeforeTakeDamageEvent::_Internal {
+ public:
+};
+
+BeforeTakeDamageEvent::BeforeTakeDamageEvent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  // @@protoc_insertion_point(arena_constructor:BeforeTakeDamageEvent)
+}
+BeforeTakeDamageEvent::BeforeTakeDamageEvent(
+    ::google::protobuf::Arena* arena,
+    const BeforeTakeDamageEvent& from)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  BeforeTakeDamageEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:BeforeTakeDamageEvent)
+}
+
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata BeforeTakeDamageEvent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter,
+                                   &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
+                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[3]);
+}
+// ===================================================================
+
+class AfterTakeDamageEvent::_Internal {
+ public:
+};
+
+AfterTakeDamageEvent::AfterTakeDamageEvent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  // @@protoc_insertion_point(arena_constructor:AfterTakeDamageEvent)
+}
+AfterTakeDamageEvent::AfterTakeDamageEvent(
+    ::google::protobuf::Arena* arena,
+    const AfterTakeDamageEvent& from)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  AfterTakeDamageEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:AfterTakeDamageEvent)
+}
+
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata AfterTakeDamageEvent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter,
+                                   &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
+                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[4]);
+}
+// ===================================================================
+
+class BeforeDeadEvent::_Internal {
+ public:
+};
+
+BeforeDeadEvent::BeforeDeadEvent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:BeforeDeadEvent)
+}
+BeforeDeadEvent::BeforeDeadEvent(
+    ::google::protobuf::Arena* arena, const BeforeDeadEvent& from)
+    : BeforeDeadEvent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE BeforeGiveDamageEvent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE BeforeDeadEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void BeforeGiveDamageEvent::SharedCtor(::_pb::Arena* arena) {
+inline void BeforeDeadEvent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, skill_idd_),
+               offsetof(Impl_, skill_id_),
            0,
-           offsetof(Impl_, damage_flags_) -
-               offsetof(Impl_, skill_idd_) +
-               sizeof(Impl_::damage_flags_));
+           offsetof(Impl_, receiver_id_) -
+               offsetof(Impl_, skill_id_) +
+               sizeof(Impl_::receiver_id_));
 }
-BeforeGiveDamageEvent::~BeforeGiveDamageEvent() {
-  // @@protoc_insertion_point(destructor:BeforeGiveDamageEvent)
+BeforeDeadEvent::~BeforeDeadEvent() {
+  // @@protoc_insertion_point(destructor:BeforeDeadEvent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void BeforeGiveDamageEvent::SharedDtor() {
+inline void BeforeDeadEvent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-BeforeGiveDamageEvent::GetClassData() const {
+BeforeDeadEvent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_._cached_size_),
               false,
           },
-          &BeforeGiveDamageEvent::MergeImpl,
-          &BeforeGiveDamageEvent::kDescriptorMethods,
+          &BeforeDeadEvent::MergeImpl,
+          &BeforeDeadEvent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void BeforeGiveDamageEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:BeforeGiveDamageEvent)
+PROTOBUF_NOINLINE void BeforeDeadEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:BeforeDeadEvent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ::memset(&_impl_.skill_idd_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.damage_flags_) -
-      reinterpret_cast<char*>(&_impl_.skill_idd_)) + sizeof(_impl_.damage_flags_));
+  ::memset(&_impl_.skill_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.receiver_id_) -
+      reinterpret_cast<char*>(&_impl_.skill_id_)) + sizeof(_impl_.receiver_id_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* BeforeGiveDamageEvent::_InternalParse(
+const char* BeforeDeadEvent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -434,77 +731,63 @@ const char* BeforeGiveDamageEvent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 5, 0, 0, 2> BeforeGiveDamageEvent::_table_ = {
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2> BeforeDeadEvent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    5, 56,  // max_field_number, fast_idx_mask
+    3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967264,  // skipmap
+    4294967288,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    5,  // num_field_entries
+    3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_BeforeGiveDamageEvent_default_instance_._instance,
+    &_BeforeDeadEvent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::BeforeGiveDamageEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::BeforeDeadEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // uint64 skill_idd = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BeforeGiveDamageEvent, _impl_.skill_idd_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.skill_idd_)}},
+    // uint64 skill_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BeforeDeadEvent, _impl_.skill_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_.skill_id_)}},
     // uint64 attacker_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BeforeGiveDamageEvent, _impl_.attacker_id_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.attacker_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BeforeDeadEvent, _impl_.attacker_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_.attacker_id_)}},
     // uint64 receiver_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BeforeGiveDamageEvent, _impl_.receiver_id_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.receiver_id_)}},
-    // double damage_amount = 4;
-    {::_pbi::TcParser::FastF64S1,
-     {33, 63, 0, PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.damage_amount_)}},
-    // uint32 damage_flags = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BeforeGiveDamageEvent, _impl_.damage_flags_), 63>(),
-     {40, 63, 0, PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.damage_flags_)}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BeforeDeadEvent, _impl_.receiver_id_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_.receiver_id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 skill_idd = 1;
-    {PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.skill_idd_), 0, 0,
+    // uint64 skill_id = 1;
+    {PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_.skill_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 attacker_id = 2;
-    {PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.attacker_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_.attacker_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 receiver_id = 3;
-    {PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.receiver_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_.receiver_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // double damage_amount = 4;
-    {PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.damage_amount_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // uint32 damage_flags = 5;
-    {PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.damage_flags_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
   }},
 };
 
-::uint8_t* BeforeGiveDamageEvent::_InternalSerialize(
+::uint8_t* BeforeDeadEvent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:BeforeGiveDamageEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:BeforeDeadEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 skill_idd = 1;
-  if (this->_internal_skill_idd() != 0) {
+  // uint64 skill_id = 1;
+  if (this->_internal_skill_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_skill_idd(), target);
+        1, this->_internal_skill_id(), target);
   }
 
   // uint64 attacker_id = 2;
@@ -521,46 +804,27 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> BeforeGiveDamageEvent::_table_ = {
         3, this->_internal_receiver_id(), target);
   }
 
-  // double damage_amount = 4;
-  static_assert(sizeof(::uint64_t) == sizeof(double),
-                "Code assumes ::uint64_t and double are the same size.");
-  double tmp_damage_amount = this->_internal_damage_amount();
-  ::uint64_t raw_damage_amount;
-  memcpy(&raw_damage_amount, &tmp_damage_amount, sizeof(tmp_damage_amount));
-  if (raw_damage_amount != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        4, this->_internal_damage_amount(), target);
-  }
-
-  // uint32 damage_flags = 5;
-  if (this->_internal_damage_flags() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        5, this->_internal_damage_flags(), target);
-  }
-
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:BeforeGiveDamageEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:BeforeDeadEvent)
   return target;
 }
 
-::size_t BeforeGiveDamageEvent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:BeforeGiveDamageEvent)
+::size_t BeforeDeadEvent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:BeforeDeadEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 skill_idd = 1;
-  if (this->_internal_skill_idd() != 0) {
+  // uint64 skill_id = 1;
+  if (this->_internal_skill_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_skill_idd());
+        this->_internal_skill_id());
   }
 
   // uint64 attacker_id = 2;
@@ -575,36 +839,20 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> BeforeGiveDamageEvent::_table_ = {
         this->_internal_receiver_id());
   }
 
-  // double damage_amount = 4;
-  static_assert(sizeof(::uint64_t) == sizeof(double),
-                "Code assumes ::uint64_t and double are the same size.");
-  double tmp_damage_amount = this->_internal_damage_amount();
-  ::uint64_t raw_damage_amount;
-  memcpy(&raw_damage_amount, &tmp_damage_amount, sizeof(tmp_damage_amount));
-  if (raw_damage_amount != 0) {
-    total_size += 9;
-  }
-
-  // uint32 damage_flags = 5;
-  if (this->_internal_damage_flags() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_damage_flags());
-  }
-
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
 
-void BeforeGiveDamageEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<BeforeGiveDamageEvent*>(&to_msg);
-  auto& from = static_cast<const BeforeGiveDamageEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:BeforeGiveDamageEvent)
+void BeforeDeadEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BeforeDeadEvent*>(&to_msg);
+  auto& from = static_cast<const BeforeDeadEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:BeforeDeadEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_skill_idd() != 0) {
-    _this->_impl_.skill_idd_ = from._impl_.skill_idd_;
+  if (from._internal_skill_id() != 0) {
+    _this->_impl_.skill_id_ = from._impl_.skill_id_;
   }
   if (from._internal_attacker_id() != 0) {
     _this->_impl_.attacker_id_ = from._impl_.attacker_id_;
@@ -612,46 +860,503 @@ void BeforeGiveDamageEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   if (from._internal_receiver_id() != 0) {
     _this->_impl_.receiver_id_ = from._impl_.receiver_id_;
   }
-  static_assert(sizeof(::uint64_t) == sizeof(double),
-                "Code assumes ::uint64_t and double are the same size.");
-  double tmp_damage_amount = from._internal_damage_amount();
-  ::uint64_t raw_damage_amount;
-  memcpy(&raw_damage_amount, &tmp_damage_amount, sizeof(tmp_damage_amount));
-  if (raw_damage_amount != 0) {
-    _this->_impl_.damage_amount_ = from._impl_.damage_amount_;
-  }
-  if (from._internal_damage_flags() != 0) {
-    _this->_impl_.damage_flags_ = from._impl_.damage_flags_;
-  }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void BeforeGiveDamageEvent::CopyFrom(const BeforeGiveDamageEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:BeforeGiveDamageEvent)
+void BeforeDeadEvent::CopyFrom(const BeforeDeadEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:BeforeDeadEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool BeforeGiveDamageEvent::IsInitialized() const {
+PROTOBUF_NOINLINE bool BeforeDeadEvent::IsInitialized() const {
   return true;
 }
 
-void BeforeGiveDamageEvent::InternalSwap(BeforeGiveDamageEvent* PROTOBUF_RESTRICT other) {
+void BeforeDeadEvent::InternalSwap(BeforeDeadEvent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.damage_flags_)
-      + sizeof(BeforeGiveDamageEvent::_impl_.damage_flags_)
-      - PROTOBUF_FIELD_OFFSET(BeforeGiveDamageEvent, _impl_.skill_idd_)>(
-          reinterpret_cast<char*>(&_impl_.skill_idd_),
-          reinterpret_cast<char*>(&other->_impl_.skill_idd_));
+      PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_.receiver_id_)
+      + sizeof(BeforeDeadEvent::_impl_.receiver_id_)
+      - PROTOBUF_FIELD_OFFSET(BeforeDeadEvent, _impl_.skill_id_)>(
+          reinterpret_cast<char*>(&_impl_.skill_id_),
+          reinterpret_cast<char*>(&other->_impl_.skill_id_));
 }
 
-::google::protobuf::Metadata BeforeGiveDamageEvent::GetMetadata() const {
+::google::protobuf::Metadata BeforeDeadEvent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter,
                                    &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
-                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[1]);
+                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[5]);
+}
+// ===================================================================
+
+class AfterDeadEvent::_Internal {
+ public:
+};
+
+AfterDeadEvent::AfterDeadEvent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:AfterDeadEvent)
+}
+AfterDeadEvent::AfterDeadEvent(
+    ::google::protobuf::Arena* arena, const AfterDeadEvent& from)
+    : AfterDeadEvent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE AfterDeadEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void AfterDeadEvent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, skill_id_),
+           0,
+           offsetof(Impl_, receiver_id_) -
+               offsetof(Impl_, skill_id_) +
+               sizeof(Impl_::receiver_id_));
+}
+AfterDeadEvent::~AfterDeadEvent() {
+  // @@protoc_insertion_point(destructor:AfterDeadEvent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void AfterDeadEvent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+AfterDeadEvent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_._cached_size_),
+              false,
+          },
+          &AfterDeadEvent::MergeImpl,
+          &AfterDeadEvent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void AfterDeadEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:AfterDeadEvent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.skill_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.receiver_id_) -
+      reinterpret_cast<char*>(&_impl_.skill_id_)) + sizeof(_impl_.receiver_id_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* AfterDeadEvent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2> AfterDeadEvent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_AfterDeadEvent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::AfterDeadEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 skill_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AfterDeadEvent, _impl_.skill_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_.skill_id_)}},
+    // uint64 attacker_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AfterDeadEvent, _impl_.attacker_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_.attacker_id_)}},
+    // uint64 receiver_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AfterDeadEvent, _impl_.receiver_id_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_.receiver_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 skill_id = 1;
+    {PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_.skill_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 attacker_id = 2;
+    {PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_.attacker_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 receiver_id = 3;
+    {PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_.receiver_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* AfterDeadEvent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:AfterDeadEvent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 skill_id = 1;
+  if (this->_internal_skill_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_skill_id(), target);
+  }
+
+  // uint64 attacker_id = 2;
+  if (this->_internal_attacker_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        2, this->_internal_attacker_id(), target);
+  }
+
+  // uint64 receiver_id = 3;
+  if (this->_internal_receiver_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        3, this->_internal_receiver_id(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:AfterDeadEvent)
+  return target;
+}
+
+::size_t AfterDeadEvent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:AfterDeadEvent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 skill_id = 1;
+  if (this->_internal_skill_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_skill_id());
+  }
+
+  // uint64 attacker_id = 2;
+  if (this->_internal_attacker_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_attacker_id());
+  }
+
+  // uint64 receiver_id = 3;
+  if (this->_internal_receiver_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_receiver_id());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void AfterDeadEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<AfterDeadEvent*>(&to_msg);
+  auto& from = static_cast<const AfterDeadEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:AfterDeadEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_skill_id() != 0) {
+    _this->_impl_.skill_id_ = from._impl_.skill_id_;
+  }
+  if (from._internal_attacker_id() != 0) {
+    _this->_impl_.attacker_id_ = from._impl_.attacker_id_;
+  }
+  if (from._internal_receiver_id() != 0) {
+    _this->_impl_.receiver_id_ = from._impl_.receiver_id_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void AfterDeadEvent::CopyFrom(const AfterDeadEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:AfterDeadEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool AfterDeadEvent::IsInitialized() const {
+  return true;
+}
+
+void AfterDeadEvent::InternalSwap(AfterDeadEvent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_.receiver_id_)
+      + sizeof(AfterDeadEvent::_impl_.receiver_id_)
+      - PROTOBUF_FIELD_OFFSET(AfterDeadEvent, _impl_.skill_id_)>(
+          reinterpret_cast<char*>(&_impl_.skill_id_),
+          reinterpret_cast<char*>(&other->_impl_.skill_id_));
+}
+
+::google::protobuf::Metadata AfterDeadEvent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter,
+                                   &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
+                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[6]);
+}
+// ===================================================================
+
+class KillEvent::_Internal {
+ public:
+};
+
+KillEvent::KillEvent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:KillEvent)
+}
+KillEvent::KillEvent(
+    ::google::protobuf::Arena* arena, const KillEvent& from)
+    : KillEvent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE KillEvent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void KillEvent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, skill_id_),
+           0,
+           offsetof(Impl_, receiver_id_) -
+               offsetof(Impl_, skill_id_) +
+               sizeof(Impl_::receiver_id_));
+}
+KillEvent::~KillEvent() {
+  // @@protoc_insertion_point(destructor:KillEvent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void KillEvent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+KillEvent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(KillEvent, _impl_._cached_size_),
+              false,
+          },
+          &KillEvent::MergeImpl,
+          &KillEvent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void KillEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:KillEvent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.skill_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.receiver_id_) -
+      reinterpret_cast<char*>(&_impl_.skill_id_)) + sizeof(_impl_.receiver_id_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* KillEvent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2> KillEvent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_KillEvent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::KillEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 skill_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(KillEvent, _impl_.skill_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(KillEvent, _impl_.skill_id_)}},
+    // uint64 attacker_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(KillEvent, _impl_.attacker_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(KillEvent, _impl_.attacker_id_)}},
+    // uint64 receiver_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(KillEvent, _impl_.receiver_id_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(KillEvent, _impl_.receiver_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 skill_id = 1;
+    {PROTOBUF_FIELD_OFFSET(KillEvent, _impl_.skill_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 attacker_id = 2;
+    {PROTOBUF_FIELD_OFFSET(KillEvent, _impl_.attacker_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 receiver_id = 3;
+    {PROTOBUF_FIELD_OFFSET(KillEvent, _impl_.receiver_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* KillEvent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:KillEvent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 skill_id = 1;
+  if (this->_internal_skill_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_skill_id(), target);
+  }
+
+  // uint64 attacker_id = 2;
+  if (this->_internal_attacker_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        2, this->_internal_attacker_id(), target);
+  }
+
+  // uint64 receiver_id = 3;
+  if (this->_internal_receiver_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        3, this->_internal_receiver_id(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:KillEvent)
+  return target;
+}
+
+::size_t KillEvent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:KillEvent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 skill_id = 1;
+  if (this->_internal_skill_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_skill_id());
+  }
+
+  // uint64 attacker_id = 2;
+  if (this->_internal_attacker_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_attacker_id());
+  }
+
+  // uint64 receiver_id = 3;
+  if (this->_internal_receiver_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_receiver_id());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void KillEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<KillEvent*>(&to_msg);
+  auto& from = static_cast<const KillEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:KillEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_skill_id() != 0) {
+    _this->_impl_.skill_id_ = from._impl_.skill_id_;
+  }
+  if (from._internal_attacker_id() != 0) {
+    _this->_impl_.attacker_id_ = from._impl_.attacker_id_;
+  }
+  if (from._internal_receiver_id() != 0) {
+    _this->_impl_.receiver_id_ = from._impl_.receiver_id_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void KillEvent::CopyFrom(const KillEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:KillEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool KillEvent::IsInitialized() const {
+  return true;
+}
+
+void KillEvent::InternalSwap(KillEvent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(KillEvent, _impl_.receiver_id_)
+      + sizeof(KillEvent::_impl_.receiver_id_)
+      - PROTOBUF_FIELD_OFFSET(KillEvent, _impl_.skill_id_)>(
+          reinterpret_cast<char*>(&_impl_.skill_id_),
+          reinterpret_cast<char*>(&other->_impl_.skill_id_));
+}
+
+::google::protobuf::Metadata KillEvent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_getter,
+                                   &descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto_once,
+                                   file_level_metadata_logic_2fevent_2fbuff_5fevent_2eproto[7]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

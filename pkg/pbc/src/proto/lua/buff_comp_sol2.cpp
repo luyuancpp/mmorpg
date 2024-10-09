@@ -29,4 +29,19 @@ sol::property(&BuffPBComponent::triggerdamage, &BuffPBComponent::set_triggerdama
 &BuffPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<DamageEventComponent>("DamageEventComponent",
+"skill_id",
+sol::property(&DamageEventComponent::skill_id, &DamageEventComponent::set_skill_id),
+"attacker_id",
+sol::property(&DamageEventComponent::attacker_id, &DamageEventComponent::set_attacker_id),
+"target",
+sol::property(&DamageEventComponent::target, &DamageEventComponent::set_target),
+"damage",
+sol::property(&DamageEventComponent::damage, &DamageEventComponent::set_damage),
+"damage_type",
+sol::property(&DamageEventComponent::damage_type, &DamageEventComponent::set_damage_type),
+"DebugString",
+&DamageEventComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 }

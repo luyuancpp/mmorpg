@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+ï»¿#include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "buff_config.h"
@@ -16,12 +16,12 @@ class BuffUtilTest : public ::testing::Test {
 protected:
 	void SetUp() override {
 		// Setup code here, if needed
-		tls.registry.clear(); // Çå¿ÕÏß³Ì¾Ö²¿´æ´¢
+		tls.registry.clear(); // æ¸…ç©ºçº¿ç¨‹å±€éƒ¨å­˜å‚¨
 	}
 
 	void TearDown() override {
 		// Cleanup code here, if needed
-		tls.registry.clear(); // Çå¿ÕÏß³Ì¾Ö²¿´æ´¢
+		tls.registry.clear(); // æ¸…ç©ºçº¿ç¨‹å±€éƒ¨å­˜å‚¨
 	}
 };
 
@@ -32,7 +32,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 
 	// Mock BuffTable
 	BuffTable mockBuffTable;
-	mockBuffTable.set_nocaster(false); // ÉèÖÃÒ»Ğ©Ä¬ÈÏÖµ
+	mockBuffTable.set_nocaster(false); // è®¾ç½®ä¸€äº›é»˜è®¤å€¼
 	mockBuffTable.set_maxlayer(3);
 
 	// Add a BuffTable to the registry
@@ -76,7 +76,7 @@ TEST_F(BuffUtilTest, CanCreateBuffSuccess) {
 	EXPECT_EQ(result, kOK);
 }
 
-// Äã¿ÉÒÔÌí¼Ó¸ü¶àµÄ²âÊÔÓÃÀıÀ´ÑéÖ¤ÆäËû¾²Ì¬·½·¨µÄĞĞÎª
+// ä½ å¯ä»¥æ·»åŠ æ›´å¤šçš„æµ‹è¯•ç”¨ä¾‹æ¥éªŒè¯å…¶ä»–é™æ€æ–¹æ³•çš„è¡Œä¸º
 
 int main(int argc, char** argv) {
 	EventLoop loop;

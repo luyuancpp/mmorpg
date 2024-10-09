@@ -4,6 +4,8 @@
 
 #include "entity_error_tip.pb.h"
 #include "skill_config.h"
+#include "proto/logic/component/buff_comp.pb.h"
+#include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
 #include "game_logic/scene/util/view_util.h"
@@ -438,7 +440,7 @@ void SkillUtil::SetupCastingTimer(entt::entity caster, const SkillTable* skillTa
 	}
 }
 
-void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, uint64_t skillId) {
+void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, const uint64_t skillId) {
 	SkillInterruptedS2C skillInterruptedS2C;
 	skillInterruptedS2C.set_entity(entt::to_integral(caster));
 	skillInterruptedS2C.set_skill_table_id(skillId);
@@ -452,13 +454,15 @@ void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, uint64_t 
 
 void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint64_t skillId) {
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
-	auto skillContentIt = casterSkillContextMap.find(skillId);
+	auto skillContextIt = casterSkillContextMap.find(skillId);
 
-	if (skillContentIt == casterSkillContextMap.end()) {
+	if (skillContextIt == casterSkillContextMap.end()) {
 		return;
 	}
 
-	auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
+	const auto& skillContext = skillContextIt->second;
+	
+	auto [skillTable, result] = GetSkillTable(skillContext->skilltableid());
 	if (skillTable == nullptr) {
 		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
 		return;
@@ -467,7 +471,7 @@ void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint64_t skillId) 
 	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(caster) << ", Skill ID: " << skillId;
 
 	for (const auto& effect : skillTable->effect()) {
-		// TODO: Implement effect application logic here
+		BuffUtil::AddOrUpdateBuff(entt::to_entity(skillContext->target()), effect, skillContext);
 	}
 }
 
@@ -490,19 +494,56 @@ void SkillUtil::RemoveEffect(entt::entity caster, const uint64_t skillId) {
 	}
 }
 
+void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damageEvent)
+{
+	damageEvent.set_attacker_id(entt::to_integral(caster));
+	damageEvent.set_damage(100);
+}
+
+void CalculateBaseDamage(const entt::entity caster, DamageEventComponent& damageEvent)
+{
+	damageEvent.set_attacker_id(entt::to_integral(caster));
+	damageEvent.set_damage(100);
+}
+
+// 具体的伤害处理
+void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster,  const entt::entity target) {
+	damageEvent.set_target(entt::to_integral(target)); 
+
+	// 触发伤害前事件
+	BuffUtil::OnBeforeGiveDamage(caster, damageEvent);
+	BuffUtil::OnBeforeTakeDamage(target, damageEvent);
+
+	auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
+	
+	// 实际处理伤害逻辑，比如减少目标生命值
+	baseAttributesPBComponent.set_health(baseAttributesPBComponent.health() - damageEvent.damage());
+
+	// 触发伤害后事件
+	BuffUtil::OnAfterGiveDamage(caster, damageEvent);
+	BuffUtil::OnAfterTakeDamage(target, damageEvent);
+}
 
 void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
     auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
-    auto skillContentIt = casterSkillContextMap.find(skillId);
+    auto skillContextIt = casterSkillContextMap.find(skillId);
 
-    if (skillContentIt == casterSkillContextMap.end()) {
+    if (skillContextIt == casterSkillContextMap.end()) {
         return;
     }
 
-    auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
+	const auto& skillContext = skillContextIt->second;
+
+
+    auto [skillTable, result] = GetSkillTable(skillContext->skilltableid());
     if (skillTable == nullptr) {
         LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
         return;
     }
+	
+	DamageEventComponent damageEvent;
+	CalculateSkillDamage(caster, damageEvent);
+
+	DealDamage(damageEvent, caster, entt::to_entity(skillContext->target()));
 }
 
