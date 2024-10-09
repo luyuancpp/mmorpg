@@ -9,6 +9,7 @@
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
 #include "game_logic/scene/util/view_util.h"
+#include "logic/event/combat_event.pb.h"
 #include "macros/return_define.h"
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/skill_error_tip.pb.h"
@@ -493,51 +494,67 @@ void SkillUtil::RemoveEffect(entt::entity caster, const uint64_t skillId) {
 		// TODO: Implement effect removal logic here
 	}
 }
-
-void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damageEvent)
-{
+// 计算技能伤害
+void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damageEvent) {
 	damageEvent.set_attacker_id(entt::to_integral(caster));
-	damageEvent.set_damage(100);
+	damageEvent.set_damage(100); // 设置固定伤害值
 }
 
 // 具体的伤害处理
-void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster,  const entt::entity target) {
+void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, const entt::entity target) {
 	damageEvent.set_target(entt::to_integral(target)); 
 
 	// 触发伤害前事件
 	BuffUtil::OnBeforeGiveDamage(caster, damageEvent);
 	BuffUtil::OnBeforeTakeDamage(target, damageEvent);
-
+    
 	auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
-	
-	// 实际处理伤害逻辑，比如减少目标生命值
-	baseAttributesPBComponent.set_health(baseAttributesPBComponent.health() - damageEvent.damage());
+    
+	// 减少目标生命值
+	baseAttributesPBComponent.set_health(baseAttributesPBComponent.health() - static_cast<uint64_t>(std::ceil(damageEvent.damage())));
+
+	// 检查目标是否死亡
+	if (baseAttributesPBComponent.health() <= 0) {
+		BuffUtil::OnBeforeDead(target); // 触发死亡前事件
+	}
 
 	// 触发伤害后事件
 	BuffUtil::OnAfterGiveDamage(caster, damageEvent);
 	BuffUtil::OnAfterTakeDamage(target, damageEvent);
+
+	// 处理死亡后逻辑
+	if (baseAttributesPBComponent.health() <= 0) {
+		BuffUtil::OnAfterDead(target); // 触发死亡后事件
+		if (caster != target) {
+			BuffUtil::OnKill(caster); // 触发击杀事件
+		}
+
+		BeKillEvent beKillEvent;
+		beKillEvent.set_caster(entt::to_integral(caster));
+		beKillEvent.set_target(entt::to_integral(target));
+
+		tls.dispatcher.trigger(beKillEvent);
+	}
 }
 
 void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
-    auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
-    auto skillContextIt = casterSkillContextMap.find(skillId);
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+	auto skillContextIt = casterSkillContextMap.find(skillId);
 
-    if (skillContextIt == casterSkillContextMap.end()) {
-        return;
-    }
+	if (skillContextIt == casterSkillContextMap.end()) {
+		return;
+	}
 
 	const auto& skillContext = skillContextIt->second;
+	auto [skillTable, result] = GetSkillTable(skillContext->skilltableid());
 
-
-    auto [skillTable, result] = GetSkillTable(skillContext->skilltableid());
-    if (skillTable == nullptr) {
-        LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
-        return;
-    }
-	
+	if (skillTable == nullptr) {
+		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
+		return;
+	}
+    
 	DamageEventComponent damageEvent;
-	CalculateSkillDamage(caster, damageEvent);
-
-	DealDamage(damageEvent, caster, entt::to_entity(skillContext->target()));
+	CalculateSkillDamage(caster, damageEvent); // 计算伤害
+	DealDamage(damageEvent, caster, entt::to_entity(skillContext->target())); // 处理伤害
 }
 

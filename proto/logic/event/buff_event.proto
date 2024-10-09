@@ -8,39 +8,3 @@ message SkillExecutedEvent
   uint64 caster_id = 2;
 }
 
-message BeforeGiveDamageEvent 
-{
-}
-
-message AfterGiveDamageEvent 
-{
-}
-
-message BeforeTakeDamageEvent 
-{
-}
-
-message AfterTakeDamageEvent 
-{
-}
-
-message BeforeDeadEvent 
-{
-  uint64 skill_id = 1;
-  uint64 attacker_id = 2;
-  uint64 receiver_id = 3;
-}
-
-message AfterDeadEvent 
-{
-  uint64 skill_id = 1;
-  uint64 attacker_id = 2;
-  uint64 receiver_id = 3;
-}
-
-message KillEvent 
-{
-  uint64 skill_id = 1;
-  uint64 attacker_id = 2;
-  uint64 receiver_id = 3;
-}
