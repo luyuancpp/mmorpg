@@ -22,6 +22,29 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
+inline constexpr DamageEventComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : skill_id_{::uint64_t{0u}},
+        attacker_id_{::uint64_t{0u}},
+        target_{::uint64_t{0u}},
+        damage_{0},
+        damage_type_{0u},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR DamageEventComponent::DamageEventComponent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct DamageEventComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR DamageEventComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~DamageEventComponentDefaultTypeInternal() {}
+  union {
+    DamageEventComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DamageEventComponentDefaultTypeInternal _DamageEventComponent_default_instance_;
+
 inline constexpr BuffPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : buff_id_{::uint64_t{0u}},
@@ -65,7 +88,7 @@ struct BuffContextPBComponentDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffContextPBComponentDefaultTypeInternal _BuffContextPBComponent_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[2];
+static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[3];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fbuff_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -97,16 +120,31 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BuffPBComponent, _impl_.layer_),
         PROTOBUF_FIELD_OFFSET(::BuffPBComponent, _impl_.caster_),
         PROTOBUF_FIELD_OFFSET(::BuffPBComponent, _impl_.triggerdamage_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::DamageEventComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::DamageEventComponent, _impl_.skill_id_),
+        PROTOBUF_FIELD_OFFSET(::DamageEventComponent, _impl_.attacker_id_),
+        PROTOBUF_FIELD_OFFSET(::DamageEventComponent, _impl_.target_),
+        PROTOBUF_FIELD_OFFSET(::DamageEventComponent, _impl_.damage_),
+        PROTOBUF_FIELD_OFFSET(::DamageEventComponent, _impl_.damage_type_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::BuffContextPBComponent)},
         {9, -1, -1, sizeof(::BuffPBComponent)},
+        {24, -1, -1, sizeof(::DamageEventComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_BuffContextPBComponent_default_instance_._instance,
     &::_BuffPBComponent_default_instance_._instance,
+    &::_DamageEventComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -115,20 +153,23 @@ const char descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto[] A
     "\002\"\232\001\n\017BuffPBComponent\022\017\n\007buff_id\030\001 \001(\004\022\025"
     "\n\rbuff_table_id\030\002 \001(\r\022\022\n\nability_id\030\003 \001("
     "\r\022\025\n\rparent_entity\030\004 \001(\004\022\r\n\005layer\030\005 \001(\r\022"
-    "\016\n\006caster\030\006 \001(\004\022\025\n\rtriggerdamage\030\007 \001(\010B\t"
-    "Z\007pb/gameb\006proto3"
+    "\016\n\006caster\030\006 \001(\004\022\025\n\rtriggerdamage\030\007 \001(\010\"r"
+    "\n\024DamageEventComponent\022\020\n\010skill_id\030\001 \001(\004"
+    "\022\023\n\013attacker_id\030\002 \001(\004\022\016\n\006target\030\003 \001(\004\022\016\n"
+    "\006damage\030\004 \001(\001\022\023\n\013damage_type\030\005 \001(\rB\tZ\007pb"
+    "/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto = {
     false,
     false,
-    257,
+    373,
     descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto,
     "logic/component/buff_comp.proto",
     &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
     nullptr,
     0,
-    2,
+    3,
     schemas,
     file_default_instances,
     TableStruct_logic_2fcomponent_2fbuff_5fcomp_2eproto::offsets,
@@ -662,6 +703,300 @@ void BuffPBComponent::InternalSwap(BuffPBComponent* PROTOBUF_RESTRICT other) {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[1]);
+}
+// ===================================================================
+
+class DamageEventComponent::_Internal {
+ public:
+};
+
+DamageEventComponent::DamageEventComponent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:DamageEventComponent)
+}
+DamageEventComponent::DamageEventComponent(
+    ::google::protobuf::Arena* arena, const DamageEventComponent& from)
+    : DamageEventComponent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE DamageEventComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void DamageEventComponent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, skill_id_),
+           0,
+           offsetof(Impl_, damage_type_) -
+               offsetof(Impl_, skill_id_) +
+               sizeof(Impl_::damage_type_));
+}
+DamageEventComponent::~DamageEventComponent() {
+  // @@protoc_insertion_point(destructor:DamageEventComponent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void DamageEventComponent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+DamageEventComponent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_._cached_size_),
+              false,
+          },
+          &DamageEventComponent::MergeImpl,
+          &DamageEventComponent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void DamageEventComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:DamageEventComponent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.skill_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.damage_type_) -
+      reinterpret_cast<char*>(&_impl_.skill_id_)) + sizeof(_impl_.damage_type_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* DamageEventComponent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 0, 2> DamageEventComponent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_DamageEventComponent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::DamageEventComponent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 skill_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DamageEventComponent, _impl_.skill_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.skill_id_)}},
+    // uint64 attacker_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DamageEventComponent, _impl_.attacker_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.attacker_id_)}},
+    // uint64 target = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DamageEventComponent, _impl_.target_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.target_)}},
+    // double damage = 4;
+    {::_pbi::TcParser::FastF64S1,
+     {33, 63, 0, PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.damage_)}},
+    // uint32 damage_type = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(DamageEventComponent, _impl_.damage_type_), 63>(),
+     {40, 63, 0, PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.damage_type_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 skill_id = 1;
+    {PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.skill_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 attacker_id = 2;
+    {PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.attacker_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 target = 3;
+    {PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.target_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // double damage = 4;
+    {PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.damage_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
+    // uint32 damage_type = 5;
+    {PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.damage_type_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* DamageEventComponent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:DamageEventComponent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 skill_id = 1;
+  if (this->_internal_skill_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_skill_id(), target);
+  }
+
+  // uint64 attacker_id = 2;
+  if (this->_internal_attacker_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        2, this->_internal_attacker_id(), target);
+  }
+
+  // uint64 target = 3;
+  if (this->_internal_target() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        3, this->_internal_target(), target);
+  }
+
+  // double damage = 4;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_damage = this->_internal_damage();
+  ::uint64_t raw_damage;
+  memcpy(&raw_damage, &tmp_damage, sizeof(tmp_damage));
+  if (raw_damage != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+        4, this->_internal_damage(), target);
+  }
+
+  // uint32 damage_type = 5;
+  if (this->_internal_damage_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        5, this->_internal_damage_type(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:DamageEventComponent)
+  return target;
+}
+
+::size_t DamageEventComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:DamageEventComponent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 skill_id = 1;
+  if (this->_internal_skill_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_skill_id());
+  }
+
+  // uint64 attacker_id = 2;
+  if (this->_internal_attacker_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_attacker_id());
+  }
+
+  // uint64 target = 3;
+  if (this->_internal_target() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_target());
+  }
+
+  // double damage = 4;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_damage = this->_internal_damage();
+  ::uint64_t raw_damage;
+  memcpy(&raw_damage, &tmp_damage, sizeof(tmp_damage));
+  if (raw_damage != 0) {
+    total_size += 9;
+  }
+
+  // uint32 damage_type = 5;
+  if (this->_internal_damage_type() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_damage_type());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void DamageEventComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<DamageEventComponent*>(&to_msg);
+  auto& from = static_cast<const DamageEventComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:DamageEventComponent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_skill_id() != 0) {
+    _this->_impl_.skill_id_ = from._impl_.skill_id_;
+  }
+  if (from._internal_attacker_id() != 0) {
+    _this->_impl_.attacker_id_ = from._impl_.attacker_id_;
+  }
+  if (from._internal_target() != 0) {
+    _this->_impl_.target_ = from._impl_.target_;
+  }
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_damage = from._internal_damage();
+  ::uint64_t raw_damage;
+  memcpy(&raw_damage, &tmp_damage, sizeof(tmp_damage));
+  if (raw_damage != 0) {
+    _this->_impl_.damage_ = from._impl_.damage_;
+  }
+  if (from._internal_damage_type() != 0) {
+    _this->_impl_.damage_type_ = from._impl_.damage_type_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void DamageEventComponent::CopyFrom(const DamageEventComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:DamageEventComponent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool DamageEventComponent::IsInitialized() const {
+  return true;
+}
+
+void DamageEventComponent::InternalSwap(DamageEventComponent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.damage_type_)
+      + sizeof(DamageEventComponent::_impl_.damage_type_)
+      - PROTOBUF_FIELD_OFFSET(DamageEventComponent, _impl_.skill_id_)>(
+          reinterpret_cast<char*>(&_impl_.skill_id_),
+          reinterpret_cast<char*>(&other->_impl_.skill_id_));
+}
+
+::google::protobuf::Metadata DamageEventComponent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[2]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

@@ -17,3 +17,12 @@ message BuffPBComponent
   uint64 caster = 6;
   bool triggerdamage = 7;
 }
+
+message DamageEventComponent
+{
+  uint64 skill_id = 1;
+  uint64 attacker_id = 2;
+  uint64 target = 3;
+  double damage = 4;
+  uint32 damage_type = 5;
+}

@@ -188,7 +188,7 @@ void BuffUtil::OnMotionInterrupt()
 }
 
 
-void BuffUtil::OnBeforeGiveDamage(entt::entity parent)
+void BuffUtil::OnBeforeGiveDamage(entt::entity parent, DamageEventComponent& damageEvent)
 {
     //class Buff {
     //public:
@@ -207,7 +207,7 @@ void BuffUtil::OnBeforeGiveDamage(entt::entity parent)
 }
 
 
-void BuffUtil::OnAfterGiveDamage(entt::entity parent)
+void BuffUtil::OnAfterGiveDamage(entt::entity parent, DamageEventComponent& damageEvent)
 {
     // 检查并应用DOT效果
     //for (auto& buff : tls.registry.get<BuffListComp>(event.target).buffList) {
@@ -218,7 +218,7 @@ void BuffUtil::OnAfterGiveDamage(entt::entity parent)
     //}
 }
 
-void BuffUtil::OnBeforeTakeDamage(entt::entity parent)
+void BuffUtil::OnBeforeTakeDamage(entt::entity parent, DamageEventComponent& damageEvent)
 {
     //auto& buffs = tls.registry.get<BuffListComp>(event.target).buffList;
     //for (auto& [buffId, buff] : buffs) {
@@ -229,7 +229,7 @@ void BuffUtil::OnBeforeTakeDamage(entt::entity parent)
     //}
 }
 
-void BuffUtil::OnAfterTakeDamage(entt::entity parent)
+void BuffUtil::OnAfterTakeDamage(entt::entity parent, DamageEventComponent& damageEvent)
 {
     // 检查并应用额外效果
     //auto& buffs = tls.registry.get<BuffListComp>(event.target).buffList;

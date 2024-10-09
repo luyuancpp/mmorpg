@@ -55,6 +55,9 @@ extern BuffContextPBComponentDefaultTypeInternal _BuffContextPBComponent_default
 class BuffPBComponent;
 struct BuffPBComponentDefaultTypeInternal;
 extern BuffPBComponentDefaultTypeInternal _BuffPBComponent_default_instance_;
+class DamageEventComponent;
+struct DamageEventComponentDefaultTypeInternal;
+extern DamageEventComponentDefaultTypeInternal _DamageEventComponent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -64,6 +67,221 @@ namespace protobuf {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class DamageEventComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:DamageEventComponent) */ {
+ public:
+  inline DamageEventComponent() : DamageEventComponent(nullptr) {}
+  ~DamageEventComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR DamageEventComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline DamageEventComponent(const DamageEventComponent& from) : DamageEventComponent(nullptr, from) {}
+  inline DamageEventComponent(DamageEventComponent&& from) noexcept
+      : DamageEventComponent(nullptr, std::move(from)) {}
+  inline DamageEventComponent& operator=(const DamageEventComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DamageEventComponent& operator=(DamageEventComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const DamageEventComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const DamageEventComponent* internal_default_instance() {
+    return reinterpret_cast<const DamageEventComponent*>(
+        &_DamageEventComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(DamageEventComponent& a, DamageEventComponent& b) { a.Swap(&b); }
+  inline void Swap(DamageEventComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DamageEventComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DamageEventComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<DamageEventComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const DamageEventComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const DamageEventComponent& from) { DamageEventComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(DamageEventComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "DamageEventComponent"; }
+
+ protected:
+  explicit DamageEventComponent(::google::protobuf::Arena* arena);
+  DamageEventComponent(::google::protobuf::Arena* arena, const DamageEventComponent& from);
+  DamageEventComponent(::google::protobuf::Arena* arena, DamageEventComponent&& from) noexcept
+      : DamageEventComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSkillIdFieldNumber = 1,
+    kAttackerIdFieldNumber = 2,
+    kTargetFieldNumber = 3,
+    kDamageFieldNumber = 4,
+    kDamageTypeFieldNumber = 5,
+  };
+  // uint64 skill_id = 1;
+  void clear_skill_id() ;
+  ::uint64_t skill_id() const;
+  void set_skill_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_skill_id() const;
+  void _internal_set_skill_id(::uint64_t value);
+
+  public:
+  // uint64 attacker_id = 2;
+  void clear_attacker_id() ;
+  ::uint64_t attacker_id() const;
+  void set_attacker_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_attacker_id() const;
+  void _internal_set_attacker_id(::uint64_t value);
+
+  public:
+  // uint64 target = 3;
+  void clear_target() ;
+  ::uint64_t target() const;
+  void set_target(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_target() const;
+  void _internal_set_target(::uint64_t value);
+
+  public:
+  // double damage = 4;
+  void clear_damage() ;
+  double damage() const;
+  void set_damage(double value);
+
+  private:
+  double _internal_damage() const;
+  void _internal_set_damage(double value);
+
+  public:
+  // uint32 damage_type = 5;
+  void clear_damage_type() ;
+  ::uint32_t damage_type() const;
+  void set_damage_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_damage_type() const;
+  void _internal_set_damage_type(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:DamageEventComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      3, 5, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t skill_id_;
+    ::uint64_t attacker_id_;
+    ::uint64_t target_;
+    double damage_;
+    ::uint32_t damage_type_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2fbuff_5fcomp_2eproto;
+};
 // -------------------------------------------------------------------
 
 class BuffPBComponent final : public ::google::protobuf::Message
@@ -665,6 +883,120 @@ inline bool BuffPBComponent::_internal_triggerdamage() const {
 inline void BuffPBComponent::_internal_set_triggerdamage(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.triggerdamage_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// DamageEventComponent
+
+// uint64 skill_id = 1;
+inline void DamageEventComponent::clear_skill_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.skill_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t DamageEventComponent::skill_id() const {
+  // @@protoc_insertion_point(field_get:DamageEventComponent.skill_id)
+  return _internal_skill_id();
+}
+inline void DamageEventComponent::set_skill_id(::uint64_t value) {
+  _internal_set_skill_id(value);
+  // @@protoc_insertion_point(field_set:DamageEventComponent.skill_id)
+}
+inline ::uint64_t DamageEventComponent::_internal_skill_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.skill_id_;
+}
+inline void DamageEventComponent::_internal_set_skill_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.skill_id_ = value;
+}
+
+// uint64 attacker_id = 2;
+inline void DamageEventComponent::clear_attacker_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.attacker_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t DamageEventComponent::attacker_id() const {
+  // @@protoc_insertion_point(field_get:DamageEventComponent.attacker_id)
+  return _internal_attacker_id();
+}
+inline void DamageEventComponent::set_attacker_id(::uint64_t value) {
+  _internal_set_attacker_id(value);
+  // @@protoc_insertion_point(field_set:DamageEventComponent.attacker_id)
+}
+inline ::uint64_t DamageEventComponent::_internal_attacker_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.attacker_id_;
+}
+inline void DamageEventComponent::_internal_set_attacker_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.attacker_id_ = value;
+}
+
+// uint64 target = 3;
+inline void DamageEventComponent::clear_target() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.target_ = ::uint64_t{0u};
+}
+inline ::uint64_t DamageEventComponent::target() const {
+  // @@protoc_insertion_point(field_get:DamageEventComponent.target)
+  return _internal_target();
+}
+inline void DamageEventComponent::set_target(::uint64_t value) {
+  _internal_set_target(value);
+  // @@protoc_insertion_point(field_set:DamageEventComponent.target)
+}
+inline ::uint64_t DamageEventComponent::_internal_target() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.target_;
+}
+inline void DamageEventComponent::_internal_set_target(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.target_ = value;
+}
+
+// double damage = 4;
+inline void DamageEventComponent::clear_damage() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.damage_ = 0;
+}
+inline double DamageEventComponent::damage() const {
+  // @@protoc_insertion_point(field_get:DamageEventComponent.damage)
+  return _internal_damage();
+}
+inline void DamageEventComponent::set_damage(double value) {
+  _internal_set_damage(value);
+  // @@protoc_insertion_point(field_set:DamageEventComponent.damage)
+}
+inline double DamageEventComponent::_internal_damage() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.damage_;
+}
+inline void DamageEventComponent::_internal_set_damage(double value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.damage_ = value;
+}
+
+// uint32 damage_type = 5;
+inline void DamageEventComponent::clear_damage_type() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.damage_type_ = 0u;
+}
+inline ::uint32_t DamageEventComponent::damage_type() const {
+  // @@protoc_insertion_point(field_get:DamageEventComponent.damage_type)
+  return _internal_damage_type();
+}
+inline void DamageEventComponent::set_damage_type(::uint32_t value) {
+  _internal_set_damage_type(value);
+  // @@protoc_insertion_point(field_set:DamageEventComponent.damage_type)
+}
+inline ::uint32_t DamageEventComponent::_internal_damage_type() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.damage_type_;
+}
+inline void DamageEventComponent::_internal_set_damage_type(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.damage_type_ = value;
 }
 
 #ifdef __GNUC__
