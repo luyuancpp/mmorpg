@@ -20,8 +20,6 @@ class BuffUtil
 {
 public:
 
-    static void Initialize();
-
     static uint32_t AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     static void OnBuffExpire(entt::entity parent, uint64_t buffId);

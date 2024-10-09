@@ -539,7 +539,7 @@ void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, co
 	}
 }
 
-void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
+void SkillUtil::HandleSkillSpell(const entt::entity caster, const uint64_t skillId) {
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
 	const auto skillContextIt = casterSkillContextMap.find(skillId);
 
@@ -548,16 +548,11 @@ void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
 	}
 
 	const auto& skillContext = skillContextIt->second;
-	auto [skillTable, result] = GetSkillTable(skillContext->skilltableid());
 
-	if (skillTable == nullptr) {
-		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
-		return;
-	}
-
-	entt::entity target = entt::to_entity(skillContext->target());
+	const entt::entity target = entt::to_entity(skillContext->target());
     
 	DamageEventComponent damageEvent;
+	damageEvent.set_skill_id(skillId);
 	CalculateSkillDamage(caster, damageEvent); // 计算伤害
 	DealDamage(damageEvent, caster, target); // 处理伤害
 
@@ -565,6 +560,6 @@ void SkillUtil::HandleSkillSpell(const entt::entity caster, uint64_t skillId) {
 	SkillExecutedEvent skillExecutedEvent;
 	skillExecutedEvent.set_caster(entt::to_integral(caster));
 	skillExecutedEvent.set_target(skillContext->target());
-	tls.dispatcher.trigger(skillExecutedEvent); // 触发事件
+	BuffUtil::OnSkillExecuted(skillExecutedEvent);
 }
 
