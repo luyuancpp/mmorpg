@@ -500,12 +500,6 @@ void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damag
 	damageEvent.set_damage(100);
 }
 
-void CalculateBaseDamage(const entt::entity caster, DamageEventComponent& damageEvent)
-{
-	damageEvent.set_attacker_id(entt::to_integral(caster));
-	damageEvent.set_damage(100);
-}
-
 // 具体的伤害处理
 void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster,  const entt::entity target) {
 	damageEvent.set_target(entt::to_integral(target)); 
