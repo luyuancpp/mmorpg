@@ -504,16 +504,25 @@ void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damag
 
 // 具体的伤害处理
 void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, const entt::entity target) {
+    auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
+
+	if (baseAttributesPBComponent.health() <= 0) {
+		return;
+	}
+
 	damageEvent.set_target(entt::to_integral(target)); 
 
 	// 触发伤害前事件
 	BuffUtil::OnBeforeGiveDamage(caster, damageEvent);
 	BuffUtil::OnBeforeTakeDamage(target, damageEvent);
     
-	auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
-    
 	// 减少目标生命值
-	baseAttributesPBComponent.set_health(baseAttributesPBComponent.health() - static_cast<uint64_t>(std::ceil(damageEvent.damage())));
+	if (baseAttributesPBComponent.health() > damageEvent.damage()){
+        baseAttributesPBComponent.set_health(baseAttributesPBComponent.health() - static_cast<uint64_t>(std::ceil(damageEvent.damage())));
+	}
+	else {
+		baseAttributesPBComponent.set_health(0);
+	}
 
 	// 检查目标是否死亡
 	if (baseAttributesPBComponent.health() <= 0) {
