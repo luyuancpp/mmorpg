@@ -12,48 +12,49 @@ template<class T>
 class ExcelExpression
 {
 public:
-    using symbol_table_type = exprtk::symbol_table<T>;
-    using expression_type = exprtk::expression<T>;
-    using parser_type =  exprtk::parser<T>;
-    using int_params =  std::vector<T>;
-    using value_list_type =  std::vector<std::string>;
+    using SymbolTableType = exprtk::symbol_table<T>;
+    using ExpressionType = exprtk::expression<T>;
+    using ParserType =  exprtk::parser<T>;
+    using IntParams =  std::vector<T>;
+    using ParamNameList =  std::vector<std::string>;
 
-    bool Init(const value_list_type& params_name, const std::string& expression_string)
+    bool Init(const ParamNameList& paramsNameList, const std::string& expression)
     {
-        iparams_.clear();
-        iparams_.resize(params_name.size());
-        std::size_t value_index = 0;
-        symbol_table_.add_function("random", myRandom);
-        for (auto& nane : params_name)
-        {
-            symbol_table_.add_variable(nane, iparams_[value_index++]);
+        intParamList.clear();
+        intParamList.resize(paramsNameList.size());
+        
+        std::size_t nameIndex = 0;
+        symbolTable.add_function("random", myRandom);
+        for (auto& nane : paramsNameList)        {
+            symbolTable.add_variable(nane, intParamList[nameIndex++]);
         }
-        expression_.register_symbol_table(symbol_table_);
+        
+        expression.register_symbol_table(symbolTable);
 
-        if (!parser_.compile(expression_string, expression_))
-        {
+        if (!parser.compile(expression, expression))        {
             return false;
         }
+        
         return true;
     }
 
-    void SetParam(std::size_t vec_index, T value)
+    void SetParam(std::size_t index, T value)
     {
-        if (vec_index < 0 || vec_index >= iparams_.size())
+        if (index < 0 || index >= intParamList.size())
         {
             return;
         }
-        iparams_[vec_index] = value;
+        intParamList[index] = value;
     }
 
     T Value()
     {
-        return expression_.value();
+        return expression.value();
     }
 
 private:
-    int_params iparams_;
-    expression_type expression_;
-    symbol_table_type symbol_table_;
-    parser_type parser_;
+    IntParams intParamList;
+    ExpressionType expression;
+    SymbolTableType symbolTable;
+    ParserType parser;
 };
