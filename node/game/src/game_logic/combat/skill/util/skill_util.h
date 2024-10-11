@@ -39,20 +39,20 @@ public:
     static uint32_t ValidateTarget(const ::ReleaseSkillSkillRequest* request);
 
     // 检查冷却时间
-    static uint32_t CheckCooldown(entt::entity caster, const SkillTable* tableSkill);
+    static uint32_t CheckCooldown(entt::entity caster, const SkillTable* skillTable);
 
     // 处理施法计时器
-    static uint32_t CheckCasting(entt::entity caster, const SkillTable* tableSkill);
+    static uint32_t CheckCasting(entt::entity caster, const SkillTable* skillTable);
 
-	static uint32_t CheckRecovery(const entt::entity caster, const SkillTable* tableSkill);
+	static uint32_t CheckRecovery(const entt::entity caster, const SkillTable* skillTable);
 
-	static uint32_t CheckChannel(const entt::entity caster, const SkillTable* tableSkill);
+	static uint32_t CheckChannel(const entt::entity caster, const SkillTable* skillTable);
 
     // 广播技能使用消息
     static void BroadcastSkillUsedMessage(entt::entity caster, const ::ReleaseSkillSkillRequest* request);
 	
     // 设置施法计时器
-    static void SetupCastingTimer(entt::entity caster, const SkillTable* tableSkill, uint64_t skillId);
+    static void SetupCastingTimer(entt::entity caster, const SkillTable* skillTable, uint64_t skillId);
 
     // 发送技能中断消息
     static void SendSkillInterruptedMessage(entt::entity caster, const uint32_t skillTableId) ;
