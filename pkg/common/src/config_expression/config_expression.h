@@ -64,8 +64,7 @@ public:
 
 private:
     // 注册变量到符号表
-    bool RegisterVariables(const ParamNameListType& paramNames)
-    {
+    bool RegisterVariables(const ParamNameListType& paramNames){
         for (std::size_t i = 0; i < paramNames.size(); ++i) {
             symbolTable.add_variable(paramNames[i], paramList[i]);
         }
