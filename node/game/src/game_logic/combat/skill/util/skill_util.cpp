@@ -502,50 +502,87 @@ void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damag
 	damageEvent.set_damage(100); // 设置固定伤害值
 }
 
-// 具体的伤害处理
-void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, const entt::entity target) {
-    auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
+// 判断目标是否已死亡
+bool IsTargetDead(const BaseAttributesPBComponent& baseAttributesPBComponent) {
+    return baseAttributesPBComponent.health() <= 0;
+}
 
-	if (baseAttributesPBComponent.health() <= 0) {
+// 触发伤害前的事件
+void TriggerBeforeDamageEvents(const entt::entity caster, const entt::entity target, DamageEventComponent& damageEvent) {
+    BuffUtil::OnBeforeGiveDamage(caster, damageEvent);
+    BuffUtil::OnBeforeTakeDamage(target, damageEvent);
+}
+
+// 处理目标生命值的减少
+void ApplyDamage(BaseAttributesPBComponent& baseAttributesPBComponent, const DamageEventComponent& damageEvent) {
+    const auto damage = static_cast<uint64_t>(std::ceil(damageEvent.damage()));
+    
+    if (baseAttributesPBComponent.health() > damage) {
+        // 如果目标生命值大于伤害值，正常扣减
+        baseAttributesPBComponent.set_health(baseAttributesPBComponent.health() - damage);
+    } else {
+        // 如果目标生命值小于等于伤害值，设置生命值为0
+        baseAttributesPBComponent.set_health(0);
+    }
+}
+
+// 触发被击杀事件
+void TriggerBeKillEvent(const entt::entity caster, const entt::entity target) {
+	BeKillEvent beKillEvent;
+	beKillEvent.set_caster(entt::to_integral(caster));
+	beKillEvent.set_target(entt::to_integral(target));
+
+	tls.dispatcher.trigger(beKillEvent);
+}
+
+// 触发伤害后的事件
+void TriggerAfterDamageEvents(const entt::entity caster, const entt::entity target, DamageEventComponent& damageEvent) {
+	BuffUtil::OnAfterGiveDamage(caster, damageEvent);
+	BuffUtil::OnAfterTakeDamage(target, damageEvent);
+}
+
+// 处理目标死亡逻辑
+void HandleTargetDeath(const entt::entity caster, const entt::entity target, const DamageEventComponent& damageEvent) {
+    // 触发死亡前的事件
+    BuffUtil::OnBeforeDead(target); 
+
+    // 触发死亡后的事件
+    BuffUtil::OnAfterDead(target);
+
+    // 如果不是自杀，触发击杀事件
+    if (caster != target) {
+        BuffUtil::OnKill(caster);
+    }
+
+    // 生成并触发被击杀事件
+    TriggerBeKillEvent(caster, target);
+}
+
+// 处理具体的伤害逻辑
+void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, const entt::entity target) {
+	auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
+
+	// 如果目标已死亡，直接返回
+	if (IsTargetDead(baseAttributesPBComponent)) {
 		return;
 	}
 
+	// 设置伤害事件的目标
 	damageEvent.set_target(entt::to_integral(target)); 
 
 	// 触发伤害前事件
-	BuffUtil::OnBeforeGiveDamage(caster, damageEvent);
-	BuffUtil::OnBeforeTakeDamage(target, damageEvent);
-    
-	// 减少目标生命值
-	if (baseAttributesPBComponent.health() > damageEvent.damage()){
-        baseAttributesPBComponent.set_health(baseAttributesPBComponent.health() - static_cast<uint64_t>(std::ceil(damageEvent.damage())));
-	}
-	else {
-		baseAttributesPBComponent.set_health(0);
-	}
+	TriggerBeforeDamageEvents(caster, target, damageEvent);
+
+	// 处理目标生命值的减少
+	ApplyDamage(baseAttributesPBComponent, damageEvent);
 
 	// 检查目标是否死亡
-	if (baseAttributesPBComponent.health() <= 0) {
-		BuffUtil::OnBeforeDead(target); // 触发死亡前事件
+	if (IsTargetDead(baseAttributesPBComponent)) {
+		HandleTargetDeath(caster, target, damageEvent);
 	}
 
 	// 触发伤害后事件
-	BuffUtil::OnAfterGiveDamage(caster, damageEvent);
-	BuffUtil::OnAfterTakeDamage(target, damageEvent);
-
-	// 处理死亡后逻辑
-	if (baseAttributesPBComponent.health() <= 0) {
-		BuffUtil::OnAfterDead(target); // 触发死亡后事件
-		if (caster != target) {
-			BuffUtil::OnKill(caster); // 触发击杀事件
-		}
-
-		BeKillEvent beKillEvent;
-		beKillEvent.set_caster(entt::to_integral(caster));
-		beKillEvent.set_target(entt::to_integral(target));
-
-		tls.dispatcher.trigger(beKillEvent);
-	}
+	TriggerAfterDamageEvents(caster, target, damageEvent);
 }
 
 void SkillUtil::HandleSkillSpell(const entt::entity caster, const uint64_t skillId) {
