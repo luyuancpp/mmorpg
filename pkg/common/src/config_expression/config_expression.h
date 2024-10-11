@@ -1,6 +1,6 @@
 #pragma once
 
-#include "exprtk/exprtk.hpp"
+#include "exprtk.hpp"
 
 template<class T>
 inline T myRandom()
