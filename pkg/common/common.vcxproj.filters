@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="src\config_expression\config_expression.h" />
-    <ClInclude Include="src\exprtk\exprtk.hpp" />
     <ClInclude Include="src\game_config\deploy_json.h" />
     <ClInclude Include="src\grpc\deploy\deploy_client.h" />
     <ClInclude Include="src\jsoncpp\json.h" />
