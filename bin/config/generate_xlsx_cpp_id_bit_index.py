@@ -31,7 +31,7 @@ class ExcelToCppConverter:
         """Find the index of the column where the 7th row contains 'bit_index'."""
         headers = [cell.value for cell in self.worksheet[1]]
         for col_idx in range(len(headers)):
-            cell_value = self.worksheet.cell(row=gen_common.COL_OBJ_TABLE_BIT_INDEX, column=col_idx + 1).value
+            cell_value = self.worksheet.cell(row=gen_common.XLSX_TABLE_BIT_BEGIN_INDEX, column=col_idx + 1).value
             if cell_value is not None and cell_value.strip().lower() == 'bit_index':
                 return col_idx
         return None

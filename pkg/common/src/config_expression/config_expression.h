@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <vector>
-#include "exprtk.hpp"
+#include "exprtk/exprtk.hpp"
 
 // 自定义随机函数
 template<class T>

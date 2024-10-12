@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include "config_expression/config_expression.h"
 #include "skill_config.pb.h"
 
 
@@ -13,11 +14,13 @@ public:
     std::pair<const SkillTable*, uint32_t> GetTable(uint32_t keyid);
     const KVDataType& KVData() const { return kv_data_; }
     void Load();
+    double GetByDamage() {return expression_damage_.Value();} 
 
 private:
     SkillTabledData data_;
     KVDataType kv_data_;
 
+    ExcelExpression<double> expression_damage_;
 };
 
 inline std::pair<const SkillTable*, uint32_t> GetSkillTable(uint32_t keyid) { return SkillConfigurationTable::GetSingleton().GetTable(keyid); }

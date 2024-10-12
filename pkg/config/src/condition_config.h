@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include "config_expression/config_expression.h"
 #include "condition_config.pb.h"
 
 
