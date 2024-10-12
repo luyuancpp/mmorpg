@@ -91,15 +91,15 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         '    void Load();',
     ]
 
-    for d in datastring:
-        column_name = d[gen_common.COL_OBJ_COL_NAME]
-        if d[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.table_key:
+    for data in datastring:
+        column_name = data[gen_common.COL_OBJ_COLUMN_NAME]
+        if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL:
             column_map_type = 'unordered_map'
-            if d[gen_common.COL_OBJ_TABLE_MULTI] == gen_common.multi_field_flag:
+            if data[gen_common.COL_OBJ_TABLE_MULTI] == gen_common.MULTI_TABLE_KEY_CELL:
                 column_map_type = "unordered_multimap"
             header_content.extend([
-                f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(d[gen_common.COL_OBJ_COL_TYPE])} keyid) const;',
-                f'    const std::{column_map_type}<{get_cpp_type_name(d[gen_common.COL_OBJ_COL_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
+                f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])} keyid) const;',
+                f'    const std::{column_map_type}<{get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
             ])
 
     header_content.extend(
@@ -110,14 +110,17 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         ]
     )
 
-    for d in datastring:
-        column_name = d[gen_common.COL_OBJ_COL_NAME]
-        if d[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.table_key:
+    for data in datastring:
+        column_name = data[gen_common.COL_OBJ_COLUMN_NAME]
+        if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL:
             column_map_type = 'unordered_map'
-            if d[gen_common.COL_OBJ_TABLE_MULTI] == gen_common.multi_field_flag:
+            if data[gen_common.COL_OBJ_TABLE_MULTI] == gen_common.MULTI_TABLE_KEY_CELL:
                 column_map_type = "unordered_multimap"
-            type_name = get_cpp_type_name(d[gen_common.COL_OBJ_COL_TYPE])
+            type_name = get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE])
             header_content.append(f'    std::{column_map_type}<{type_name}, {const_table_type}>  kv_{column_name}data_;')
+        if data[gen_common.COL_OBJ_TABLE_EXPRESSION_INDEX] is not None:
+            header_content.append(
+                f'    ExcelExpression<{data[gen_common.COL_OBJ_TABLE_EXPRESSION_INDEX]}> expression_{column_name}_;')
 
     header_content.append('};')
     header_content.append(
@@ -154,9 +157,9 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         '        kv_data_.emplace(row_data.id(), &row_data);\n\n',
     ]
 
-    for d in datastring:
-        column_name = d[gen_common.COL_OBJ_COL_NAME]
-        if d[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.table_key:
+    for data in datastring:
+        column_name = data[gen_common.COL_OBJ_COLUMN_NAME]
+        if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL:
             cpp_content.append(f'        kv_{column_name}data_.emplace(row_data.{column_name}(), &row_data);')
 
     cpp_content.extend([
@@ -172,10 +175,10 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         '}\n\n',
     ])
 
-    for d in datastring:
-        column_name = d[gen_common.COL_OBJ_COL_NAME]
-        if d[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.table_key:
-            type_name = get_cpp_type_param_name_with_ref(d[gen_common.COL_OBJ_COL_TYPE])
+    for data in datastring:
+        column_name = data[gen_common.COL_OBJ_COLUMN_NAME]
+        if data[gen_common.COL_OBJ_TABLE_KEY_INDEX] == gen_common.TABLE_KEY_CELL:
+            type_name = get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])
             cpp_content.extend([
                 f'{get_table_return_type} '
                 f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} keyid) const {{',

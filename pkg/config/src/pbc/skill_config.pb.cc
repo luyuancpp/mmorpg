@@ -93,6 +93,9 @@ inline constexpr SkillTable::Impl_::Impl_(
         effect_{},
         _effect_cached_byte_size_{0},
         requestresource_{},
+        damage_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         id_{0u},
         rquest_target_{0u},
         castpoint_{0},
@@ -211,6 +214,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.self_status_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.required_status_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.cooldown_id_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.damage_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::SkillTabledData, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -228,7 +232,7 @@ static const ::_pbi::MigrationSchema
         {10, -1, -1, sizeof(::requiredresource)},
         {20, -1, -1, sizeof(::requestresource)},
         {30, -1, -1, sizeof(::SkillTable)},
-        {60, -1, -1, sizeof(::SkillTabledData)},
+        {61, -1, -1, sizeof(::SkillTabledData)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_requireditem_default_instance_._instance,
@@ -245,7 +249,7 @@ const char descriptor_table_protodef_skill_5fconfig_2eproto[] ABSL_ATTRIBUTE_SEC
     "redresource_type\030\001 \001(\r\022\036\n\026requiredresour"
     "ce_value\030\002 \001(\r\"K\n\017requestresource\022\032\n\022req"
     "uestresource_id\030\001 \001(\r\022\034\n\024requestresource"
-    "_cost\030\002 \001(\r\"\214\004\n\nSkillTable\022\n\n\002id\030\001 \001(\r\022\022"
+    "_cost\030\002 \001(\r\"\234\004\n\nSkillTable\022\n\n\002id\030\001 \001(\r\022\022"
     "\n\nskill_type\030\002 \003(\r\022\023\n\013target_type\030\003 \003(\r\022"
     "\025\n\rrquest_target\030\004 \001(\r\022\025\n\rtarget_status\030"
     "\005 \001(\r\022\021\n\tcastpoint\030\006 \001(\001\022\024\n\014recoverytime"
@@ -258,15 +262,15 @@ const char descriptor_table_protodef_skill_5fconfig_2eproto[] ABSL_ATTRIBUTE_SEC
     "\020.requestresource\022\r\n\005range\030\021 \001(\001\022\021\n\tmax_"
     "range\030\022 \001(\001\022\022\n\nmmin_range\030\023 \001(\001\022\023\n\013self_"
     "status\030\024 \001(\r\022\027\n\017required_status\030\025 \001(\r\022\023\n"
-    "\013cooldown_id\030\026 \001(\r\",\n\017SkillTabledData\022\031\n"
-    "\004data\030\001 \003(\0132\013.SkillTableB\tZ\007pb/gameb\006pro"
-    "to3"
+    "\013cooldown_id\030\026 \001(\r\022\016\n\006damage\030\027 \001(\t\",\n\017Sk"
+    "illTabledData\022\031\n\004data\030\001 \003(\0132\013.SkillTable"
+    "B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_skill_5fconfig_2eproto = {
     false,
     false,
-    843,
+    859,
     descriptor_table_protodef_skill_5fconfig_2eproto,
     "skill_config.proto",
     &descriptor_table_skill_5fconfig_2eproto_once,
@@ -951,6 +955,7 @@ inline PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
         effect_{visibility, arena, from.effect_},
         _effect_cached_byte_size_{0},
         requestresource_{visibility, arena, from.requestresource_},
+        damage_(arena, from.damage_),
         _cached_size_{0} {}
 
 SkillTable::SkillTable(
@@ -984,6 +989,7 @@ inline PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
         effect_{visibility, arena},
         _effect_cached_byte_size_{0},
         requestresource_{visibility, arena},
+        damage_(arena),
         _cached_size_{0} {}
 
 inline void SkillTable::SharedCtor(::_pb::Arena* arena) {
@@ -1002,6 +1008,7 @@ SkillTable::~SkillTable() {
 }
 inline void SkillTable::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.damage_.Destroy();
   _impl_.~Impl_();
 }
 
@@ -1032,6 +1039,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   _impl_.requiredresource_.Clear();
   _impl_.effect_.Clear();
   _impl_.requestresource_.Clear();
+  _impl_.damage_.ClearToEmpty();
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.cooldown_id_) -
       reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.cooldown_id_));
@@ -1046,15 +1054,15 @@ const char* SkillTable::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<5, 22, 3, 0, 2> SkillTable::_table_ = {
+const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    22, 248,  // max_field_number, fast_idx_mask
+    23, 248,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4290772992,  // skipmap
+    4286578688,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    22,  // num_field_entries
+    23,  // num_field_entries
     3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_SkillTable_default_instance_._instance,
@@ -1130,7 +1138,9 @@ const ::_pbi::TcParseTable<5, 22, 3, 0, 2> SkillTable::_table_ = {
     // uint32 cooldown_id = 22;
     {::_pbi::TcParser::FastV32S2,
      {432, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // string damage = 23;
+    {::_pbi::TcParser::FastUS2,
+     {442, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -1208,11 +1218,17 @@ const ::_pbi::TcParseTable<5, 22, 3, 0, 2> SkillTable::_table_ = {
     // uint32 cooldown_id = 22;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // string damage = 23;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }}, {{
     {::_pbi::TcParser::GetTable<::requireditem>()},
     {::_pbi::TcParser::GetTable<::requiredresource>()},
     {::_pbi::TcParser::GetTable<::requestresource>()},
   }}, {{
+    "\12\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6"
+    "SkillTable"
+    "damage"
   }},
 };
 
@@ -1420,6 +1436,14 @@ const ::_pbi::TcParseTable<5, 22, 3, 0, 2> SkillTable::_table_ = {
         22, this->_internal_cooldown_id(), target);
   }
 
+  // string damage = 23;
+  if (!this->_internal_damage().empty()) {
+    const std::string& _s = this->_internal_damage();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillTable.damage");
+    target = stream->WriteStringMaybeAliased(23, _s, target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1491,6 +1515,12 @@ const ::_pbi::TcParseTable<5, 22, 3, 0, 2> SkillTable::_table_ = {
   for (const auto& msg : this->_internal_requestresource()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
   }
+  // string damage = 23;
+  if (!this->_internal_damage().empty()) {
+    total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_damage());
+  }
+
   // uint32 id = 1;
   if (this->_internal_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
@@ -1628,6 +1658,9 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   _this->_internal_mutable_effect()->MergeFrom(from._internal_effect());
   _this->_internal_mutable_requestresource()->MergeFrom(
       from._internal_requestresource());
+  if (!from._internal_damage().empty()) {
+    _this->_internal_set_damage(from._internal_damage());
+  }
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
   }
@@ -1717,6 +1750,8 @@ PROTOBUF_NOINLINE bool SkillTable::IsInitialized() const {
 
 void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.skill_type_.InternalSwap(&other->_impl_.skill_type_);
   _impl_.target_type_.InternalSwap(&other->_impl_.target_type_);
@@ -1724,6 +1759,7 @@ void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT other) {
   _impl_.requiredresource_.InternalSwap(&other->_impl_.requiredresource_);
   _impl_.effect_.InternalSwap(&other->_impl_.effect_);
   _impl_.requestresource_.InternalSwap(&other->_impl_.requestresource_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.damage_, &other->_impl_.damage_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)
       + sizeof(SkillTable::_impl_.cooldown_id_)

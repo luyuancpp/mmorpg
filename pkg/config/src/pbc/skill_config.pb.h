@@ -743,6 +743,7 @@ class SkillTable final : public ::google::protobuf::Message
     kRequiredresourceFieldNumber = 10,
     kEffectFieldNumber = 11,
     kRequestresourceFieldNumber = 16,
+    kDamageFieldNumber = 23,
     kIdFieldNumber = 1,
     kRquestTargetFieldNumber = 4,
     kCastpointFieldNumber = 6,
@@ -865,6 +866,22 @@ class SkillTable final : public ::google::protobuf::Message
   const ::requestresource& requestresource(int index) const;
   ::requestresource* add_requestresource();
   const ::google::protobuf::RepeatedPtrField<::requestresource>& requestresource() const;
+  // string damage = 23;
+  void clear_damage() ;
+  const std::string& damage() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_damage(Arg_&& arg, Args_... args);
+  std::string* mutable_damage();
+  PROTOBUF_NODISCARD std::string* release_damage();
+  void set_allocated_damage(std::string* value);
+
+  private:
+  const std::string& _internal_damage() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_damage(
+      const std::string& value);
+  std::string* _internal_mutable_damage();
+
+  public:
   // uint32 id = 1;
   void clear_id() ;
   ::uint32_t id() const;
@@ -1030,8 +1047,8 @@ class SkillTable final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 22, 3,
-      0, 2>
+      5, 23, 3,
+      41, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -1055,6 +1072,7 @@ class SkillTable final : public ::google::protobuf::Message
     ::google::protobuf::RepeatedField<::uint32_t> effect_;
     mutable ::google::protobuf::internal::CachedSize _effect_cached_byte_size_;
     ::google::protobuf::RepeatedPtrField< ::requestresource > requestresource_;
+    ::google::protobuf::internal::ArenaStringPtr damage_;
     ::uint32_t id_;
     ::uint32_t rquest_target_;
     double castpoint_;
@@ -2044,6 +2062,56 @@ inline ::uint32_t SkillTable::_internal_cooldown_id() const {
 inline void SkillTable::_internal_set_cooldown_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.cooldown_id_ = value;
+}
+
+// string damage = 23;
+inline void SkillTable::clear_damage() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.damage_.ClearToEmpty();
+}
+inline const std::string& SkillTable::damage() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SkillTable.damage)
+  return _internal_damage();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void SkillTable::set_damage(Arg_&& arg,
+                                                     Args_... args) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.damage_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:SkillTable.damage)
+}
+inline std::string* SkillTable::mutable_damage() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_damage();
+  // @@protoc_insertion_point(field_mutable:SkillTable.damage)
+  return _s;
+}
+inline const std::string& SkillTable::_internal_damage() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.damage_.Get();
+}
+inline void SkillTable::_internal_set_damage(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.damage_.Set(value, GetArena());
+}
+inline std::string* SkillTable::_internal_mutable_damage() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.damage_.Mutable( GetArena());
+}
+inline std::string* SkillTable::release_damage() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:SkillTable.damage)
+  return _impl_.damage_.Release();
+}
+inline void SkillTable::set_allocated_damage(std::string* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.damage_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.damage_.IsDefault()) {
+          _impl_.damage_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:SkillTable.damage)
 }
 
 // -------------------------------------------------------------------
