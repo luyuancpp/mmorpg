@@ -103,9 +103,9 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
                 f'    const std::{column_map_type}<{get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
             ])
 
-        if data[gen_common.COL_OBJ_TABLE_EXPRESSION_INDEX] is not None:
+        if data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not None:
             header_content.extend([
-                f'    {data[gen_common.COL_OBJ_TABLE_EXPRESSION_INDEX]} GetBy{column_name.title()}() {{ return expression_{column_name}_.Value(); }} '
+                f'    {data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX]} GetBy{column_name.title()}() {{ return expression_{column_name}_.Value(); }} '
             ])
 
     header_content.extend(
@@ -124,9 +124,9 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
                 column_map_type = "unordered_multimap"
             type_name = get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE])
             header_content.append(f'    std::{column_map_type}<{type_name}, {const_table_type}>  kv_{column_name}data_;')
-        if data[gen_common.COL_OBJ_TABLE_EXPRESSION_INDEX] is not None:
+        if data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not None:
             header_content.append(
-                f'    ExcelExpression<{data[gen_common.COL_OBJ_TABLE_EXPRESSION_INDEX]}> expression_{column_name}_;')
+                f'    ExcelExpression<{data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX]}> expression_{column_name}_;')
 
     header_content.append('};')
     header_content.append(
@@ -157,11 +157,15 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         f'    if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); '
         f'!result.ok()) {{',
         f'        LOG_FATAL << "{sheetname} " << result.message().data();',
-        '    }',
-        '    for (int32_t i = 0; i < data_.data_size(); ++i) {',
-        '        const auto& row_data = data_.data(i);',
-        '        kv_data_.emplace(row_data.id(), &row_data);\n\n',
+        '    }\n'
     ]
+
+    cpp_content.extend(
+        [  f'    for (int32_t i = 0; i < data_.data_size(); ++i) {{ ',
+        f'        const auto& row_data = data_.data(i);',
+        f'        kv_data_.emplace(row_data.id(), &row_data);\n\n',
+        ]
+    )
 
     for data in datastring:
         column_name = data[gen_common.COL_OBJ_COLUMN_NAME]
@@ -169,7 +173,44 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
             cpp_content.append(f'        kv_{column_name}data_.emplace(row_data.{column_name}(), &row_data);')
 
     cpp_content.extend([
-        '    }',
+        f'    }}',
+    ])
+
+    for data in datastring:
+        cell_value = data[gen_common.COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX]
+
+        # 跳过空值
+        if cell_value is None:
+            continue
+
+        # 统计单词并按逗号分隔
+        word_count, word_list = gen_common.count_words_by_comma(cell_value)
+
+        # 如果没有有效的单词，继续下一个循环
+        if word_count <= 0:
+            continue
+
+        # 提取列名，但这里暂时没有使用
+        column_name = data[gen_common.COL_OBJ_COLUMN_NAME]
+
+        # 开始生成 C++ 内容
+        cpp_content.append('    {')  # 添加一个块的起始括号
+
+        # 构造 StringVector 并添加到 C++ 代码
+        cpp_content.append('     StringVector paramNameList{')
+
+        # 按照单词列表生成 C++ 代码，最后一个单词不需要逗号
+        for i, word in enumerate(word_list):
+            if i == len(word_list) - 1:
+                cpp_content.append(f'   "{word}"')  # 最后一个单词不加逗号
+            else:
+                cpp_content.append(f'   "{word}", ')
+
+        cpp_content.append('     };')  # 结束 StringVector 的定义
+        #cpp_content.append(f'    expression_{column_name}_.Init(paramNameList, );')
+        cpp_content.append('    }')  # 结束整个块
+
+    cpp_content.extend([
         '}\n\n',
         f'{get_table_return_type} {sheetname}ConfigurationTable::GetTable(uint32_t keyid) {{',
         '    const auto it = kv_data_.find(keyid);',
