@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const CooldownTable*, uint32_t> GetCooldownTable(uint32_t keyid) { return CooldownConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const CooldownTable*, uint32_t> GetCooldownTable(const uint32_t keyid) { return CooldownConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const CooldownTabledData& GetCooldownAllTable() { return CooldownConfigurationTable::GetSingleton().All(); }

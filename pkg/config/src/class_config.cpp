@@ -17,10 +17,11 @@ void ClassConfigurationTable::Load() {
 
 
     }
+
 }
 
 
-std::pair<const ClassTable*, uint32_t> ClassConfigurationTable::GetTable(uint32_t keyid) {
+std::pair<const ClassTable*, uint32_t> ClassConfigurationTable::GetTable(const uint32_t keyid) {
     const auto it = kv_data_.find(keyid);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Class table not found for ID: " << keyid;

@@ -17,10 +17,11 @@ void MonsterBaseConfigurationTable::Load() {
 
 
     }
+
 }
 
 
-std::pair<const MonsterBaseTable*, uint32_t> MonsterBaseConfigurationTable::GetTable(uint32_t keyid) {
+std::pair<const MonsterBaseTable*, uint32_t> MonsterBaseConfigurationTable::GetTable(const uint32_t keyid) {
     const auto it = kv_data_.find(keyid);
     if (it == kv_data_.end()) {
         LOG_ERROR << "MonsterBase table not found for ID: " << keyid;

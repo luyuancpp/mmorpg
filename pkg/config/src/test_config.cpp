@@ -17,10 +17,11 @@ void TestConfigurationTable::Load() {
 
 
     }
+
 }
 
 
-std::pair<const TestTable*, uint32_t> TestConfigurationTable::GetTable(uint32_t keyid) {
+std::pair<const TestTable*, uint32_t> TestConfigurationTable::GetTable(const uint32_t keyid) {
     const auto it = kv_data_.find(keyid);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Test table not found for ID: " << keyid;

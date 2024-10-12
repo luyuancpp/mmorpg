@@ -17,10 +17,11 @@ void MainSceneConfigurationTable::Load() {
 
 
     }
+
 }
 
 
-std::pair<const MainSceneTable*, uint32_t> MainSceneConfigurationTable::GetTable(uint32_t keyid) {
+std::pair<const MainSceneTable*, uint32_t> MainSceneConfigurationTable::GetTable(const uint32_t keyid) {
     const auto it = kv_data_.find(keyid);
     if (it == kv_data_.end()) {
         LOG_ERROR << "MainScene table not found for ID: " << keyid;

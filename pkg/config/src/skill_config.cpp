@@ -17,15 +17,16 @@ void SkillConfigurationTable::Load() {
 
 
     }
+
     {
-     StringVector paramNameList{
+      expression_damage_.Init({
    "level"
-     };
-    };
+     });
+    }
 }
 
 
-std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTable(uint32_t keyid) {
+std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTable(const uint32_t keyid) {
     const auto it = kv_data_.find(keyid);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Skill table not found for ID: " << keyid;

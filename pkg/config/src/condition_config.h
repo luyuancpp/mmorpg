@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const ConditionTable*, uint32_t> GetConditionTable(uint32_t keyid) { return ConditionConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const ConditionTable*, uint32_t> GetConditionTable(const uint32_t keyid) { return ConditionConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const ConditionTabledData& GetConditionAllTable() { return ConditionConfigurationTable::GetSingleton().All(); }

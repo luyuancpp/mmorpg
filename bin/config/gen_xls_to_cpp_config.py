@@ -104,8 +104,13 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
             ])
 
         if data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not None:
+            type_name = data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX]
             header_content.extend([
-                f'    {data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX]} GetBy{column_name.title()}() {{ return expression_{column_name}_.Value(); }} '
+                f'    {type_name} Get{column_name.title()}(const uint32_t keyid){{',
+                f'          auto [table, ok] = GetTable(keyid);',
+                f'          if ( table == nullptr){{{{return {type_name}(); }}}}',
+                f'          return expression_{column_name}_.Value(table->{column_name}());',
+                f'     }} ',
             ])
 
     header_content.extend(
@@ -130,7 +135,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
 
     header_content.append('};')
     header_content.append(
-        f'\ninline {get_table_return_type} Get{sheetname}Table(uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}')
+        f'\ninline {get_table_return_type} Get{sheetname}Table(const uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}')
     header_content.append(
         f'\ninline const {table_data_name}& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}')
 
@@ -173,7 +178,7 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
             cpp_content.append(f'        kv_{column_name}data_.emplace(row_data.{column_name}(), &row_data);')
 
     cpp_content.extend([
-        f'    }}',
+        f'    }}\n',
     ])
 
     for data in datastring:
@@ -197,7 +202,7 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         cpp_content.append('    {')  # 添加一个块的起始括号
 
         # 构造 StringVector 并添加到 C++ 代码
-        cpp_content.append('     StringVector paramNameList{')
+        cpp_content.append(f'      expression_{column_name}_.Init({{')
 
         # 按照单词列表生成 C++ 代码，最后一个单词不需要逗号
         for i, word in enumerate(word_list):
@@ -206,13 +211,12 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
             else:
                 cpp_content.append(f'   "{word}", ')
 
-        cpp_content.append('     };')  # 结束 StringVector 的定义
-        #cpp_content.append(f'    expression_{column_name}_.Init(paramNameList, );')
+        cpp_content.append('     });')  # 结束 StringVector 的定义
         cpp_content.append('    }')  # 结束整个块
 
     cpp_content.extend([
         '}\n\n',
-        f'{get_table_return_type} {sheetname}ConfigurationTable::GetTable(uint32_t keyid) {{',
+        f'{get_table_return_type} {sheetname}ConfigurationTable::GetTable(const uint32_t keyid) {{',
         '    const auto it = kv_data_.find(keyid);',
         '    if (it == kv_data_.end()) {',
         f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyid;',

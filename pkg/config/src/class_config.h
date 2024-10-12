@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const ClassTable*, uint32_t> GetClassTable(uint32_t keyid) { return ClassConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const ClassTable*, uint32_t> GetClassTable(const uint32_t keyid) { return ClassConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const ClassTabledData& GetClassAllTable() { return ClassConfigurationTable::GetSingleton().All(); }

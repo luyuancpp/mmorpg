@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const ItemTable*, uint32_t> GetItemTable(uint32_t keyid) { return ItemConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const ItemTable*, uint32_t> GetItemTable(const uint32_t keyid) { return ItemConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const ItemTabledData& GetItemAllTable() { return ItemConfigurationTable::GetSingleton().All(); }
