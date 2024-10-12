@@ -84,11 +84,11 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'#include "{sheet_name_lower}_config.pb.h"\n\n',
         f'class {sheetname}ConfigurationTable {{',
         'public:',
-        f'    using KVDataType = std::{container_type}<uint32_t, {const_table_type}>;',
+        f'    using KeyValueDataType = std::{container_type}<uint32_t, {const_table_type}>;',
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
         f'    const {table_data_name}& All() const {{ return data_; }}',
         f'    {get_table_return_type} GetTable(uint32_t keyId);',
-        f'    const KVDataType& KVData() const {{ return kv_data_; }}',
+        f'    const KeyValueDataType& KeyValueData() const {{ return kv_data_; }}',
         '    void Load();\n',
     ]
 
@@ -120,7 +120,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         [
             '\nprivate:',
             f'    {table_data_name} data_;',
-            '    KVDataType kv_data_;\n',
+            '    KeyValueDataType kv_data_;\n',
         ]
     )
 

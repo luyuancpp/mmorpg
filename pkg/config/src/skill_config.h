@@ -8,11 +8,11 @@
 
 class SkillConfigurationTable {
 public:
-    using KVDataType = std::unordered_map<uint32_t, const SkillTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const SkillTable*>;
     static SkillConfigurationTable& GetSingleton() { static SkillConfigurationTable singleton; return singleton; }
     const SkillTabledData& All() const { return data_; }
     std::pair<const SkillTable*, uint32_t> GetTable(uint32_t keyId);
-    const KVDataType& KVData() const { return kv_data_; }
+    const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
     void SetDamageParam(const std::vector<double>& paramList){
@@ -27,7 +27,7 @@ public:
 
 private:
     SkillTabledData data_;
-    KVDataType kv_data_;
+    KeyValueDataType kv_data_;
 
     ExcelExpression<double> expression_damage_;
 };

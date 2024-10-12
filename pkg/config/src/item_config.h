@@ -8,17 +8,17 @@
 
 class ItemConfigurationTable {
 public:
-    using KVDataType = std::unordered_map<uint32_t, const ItemTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const ItemTable*>;
     static ItemConfigurationTable& GetSingleton() { static ItemConfigurationTable singleton; return singleton; }
     const ItemTabledData& All() const { return data_; }
     std::pair<const ItemTable*, uint32_t> GetTable(uint32_t keyId);
-    const KVDataType& KVData() const { return kv_data_; }
+    const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
 
 private:
     ItemTabledData data_;
-    KVDataType kv_data_;
+    KeyValueDataType kv_data_;
 
 };
 
