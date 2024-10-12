@@ -9,22 +9,23 @@ md5_output_dir = "generated/xlsx/md5/"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-map_key_flag = 'map_key'
-map_value_flag = 'map_value'
-set_flag = 'set'
-table_key = 'table_key'
-multi_field_flag = 'multi'
+MAP_KEY_CELL = 'map_key'
+MAP_VALUE_CELL = 'map_value'
+SET_CELL = 'set'
+TABLE_KEY_CELL = 'table_key'
+MULTI_TABLE_KEY_CELL = 'multi'
 
 FILE_TYPE_INDEX = 0
 MAP_TYPE_INDEX = 1
 OWNER_INDEX = 2
 MULTI_KEY_INDEX = 3
 
-COL_OBJ_COL_NAME = 0
-COL_OBJ_COL_TYPE = 1
+COL_OBJ_COLUMN_NAME = 0
+COL_OBJ_COLUMN_TYPE = 1
 COL_OBJ_TABLE_MULTI = 4
 COL_OBJ_TABLE_KEY_INDEX = 5
 COL_OBJ_TABLE_BIT_INDEX = 6
+COL_OBJ_TABLE_EXPRESSION_INDEX = 7
 
 SHEET_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX - 1
 SHEET_GROUP_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX
@@ -105,7 +106,7 @@ def is_key_in_map(data, key, map_field_data, column_names):
             for cell_index in v:
                 if column_names[cell_index] in map_field_data:
                     column_name = column_names[cell_index]
-                    return map_field_data[column_name] in (map_key_flag, map_value_flag)
+                    return map_field_data[column_name] in (MAP_KEY_CELL, MAP_VALUE_CELL)
     return False
 
 def column_name_to_obj_name(column_name, separator):
@@ -130,10 +131,10 @@ def get_row_data(row, column_names):
 def fill_map(group_data, map_field_data, column_names):
     """填充映射数据"""
     for k, v in group_data.items():
-        if column_names[v[0]] in map_field_data and map_field_data[column_names[v[0]]] == map_key_flag:
-            map_field_data[column_names[v[0]]] = map_key_flag
+        if column_names[v[0]] in map_field_data and map_field_data[column_names[v[0]]] == MAP_KEY_CELL:
+            map_field_data[column_names[v[0]]] = MAP_KEY_CELL
             if len(v) > 1:
-                map_field_data[column_names[v[1]]] = map_value_flag
+                map_field_data[column_names[v[1]]] = MAP_VALUE_CELL
 
 def get_sheet_data(sheet, column_names):
     """获取整个Excel表格的数据"""

@@ -111,9 +111,9 @@ def format_field(data: Dict, key: str, column_names: List[str], field_index: int
 def format_map_field(data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a map field for the .proto file."""
     map_type = data[gen_common.MAP_TYPE_INDEX][key]
-    if map_type == gen_common.set_flag:
+    if map_type == gen_common.SET_CELL:
         return f'\tmap <{data[0][key]}, bool> {key} = {field_index};\n'
-    elif map_type == gen_common.map_key_flag:
+    elif map_type == gen_common.MAP_KEY_CELL:
         value_type = data[gen_common.FILE_TYPE_INDEX]
         if key in data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX]:
             value = data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX][key]
