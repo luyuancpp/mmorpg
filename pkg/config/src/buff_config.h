@@ -11,9 +11,10 @@ public:
     using KVDataType = std::unordered_map<uint32_t, const BuffTable*>;
     static BuffConfigurationTable& GetSingleton() { static BuffConfigurationTable singleton; return singleton; }
     const BuffTabledData& All() const { return data_; }
-    std::pair<const BuffTable*, uint32_t> GetTable(uint32_t keyid);
+    std::pair<const BuffTable*, uint32_t> GetTable(uint32_t keyId);
     const KVDataType& KVData() const { return kv_data_; }
     void Load();
+
 
 private:
     BuffTabledData data_;
@@ -21,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const BuffTable*, uint32_t> GetBuffTable(const uint32_t keyid) { return BuffConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const BuffTable*, uint32_t> GetBuffTable(const uint32_t keyId) { return BuffConfigurationTable::GetSingleton().GetTable(keyId); }
 
 inline const BuffTabledData& GetBuffAllTable() { return BuffConfigurationTable::GetSingleton().All(); }

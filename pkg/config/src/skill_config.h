@@ -11,13 +11,18 @@ public:
     using KVDataType = std::unordered_map<uint32_t, const SkillTable*>;
     static SkillConfigurationTable& GetSingleton() { static SkillConfigurationTable singleton; return singleton; }
     const SkillTabledData& All() const { return data_; }
-    std::pair<const SkillTable*, uint32_t> GetTable(uint32_t keyid);
+    std::pair<const SkillTable*, uint32_t> GetTable(uint32_t keyId);
     const KVDataType& KVData() const { return kv_data_; }
     void Load();
-    double GetDamage(const uint32_t keyid){
-          auto [table, ok] = GetTable(keyid);
-          if ( table == nullptr){{return double(); }}
-          return expression_damage_.Value(table->damage());
+
+    void SetDamageParam(const std::vector<double>& paramList){
+      expression_damage_.SetParam(paramList); 
+    }
+ 
+    double GetDamage(const uint32_t keyId){
+      auto [table, ok] = GetTable(keyId);
+      if ( table == nullptr){{return double(); }}
+      return expression_damage_.Value(table->damage());
      } 
 
 private:
@@ -27,6 +32,6 @@ private:
     ExcelExpression<double> expression_damage_;
 };
 
-inline std::pair<const SkillTable*, uint32_t> GetSkillTable(const uint32_t keyid) { return SkillConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const SkillTable*, uint32_t> GetSkillTable(const uint32_t keyId) { return SkillConfigurationTable::GetSingleton().GetTable(keyId); }
 
 inline const SkillTabledData& GetSkillAllTable() { return SkillConfigurationTable::GetSingleton().All(); }

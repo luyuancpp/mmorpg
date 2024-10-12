@@ -21,10 +21,10 @@ void BuffConfigurationTable::Load() {
 }
 
 
-std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTable(const uint32_t keyid) {
-    const auto it = kv_data_.find(keyid);
+std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTable(const uint32_t keyId) {
+    const auto it = kv_data_.find(keyId);
     if (it == kv_data_.end()) {
-        LOG_ERROR << "Buff table not found for ID: " << keyid;
+        LOG_ERROR << "Buff table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
     return { it->second, kOK };

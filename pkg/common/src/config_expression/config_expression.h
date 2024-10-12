@@ -49,6 +49,17 @@ public:
         paramList[index] = value;
     }
 
+    void SetParam(const ParamListType& params)
+    {
+        if (params.size() != paramList.size())
+        {
+            return;  // 检查索引有效性
+        }
+        for (std::size_t i = 0; i < paramList.size(); ++i) {
+            paramList[i] = params[i];
+        }
+    }
+
     // 返回表达式的值
     T Value( const std::string& expressionStr)
     {

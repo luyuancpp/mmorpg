@@ -87,9 +87,9 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'    using KVDataType = std::{container_type}<uint32_t, {const_table_type}>;',
         f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
         f'    const {table_data_name}& All() const {{ return data_; }}',
-        f'    {get_table_return_type} GetTable(uint32_t keyid);',
+        f'    {get_table_return_type} GetTable(uint32_t keyId);',
         f'    const KVDataType& KVData() const {{ return kv_data_; }}',
-        '    void Load();',
+        '    void Load();\n',
     ]
 
     for data in datastring:
@@ -99,17 +99,20 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
             if data[gen_common.COL_OBJ_TABLE_MULTI] == gen_common.MULTI_TABLE_KEY_CELL:
                 column_map_type = "unordered_multimap"
             header_content.extend([
-                f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])} keyid) const;',
+                f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])} keyId) const;',
                 f'    const std::{column_map_type}<{get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
             ])
 
         if data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX] is not None:
             type_name = data[gen_common.COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX]
             header_content.extend([
-                f'    {type_name} Get{column_name.title()}(const uint32_t keyid){{',
-                f'          auto [table, ok] = GetTable(keyid);',
-                f'          if ( table == nullptr){{{{return {type_name}(); }}}}',
-                f'          return expression_{column_name}_.Value(table->{column_name}());',
+                f'    void Set{column_name.title()}Param(const std::vector<{type_name}>& paramList){{',
+                f'      expression_{column_name}_.SetParam(paramList); ',
+                f'    }}\n ',
+                f'    {type_name} Get{column_name.title()}(const uint32_t keyId){{',
+                f'      auto [table, ok] = GetTable(keyId);',
+                f'      if ( table == nullptr){{{{return {type_name}(); }}}}',
+                f'      return expression_{column_name}_.Value(table->{column_name}());',
                 f'     }} ',
             ])
 
@@ -135,7 +138,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
 
     header_content.append('};')
     header_content.append(
-        f'\ninline {get_table_return_type} Get{sheetname}Table(const uint32_t keyid) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyid); }}')
+        f'\ninline {get_table_return_type} Get{sheetname}Table(const uint32_t keyId) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyId); }}')
     header_content.append(
         f'\ninline const {table_data_name}& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}')
 
@@ -216,10 +219,10 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
 
     cpp_content.extend([
         '}\n\n',
-        f'{get_table_return_type} {sheetname}ConfigurationTable::GetTable(const uint32_t keyid) {{',
-        '    const auto it = kv_data_.find(keyid);',
+        f'{get_table_return_type} {sheetname}ConfigurationTable::GetTable(const uint32_t keyId) {{',
+        '    const auto it = kv_data_.find(keyId);',
         '    if (it == kv_data_.end()) {',
-        f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyid;',
+        f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyId;',
         '        return { nullptr, kInvalidTableId };',
         '    }',
         '    return { it->second, kOK };',
@@ -232,10 +235,10 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
             type_name = get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])
             cpp_content.extend([
                 f'{get_table_return_type} '
-                f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} keyid) const {{',
-                f'    const auto it = kv_{column_name}data_.find(keyid);',
+                f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} keyId) const {{',
+                f'    const auto it = kv_{column_name}data_.find(keyId);',
                 f'    if (it == kv_{column_name}data_.end()) {{',
-                f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyid;',
+                f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyId;',
                 '        return { nullptr, kInvalidTableId };',
                 '    }',
                 '    return { it->second, kOK };',
