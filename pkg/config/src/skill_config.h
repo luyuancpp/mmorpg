@@ -14,7 +14,7 @@ public:
     std::pair<const SkillTable*, uint32_t> GetTable(uint32_t keyid);
     const KVDataType& KVData() const { return kv_data_; }
     void Load();
-    double GetByDamage() {return expression_damage_.Value();} 
+    double GetByDamage() { return expression_damage_.Value(); } 
 
 private:
     SkillTabledData data_;

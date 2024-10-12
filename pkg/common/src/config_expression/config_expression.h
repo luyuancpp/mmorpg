@@ -1,8 +1,7 @@
 ﻿#pragma once
 
-#include <string>
-#include <vector>
 #include "exprtk/exprtk.hpp"
+#include "type_define/type_define.h"
 
 // 自定义随机函数
 template<class T>
@@ -19,16 +18,21 @@ public:
     using ExpressionType = exprtk::expression<T>;
     using ParserType = exprtk::parser<T>;
     using ParamListType = std::vector<T>;
-    using ParamNameListType = std::vector<std::string>;
 
     // 初始化函数，接受参数名和表达式字符串
-    bool Init(const ParamNameListType& paramNames, const std::string& expressionStr)
+    bool Init(const StringVector& paramNames, const std::string& expressionStr)
     {
         paramList.clear();
         paramList.resize(paramNames.size());
 
         // 注册自定义函数
         symbolTable.add_function("random", customRandom<T>);
+
+        std::size_t index = 0;
+        for (auto& name : paramNames)
+        {
+            symbolTable.add_variable(name, paramList[index++]);
+        }
 
         // 注册变量名到符号表
         if (!RegisterVariables(paramNames)) {
@@ -64,7 +68,7 @@ public:
 
 private:
     // 注册变量到符号表
-    bool RegisterVariables(const ParamNameListType& paramNames){
+    bool RegisterVariables(const StringVector& paramNames){
         for (std::size_t i = 0; i < paramNames.size(); ++i) {
             symbolTable.add_variable(paramNames[i], paramList[i]);
         }

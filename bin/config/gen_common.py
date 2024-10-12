@@ -26,7 +26,9 @@ COL_OBJ_COLUMN_NAME = 0
 COL_OBJ_COLUMN_TYPE = 1
 COL_OBJ_TABLE_MULTI = 4
 COL_OBJ_TABLE_KEY_INDEX = 5
-COL_OBJ_TABLE_EXPRESSION_INDEX = 6
+COL_OBJ_TABLE_EXPRESSION_TYPE_INDEX = 6
+COL_OBJ_TABLE_EXPRESSION_PARAM_NAMES_INDEX = 7
+
 
 SHEET_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX - 1
 SHEET_GROUP_ARRAY_DATA_INDEX = FIELD_INFO_END_ROW_INDEX
@@ -186,3 +188,14 @@ def check_cell_value(columns_data, column_name, row_number, target_value):
     cell_value = columns_data[column_name][row_number]
 
     return cell_value == target_value
+
+
+def count_words_by_comma(text):
+    # 使用逗号作为分隔符，split 方法返回一个列表
+    words = text.split(',')
+
+    # 去除可能的前后空格，并排除空字符串
+    words = [word.strip() for word in words if word.strip()]
+
+    # 返回单词数量和单词列表
+    return len(words), words

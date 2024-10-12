@@ -10,7 +10,8 @@ void MonsterBaseConfigurationTable::Load() {
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
         LOG_FATAL << "MonsterBase " << result.message().data();
     }
-    for (int32_t i = 0; i < data_.data_size(); ++i) {
+
+    for (int32_t i = 0; i < data_.data_size(); ++i) { 
         const auto& row_data = data_.data(i);
         kv_data_.emplace(row_data.id(), &row_data);
 
