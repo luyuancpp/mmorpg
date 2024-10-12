@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const MonsterBaseTable*, uint32_t> GetMonsterBaseTable(uint32_t keyid) { return MonsterBaseConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const MonsterBaseTable*, uint32_t> GetMonsterBaseTable(const uint32_t keyid) { return MonsterBaseConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const MonsterBaseTabledData& GetMonsterBaseAllTable() { return MonsterBaseConfigurationTable::GetSingleton().All(); }

@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const TestTable*, uint32_t> GetTestTable(uint32_t keyid) { return TestConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const TestTable*, uint32_t> GetTestTable(const uint32_t keyid) { return TestConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const TestTabledData& GetTestAllTable() { return TestConfigurationTable::GetSingleton().All(); }

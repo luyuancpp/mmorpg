@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const MissionTable*, uint32_t> GetMissionTable(uint32_t keyid) { return MissionConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const MissionTable*, uint32_t> GetMissionTable(const uint32_t keyid) { return MissionConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const MissionTabledData& GetMissionAllTable() { return MissionConfigurationTable::GetSingleton().All(); }

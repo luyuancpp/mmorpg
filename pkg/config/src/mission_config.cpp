@@ -17,10 +17,11 @@ void MissionConfigurationTable::Load() {
 
 
     }
+
 }
 
 
-std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTable(uint32_t keyid) {
+std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTable(const uint32_t keyid) {
     const auto it = kv_data_.find(keyid);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Mission table not found for ID: " << keyid;

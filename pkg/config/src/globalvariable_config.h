@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(uint32_t keyid) { return GlobalVariableConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(const uint32_t keyid) { return GlobalVariableConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const GlobalVariableTabledData& GetGlobalVariableAllTable() { return GlobalVariableConfigurationTable::GetSingleton().All(); }

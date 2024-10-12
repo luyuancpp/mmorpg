@@ -17,10 +17,11 @@ void ConditionConfigurationTable::Load() {
 
 
     }
+
 }
 
 
-std::pair<const ConditionTable*, uint32_t> ConditionConfigurationTable::GetTable(uint32_t keyid) {
+std::pair<const ConditionTable*, uint32_t> ConditionConfigurationTable::GetTable(const uint32_t keyid) {
     const auto it = kv_data_.find(keyid);
     if (it == kv_data_.end()) {
         LOG_ERROR << "Condition table not found for ID: " << keyid;

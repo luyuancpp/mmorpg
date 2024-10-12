@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const MainSceneTable*, uint32_t> GetMainSceneTable(uint32_t keyid) { return MainSceneConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const MainSceneTable*, uint32_t> GetMainSceneTable(const uint32_t keyid) { return MainSceneConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const MainSceneTabledData& GetMainSceneAllTable() { return MainSceneConfigurationTable::GetSingleton().All(); }

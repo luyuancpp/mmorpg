@@ -39,6 +39,6 @@ private:
     std::unordered_multimap<int32_t, const TestMultiKeyTable*>  kv_min32keydata_;
 };
 
-inline std::pair<const TestMultiKeyTable*, uint32_t> GetTestMultiKeyTable(uint32_t keyid) { return TestMultiKeyConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const TestMultiKeyTable*, uint32_t> GetTestMultiKeyTable(const uint32_t keyid) { return TestMultiKeyConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() { return TestMultiKeyConfigurationTable::GetSingleton().All(); }

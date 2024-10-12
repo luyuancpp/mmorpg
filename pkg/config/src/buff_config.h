@@ -21,6 +21,6 @@ private:
 
 };
 
-inline std::pair<const BuffTable*, uint32_t> GetBuffTable(uint32_t keyid) { return BuffConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const BuffTable*, uint32_t> GetBuffTable(const uint32_t keyid) { return BuffConfigurationTable::GetSingleton().GetTable(keyid); }
 
 inline const BuffTabledData& GetBuffAllTable() { return BuffConfigurationTable::GetSingleton().All(); }

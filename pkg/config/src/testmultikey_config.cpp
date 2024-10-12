@@ -23,10 +23,11 @@ void TestMultiKeyConfigurationTable::Load() {
         kv_muint32keydata_.emplace(row_data.muint32key(), &row_data);
         kv_min32keydata_.emplace(row_data.min32key(), &row_data);
     }
+
 }
 
 
-std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetTable(uint32_t keyid) {
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetTable(const uint32_t keyid) {
     const auto it = kv_data_.find(keyid);
     if (it == kv_data_.end()) {
         LOG_ERROR << "TestMultiKey table not found for ID: " << keyid;

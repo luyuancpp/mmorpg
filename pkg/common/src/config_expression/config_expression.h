@@ -20,20 +20,14 @@ public:
     using ParamListType = std::vector<T>;
 
     // 初始化函数，接受参数名和表达式字符串
-    bool Init(const StringVector& paramNames, const std::string& expressionStr)
+    bool Init(const StringVector& paramNames)
     {
         paramList.clear();
         paramList.resize(paramNames.size());
 
         // 注册自定义函数
         symbolTable.add_function("random", customRandom<T>);
-
-        std::size_t index = 0;
-        for (auto& name : paramNames)
-        {
-            symbolTable.add_variable(name, paramList[index++]);
-        }
-
+        
         // 注册变量名到符号表
         if (!RegisterVariables(paramNames)) {
             return false;
@@ -42,11 +36,6 @@ public:
         // 将符号表关联到表达式中
         expression.register_symbol_table(symbolTable);
 
-        // 编译表达式
-        if (!parser.compile(expressionStr, expression)) {
-            return false;
-        }
-        
         return true;
     }
 
@@ -61,8 +50,9 @@ public:
     }
 
     // 返回表达式的值
-    T Value()
+    T Value( const std::string& expressionStr)
     {
+        parser.compile(expressionStr, expression);
         return expression.value();
     }
 
