@@ -21,10 +21,10 @@ void GlobalVariableConfigurationTable::Load() {
 }
 
 
-std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableConfigurationTable::GetTable(const uint32_t keyid) {
-    const auto it = kv_data_.find(keyid);
+std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableConfigurationTable::GetTable(const uint32_t keyId) {
+    const auto it = kv_data_.find(keyId);
     if (it == kv_data_.end()) {
-        LOG_ERROR << "GlobalVariable table not found for ID: " << keyid;
+        LOG_ERROR << "GlobalVariable table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
     return { it->second, kOK };

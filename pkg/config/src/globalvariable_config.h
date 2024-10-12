@@ -11,9 +11,10 @@ public:
     using KVDataType = std::unordered_map<uint32_t, const GlobalVariableTable*>;
     static GlobalVariableConfigurationTable& GetSingleton() { static GlobalVariableConfigurationTable singleton; return singleton; }
     const GlobalVariableTabledData& All() const { return data_; }
-    std::pair<const GlobalVariableTable*, uint32_t> GetTable(uint32_t keyid);
+    std::pair<const GlobalVariableTable*, uint32_t> GetTable(uint32_t keyId);
     const KVDataType& KVData() const { return kv_data_; }
     void Load();
+
 
 private:
     GlobalVariableTabledData data_;
@@ -21,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(const uint32_t keyid) { return GlobalVariableConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(const uint32_t keyId) { return GlobalVariableConfigurationTable::GetSingleton().GetTable(keyId); }
 
 inline const GlobalVariableTabledData& GetGlobalVariableAllTable() { return GlobalVariableConfigurationTable::GetSingleton().All(); }

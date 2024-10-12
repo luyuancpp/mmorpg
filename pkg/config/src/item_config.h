@@ -11,9 +11,10 @@ public:
     using KVDataType = std::unordered_map<uint32_t, const ItemTable*>;
     static ItemConfigurationTable& GetSingleton() { static ItemConfigurationTable singleton; return singleton; }
     const ItemTabledData& All() const { return data_; }
-    std::pair<const ItemTable*, uint32_t> GetTable(uint32_t keyid);
+    std::pair<const ItemTable*, uint32_t> GetTable(uint32_t keyId);
     const KVDataType& KVData() const { return kv_data_; }
     void Load();
+
 
 private:
     ItemTabledData data_;
@@ -21,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const ItemTable*, uint32_t> GetItemTable(const uint32_t keyid) { return ItemConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const ItemTable*, uint32_t> GetItemTable(const uint32_t keyId) { return ItemConfigurationTable::GetSingleton().GetTable(keyId); }
 
 inline const ItemTabledData& GetItemAllTable() { return ItemConfigurationTable::GetSingleton().All(); }

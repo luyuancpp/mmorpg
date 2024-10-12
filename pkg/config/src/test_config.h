@@ -11,9 +11,10 @@ public:
     using KVDataType = std::unordered_map<uint32_t, const TestTable*>;
     static TestConfigurationTable& GetSingleton() { static TestConfigurationTable singleton; return singleton; }
     const TestTabledData& All() const { return data_; }
-    std::pair<const TestTable*, uint32_t> GetTable(uint32_t keyid);
+    std::pair<const TestTable*, uint32_t> GetTable(uint32_t keyId);
     const KVDataType& KVData() const { return kv_data_; }
     void Load();
+
 
 private:
     TestTabledData data_;
@@ -21,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const TestTable*, uint32_t> GetTestTable(const uint32_t keyid) { return TestConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const TestTable*, uint32_t> GetTestTable(const uint32_t keyId) { return TestConfigurationTable::GetSingleton().GetTable(keyId); }
 
 inline const TestTabledData& GetTestAllTable() { return TestConfigurationTable::GetSingleton().All(); }

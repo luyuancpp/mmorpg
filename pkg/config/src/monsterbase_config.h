@@ -11,9 +11,10 @@ public:
     using KVDataType = std::unordered_map<uint32_t, const MonsterBaseTable*>;
     static MonsterBaseConfigurationTable& GetSingleton() { static MonsterBaseConfigurationTable singleton; return singleton; }
     const MonsterBaseTabledData& All() const { return data_; }
-    std::pair<const MonsterBaseTable*, uint32_t> GetTable(uint32_t keyid);
+    std::pair<const MonsterBaseTable*, uint32_t> GetTable(uint32_t keyId);
     const KVDataType& KVData() const { return kv_data_; }
     void Load();
+
 
 private:
     MonsterBaseTabledData data_;
@@ -21,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const MonsterBaseTable*, uint32_t> GetMonsterBaseTable(const uint32_t keyid) { return MonsterBaseConfigurationTable::GetSingleton().GetTable(keyid); }
+inline std::pair<const MonsterBaseTable*, uint32_t> GetMonsterBaseTable(const uint32_t keyId) { return MonsterBaseConfigurationTable::GetSingleton().GetTable(keyId); }
 
 inline const MonsterBaseTabledData& GetMonsterBaseAllTable() { return MonsterBaseConfigurationTable::GetSingleton().All(); }
