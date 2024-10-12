@@ -4,8 +4,6 @@
 
 #include <muduo/base/Types.h>
 
-
-
 #ifdef __linux__
 #include <sys/types.h>
 #include <sys/time.h>
@@ -63,7 +61,6 @@ typedef long long ssize_t;
 #define rlim_t uint64_t
 typedef uint64_t uid_t;
 typedef uint32_t in_addr_t;
-
 
 
 //keyword
