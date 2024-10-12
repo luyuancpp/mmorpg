@@ -80,6 +80,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         "#include <cstdint>",
         "#include <memory>",
         "#include <unordered_map>",
+        '#include "config_expression/config_expression.h"',
         f'#include "{sheet_name_lower}_config.pb.h"\n\n',
         f'class {sheetname}ConfigurationTable {{',
         'public:',
@@ -100,6 +101,11 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
             header_content.extend([
                 f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])} keyid) const;',
                 f'    const std::{column_map_type}<{get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
+            ])
+
+        if data[gen_common.COL_OBJ_TABLE_EXPRESSION_INDEX] is not None:
+            header_content.extend([
+                f'    {data[gen_common.COL_OBJ_TABLE_EXPRESSION_INDEX]} GetBy{column_name.title()}() {{ return expression_{column_name}_.Value(); }} '
             ])
 
     header_content.extend(
