@@ -8,11 +8,11 @@
 
 class TestMultiKeyConfigurationTable {
 public:
-    using KVDataType = std::unordered_multimap<uint32_t, const TestMultiKeyTable*>;
+    using KeyValueDataType = std::unordered_multimap<uint32_t, const TestMultiKeyTable*>;
     static TestMultiKeyConfigurationTable& GetSingleton() { static TestMultiKeyConfigurationTable singleton; return singleton; }
     const TestMultiKeyTabledData& All() const { return data_; }
     std::pair<const TestMultiKeyTable*, uint32_t> GetTable(uint32_t keyId);
-    const KVDataType& KVData() const { return kv_data_; }
+    const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
     std::pair<const TestMultiKeyTable*, uint32_t> GetByStringkey(const std::string& keyId) const;
@@ -30,7 +30,7 @@ public:
 
 private:
     TestMultiKeyTabledData data_;
-    KVDataType kv_data_;
+    KeyValueDataType kv_data_;
 
     std::unordered_map<std::string, const TestMultiKeyTable*>  kv_stringkeydata_;
     std::unordered_map<uint32_t, const TestMultiKeyTable*>  kv_uint32keydata_;

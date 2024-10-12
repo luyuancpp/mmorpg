@@ -8,17 +8,17 @@
 
 class MainSceneConfigurationTable {
 public:
-    using KVDataType = std::unordered_map<uint32_t, const MainSceneTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const MainSceneTable*>;
     static MainSceneConfigurationTable& GetSingleton() { static MainSceneConfigurationTable singleton; return singleton; }
     const MainSceneTabledData& All() const { return data_; }
     std::pair<const MainSceneTable*, uint32_t> GetTable(uint32_t keyId);
-    const KVDataType& KVData() const { return kv_data_; }
+    const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
 
 private:
     MainSceneTabledData data_;
-    KVDataType kv_data_;
+    KeyValueDataType kv_data_;
 
 };
 

@@ -8,17 +8,17 @@
 
 class BuffConfigurationTable {
 public:
-    using KVDataType = std::unordered_map<uint32_t, const BuffTable*>;
+    using KeyValueDataType = std::unordered_map<uint32_t, const BuffTable*>;
     static BuffConfigurationTable& GetSingleton() { static BuffConfigurationTable singleton; return singleton; }
     const BuffTabledData& All() const { return data_; }
     std::pair<const BuffTable*, uint32_t> GetTable(uint32_t keyId);
-    const KVDataType& KVData() const { return kv_data_; }
+    const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
 
 private:
     BuffTabledData data_;
-    KVDataType kv_data_;
+    KeyValueDataType kv_data_;
 
 };
 
