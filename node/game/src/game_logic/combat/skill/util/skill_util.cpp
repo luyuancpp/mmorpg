@@ -661,12 +661,13 @@ void SkillUtil::HandleSkillSpell(const entt::entity caster, const uint64_t skill
 
 	const auto& skillContext = skillContextIt->second;
 
-	const entt::entity target = entt::to_entity(skillContext->target());
+	const entt::entity targetEntity = entt::to_entity(skillContext->target());
     
 	DamageEventComponent damageEvent;
 	damageEvent.set_skill_id(skillId);
+	damageEvent.set_target(skillContext->target());
 	CalculateSkillDamage(caster, damageEvent); // 计算伤害
-	DealDamage(damageEvent, caster, target); // 处理伤害
+	DealDamage(damageEvent, caster, targetEntity); // 处理伤害
 
 	// 触发技能执行事件
 	SkillExecutedEvent skillExecutedEvent;
