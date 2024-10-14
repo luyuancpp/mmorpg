@@ -85,7 +85,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'class {sheetname}ConfigurationTable {{',
         'public:',
         f'    using KeyValueDataType = std::{container_type}<uint32_t, {const_table_type}>;',
-        f'    static {sheetname}ConfigurationTable& GetSingleton() {{ static {sheetname}ConfigurationTable singleton; return singleton; }}',
+        f'    static {sheetname}ConfigurationTable& Instance() {{ static {sheetname}ConfigurationTable instance; return instance; }}',
         f'    const {table_data_name}& All() const {{ return data_; }}',
         f'    {get_table_return_type} GetTable(uint32_t keyId);',
         f'    const KeyValueDataType& KeyValueData() const {{ return kv_data_; }}',
@@ -111,7 +111,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
                 f'    }}\n ',
                 f'    {type_name} Get{column_name.title()}(const uint32_t keyId){{',
                 f'      auto [table, ok] = GetTable(keyId);',
-                f'      if ( table == nullptr){{{{return {type_name}(); }}}}',
+                f'      if ( table == nullptr){{return {type_name}(); }}',
                 f'      return expression_{column_name}_.Value(table->{column_name}());',
                 f'     }} ',
             ])
@@ -138,9 +138,9 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
 
     header_content.append('};')
     header_content.append(
-        f'\ninline {get_table_return_type} Get{sheetname}Table(const uint32_t keyId) {{ return {sheetname}ConfigurationTable::GetSingleton().GetTable(keyId); }}')
+        f'\ninline {get_table_return_type} Get{sheetname}Table(const uint32_t keyId) {{ return {sheetname}ConfigurationTable::Instance().GetTable(keyId); }}')
     header_content.append(
-        f'\ninline const {table_data_name}& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::GetSingleton().All(); }}')
+        f'\ninline const {table_data_name}& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::Instance().All(); }}')
 
     return '\n'.join(header_content)
 
@@ -288,7 +288,7 @@ def generate_all_config():
 
     cpp_content += 'void LoadAllConfig()\n{\n'
     for item in sheetnames:
-        cpp_content += f'    {item}ConfigurationTable::GetSingleton().Load();\n'
+        cpp_content += f'    {item}ConfigurationTable::Instance().Load();\n'
     cpp_content += '}\n\n'
 
     cpucount = cpu_count()
@@ -297,7 +297,7 @@ def generate_all_config():
 
     load_blocks = [[] for _ in range(cpucount)]
     for idx, item in enumerate(sheetnames):
-        load_blocks[idx % cpucount].append(f'    {item}ConfigurationTable::GetSingleton().Load();\n')
+        load_blocks[idx % cpucount].append(f'    {item}ConfigurationTable::Instance().Load();\n')
 
     for block in load_blocks:
         if block:

@@ -9,7 +9,7 @@
 class ItemConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ItemTable*>;
-    static ItemConfigurationTable& GetSingleton() { static ItemConfigurationTable singleton; return singleton; }
+    static ItemConfigurationTable& Instance() { static ItemConfigurationTable instance; return instance; }
     const ItemTabledData& All() const { return data_; }
     std::pair<const ItemTable*, uint32_t> GetTable(uint32_t keyId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
@@ -22,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const ItemTable*, uint32_t> GetItemTable(const uint32_t keyId) { return ItemConfigurationTable::GetSingleton().GetTable(keyId); }
+inline std::pair<const ItemTable*, uint32_t> GetItemTable(const uint32_t keyId) { return ItemConfigurationTable::Instance().GetTable(keyId); }
 
-inline const ItemTabledData& GetItemAllTable() { return ItemConfigurationTable::GetSingleton().All(); }
+inline const ItemTabledData& GetItemAllTable() { return ItemConfigurationTable::Instance().All(); }

@@ -125,6 +125,25 @@ struct LocationDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LocationDefaultTypeInternal _Location_default_instance_;
 
+inline constexpr LevelComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : level_{0u},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LevelComponent::LevelComponent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct LevelComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LevelComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LevelComponentDefaultTypeInternal() {}
+  union {
+    LevelComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LevelComponentDefaultTypeInternal _LevelComponent_default_instance_;
+
 inline constexpr BaseAttributesPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : strength_{::uint64_t{0u}},
@@ -188,7 +207,7 @@ struct TransformDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TransformDefaultTypeInternal _Transform_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[8];
+static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[9];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2factor_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -286,6 +305,15 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BaseAttributesPBComponent, _impl_.stamina_),
         PROTOBUF_FIELD_OFFSET(::BaseAttributesPBComponent, _impl_.health_),
         PROTOBUF_FIELD_OFFSET(::BaseAttributesPBComponent, _impl_.mana_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::LevelComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::LevelComponent, _impl_.level_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -298,6 +326,7 @@ static const ::_pbi::MigrationSchema
         {58, -1, -1, sizeof(::Acceleration)},
         {69, -1, -1, sizeof(::ViewRadius)},
         {78, -1, -1, sizeof(::BaseAttributesPBComponent)},
+        {90, -1, -1, sizeof(::LevelComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_Location_default_instance_._instance,
@@ -308,6 +337,7 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_Acceleration_default_instance_._instance,
     &::_ViewRadius_default_instance_._instance,
     &::_BaseAttributesPBComponent_default_instance_._instance,
+    &::_LevelComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -323,7 +353,8 @@ const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto[] 
     "\001\022\t\n\001z\030\003 \001(\001\"\034\n\nViewRadius\022\016\n\006radius\030\001 \001"
     "(\001\"\\\n\031BaseAttributesPBComponent\022\020\n\010stren"
     "gth\030\001 \001(\004\022\017\n\007stamina\030\002 \001(\004\022\016\n\006health\030\003 \001"
-    "(\004\022\014\n\004mana\030\004 \001(\004B\tZ\007pb/gameb\006proto3"
+    "(\004\022\014\n\004mana\030\004 \001(\004\"\037\n\016LevelComponent\022\r\n\005le"
+    "vel\030\001 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_deps[1] =
     {
@@ -333,13 +364,13 @@ static ::absl::once_flag descriptor_table_logic_2fcomponent_2factor_5fcomp_2epro
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto = {
     false,
     false,
-    515,
+    548,
     descriptor_table_protodef_logic_2fcomponent_2factor_5fcomp_2eproto,
     "logic/component/actor_comp.proto",
     &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
     descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_deps,
     1,
-    8,
+    9,
     schemas,
     file_default_instances,
     TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto::offsets,
@@ -2495,6 +2526,183 @@ void BaseAttributesPBComponent::InternalSwap(BaseAttributesPBComponent* PROTOBUF
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[7]);
+}
+// ===================================================================
+
+class LevelComponent::_Internal {
+ public:
+};
+
+LevelComponent::LevelComponent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:LevelComponent)
+}
+LevelComponent::LevelComponent(
+    ::google::protobuf::Arena* arena, const LevelComponent& from)
+    : LevelComponent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE LevelComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LevelComponent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.level_ = {};
+}
+LevelComponent::~LevelComponent() {
+  // @@protoc_insertion_point(destructor:LevelComponent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void LevelComponent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+LevelComponent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(LevelComponent, _impl_._cached_size_),
+              false,
+          },
+          &LevelComponent::MergeImpl,
+          &LevelComponent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void LevelComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:LevelComponent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.level_ = 0u;
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* LevelComponent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> LevelComponent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_LevelComponent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::LevelComponent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 level = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LevelComponent, _impl_.level_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(LevelComponent, _impl_.level_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 level = 1;
+    {PROTOBUF_FIELD_OFFSET(LevelComponent, _impl_.level_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* LevelComponent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:LevelComponent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 level = 1;
+  if (this->_internal_level() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        1, this->_internal_level(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:LevelComponent)
+  return target;
+}
+
+::size_t LevelComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:LevelComponent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint32 level = 1;
+  if (this->_internal_level() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_level());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void LevelComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LevelComponent*>(&to_msg);
+  auto& from = static_cast<const LevelComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:LevelComponent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_level() != 0) {
+    _this->_impl_.level_ = from._impl_.level_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LevelComponent::CopyFrom(const LevelComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:LevelComponent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool LevelComponent::IsInitialized() const {
+  return true;
+}
+
+void LevelComponent::InternalSwap(LevelComponent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.level_, other->_impl_.level_);
+}
+
+::google::protobuf::Metadata LevelComponent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2factor_5fcomp_2eproto[8]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

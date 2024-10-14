@@ -496,10 +496,28 @@ void SkillUtil::RemoveEffect(entt::entity caster, const uint64_t skillId) {
 		// TODO: Implement effect removal logic here
 	}
 }
+
 // 计算技能伤害
 void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damageEvent) {
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+	auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
+
+	if (skillContentIt == casterSkillContextMap.end()) {
+		return;
+	}
+	
+	auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
+	if (skillTable == nullptr) {
+		LOG_ERROR << "Failed to get skill table for Skill ID: " << damageEvent.skill_id();
+		return;
+	}
+
+	auto& levelComponent = tls.registry.get<LevelComponent>(caster);
+	
+	SkillConfigurationTable::Instance().SetDamageParam({static_cast<double>(levelComponent.level())});
+	
 	damageEvent.set_attacker_id(entt::to_integral(caster));
-	damageEvent.set_damage(100); // 设置固定伤害值
+	damageEvent.set_damage(SkillConfigurationTable::Instance().GetDamage(skillContentIt->second->skilltableid())); // 设置固定伤害值
 }
 
 // 判断目标是否已死亡

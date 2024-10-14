@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 	EventLoop loop;
 
 	::testing::InitGoogleTest(&argc, argv);
-	BuffConfigurationTable::GetSingleton().Load();
+	BuffConfigurationTable::Instance().Load();
 	int ret = RUN_ALL_TESTS();
 	tls.registry.clear(); // Clean up thread-local storage after all tests
 	return ret;

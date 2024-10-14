@@ -56,6 +56,9 @@ extern AccelerationDefaultTypeInternal _Acceleration_default_instance_;
 class BaseAttributesPBComponent;
 struct BaseAttributesPBComponentDefaultTypeInternal;
 extern BaseAttributesPBComponentDefaultTypeInternal _BaseAttributesPBComponent_default_instance_;
+class LevelComponent;
+struct LevelComponentDefaultTypeInternal;
+extern LevelComponentDefaultTypeInternal _LevelComponent_default_instance_;
 class Location;
 struct LocationDefaultTypeInternal;
 extern LocationDefaultTypeInternal _Location_default_instance_;
@@ -1008,6 +1011,173 @@ class Location final : public ::google::protobuf::Message
     double x_;
     double y_;
     double z_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
+class LevelComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:LevelComponent) */ {
+ public:
+  inline LevelComponent() : LevelComponent(nullptr) {}
+  ~LevelComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR LevelComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline LevelComponent(const LevelComponent& from) : LevelComponent(nullptr, from) {}
+  inline LevelComponent(LevelComponent&& from) noexcept
+      : LevelComponent(nullptr, std::move(from)) {}
+  inline LevelComponent& operator=(const LevelComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline LevelComponent& operator=(LevelComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const LevelComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const LevelComponent* internal_default_instance() {
+    return reinterpret_cast<const LevelComponent*>(
+        &_LevelComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 8;
+  friend void swap(LevelComponent& a, LevelComponent& b) { a.Swap(&b); }
+  inline void Swap(LevelComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(LevelComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  LevelComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<LevelComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const LevelComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const LevelComponent& from) { LevelComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(LevelComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "LevelComponent"; }
+
+ protected:
+  explicit LevelComponent(::google::protobuf::Arena* arena);
+  LevelComponent(::google::protobuf::Arena* arena, const LevelComponent& from);
+  LevelComponent(::google::protobuf::Arena* arena, LevelComponent&& from) noexcept
+      : LevelComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kLevelFieldNumber = 1,
+  };
+  // uint32 level = 1;
+  void clear_level() ;
+  ::uint32_t level() const;
+  void set_level(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_level() const;
+  void _internal_set_level(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:LevelComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint32_t level_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2381,6 +2551,32 @@ inline ::uint64_t BaseAttributesPBComponent::_internal_mana() const {
 inline void BaseAttributesPBComponent::_internal_set_mana(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mana_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// LevelComponent
+
+// uint32 level = 1;
+inline void LevelComponent::clear_level() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.level_ = 0u;
+}
+inline ::uint32_t LevelComponent::level() const {
+  // @@protoc_insertion_point(field_get:LevelComponent.level)
+  return _internal_level();
+}
+inline void LevelComponent::set_level(::uint32_t value) {
+  _internal_set_level(value);
+  // @@protoc_insertion_point(field_set:LevelComponent.level)
+}
+inline ::uint32_t LevelComponent::_internal_level() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.level_;
+}
+inline void LevelComponent::_internal_set_level(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.level_ = value;
 }
 
 #ifdef __GNUC__

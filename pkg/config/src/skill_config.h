@@ -9,7 +9,7 @@
 class SkillConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SkillTable*>;
-    static SkillConfigurationTable& GetSingleton() { static SkillConfigurationTable singleton; return singleton; }
+    static SkillConfigurationTable& Instance() { static SkillConfigurationTable instance; return instance; }
     const SkillTabledData& All() const { return data_; }
     std::pair<const SkillTable*, uint32_t> GetTable(uint32_t keyId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
@@ -21,7 +21,7 @@ public:
  
     double GetDamage(const uint32_t keyId){
       auto [table, ok] = GetTable(keyId);
-      if ( table == nullptr){{return double(); }}
+      if ( table == nullptr){return double(); }
       return expression_damage_.Value(table->damage());
      } 
 
@@ -32,6 +32,6 @@ private:
     ExcelExpression<double> expression_damage_;
 };
 
-inline std::pair<const SkillTable*, uint32_t> GetSkillTable(const uint32_t keyId) { return SkillConfigurationTable::GetSingleton().GetTable(keyId); }
+inline std::pair<const SkillTable*, uint32_t> GetSkillTable(const uint32_t keyId) { return SkillConfigurationTable::Instance().GetTable(keyId); }
 
-inline const SkillTabledData& GetSkillAllTable() { return SkillConfigurationTable::GetSingleton().All(); }
+inline const SkillTabledData& GetSkillAllTable() { return SkillConfigurationTable::Instance().All(); }

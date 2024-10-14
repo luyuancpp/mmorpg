@@ -95,4 +95,11 @@ sol::property(&BaseAttributesPBComponent::mana, &BaseAttributesPBComponent::set_
 &BaseAttributesPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<LevelComponent>("LevelComponent",
+"level",
+sol::property(&LevelComponent::level, &LevelComponent::set_level),
+"DebugString",
+&LevelComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 }
