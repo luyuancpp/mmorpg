@@ -497,52 +497,82 @@ void SkillUtil::RemoveEffect(entt::entity caster, const uint64_t skillId) {
 	}
 }
 
-double CalculateFinalDamage(const entt::entity caster, const entt::entity target, double baseDamage){
-	return baseDamage;
-}
-
-void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damageEvent) {
-	// 获取施法者的技能上下文
-	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
-	auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
-
-	if (skillContentIt == casterSkillContextMap.end()) {
-		LOG_ERROR << "Skill context not found for skill ID: " << damageEvent.skill_id();
-		return;
-	}
-    
-	// 获取技能表
-	auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
-	if (skillTable == nullptr) {
-		LOG_ERROR << "Failed to get skill table for Skill ID: " << damageEvent.skill_id();
-		return;
-	}
-
-	// 获取施法者的等级组件
-	auto& levelComponent = tls.registry.get<LevelComponent>(caster);
-    
-	// 设置技能伤害参数，基于施法者等级
-	SkillConfigurationTable::Instance().SetDamageParam({static_cast<double>(levelComponent.level())});
-
-	// 设置攻击者 ID
-	damageEvent.set_attacker_id(entt::to_integral(caster));
-
-	// 计算伤害
-	double baseDamage = SkillConfigurationTable::Instance().GetDamage(skillContentIt->second->skilltableid());
-    
-	// 可以在这里引入更多复杂的伤害计算逻辑
-	// 如加入施法者的力量、攻击属性或目标的防御、抗性等
-	double finalDamage = CalculateFinalDamage(caster, entt::to_entity(damageEvent.target()), baseDamage);
-
-	// 设置最终的伤害值
-	damageEvent.set_damage(finalDamage); // 如果有更多逻辑，使用 finalDamage 代替 baseDamage
-}
-
 
 // 判断目标是否已死亡
-bool IsTargetDead(const BaseAttributesPBComponent& baseAttributesPBComponent) {
-    return baseAttributesPBComponent.health() <= 0;
+bool IsTargetDead(entt::entity targetEntity) {
+    auto& targetBaseAttributes = tls.registry.get<BaseAttributesPBComponent>(targetEntity);
+    return targetBaseAttributes.health() <= 0;
 }
+
+
+double CalculateFinalDamage(const entt::entity caster, const entt::entity target, double baseDamage) {
+    // 获取施法者的属性，例如力量和暴击率
+    auto& casterAttributes = tls.registry.get<BaseAttributesPBComponent>(caster);
+    double critChance = casterAttributes.critchance();
+    double strength = casterAttributes.strength();
+
+    // 获取目标的属性，例如护甲和抗性
+    auto& targetAttributes = tls.registry.get<BaseAttributesPBComponent>(target);
+    double armor = targetAttributes.armor();
+    double resistance = targetAttributes.resistance();
+
+    // 计算暴击和穿透的影响
+    double finalDamage = baseDamage * (1 + strength * 0.1);  // 力量影响伤害
+    finalDamage = finalDamage - armor;  // 减去护甲值
+    finalDamage *= (1 - resistance * 0.01);  // 计算抗性的减伤效果
+
+    // 暴击处理
+    if (rand() / static_cast<double>(RAND_MAX) < critChance) {
+        finalDamage *= 2;  // 暴击造成双倍伤害
+    }
+
+    return std::max(finalDamage, 0.0);  // 确保伤害不为负数
+}
+
+
+void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damageEvent) {
+    // 获取施法者的技能上下文
+    auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+    auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
+
+    if (skillContentIt == casterSkillContextMap.end()) {
+        LOG_ERROR << "Skill context not found for skill ID: " << damageEvent.skill_id();
+        return;
+    }
+
+    // 获取技能表
+    auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
+    if (!skillTable) {
+        LOG_ERROR << "Failed to get skill table for Skill ID: " << damageEvent.skill_id();
+        return;
+    }
+
+    // 获取目标的 BaseAttributesPBComponent 用于判断是否死亡
+    auto targetEntity = entt::to_entity(damageEvent.target());
+
+    // 如果目标已经死亡，停止进一步处理
+    if (IsTargetDead(targetEntity)) {
+        LOG_INFO << "Target is already dead, skipping damage calculation.";
+        return;
+    }
+
+    // 获取施法者的等级组件并设置伤害参数
+    auto& levelComponent = tls.registry.get<LevelComponent>(caster);
+    SkillConfigurationTable::Instance().SetDamageParam({ static_cast<double>(levelComponent.level()) });
+
+    // 设置攻击者 ID
+    damageEvent.set_attacker_id(entt::to_integral(caster));
+
+    // 计算技能的基础伤害
+    double baseDamage = SkillConfigurationTable::Instance().GetDamage(skillContentIt->second->skilltableid());
+
+    // 计算最终伤害
+    double finalDamage = CalculateFinalDamage(caster, targetEntity, baseDamage);
+
+    // 设置最终的伤害值
+    damageEvent.set_damage(finalDamage);
+}
+
 
 // 触发伤害前的事件
 void TriggerBeforeDamageEvents(const entt::entity caster, const entt::entity target, DamageEventComponent& damageEvent) {
@@ -553,12 +583,11 @@ void TriggerBeforeDamageEvents(const entt::entity caster, const entt::entity tar
 // 处理目标生命值的减少
 void ApplyDamage(BaseAttributesPBComponent& baseAttributesPBComponent, const DamageEventComponent& damageEvent) {
     const auto damage = static_cast<uint64_t>(std::ceil(damageEvent.damage()));
-    
+
     if (baseAttributesPBComponent.health() > damage) {
-        // 如果目标生命值大于伤害值，正常扣减
         baseAttributesPBComponent.set_health(baseAttributesPBComponent.health() - damage);
-    } else {
-        // 如果目标生命值小于等于伤害值，设置生命值为0
+    }
+    else {
         baseAttributesPBComponent.set_health(0);
     }
 }
@@ -600,7 +629,7 @@ void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, co
 	auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
 
 	// 如果目标已死亡，直接返回
-	if (IsTargetDead(baseAttributesPBComponent)) {
+	if (IsTargetDead(target)) {
 		return;
 	}
 
@@ -614,7 +643,7 @@ void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, co
 	ApplyDamage(baseAttributesPBComponent, damageEvent);
 
 	// 检查目标是否死亡
-	if (IsTargetDead(baseAttributesPBComponent)) {
+	if (IsTargetDead(target)) {
 		HandleTargetDeath(caster, target, damageEvent);
 	}
 

@@ -91,6 +91,12 @@ sol::property(&BaseAttributesPBComponent::stamina, &BaseAttributesPBComponent::s
 sol::property(&BaseAttributesPBComponent::health, &BaseAttributesPBComponent::set_health),
 "mana",
 sol::property(&BaseAttributesPBComponent::mana, &BaseAttributesPBComponent::set_mana),
+"critchance",
+sol::property(&BaseAttributesPBComponent::critchance, &BaseAttributesPBComponent::set_critchance),
+"armor",
+sol::property(&BaseAttributesPBComponent::armor, &BaseAttributesPBComponent::set_armor),
+"resistance",
+sol::property(&BaseAttributesPBComponent::resistance, &BaseAttributesPBComponent::set_resistance),
 "DebugString",
 &BaseAttributesPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
