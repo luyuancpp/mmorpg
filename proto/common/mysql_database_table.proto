@@ -44,7 +44,8 @@ message player_database
   PlayerUint64PBComponent uint64_pb_component = 3;
   PlayerSkillListPBComponent skill_list = 4;
   PlayerUint32PBComponent uint32_pb_component = 5;
-  BaseAttributesPBComponent derived_attributes = 6;
+  BaseAttributesPBComponent derived_attributes_component = 6;
+  LevelComponent level_component = 7;
 }
 
 message player_database_1

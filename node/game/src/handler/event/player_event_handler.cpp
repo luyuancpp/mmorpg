@@ -10,19 +10,19 @@
 ///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
 {
-		tls.dispatcher.sink<RegisterPlayer>().connect<&PlayerEventHandler::RegisterPlayerHandler>();
-		tls.dispatcher.sink<PlayerUpgrade>().connect<&PlayerEventHandler::PlayerUpgradeHandler>();
-		tls.dispatcher.sink<InitializePlayerComponents>().connect<&PlayerEventHandler::InitializePlayerComponentsHandler>();
+		tls.dispatcher.sink<RegisterPlayerEvent>().connect<&PlayerEventHandler::RegisterPlayerEventHandler>();
+		tls.dispatcher.sink<PlayerUpgradeEvent>().connect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
+		tls.dispatcher.sink<InitializePlayerComponentsEvent>().connect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
 }
 
 void PlayerEventHandler::UnRegister()
 {
-		tls.dispatcher.sink<RegisterPlayer>().disconnect<&PlayerEventHandler::RegisterPlayerHandler>();
-		tls.dispatcher.sink<PlayerUpgrade>().disconnect<&PlayerEventHandler::PlayerUpgradeHandler>();
-		tls.dispatcher.sink<InitializePlayerComponents>().disconnect<&PlayerEventHandler::InitializePlayerComponentsHandler>();
+		tls.dispatcher.sink<RegisterPlayerEvent>().disconnect<&PlayerEventHandler::RegisterPlayerEventHandler>();
+		tls.dispatcher.sink<PlayerUpgradeEvent>().disconnect<&PlayerEventHandler::PlayerUpgradeEventHandler>();
+		tls.dispatcher.sink<InitializePlayerComponentsEvent>().disconnect<&PlayerEventHandler::InitializePlayerComponentsEventHandler>();
 }
 
-void PlayerEventHandler::RegisterPlayerHandler(const RegisterPlayer& event)
+void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.entity());
@@ -37,14 +37,14 @@ void PlayerEventHandler::RegisterPlayerHandler(const RegisterPlayer& event)
 ///<<< END WRITING YOUR CODE
 }
 
-void PlayerEventHandler::PlayerUpgradeHandler(const PlayerUpgrade& event)
+void PlayerEventHandler::PlayerUpgradeEventHandler(const PlayerUpgradeEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	
 ///<<< END WRITING YOUR CODE
 }
 
-void PlayerEventHandler::InitializePlayerComponentsHandler(const InitializePlayerComponents& event)
+void PlayerEventHandler::InitializePlayerComponentsEventHandler(const InitializePlayerComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	auto player = entt::to_entity(event.entity());

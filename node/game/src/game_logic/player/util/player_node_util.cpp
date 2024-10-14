@@ -54,7 +54,9 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	{
 		tls.registry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
 
-		RegisterPlayer registerPlayer;
+		tls.registry.get<LevelComponent>(player).set_level(1);
+		
+		RegisterPlayerEvent registerPlayer;
 		registerPlayer.set_entity(entt::to_integral(player));
 		tls.dispatcher.trigger(registerPlayer);
 	}
@@ -67,7 +69,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
 	tls.registry.emplace<PlayerNodeInfoPBComponent>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
-	InitializePlayerComponents initializePlayerComponents;
+	InitializePlayerComponentsEvent initializePlayerComponents;
 	initializePlayerComponents.set_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(initializePlayerComponents);
 	

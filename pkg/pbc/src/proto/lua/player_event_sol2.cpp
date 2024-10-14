@@ -3,27 +3,27 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2player_event()
 {
-tls_lua_state.new_usertype<RegisterPlayer>("RegisterPlayer",
+tls_lua_state.new_usertype<RegisterPlayerEvent>("RegisterPlayerEvent",
 "entity",
-sol::property(&RegisterPlayer::entity, &RegisterPlayer::set_entity),
+sol::property(&RegisterPlayerEvent::entity, &RegisterPlayerEvent::set_entity),
 "DebugString",
-&RegisterPlayer::DebugString,
+&RegisterPlayerEvent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<PlayerUpgrade>("PlayerUpgrade",
+tls_lua_state.new_usertype<PlayerUpgradeEvent>("PlayerUpgradeEvent",
 "entity",
-sol::property(&PlayerUpgrade::entity, &PlayerUpgrade::set_entity),
+sol::property(&PlayerUpgradeEvent::entity, &PlayerUpgradeEvent::set_entity),
 "new_level",
-sol::property(&PlayerUpgrade::new_level, &PlayerUpgrade::set_new_level),
+sol::property(&PlayerUpgradeEvent::new_level, &PlayerUpgradeEvent::set_new_level),
 "DebugString",
-&PlayerUpgrade::DebugString,
+&PlayerUpgradeEvent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<InitializePlayerComponents>("InitializePlayerComponents",
+tls_lua_state.new_usertype<InitializePlayerComponentsEvent>("InitializePlayerComponentsEvent",
 "entity",
-sol::property(&InitializePlayerComponents::entity, &InitializePlayerComponents::set_entity),
+sol::property(&InitializePlayerComponentsEvent::entity, &InitializePlayerComponentsEvent::set_entity),
 "DebugString",
-&InitializePlayerComponents::DebugString,
+&InitializePlayerComponentsEvent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }
