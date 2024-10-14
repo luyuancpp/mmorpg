@@ -7,6 +7,8 @@ import logging
 import concurrent.futures
 from os import listdir
 from os.path import isfile, join
+from typing import Any
+
 import openpyxl
 import gen_common  # Assuming gen_common contains the necessary functions
 from common import constants
@@ -33,12 +35,17 @@ def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> list[str]
     ]
 
 
-def process_cell_value(cell: openpyxl.cell.cell.Cell) -> int | str | None:
+def process_cell_value(cell: openpyxl.cell.cell.Cell, field_type) -> float | int | Any:
     """
     Process cell value to ensure correct type.
     """
     cell_value = cell.value
-    if isinstance(cell_value, float) and cell_value.is_integer():
+
+    if field_type == "float" or field_type == "double":
+        return float(cell_value)
+    elif field_type == "string" :
+        return cell_value
+    elif cell_value is not None and cell_value.is_integer():
         return int(cell_value)
     return cell_value
 
@@ -95,6 +102,7 @@ def process_row(sheet, row, column_names):
     """
     sheet_data = gen_common.get_sheet_data(sheet, column_names)
     array_data = sheet_data[gen_common.SHEET_ARRAY_DATA_INDEX]
+    field_type_data = sheet_data[gen_common.FILE_TYPE_INDEX]
     group_data = sheet_data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX]
     map_field_data = sheet_data[gen_common.MAP_TYPE_INDEX]
 
@@ -110,7 +118,7 @@ def process_row(sheet, row, column_names):
         if not col_name.strip():
             continue
 
-        cell_value = process_cell_value(cell)
+        cell_value = process_cell_value(cell, field_type_data[col_name])
         if col_name in map_field_data or gen_common.is_key_in_map(group_data, col_name, map_field_data, column_names):
             handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, column_names, prev_cell)
         elif col_name in array_data:
