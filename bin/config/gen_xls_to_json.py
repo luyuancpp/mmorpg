@@ -44,7 +44,7 @@ def process_cell_value(cell: openpyxl.cell.cell.Cell, field_type) -> float | int
     if field_type == "float" or field_type == "double":
         return float(cell_value)
     elif field_type == "string" :
-        return cell_value
+        return str(cell_value)
     elif cell_value is not None and cell_value.is_integer():
         return int(cell_value)
     return cell_value

@@ -108,7 +108,7 @@ inline constexpr SkillTable::Impl_::Impl_(
         channeltime_{0u},
         range_{0},
         max_range_{0},
-        mmin_range_{0},
+        min_range_{0},
         self_status_{0u},
         required_status_{0u},
         cooldown_id_{0u},
@@ -210,7 +210,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.requestresource_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.range_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.max_range_),
-        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.mmin_range_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.min_range_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.self_status_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.required_status_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.cooldown_id_),
@@ -249,7 +249,7 @@ const char descriptor_table_protodef_skill_5fconfig_2eproto[] ABSL_ATTRIBUTE_SEC
     "redresource_type\030\001 \001(\r\022\036\n\026requiredresour"
     "ce_value\030\002 \001(\r\"K\n\017requestresource\022\032\n\022req"
     "uestresource_id\030\001 \001(\r\022\034\n\024requestresource"
-    "_cost\030\002 \001(\r\"\234\004\n\nSkillTable\022\n\n\002id\030\001 \001(\r\022\022"
+    "_cost\030\002 \001(\r\"\233\004\n\nSkillTable\022\n\n\002id\030\001 \001(\r\022\022"
     "\n\nskill_type\030\002 \003(\r\022\023\n\013target_type\030\003 \003(\r\022"
     "\025\n\rrquest_target\030\004 \001(\r\022\025\n\rtarget_status\030"
     "\005 \001(\r\022\021\n\tcastpoint\030\006 \001(\001\022\024\n\014recoverytime"
@@ -260,17 +260,17 @@ const char descriptor_table_protodef_skill_5fconfig_2eproto[] ABSL_ATTRIBUTE_SEC
     "nish\030\r \001(\r\022\025\n\rthinkinterval\030\016 \001(\r\022\023\n\013cha"
     "nneltime\030\017 \001(\r\022)\n\017requestresource\030\020 \003(\0132"
     "\020.requestresource\022\r\n\005range\030\021 \001(\001\022\021\n\tmax_"
-    "range\030\022 \001(\001\022\022\n\nmmin_range\030\023 \001(\001\022\023\n\013self_"
-    "status\030\024 \001(\r\022\027\n\017required_status\030\025 \001(\r\022\023\n"
-    "\013cooldown_id\030\026 \001(\r\022\016\n\006damage\030\027 \001(\t\",\n\017Sk"
-    "illTabledData\022\031\n\004data\030\001 \003(\0132\013.SkillTable"
-    "B\tZ\007pb/gameb\006proto3"
+    "range\030\022 \001(\001\022\021\n\tmin_range\030\023 \001(\001\022\023\n\013self_s"
+    "tatus\030\024 \001(\r\022\027\n\017required_status\030\025 \001(\r\022\023\n\013"
+    "cooldown_id\030\026 \001(\r\022\016\n\006damage\030\027 \001(\t\",\n\017Ski"
+    "llTabledData\022\031\n\004data\030\001 \003(\0132\013.SkillTableB"
+    "\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_skill_5fconfig_2eproto = {
     false,
     false,
-    859,
+    858,
     descriptor_table_protodef_skill_5fconfig_2eproto,
     "skill_config.proto",
     &descriptor_table_skill_5fconfig_2eproto_once,
@@ -1126,9 +1126,9 @@ const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
     // double max_range = 18;
     {::_pbi::TcParser::FastF64S2,
      {401, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_)}},
-    // double mmin_range = 19;
+    // double min_range = 19;
     {::_pbi::TcParser::FastF64S2,
-     {409, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mmin_range_)}},
+     {409, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.min_range_)}},
     // uint32 self_status = 20;
     {::_pbi::TcParser::FastV32S2,
      {416, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_)}},
@@ -1206,8 +1206,8 @@ const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
     // double max_range = 18;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // double mmin_range = 19;
-    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mmin_range_), 0, 0,
+    // double min_range = 19;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.min_range_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
     // uint32 self_status = 20;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_), 0, 0,
@@ -1403,16 +1403,16 @@ const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
         18, this->_internal_max_range(), target);
   }
 
-  // double mmin_range = 19;
+  // double min_range = 19;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
-  double tmp_mmin_range = this->_internal_mmin_range();
-  ::uint64_t raw_mmin_range;
-  memcpy(&raw_mmin_range, &tmp_mmin_range, sizeof(tmp_mmin_range));
-  if (raw_mmin_range != 0) {
+  double tmp_min_range = this->_internal_min_range();
+  ::uint64_t raw_min_range;
+  memcpy(&raw_min_range, &tmp_min_range, sizeof(tmp_min_range));
+  if (raw_min_range != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        19, this->_internal_mmin_range(), target);
+        19, this->_internal_min_range(), target);
   }
 
   // uint32 self_status = 20;
@@ -1609,13 +1609,13 @@ const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
     total_size += 10;
   }
 
-  // double mmin_range = 19;
+  // double min_range = 19;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
-  double tmp_mmin_range = this->_internal_mmin_range();
-  ::uint64_t raw_mmin_range;
-  memcpy(&raw_mmin_range, &tmp_mmin_range, sizeof(tmp_mmin_range));
-  if (raw_mmin_range != 0) {
+  double tmp_min_range = this->_internal_min_range();
+  ::uint64_t raw_min_range;
+  memcpy(&raw_min_range, &tmp_min_range, sizeof(tmp_min_range));
+  if (raw_min_range != 0) {
     total_size += 10;
   }
 
@@ -1719,11 +1719,11 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   }
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
-  double tmp_mmin_range = from._internal_mmin_range();
-  ::uint64_t raw_mmin_range;
-  memcpy(&raw_mmin_range, &tmp_mmin_range, sizeof(tmp_mmin_range));
-  if (raw_mmin_range != 0) {
-    _this->_impl_.mmin_range_ = from._impl_.mmin_range_;
+  double tmp_min_range = from._internal_min_range();
+  ::uint64_t raw_min_range;
+  memcpy(&raw_min_range, &tmp_min_range, sizeof(tmp_min_range));
+  if (raw_min_range != 0) {
+    _this->_impl_.min_range_ = from._impl_.min_range_;
   }
   if (from._internal_self_status() != 0) {
     _this->_impl_.self_status_ = from._impl_.self_status_;

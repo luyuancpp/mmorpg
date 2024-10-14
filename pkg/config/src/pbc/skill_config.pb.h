@@ -756,7 +756,7 @@ class SkillTable final : public ::google::protobuf::Message
     kChanneltimeFieldNumber = 15,
     kRangeFieldNumber = 17,
     kMaxRangeFieldNumber = 18,
-    kMminRangeFieldNumber = 19,
+    kMinRangeFieldNumber = 19,
     kSelfStatusFieldNumber = 20,
     kRequiredStatusFieldNumber = 21,
     kCooldownIdFieldNumber = 22,
@@ -1002,14 +1002,14 @@ class SkillTable final : public ::google::protobuf::Message
   void _internal_set_max_range(double value);
 
   public:
-  // double mmin_range = 19;
-  void clear_mmin_range() ;
-  double mmin_range() const;
-  void set_mmin_range(double value);
+  // double min_range = 19;
+  void clear_min_range() ;
+  double min_range() const;
+  void set_min_range(double value);
 
   private:
-  double _internal_mmin_range() const;
-  void _internal_set_mmin_range(double value);
+  double _internal_min_range() const;
+  void _internal_set_min_range(double value);
 
   public:
   // uint32 self_status = 20;
@@ -1085,7 +1085,7 @@ class SkillTable final : public ::google::protobuf::Message
     ::uint32_t channeltime_;
     double range_;
     double max_range_;
-    double mmin_range_;
+    double min_range_;
     ::uint32_t self_status_;
     ::uint32_t required_status_;
     ::uint32_t cooldown_id_;
@@ -1976,26 +1976,26 @@ inline void SkillTable::_internal_set_max_range(double value) {
   _impl_.max_range_ = value;
 }
 
-// double mmin_range = 19;
-inline void SkillTable::clear_mmin_range() {
+// double min_range = 19;
+inline void SkillTable::clear_min_range() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.mmin_range_ = 0;
+  _impl_.min_range_ = 0;
 }
-inline double SkillTable::mmin_range() const {
-  // @@protoc_insertion_point(field_get:SkillTable.mmin_range)
-  return _internal_mmin_range();
+inline double SkillTable::min_range() const {
+  // @@protoc_insertion_point(field_get:SkillTable.min_range)
+  return _internal_min_range();
 }
-inline void SkillTable::set_mmin_range(double value) {
-  _internal_set_mmin_range(value);
-  // @@protoc_insertion_point(field_set:SkillTable.mmin_range)
+inline void SkillTable::set_min_range(double value) {
+  _internal_set_min_range(value);
+  // @@protoc_insertion_point(field_set:SkillTable.min_range)
 }
-inline double SkillTable::_internal_mmin_range() const {
+inline double SkillTable::_internal_min_range() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.mmin_range_;
+  return _impl_.min_range_;
 }
-inline void SkillTable::_internal_set_mmin_range(double value) {
+inline void SkillTable::_internal_set_min_range(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.mmin_range_ = value;
+  _impl_.min_range_ = value;
 }
 
 // uint32 self_status = 20;
