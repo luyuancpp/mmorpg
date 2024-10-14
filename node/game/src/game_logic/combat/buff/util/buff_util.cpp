@@ -37,6 +37,11 @@ bool IsTargetImmune(const BuffList& buffList, const BuffTable* buffTable)
     return false;
 }
 
+void BuffUtil::InitializeActorComponents(entt::entity entity)
+{
+    tls.registry.emplace<BuffListComp>(entity);
+}
+
 uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);

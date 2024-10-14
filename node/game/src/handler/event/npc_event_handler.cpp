@@ -3,6 +3,7 @@
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "game_logic/actor/util/actor_status_util.h"
+#include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/util/skill_util.h"
 #include "game_logic/npc/util/npc_util.h"
 ///<<< END WRITING YOUR CODE
@@ -30,7 +31,8 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
     ActorStatusUtil::InitializeActorComponents(npc);
     NpcUtil::InitializeNpcComponents(npc);
     SkillUtil::InitializeActorComponents(npc);
-    
+    BuffUtil::InitializeActorComponents(npc);
+
 ///<<< END WRITING YOUR CODE
 }
 
