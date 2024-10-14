@@ -1315,6 +1315,9 @@ class BaseAttributesPBComponent final : public ::google::protobuf::Message
     kStaminaFieldNumber = 2,
     kHealthFieldNumber = 3,
     kManaFieldNumber = 4,
+    kCritchanceFieldNumber = 5,
+    kArmorFieldNumber = 6,
+    kResistanceFieldNumber = 7,
   };
   // uint64 strength = 1;
   void clear_strength() ;
@@ -1356,12 +1359,42 @@ class BaseAttributesPBComponent final : public ::google::protobuf::Message
   void _internal_set_mana(::uint64_t value);
 
   public:
+  // uint64 critchance = 5;
+  void clear_critchance() ;
+  ::uint64_t critchance() const;
+  void set_critchance(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_critchance() const;
+  void _internal_set_critchance(::uint64_t value);
+
+  public:
+  // uint64 armor = 6;
+  void clear_armor() ;
+  ::uint64_t armor() const;
+  void set_armor(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_armor() const;
+  void _internal_set_armor(::uint64_t value);
+
+  public:
+  // uint64 resistance = 7;
+  void clear_resistance() ;
+  ::uint64_t resistance() const;
+  void set_resistance(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_resistance() const;
+  void _internal_set_resistance(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BaseAttributesPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 0,
+      3, 7, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -1381,6 +1414,9 @@ class BaseAttributesPBComponent final : public ::google::protobuf::Message
     ::uint64_t stamina_;
     ::uint64_t health_;
     ::uint64_t mana_;
+    ::uint64_t critchance_;
+    ::uint64_t armor_;
+    ::uint64_t resistance_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2551,6 +2587,72 @@ inline ::uint64_t BaseAttributesPBComponent::_internal_mana() const {
 inline void BaseAttributesPBComponent::_internal_set_mana(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mana_ = value;
+}
+
+// uint64 critchance = 5;
+inline void BaseAttributesPBComponent::clear_critchance() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.critchance_ = ::uint64_t{0u};
+}
+inline ::uint64_t BaseAttributesPBComponent::critchance() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.critchance)
+  return _internal_critchance();
+}
+inline void BaseAttributesPBComponent::set_critchance(::uint64_t value) {
+  _internal_set_critchance(value);
+  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.critchance)
+}
+inline ::uint64_t BaseAttributesPBComponent::_internal_critchance() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.critchance_;
+}
+inline void BaseAttributesPBComponent::_internal_set_critchance(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.critchance_ = value;
+}
+
+// uint64 armor = 6;
+inline void BaseAttributesPBComponent::clear_armor() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.armor_ = ::uint64_t{0u};
+}
+inline ::uint64_t BaseAttributesPBComponent::armor() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.armor)
+  return _internal_armor();
+}
+inline void BaseAttributesPBComponent::set_armor(::uint64_t value) {
+  _internal_set_armor(value);
+  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.armor)
+}
+inline ::uint64_t BaseAttributesPBComponent::_internal_armor() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.armor_;
+}
+inline void BaseAttributesPBComponent::_internal_set_armor(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.armor_ = value;
+}
+
+// uint64 resistance = 7;
+inline void BaseAttributesPBComponent::clear_resistance() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.resistance_ = ::uint64_t{0u};
+}
+inline ::uint64_t BaseAttributesPBComponent::resistance() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.resistance)
+  return _internal_resistance();
+}
+inline void BaseAttributesPBComponent::set_resistance(::uint64_t value) {
+  _internal_set_resistance(value);
+  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.resistance)
+}
+inline ::uint64_t BaseAttributesPBComponent::_internal_resistance() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.resistance_;
+}
+inline void BaseAttributesPBComponent::_internal_set_resistance(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.resistance_ = value;
 }
 
 // -------------------------------------------------------------------
