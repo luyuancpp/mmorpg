@@ -760,7 +760,8 @@ class player_database final : public ::google::protobuf::Message
     kUint64PbComponentFieldNumber = 3,
     kSkillListFieldNumber = 4,
     kUint32PbComponentFieldNumber = 5,
-    kDerivedAttributesFieldNumber = 6,
+    kDerivedAttributesComponentFieldNumber = 6,
+    kLevelComponentFieldNumber = 7,
     kPlayerIdFieldNumber = 1,
   };
   // .Transform transform = 2;
@@ -823,19 +824,34 @@ class player_database final : public ::google::protobuf::Message
   ::PlayerUint32PBComponent* _internal_mutable_uint32_pb_component();
 
   public:
-  // .BaseAttributesPBComponent derived_attributes = 6;
-  bool has_derived_attributes() const;
-  void clear_derived_attributes() ;
-  const ::BaseAttributesPBComponent& derived_attributes() const;
-  PROTOBUF_NODISCARD ::BaseAttributesPBComponent* release_derived_attributes();
-  ::BaseAttributesPBComponent* mutable_derived_attributes();
-  void set_allocated_derived_attributes(::BaseAttributesPBComponent* value);
-  void unsafe_arena_set_allocated_derived_attributes(::BaseAttributesPBComponent* value);
-  ::BaseAttributesPBComponent* unsafe_arena_release_derived_attributes();
+  // .BaseAttributesPBComponent derived_attributes_component = 6;
+  bool has_derived_attributes_component() const;
+  void clear_derived_attributes_component() ;
+  const ::BaseAttributesPBComponent& derived_attributes_component() const;
+  PROTOBUF_NODISCARD ::BaseAttributesPBComponent* release_derived_attributes_component();
+  ::BaseAttributesPBComponent* mutable_derived_attributes_component();
+  void set_allocated_derived_attributes_component(::BaseAttributesPBComponent* value);
+  void unsafe_arena_set_allocated_derived_attributes_component(::BaseAttributesPBComponent* value);
+  ::BaseAttributesPBComponent* unsafe_arena_release_derived_attributes_component();
 
   private:
-  const ::BaseAttributesPBComponent& _internal_derived_attributes() const;
-  ::BaseAttributesPBComponent* _internal_mutable_derived_attributes();
+  const ::BaseAttributesPBComponent& _internal_derived_attributes_component() const;
+  ::BaseAttributesPBComponent* _internal_mutable_derived_attributes_component();
+
+  public:
+  // .LevelComponent level_component = 7;
+  bool has_level_component() const;
+  void clear_level_component() ;
+  const ::LevelComponent& level_component() const;
+  PROTOBUF_NODISCARD ::LevelComponent* release_level_component();
+  ::LevelComponent* mutable_level_component();
+  void set_allocated_level_component(::LevelComponent* value);
+  void unsafe_arena_set_allocated_level_component(::LevelComponent* value);
+  ::LevelComponent* unsafe_arena_release_level_component();
+
+  private:
+  const ::LevelComponent& _internal_level_component() const;
+  ::LevelComponent* _internal_mutable_level_component();
 
   public:
   // uint64 player_id = 1;
@@ -853,7 +869,7 @@ class player_database final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 6, 5,
+      3, 7, 6,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -875,7 +891,8 @@ class player_database final : public ::google::protobuf::Message
     ::PlayerUint64PBComponent* uint64_pb_component_;
     ::PlayerSkillListPBComponent* skill_list_;
     ::PlayerUint32PBComponent* uint32_pb_component_;
-    ::BaseAttributesPBComponent* derived_attributes_;
+    ::BaseAttributesPBComponent* derived_attributes_component_;
+    ::LevelComponent* level_component_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1836,40 +1853,40 @@ inline void player_database::set_allocated_uint32_pb_component(::PlayerUint32PBC
   // @@protoc_insertion_point(field_set_allocated:player_database.uint32_pb_component)
 }
 
-// .BaseAttributesPBComponent derived_attributes = 6;
-inline bool player_database::has_derived_attributes() const {
+// .BaseAttributesPBComponent derived_attributes_component = 6;
+inline bool player_database::has_derived_attributes_component() const {
   bool value = (_impl_._has_bits_[0] & 0x00000010u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.derived_attributes_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.derived_attributes_component_ != nullptr);
   return value;
 }
-inline const ::BaseAttributesPBComponent& player_database::_internal_derived_attributes() const {
+inline const ::BaseAttributesPBComponent& player_database::_internal_derived_attributes_component() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::BaseAttributesPBComponent* p = _impl_.derived_attributes_;
+  const ::BaseAttributesPBComponent* p = _impl_.derived_attributes_component_;
   return p != nullptr ? *p : reinterpret_cast<const ::BaseAttributesPBComponent&>(::_BaseAttributesPBComponent_default_instance_);
 }
-inline const ::BaseAttributesPBComponent& player_database::derived_attributes() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:player_database.derived_attributes)
-  return _internal_derived_attributes();
+inline const ::BaseAttributesPBComponent& player_database::derived_attributes_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.derived_attributes_component)
+  return _internal_derived_attributes_component();
 }
-inline void player_database::unsafe_arena_set_allocated_derived_attributes(::BaseAttributesPBComponent* value) {
+inline void player_database::unsafe_arena_set_allocated_derived_attributes_component(::BaseAttributesPBComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.derived_attributes_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.derived_attributes_component_);
   }
-  _impl_.derived_attributes_ = reinterpret_cast<::BaseAttributesPBComponent*>(value);
+  _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPBComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000010u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000010u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.derived_attributes)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.derived_attributes_component)
 }
-inline ::BaseAttributesPBComponent* player_database::release_derived_attributes() {
+inline ::BaseAttributesPBComponent* player_database::release_derived_attributes_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000010u;
-  ::BaseAttributesPBComponent* released = _impl_.derived_attributes_;
-  _impl_.derived_attributes_ = nullptr;
+  ::BaseAttributesPBComponent* released = _impl_.derived_attributes_component_;
+  _impl_.derived_attributes_component_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
   released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -1883,34 +1900,34 @@ inline ::BaseAttributesPBComponent* player_database::release_derived_attributes(
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::BaseAttributesPBComponent* player_database::unsafe_arena_release_derived_attributes() {
+inline ::BaseAttributesPBComponent* player_database::unsafe_arena_release_derived_attributes_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:player_database.derived_attributes)
+  // @@protoc_insertion_point(field_release:player_database.derived_attributes_component)
 
   _impl_._has_bits_[0] &= ~0x00000010u;
-  ::BaseAttributesPBComponent* temp = _impl_.derived_attributes_;
-  _impl_.derived_attributes_ = nullptr;
+  ::BaseAttributesPBComponent* temp = _impl_.derived_attributes_component_;
+  _impl_.derived_attributes_component_ = nullptr;
   return temp;
 }
-inline ::BaseAttributesPBComponent* player_database::_internal_mutable_derived_attributes() {
+inline ::BaseAttributesPBComponent* player_database::_internal_mutable_derived_attributes_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.derived_attributes_ == nullptr) {
+  if (_impl_.derived_attributes_component_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::BaseAttributesPBComponent>(GetArena());
-    _impl_.derived_attributes_ = reinterpret_cast<::BaseAttributesPBComponent*>(p);
+    _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPBComponent*>(p);
   }
-  return _impl_.derived_attributes_;
+  return _impl_.derived_attributes_component_;
 }
-inline ::BaseAttributesPBComponent* player_database::mutable_derived_attributes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::BaseAttributesPBComponent* player_database::mutable_derived_attributes_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000010u;
-  ::BaseAttributesPBComponent* _msg = _internal_mutable_derived_attributes();
-  // @@protoc_insertion_point(field_mutable:player_database.derived_attributes)
+  ::BaseAttributesPBComponent* _msg = _internal_mutable_derived_attributes_component();
+  // @@protoc_insertion_point(field_mutable:player_database.derived_attributes_component)
   return _msg;
 }
-inline void player_database::set_allocated_derived_attributes(::BaseAttributesPBComponent* value) {
+inline void player_database::set_allocated_derived_attributes_component(::BaseAttributesPBComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.derived_attributes_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.derived_attributes_component_);
   }
 
   if (value != nullptr) {
@@ -1923,8 +1940,99 @@ inline void player_database::set_allocated_derived_attributes(::BaseAttributesPB
     _impl_._has_bits_[0] &= ~0x00000010u;
   }
 
-  _impl_.derived_attributes_ = reinterpret_cast<::BaseAttributesPBComponent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:player_database.derived_attributes)
+  _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPBComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.derived_attributes_component)
+}
+
+// .LevelComponent level_component = 7;
+inline bool player_database::has_level_component() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000020u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.level_component_ != nullptr);
+  return value;
+}
+inline const ::LevelComponent& player_database::_internal_level_component() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::LevelComponent* p = _impl_.level_component_;
+  return p != nullptr ? *p : reinterpret_cast<const ::LevelComponent&>(::_LevelComponent_default_instance_);
+}
+inline const ::LevelComponent& player_database::level_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.level_component)
+  return _internal_level_component();
+}
+inline void player_database::unsafe_arena_set_allocated_level_component(::LevelComponent* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.level_component_);
+  }
+  _impl_.level_component_ = reinterpret_cast<::LevelComponent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000020u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000020u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.level_component)
+}
+inline ::LevelComponent* player_database::release_level_component() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000020u;
+  ::LevelComponent* released = _impl_.level_component_;
+  _impl_.level_component_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::LevelComponent* player_database::unsafe_arena_release_level_component() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:player_database.level_component)
+
+  _impl_._has_bits_[0] &= ~0x00000020u;
+  ::LevelComponent* temp = _impl_.level_component_;
+  _impl_.level_component_ = nullptr;
+  return temp;
+}
+inline ::LevelComponent* player_database::_internal_mutable_level_component() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.level_component_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::LevelComponent>(GetArena());
+    _impl_.level_component_ = reinterpret_cast<::LevelComponent*>(p);
+  }
+  return _impl_.level_component_;
+}
+inline ::LevelComponent* player_database::mutable_level_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000020u;
+  ::LevelComponent* _msg = _internal_mutable_level_component();
+  // @@protoc_insertion_point(field_mutable:player_database.level_component)
+  return _msg;
+}
+inline void player_database::set_allocated_level_component(::LevelComponent* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.level_component_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000020u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000020u;
+  }
+
+  _impl_.level_component_ = reinterpret_cast<::LevelComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.level_component)
 }
 
 // -------------------------------------------------------------------

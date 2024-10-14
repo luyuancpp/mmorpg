@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type RegisterPlayer struct {
+type RegisterPlayerEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type RegisterPlayer struct {
 	Entity uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 }
 
-func (x *RegisterPlayer) Reset() {
-	*x = RegisterPlayer{}
+func (x *RegisterPlayerEvent) Reset() {
+	*x = RegisterPlayerEvent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_event_player_event_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *RegisterPlayer) Reset() {
 	}
 }
 
-func (x *RegisterPlayer) String() string {
+func (x *RegisterPlayerEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegisterPlayer) ProtoMessage() {}
+func (*RegisterPlayerEvent) ProtoMessage() {}
 
-func (x *RegisterPlayer) ProtoReflect() protoreflect.Message {
+func (x *RegisterPlayerEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_event_player_event_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,19 +55,19 @@ func (x *RegisterPlayer) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegisterPlayer.ProtoReflect.Descriptor instead.
-func (*RegisterPlayer) Descriptor() ([]byte, []int) {
+// Deprecated: Use RegisterPlayerEvent.ProtoReflect.Descriptor instead.
+func (*RegisterPlayerEvent) Descriptor() ([]byte, []int) {
 	return file_logic_event_player_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RegisterPlayer) GetEntity() uint64 {
+func (x *RegisterPlayerEvent) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-type PlayerUpgrade struct {
+type PlayerUpgradeEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -76,8 +76,8 @@ type PlayerUpgrade struct {
 	NewLevel uint32 `protobuf:"varint,2,opt,name=new_level,json=newLevel,proto3" json:"new_level,omitempty"`
 }
 
-func (x *PlayerUpgrade) Reset() {
-	*x = PlayerUpgrade{}
+func (x *PlayerUpgradeEvent) Reset() {
+	*x = PlayerUpgradeEvent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_event_player_event_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -85,13 +85,13 @@ func (x *PlayerUpgrade) Reset() {
 	}
 }
 
-func (x *PlayerUpgrade) String() string {
+func (x *PlayerUpgradeEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerUpgrade) ProtoMessage() {}
+func (*PlayerUpgradeEvent) ProtoMessage() {}
 
-func (x *PlayerUpgrade) ProtoReflect() protoreflect.Message {
+func (x *PlayerUpgradeEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_event_player_event_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -103,26 +103,26 @@ func (x *PlayerUpgrade) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerUpgrade.ProtoReflect.Descriptor instead.
-func (*PlayerUpgrade) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerUpgradeEvent.ProtoReflect.Descriptor instead.
+func (*PlayerUpgradeEvent) Descriptor() ([]byte, []int) {
 	return file_logic_event_player_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PlayerUpgrade) GetEntity() uint64 {
+func (x *PlayerUpgradeEvent) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
 	return 0
 }
 
-func (x *PlayerUpgrade) GetNewLevel() uint32 {
+func (x *PlayerUpgradeEvent) GetNewLevel() uint32 {
 	if x != nil {
 		return x.NewLevel
 	}
 	return 0
 }
 
-type InitializePlayerComponents struct {
+type InitializePlayerComponentsEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -130,8 +130,8 @@ type InitializePlayerComponents struct {
 	Entity uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 }
 
-func (x *InitializePlayerComponents) Reset() {
-	*x = InitializePlayerComponents{}
+func (x *InitializePlayerComponentsEvent) Reset() {
+	*x = InitializePlayerComponentsEvent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_event_player_event_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -139,13 +139,13 @@ func (x *InitializePlayerComponents) Reset() {
 	}
 }
 
-func (x *InitializePlayerComponents) String() string {
+func (x *InitializePlayerComponentsEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InitializePlayerComponents) ProtoMessage() {}
+func (*InitializePlayerComponentsEvent) ProtoMessage() {}
 
-func (x *InitializePlayerComponents) ProtoReflect() protoreflect.Message {
+func (x *InitializePlayerComponentsEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_event_player_event_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -157,12 +157,12 @@ func (x *InitializePlayerComponents) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InitializePlayerComponents.ProtoReflect.Descriptor instead.
-func (*InitializePlayerComponents) Descriptor() ([]byte, []int) {
+// Deprecated: Use InitializePlayerComponentsEvent.ProtoReflect.Descriptor instead.
+func (*InitializePlayerComponentsEvent) Descriptor() ([]byte, []int) {
 	return file_logic_event_player_event_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *InitializePlayerComponents) GetEntity() uint64 {
+func (x *InitializePlayerComponentsEvent) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
@@ -174,18 +174,19 @@ var File_logic_event_player_event_proto protoreflect.FileDescriptor
 var file_logic_event_player_event_proto_rawDesc = []byte{
 	0x0a, 0x1e, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2f, 0x70, 0x6c,
 	0x61, 0x79, 0x65, 0x72, 0x5f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x22, 0x28, 0x0a, 0x0e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x50, 0x6c, 0x61, 0x79,
-	0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x22, 0x44, 0x0a, 0x0d, 0x50, 0x6c,
-	0x61, 0x79, 0x65, 0x72, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x65,
-	0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74,
-	0x69, 0x74, 0x79, 0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x65, 0x77, 0x5f, 0x6c, 0x65, 0x76, 0x65, 0x6c,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x6e, 0x65, 0x77, 0x4c, 0x65, 0x76, 0x65, 0x6c,
-	0x22, 0x34, 0x0a, 0x1a, 0x49, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x50, 0x6c,
-	0x61, 0x79, 0x65, 0x72, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x16,
-	0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06,
-	0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d,
-	0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x2d, 0x0a, 0x13, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x50, 0x6c, 0x61, 0x79,
+	0x65, 0x72, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74,
+	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x22,
+	0x49, 0x0a, 0x12, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65,
+	0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x12, 0x1b, 0x0a,
+	0x09, 0x6e, 0x65, 0x77, 0x5f, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d,
+	0x52, 0x08, 0x6e, 0x65, 0x77, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x22, 0x39, 0x0a, 0x1f, 0x49, 0x6e,
+	0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x43, 0x6f,
+	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a,
+	0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65,
+	0x6e, 0x74, 0x69, 0x74, 0x79, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -202,9 +203,9 @@ func file_logic_event_player_event_proto_rawDescGZIP() []byte {
 
 var file_logic_event_player_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_logic_event_player_event_proto_goTypes = []any{
-	(*RegisterPlayer)(nil),             // 0: RegisterPlayer
-	(*PlayerUpgrade)(nil),              // 1: PlayerUpgrade
-	(*InitializePlayerComponents)(nil), // 2: InitializePlayerComponents
+	(*RegisterPlayerEvent)(nil),             // 0: RegisterPlayerEvent
+	(*PlayerUpgradeEvent)(nil),              // 1: PlayerUpgradeEvent
+	(*InitializePlayerComponentsEvent)(nil), // 2: InitializePlayerComponentsEvent
 }
 var file_logic_event_player_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -221,7 +222,7 @@ func file_logic_event_player_event_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_logic_event_player_event_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*RegisterPlayer); i {
+			switch v := v.(*RegisterPlayerEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -233,7 +234,7 @@ func file_logic_event_player_event_proto_init() {
 			}
 		}
 		file_logic_event_player_event_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*PlayerUpgrade); i {
+			switch v := v.(*PlayerUpgradeEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -245,7 +246,7 @@ func file_logic_event_player_event_proto_init() {
 			}
 		}
 		file_logic_event_player_event_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*InitializePlayerComponents); i {
+			switch v := v.(*InitializePlayerComponentsEvent); i {
 			case 0:
 				return &v.state
 			case 1:

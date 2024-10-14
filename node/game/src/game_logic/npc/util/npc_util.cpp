@@ -13,7 +13,7 @@ void NpcUtil::CreateNpc()
 {
     auto npc = tls.registry.create();
     
-    InitializePlayerComponents initializePlayerComponents;
+    InitializePlayerComponentsEvent initializePlayerComponents;
     initializePlayerComponents.set_entity(entt::to_integral(npc));
     tls.dispatcher.trigger(initializePlayerComponents);
 }
