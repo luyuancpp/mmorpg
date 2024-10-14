@@ -1,6 +1,6 @@
 #pragma once
 
-class InitializeNpcComponents;
+class InitializeNpcComponentsEvent;
 
 class NpcEventHandler
 {
@@ -8,5 +8,5 @@ public:
 	static void Register();
 	static void UnRegister();
 
-	static void InitializeNpcComponentsHandler(const InitializeNpcComponents& event);
+	static void InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event);
 };

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message InitializeNpcComponents
+message InitializeNpcComponentsEvent
 {
   uint64 entity = 1;
 }

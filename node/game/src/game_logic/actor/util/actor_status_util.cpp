@@ -3,7 +3,10 @@
 #include "component/actor_status_comp.pb.h"
 #include "thread_local/storage.h"
 
-void ActorStatusUtil::InitializeActorComponents(entt::entity entity)
-{
+void ActorStatusUtil::Initialize(){
+    
+}
+
+void ActorStatusUtil::InitializeActorComponents(entt::entity entity){
     tls.registry.emplace<ActorStatusPBComponent>(entity);
 }

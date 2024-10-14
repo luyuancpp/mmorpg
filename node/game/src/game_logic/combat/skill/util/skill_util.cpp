@@ -33,7 +33,7 @@ uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const 
 }
 
 // Initialize an entity with necessary skill components
-void SkillUtil::InitializePlayerComponents(entt::entity entity) {
+void SkillUtil::InitializeActorComponents(entt::entity entity) {
     tls.registry.emplace<SkillContextCompMap>(entity);
     tls.registry.emplace<CooldownTimeListComp>(entity);
 }
