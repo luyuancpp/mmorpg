@@ -659,7 +659,7 @@ TEST(BagTest, NeatenCanNotStack)
 
 int main(int argc, char** argv)
 {
-    ItemConfigurationTable::GetSingleton().Load();
+    ItemConfigurationTable::Instance().Load();
     testing::InitGoogleTest();
     return RUN_ALL_TESTS();
 }

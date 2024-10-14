@@ -9,7 +9,7 @@
 class SceneConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SceneTable*>;
-    static SceneConfigurationTable& GetSingleton() { static SceneConfigurationTable singleton; return singleton; }
+    static SceneConfigurationTable& Instance() { static SceneConfigurationTable instance; return instance; }
     const SceneTabledData& All() const { return data_; }
     std::pair<const SceneTable*, uint32_t> GetTable(uint32_t keyId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
@@ -22,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const SceneTable*, uint32_t> GetSceneTable(const uint32_t keyId) { return SceneConfigurationTable::GetSingleton().GetTable(keyId); }
+inline std::pair<const SceneTable*, uint32_t> GetSceneTable(const uint32_t keyId) { return SceneConfigurationTable::Instance().GetTable(keyId); }
 
-inline const SceneTabledData& GetSceneAllTable() { return SceneConfigurationTable::GetSingleton().All(); }
+inline const SceneTabledData& GetSceneAllTable() { return SceneConfigurationTable::Instance().All(); }

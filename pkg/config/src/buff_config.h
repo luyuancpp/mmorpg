@@ -9,7 +9,7 @@
 class BuffConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const BuffTable*>;
-    static BuffConfigurationTable& GetSingleton() { static BuffConfigurationTable singleton; return singleton; }
+    static BuffConfigurationTable& Instance() { static BuffConfigurationTable instance; return instance; }
     const BuffTabledData& All() const { return data_; }
     std::pair<const BuffTable*, uint32_t> GetTable(uint32_t keyId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
@@ -22,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const BuffTable*, uint32_t> GetBuffTable(const uint32_t keyId) { return BuffConfigurationTable::GetSingleton().GetTable(keyId); }
+inline std::pair<const BuffTable*, uint32_t> GetBuffTable(const uint32_t keyId) { return BuffConfigurationTable::Instance().GetTable(keyId); }
 
-inline const BuffTabledData& GetBuffAllTable() { return BuffConfigurationTable::GetSingleton().All(); }
+inline const BuffTabledData& GetBuffAllTable() { return BuffConfigurationTable::Instance().All(); }

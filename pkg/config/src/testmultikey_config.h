@@ -9,7 +9,7 @@
 class TestMultiKeyConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_multimap<uint32_t, const TestMultiKeyTable*>;
-    static TestMultiKeyConfigurationTable& GetSingleton() { static TestMultiKeyConfigurationTable singleton; return singleton; }
+    static TestMultiKeyConfigurationTable& Instance() { static TestMultiKeyConfigurationTable instance; return instance; }
     const TestMultiKeyTabledData& All() const { return data_; }
     std::pair<const TestMultiKeyTable*, uint32_t> GetTable(uint32_t keyId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
@@ -40,6 +40,6 @@ private:
     std::unordered_multimap<int32_t, const TestMultiKeyTable*>  kv_min32keydata_;
 };
 
-inline std::pair<const TestMultiKeyTable*, uint32_t> GetTestMultiKeyTable(const uint32_t keyId) { return TestMultiKeyConfigurationTable::GetSingleton().GetTable(keyId); }
+inline std::pair<const TestMultiKeyTable*, uint32_t> GetTestMultiKeyTable(const uint32_t keyId) { return TestMultiKeyConfigurationTable::Instance().GetTable(keyId); }
 
-inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() { return TestMultiKeyConfigurationTable::GetSingleton().All(); }
+inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() { return TestMultiKeyConfigurationTable::Instance().All(); }

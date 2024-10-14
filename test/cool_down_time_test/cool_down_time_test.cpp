@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "time/util/cooldown_time_util.h"  // ¼ÙÉèÄã½«ÉÏÃæµÄ CoolDownTimeMillisecondUtil ¶¨ÒåÔÚÕâ¸öÍ·ÎÄ¼şÖĞ
+#include "time/util/cooldown_time_util.h"  // ï¿½ï¿½ï¿½ï¿½ï¿½ã½«ï¿½ï¿½ï¿½ï¿½ï¿½ CoolDownTimeMillisecondUtil ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í·ï¿½Ä¼ï¿½ï¿½ï¿½
 
 // Test Fixture
 class CoolDownTimeMillisecondUtilTest  : public ::testing::Test {
@@ -142,7 +142,7 @@ TEST_F(CoolDownTimeMillisecondUtilTest, ResetCooldown) {
 
 int main(int argc, char** argv)
 {
-	CooldownConfigurationTable::GetSingleton().Load();
+	CooldownConfigurationTable::Instance().Load();
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }

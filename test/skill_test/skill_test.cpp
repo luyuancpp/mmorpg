@@ -279,8 +279,8 @@ int main(int argc, char** argv) {
     EventLoop loop;
 
     ::testing::InitGoogleTest(&argc, argv);
-    CooldownConfigurationTable::GetSingleton().Load();
-    SkillConfigurationTable::GetSingleton().Load();
+    CooldownConfigurationTable::Instance().Load();
+    SkillConfigurationTable::Instance().Load();
 
     int ret = RUN_ALL_TESTS();
     tls.registry.clear(); // Clean up thread-local storage after all tests

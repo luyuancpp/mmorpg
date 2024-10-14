@@ -616,8 +616,8 @@ class C
 
 int main(int argc, char** argv)
 {
-    ConditionConfigurationTable::GetSingleton().Load();
-    MissionConfigurationTable::GetSingleton().Load();
+    ConditionConfigurationTable::Instance().Load();
+    MissionConfigurationTable::Instance().Load();
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -43,7 +43,7 @@ TEST(LoadAllConfigTest, GetTestMultiKeyAllTable)
 
 TEST(LoadAllConfigTest, GetTestMultiUint32ValueRangeTable)
 {
-	auto& data = TestMultiKeyConfigurationTable::GetSingleton().GetMuint32KeyData();
+	auto& data = TestMultiKeyConfigurationTable::Instance().GetMuint32KeyData();
 	auto range17 = data.equal_range(17);
 	for (auto it = range17.first; it != range17.second; ++it) {
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
@@ -53,7 +53,7 @@ TEST(LoadAllConfigTest, GetTestMultiUint32ValueRangeTable)
 
 TEST(LoadAllConfigTest, GetTestMultiInt32ValueRangeTable)
 {
-	auto& data = TestMultiKeyConfigurationTable::GetSingleton().GetMin32KeyData();
+	auto& data = TestMultiKeyConfigurationTable::Instance().GetMin32KeyData();
 	auto range10 = data.equal_range(10);
 	for (auto it = range10.first; it != range10.second; ++it) {
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
@@ -62,7 +62,7 @@ TEST(LoadAllConfigTest, GetTestMultiInt32ValueRangeTable)
 
 TEST(LoadAllConfigTest, GetTestMultiStringValueRangeTable)
 {
-	auto& data = TestMultiKeyConfigurationTable::GetSingleton().GetMstringkeyData();
+	auto& data = TestMultiKeyConfigurationTable::Instance().GetMstringkeyData();
 	auto rangeaa = data.equal_range("aa");
 	for (auto it = rangeaa.first; it != rangeaa.second; ++it) {
 		LOG_INFO << it->first << ' ' << it->second->DebugString();
@@ -71,19 +71,19 @@ TEST(LoadAllConfigTest, GetTestMultiStringValueRangeTable)
 
 TEST(LoadAllConfigTest, GetTestUint32ValueFindTable)
 {
-	auto it = TestMultiKeyConfigurationTable::GetSingleton().GetByUint32Key(14);
+	auto it = TestMultiKeyConfigurationTable::Instance().GetByUint32Key(14);
 	EXPECT_EQ(it.first->id(), 1);
 }
 
 TEST(LoadAllConfigTest, GetTestInt32ValueAllTable)
 {
-	auto it = TestMultiKeyConfigurationTable::GetSingleton().GetByIn32Key(8);
+	auto it = TestMultiKeyConfigurationTable::Instance().GetByIn32Key(8);
 	EXPECT_EQ(it.first->id(), 1);
 }
 
 TEST(LoadAllConfigTest, GetTestStringValueAllTable)
 {
-	auto it = TestMultiKeyConfigurationTable::GetSingleton().GetByStringkey("aa");
+	auto it = TestMultiKeyConfigurationTable::Instance().GetByStringkey("aa");
 	EXPECT_EQ(it.first->id(), 1);
 }
 

@@ -9,7 +9,7 @@
 class MissionConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const MissionTable*>;
-    static MissionConfigurationTable& GetSingleton() { static MissionConfigurationTable singleton; return singleton; }
+    static MissionConfigurationTable& Instance() { static MissionConfigurationTable instance; return instance; }
     const MissionTabledData& All() const { return data_; }
     std::pair<const MissionTable*, uint32_t> GetTable(uint32_t keyId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
@@ -22,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const MissionTable*, uint32_t> GetMissionTable(const uint32_t keyId) { return MissionConfigurationTable::GetSingleton().GetTable(keyId); }
+inline std::pair<const MissionTable*, uint32_t> GetMissionTable(const uint32_t keyId) { return MissionConfigurationTable::Instance().GetTable(keyId); }
 
-inline const MissionTabledData& GetMissionAllTable() { return MissionConfigurationTable::GetSingleton().All(); }
+inline const MissionTabledData& GetMissionAllTable() { return MissionConfigurationTable::Instance().All(); }

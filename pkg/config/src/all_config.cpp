@@ -18,19 +18,19 @@
 #include "cooldown_config.h"
 void LoadAllConfig()
 {
-    SkillConfigurationTable::GetSingleton().Load();
-    MissionConfigurationTable::GetSingleton().Load();
-    ConditionConfigurationTable::GetSingleton().Load();
-    TestMultiKeyConfigurationTable::GetSingleton().Load();
-    BuffConfigurationTable::GetSingleton().Load();
-    TestConfigurationTable::GetSingleton().Load();
-    ItemConfigurationTable::GetSingleton().Load();
-    GlobalVariableConfigurationTable::GetSingleton().Load();
-    MainSceneConfigurationTable::GetSingleton().Load();
-    SceneConfigurationTable::GetSingleton().Load();
-    ClassConfigurationTable::GetSingleton().Load();
-    MonsterBaseConfigurationTable::GetSingleton().Load();
-    CooldownConfigurationTable::GetSingleton().Load();
+    SkillConfigurationTable::Instance().Load();
+    MissionConfigurationTable::Instance().Load();
+    ConditionConfigurationTable::Instance().Load();
+    TestMultiKeyConfigurationTable::Instance().Load();
+    BuffConfigurationTable::Instance().Load();
+    TestConfigurationTable::Instance().Load();
+    ItemConfigurationTable::Instance().Load();
+    GlobalVariableConfigurationTable::Instance().Load();
+    MainSceneConfigurationTable::Instance().Load();
+    SceneConfigurationTable::Instance().Load();
+    ClassConfigurationTable::Instance().Load();
+    MonsterBaseConfigurationTable::Instance().Load();
+    CooldownConfigurationTable::Instance().Load();
 }
 
 void LoadAllConfigAsyncWhenServerLaunch()
@@ -41,7 +41,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    SkillConfigurationTable::GetSingleton().Load();
+    SkillConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -52,7 +52,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    MissionConfigurationTable::GetSingleton().Load();
+    MissionConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -63,7 +63,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    ConditionConfigurationTable::GetSingleton().Load();
+    ConditionConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -74,7 +74,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    TestMultiKeyConfigurationTable::GetSingleton().Load();
+    TestMultiKeyConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -85,7 +85,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    BuffConfigurationTable::GetSingleton().Load();
+    BuffConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -96,7 +96,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    TestConfigurationTable::GetSingleton().Load();
+    TestConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -107,7 +107,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    ItemConfigurationTable::GetSingleton().Load();
+    ItemConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -118,7 +118,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    GlobalVariableConfigurationTable::GetSingleton().Load();
+    GlobalVariableConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -129,7 +129,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    MainSceneConfigurationTable::GetSingleton().Load();
+    MainSceneConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -140,7 +140,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    SceneConfigurationTable::GetSingleton().Load();
+    SceneConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -151,7 +151,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    ClassConfigurationTable::GetSingleton().Load();
+    ClassConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -162,7 +162,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    MonsterBaseConfigurationTable::GetSingleton().Load();
+    MonsterBaseConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -173,7 +173,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    CooldownConfigurationTable::GetSingleton().Load();
+    CooldownConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();

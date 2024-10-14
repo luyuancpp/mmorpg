@@ -9,7 +9,7 @@
 class GlobalVariableConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const GlobalVariableTable*>;
-    static GlobalVariableConfigurationTable& GetSingleton() { static GlobalVariableConfigurationTable singleton; return singleton; }
+    static GlobalVariableConfigurationTable& Instance() { static GlobalVariableConfigurationTable instance; return instance; }
     const GlobalVariableTabledData& All() const { return data_; }
     std::pair<const GlobalVariableTable*, uint32_t> GetTable(uint32_t keyId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
@@ -22,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(const uint32_t keyId) { return GlobalVariableConfigurationTable::GetSingleton().GetTable(keyId); }
+inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(const uint32_t keyId) { return GlobalVariableConfigurationTable::Instance().GetTable(keyId); }
 
-inline const GlobalVariableTabledData& GetGlobalVariableAllTable() { return GlobalVariableConfigurationTable::GetSingleton().All(); }
+inline const GlobalVariableTabledData& GetGlobalVariableAllTable() { return GlobalVariableConfigurationTable::Instance().All(); }

@@ -447,16 +447,16 @@ func (x *ViewRadius) GetRadius() float64 {
 	return 0
 }
 
-// 基础属性，仅玩家自己存储
+// 玩家基础属性组件，仅存储与战斗相关的基础属性
 type BaseAttributesPBComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Strength uint64 `protobuf:"varint,1,opt,name=strength,proto3" json:"strength,omitempty"` // 力量
-	Stamina  uint64 `protobuf:"varint,2,opt,name=stamina,proto3" json:"stamina,omitempty"`   // 耐力
-	Health   uint64 `protobuf:"varint,3,opt,name=health,proto3" json:"health,omitempty"`     // 生命值
-	Mana     uint64 `protobuf:"varint,4,opt,name=mana,proto3" json:"mana,omitempty"`         // 法力值
+	Strength uint64 `protobuf:"varint,1,opt,name=strength,proto3" json:"strength,omitempty"` // 力量，影响物理攻击
+	Stamina  uint64 `protobuf:"varint,2,opt,name=stamina,proto3" json:"stamina,omitempty"`   // 耐力，影响生命值等
+	Health   uint64 `protobuf:"varint,3,opt,name=health,proto3" json:"health,omitempty"`     // 当前生命值
+	Mana     uint64 `protobuf:"varint,4,opt,name=mana,proto3" json:"mana,omitempty"`         // 当前法力值
 }
 
 func (x *BaseAttributesPBComponent) Reset() {
@@ -519,6 +519,54 @@ func (x *BaseAttributesPBComponent) GetMana() uint64 {
 	return 0
 }
 
+// 玩家等级组件，专注于管理等级及与等级相关的功能
+type LevelComponent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Level uint32 `protobuf:"varint,1,opt,name=level,proto3" json:"level,omitempty"` // 玩家等级
+}
+
+func (x *LevelComponent) Reset() {
+	*x = LevelComponent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_logic_component_actor_comp_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *LevelComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LevelComponent) ProtoMessage() {}
+
+func (x *LevelComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_logic_component_actor_comp_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LevelComponent.ProtoReflect.Descriptor instead.
+func (*LevelComponent) Descriptor() ([]byte, []int) {
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *LevelComponent) GetLevel() uint32 {
+	if x != nil {
+		return x.Level
+	}
+	return 0
+}
+
 var File_logic_component_actor_comp_proto protoreflect.FileDescriptor
 
 var file_logic_component_actor_comp_proto_rawDesc = []byte{
@@ -560,8 +608,10 @@ var file_logic_component_actor_comp_proto_rawDesc = []byte{
 	0x61, 0x6d, 0x69, 0x6e, 0x61, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x18,
 	0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x12, 0x12, 0x0a,
 	0x04, 0x6d, 0x61, 0x6e, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x6d, 0x61, 0x6e,
-	0x61, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x61, 0x22, 0x26, 0x0a, 0x0e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e,
+	0x65, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0d, 0x52, 0x05, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f,
+	0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -576,7 +626,7 @@ func file_logic_component_actor_comp_proto_rawDescGZIP() []byte {
 	return file_logic_component_actor_comp_proto_rawDescData
 }
 
-var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_logic_component_actor_comp_proto_goTypes = []any{
 	(*Location)(nil),                  // 0: Location
 	(*Rotation)(nil),                  // 1: Rotation
@@ -586,10 +636,11 @@ var file_logic_component_actor_comp_proto_goTypes = []any{
 	(*Acceleration)(nil),              // 5: Acceleration
 	(*ViewRadius)(nil),                // 6: ViewRadius
 	(*BaseAttributesPBComponent)(nil), // 7: BaseAttributesPBComponent
-	(*Vector3)(nil),                   // 8: Vector3
+	(*LevelComponent)(nil),            // 8: LevelComponent
+	(*Vector3)(nil),                   // 9: Vector3
 }
 var file_logic_component_actor_comp_proto_depIdxs = []int32{
-	8, // 0: Transform.location:type_name -> Vector3
+	9, // 0: Transform.location:type_name -> Vector3
 	1, // 1: Transform.rotation:type_name -> Rotation
 	2, // 2: Transform.scale:type_name -> Scale
 	3, // [3:3] is the sub-list for method output_type
@@ -702,6 +753,18 @@ func file_logic_component_actor_comp_proto_init() {
 				return nil
 			}
 		}
+		file_logic_component_actor_comp_proto_msgTypes[8].Exporter = func(v any, i int) any {
+			switch v := v.(*LevelComponent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -709,7 +772,7 @@ func file_logic_component_actor_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_logic_component_actor_comp_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

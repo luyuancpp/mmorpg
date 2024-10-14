@@ -9,7 +9,7 @@
 class ConditionConfigurationTable {
 public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ConditionTable*>;
-    static ConditionConfigurationTable& GetSingleton() { static ConditionConfigurationTable singleton; return singleton; }
+    static ConditionConfigurationTable& Instance() { static ConditionConfigurationTable instance; return instance; }
     const ConditionTabledData& All() const { return data_; }
     std::pair<const ConditionTable*, uint32_t> GetTable(uint32_t keyId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
@@ -22,6 +22,6 @@ private:
 
 };
 
-inline std::pair<const ConditionTable*, uint32_t> GetConditionTable(const uint32_t keyId) { return ConditionConfigurationTable::GetSingleton().GetTable(keyId); }
+inline std::pair<const ConditionTable*, uint32_t> GetConditionTable(const uint32_t keyId) { return ConditionConfigurationTable::Instance().GetTable(keyId); }
 
-inline const ConditionTabledData& GetConditionAllTable() { return ConditionConfigurationTable::GetSingleton().All(); }
+inline const ConditionTabledData& GetConditionAllTable() { return ConditionConfigurationTable::Instance().All(); }
