@@ -33,8 +33,6 @@ void World::InitializeSystemBeforeConnect()
 
 void World::InitSystemAfterConnect()
 {
-	// Initialization logic after connecting
-	// Currently empty
 }
 
 void World::Update()

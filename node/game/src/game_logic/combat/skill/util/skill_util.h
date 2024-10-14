@@ -11,7 +11,7 @@ class SkillTable;
 class SkillUtil
 {
 public:
-	static void InitializePlayerComponents(entt::entity entity);
+	static void InitializeActorComponents(entt::entity entity);
 
 	static void StartCooldown(const entt::entity caster, const SkillTable* skillTable);
 

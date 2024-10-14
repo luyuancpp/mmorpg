@@ -5,7 +5,7 @@
 class  NpcUtil
 {
 public:
-    static void InitializeNpcComponents(entt::entity entity);
+    static void InitializeNpcComponents(entt::entity npc);
 
     static void CreateNpc();
 };

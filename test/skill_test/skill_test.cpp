@@ -186,7 +186,7 @@ TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
 TEST_F(SkillUtilTest, HandleSkillSpell_TriggersEffect) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializePlayerComponents(caster);
+    SkillUtil::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -200,7 +200,7 @@ TEST_F(SkillUtilTest, HandleSkillSpell_TriggersEffect) {
 TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializePlayerComponents(caster);
+    SkillUtil::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_recoverytime(1000); // Set recovery time to 1000ms
@@ -214,7 +214,7 @@ TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
 TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializePlayerComponents(caster);
+    SkillUtil::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -228,7 +228,7 @@ TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
 TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
     entt::entity caster = tls.registry.create();
     
-    SkillUtil::InitializePlayerComponents(caster);
+    SkillUtil::InitializeActorComponents(caster);
     
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -242,7 +242,7 @@ TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
 TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializePlayerComponents(caster);
+    SkillUtil::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -256,7 +256,7 @@ TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
 TEST_F(SkillUtilTest, HandleSkillDeactivate_RemovesEffect) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializePlayerComponents(caster);
+    SkillUtil::InitializeActorComponents(caster);
     
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);

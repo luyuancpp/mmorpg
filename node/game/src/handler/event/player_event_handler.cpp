@@ -6,7 +6,6 @@
 #include "game_logic/actor/util/actor_status_util.h"
 #include "game_logic/player/util/player_skill_util.h"
 #include "game_logic/combat/skill/util/skill_util.h"
-#include "game_logic/npc/util/npc_util.h"
 ///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
 {
@@ -55,7 +54,7 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 		return;
 	}
 	ActorStatusUtil::InitializeActorComponents(player);
-	SkillUtil::InitializePlayerComponents(player);
+	SkillUtil::InitializeActorComponents(player);
 ///<<< END WRITING YOUR CODE
 }
 

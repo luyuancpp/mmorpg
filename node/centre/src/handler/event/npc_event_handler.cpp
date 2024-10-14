@@ -5,15 +5,15 @@
 ///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
 {
-		tls.dispatcher.sink<InitializeNpcComponents>().connect<&NpcEventHandler::InitializeNpcComponentsHandler>();
+		tls.dispatcher.sink<InitializeNpcComponentsEvent>().connect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
 }
 
 void NpcEventHandler::UnRegister()
 {
-		tls.dispatcher.sink<InitializeNpcComponents>().disconnect<&NpcEventHandler::InitializeNpcComponentsHandler>();
+		tls.dispatcher.sink<InitializeNpcComponentsEvent>().disconnect<&NpcEventHandler::InitializeNpcComponentsEventHandler>();
 }
 
-void NpcEventHandler::InitializeNpcComponentsHandler(const InitializeNpcComponents& event)
+void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

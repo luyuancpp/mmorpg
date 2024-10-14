@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type InitializeNpcComponents struct {
+type InitializeNpcComponentsEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type InitializeNpcComponents struct {
 	Entity uint64 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 }
 
-func (x *InitializeNpcComponents) Reset() {
-	*x = InitializeNpcComponents{}
+func (x *InitializeNpcComponentsEvent) Reset() {
+	*x = InitializeNpcComponentsEvent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_event_npc_event_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *InitializeNpcComponents) Reset() {
 	}
 }
 
-func (x *InitializeNpcComponents) String() string {
+func (x *InitializeNpcComponentsEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InitializeNpcComponents) ProtoMessage() {}
+func (*InitializeNpcComponentsEvent) ProtoMessage() {}
 
-func (x *InitializeNpcComponents) ProtoReflect() protoreflect.Message {
+func (x *InitializeNpcComponentsEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_event_npc_event_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,12 +55,12 @@ func (x *InitializeNpcComponents) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InitializeNpcComponents.ProtoReflect.Descriptor instead.
-func (*InitializeNpcComponents) Descriptor() ([]byte, []int) {
+// Deprecated: Use InitializeNpcComponentsEvent.ProtoReflect.Descriptor instead.
+func (*InitializeNpcComponentsEvent) Descriptor() ([]byte, []int) {
 	return file_logic_event_npc_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *InitializeNpcComponents) GetEntity() uint64 {
+func (x *InitializeNpcComponentsEvent) GetEntity() uint64 {
 	if x != nil {
 		return x.Entity
 	}
@@ -71,12 +71,12 @@ var File_logic_event_npc_event_proto protoreflect.FileDescriptor
 
 var file_logic_event_npc_event_proto_rawDesc = []byte{
 	0x0a, 0x1b, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2f, 0x6e, 0x70,
-	0x63, 0x5f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x31, 0x0a,
-	0x17, 0x49, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x4e, 0x70, 0x63, 0x43, 0x6f,
-	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x74, 0x69,
-	0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
-	0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x63, 0x5f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x36, 0x0a,
+	0x1c, 0x49, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x4e, 0x70, 0x63, 0x43, 0x6f,
+	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x73, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a,
+	0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x65,
+	0x6e, 0x74, 0x69, 0x74, 0x79, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -93,7 +93,7 @@ func file_logic_event_npc_event_proto_rawDescGZIP() []byte {
 
 var file_logic_event_npc_event_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_logic_event_npc_event_proto_goTypes = []any{
-	(*InitializeNpcComponents)(nil), // 0: InitializeNpcComponents
+	(*InitializeNpcComponentsEvent)(nil), // 0: InitializeNpcComponentsEvent
 }
 var file_logic_event_npc_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -110,7 +110,7 @@ func file_logic_event_npc_event_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_logic_event_npc_event_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*InitializeNpcComponents); i {
+			switch v := v.(*InitializeNpcComponentsEvent); i {
 			case 0:
 				return &v.state
 			case 1:

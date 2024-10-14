@@ -143,7 +143,6 @@ void PlayerNodeUtil::LeaveGs(entt::entity player)
 
 void PlayerNodeUtil::OnPlayerLogin(entt::entity player, uint32_t enterGsType)
 {
-
 	switch (enterGsType)
 	{
 	case LOGIN_FIRST:
