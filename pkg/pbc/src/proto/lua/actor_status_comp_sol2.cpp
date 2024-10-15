@@ -28,6 +28,8 @@ tls_lua_state.new_usertype<ActorStatusPBComponent>("ActorStatusPBComponent",
 [](ActorStatusPBComponent& pb) ->decltype(auto){ return pb.derived_attributes();},
 "mutable_derived_attributes",
 [](ActorStatusPBComponent& pb) ->decltype(auto){ return pb.mutable_derived_attributes();},
+"isDead",
+sol::property(&ActorStatusPBComponent::isDead, &ActorStatusPBComponent::set_isDead),
 "DebugString",
 &ActorStatusPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

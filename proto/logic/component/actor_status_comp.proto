@@ -19,5 +19,6 @@ message DerivedAttributesPBComponent {
 message ActorStatusPBComponent {
     CalculatedAttributesPBComponent calculated_attributes = 1; // 计算属性
     DerivedAttributesPBComponent derived_attributes = 2;     // 衍生属性
+	bool isDead = 3; // 独立的生死状态
 }
 

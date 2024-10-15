@@ -65,7 +65,8 @@ inline constexpr ActorStatusPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         calculated_attributes_{nullptr},
-        derived_attributes_{nullptr} {}
+        derived_attributes_{nullptr},
+        isdead_{false} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR ActorStatusPBComponent::ActorStatusPBComponent(::_pbi::ConstantInitialized)
@@ -117,15 +118,17 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::ActorStatusPBComponent, _impl_.calculated_attributes_),
         PROTOBUF_FIELD_OFFSET(::ActorStatusPBComponent, _impl_.derived_attributes_),
+        PROTOBUF_FIELD_OFFSET(::ActorStatusPBComponent, _impl_.isdead_),
         0,
         1,
+        ~0u,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::CalculatedAttributesPBComponent)},
         {10, -1, -1, sizeof(::DerivedAttributesPBComponent)},
-        {19, 29, -1, sizeof(::ActorStatusPBComponent)},
+        {19, 30, -1, sizeof(::ActorStatusPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_CalculatedAttributesPBComponent_default_instance_._instance,
@@ -138,12 +141,12 @@ const char descriptor_table_protodef_logic_2fcomponent_2factor_5fstatus_5fcomp_2
     "o\032\021common/comp.proto\"N\n\037CalculatedAttrib"
     "utesPBComponent\022\024\n\014attack_power\030\001 \001(\004\022\025\n"
     "\rdefense_power\030\002 \001(\004\"2\n\034DerivedAttribute"
-    "sPBComponent\022\022\n\nmax_health\030\001 \001(\004\"\224\001\n\026Act"
+    "sPBComponent\022\022\n\nmax_health\030\001 \001(\004\"\244\001\n\026Act"
     "orStatusPBComponent\022\?\n\025calculated_attrib"
     "utes\030\001 \001(\0132 .CalculatedAttributesPBCompo"
     "nent\0229\n\022derived_attributes\030\002 \001(\0132\035.Deriv"
-    "edAttributesPBComponentB\tZ\007pb/gameb\006prot"
-    "o3"
+    "edAttributesPBComponent\022\016\n\006isDead\030\003 \001(\010B"
+    "\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto_deps[1] =
     {
@@ -153,7 +156,7 @@ static ::absl::once_flag descriptor_table_logic_2fcomponent_2factor_5fstatus_5fc
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto = {
     false,
     false,
-    362,
+    378,
     descriptor_table_protodef_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto,
     "logic/component/actor_status_comp.proto",
     &descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto_once,
@@ -606,6 +609,7 @@ ActorStatusPBComponent::ActorStatusPBComponent(
   _impl_.derived_attributes_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::DerivedAttributesPBComponent>(
                               arena, *from._impl_.derived_attributes_)
                         : nullptr;
+  _impl_.isdead_ = from._impl_.isdead_;
 
   // @@protoc_insertion_point(copy_constructor:ActorStatusPBComponent)
 }
@@ -619,9 +623,9 @@ inline void ActorStatusPBComponent::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, calculated_attributes_),
            0,
-           offsetof(Impl_, derived_attributes_) -
+           offsetof(Impl_, isdead_) -
                offsetof(Impl_, calculated_attributes_) +
-               sizeof(Impl_::derived_attributes_));
+               sizeof(Impl_::isdead_));
 }
 ActorStatusPBComponent::~ActorStatusPBComponent() {
   // @@protoc_insertion_point(destructor:ActorStatusPBComponent)
@@ -667,6 +671,7 @@ PROTOBUF_NOINLINE void ActorStatusPBComponent::Clear() {
       _impl_.derived_attributes_->Clear();
     }
   }
+  _impl_.isdead_ = false;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -679,15 +684,15 @@ const char* ActorStatusPBComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 2, 0, 2> ActorStatusPBComponent::_table_ = {
+const ::_pbi::TcParseTable<2, 3, 2, 0, 2> ActorStatusPBComponent::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_._has_bits_),
     0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
+    3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
+    4294967288,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
+    3,  // num_field_entries
     2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_ActorStatusPBComponent_default_instance_._instance,
@@ -696,12 +701,16 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> ActorStatusPBComponent::_table_ = {
     ::_pbi::TcParser::GetTable<::ActorStatusPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .DerivedAttributesPBComponent derived_attributes = 2;
-    {::_pbi::TcParser::FastMtS1,
-     {18, 1, 1, PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.derived_attributes_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // .CalculatedAttributesPBComponent calculated_attributes = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.calculated_attributes_)}},
+    // .DerivedAttributesPBComponent derived_attributes = 2;
+    {::_pbi::TcParser::FastMtS1,
+     {18, 1, 1, PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.derived_attributes_)}},
+    // bool isDead = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ActorStatusPBComponent, _impl_.isdead_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.isdead_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -711,6 +720,9 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> ActorStatusPBComponent::_table_ = {
     // .DerivedAttributesPBComponent derived_attributes = 2;
     {PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.derived_attributes_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // bool isDead = 3;
+    {PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.isdead_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
   }}, {{
     {::_pbi::TcParser::GetTable<::CalculatedAttributesPBComponent>()},
     {::_pbi::TcParser::GetTable<::DerivedAttributesPBComponent>()},
@@ -736,6 +748,13 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> ActorStatusPBComponent::_table_ = {
   if (cached_has_bits & 0x00000002u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *_impl_.derived_attributes_, _impl_.derived_attributes_->GetCachedSize(), target, stream);
+  }
+
+  // bool isDead = 3;
+  if (this->_internal_isdead() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(
+        3, this->_internal_isdead(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -770,6 +789,11 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> ActorStatusPBComponent::_table_ = {
     }
 
   }
+  // bool isDead = 3;
+  if (this->_internal_isdead() != 0) {
+    total_size += 2;
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -804,6 +828,9 @@ void ActorStatusPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, 
       }
     }
   }
+  if (from._internal_isdead() != 0) {
+    _this->_impl_.isdead_ = from._impl_.isdead_;
+  }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -824,8 +851,8 @@ void ActorStatusPBComponent::InternalSwap(ActorStatusPBComponent* PROTOBUF_RESTR
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.derived_attributes_)
-      + sizeof(ActorStatusPBComponent::_impl_.derived_attributes_)
+      PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.isdead_)
+      + sizeof(ActorStatusPBComponent::_impl_.isdead_)
       - PROTOBUF_FIELD_OFFSET(ActorStatusPBComponent, _impl_.calculated_attributes_)>(
           reinterpret_cast<char*>(&_impl_.calculated_attributes_),
           reinterpret_cast<char*>(&other->_impl_.calculated_attributes_));
