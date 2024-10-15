@@ -457,9 +457,9 @@ type BaseAttributesPBComponent struct {
 	Stamina    uint64 `protobuf:"varint,2,opt,name=stamina,proto3" json:"stamina,omitempty"`       // 耐力，影响生命值等
 	Health     uint64 `protobuf:"varint,3,opt,name=health,proto3" json:"health,omitempty"`         // 当前生命值
 	Mana       uint64 `protobuf:"varint,4,opt,name=mana,proto3" json:"mana,omitempty"`             // 当前法力值
-	Critchance uint64 `protobuf:"varint,5,opt,name=critchance,proto3" json:"critchance,omitempty"` //
-	Armor      uint64 `protobuf:"varint,6,opt,name=armor,proto3" json:"armor,omitempty"`
-	Resistance uint64 `protobuf:"varint,7,opt,name=resistance,proto3" json:"resistance,omitempty"`
+	Critchance uint64 `protobuf:"varint,5,opt,name=critchance,proto3" json:"critchance,omitempty"` // 暴击几率
+	Armor      uint64 `protobuf:"varint,6,opt,name=armor,proto3" json:"armor,omitempty"`           // 护甲
+	Resistance uint64 `protobuf:"varint,7,opt,name=resistance,proto3" json:"resistance,omitempty"` // 抗性
 }
 
 func (x *BaseAttributesPBComponent) Reset() {

@@ -543,6 +543,7 @@ class ActorStatusPBComponent final : public ::google::protobuf::Message
   enum : int {
     kCalculatedAttributesFieldNumber = 1,
     kDerivedAttributesFieldNumber = 2,
+    kIsDeadFieldNumber = 3,
   };
   // .CalculatedAttributesPBComponent calculated_attributes = 1;
   bool has_calculated_attributes() const;
@@ -574,12 +575,22 @@ class ActorStatusPBComponent final : public ::google::protobuf::Message
   ::DerivedAttributesPBComponent* _internal_mutable_derived_attributes();
 
   public:
+  // bool isDead = 3;
+  void clear_isdead() ;
+  bool isdead() const;
+  void set_isdead(bool value);
+
+  private:
+  bool _internal_isdead() const;
+  void _internal_set_isdead(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:ActorStatusPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 2,
+      2, 3, 2,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -599,6 +610,7 @@ class ActorStatusPBComponent final : public ::google::protobuf::Message
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::CalculatedAttributesPBComponent* calculated_attributes_;
     ::DerivedAttributesPBComponent* derived_attributes_;
+    bool isdead_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -885,6 +897,28 @@ inline void ActorStatusPBComponent::set_allocated_derived_attributes(::DerivedAt
 
   _impl_.derived_attributes_ = reinterpret_cast<::DerivedAttributesPBComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:ActorStatusPBComponent.derived_attributes)
+}
+
+// bool isDead = 3;
+inline void ActorStatusPBComponent::clear_isdead() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.isdead_ = false;
+}
+inline bool ActorStatusPBComponent::isdead() const {
+  // @@protoc_insertion_point(field_get:ActorStatusPBComponent.isDead)
+  return _internal_isdead();
+}
+inline void ActorStatusPBComponent::set_isdead(bool value) {
+  _internal_set_isdead(value);
+  // @@protoc_insertion_point(field_set:ActorStatusPBComponent.isDead)
+}
+inline bool ActorStatusPBComponent::_internal_isdead() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.isdead_;
+}
+inline void ActorStatusPBComponent::_internal_set_isdead(bool value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.isdead_ = value;
 }
 
 #ifdef __GNUC__

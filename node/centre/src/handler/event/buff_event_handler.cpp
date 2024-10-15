@@ -3,11 +3,3 @@
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void BuffEventHandler::Register()
-{
-}
-
-void BuffEventHandler::UnRegister()
-{
-}
-
