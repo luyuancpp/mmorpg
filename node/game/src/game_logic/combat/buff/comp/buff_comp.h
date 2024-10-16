@@ -10,6 +10,7 @@ struct BuffComp
     BuffPbComponent buffPb;
     SkillContextPtrComp abilityContext;
     PeriodicBuffPbComponent periodicBuffPbComponent;
+    TimerTaskComp expireTimerTaskComp;
 };
 
 using BuffListComp = std::map<uint64_t, BuffComp>;

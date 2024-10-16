@@ -2,14 +2,15 @@
 
 #include <ranges>
 #include <muduo/base/Logging.h>
-#include "common_error_tip.pb.h"
 #include "buff_config.h"
-#include "game_logic/combat/buff/comp/buff_comp.h"
-#include "thread_local/storage.h"
 #include "buff_error_tip.pb.h"
+#include "common_error_tip.pb.h"
+#include "game_logic/combat/buff/comp/buff_comp.h"
 #include "macros/return_define.h"
-#include "thread_local/storage_game.h"
 #include "proto/logic/event/skill_event.pb.h"
+#include "thread_local/storage.h"
+#include "thread_local/storage_game.h"
+#include "util/utility.h"
 
 uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 {
@@ -42,7 +43,7 @@ void BuffUtil::InitializeActorComponents(entt::entity entity)
     tls.registry.emplace<BuffListComp>(entity);
 }
 
-uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
+uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (!buffTable) {
@@ -61,22 +62,32 @@ uint32_t BuffUtil::AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, co
     BuffComp newBuff;
     newBuff.buffPb.set_caster(buffTable->nocaster() ? entt::null : abilityContext->caster());
 
-    if (const bool shouldDestroy = OnBuffAwake(parent, buffTableId); !shouldDestroy) {
-        uint64_t newBuffId = GenerateUniqueBuffId(buffList);
-        newBuff.buffPb.set_buff_id(newBuffId);
-        newBuff.abilityContext = abilityContext;
+    if ( !OnBuffAwake(parent, buffTableId) ) {
+        return kOK;
+    }
+    
+    uint64_t newBuffId = GenerateUniqueBuffId(buffList);
+    newBuff.buffPb.set_buff_id(newBuffId);
+    newBuff.abilityContext = abilityContext;
 
-        buffList.emplace(newBuffId, std::move(newBuff));
-        OnBuffStart(parent, newBuffId);
+    auto it = buffList.emplace(newBuffId, std::move(newBuff));
+    OnBuffStart(parent, newBuffId);
+
+    if (buffTable->duration() > 0) {
+        it.first->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
+            OnBuffExpire(parent, newBuffId);
+        });
+    } else if (IsZero(buffTable->duration())) {//todo std::is_zero
+        OnBuffExpire(parent, newBuffId);
     }
 
     return kOK;
 }
 
-void BuffUtil::OnBuffExpire(entt::entity parent, uint64_t buffId)
+void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent);
-    auto buffIt = buffList.find(buffId);
+    const auto buffIt = buffList.find(buffId);
 
     if (buffIt == buffList.end()) {
         LOG_ERROR << "Cannot find buff " << buffId;
@@ -95,8 +106,8 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
         return result;
     }
 
-    auto& buffList = tls.registry.get<BuffListComp>(parent);
-    bool isImmune = IsTargetImmune(buffList, buffTable);
+    const auto& buffList = tls.registry.get<BuffListComp>(parent);
+    const bool isImmune = IsTargetImmune(buffList, buffTable);
 
     return isImmune ? kBuffTargetImmuneToBuff : kOK;
 }
