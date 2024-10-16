@@ -4,7 +4,7 @@
 #include "thread_local/storage.h"
 #include "proto/logic/component/actor_comp.pb.h"
 
-void MovementSystem::Update(double delta)
+void MovementSystem::Update(const double delta)
 {
 	auto view = tls.registry.view<Transform, Velocity>(entt::exclude<Acceleration>);
 	for (auto&& [entity, transform, velocity] : view.each())

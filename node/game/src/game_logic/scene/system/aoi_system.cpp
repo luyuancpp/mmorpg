@@ -15,7 +15,7 @@
 #include "type_alias/actor.h"
 
 
-void AoiSystem::Update(double deltaTime) {
+void AoiSystem::Update(double delta) {
 	GridSet gridsToEnter, gridsToLeave;
 	EntityUnorderedSet entitiesToNotifyEntry, entitiesToNotifyExit;
 

@@ -5,7 +5,7 @@
 #include "proto/logic/component/actor_comp.pb.h"
 #include "proto/common/comp.pb.h"
 
-void MovementAccelerationSystem::Update(double delta)
+void MovementAccelerationSystem::Update(const double delta)
 {
 	auto view = tls.registry.view<Transform, Velocity, Acceleration>();
 	for (auto&& [entity, transform, velocity, acceleration] : view.each())

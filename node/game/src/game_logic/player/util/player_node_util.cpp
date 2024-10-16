@@ -24,7 +24,6 @@ void Player_databaseMessageFieldsMarshal(entt::entity player, player_database& m
 void Player_database_1MessageFieldsUnmarshal(entt::entity player, const player_database& message);
 void Player_database_1MessageFieldsMarshal(entt::entity player, player_database& message);
 
-
 void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_database& message)
 {
 	LOG_INFO << "Player loaded: " << playerId;
