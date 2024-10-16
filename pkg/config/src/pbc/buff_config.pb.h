@@ -264,8 +264,8 @@ class BuffTable final : public ::google::protobuf::Message
     kLevelFieldNumber = 5,
     kMaxlayerFieldNumber = 6,
     kDurationFieldNumber = 7,
-    kForceinterruptFieldNumber = 8,
     kIntervalFieldNumber = 9,
+    kForceinterruptFieldNumber = 8,
     kIntervalcountFieldNumber = 10,
   };
   // map<string, bool> tag = 3;
@@ -356,24 +356,14 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_maxlayer(::uint32_t value);
 
   public:
-  // uint32 duration = 7;
+  // double duration = 7;
   void clear_duration() ;
-  ::uint32_t duration() const;
-  void set_duration(::uint32_t value);
+  double duration() const;
+  void set_duration(double value);
 
   private:
-  ::uint32_t _internal_duration() const;
-  void _internal_set_duration(::uint32_t value);
-
-  public:
-  // uint32 forceinterrupt = 8;
-  void clear_forceinterrupt() ;
-  ::uint32_t forceinterrupt() const;
-  void set_forceinterrupt(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_forceinterrupt() const;
-  void _internal_set_forceinterrupt(::uint32_t value);
+  double _internal_duration() const;
+  void _internal_set_duration(double value);
 
   public:
   // double interval = 9;
@@ -384,6 +374,16 @@ class BuffTable final : public ::google::protobuf::Message
   private:
   double _internal_interval() const;
   void _internal_set_interval(double value);
+
+  public:
+  // uint32 forceinterrupt = 8;
+  void clear_forceinterrupt() ;
+  ::uint32_t forceinterrupt() const;
+  void set_forceinterrupt(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_forceinterrupt() const;
+  void _internal_set_forceinterrupt(::uint32_t value);
 
   public:
   // uint32 intervalcount = 10;
@@ -430,9 +430,9 @@ class BuffTable final : public ::google::protobuf::Message
     ::uint32_t nocaster_;
     ::uint32_t level_;
     ::uint32_t maxlayer_;
-    ::uint32_t duration_;
-    ::uint32_t forceinterrupt_;
+    double duration_;
     double interval_;
+    ::uint32_t forceinterrupt_;
     ::uint32_t intervalcount_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -779,24 +779,24 @@ inline void BuffTable::_internal_set_maxlayer(::uint32_t value) {
   _impl_.maxlayer_ = value;
 }
 
-// uint32 duration = 7;
+// double duration = 7;
 inline void BuffTable::clear_duration() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.duration_ = 0u;
+  _impl_.duration_ = 0;
 }
-inline ::uint32_t BuffTable::duration() const {
+inline double BuffTable::duration() const {
   // @@protoc_insertion_point(field_get:BuffTable.duration)
   return _internal_duration();
 }
-inline void BuffTable::set_duration(::uint32_t value) {
+inline void BuffTable::set_duration(double value) {
   _internal_set_duration(value);
   // @@protoc_insertion_point(field_set:BuffTable.duration)
 }
-inline ::uint32_t BuffTable::_internal_duration() const {
+inline double BuffTable::_internal_duration() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.duration_;
 }
-inline void BuffTable::_internal_set_duration(::uint32_t value) {
+inline void BuffTable::_internal_set_duration(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.duration_ = value;
 }

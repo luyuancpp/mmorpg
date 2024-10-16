@@ -6,7 +6,7 @@
 #include "thread_local/storage.h"
 
 bool CanApplyMoreTicks(const PeriodicBuffPbComponent& periodicBuff, const BuffTable* buffTable) {
-    return (periodicBuff.ticks_done() + 1) <= buffTable->intervalcount();
+    return (buffTable->intervalcount() <= 0) || (periodicBuff.ticks_done() + 1 <= buffTable->intervalcount());
 }
 
 void UpdatePeriodicBuff(entt::entity target, uint64_t buffId, BuffComp& buffComp, double delta) {

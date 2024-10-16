@@ -55,9 +55,9 @@ inline constexpr BuffTable::Impl_::Impl_(
         nocaster_{0u},
         level_{0u},
         maxlayer_{0u},
-        duration_{0u},
-        forceinterrupt_{0u},
+        duration_{0},
         interval_{0},
+        forceinterrupt_{0u},
         intervalcount_{0u},
         _cached_size_{0} {}
 
@@ -174,7 +174,7 @@ const char descriptor_table_protodef_buff_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECT
     "\001 \001(\r\022\020\n\010nocaster\030\002 \001(\r\022 \n\003tag\030\003 \003(\0132\023.B"
     "uffTable.TagEntry\022,\n\timmunetag\030\004 \003(\0132\031.B"
     "uffTable.ImmunetagEntry\022\r\n\005level\030\005 \001(\r\022\020"
-    "\n\010maxlayer\030\006 \001(\r\022\020\n\010duration\030\007 \001(\r\022\026\n\016fo"
+    "\n\010maxlayer\030\006 \001(\r\022\020\n\010duration\030\007 \001(\001\022\026\n\016fo"
     "rceinterrupt\030\010 \001(\r\022\020\n\010interval\030\t \001(\001\022\025\n\r"
     "intervalcount\030\n \001(\r\022\026\n\016intervaleffect\030\013 "
     "\003(\001\032*\n\010TagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 "
@@ -370,9 +370,9 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
     // uint32 maxlayer = 6;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.maxlayer_), 63>(),
      {48, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.maxlayer_)}},
-    // uint32 duration = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.duration_), 63>(),
-     {56, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.duration_)}},
+    // double duration = 7;
+    {::_pbi::TcParser::FastF64S1,
+     {57, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.duration_)}},
     // uint32 forceinterrupt = 8;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.forceinterrupt_), 63>(),
      {64, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.forceinterrupt_)}},
@@ -410,9 +410,9 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
     // uint32 maxlayer = 6;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.maxlayer_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 duration = 7;
+    // double duration = 7;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.duration_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
     // uint32 forceinterrupt = 8;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.forceinterrupt_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
@@ -531,10 +531,15 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
         6, this->_internal_maxlayer(), target);
   }
 
-  // uint32 duration = 7;
-  if (this->_internal_duration() != 0) {
+  // double duration = 7;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_duration = this->_internal_duration();
+  ::uint64_t raw_duration;
+  memcpy(&raw_duration, &tmp_duration, sizeof(tmp_duration));
+  if (raw_duration != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
         7, this->_internal_duration(), target);
   }
 
@@ -636,16 +641,14 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
         this->_internal_maxlayer());
   }
 
-  // uint32 duration = 7;
-  if (this->_internal_duration() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_duration());
-  }
-
-  // uint32 forceinterrupt = 8;
-  if (this->_internal_forceinterrupt() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_forceinterrupt());
+  // double duration = 7;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_duration = this->_internal_duration();
+  ::uint64_t raw_duration;
+  memcpy(&raw_duration, &tmp_duration, sizeof(tmp_duration));
+  if (raw_duration != 0) {
+    total_size += 9;
   }
 
   // double interval = 9;
@@ -656,6 +659,12 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
   memcpy(&raw_interval, &tmp_interval, sizeof(tmp_interval));
   if (raw_interval != 0) {
     total_size += 9;
+  }
+
+  // uint32 forceinterrupt = 8;
+  if (this->_internal_forceinterrupt() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_forceinterrupt());
   }
 
   // uint32 intervalcount = 10;
@@ -691,11 +700,13 @@ void BuffTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   if (from._internal_maxlayer() != 0) {
     _this->_impl_.maxlayer_ = from._impl_.maxlayer_;
   }
-  if (from._internal_duration() != 0) {
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_duration = from._internal_duration();
+  ::uint64_t raw_duration;
+  memcpy(&raw_duration, &tmp_duration, sizeof(tmp_duration));
+  if (raw_duration != 0) {
     _this->_impl_.duration_ = from._impl_.duration_;
-  }
-  if (from._internal_forceinterrupt() != 0) {
-    _this->_impl_.forceinterrupt_ = from._impl_.forceinterrupt_;
   }
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
@@ -704,6 +715,9 @@ void BuffTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   memcpy(&raw_interval, &tmp_interval, sizeof(tmp_interval));
   if (raw_interval != 0) {
     _this->_impl_.interval_ = from._impl_.interval_;
+  }
+  if (from._internal_forceinterrupt() != 0) {
+    _this->_impl_.forceinterrupt_ = from._impl_.forceinterrupt_;
   }
   if (from._internal_intervalcount() != 0) {
     _this->_impl_.intervalcount_ = from._impl_.intervalcount_;
