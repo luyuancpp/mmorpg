@@ -258,7 +258,7 @@ class BuffTable final : public ::google::protobuf::Message
   enum : int {
     kTagFieldNumber = 3,
     kImmunetagFieldNumber = 4,
-    kIntervaleffectFieldNumber = 10,
+    kIntervaleffectFieldNumber = 11,
     kIdFieldNumber = 1,
     kNocasterFieldNumber = 2,
     kLevelFieldNumber = 5,
@@ -266,6 +266,7 @@ class BuffTable final : public ::google::protobuf::Message
     kDurationFieldNumber = 7,
     kForceinterruptFieldNumber = 8,
     kIntervalFieldNumber = 9,
+    kIntervalcountFieldNumber = 10,
   };
   // map<string, bool> tag = 3;
   int tag_size() const;
@@ -297,22 +298,22 @@ class BuffTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, bool>* _internal_mutable_immunetag();
 
   public:
-  // repeated uint32 intervaleffect = 10;
+  // repeated double intervaleffect = 11;
   int intervaleffect_size() const;
   private:
   int _internal_intervaleffect_size() const;
 
   public:
   void clear_intervaleffect() ;
-  ::uint32_t intervaleffect(int index) const;
-  void set_intervaleffect(int index, ::uint32_t value);
-  void add_intervaleffect(::uint32_t value);
-  const ::google::protobuf::RepeatedField<::uint32_t>& intervaleffect() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* mutable_intervaleffect();
+  double intervaleffect(int index) const;
+  void set_intervaleffect(int index, double value);
+  void add_intervaleffect(double value);
+  const ::google::protobuf::RepeatedField<double>& intervaleffect() const;
+  ::google::protobuf::RepeatedField<double>* mutable_intervaleffect();
 
   private:
-  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_intervaleffect() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_intervaleffect();
+  const ::google::protobuf::RepeatedField<double>& _internal_intervaleffect() const;
+  ::google::protobuf::RepeatedField<double>* _internal_mutable_intervaleffect();
 
   public:
   // uint32 id = 1;
@@ -375,14 +376,24 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_forceinterrupt(::uint32_t value);
 
   public:
-  // uint32 interval = 9;
+  // double interval = 9;
   void clear_interval() ;
-  ::uint32_t interval() const;
-  void set_interval(::uint32_t value);
+  double interval() const;
+  void set_interval(double value);
 
   private:
-  ::uint32_t _internal_interval() const;
-  void _internal_set_interval(::uint32_t value);
+  double _internal_interval() const;
+  void _internal_set_interval(double value);
+
+  public:
+  // uint32 intervalcount = 10;
+  void clear_intervalcount() ;
+  ::uint32_t intervalcount() const;
+  void set_intervalcount(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_intervalcount() const;
+  void _internal_set_intervalcount(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:BuffTable)
@@ -390,7 +401,7 @@ class BuffTable final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 10, 2,
+      4, 11, 2,
       38, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -414,15 +425,15 @@ class BuffTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         immunetag_;
-    ::google::protobuf::RepeatedField<::uint32_t> intervaleffect_;
-    mutable ::google::protobuf::internal::CachedSize _intervaleffect_cached_byte_size_;
+    ::google::protobuf::RepeatedField<double> intervaleffect_;
     ::uint32_t id_;
     ::uint32_t nocaster_;
     ::uint32_t level_;
     ::uint32_t maxlayer_;
     ::uint32_t duration_;
     ::uint32_t forceinterrupt_;
-    ::uint32_t interval_;
+    double interval_;
+    ::uint32_t intervalcount_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -812,29 +823,51 @@ inline void BuffTable::_internal_set_forceinterrupt(::uint32_t value) {
   _impl_.forceinterrupt_ = value;
 }
 
-// uint32 interval = 9;
+// double interval = 9;
 inline void BuffTable::clear_interval() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.interval_ = 0u;
+  _impl_.interval_ = 0;
 }
-inline ::uint32_t BuffTable::interval() const {
+inline double BuffTable::interval() const {
   // @@protoc_insertion_point(field_get:BuffTable.interval)
   return _internal_interval();
 }
-inline void BuffTable::set_interval(::uint32_t value) {
+inline void BuffTable::set_interval(double value) {
   _internal_set_interval(value);
   // @@protoc_insertion_point(field_set:BuffTable.interval)
 }
-inline ::uint32_t BuffTable::_internal_interval() const {
+inline double BuffTable::_internal_interval() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.interval_;
 }
-inline void BuffTable::_internal_set_interval(::uint32_t value) {
+inline void BuffTable::_internal_set_interval(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.interval_ = value;
 }
 
-// repeated uint32 intervaleffect = 10;
+// uint32 intervalcount = 10;
+inline void BuffTable::clear_intervalcount() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.intervalcount_ = 0u;
+}
+inline ::uint32_t BuffTable::intervalcount() const {
+  // @@protoc_insertion_point(field_get:BuffTable.intervalcount)
+  return _internal_intervalcount();
+}
+inline void BuffTable::set_intervalcount(::uint32_t value) {
+  _internal_set_intervalcount(value);
+  // @@protoc_insertion_point(field_set:BuffTable.intervalcount)
+}
+inline ::uint32_t BuffTable::_internal_intervalcount() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.intervalcount_;
+}
+inline void BuffTable::_internal_set_intervalcount(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.intervalcount_ = value;
+}
+
+// repeated double intervaleffect = 11;
 inline int BuffTable::_internal_intervaleffect_size() const {
   return _internal_intervaleffect().size();
 }
@@ -845,36 +878,36 @@ inline void BuffTable::clear_intervaleffect() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.intervaleffect_.Clear();
 }
-inline ::uint32_t BuffTable::intervaleffect(int index) const {
+inline double BuffTable::intervaleffect(int index) const {
   // @@protoc_insertion_point(field_get:BuffTable.intervaleffect)
   return _internal_intervaleffect().Get(index);
 }
-inline void BuffTable::set_intervaleffect(int index, ::uint32_t value) {
+inline void BuffTable::set_intervaleffect(int index, double value) {
   _internal_mutable_intervaleffect()->Set(index, value);
   // @@protoc_insertion_point(field_set:BuffTable.intervaleffect)
 }
-inline void BuffTable::add_intervaleffect(::uint32_t value) {
+inline void BuffTable::add_intervaleffect(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _internal_mutable_intervaleffect()->Add(value);
   // @@protoc_insertion_point(field_add:BuffTable.intervaleffect)
 }
-inline const ::google::protobuf::RepeatedField<::uint32_t>& BuffTable::intervaleffect() const
+inline const ::google::protobuf::RepeatedField<double>& BuffTable::intervaleffect() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:BuffTable.intervaleffect)
   return _internal_intervaleffect();
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* BuffTable::mutable_intervaleffect()
+inline ::google::protobuf::RepeatedField<double>* BuffTable::mutable_intervaleffect()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:BuffTable.intervaleffect)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_intervaleffect();
 }
-inline const ::google::protobuf::RepeatedField<::uint32_t>&
+inline const ::google::protobuf::RepeatedField<double>&
 BuffTable::_internal_intervaleffect() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.intervaleffect_;
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* BuffTable::_internal_mutable_intervaleffect() {
+inline ::google::protobuf::RepeatedField<double>* BuffTable::_internal_mutable_intervaleffect() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.intervaleffect_;
 }

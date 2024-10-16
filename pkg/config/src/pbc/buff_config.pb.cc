@@ -51,14 +51,14 @@ inline constexpr BuffTable::Impl_::Impl_(
       : tag_{},
         immunetag_{},
         intervaleffect_{},
-        _intervaleffect_cached_byte_size_{0},
         id_{0u},
         nocaster_{0u},
         level_{0u},
         maxlayer_{0u},
         duration_{0u},
         forceinterrupt_{0u},
-        interval_{0u},
+        interval_{0},
+        intervalcount_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -142,6 +142,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.duration_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.forceinterrupt_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.interval_),
+        PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.intervalcount_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.intervaleffect_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::BuffTabledData, _internal_metadata_),
@@ -159,7 +160,7 @@ static const ::_pbi::MigrationSchema
         {0, 10, -1, sizeof(::BuffTable_TagEntry_DoNotUse)},
         {12, 22, -1, sizeof(::BuffTable_ImmunetagEntry_DoNotUse)},
         {24, -1, -1, sizeof(::BuffTable)},
-        {42, -1, -1, sizeof(::BuffTabledData)},
+        {43, -1, -1, sizeof(::BuffTabledData)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_BuffTable_TagEntry_DoNotUse_default_instance_._instance,
@@ -169,23 +170,23 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_buff_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\021buff_config.proto\"\314\002\n\tBuffTable\022\n\n\002id\030"
+    "\n\021buff_config.proto\"\343\002\n\tBuffTable\022\n\n\002id\030"
     "\001 \001(\r\022\020\n\010nocaster\030\002 \001(\r\022 \n\003tag\030\003 \003(\0132\023.B"
     "uffTable.TagEntry\022,\n\timmunetag\030\004 \003(\0132\031.B"
     "uffTable.ImmunetagEntry\022\r\n\005level\030\005 \001(\r\022\020"
     "\n\010maxlayer\030\006 \001(\r\022\020\n\010duration\030\007 \001(\r\022\026\n\016fo"
-    "rceinterrupt\030\010 \001(\r\022\020\n\010interval\030\t \001(\r\022\026\n\016"
-    "intervaleffect\030\n \003(\r\032*\n\010TagEntry\022\013\n\003key\030"
-    "\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\0320\n\016ImmunetagEnt"
-    "ry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\"*\n\016Bu"
-    "ffTabledData\022\030\n\004data\030\001 \003(\0132\n.BuffTableB\t"
-    "Z\007pb/gameb\006proto3"
+    "rceinterrupt\030\010 \001(\r\022\020\n\010interval\030\t \001(\001\022\025\n\r"
+    "intervalcount\030\n \001(\r\022\026\n\016intervaleffect\030\013 "
+    "\003(\001\032*\n\010TagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 "
+    "\001(\010:\0028\001\0320\n\016ImmunetagEntry\022\013\n\003key\030\001 \001(\t\022\r"
+    "\n\005value\030\002 \001(\010:\0028\001\"*\n\016BuffTabledData\022\030\n\004d"
+    "ata\030\001 \003(\0132\n.BuffTableB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_buff_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_buff_5fconfig_2eproto = {
     false,
     false,
-    417,
+    440,
     descriptor_table_protodef_buff_5fconfig_2eproto,
     "buff_config.proto",
     &descriptor_table_buff_5fconfig_2eproto_once,
@@ -251,7 +252,6 @@ inline PROTOBUF_NDEBUG_INLINE BuffTable::Impl_::Impl_(
       : tag_{visibility, arena, from.tag_},
         immunetag_{visibility, arena, from.immunetag_},
         intervaleffect_{visibility, arena, from.intervaleffect_},
-        _intervaleffect_cached_byte_size_{0},
         _cached_size_{0} {}
 
 BuffTable::BuffTable(
@@ -267,9 +267,9 @@ BuffTable::BuffTable(
                offsetof(Impl_, id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, id_),
-           offsetof(Impl_, interval_) -
+           offsetof(Impl_, intervalcount_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::interval_));
+               sizeof(Impl_::intervalcount_));
 
   // @@protoc_insertion_point(copy_constructor:BuffTable)
 }
@@ -279,7 +279,6 @@ inline PROTOBUF_NDEBUG_INLINE BuffTable::Impl_::Impl_(
       : tag_{visibility, arena},
         immunetag_{visibility, arena},
         intervaleffect_{visibility, arena},
-        _intervaleffect_cached_byte_size_{0},
         _cached_size_{0} {}
 
 inline void BuffTable::SharedCtor(::_pb::Arena* arena) {
@@ -287,9 +286,9 @@ inline void BuffTable::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, interval_) -
+           offsetof(Impl_, intervalcount_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::interval_));
+               sizeof(Impl_::intervalcount_));
 }
 BuffTable::~BuffTable() {
   // @@protoc_insertion_point(destructor:BuffTable)
@@ -326,8 +325,8 @@ PROTOBUF_NOINLINE void BuffTable::Clear() {
   _impl_.immunetag_.Clear();
   _impl_.intervaleffect_.Clear();
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.interval_) -
-      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.interval_));
+      reinterpret_cast<char*>(&_impl_.intervalcount_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.intervalcount_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -339,15 +338,15 @@ const char* BuffTable::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 10, 2, 38, 2> BuffTable::_table_ = {
+const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    10, 120,  // max_field_number, fast_idx_mask
+    11, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294966272,  // skipmap
+    4294965248,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    10,  // num_field_entries
+    11,  // num_field_entries
     2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_BuffTable_default_instance_._instance,
@@ -377,13 +376,15 @@ const ::_pbi::TcParseTable<4, 10, 2, 38, 2> BuffTable::_table_ = {
     // uint32 forceinterrupt = 8;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.forceinterrupt_), 63>(),
      {64, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.forceinterrupt_)}},
-    // uint32 interval = 9;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.interval_), 63>(),
-     {72, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.interval_)}},
-    // repeated uint32 intervaleffect = 10;
-    {::_pbi::TcParser::FastV32P1,
-     {82, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervaleffect_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // double interval = 9;
+    {::_pbi::TcParser::FastF64S1,
+     {73, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.interval_)}},
+    // uint32 intervalcount = 10;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.intervalcount_), 63>(),
+     {80, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervalcount_)}},
+    // repeated double intervaleffect = 11;
+    {::_pbi::TcParser::FastF64P1,
+     {90, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervaleffect_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -415,12 +416,15 @@ const ::_pbi::TcParseTable<4, 10, 2, 38, 2> BuffTable::_table_ = {
     // uint32 forceinterrupt = 8;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.forceinterrupt_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 interval = 9;
+    // double interval = 9;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.interval_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
+    // uint32 intervalcount = 10;
+    {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervalcount_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // repeated uint32 intervaleffect = 10;
+    // repeated double intervaleffect = 11;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervaleffect_), 0, 0,
-    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedDouble)},
   }}, {{
     {::_pbi::TcParser::GetMapAuxInfo<
         decltype(BuffTable()._impl_.tag_)>(
@@ -541,20 +545,28 @@ const ::_pbi::TcParseTable<4, 10, 2, 38, 2> BuffTable::_table_ = {
         8, this->_internal_forceinterrupt(), target);
   }
 
-  // uint32 interval = 9;
-  if (this->_internal_interval() != 0) {
+  // double interval = 9;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_interval = this->_internal_interval();
+  ::uint64_t raw_interval;
+  memcpy(&raw_interval, &tmp_interval, sizeof(tmp_interval));
+  if (raw_interval != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
         9, this->_internal_interval(), target);
   }
 
-  // repeated uint32 intervaleffect = 10;
-  {
-    int byte_size = _impl_._intervaleffect_cached_byte_size_.Get();
-    if (byte_size > 0) {
-      target = stream->WriteUInt32Packed(
-          10, _internal_intervaleffect(), byte_size, target);
-    }
+  // uint32 intervalcount = 10;
+  if (this->_internal_intervalcount() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        10, this->_internal_intervalcount(), target);
+  }
+
+  // repeated double intervaleffect = 11;
+  if (this->_internal_intervaleffect_size() > 0) {
+    target = stream->WriteFixedPacked(11, _internal_intervaleffect(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -588,12 +600,11 @@ const ::_pbi::TcParseTable<4, 10, 2, 38, 2> BuffTable::_table_ = {
                                    _pbi::WireFormatLite::TYPE_STRING,
                                    _pbi::WireFormatLite::TYPE_BOOL>::ByteSizeLong(entry.first, entry.second);
   }
-  // repeated uint32 intervaleffect = 10;
+  // repeated double intervaleffect = 11;
   {
-    std::size_t data_size = ::_pbi::WireFormatLite::UInt32Size(
-        this->_internal_intervaleffect())
+    std::size_t data_size = std::size_t{8} *
+        ::_pbi::FromIntSize(this->_internal_intervaleffect_size())
     ;
-    _impl_._intervaleffect_cached_byte_size_.Set(::_pbi::ToCachedSize(data_size));
     std::size_t tag_size = data_size == 0
         ? 0
         : 1 + ::_pbi::WireFormatLite::Int32Size(
@@ -637,10 +648,20 @@ const ::_pbi::TcParseTable<4, 10, 2, 38, 2> BuffTable::_table_ = {
         this->_internal_forceinterrupt());
   }
 
-  // uint32 interval = 9;
-  if (this->_internal_interval() != 0) {
+  // double interval = 9;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_interval = this->_internal_interval();
+  ::uint64_t raw_interval;
+  memcpy(&raw_interval, &tmp_interval, sizeof(tmp_interval));
+  if (raw_interval != 0) {
+    total_size += 9;
+  }
+
+  // uint32 intervalcount = 10;
+  if (this->_internal_intervalcount() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_interval());
+        this->_internal_intervalcount());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -676,8 +697,16 @@ void BuffTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   if (from._internal_forceinterrupt() != 0) {
     _this->_impl_.forceinterrupt_ = from._impl_.forceinterrupt_;
   }
-  if (from._internal_interval() != 0) {
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_interval = from._internal_interval();
+  ::uint64_t raw_interval;
+  memcpy(&raw_interval, &tmp_interval, sizeof(tmp_interval));
+  if (raw_interval != 0) {
     _this->_impl_.interval_ = from._impl_.interval_;
+  }
+  if (from._internal_intervalcount() != 0) {
+    _this->_impl_.intervalcount_ = from._impl_.intervalcount_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -700,8 +729,8 @@ void BuffTable::InternalSwap(BuffTable* PROTOBUF_RESTRICT other) {
   _impl_.immunetag_.InternalSwap(&other->_impl_.immunetag_);
   _impl_.intervaleffect_.InternalSwap(&other->_impl_.intervaleffect_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.interval_)
-      + sizeof(BuffTable::_impl_.interval_)
+      PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervalcount_)
+      + sizeof(BuffTable::_impl_.intervalcount_)
       - PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));

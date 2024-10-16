@@ -24,8 +24,10 @@
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
 #include "google/protobuf/generated_message_reflection.h"
+#include "google/protobuf/message.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
+#include "google/protobuf/unknown_field_set.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -47,6 +49,9 @@ struct TableStruct_logic_2fevent_2fbuff_5fevent_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fevent_2fbuff_5fevent_2eproto;
+class BuffTestEvet;
+struct BuffTestEvetDefaultTypeInternal;
+extern BuffTestEvetDefaultTypeInternal _BuffTestEvet_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -56,6 +61,197 @@ namespace protobuf {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class BuffTestEvet final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BuffTestEvet) */ {
+ public:
+  inline BuffTestEvet() : BuffTestEvet(nullptr) {}
+  ~BuffTestEvet() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR BuffTestEvet(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline BuffTestEvet(const BuffTestEvet& from) : BuffTestEvet(nullptr, from) {}
+  inline BuffTestEvet(BuffTestEvet&& from) noexcept
+      : BuffTestEvet(nullptr, std::move(from)) {}
+  inline BuffTestEvet& operator=(const BuffTestEvet& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BuffTestEvet& operator=(BuffTestEvet&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BuffTestEvet& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const BuffTestEvet* internal_default_instance() {
+    return reinterpret_cast<const BuffTestEvet*>(
+        &_BuffTestEvet_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 0;
+  friend void swap(BuffTestEvet& a, BuffTestEvet& b) { a.Swap(&b); }
+  inline void Swap(BuffTestEvet* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BuffTestEvet* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BuffTestEvet* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<BuffTestEvet>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const BuffTestEvet& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const BuffTestEvet& from) { BuffTestEvet::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(BuffTestEvet* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "BuffTestEvet"; }
+
+ protected:
+  explicit BuffTestEvet(::google::protobuf::Arena* arena);
+  BuffTestEvet(::google::protobuf::Arena* arena, const BuffTestEvet& from);
+  BuffTestEvet(::google::protobuf::Arena* arena, BuffTestEvet&& from) noexcept
+      : BuffTestEvet(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPeriodFieldNumber = 1,
+    kPeriodicTimerFieldNumber = 2,
+    kPeriodDoneFieldNumber = 3,
+  };
+  // uint64 period = 1;
+  void clear_period() ;
+  ::uint64_t period() const;
+  void set_period(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_period() const;
+  void _internal_set_period(::uint64_t value);
+
+  public:
+  // uint64 periodic_timer = 2;
+  void clear_periodic_timer() ;
+  ::uint64_t periodic_timer() const;
+  void set_periodic_timer(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_periodic_timer() const;
+  void _internal_set_periodic_timer(::uint64_t value);
+
+  public:
+  // uint32 period_done = 3;
+  void clear_period_done() ;
+  ::uint32_t period_done() const;
+  void set_period_done(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_period_done() const;
+  void _internal_set_period_done(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:BuffTestEvet)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 3, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t period_;
+    ::uint64_t periodic_timer_;
+    ::uint32_t period_done_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fevent_2fbuff_5fevent_2eproto;
+};
 
 // ===================================================================
 
@@ -69,6 +265,76 @@ namespace protobuf {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// BuffTestEvet
+
+// uint64 period = 1;
+inline void BuffTestEvet::clear_period() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.period_ = ::uint64_t{0u};
+}
+inline ::uint64_t BuffTestEvet::period() const {
+  // @@protoc_insertion_point(field_get:BuffTestEvet.period)
+  return _internal_period();
+}
+inline void BuffTestEvet::set_period(::uint64_t value) {
+  _internal_set_period(value);
+  // @@protoc_insertion_point(field_set:BuffTestEvet.period)
+}
+inline ::uint64_t BuffTestEvet::_internal_period() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.period_;
+}
+inline void BuffTestEvet::_internal_set_period(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.period_ = value;
+}
+
+// uint64 periodic_timer = 2;
+inline void BuffTestEvet::clear_periodic_timer() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.periodic_timer_ = ::uint64_t{0u};
+}
+inline ::uint64_t BuffTestEvet::periodic_timer() const {
+  // @@protoc_insertion_point(field_get:BuffTestEvet.periodic_timer)
+  return _internal_periodic_timer();
+}
+inline void BuffTestEvet::set_periodic_timer(::uint64_t value) {
+  _internal_set_periodic_timer(value);
+  // @@protoc_insertion_point(field_set:BuffTestEvet.periodic_timer)
+}
+inline ::uint64_t BuffTestEvet::_internal_periodic_timer() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.periodic_timer_;
+}
+inline void BuffTestEvet::_internal_set_periodic_timer(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.periodic_timer_ = value;
+}
+
+// uint32 period_done = 3;
+inline void BuffTestEvet::clear_period_done() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.period_done_ = 0u;
+}
+inline ::uint32_t BuffTestEvet::period_done() const {
+  // @@protoc_insertion_point(field_get:BuffTestEvet.period_done)
+  return _internal_period_done();
+}
+inline void BuffTestEvet::set_period_done(::uint32_t value) {
+  _internal_set_period_done(value);
+  // @@protoc_insertion_point(field_set:BuffTestEvet.period_done)
+}
+inline ::uint32_t BuffTestEvet::_internal_period_done() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.period_done_;
+}
+inline void BuffTestEvet::_internal_set_period_done(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.period_done_ = value;
+}
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__

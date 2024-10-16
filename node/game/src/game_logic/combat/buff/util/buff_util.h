@@ -14,7 +14,7 @@ class SkillExecutedEvent;
 //BuffTag，BuffImmuneTag（免疫BuffTag）
 //以及Context(Buff创建时的一些相关上下文数据)等等。
 
-class DamageEventComponent;
+class DamageEventPbComponent;
 
 class BuffUtil
 {
@@ -69,16 +69,16 @@ public:
     static void OnSkillExecuted(SkillExecutedEvent& event);
 
     //监听我方给目标造成伤害时触发
-    static void OnBeforeGiveDamage(entt::entity parent, DamageEventComponent& damageEvent);
+    static void OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent);
 
     //监听我方给目标造成伤害时触发
-    static void OnAfterGiveDamage(entt::entity parent, DamageEventComponent& damageEvent);
+    static void OnAfterGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent);
 
     //监听我方受到伤害时触发
-    static void OnBeforeTakeDamage(entt::entity parent, DamageEventComponent& damageEvent);
+    static void OnBeforeTakeDamage(entt::entity parent, DamageEventPbComponent& damageEvent);
 
     //监听我方受到伤害时触发
-    static void OnAfterTakeDamage(entt::entity parent, DamageEventComponent& damageEvent);   
+    static void OnAfterTakeDamage(entt::entity parent, DamageEventPbComponent& damageEvent);   
 
     //监听我方死亡时触发
     static void OnBeforeDead(entt::entity parent);

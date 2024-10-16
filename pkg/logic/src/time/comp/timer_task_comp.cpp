@@ -17,7 +17,8 @@ TimerTaskComp::TimerTaskComp(TimerTaskComp&& param) noexcept {
     param.Cancel();
 }
 
-TimerTaskComp& TimerTaskComp::operator=(TimerTaskComp&& param) {
+TimerTaskComp& TimerTaskComp::operator=(TimerTaskComp&& param) noexcept
+{
     param.Cancel();
     return *this;
 }

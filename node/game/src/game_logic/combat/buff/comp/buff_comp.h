@@ -2,20 +2,14 @@
 
 #include <cstdint>
 #include <memory>
-#include "logic/component/buff_comp.pb.h"
 #include "game_logic/combat/skill/comp//skill_comp.h"
-#include "time/comp/timer_task_comp.h"
-
+#include "logic/component/buff_comp.pb.h"
 
 struct BuffComp
 {
-    BuffPBComponent buffPB;
+    BuffPbComponent buffPb;
     SkillContextPtrComp abilityContext;
-    TimerTaskComp intervalTTimer;
+    PeriodicBuffPbComponent periodicBuffPbComponent;
 };
 
-using BuffList = std::map<uint64_t, BuffComp>;
-struct BuffListComp
-{
-    BuffList buffList;
-};
+using BuffListComp = std::map<uint64_t, BuffComp>;

@@ -5,10 +5,11 @@
 #include "game_logic/common/constants/fps_constants.h"
 #include "Recast/Recast.h"
 #undef TEXT
+#include "combat/buff/system/buff_system.h"
 #include "game_logic/player/util/player_session_util.h"
 #include "game_logic/scene/system/aoi_system.h"
-#include "game_logic/scene/system/movement_system.h"
 #include "game_logic/scene/system/movement_acceleration_system.h"
+#include "game_logic/scene/system/movement_system.h"
 #include "game_logic/scene/util/view_util.h"
 #include "thread_local/storage_game.h"
 
@@ -39,7 +40,7 @@ void World::Update()
 {
 	//https://github.com/recastnavigation/recastnavigation.git
 	const auto currentTime = GetTimeInMilliseconds();
-	const double deltaTime = (currentTime - tlsGame.frameTime.previous_time()) / 1000.0;
+	const double deltaTime = static_cast<double>((currentTime - tlsGame.frameTime.previous_time())) / 1000.0;
 	tlsGame.frameTime.set_previous_time(currentTime);
 
 	double accumulatedTime = rcClamp(tlsGame.frameTime.time_accumulator() + deltaTime, -1.0, 1.0);
@@ -54,6 +55,7 @@ void World::Update()
 			AoiSystem::Update(fixedDeltaTime);
 			MovementSystem::Update(fixedDeltaTime);
 			MovementAccelerationSystem::Update(fixedDeltaTime);
+			BuffSystem::Update(fixedDeltaTime);
 		}
 		simulationIterations++;
 	}

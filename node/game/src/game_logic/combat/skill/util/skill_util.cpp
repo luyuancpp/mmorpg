@@ -455,7 +455,7 @@ void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, const uin
 	);
 }
 
-void SkillUtil::TriggerSkillEffect(entt::entity caster, const uint64_t skillId) {
+void SkillUtil::TriggerSkillEffect(const entt::entity caster, const uint64_t skillId) {
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
 	const auto skillContextIt = casterSkillContextMap.find(skillId);
 
@@ -530,7 +530,7 @@ double CalculateFinalDamage(const entt::entity caster, const entt::entity target
 }
 
 
-void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damageEvent) {
+void CalculateSkillDamage(const entt::entity caster, DamageEventPbComponent& damageEvent) {
     // 获取施法者的技能上下文
     auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
     auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
@@ -575,13 +575,13 @@ void CalculateSkillDamage(const entt::entity caster, DamageEventComponent& damag
 
 
 // 触发伤害前的事件
-void TriggerBeforeDamageEvents(const entt::entity caster, const entt::entity target, DamageEventComponent& damageEvent) {
+void TriggerBeforeDamageEvents(const entt::entity caster, const entt::entity target, DamageEventPbComponent& damageEvent) {
     BuffUtil::OnBeforeGiveDamage(caster, damageEvent);
     BuffUtil::OnBeforeTakeDamage(target, damageEvent);
 }
 
 // 处理目标生命值的减少
-void ApplyDamage(BaseAttributesPBComponent& baseAttributesPBComponent, const DamageEventComponent& damageEvent) {
+void ApplyDamage(BaseAttributesPBComponent& baseAttributesPBComponent, const DamageEventPbComponent& damageEvent) {
     const auto damage = static_cast<uint64_t>(std::ceil(damageEvent.damage()));
 
     if (baseAttributesPBComponent.health() > damage) {
@@ -602,13 +602,13 @@ void TriggerBeKillEvent(const entt::entity caster, const entt::entity target) {
 }
 
 // 触发伤害后的事件
-void TriggerAfterDamageEvents(const entt::entity caster, const entt::entity target, DamageEventComponent& damageEvent) {
+void TriggerAfterDamageEvents(const entt::entity caster, const entt::entity target, DamageEventPbComponent& damageEvent) {
 	BuffUtil::OnAfterGiveDamage(caster, damageEvent);
 	BuffUtil::OnAfterTakeDamage(target, damageEvent);
 }
 
 // 处理目标死亡逻辑
-void HandleTargetDeath(const entt::entity caster, const entt::entity target, const DamageEventComponent& damageEvent) {
+void HandleTargetDeath(const entt::entity caster, const entt::entity target, const DamageEventPbComponent& damageEvent) {
     // 触发死亡前的事件
     BuffUtil::OnBeforeDead(target); 
 
@@ -625,7 +625,7 @@ void HandleTargetDeath(const entt::entity caster, const entt::entity target, con
 }
 
 // 处理具体的伤害逻辑
-void DealDamage(DamageEventComponent& damageEvent, const entt::entity caster, const entt::entity target) {
+void DealDamage(DamageEventPbComponent& damageEvent, const entt::entity caster, const entt::entity target) {
 	auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
 
 	// 如果目标已死亡，直接返回
@@ -663,7 +663,7 @@ void SkillUtil::HandleSkillSpell(const entt::entity caster, const uint64_t skill
 
 	const entt::entity targetEntity = entt::to_entity(skillContext->target());
     
-	DamageEventComponent damageEvent;
+	DamageEventPbComponent damageEvent;
 	damageEvent.set_skill_id(skillId);
 	damageEvent.set_target(skillContext->target());
 	CalculateSkillDamage(caster, damageEvent); // 计算伤害

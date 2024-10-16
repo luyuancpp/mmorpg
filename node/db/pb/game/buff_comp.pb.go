@@ -67,7 +67,7 @@ func (x *BuffContextPBComponent) GetDamageValue() float32 {
 	return 0
 }
 
-type BuffPBComponent struct {
+type BuffPbComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -81,8 +81,8 @@ type BuffPBComponent struct {
 	Triggerdamage bool   `protobuf:"varint,7,opt,name=triggerdamage,proto3" json:"triggerdamage,omitempty"`
 }
 
-func (x *BuffPBComponent) Reset() {
-	*x = BuffPBComponent{}
+func (x *BuffPbComponent) Reset() {
+	*x = BuffPbComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_buff_comp_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -90,13 +90,13 @@ func (x *BuffPBComponent) Reset() {
 	}
 }
 
-func (x *BuffPBComponent) String() string {
+func (x *BuffPbComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BuffPBComponent) ProtoMessage() {}
+func (*BuffPbComponent) ProtoMessage() {}
 
-func (x *BuffPBComponent) ProtoReflect() protoreflect.Message {
+func (x *BuffPbComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_buff_comp_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -108,61 +108,61 @@ func (x *BuffPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BuffPBComponent.ProtoReflect.Descriptor instead.
-func (*BuffPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuffPbComponent.ProtoReflect.Descriptor instead.
+func (*BuffPbComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_buff_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *BuffPBComponent) GetBuffId() uint64 {
+func (x *BuffPbComponent) GetBuffId() uint64 {
 	if x != nil {
 		return x.BuffId
 	}
 	return 0
 }
 
-func (x *BuffPBComponent) GetBuffTableId() uint32 {
+func (x *BuffPbComponent) GetBuffTableId() uint32 {
 	if x != nil {
 		return x.BuffTableId
 	}
 	return 0
 }
 
-func (x *BuffPBComponent) GetAbilityId() uint32 {
+func (x *BuffPbComponent) GetAbilityId() uint32 {
 	if x != nil {
 		return x.AbilityId
 	}
 	return 0
 }
 
-func (x *BuffPBComponent) GetParentEntity() uint64 {
+func (x *BuffPbComponent) GetParentEntity() uint64 {
 	if x != nil {
 		return x.ParentEntity
 	}
 	return 0
 }
 
-func (x *BuffPBComponent) GetLayer() uint32 {
+func (x *BuffPbComponent) GetLayer() uint32 {
 	if x != nil {
 		return x.Layer
 	}
 	return 0
 }
 
-func (x *BuffPBComponent) GetCaster() uint64 {
+func (x *BuffPbComponent) GetCaster() uint64 {
 	if x != nil {
 		return x.Caster
 	}
 	return 0
 }
 
-func (x *BuffPBComponent) GetTriggerdamage() bool {
+func (x *BuffPbComponent) GetTriggerdamage() bool {
 	if x != nil {
 		return x.Triggerdamage
 	}
 	return false
 }
 
-type DamageEventComponent struct {
+type DamageEventPbComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -174,8 +174,8 @@ type DamageEventComponent struct {
 	DamageType uint32  `protobuf:"varint,5,opt,name=damage_type,json=damageType,proto3" json:"damage_type,omitempty"`
 }
 
-func (x *DamageEventComponent) Reset() {
-	*x = DamageEventComponent{}
+func (x *DamageEventPbComponent) Reset() {
+	*x = DamageEventPbComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_buff_comp_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -183,13 +183,13 @@ func (x *DamageEventComponent) Reset() {
 	}
 }
 
-func (x *DamageEventComponent) String() string {
+func (x *DamageEventPbComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DamageEventComponent) ProtoMessage() {}
+func (*DamageEventPbComponent) ProtoMessage() {}
 
-func (x *DamageEventComponent) ProtoReflect() protoreflect.Message {
+func (x *DamageEventPbComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_buff_comp_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -201,42 +201,97 @@ func (x *DamageEventComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DamageEventComponent.ProtoReflect.Descriptor instead.
-func (*DamageEventComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use DamageEventPbComponent.ProtoReflect.Descriptor instead.
+func (*DamageEventPbComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_buff_comp_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *DamageEventComponent) GetSkillId() uint64 {
+func (x *DamageEventPbComponent) GetSkillId() uint64 {
 	if x != nil {
 		return x.SkillId
 	}
 	return 0
 }
 
-func (x *DamageEventComponent) GetAttackerId() uint64 {
+func (x *DamageEventPbComponent) GetAttackerId() uint64 {
 	if x != nil {
 		return x.AttackerId
 	}
 	return 0
 }
 
-func (x *DamageEventComponent) GetTarget() uint64 {
+func (x *DamageEventPbComponent) GetTarget() uint64 {
 	if x != nil {
 		return x.Target
 	}
 	return 0
 }
 
-func (x *DamageEventComponent) GetDamage() float64 {
+func (x *DamageEventPbComponent) GetDamage() float64 {
 	if x != nil {
 		return x.Damage
 	}
 	return 0
 }
 
-func (x *DamageEventComponent) GetDamageType() uint32 {
+func (x *DamageEventPbComponent) GetDamageType() uint32 {
 	if x != nil {
 		return x.DamageType
+	}
+	return 0
+}
+
+type PeriodicBuffPbComponent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	PeriodicTimer float64 `protobuf:"fixed64,1,opt,name=periodic_timer,json=periodicTimer,proto3" json:"periodic_timer,omitempty"`
+	TicksDone     uint32  `protobuf:"varint,2,opt,name=ticks_done,json=ticksDone,proto3" json:"ticks_done,omitempty"`
+}
+
+func (x *PeriodicBuffPbComponent) Reset() {
+	*x = PeriodicBuffPbComponent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_logic_component_buff_comp_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PeriodicBuffPbComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PeriodicBuffPbComponent) ProtoMessage() {}
+
+func (x *PeriodicBuffPbComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_logic_component_buff_comp_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PeriodicBuffPbComponent.ProtoReflect.Descriptor instead.
+func (*PeriodicBuffPbComponent) Descriptor() ([]byte, []int) {
+	return file_logic_component_buff_comp_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *PeriodicBuffPbComponent) GetPeriodicTimer() float64 {
+	if x != nil {
+		return x.PeriodicTimer
+	}
+	return 0
+}
+
+func (x *PeriodicBuffPbComponent) GetTicksDone() uint32 {
+	if x != nil {
+		return x.TicksDone
 	}
 	return 0
 }
@@ -250,7 +305,7 @@ var file_logic_component_buff_comp_proto_rawDesc = []byte{
 	0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x64,
 	0x61, 0x6d, 0x61, 0x67, 0x65, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x02, 0x52, 0x0b, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0xe6,
-	0x01, 0x0a, 0x0f, 0x42, 0x75, 0x66, 0x66, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65,
+	0x01, 0x0a, 0x0f, 0x42, 0x75, 0x66, 0x66, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65,
 	0x6e, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x62, 0x75, 0x66, 0x66, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x04, 0x52, 0x06, 0x62, 0x75, 0x66, 0x66, 0x49, 0x64, 0x12, 0x22, 0x0a, 0x0d, 0x62,
 	0x75, 0x66, 0x66, 0x5f, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
@@ -264,18 +319,25 @@ var file_logic_component_buff_comp_proto_rawDesc = []byte{
 	0x74, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x63, 0x61, 0x73, 0x74, 0x65,
 	0x72, 0x12, 0x24, 0x0a, 0x0d, 0x74, 0x72, 0x69, 0x67, 0x67, 0x65, 0x72, 0x64, 0x61, 0x6d, 0x61,
 	0x67, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x74, 0x72, 0x69, 0x67, 0x67, 0x65,
-	0x72, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x22, 0xa3, 0x01, 0x0a, 0x14, 0x44, 0x61, 0x6d, 0x61,
-	0x67, 0x65, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
-	0x12, 0x19, 0x0a, 0x08, 0x73, 0x6b, 0x69, 0x6c, 0x6c, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x07, 0x73, 0x6b, 0x69, 0x6c, 0x6c, 0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x61,
-	0x74, 0x74, 0x61, 0x63, 0x6b, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x0a, 0x61, 0x74, 0x74, 0x61, 0x63, 0x6b, 0x65, 0x72, 0x49, 0x64, 0x12, 0x16, 0x0a, 0x06,
-	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x74, 0x61,
-	0x72, 0x67, 0x65, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x12, 0x1f, 0x0a, 0x0b,
-	0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28,
-	0x0d, 0x52, 0x0a, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x54, 0x79, 0x70, 0x65, 0x42, 0x09, 0x5a,
-	0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x22, 0xa5, 0x01, 0x0a, 0x16, 0x44, 0x61, 0x6d, 0x61,
+	0x67, 0x65, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65,
+	0x6e, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x73, 0x6b, 0x69, 0x6c, 0x6c, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x73, 0x6b, 0x69, 0x6c, 0x6c, 0x49, 0x64, 0x12, 0x1f, 0x0a,
+	0x0b, 0x61, 0x74, 0x74, 0x61, 0x63, 0x6b, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x0a, 0x61, 0x74, 0x74, 0x61, 0x63, 0x6b, 0x65, 0x72, 0x49, 0x64, 0x12, 0x16,
+	0x0a, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06,
+	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x12, 0x1f,
+	0x0a, 0x0b, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x0a, 0x64, 0x61, 0x6d, 0x61, 0x67, 0x65, 0x54, 0x79, 0x70, 0x65, 0x22,
+	0x5f, 0x0a, 0x17, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x69, 0x63, 0x42, 0x75, 0x66, 0x66, 0x50,
+	0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x25, 0x0a, 0x0e, 0x70, 0x65,
+	0x72, 0x69, 0x6f, 0x64, 0x69, 0x63, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x01, 0x52, 0x0d, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x69, 0x63, 0x54, 0x69, 0x6d, 0x65,
+	0x72, 0x12, 0x1d, 0x0a, 0x0a, 0x74, 0x69, 0x63, 0x6b, 0x73, 0x5f, 0x64, 0x6f, 0x6e, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x74, 0x69, 0x63, 0x6b, 0x73, 0x44, 0x6f, 0x6e, 0x65,
+	0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -290,11 +352,12 @@ func file_logic_component_buff_comp_proto_rawDescGZIP() []byte {
 	return file_logic_component_buff_comp_proto_rawDescData
 }
 
-var file_logic_component_buff_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_logic_component_buff_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_logic_component_buff_comp_proto_goTypes = []any{
-	(*BuffContextPBComponent)(nil), // 0: BuffContextPBComponent
-	(*BuffPBComponent)(nil),        // 1: BuffPBComponent
-	(*DamageEventComponent)(nil),   // 2: DamageEventComponent
+	(*BuffContextPBComponent)(nil),  // 0: BuffContextPBComponent
+	(*BuffPbComponent)(nil),         // 1: BuffPbComponent
+	(*DamageEventPbComponent)(nil),  // 2: DamageEventPbComponent
+	(*PeriodicBuffPbComponent)(nil), // 3: PeriodicBuffPbComponent
 }
 var file_logic_component_buff_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -323,7 +386,7 @@ func file_logic_component_buff_comp_proto_init() {
 			}
 		}
 		file_logic_component_buff_comp_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*BuffPBComponent); i {
+			switch v := v.(*BuffPbComponent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -335,7 +398,19 @@ func file_logic_component_buff_comp_proto_init() {
 			}
 		}
 		file_logic_component_buff_comp_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*DamageEventComponent); i {
+			switch v := v.(*DamageEventPbComponent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_logic_component_buff_comp_proto_msgTypes[3].Exporter = func(v any, i int) any {
+			switch v := v.(*PeriodicBuffPbComponent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -353,7 +428,7 @@ func file_logic_component_buff_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_logic_component_buff_comp_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

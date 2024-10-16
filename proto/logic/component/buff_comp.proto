@@ -7,7 +7,7 @@ message BuffContextPBComponent
   float damage_value = 1;
 }
 
-message BuffPBComponent
+message BuffPbComponent
 {
   uint64 buff_id = 1;
   uint32 buff_table_id = 2;
@@ -18,11 +18,17 @@ message BuffPBComponent
   bool triggerdamage = 7;
 }
 
-message DamageEventComponent
+message DamageEventPbComponent
 {
   uint64 skill_id = 1;
   uint64 attacker_id = 2;
   uint64 target = 3;
   double damage = 4;
   uint32 damage_type = 5;
+}
+
+message PeriodicBuffPbComponent
+{
+  double periodic_timer = 1;
+  uint32 ticks_done = 2;
 }

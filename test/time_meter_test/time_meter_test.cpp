@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+ï»¿#include <gtest/gtest.h>
 #include <chrono>
 #include <thread>
 
@@ -9,52 +9,52 @@ protected:
 	TimeMeterComp timeMeter;
 
 	void SetUp() override {
-		// ³õÊ¼»¯´úÂë£¨Èç¹ûĞèÒª£©
+		// åˆå§‹åŒ–ä»£ç ï¼ˆå¦‚æœéœ€è¦ï¼‰
 	}
 
 	void TearDown() override {
-		// ÇåÀí´úÂë£¨Èç¹ûĞèÒª£©
+		// æ¸…ç†ä»£ç ï¼ˆå¦‚æœéœ€è¦ï¼‰
 	}
 };
 
 TEST_F(TimeMeterUtilTest, InitialExpiration) {
-	timeMeter.set_duration(5); // ÉèÖÃÊ±¼ä²âÁ¿Æ÷³ÖĞøÊ±¼äÎª5Ãë
+	timeMeter.set_duration(5); // è®¾ç½®æ—¶é—´æµ‹é‡å™¨æŒç»­æ—¶é—´ä¸º5ç§’
 
 	TimeMeterSecondUtil::Reset(timeMeter);
 
-	std::this_thread::sleep_for(std::chrono::seconds(6)); // µÈ´ı6Ãë
+	std::this_thread::sleep_for(std::chrono::seconds(6)); // ç­‰å¾…6ç§’
 
 	EXPECT_TRUE(TimeMeterSecondUtil::IsExpired(timeMeter));
 }
 
 TEST_F(TimeMeterUtilTest, ExtendedDuration) {
-	timeMeter.set_duration(5); // ÉèÖÃÊ±¼ä²âÁ¿Æ÷³ÖĞøÊ±¼äÎª5Ãë
+	timeMeter.set_duration(5); // è®¾ç½®æ—¶é—´æµ‹é‡å™¨æŒç»­æ—¶é—´ä¸º5ç§’
 
 	TimeMeterSecondUtil::Reset(timeMeter);
 
-	std::this_thread::sleep_for(std::chrono::seconds(3)); // µÈ´ı3Ãë
+	std::this_thread::sleep_for(std::chrono::seconds(3)); // ç­‰å¾…3ç§’
 
 	EXPECT_FALSE(TimeMeterSecondUtil::IsExpired(timeMeter));
 
-	// µ÷ÕûÊ±¼ä²âÁ¿Æ÷µÄ³ÖĞøÊ±¼äÎª10Ãë
+	// è°ƒæ•´æ—¶é—´æµ‹é‡å™¨çš„æŒç»­æ—¶é—´ä¸º10ç§’
 	timeMeter.set_duration(10);
 
 	TimeMeterSecondUtil::Reset(timeMeter);
 
-	std::this_thread::sleep_for(std::chrono::seconds(6)); // µÈ´ı6Ãë
+	std::this_thread::sleep_for(std::chrono::seconds(6)); // ç­‰å¾…6ç§’
 
 	EXPECT_FALSE(TimeMeterSecondUtil::IsExpired(timeMeter));
-	EXPECT_EQ(TimeMeterSecondUtil::Remaining(timeMeter), 4); // 10Ãë³ÖĞøÊ±¼ä¼õÈ¥6Ãë£¬Ê£Óà4Ãë
+	EXPECT_EQ(TimeMeterSecondUtil::Remaining(timeMeter), 4); // 10ç§’æŒç»­æ—¶é—´å‡å»6ç§’ï¼Œå‰©ä½™4ç§’
 }
 
 
 class TimeMeterMillisecondUtilTest : public ::testing::Test {
 protected:
 	void SetUp() override {
-		// ÉèÖÃÒ»¸ö±ê×¼Ê±¼ä
+		// è®¾ç½®ä¸€ä¸ªæ ‡å‡†æ—¶é—´
 		current_time_ms = TimeMeterMillisecondUtil::GetCurrentTimeInMilliseconds();
 		time_meter_comp.set_start(current_time_ms);
-		time_meter_comp.set_duration(10000); // 10Ãë
+		time_meter_comp.set_duration(10000); // 10ç§’
 	}
 
 	uint64_t current_time_ms;
@@ -62,40 +62,40 @@ protected:
 };
 
 TEST_F(TimeMeterMillisecondUtilTest, RemainingTime) {
-	// ²âÊÔÊ£ÓàÊ±¼ä
+	// æµ‹è¯•å‰©ä½™æ—¶é—´
 	uint64_t remaining = TimeMeterMillisecondUtil::Remaining(time_meter_comp);
 	EXPECT_LE(remaining, 10000);
 }
 
 TEST_F(TimeMeterMillisecondUtilTest, IsExpired) {
-	// ²âÊÔÊÇ·ñ³¬Ê±
+	// æµ‹è¯•æ˜¯å¦è¶…æ—¶
 	EXPECT_FALSE(TimeMeterMillisecondUtil::IsExpired(time_meter_comp));
 
-	// ĞŞ¸Ä³ÖĞøÊ±¼äÒÔÊ¹Æä³¬Ê±
-	time_meter_comp.set_start(current_time_ms - 20000); // ÆğÊ¼Ê±¼äÉèÖÃÎª20ÃëÇ°
+	// ä¿®æ”¹æŒç»­æ—¶é—´ä»¥ä½¿å…¶è¶…æ—¶
+	time_meter_comp.set_start(current_time_ms - 20000); // èµ·å§‹æ—¶é—´è®¾ç½®ä¸º20ç§’å‰
 	EXPECT_TRUE(TimeMeterMillisecondUtil::IsExpired(time_meter_comp));
 }
 
 TEST_F(TimeMeterMillisecondUtilTest, IsBeforeStart) {
-	// ²âÊÔÊÇ·ñÔÚ¿ªÊ¼Ê±¼äÖ®Ç°
+	// æµ‹è¯•æ˜¯å¦åœ¨å¼€å§‹æ—¶é—´ä¹‹å‰
 	EXPECT_FALSE(TimeMeterMillisecondUtil::IsBeforeStart(time_meter_comp));
 
-	// ĞŞ¸Ä¿ªÊ¼Ê±¼ä
-	time_meter_comp.set_start(current_time_ms + 20000); // ÉèÖÃÎª20Ãëºó
+	// ä¿®æ”¹å¼€å§‹æ—¶é—´
+	time_meter_comp.set_start(current_time_ms + 20000); // è®¾ç½®ä¸º20ç§’å
 	EXPECT_TRUE(TimeMeterMillisecondUtil::IsBeforeStart(time_meter_comp));
 }
 
 TEST_F(TimeMeterMillisecondUtilTest, IsNotStarted) {
-	// ²âÊÔÊÇ·ñÎ´¿ªÊ¼
+	// æµ‹è¯•æ˜¯å¦æœªå¼€å§‹
 	EXPECT_FALSE(TimeMeterMillisecondUtil::IsNotStarted(time_meter_comp));
 
-	// ĞŞ¸Ä¿ªÊ¼Ê±¼ä
-	time_meter_comp.set_start(current_time_ms + 20000); // ÉèÖÃÎª20Ãëºó
+	// ä¿®æ”¹å¼€å§‹æ—¶é—´
+	time_meter_comp.set_start(current_time_ms + 20000); // è®¾ç½®ä¸º20ç§’å
 	EXPECT_TRUE(TimeMeterMillisecondUtil::IsNotStarted(time_meter_comp));
 }
 
 TEST_F(TimeMeterMillisecondUtilTest, Reset) {
-	// ²âÊÔÖØÖÃ¹¦ÄÜ
+	// æµ‹è¯•é‡ç½®åŠŸèƒ½
 	TimeMeterMillisecondUtil::Reset(time_meter_comp);
 	uint64_t new_start = time_meter_comp.start();
 	EXPECT_GE(new_start, current_time_ms);

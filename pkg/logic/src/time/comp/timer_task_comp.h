@@ -19,7 +19,7 @@ public:
     TimerTaskComp& operator=(const TimerTaskComp&) = delete;
 
 	TimerTaskComp(TimerTaskComp&& param) noexcept;
-    TimerTaskComp& operator=(TimerTaskComp&& param);
+    TimerTaskComp& operator=(TimerTaskComp&& param) noexcept;
 
 	void RunAt(const Timestamp& time, const TimerCallback& cb);
 	void RunAfter(double delay, const TimerCallback& cb);

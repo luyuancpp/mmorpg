@@ -5,14 +5,20 @@
 ///<<< END WRITING YOUR CODE
 void BuffEventHandler::Register()
 {
+		tls.dispatcher.sink<BuffTestEvet>().connect<&BuffEventHandler::BuffTestEvetHandler>();
 }
 
 void BuffEventHandler::UnRegister()
 {
+		tls.dispatcher.sink<BuffTestEvet>().disconnect<&BuffEventHandler::BuffTestEvetHandler>();
 }
 
+void BuffEventHandler::BuffTestEvetHandler(const BuffTestEvet& event)
+{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+}
+
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE

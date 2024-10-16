@@ -41,7 +41,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 
 	// Set up a BuffListComp for the parent entity
 	BuffListComp& buffListComp = tls.registry.emplace<BuffListComp>(parent);
-	buffListComp.buffList.clear(); // Ensure it's empty for this test
+	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the AddOrUpdateBuff method
 	uint32_t result = BuffUtil::AddOrUpdateBuff(parent, buffTableId, abilityContext);
@@ -50,7 +50,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	EXPECT_EQ(result, kOK);
 
 	// Verify that the Buff was added to the BuffListComp
-	const auto& buffList = tls.registry.get<BuffListComp>(parent).buffList;
+	const auto& buffList = tls.registry.get<BuffListComp>(parent);
 	EXPECT_FALSE(buffList.empty());
 }
 
@@ -67,7 +67,7 @@ TEST_F(BuffUtilTest, CanCreateBuffSuccess) {
 
 	// Set up a BuffListComp for the parent entity
 	BuffListComp& buffListComp = tls.registry.emplace<BuffListComp>(parent);
-	buffListComp.buffList.clear(); // Ensure it's empty for this test
+	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the CanCreateBuff method
 	uint32_t result = BuffUtil::CanCreateBuff(parent, buffTableId);
