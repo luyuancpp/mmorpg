@@ -60,7 +60,8 @@ uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buf
     }
 
     BuffComp newBuff;
-    newBuff.buffPb.set_caster(buffTable->nocaster() ? entt::null : abilityContext->caster());
+    newBuff.buffPb.set_caster(abilityContext->caster());
+    newBuff.buffPb.set_processed_caster(buffTable->nocaster() ? entt::null : abilityContext->caster());
 
     if ( !OnBuffAwake(parent, buffTableId) ) {
         return kOK;
@@ -70,11 +71,11 @@ uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buf
     newBuff.buffPb.set_buff_id(newBuffId);
     newBuff.abilityContext = abilityContext;
 
-    auto it = buffList.emplace(newBuffId, std::move(newBuff));
+    auto [fst, snd] = buffList.emplace(newBuffId, std::move(newBuff));
     OnBuffStart(parent, newBuffId);
 
     if (buffTable->duration() > 0) {
-        it.first->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
+        fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
             OnBuffExpire(parent, newBuffId);
         });
     } else if (IsZero(buffTable->duration())) {//todo std::is_zero
@@ -94,9 +95,11 @@ void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
         return;
     }
 
+    const auto buffTableId = buffIt->second.buffPb.buff_table_id();
+    
     OnBuffRemove(parent, buffId);
     buffList.erase(buffId);
-    OnBuffDestroy(parent, buffIt->second.buffPb.buff_table_id());
+    OnBuffDestroy(parent, buffTableId);
 }
 
 uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
@@ -135,7 +138,6 @@ bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId)
 
 void BuffUtil::OnBuffStart(entt::entity parent, uint64_t buffId)
 {
-    StartIntervalThink(parent, buffId);
 }
 
 void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp)
@@ -151,28 +153,6 @@ void BuffUtil::OnBuffRemove(entt::entity parent, uint64_t buffId)
 void BuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
 {
     // Implement logic if needed
-}
-
-void BuffUtil::StartIntervalThink(entt::entity parent, uint64_t buffId)
-{
-    auto& buffList = tls.registry.get<BuffListComp>(parent);
-    auto buffIt = buffList.find(buffId);
-
-    if (buffIt == buffList.end()) {
-        LOG_ERROR << "Cannot find buff " << buffId;
-        return;
-    }
-
-    auto& buffComp = buffIt->second;
-    auto [buffTable, result] = GetBuffTable(buffComp.buffPb.buff_table_id());
-    if (!buffTable) {
-        return;
-    }
-
-    if (buffTable->interval() <= 0){
-        return;
-    }
-    
 }
 
 void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)

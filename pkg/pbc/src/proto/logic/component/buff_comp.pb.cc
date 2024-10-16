@@ -74,6 +74,7 @@ inline constexpr BuffPbComponent::Impl_::Impl_(
         caster_{::uint64_t{0u}},
         layer_{0u},
         triggerdamage_{false},
+        processed_caster_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -140,6 +141,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.layer_),
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.caster_),
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.triggerdamage_),
+        PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.processed_caster_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::DamageEventPbComponent, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -169,8 +171,8 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::BuffContextPBComponent)},
         {9, -1, -1, sizeof(::BuffPbComponent)},
-        {24, -1, -1, sizeof(::DamageEventPbComponent)},
-        {37, -1, -1, sizeof(::PeriodicBuffPbComponent)},
+        {25, -1, -1, sizeof(::DamageEventPbComponent)},
+        {38, -1, -1, sizeof(::PeriodicBuffPbComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_BuffContextPBComponent_default_instance_._instance,
@@ -182,22 +184,22 @@ const char descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto[] A
     protodesc_cold) = {
     "\n\037logic/component/buff_comp.proto\".\n\026Buf"
     "fContextPBComponent\022\024\n\014damage_value\030\001 \001("
-    "\002\"\232\001\n\017BuffPbComponent\022\017\n\007buff_id\030\001 \001(\004\022\025"
+    "\002\"\264\001\n\017BuffPbComponent\022\017\n\007buff_id\030\001 \001(\004\022\025"
     "\n\rbuff_table_id\030\002 \001(\r\022\022\n\nability_id\030\003 \001("
     "\r\022\025\n\rparent_entity\030\004 \001(\004\022\r\n\005layer\030\005 \001(\r\022"
-    "\016\n\006caster\030\006 \001(\004\022\025\n\rtriggerdamage\030\007 \001(\010\"t"
-    "\n\026DamageEventPbComponent\022\020\n\010skill_id\030\001 \001"
-    "(\004\022\023\n\013attacker_id\030\002 \001(\004\022\016\n\006target\030\003 \001(\004\022"
-    "\016\n\006damage\030\004 \001(\001\022\023\n\013damage_type\030\005 \001(\r\"E\n\027"
-    "PeriodicBuffPbComponent\022\026\n\016periodic_time"
-    "r\030\001 \001(\001\022\022\n\nticks_done\030\002 \001(\rB\tZ\007pb/gameb\006"
-    "proto3"
+    "\016\n\006caster\030\006 \001(\004\022\025\n\rtriggerdamage\030\007 \001(\010\022\030"
+    "\n\020processed_caster\030\010 \001(\004\"t\n\026DamageEventP"
+    "bComponent\022\020\n\010skill_id\030\001 \001(\004\022\023\n\013attacker"
+    "_id\030\002 \001(\004\022\016\n\006target\030\003 \001(\004\022\016\n\006damage\030\004 \001("
+    "\001\022\023\n\013damage_type\030\005 \001(\r\"E\n\027PeriodicBuffPb"
+    "Component\022\026\n\016periodic_timer\030\001 \001(\001\022\022\n\ntic"
+    "ks_done\030\002 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto = {
     false,
     false,
-    446,
+    472,
     descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto,
     "logic/component/buff_comp.proto",
     &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
@@ -443,9 +445,9 @@ inline void BuffPbComponent::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, buff_id_),
            0,
-           offsetof(Impl_, triggerdamage_) -
+           offsetof(Impl_, processed_caster_) -
                offsetof(Impl_, buff_id_) +
-               sizeof(Impl_::triggerdamage_));
+               sizeof(Impl_::processed_caster_));
 }
 BuffPbComponent::~BuffPbComponent() {
   // @@protoc_insertion_point(destructor:BuffPbComponent)
@@ -479,8 +481,8 @@ PROTOBUF_NOINLINE void BuffPbComponent::Clear() {
   (void) cached_has_bits;
 
   ::memset(&_impl_.buff_id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.triggerdamage_) -
-      reinterpret_cast<char*>(&_impl_.buff_id_)) + sizeof(_impl_.triggerdamage_));
+      reinterpret_cast<char*>(&_impl_.processed_caster_) -
+      reinterpret_cast<char*>(&_impl_.buff_id_)) + sizeof(_impl_.processed_caster_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -492,15 +494,15 @@ const char* BuffPbComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 7, 0, 0, 2> BuffPbComponent::_table_ = {
+const ::_pbi::TcParseTable<3, 8, 0, 0, 2> BuffPbComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    7, 56,  // max_field_number, fast_idx_mask
+    8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967168,  // skipmap
+    4294967040,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    7,  // num_field_entries
+    8,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     &_BuffPbComponent_default_instance_._instance,
@@ -509,7 +511,9 @@ const ::_pbi::TcParseTable<3, 7, 0, 0, 2> BuffPbComponent::_table_ = {
     ::_pbi::TcParser::GetTable<::BuffPbComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 processed_caster = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BuffPbComponent, _impl_.processed_caster_), 63>(),
+     {64, 63, 0, PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.processed_caster_)}},
     // uint64 buff_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BuffPbComponent, _impl_.buff_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.buff_id_)}},
@@ -555,6 +559,9 @@ const ::_pbi::TcParseTable<3, 7, 0, 0, 2> BuffPbComponent::_table_ = {
     // bool triggerdamage = 7;
     {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.triggerdamage_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+    // uint64 processed_caster = 8;
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.processed_caster_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
@@ -617,6 +624,13 @@ const ::_pbi::TcParseTable<3, 7, 0, 0, 2> BuffPbComponent::_table_ = {
         7, this->_internal_triggerdamage(), target);
   }
 
+  // uint64 processed_caster = 8;
+  if (this->_internal_processed_caster() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        8, this->_internal_processed_caster(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -675,6 +689,12 @@ const ::_pbi::TcParseTable<3, 7, 0, 0, 2> BuffPbComponent::_table_ = {
     total_size += 2;
   }
 
+  // uint64 processed_caster = 8;
+  if (this->_internal_processed_caster() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_processed_caster());
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -708,6 +728,9 @@ void BuffPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   if (from._internal_triggerdamage() != 0) {
     _this->_impl_.triggerdamage_ = from._impl_.triggerdamage_;
   }
+  if (from._internal_processed_caster() != 0) {
+    _this->_impl_.processed_caster_ = from._impl_.processed_caster_;
+  }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -726,8 +749,8 @@ void BuffPbComponent::InternalSwap(BuffPbComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.triggerdamage_)
-      + sizeof(BuffPbComponent::_impl_.triggerdamage_)
+      PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.processed_caster_)
+      + sizeof(BuffPbComponent::_impl_.processed_caster_)
       - PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.buff_id_)>(
           reinterpret_cast<char*>(&_impl_.buff_id_),
           reinterpret_cast<char*>(&other->_impl_.buff_id_));

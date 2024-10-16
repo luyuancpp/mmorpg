@@ -53,7 +53,6 @@ public:
 
     //Buff还可以创建定时器，以触发间隔持续效果。通过策划配置时调用StartIntervalThink操作，
     // 提供OnIntervalThink抽象接口供策划配置具体效果。
-    static void StartIntervalThink(entt::entity parent, uint64_t buffId);
 
     static void OnIntervalThink(entt::entity parent, uint64_t buffId);
     
