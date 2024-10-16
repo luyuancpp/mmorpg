@@ -25,6 +25,8 @@ sol::property(&BuffPbComponent::layer, &BuffPbComponent::set_layer),
 sol::property(&BuffPbComponent::caster, &BuffPbComponent::set_caster),
 "triggerdamage",
 sol::property(&BuffPbComponent::triggerdamage, &BuffPbComponent::set_triggerdamage),
+"processed_caster",
+sol::property(&BuffPbComponent::processed_caster, &BuffPbComponent::set_processed_caster),
 "DebugString",
 &BuffPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

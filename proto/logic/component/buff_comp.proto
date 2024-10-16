@@ -16,6 +16,7 @@ message BuffPbComponent
   uint32 layer = 5;
   uint64 caster = 6;
   bool triggerdamage = 7;
+  uint64 processed_caster = 8; // 根据表处理后的施法者
 }
 
 message DamageEventPbComponent

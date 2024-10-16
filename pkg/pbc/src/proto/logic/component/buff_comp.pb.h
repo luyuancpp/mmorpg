@@ -598,6 +598,7 @@ class BuffPbComponent final : public ::google::protobuf::Message
     kCasterFieldNumber = 6,
     kLayerFieldNumber = 5,
     kTriggerdamageFieldNumber = 7,
+    kProcessedCasterFieldNumber = 8,
   };
   // uint64 buff_id = 1;
   void clear_buff_id() ;
@@ -669,12 +670,22 @@ class BuffPbComponent final : public ::google::protobuf::Message
   void _internal_set_triggerdamage(bool value);
 
   public:
+  // uint64 processed_caster = 8;
+  void clear_processed_caster() ;
+  ::uint64_t processed_caster() const;
+  void set_processed_caster(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_processed_caster() const;
+  void _internal_set_processed_caster(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BuffPbComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 7, 0,
+      3, 8, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -697,6 +708,7 @@ class BuffPbComponent final : public ::google::protobuf::Message
     ::uint64_t caster_;
     ::uint32_t layer_;
     bool triggerdamage_;
+    ::uint64_t processed_caster_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1065,6 +1077,28 @@ inline bool BuffPbComponent::_internal_triggerdamage() const {
 inline void BuffPbComponent::_internal_set_triggerdamage(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.triggerdamage_ = value;
+}
+
+// uint64 processed_caster = 8;
+inline void BuffPbComponent::clear_processed_caster() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.processed_caster_ = ::uint64_t{0u};
+}
+inline ::uint64_t BuffPbComponent::processed_caster() const {
+  // @@protoc_insertion_point(field_get:BuffPbComponent.processed_caster)
+  return _internal_processed_caster();
+}
+inline void BuffPbComponent::set_processed_caster(::uint64_t value) {
+  _internal_set_processed_caster(value);
+  // @@protoc_insertion_point(field_set:BuffPbComponent.processed_caster)
+}
+inline ::uint64_t BuffPbComponent::_internal_processed_caster() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.processed_caster_;
+}
+inline void BuffPbComponent::_internal_set_processed_caster(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.processed_caster_ = value;
 }
 
 // -------------------------------------------------------------------
