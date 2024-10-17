@@ -58,6 +58,9 @@ extern BuffTableDefaultTypeInternal _BuffTable_default_instance_;
 class BuffTable_ImmunetagEntry_DoNotUse;
 struct BuffTable_ImmunetagEntry_DoNotUseDefaultTypeInternal;
 extern BuffTable_ImmunetagEntry_DoNotUseDefaultTypeInternal _BuffTable_ImmunetagEntry_DoNotUse_default_instance_;
+class BuffTable_RemovetagEntry_DoNotUse;
+struct BuffTable_RemovetagEntry_DoNotUseDefaultTypeInternal;
+extern BuffTable_RemovetagEntry_DoNotUseDefaultTypeInternal _BuffTable_RemovetagEntry_DoNotUse_default_instance_;
 class BuffTable_TagEntry_DoNotUse;
 struct BuffTable_TagEntry_DoNotUseDefaultTypeInternal;
 extern BuffTable_TagEntry_DoNotUseDefaultTypeInternal _BuffTable_TagEntry_DoNotUse_default_instance_;
@@ -96,6 +99,34 @@ class BuffTable_TagEntry_DoNotUse final
   }
   static bool ValidateKey(std::string* s) {
     return ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::google::protobuf::internal::WireFormatLite::PARSE, "BuffTable.TagEntry.key");
+ }
+  static bool ValidateValue(void*) { return true; }
+  ::google::protobuf::Metadata GetMetadata() const final;
+  friend struct ::TableStruct_buff_5fconfig_2eproto;
+};
+// -------------------------------------------------------------------
+
+class BuffTable_RemovetagEntry_DoNotUse final
+    : public ::google::protobuf::internal::MapEntry<
+          BuffTable_RemovetagEntry_DoNotUse, std::string, bool,
+          ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
+          ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
+ public:
+  using SuperType = ::google::protobuf::internal::MapEntry<
+      BuffTable_RemovetagEntry_DoNotUse, std::string, bool,
+      ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
+      ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
+  BuffTable_RemovetagEntry_DoNotUse();
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR BuffTable_RemovetagEntry_DoNotUse(
+      ::google::protobuf::internal::ConstantInitialized);
+  explicit BuffTable_RemovetagEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const BuffTable_RemovetagEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const BuffTable_RemovetagEntry_DoNotUse*>(
+        &_BuffTable_RemovetagEntry_DoNotUse_default_instance_);
+  }
+  static bool ValidateKey(std::string* s) {
+    return ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::google::protobuf::internal::WireFormatLite::PARSE, "BuffTable.RemovetagEntry.key");
  }
   static bool ValidateValue(void*) { return true; }
   ::google::protobuf::Metadata GetMetadata() const final;
@@ -186,7 +217,7 @@ class BuffTable final : public ::google::protobuf::Message
     return reinterpret_cast<const BuffTable*>(
         &_BuffTable_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(BuffTable& a, BuffTable& b) { a.Swap(&b); }
   inline void Swap(BuffTable* other) {
     if (other == this) return;
@@ -258,15 +289,16 @@ class BuffTable final : public ::google::protobuf::Message
   enum : int {
     kTagFieldNumber = 3,
     kImmunetagFieldNumber = 4,
-    kIntervaleffectFieldNumber = 11,
+    kRemovetagFieldNumber = 5,
+    kIntervaleffectFieldNumber = 12,
     kIdFieldNumber = 1,
     kNocasterFieldNumber = 2,
-    kLevelFieldNumber = 5,
-    kMaxlayerFieldNumber = 6,
-    kDurationFieldNumber = 7,
-    kIntervalFieldNumber = 9,
-    kForceinterruptFieldNumber = 8,
-    kIntervalcountFieldNumber = 10,
+    kLevelFieldNumber = 6,
+    kMaxlayerFieldNumber = 7,
+    kDurationFieldNumber = 8,
+    kIntervalFieldNumber = 10,
+    kForceinterruptFieldNumber = 9,
+    kIntervalcountFieldNumber = 11,
   };
   // map<string, bool> tag = 3;
   int tag_size() const;
@@ -298,7 +330,22 @@ class BuffTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, bool>* _internal_mutable_immunetag();
 
   public:
-  // repeated double intervaleffect = 11;
+  // map<string, bool> removetag = 5;
+  int removetag_size() const;
+  private:
+  int _internal_removetag_size() const;
+
+  public:
+  void clear_removetag() ;
+  const ::google::protobuf::Map<std::string, bool>& removetag() const;
+  ::google::protobuf::Map<std::string, bool>* mutable_removetag();
+
+  private:
+  const ::google::protobuf::Map<std::string, bool>& _internal_removetag() const;
+  ::google::protobuf::Map<std::string, bool>* _internal_mutable_removetag();
+
+  public:
+  // repeated double intervaleffect = 12;
   int intervaleffect_size() const;
   private:
   int _internal_intervaleffect_size() const;
@@ -336,7 +383,7 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_nocaster(::uint32_t value);
 
   public:
-  // uint32 level = 5;
+  // uint32 level = 6;
   void clear_level() ;
   ::uint32_t level() const;
   void set_level(::uint32_t value);
@@ -346,7 +393,7 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_level(::uint32_t value);
 
   public:
-  // uint32 maxlayer = 6;
+  // uint32 maxlayer = 7;
   void clear_maxlayer() ;
   ::uint32_t maxlayer() const;
   void set_maxlayer(::uint32_t value);
@@ -356,7 +403,7 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_maxlayer(::uint32_t value);
 
   public:
-  // double duration = 7;
+  // double duration = 8;
   void clear_duration() ;
   double duration() const;
   void set_duration(double value);
@@ -366,7 +413,7 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_duration(double value);
 
   public:
-  // double interval = 9;
+  // double interval = 10;
   void clear_interval() ;
   double interval() const;
   void set_interval(double value);
@@ -376,7 +423,7 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_interval(double value);
 
   public:
-  // uint32 forceinterrupt = 8;
+  // uint32 forceinterrupt = 9;
   void clear_forceinterrupt() ;
   ::uint32_t forceinterrupt() const;
   void set_forceinterrupt(::uint32_t value);
@@ -386,7 +433,7 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_forceinterrupt(::uint32_t value);
 
   public:
-  // uint32 intervalcount = 10;
+  // uint32 intervalcount = 11;
   void clear_intervalcount() ;
   ::uint32_t intervalcount() const;
   void set_intervalcount(::uint32_t value);
@@ -401,8 +448,8 @@ class BuffTable final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 11, 2,
-      38, 2>
+      4, 12, 3,
+      47, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -425,6 +472,10 @@ class BuffTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         immunetag_;
+    ::google::protobuf::internal::MapField<BuffTable_RemovetagEntry_DoNotUse, std::string, bool,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
+        removetag_;
     ::google::protobuf::RepeatedField<double> intervaleffect_;
     ::uint32_t id_;
     ::uint32_t nocaster_;
@@ -497,7 +548,7 @@ class BuffTabledData final : public ::google::protobuf::Message
     return reinterpret_cast<const BuffTabledData*>(
         &_BuffTabledData_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(BuffTabledData& a, BuffTabledData& b) { a.Swap(&b); }
   inline void Swap(BuffTabledData* other) {
     if (other == this) return;
@@ -633,6 +684,8 @@ class BuffTabledData final : public ::google::protobuf::Message
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
 // BuffTable
 
 // uint32 id = 1;
@@ -735,7 +788,35 @@ inline ::google::protobuf::Map<std::string, bool>* BuffTable::mutable_immunetag(
   return _internal_mutable_immunetag();
 }
 
-// uint32 level = 5;
+// map<string, bool> removetag = 5;
+inline int BuffTable::_internal_removetag_size() const {
+  return _internal_removetag().size();
+}
+inline int BuffTable::removetag_size() const {
+  return _internal_removetag_size();
+}
+inline void BuffTable::clear_removetag() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.removetag_.Clear();
+}
+inline const ::google::protobuf::Map<std::string, bool>& BuffTable::_internal_removetag() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.removetag_.GetMap();
+}
+inline const ::google::protobuf::Map<std::string, bool>& BuffTable::removetag() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:BuffTable.removetag)
+  return _internal_removetag();
+}
+inline ::google::protobuf::Map<std::string, bool>* BuffTable::_internal_mutable_removetag() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.removetag_.MutableMap();
+}
+inline ::google::protobuf::Map<std::string, bool>* BuffTable::mutable_removetag() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:BuffTable.removetag)
+  return _internal_mutable_removetag();
+}
+
+// uint32 level = 6;
 inline void BuffTable::clear_level() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.level_ = 0u;
@@ -757,7 +838,7 @@ inline void BuffTable::_internal_set_level(::uint32_t value) {
   _impl_.level_ = value;
 }
 
-// uint32 maxlayer = 6;
+// uint32 maxlayer = 7;
 inline void BuffTable::clear_maxlayer() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.maxlayer_ = 0u;
@@ -779,7 +860,7 @@ inline void BuffTable::_internal_set_maxlayer(::uint32_t value) {
   _impl_.maxlayer_ = value;
 }
 
-// double duration = 7;
+// double duration = 8;
 inline void BuffTable::clear_duration() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.duration_ = 0;
@@ -801,7 +882,7 @@ inline void BuffTable::_internal_set_duration(double value) {
   _impl_.duration_ = value;
 }
 
-// uint32 forceinterrupt = 8;
+// uint32 forceinterrupt = 9;
 inline void BuffTable::clear_forceinterrupt() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.forceinterrupt_ = 0u;
@@ -823,7 +904,7 @@ inline void BuffTable::_internal_set_forceinterrupt(::uint32_t value) {
   _impl_.forceinterrupt_ = value;
 }
 
-// double interval = 9;
+// double interval = 10;
 inline void BuffTable::clear_interval() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.interval_ = 0;
@@ -845,7 +926,7 @@ inline void BuffTable::_internal_set_interval(double value) {
   _impl_.interval_ = value;
 }
 
-// uint32 intervalcount = 10;
+// uint32 intervalcount = 11;
 inline void BuffTable::clear_intervalcount() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.intervalcount_ = 0u;
@@ -867,7 +948,7 @@ inline void BuffTable::_internal_set_intervalcount(::uint32_t value) {
   _impl_.intervalcount_ = value;
 }
 
-// repeated double intervaleffect = 11;
+// repeated double intervaleffect = 12;
 inline int BuffTable::_internal_intervaleffect_size() const {
   return _internal_intervaleffect().size();
 }

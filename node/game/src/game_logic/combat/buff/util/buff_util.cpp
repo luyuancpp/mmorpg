@@ -118,7 +118,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
 bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent);
-    for (auto& [buffId, buffComp] : buffList) {
+    for (auto& buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.abilityContext->caster() == abilityContext->caster()) {
             if (buffComp.buffPb.layer() < GetBuffTable(buffTableId).first->maxlayer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
@@ -130,9 +130,31 @@ bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, con
     return false;
 }
 
-bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId)
-{
-    // Customize the logic if necessary
+bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId){
+    auto [newBuffTable, result] = GetBuffTable(buffTableId);
+    if (!newBuffTable) {
+        return result;
+    }
+
+    UInt64Vector removeBuffIdList;
+
+    for (auto& buffList = tls.registry.get<BuffListComp>(parent); auto& [buffId, buffPbComp] : buffList){
+        auto [buffTable, result] = GetBuffTable(buffTableId);
+        if (!buffTable) {
+            continue;
+        }
+
+        for (auto& [removeTag, _] : newBuffTable->removetag()){
+            if (buffTable->tag().contains(removeTag)){
+                removeBuffIdList.emplace_back(buffId);
+                break;
+            }
+        }
+    }
+
+    for (const auto& buffId : removeBuffIdList){
+        BuffUtil::OnBuffExpire(parent, buffId);
+    }
     return false;
 }
 

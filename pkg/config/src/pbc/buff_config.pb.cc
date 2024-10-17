@@ -34,6 +34,18 @@ struct BuffTable_TagEntry_DoNotUseDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffTable_TagEntry_DoNotUseDefaultTypeInternal _BuffTable_TagEntry_DoNotUse_default_instance_;
       template <typename>
+PROTOBUF_CONSTEXPR BuffTable_RemovetagEntry_DoNotUse::BuffTable_RemovetagEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct BuffTable_RemovetagEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BuffTable_RemovetagEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BuffTable_RemovetagEntry_DoNotUseDefaultTypeInternal() {}
+  union {
+    BuffTable_RemovetagEntry_DoNotUse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffTable_RemovetagEntry_DoNotUseDefaultTypeInternal _BuffTable_RemovetagEntry_DoNotUse_default_instance_;
+      template <typename>
 PROTOBUF_CONSTEXPR BuffTable_ImmunetagEntry_DoNotUse::BuffTable_ImmunetagEntry_DoNotUse(::_pbi::ConstantInitialized) {}
 struct BuffTable_ImmunetagEntry_DoNotUseDefaultTypeInternal {
   PROTOBUF_CONSTEXPR BuffTable_ImmunetagEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
@@ -50,6 +62,7 @@ inline constexpr BuffTable::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : tag_{},
         immunetag_{},
+        removetag_{},
         intervaleffect_{},
         id_{0u},
         nocaster_{0u},
@@ -93,7 +106,7 @@ struct BuffTabledDataDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffTabledDataDefaultTypeInternal _BuffTabledData_default_instance_;
-static ::_pb::Metadata file_level_metadata_buff_5fconfig_2eproto[4];
+static ::_pb::Metadata file_level_metadata_buff_5fconfig_2eproto[5];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_buff_5fconfig_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -125,6 +138,18 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BuffTable_ImmunetagEntry_DoNotUse, value_),
         0,
         1,
+        PROTOBUF_FIELD_OFFSET(::BuffTable_RemovetagEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::BuffTable_RemovetagEntry_DoNotUse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::BuffTable_RemovetagEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::BuffTable_RemovetagEntry_DoNotUse, value_),
+        0,
+        1,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::BuffTable, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -137,6 +162,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.nocaster_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.tag_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.immunetag_),
+        PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.removetag_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.level_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.maxlayer_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.duration_),
@@ -159,40 +185,45 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, 10, -1, sizeof(::BuffTable_TagEntry_DoNotUse)},
         {12, 22, -1, sizeof(::BuffTable_ImmunetagEntry_DoNotUse)},
-        {24, -1, -1, sizeof(::BuffTable)},
-        {43, -1, -1, sizeof(::BuffTabledData)},
+        {24, 34, -1, sizeof(::BuffTable_RemovetagEntry_DoNotUse)},
+        {36, -1, -1, sizeof(::BuffTable)},
+        {56, -1, -1, sizeof(::BuffTabledData)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_BuffTable_TagEntry_DoNotUse_default_instance_._instance,
     &::_BuffTable_ImmunetagEntry_DoNotUse_default_instance_._instance,
+    &::_BuffTable_RemovetagEntry_DoNotUse_default_instance_._instance,
     &::_BuffTable_default_instance_._instance,
     &::_BuffTabledData_default_instance_._instance,
 };
 const char descriptor_table_protodef_buff_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\021buff_config.proto\"\343\002\n\tBuffTable\022\n\n\002id\030"
+    "\n\021buff_config.proto\"\303\003\n\tBuffTable\022\n\n\002id\030"
     "\001 \001(\r\022\020\n\010nocaster\030\002 \001(\r\022 \n\003tag\030\003 \003(\0132\023.B"
     "uffTable.TagEntry\022,\n\timmunetag\030\004 \003(\0132\031.B"
-    "uffTable.ImmunetagEntry\022\r\n\005level\030\005 \001(\r\022\020"
-    "\n\010maxlayer\030\006 \001(\r\022\020\n\010duration\030\007 \001(\001\022\026\n\016fo"
-    "rceinterrupt\030\010 \001(\r\022\020\n\010interval\030\t \001(\001\022\025\n\r"
-    "intervalcount\030\n \001(\r\022\026\n\016intervaleffect\030\013 "
-    "\003(\001\032*\n\010TagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 "
-    "\001(\010:\0028\001\0320\n\016ImmunetagEntry\022\013\n\003key\030\001 \001(\t\022\r"
-    "\n\005value\030\002 \001(\010:\0028\001\"*\n\016BuffTabledData\022\030\n\004d"
-    "ata\030\001 \003(\0132\n.BuffTableB\tZ\007pb/gameb\006proto3"
+    "uffTable.ImmunetagEntry\022,\n\tremovetag\030\005 \003"
+    "(\0132\031.BuffTable.RemovetagEntry\022\r\n\005level\030\006"
+    " \001(\r\022\020\n\010maxlayer\030\007 \001(\r\022\020\n\010duration\030\010 \001(\001"
+    "\022\026\n\016forceinterrupt\030\t \001(\r\022\020\n\010interval\030\n \001"
+    "(\001\022\025\n\rintervalcount\030\013 \001(\r\022\026\n\016intervaleff"
+    "ect\030\014 \003(\001\032*\n\010TagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005va"
+    "lue\030\002 \001(\010:\0028\001\0320\n\016ImmunetagEntry\022\013\n\003key\030\001"
+    " \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\0320\n\016RemovetagEntr"
+    "y\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\"*\n\016Buf"
+    "fTabledData\022\030\n\004data\030\001 \003(\0132\n.BuffTableB\tZ"
+    "\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_buff_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_buff_5fconfig_2eproto = {
     false,
     false,
-    440,
+    536,
     descriptor_table_protodef_buff_5fconfig_2eproto,
     "buff_config.proto",
     &descriptor_table_buff_5fconfig_2eproto_once,
     nullptr,
     0,
-    4,
+    5,
     schemas,
     file_default_instances,
     TableStruct_buff_5fconfig_2eproto::offsets,
@@ -237,6 +268,16 @@ BuffTable_ImmunetagEntry_DoNotUse::BuffTable_ImmunetagEntry_DoNotUse(::google::p
 }
 // ===================================================================
 
+BuffTable_RemovetagEntry_DoNotUse::BuffTable_RemovetagEntry_DoNotUse() {}
+BuffTable_RemovetagEntry_DoNotUse::BuffTable_RemovetagEntry_DoNotUse(::google::protobuf::Arena* arena)
+    : SuperType(arena) {}
+::google::protobuf::Metadata BuffTable_RemovetagEntry_DoNotUse::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_buff_5fconfig_2eproto_getter,
+                                   &descriptor_table_buff_5fconfig_2eproto_once,
+                                   file_level_metadata_buff_5fconfig_2eproto[2]);
+}
+// ===================================================================
+
 class BuffTable::_Internal {
  public:
 };
@@ -251,6 +292,7 @@ inline PROTOBUF_NDEBUG_INLINE BuffTable::Impl_::Impl_(
     const Impl_& from)
       : tag_{visibility, arena, from.tag_},
         immunetag_{visibility, arena, from.immunetag_},
+        removetag_{visibility, arena, from.removetag_},
         intervaleffect_{visibility, arena, from.intervaleffect_},
         _cached_size_{0} {}
 
@@ -278,6 +320,7 @@ inline PROTOBUF_NDEBUG_INLINE BuffTable::Impl_::Impl_(
     ::google::protobuf::Arena* arena)
       : tag_{visibility, arena},
         immunetag_{visibility, arena},
+        removetag_{visibility, arena},
         intervaleffect_{visibility, arena},
         _cached_size_{0} {}
 
@@ -323,6 +366,7 @@ PROTOBUF_NOINLINE void BuffTable::Clear() {
 
   _impl_.tag_.Clear();
   _impl_.immunetag_.Clear();
+  _impl_.removetag_.Clear();
   _impl_.intervaleffect_.Clear();
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.intervalcount_) -
@@ -338,16 +382,16 @@ const char* BuffTable::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
+const ::_pbi::TcParseTable<4, 12, 3, 47, 2> BuffTable::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    11, 120,  // max_field_number, fast_idx_mask
+    12, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294965248,  // skipmap
+    4294963200,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    11,  // num_field_entries
-    2,  // num_aux_entries
+    12,  // num_field_entries
+    3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_BuffTable_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -364,28 +408,28 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.nocaster_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
-    // uint32 level = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.level_), 63>(),
-     {40, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.level_)}},
-    // uint32 maxlayer = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.maxlayer_), 63>(),
-     {48, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.maxlayer_)}},
-    // double duration = 7;
-    {::_pbi::TcParser::FastF64S1,
-     {57, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.duration_)}},
-    // uint32 forceinterrupt = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.forceinterrupt_), 63>(),
-     {64, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.forceinterrupt_)}},
-    // double interval = 9;
-    {::_pbi::TcParser::FastF64S1,
-     {73, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.interval_)}},
-    // uint32 intervalcount = 10;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.intervalcount_), 63>(),
-     {80, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervalcount_)}},
-    // repeated double intervaleffect = 11;
-    {::_pbi::TcParser::FastF64P1,
-     {90, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervaleffect_)}},
     {::_pbi::TcParser::MiniParse, {}},
+    // uint32 level = 6;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.level_), 63>(),
+     {48, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.level_)}},
+    // uint32 maxlayer = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.maxlayer_), 63>(),
+     {56, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.maxlayer_)}},
+    // double duration = 8;
+    {::_pbi::TcParser::FastF64S1,
+     {65, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.duration_)}},
+    // uint32 forceinterrupt = 9;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.forceinterrupt_), 63>(),
+     {72, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.forceinterrupt_)}},
+    // double interval = 10;
+    {::_pbi::TcParser::FastF64S1,
+     {81, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.interval_)}},
+    // uint32 intervalcount = 11;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffTable, _impl_.intervalcount_), 63>(),
+     {88, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervalcount_)}},
+    // repeated double intervaleffect = 12;
+    {::_pbi::TcParser::FastF64P1,
+     {98, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervaleffect_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -404,25 +448,28 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
     // map<string, bool> immunetag = 4;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.immunetag_), 0, 1,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
-    // uint32 level = 5;
+    // map<string, bool> removetag = 5;
+    {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.removetag_), 0, 2,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
+    // uint32 level = 6;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.level_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 maxlayer = 6;
+    // uint32 maxlayer = 7;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.maxlayer_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // double duration = 7;
+    // double duration = 8;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.duration_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // uint32 forceinterrupt = 8;
+    // uint32 forceinterrupt = 9;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.forceinterrupt_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // double interval = 9;
+    // double interval = 10;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.interval_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // uint32 intervalcount = 10;
+    // uint32 intervalcount = 11;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervalcount_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // repeated double intervaleffect = 11;
+    // repeated double intervaleffect = 12;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervaleffect_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedDouble)},
   }}, {{
@@ -434,11 +481,16 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
         decltype(BuffTable()._impl_.immunetag_)>(
         1, 0, 0, 9,
         8)},
+    {::_pbi::TcParser::GetMapAuxInfo<
+        decltype(BuffTable()._impl_.removetag_)>(
+        1, 0, 0, 9,
+        8)},
   }}, {{
-    "\11\0\0\3\11\0\0\0\0\0\0\0\0\0\0\0"
+    "\11\0\0\3\11\11\0\0\0\0\0\0\0\0\0\0"
     "BuffTable"
     "tag"
     "immunetag"
+    "removetag"
   }},
 };
 
@@ -517,21 +569,48 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
     }
   }
 
-  // uint32 level = 5;
+  // map<string, bool> removetag = 5;
+  if (!_internal_removetag().empty()) {
+    using MapType = ::google::protobuf::Map<std::string, bool>;
+    using WireHelper = _pbi::MapEntryFuncs<std::string, bool,
+                                   _pbi::WireFormatLite::TYPE_STRING,
+                                   _pbi::WireFormatLite::TYPE_BOOL>;
+    const auto& field = _internal_removetag();
+
+    if (stream->IsSerializationDeterministic() && field.size() > 1) {
+      for (const auto& entry : ::google::protobuf::internal::MapSorterPtr<MapType>(field)) {
+        target = WireHelper::InternalSerialize(
+            5, entry.first, entry.second, target, stream);
+        ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+            entry.first.data(), static_cast<int>(entry.first.length()),
+ ::google::protobuf::internal::WireFormatLite::SERIALIZE, "BuffTable.removetag");
+      }
+    } else {
+      for (const auto& entry : field) {
+        target = WireHelper::InternalSerialize(
+            5, entry.first, entry.second, target, stream);
+        ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+            entry.first.data(), static_cast<int>(entry.first.length()),
+ ::google::protobuf::internal::WireFormatLite::SERIALIZE, "BuffTable.removetag");
+      }
+    }
+  }
+
+  // uint32 level = 6;
   if (this->_internal_level() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        5, this->_internal_level(), target);
+        6, this->_internal_level(), target);
   }
 
-  // uint32 maxlayer = 6;
+  // uint32 maxlayer = 7;
   if (this->_internal_maxlayer() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        6, this->_internal_maxlayer(), target);
+        7, this->_internal_maxlayer(), target);
   }
 
-  // double duration = 7;
+  // double duration = 8;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_duration = this->_internal_duration();
@@ -540,17 +619,17 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
   if (raw_duration != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        7, this->_internal_duration(), target);
+        8, this->_internal_duration(), target);
   }
 
-  // uint32 forceinterrupt = 8;
+  // uint32 forceinterrupt = 9;
   if (this->_internal_forceinterrupt() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        8, this->_internal_forceinterrupt(), target);
+        9, this->_internal_forceinterrupt(), target);
   }
 
-  // double interval = 9;
+  // double interval = 10;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_interval = this->_internal_interval();
@@ -559,19 +638,19 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
   if (raw_interval != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        9, this->_internal_interval(), target);
+        10, this->_internal_interval(), target);
   }
 
-  // uint32 intervalcount = 10;
+  // uint32 intervalcount = 11;
   if (this->_internal_intervalcount() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        10, this->_internal_intervalcount(), target);
+        11, this->_internal_intervalcount(), target);
   }
 
-  // repeated double intervaleffect = 11;
+  // repeated double intervaleffect = 12;
   if (this->_internal_intervaleffect_size() > 0) {
-    target = stream->WriteFixedPacked(11, _internal_intervaleffect(), target);
+    target = stream->WriteFixedPacked(12, _internal_intervaleffect(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -605,7 +684,14 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
                                    _pbi::WireFormatLite::TYPE_STRING,
                                    _pbi::WireFormatLite::TYPE_BOOL>::ByteSizeLong(entry.first, entry.second);
   }
-  // repeated double intervaleffect = 11;
+  // map<string, bool> removetag = 5;
+  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_removetag_size());
+  for (const auto& entry : _internal_removetag()) {
+    total_size += _pbi::MapEntryFuncs<std::string, bool,
+                                   _pbi::WireFormatLite::TYPE_STRING,
+                                   _pbi::WireFormatLite::TYPE_BOOL>::ByteSizeLong(entry.first, entry.second);
+  }
+  // repeated double intervaleffect = 12;
   {
     std::size_t data_size = std::size_t{8} *
         ::_pbi::FromIntSize(this->_internal_intervaleffect_size())
@@ -629,19 +715,19 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
         this->_internal_nocaster());
   }
 
-  // uint32 level = 5;
+  // uint32 level = 6;
   if (this->_internal_level() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_level());
   }
 
-  // uint32 maxlayer = 6;
+  // uint32 maxlayer = 7;
   if (this->_internal_maxlayer() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_maxlayer());
   }
 
-  // double duration = 7;
+  // double duration = 8;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_duration = this->_internal_duration();
@@ -651,7 +737,7 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
     total_size += 9;
   }
 
-  // double interval = 9;
+  // double interval = 10;
   static_assert(sizeof(::uint64_t) == sizeof(double),
                 "Code assumes ::uint64_t and double are the same size.");
   double tmp_interval = this->_internal_interval();
@@ -661,13 +747,13 @@ const ::_pbi::TcParseTable<4, 11, 2, 38, 2> BuffTable::_table_ = {
     total_size += 9;
   }
 
-  // uint32 forceinterrupt = 8;
+  // uint32 forceinterrupt = 9;
   if (this->_internal_forceinterrupt() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_forceinterrupt());
   }
 
-  // uint32 intervalcount = 10;
+  // uint32 intervalcount = 11;
   if (this->_internal_intervalcount() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_intervalcount());
@@ -687,6 +773,7 @@ void BuffTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
 
   _this->_impl_.tag_.MergeFrom(from._impl_.tag_);
   _this->_impl_.immunetag_.MergeFrom(from._impl_.immunetag_);
+  _this->_impl_.removetag_.MergeFrom(from._impl_.removetag_);
   _this->_internal_mutable_intervaleffect()->MergeFrom(from._internal_intervaleffect());
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
@@ -741,6 +828,7 @@ void BuffTable::InternalSwap(BuffTable* PROTOBUF_RESTRICT other) {
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.tag_.InternalSwap(&other->_impl_.tag_);
   _impl_.immunetag_.InternalSwap(&other->_impl_.immunetag_);
+  _impl_.removetag_.InternalSwap(&other->_impl_.removetag_);
   _impl_.intervaleffect_.InternalSwap(&other->_impl_.intervaleffect_);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.intervalcount_)
@@ -753,7 +841,7 @@ void BuffTable::InternalSwap(BuffTable* PROTOBUF_RESTRICT other) {
 ::google::protobuf::Metadata BuffTable::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_buff_5fconfig_2eproto_getter,
                                    &descriptor_table_buff_5fconfig_2eproto_once,
-                                   file_level_metadata_buff_5fconfig_2eproto[2]);
+                                   file_level_metadata_buff_5fconfig_2eproto[3]);
 }
 // ===================================================================
 
@@ -945,7 +1033,7 @@ void BuffTabledData::InternalSwap(BuffTabledData* PROTOBUF_RESTRICT other) {
 ::google::protobuf::Metadata BuffTabledData::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_buff_5fconfig_2eproto_getter,
                                    &descriptor_table_buff_5fconfig_2eproto_once,
-                                   file_level_metadata_buff_5fconfig_2eproto[3]);
+                                   file_level_metadata_buff_5fconfig_2eproto[4]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
