@@ -5,8 +5,8 @@
 
 #include "skill_config.h"
 #include "mission_config.h"
-#include "condition_config.h"
 #include "buff_config.h"
+#include "condition_config.h"
 #include "testmultikey_config.h"
 #include "test_config.h"
 #include "item_config.h"
@@ -20,8 +20,8 @@ void LoadAllConfig()
 {
     SkillConfigurationTable::Instance().Load();
     MissionConfigurationTable::Instance().Load();
-    ConditionConfigurationTable::Instance().Load();
     BuffConfigurationTable::Instance().Load();
+    ConditionConfigurationTable::Instance().Load();
     TestMultiKeyConfigurationTable::Instance().Load();
     TestConfigurationTable::Instance().Load();
     ItemConfigurationTable::Instance().Load();
@@ -63,7 +63,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    ConditionConfigurationTable::Instance().Load();
+    BuffConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -74,7 +74,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    BuffConfigurationTable::Instance().Load();
+    ConditionConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();

@@ -6,6 +6,7 @@
 #include "buff_error_tip.pb.h"
 #include "common_error_tip.pb.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
+#include "game_logic/combat/buff/constants/buff_constants.h"
 #include "macros/return_define.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "thread_local/storage.h"
@@ -72,7 +73,7 @@ uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buf
     newBuff.abilityContext = abilityContext;
 
     auto [fst, snd] = buffList.emplace(newBuffId, std::move(newBuff));
-    OnBuffStart(parent, newBuffId);
+    OnBuffStart(parent, fst->second, buffTable);
 
     if (buffTable->duration() > 0) {
         fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
@@ -158,11 +159,15 @@ bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId){
     for (const auto& buffId : removeBuffIdList){
         BuffUtil::OnBuffExpire(parent, buffId);
     }
-    return false;
+    
+    return newBuffTable->bufftype() == kBuffTypeDispel;
 }
 
-void BuffUtil::OnBuffStart(entt::entity parent, uint64_t buffId)
-{
+void BuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable){
+    if (nullptr == buffTable) {
+        return;
+    }
+    
 }
 
 void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp)
