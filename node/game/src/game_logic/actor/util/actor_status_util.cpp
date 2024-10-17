@@ -7,6 +7,7 @@ void ActorStatusUtil::Initialize(){
     
 }
 
-void ActorStatusUtil::InitializeActorComponents(entt::entity entity){
-    tls.registry.emplace<ActorStatusPBComponent>(entity);
+void ActorStatusUtil::InitializeActorComponents(const entt::entity entity){
+    tls.registry.emplace<CalculatedAttributesPBComponent>(entity);
+    tls.registry.emplace<DerivedAttributesPBComponent>(entity);
 }
