@@ -15,6 +15,7 @@ class SkillExecutedEvent;
 //以及Context(Buff创建时的一些相关上下文数据)等等。
 
 class DamageEventPbComponent;
+struct BuffComp;
 
 class BuffUtil
 {
@@ -39,7 +40,7 @@ public:
     static bool OnBuffAwake(entt::entity parent, uint32_t buffTableId);
 
     //当Buff生效时（加入到Buff容器后），我们提供给策划一个抽象接口OnBuffStart，由策划配置具体效果。
-    static void OnBuffStart(entt::entity parent, uint64_t buffId);
+    static void OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable);
 
     //当Buff添加时存在相同类型且Caster相等的时候，Buff执行刷新流程（更新Buff层数，等级，持续时间等数据）。
     // 我们提供给策划一个抽象接口OnBuffRefresh，由策划配置具体效果。
