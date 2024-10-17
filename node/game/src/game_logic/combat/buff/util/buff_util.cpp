@@ -110,16 +110,19 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
     }
 
     const auto& buffList = tls.registry.get<BuffListComp>(parent);
-    const bool isImmune = IsTargetImmune(buffList, buffTable);
 
-    return isImmune ? kBuffTargetImmuneToBuff : kOK;
+    if (const bool isImmune = IsTargetImmune(buffList, buffTable)){
+        return kBuffTargetImmuneToBuff;
+    }
+    
+    return kOK;
 }
 
 bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent);
     for (auto& buffComp : buffList | std::views::values) {
-        if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.abilityContext->caster() == abilityContext->caster()) {
+        if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
             if (buffComp.buffPb.layer() < GetBuffTable(buffTableId).first->maxlayer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
             }
