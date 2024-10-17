@@ -50,9 +50,6 @@ struct TableStruct_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto;
-class ActorStatusPBComponent;
-struct ActorStatusPBComponentDefaultTypeInternal;
-extern ActorStatusPBComponentDefaultTypeInternal _ActorStatusPBComponent_default_instance_;
 class CalculatedAttributesPBComponent;
 struct CalculatedAttributesPBComponentDefaultTypeInternal;
 extern CalculatedAttributesPBComponentDefaultTypeInternal _CalculatedAttributesPBComponent_default_instance_;
@@ -364,6 +361,7 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
   enum : int {
     kAttackPowerFieldNumber = 1,
     kDefensePowerFieldNumber = 2,
+    kIsDeadFieldNumber = 3,
   };
   // uint64 attack_power = 1;
   void clear_attack_power() ;
@@ -385,12 +383,22 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
   void _internal_set_defense_power(::uint64_t value);
 
   public:
+  // bool isDead = 3;
+  void clear_isdead() ;
+  bool isdead() const;
+  void set_isdead(bool value);
+
+  private:
+  bool _internal_isdead() const;
+  void _internal_set_isdead(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:CalculatedAttributesPBComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 0,
+      2, 3, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -408,209 +416,8 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::uint64_t attack_power_;
     ::uint64_t defense_power_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto;
-};
-// -------------------------------------------------------------------
-
-class ActorStatusPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:ActorStatusPBComponent) */ {
- public:
-  inline ActorStatusPBComponent() : ActorStatusPBComponent(nullptr) {}
-  ~ActorStatusPBComponent() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ActorStatusPBComponent(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline ActorStatusPBComponent(const ActorStatusPBComponent& from) : ActorStatusPBComponent(nullptr, from) {}
-  inline ActorStatusPBComponent(ActorStatusPBComponent&& from) noexcept
-      : ActorStatusPBComponent(nullptr, std::move(from)) {}
-  inline ActorStatusPBComponent& operator=(const ActorStatusPBComponent& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline ActorStatusPBComponent& operator=(ActorStatusPBComponent&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const ActorStatusPBComponent& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const ActorStatusPBComponent* internal_default_instance() {
-    return reinterpret_cast<const ActorStatusPBComponent*>(
-        &_ActorStatusPBComponent_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(ActorStatusPBComponent& a, ActorStatusPBComponent& b) { a.Swap(&b); }
-  inline void Swap(ActorStatusPBComponent* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(ActorStatusPBComponent* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  ActorStatusPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<ActorStatusPBComponent>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ActorStatusPBComponent& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ActorStatusPBComponent& from) { ActorStatusPBComponent::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(ActorStatusPBComponent* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "ActorStatusPBComponent"; }
-
- protected:
-  explicit ActorStatusPBComponent(::google::protobuf::Arena* arena);
-  ActorStatusPBComponent(::google::protobuf::Arena* arena, const ActorStatusPBComponent& from);
-  ActorStatusPBComponent(::google::protobuf::Arena* arena, ActorStatusPBComponent&& from) noexcept
-      : ActorStatusPBComponent(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kCalculatedAttributesFieldNumber = 1,
-    kDerivedAttributesFieldNumber = 2,
-    kIsDeadFieldNumber = 3,
-  };
-  // .CalculatedAttributesPBComponent calculated_attributes = 1;
-  bool has_calculated_attributes() const;
-  void clear_calculated_attributes() ;
-  const ::CalculatedAttributesPBComponent& calculated_attributes() const;
-  PROTOBUF_NODISCARD ::CalculatedAttributesPBComponent* release_calculated_attributes();
-  ::CalculatedAttributesPBComponent* mutable_calculated_attributes();
-  void set_allocated_calculated_attributes(::CalculatedAttributesPBComponent* value);
-  void unsafe_arena_set_allocated_calculated_attributes(::CalculatedAttributesPBComponent* value);
-  ::CalculatedAttributesPBComponent* unsafe_arena_release_calculated_attributes();
-
-  private:
-  const ::CalculatedAttributesPBComponent& _internal_calculated_attributes() const;
-  ::CalculatedAttributesPBComponent* _internal_mutable_calculated_attributes();
-
-  public:
-  // .DerivedAttributesPBComponent derived_attributes = 2;
-  bool has_derived_attributes() const;
-  void clear_derived_attributes() ;
-  const ::DerivedAttributesPBComponent& derived_attributes() const;
-  PROTOBUF_NODISCARD ::DerivedAttributesPBComponent* release_derived_attributes();
-  ::DerivedAttributesPBComponent* mutable_derived_attributes();
-  void set_allocated_derived_attributes(::DerivedAttributesPBComponent* value);
-  void unsafe_arena_set_allocated_derived_attributes(::DerivedAttributesPBComponent* value);
-  ::DerivedAttributesPBComponent* unsafe_arena_release_derived_attributes();
-
-  private:
-  const ::DerivedAttributesPBComponent& _internal_derived_attributes() const;
-  ::DerivedAttributesPBComponent* _internal_mutable_derived_attributes();
-
-  public:
-  // bool isDead = 3;
-  void clear_isdead() ;
-  bool isdead() const;
-  void set_isdead(bool value);
-
-  private:
-  bool _internal_isdead() const;
-  void _internal_set_isdead(bool value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:ActorStatusPBComponent)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 2,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::CalculatedAttributesPBComponent* calculated_attributes_;
-    ::DerivedAttributesPBComponent* derived_attributes_;
     bool isdead_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -677,6 +484,28 @@ inline void CalculatedAttributesPBComponent::_internal_set_defense_power(::uint6
   _impl_.defense_power_ = value;
 }
 
+// bool isDead = 3;
+inline void CalculatedAttributesPBComponent::clear_isdead() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.isdead_ = false;
+}
+inline bool CalculatedAttributesPBComponent::isdead() const {
+  // @@protoc_insertion_point(field_get:CalculatedAttributesPBComponent.isDead)
+  return _internal_isdead();
+}
+inline void CalculatedAttributesPBComponent::set_isdead(bool value) {
+  _internal_set_isdead(value);
+  // @@protoc_insertion_point(field_set:CalculatedAttributesPBComponent.isDead)
+}
+inline bool CalculatedAttributesPBComponent::_internal_isdead() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.isdead_;
+}
+inline void CalculatedAttributesPBComponent::_internal_set_isdead(bool value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.isdead_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // DerivedAttributesPBComponent
@@ -701,224 +530,6 @@ inline ::uint64_t DerivedAttributesPBComponent::_internal_max_health() const {
 inline void DerivedAttributesPBComponent::_internal_set_max_health(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.max_health_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// ActorStatusPBComponent
-
-// .CalculatedAttributesPBComponent calculated_attributes = 1;
-inline bool ActorStatusPBComponent::has_calculated_attributes() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.calculated_attributes_ != nullptr);
-  return value;
-}
-inline void ActorStatusPBComponent::clear_calculated_attributes() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.calculated_attributes_ != nullptr) _impl_.calculated_attributes_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-inline const ::CalculatedAttributesPBComponent& ActorStatusPBComponent::_internal_calculated_attributes() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::CalculatedAttributesPBComponent* p = _impl_.calculated_attributes_;
-  return p != nullptr ? *p : reinterpret_cast<const ::CalculatedAttributesPBComponent&>(::_CalculatedAttributesPBComponent_default_instance_);
-}
-inline const ::CalculatedAttributesPBComponent& ActorStatusPBComponent::calculated_attributes() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ActorStatusPBComponent.calculated_attributes)
-  return _internal_calculated_attributes();
-}
-inline void ActorStatusPBComponent::unsafe_arena_set_allocated_calculated_attributes(::CalculatedAttributesPBComponent* value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.calculated_attributes_);
-  }
-  _impl_.calculated_attributes_ = reinterpret_cast<::CalculatedAttributesPBComponent*>(value);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ActorStatusPBComponent.calculated_attributes)
-}
-inline ::CalculatedAttributesPBComponent* ActorStatusPBComponent::release_calculated_attributes() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  ::CalculatedAttributesPBComponent* released = _impl_.calculated_attributes_;
-  _impl_.calculated_attributes_ = nullptr;
-#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
-  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
-  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  if (GetArena() == nullptr) {
-    delete old;
-  }
-#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
-  if (GetArena() != nullptr) {
-    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  }
-#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
-  return released;
-}
-inline ::CalculatedAttributesPBComponent* ActorStatusPBComponent::unsafe_arena_release_calculated_attributes() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:ActorStatusPBComponent.calculated_attributes)
-
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  ::CalculatedAttributesPBComponent* temp = _impl_.calculated_attributes_;
-  _impl_.calculated_attributes_ = nullptr;
-  return temp;
-}
-inline ::CalculatedAttributesPBComponent* ActorStatusPBComponent::_internal_mutable_calculated_attributes() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.calculated_attributes_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::CalculatedAttributesPBComponent>(GetArena());
-    _impl_.calculated_attributes_ = reinterpret_cast<::CalculatedAttributesPBComponent*>(p);
-  }
-  return _impl_.calculated_attributes_;
-}
-inline ::CalculatedAttributesPBComponent* ActorStatusPBComponent::mutable_calculated_attributes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000001u;
-  ::CalculatedAttributesPBComponent* _msg = _internal_mutable_calculated_attributes();
-  // @@protoc_insertion_point(field_mutable:ActorStatusPBComponent.calculated_attributes)
-  return _msg;
-}
-inline void ActorStatusPBComponent::set_allocated_calculated_attributes(::CalculatedAttributesPBComponent* value) {
-  ::google::protobuf::Arena* message_arena = GetArena();
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (message_arena == nullptr) {
-    delete (_impl_.calculated_attributes_);
-  }
-
-  if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
-    if (message_arena != submessage_arena) {
-      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
-    }
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-
-  _impl_.calculated_attributes_ = reinterpret_cast<::CalculatedAttributesPBComponent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:ActorStatusPBComponent.calculated_attributes)
-}
-
-// .DerivedAttributesPBComponent derived_attributes = 2;
-inline bool ActorStatusPBComponent::has_derived_attributes() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.derived_attributes_ != nullptr);
-  return value;
-}
-inline void ActorStatusPBComponent::clear_derived_attributes() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.derived_attributes_ != nullptr) _impl_.derived_attributes_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000002u;
-}
-inline const ::DerivedAttributesPBComponent& ActorStatusPBComponent::_internal_derived_attributes() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::DerivedAttributesPBComponent* p = _impl_.derived_attributes_;
-  return p != nullptr ? *p : reinterpret_cast<const ::DerivedAttributesPBComponent&>(::_DerivedAttributesPBComponent_default_instance_);
-}
-inline const ::DerivedAttributesPBComponent& ActorStatusPBComponent::derived_attributes() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ActorStatusPBComponent.derived_attributes)
-  return _internal_derived_attributes();
-}
-inline void ActorStatusPBComponent::unsafe_arena_set_allocated_derived_attributes(::DerivedAttributesPBComponent* value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.derived_attributes_);
-  }
-  _impl_.derived_attributes_ = reinterpret_cast<::DerivedAttributesPBComponent*>(value);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000002u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ActorStatusPBComponent.derived_attributes)
-}
-inline ::DerivedAttributesPBComponent* ActorStatusPBComponent::release_derived_attributes() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-
-  _impl_._has_bits_[0] &= ~0x00000002u;
-  ::DerivedAttributesPBComponent* released = _impl_.derived_attributes_;
-  _impl_.derived_attributes_ = nullptr;
-#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
-  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
-  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  if (GetArena() == nullptr) {
-    delete old;
-  }
-#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
-  if (GetArena() != nullptr) {
-    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  }
-#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
-  return released;
-}
-inline ::DerivedAttributesPBComponent* ActorStatusPBComponent::unsafe_arena_release_derived_attributes() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:ActorStatusPBComponent.derived_attributes)
-
-  _impl_._has_bits_[0] &= ~0x00000002u;
-  ::DerivedAttributesPBComponent* temp = _impl_.derived_attributes_;
-  _impl_.derived_attributes_ = nullptr;
-  return temp;
-}
-inline ::DerivedAttributesPBComponent* ActorStatusPBComponent::_internal_mutable_derived_attributes() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.derived_attributes_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::DerivedAttributesPBComponent>(GetArena());
-    _impl_.derived_attributes_ = reinterpret_cast<::DerivedAttributesPBComponent*>(p);
-  }
-  return _impl_.derived_attributes_;
-}
-inline ::DerivedAttributesPBComponent* ActorStatusPBComponent::mutable_derived_attributes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000002u;
-  ::DerivedAttributesPBComponent* _msg = _internal_mutable_derived_attributes();
-  // @@protoc_insertion_point(field_mutable:ActorStatusPBComponent.derived_attributes)
-  return _msg;
-}
-inline void ActorStatusPBComponent::set_allocated_derived_attributes(::DerivedAttributesPBComponent* value) {
-  ::google::protobuf::Arena* message_arena = GetArena();
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (message_arena == nullptr) {
-    delete (_impl_.derived_attributes_);
-  }
-
-  if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
-    if (message_arena != submessage_arena) {
-      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
-    }
-    _impl_._has_bits_[0] |= 0x00000002u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
-  }
-
-  _impl_.derived_attributes_ = reinterpret_cast<::DerivedAttributesPBComponent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:ActorStatusPBComponent.derived_attributes)
-}
-
-// bool isDead = 3;
-inline void ActorStatusPBComponent::clear_isdead() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.isdead_ = false;
-}
-inline bool ActorStatusPBComponent::isdead() const {
-  // @@protoc_insertion_point(field_get:ActorStatusPBComponent.isDead)
-  return _internal_isdead();
-}
-inline void ActorStatusPBComponent::set_isdead(bool value) {
-  _internal_set_isdead(value);
-  // @@protoc_insertion_point(field_set:ActorStatusPBComponent.isDead)
-}
-inline bool ActorStatusPBComponent::_internal_isdead() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.isdead_;
-}
-inline void ActorStatusPBComponent::_internal_set_isdead(bool value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.isdead_ = value;
 }
 
 #ifdef __GNUC__

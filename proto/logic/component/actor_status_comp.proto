@@ -8,6 +8,7 @@ import "common/comp.proto";
 message CalculatedAttributesPBComponent {
     uint64 attack_power = 1;   // 攻击力
     uint64 defense_power = 2;  // 防御力
+	bool isDead = 3; // 独立的生死状态
 }
 
 // 衍生属性，服务器端计算
@@ -15,10 +16,4 @@ message DerivedAttributesPBComponent {
     uint64 max_health = 1;     // 最大生命值
 }
 
-// 角色状态，仅包含计算和衍生属性
-message ActorStatusPBComponent {
-    CalculatedAttributesPBComponent calculated_attributes = 1; // 计算属性
-    DerivedAttributesPBComponent derived_attributes = 2;     // 衍生属性
-	bool isDead = 3; // 独立的生死状态
-}
 
