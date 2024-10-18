@@ -150,9 +150,6 @@
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -177,7 +174,7 @@
     <ClCompile Include="src\handler\event\player_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\actor\util\actor_status_util.cpp">
+    <ClCompile Include="src\game_logic\actor\util\actor_state_attribute_sync_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\npc\util\npc_util.cpp">
@@ -190,6 +187,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\event\skill_event_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -365,9 +365,6 @@
     <ClInclude Include="src\game_logic\combat\buff\comp\buff_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\buff\util\modifier_util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -389,7 +386,7 @@
     <ClInclude Include="src\handler\event\player_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\actor\util\actor_status_util.h">
+    <ClInclude Include="src\game_logic\actor\util\actor_state_attribute_sync_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\npc\util\npc_util.h">
@@ -402,6 +399,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\skill_event_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\combat\buff\util\modifier_buff_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

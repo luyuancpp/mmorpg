@@ -2,7 +2,7 @@
 #include "logic/event/npc_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "game_logic/actor/util/actor_status_util.h"
+#include "game_logic/actor/util/actor_state_attribute_sync_util.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/util/skill_util.h"
 #include "game_logic/npc/util/npc_util.h"
@@ -28,7 +28,7 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
         return;
     }
     
-    ActorStatusUtil::InitializeActorComponents(npc);
+    ActorStateAttributeSyncUtil::InitializeActorComponents(npc);
     NpcUtil::InitializeNpcComponents(npc);
     SkillUtil::InitializeActorComponents(npc);
     BuffUtil::InitializeActorComponents(npc);
