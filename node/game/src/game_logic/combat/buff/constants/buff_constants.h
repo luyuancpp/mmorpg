@@ -2,7 +2,7 @@
 
 enum eBuffType {
     // 控制类 Buff
-    kBuffTypeMovementSlow = 0,           // 移动速度减速
+    kBuffTypeMovementSpeedReduction = 0,           // 移动速度减速
     kBuffTypeAttackSpeedSlow = 1,        // 攻击速度减速
     kBuffTypeCastSpeedSlow = 2,          // 技能施放速度减速
     kBuffTypeGlobalSlow = 3,             // 全局减速（移动、攻击、施法等都减速）
@@ -11,7 +11,7 @@ enum eBuffType {
     kBuffTypeIncreaseAttack = 10,        // 增加攻击力
     kBuffTypeIncreaseDefense = 11,       // 增加防御力
     kBuffTypeIncreaseHealth = 12,        // 增加最大生命值
-    kBuffTypeIncreaseSpeed = 13,         // 提高移动速度
+    kBuffTypeMovementSpeedBoost = 13,         // 提高移动速度
     kBuffTypeIncreaseCriticalChance = 14,// 提高暴击率
 
     // 防御类 Buff

@@ -5,6 +5,8 @@
 #include "buff_config.h"
 #include "buff_error_tip.pb.h"
 #include "common_error_tip.pb.h"
+#include "modifier_buff_util.h"
+#include "motion_modifier_util.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "macros/return_define.h"
@@ -140,7 +142,7 @@ bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId){
         return result;
     }
 
-    UInt64Vector removeBuffIdList;
+    UInt64Vector dispelBuffIdList;
 
     for (auto& buffList = tls.registry.get<BuffListComp>(parent); auto& [buffId, buffPbComp] : buffList){
         auto [buffTable, result] = GetBuffTable(buffTableId);
@@ -148,15 +150,15 @@ bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId){
             continue;
         }
 
-        for (auto& [removeTag, _] : newBuffTable->removetag()){
+        for (auto& [removeTag, _] : newBuffTable->dispeltag()){
             if (buffTable->tag().contains(removeTag)){
-                removeBuffIdList.emplace_back(buffId);
+                dispelBuffIdList.emplace_back(buffId);
                 break;
             }
         }
     }
 
-    for (const auto& buffId : removeBuffIdList){
+    for (const auto& buffId : dispelBuffIdList){
         BuffUtil::OnBuffExpire(parent, buffId);
     }
     
@@ -164,10 +166,12 @@ bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId){
 }
 
 void BuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable){
-    if (nullptr == buffTable) {
+    if (ModifierBuffUtil::OnBuffStart(parent, buff, buffTable)) {
+        return;
+    } else if (MotionModifierBuffUtil::OnBuffStart(parent, buff, buffTable))
+    {
         return;
     }
-    
 }
 
 void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp)
@@ -177,7 +181,11 @@ void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const Sk
 
 void BuffUtil::OnBuffRemove(entt::entity parent, uint64_t buffId)
 {
-    // Implement logic if needed
+    if (ModifierBuffUtil::OnBuffRemove(parent, buffId)){
+        return;
+    }else if ( ModifierBuffUtil::OnBuffRemove(parent, buffId)){
+        return;
+    }
 }
 
 void BuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
