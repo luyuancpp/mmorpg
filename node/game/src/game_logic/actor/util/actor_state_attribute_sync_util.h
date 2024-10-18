@@ -2,7 +2,7 @@
 
 #include "util/game_registry.h"
 
-class ActorStatusUtil
+class ActorStateAttributeSyncUtil
 {
 public:
     static void Initialize();
