@@ -10,11 +10,11 @@ public:
     
     static void InitializeActorComponents(entt::entity entity);
 
-    static void GetNearLevel1EntityList(entt::entity entity, const EntityVector& entityList);
+    static void GetNearLevel1EntityList(const entt::entity entity, const EntityVector& entityList);
 
-    static void GetNearLevel2EntityList(entt::entity entity, const EntityVector& entityList);
+    static void GetNearLevel2EntityList(const entt::entity entity, const EntityVector& entityList);
 
-    static void GetNearLevel3EntityList(entt::entity entity, const EntityVector& entityList);
+    static void GetNearLevel3EntityList(const entt::entity entity, const EntityVector& entityList);
 
     static void SyncBasicAttributes(entt::entity entity, const EntityVector& nearbyEntities, double delta);
 
