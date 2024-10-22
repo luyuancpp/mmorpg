@@ -6,43 +6,72 @@
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 
+constexpr uint32_t kFrameArraySize = 5;
+
+using SyncLevelConfigs = std::array<uint32_t, kFrameArraySize>;
+
+constexpr  SyncLevelConfigs syncConfigsLevel1{
+     eAttributeSyncFrequency::kSyncEvery1Frame,
+     eAttributeSyncFrequency::kSyncEvery2Frames, 
+     eAttributeSyncFrequency::kSyncEvery5Frames, 
+     eAttributeSyncFrequency::kSyncEvery10Frames, 
+     eAttributeSyncFrequency::kSyncEvery30Frames};
+
+constexpr  SyncLevelConfigs syncConfigsLevel2{
+    eAttributeSyncFrequency::kSyncEvery1Frame,
+    eAttributeSyncFrequency::kSyncEvery2Frames, 
+    eAttributeSyncFrequency::kSyncEvery5Frames};
+
+
+constexpr  SyncLevelConfigs syncConfigsLevel3{
+    eAttributeSyncFrequency::kSyncEvery1Frame};
+
+// 根据距离级别执行同步逻辑的函数
+void SyncByDistanceLevel(const entt::entity& entity, EntityVector& entityList, int level, const double delta) {
+    const auto frameCount = tlsGame.frameTime.frame_count();
+    
+    const SyncLevelConfigs* syncConfigs = nullptr;
+    
+    if (level == 1) {
+        syncConfigs = &syncConfigsLevel1;
+        ActorStateAttributeSyncUtil::GetNearLevel1EntityList(entity, entityList);
+    }
+    else if (level == 2) {
+        syncConfigs = &syncConfigsLevel2;
+        ActorStateAttributeSyncUtil::GetNearLevel2EntityList(entity, entityList);
+    }
+    else if (level == 3) {
+        syncConfigs = &syncConfigsLevel3;
+        ActorStateAttributeSyncUtil::GetNearLevel3EntityList(entity, entityList);
+    }
+
+    ActorStateAttributeSyncUtil::SyncBasicAttributes(entity, entityList, delta);  // 只同步基础属性
+
+    if (nullptr == syncConfigs)
+    {
+        return;
+    }
+    
+    // 根据配置和帧数执行同步
+    for (const auto& config : *syncConfigs) {
+        if (frameCount % config == 0) {
+            ActorStateAttributeSyncUtil::SyncAttributes(entity, entityList, config, delta);
+        }
+    }
+
+    entityList.clear();  // 清空列表为下一个距离级别做准备
+}
+
 void ActorStateAttributeSyncSystem::Update(const double delta)
 {
-    const auto frameCount = tlsGame.frameTime.frame_count();
-
     EntityVector entityList;
 
     // 遍历所有带有 Transform 组件的实体
     for (auto [entity, transform] : tls.registry.view<Transform>().each())
     {
-        // 获取 Level 1 近距离的实体，并进行高频同步
-        ActorStateAttributeSyncUtil::GetNearLevel1EntityList(entity, entityList);
-        ActorStateAttributeSyncUtil::SyncAttributes(entity, entityList, eAttributeSyncFrequency::kSyncEvery1Frame, delta);
-        entityList.clear();  // 清空列表
-
-        // 获取 Level 2 中距离的实体，并每 2 帧同步一次
-        ActorStateAttributeSyncUtil::GetNearLevel2EntityList(entity, entityList);
-        if (frameCount % eAttributeSyncFrequency::kSyncEvery2Frames == 0) {
-            ActorStateAttributeSyncUtil::SyncAttributes(entity, entityList, eAttributeSyncFrequency::kSyncEvery2Frames, delta);
-        }
-        entityList.clear();
-
-        // 获取 Level 3 远距离的实体，并每 5 帧同步一次
-        ActorStateAttributeSyncUtil::GetNearLevel3EntityList(entity, entityList);
-        if (frameCount % eAttributeSyncFrequency::kSyncEvery5Frames == 0) {
-            ActorStateAttributeSyncUtil::SyncAttributes(entity, entityList, eAttributeSyncFrequency::kSyncEvery5Frames, delta);
-        }
-        entityList.clear();
-
-        // 每 10 帧同步一次低优先级属性
-        if (frameCount % eAttributeSyncFrequency::kSyncEvery10Frames == 0) {
-            ActorStateAttributeSyncUtil::SyncAttributes(entity, entityList, eAttributeSyncFrequency::kSyncEvery10Frames, delta);
-        }
-
-        // 每 30 帧同步一次很低优先级属性
-        if (frameCount % eAttributeSyncFrequency::kSyncEvery30Frames == 0) {
-            ActorStateAttributeSyncUtil::SyncAttributes(entity, entityList, eAttributeSyncFrequency::kSyncEvery30Frames, delta);
-        }
+        // 处理各距离级别的同步，传入距离级别参数
+        SyncByDistanceLevel(entity, entityList, 1, delta);  // 近距离同步
+        SyncByDistanceLevel(entity, entityList, 2, delta);  // 中距离同步
+        SyncByDistanceLevel(entity, entityList, 3, delta);  // 远距离同步
     }
 }
-
