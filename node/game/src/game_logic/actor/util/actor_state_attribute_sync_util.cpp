@@ -17,15 +17,15 @@ void ActorStateAttributeSyncUtil::InitializeActorComponents(const entt::entity e
     tls.registry.emplace<DerivedAttributesPBComponent>(entity);
 }
 
-void ActorStateAttributeSyncUtil::GetNearLevel1EntityList(const entt::entity entity, const EntityVector& entityList)
+void ActorStateAttributeSyncUtil::GetNearLevel1EntityList(const entt::entity entity, EntityVector& entityList)
 {
 }
 
-void ActorStateAttributeSyncUtil::GetNearLevel2EntityList(const entt::entity entity, const EntityVector& entityList)
+void ActorStateAttributeSyncUtil::GetNearLevel2EntityList(const entt::entity entity, EntityVector& entityList)
 {
 }
 
-void ActorStateAttributeSyncUtil::GetNearLevel3EntityList(const entt::entity entity, const EntityVector& entityList)
+void ActorStateAttributeSyncUtil::GetNearLevel3EntityList(const entt::entity entity, EntityVector& entityList)
 {
 }
 

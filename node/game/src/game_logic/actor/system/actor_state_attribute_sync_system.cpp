@@ -6,70 +6,72 @@
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 
-constexpr uint32_t kFrameArraySize = 5;
+// 定义帧同步频率的配置数组大小
+constexpr uint32_t kSyncFrequencyArraySize = 5;
 
-// 使用别名简化配置数组类型
-using SyncLevelConfigs = std::array<uint32_t, kFrameArraySize>;
+// 别名：定义同步频率数组类型
+using SyncFrequencyArray = std::array<uint32_t, kSyncFrequencyArraySize>;
 
-// 各级别的同步频率配置
-constexpr SyncLevelConfigs syncConfigsLevel1{
+// 定义不同距离级别的同步频率
+constexpr SyncFrequencyArray kLevel1SyncFrequencies{
     eAttributeSyncFrequency::kSyncEvery1Frame,
     eAttributeSyncFrequency::kSyncEvery2Frames, 
     eAttributeSyncFrequency::kSyncEvery5Frames, 
     eAttributeSyncFrequency::kSyncEvery10Frames, 
     eAttributeSyncFrequency::kSyncEvery30Frames};
 
-constexpr SyncLevelConfigs syncConfigsLevel2{
+constexpr SyncFrequencyArray kLevel2SyncFrequencies{
     eAttributeSyncFrequency::kSyncEvery1Frame,
     eAttributeSyncFrequency::kSyncEvery2Frames, 
     eAttributeSyncFrequency::kSyncEvery5Frames};
 
-constexpr SyncLevelConfigs syncConfigsLevel3{
+constexpr SyncFrequencyArray kLevel3SyncFrequencies{
     eAttributeSyncFrequency::kSyncEvery1Frame};
 
-// 将距离级别、配置和实体列表获取函数绑定
-struct SyncLevel {
-    const SyncLevelConfigs& configs;
-    std::function<void (const entt::entity&, const EntityVector&)> getEntityList;
+// 定义距离级别同步配置结构体，包含同步频率和获取实体列表的函数指针
+struct DistanceSyncConfig {
+    const SyncFrequencyArray& syncFrequencies;
+    void (*retrieveEntityList)(const entt::entity, EntityVector&);
 };
 
-// 不同距离级别的配置
-const SyncLevel syncLevels[] = {
-    {syncConfigsLevel1, ActorStateAttributeSyncUtil::GetNearLevel1EntityList},
-    {syncConfigsLevel2, ActorStateAttributeSyncUtil::GetNearLevel2EntityList},
-    {syncConfigsLevel3, ActorStateAttributeSyncUtil::GetNearLevel3EntityList}
+// 定义不同距离级别的同步配置
+constexpr DistanceSyncConfig kDistanceSyncConfigs[] = {
+    {kLevel1SyncFrequencies, ActorStateAttributeSyncUtil::GetNearLevel1EntityList},
+    {kLevel2SyncFrequencies, ActorStateAttributeSyncUtil::GetNearLevel2EntityList},
+    {kLevel3SyncFrequencies, ActorStateAttributeSyncUtil::GetNearLevel3EntityList}
 };
 
-// 执行同步的通用函数，处理所有距离级别
-void SyncByDistanceLevel(const entt::entity& entity, EntityVector& entityList, const SyncLevel& syncLevel, const double delta) {
-    const auto frameCount = tlsGame.frameTime.frame_count();
+// 通用的同步函数，根据不同距离级别执行同步
+void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& nearbyEntityList, const DistanceSyncConfig& distanceSyncConfig, const double deltaTime) {
+    const auto currentFrame = tlsGame.frameTime.frame_count();
 
-    // 获取对应距离级别的实体列表
-    syncLevel.getEntityList(entity, entityList);
+    // 获取该距离级别的实体列表
+    distanceSyncConfig.retrieveEntityList(entity, nearbyEntityList);
 
     // 始终同步基础属性
-    ActorStateAttributeSyncUtil::SyncBasicAttributes(entity, entityList, delta);
+    ActorStateAttributeSyncUtil::SyncBasicAttributes(entity, nearbyEntityList, deltaTime);
 
-    // 根据配置和帧数执行属性同步
-    for (const auto& config : syncLevel.configs) {
-        if (frameCount % config == 0) {
-            ActorStateAttributeSyncUtil::SyncAttributes(entity, entityList, config, delta);
+    // 根据每个帧同步频率配置进行属性同步
+    for (const auto& frequency : distanceSyncConfig.syncFrequencies) {
+        if (currentFrame % frequency == 0) {
+            ActorStateAttributeSyncUtil::SyncAttributes(entity, nearbyEntityList, frequency, deltaTime);
         }
     }
 
-    entityList.clear();  // 清空列表为下一个距离级别做准备
+    // 清空实体列表，为下一个距离级别的同步做准备
+    nearbyEntityList.clear();
 }
 
+// 系统更新函数，遍历每个实体并按距离级别进行属性同步
 void ActorStateAttributeSyncSystem::Update(const double delta)
 {
-    EntityVector entityList;
+    EntityVector nearbyEntityList;
 
-    // 遍历所有带有 Transform 组件的实体
     for (auto [entity, transform] : tls.registry.view<Transform>().each())
     {
-        // 处理各距离级别的同步，迭代 syncLevels 数组，动态处理距离级别
-        for (const auto& syncLevel : syncLevels) {
-            SyncByDistanceLevel(entity, entityList, syncLevel, delta);
+        // 处理各距离级别的同步，迭代 kDistanceSyncConfigs 数组，动态处理距离级别
+        for (const auto& distanceSyncConfig : kDistanceSyncConfigs) {
+            SyncAttributesForDistanceLevel(entity, nearbyEntityList, distanceSyncConfig, delta);
         }
     }
 }
