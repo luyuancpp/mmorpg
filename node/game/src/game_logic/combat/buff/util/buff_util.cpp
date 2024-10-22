@@ -123,8 +123,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
 
 bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
-    auto& buffList = tls.registry.get<BuffListComp>(parent);
-    for (auto& buffComp : buffList | std::views::values) {
+    for (auto& buffList = tls.registry.get<BuffListComp>(parent); auto& buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
             if (buffComp.buffPb.layer() < GetBuffTable(buffTableId).first->maxlayer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
@@ -150,7 +149,7 @@ bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId){
             continue;
         }
 
-        for (auto& [removeTag, _] : newBuffTable->dispeltag()){
+        for (const auto& removeTag : newBuffTable->dispeltag() | std::views::keys){
             if (buffTable->tag().contains(removeTag)){
                 dispelBuffIdList.emplace_back(buffId);
                 break;

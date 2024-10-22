@@ -5,6 +5,7 @@
 #include "logic/server/centre_scene.pb.h"
 #include "common/centre_service.pb.h"
 #include "logic/client_player/player_scene.pb.h"
+#include "logic/client_player/player_state_attribute_sync.pb.h"
 #include "logic/server_player/game_player_scene.pb.h"
 #include "logic/server_player/game_player.pb.h"
 #include "logic/server/game_scene.pb.h"
@@ -18,6 +19,7 @@
 #include "centre_scene_service_info.h"
 #include "centre_service_service_info.h"
 #include "player_scene_service_info.h"
+#include "player_state_attribute_sync_service_info.h"
 #include "game_player_scene_service_info.h"
 #include "game_player_service_info.h"
 #include "game_scene_service_info.h"
@@ -31,6 +33,7 @@ class CentrePlayerServiceImpl final : public CentrePlayerService{};
 class CentreSceneServiceImpl final : public CentreSceneService{};
 class CentreServiceImpl final : public CentreService{};
 class ClientPlayerSceneServiceImpl final : public ClientPlayerSceneService{};
+class EntityStateSyncServiceImpl final : public EntityStateSyncService{};
 class GamePlayerSceneServiceImpl final : public GamePlayerSceneService{};
 class GamePlayerServiceImpl final : public GamePlayerService{};
 class GameSceneServiceImpl final : public GameSceneService{};
@@ -85,6 +88,9 @@ g_message_info[ClientPlayerSceneServiceNotifyActorListCreateMessageId] = RpcServ
 g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListCreateMessageId);
 g_message_info[ClientPlayerSceneServiceNotifyActorListDestroyMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorListDestroy","ActorListDestroyS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
 g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListDestroyMessageId);
+
+g_message_info[EntityStateSyncServiceSyncVelocityMessageId] = RpcService{"EntityStateSyncService","SyncVelocity","SyncEntityVelocityS2C","Empty",std::make_unique_for_overwrite<EntityStateSyncServiceImpl>()};
+g_c2s_service_id.emplace(EntityStateSyncServiceSyncVelocityMessageId);
 
 g_message_info[GamePlayerSceneServiceEnterSceneMessageId] = RpcService{"GamePlayerSceneService","EnterScene","GsEnterSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};
 g_message_info[GamePlayerSceneServiceLeaveSceneMessageId] = RpcService{"GamePlayerSceneService","LeaveScene","GsLeaveSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};

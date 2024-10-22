@@ -192,6 +192,12 @@
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\service\player\player_state_attribute_sync_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_logic\actor\system\actor_state_attribute_sync_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -402,6 +408,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\combat\buff\util\modifier_buff_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\service\player\player_state_attribute_sync_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\actor\system\actor_state_attribute_sync_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\actor\constants\actor_state_attribute_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
