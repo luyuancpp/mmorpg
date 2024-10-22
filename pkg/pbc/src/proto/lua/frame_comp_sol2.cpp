@@ -12,6 +12,8 @@ sol::property(&FrameTime::delta_time, &FrameTime::set_delta_time),
 sol::property(&FrameTime::target_fps, &FrameTime::set_target_fps),
 "time_accumulator",
 sol::property(&FrameTime::time_accumulator, &FrameTime::set_time_accumulator),
+"frame_count",
+sol::property(&FrameTime::frame_count, &FrameTime::set_frame_count),
 "DebugString",
 &FrameTime::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

@@ -15,6 +15,9 @@ void InitServiceLua()
 	void InitClientPlayerSceneServiceLua();
 	InitClientPlayerSceneServiceLua();
 
+	void InitEntityStateSyncServiceLua();
+	InitEntityStateSyncServiceLua();
+
 	void InitGamePlayerSceneServiceLua();
 	InitGamePlayerSceneServiceLua();
 

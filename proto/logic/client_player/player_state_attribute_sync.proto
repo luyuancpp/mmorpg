@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+import "common/tip.proto";
+import "common/comp.proto";
+import "common/empty.proto";
+import "logic/component/skill_comp.proto";
+import "logic/component/actor_comp.proto";
+
+option cc_generic_services = true;
+
+message SyncEntityVelocityS2C 
+{
+  uint64 entity_id = 1;       // 实体的唯一ID
+  Velocity velocity = 2;      // 速度信息，Velocity 类型定义在导入的 proto 文件中
+}
+
+service EntityStateSyncService 
+{
+  rpc SyncVelocity (SyncEntityVelocityS2C) returns (Empty);
+}
