@@ -29,6 +29,11 @@ void ActorStateAttributeSyncUtil::GetNearLevel3EntityList(entt::entity entity, c
 {
 }
 
+void ActorStateAttributeSyncUtil::SyncBasicAttributes(entt::entity entity, const EntityVector& nearbyEntities,
+    double delta)
+{
+}
+
 void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency, double delta)
 {
     for (const auto& nearbyEntity : nearbyEntities)
