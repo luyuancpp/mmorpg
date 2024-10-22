@@ -8,52 +8,50 @@
 
 constexpr uint32_t kFrameArraySize = 5;
 
+// 使用别名简化配置数组类型
 using SyncLevelConfigs = std::array<uint32_t, kFrameArraySize>;
 
-constexpr  SyncLevelConfigs syncConfigsLevel1{
-     eAttributeSyncFrequency::kSyncEvery1Frame,
-     eAttributeSyncFrequency::kSyncEvery2Frames, 
-     eAttributeSyncFrequency::kSyncEvery5Frames, 
-     eAttributeSyncFrequency::kSyncEvery10Frames, 
-     eAttributeSyncFrequency::kSyncEvery30Frames};
+// 各级别的同步频率配置
+constexpr SyncLevelConfigs syncConfigsLevel1{
+    eAttributeSyncFrequency::kSyncEvery1Frame,
+    eAttributeSyncFrequency::kSyncEvery2Frames, 
+    eAttributeSyncFrequency::kSyncEvery5Frames, 
+    eAttributeSyncFrequency::kSyncEvery10Frames, 
+    eAttributeSyncFrequency::kSyncEvery30Frames};
 
-constexpr  SyncLevelConfigs syncConfigsLevel2{
+constexpr SyncLevelConfigs syncConfigsLevel2{
     eAttributeSyncFrequency::kSyncEvery1Frame,
     eAttributeSyncFrequency::kSyncEvery2Frames, 
     eAttributeSyncFrequency::kSyncEvery5Frames};
 
-
-constexpr  SyncLevelConfigs syncConfigsLevel3{
+constexpr SyncLevelConfigs syncConfigsLevel3{
     eAttributeSyncFrequency::kSyncEvery1Frame};
 
-// 根据距离级别执行同步逻辑的函数
-void SyncByDistanceLevel(const entt::entity& entity, EntityVector& entityList, int level, const double delta) {
+// 将距离级别、配置和实体列表获取函数绑定
+struct SyncLevel {
+    const SyncLevelConfigs& configs;
+    std::function<void (const entt::entity&, const EntityVector&)> getEntityList;
+};
+
+// 不同距离级别的配置
+const SyncLevel syncLevels[] = {
+    {syncConfigsLevel1, ActorStateAttributeSyncUtil::GetNearLevel1EntityList},
+    {syncConfigsLevel2, ActorStateAttributeSyncUtil::GetNearLevel2EntityList},
+    {syncConfigsLevel3, ActorStateAttributeSyncUtil::GetNearLevel3EntityList}
+};
+
+// 执行同步的通用函数，处理所有距离级别
+void SyncByDistanceLevel(const entt::entity& entity, EntityVector& entityList, const SyncLevel& syncLevel, const double delta) {
     const auto frameCount = tlsGame.frameTime.frame_count();
-    
-    const SyncLevelConfigs* syncConfigs = nullptr;
-    
-    if (level == 1) {
-        syncConfigs = &syncConfigsLevel1;
-        ActorStateAttributeSyncUtil::GetNearLevel1EntityList(entity, entityList);
-    }
-    else if (level == 2) {
-        syncConfigs = &syncConfigsLevel2;
-        ActorStateAttributeSyncUtil::GetNearLevel2EntityList(entity, entityList);
-    }
-    else if (level == 3) {
-        syncConfigs = &syncConfigsLevel3;
-        ActorStateAttributeSyncUtil::GetNearLevel3EntityList(entity, entityList);
-    }
 
-    ActorStateAttributeSyncUtil::SyncBasicAttributes(entity, entityList, delta);  // 只同步基础属性
+    // 获取对应距离级别的实体列表
+    syncLevel.getEntityList(entity, entityList);
 
-    if (nullptr == syncConfigs)
-    {
-        return;
-    }
-    
-    // 根据配置和帧数执行同步
-    for (const auto& config : *syncConfigs) {
+    // 始终同步基础属性
+    ActorStateAttributeSyncUtil::SyncBasicAttributes(entity, entityList, delta);
+
+    // 根据配置和帧数执行属性同步
+    for (const auto& config : syncLevel.configs) {
         if (frameCount % config == 0) {
             ActorStateAttributeSyncUtil::SyncAttributes(entity, entityList, config, delta);
         }
@@ -69,9 +67,9 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
     // 遍历所有带有 Transform 组件的实体
     for (auto [entity, transform] : tls.registry.view<Transform>().each())
     {
-        // 处理各距离级别的同步，传入距离级别参数
-        SyncByDistanceLevel(entity, entityList, 1, delta);  // 近距离同步
-        SyncByDistanceLevel(entity, entityList, 2, delta);  // 中距离同步
-        SyncByDistanceLevel(entity, entityList, 3, delta);  // 远距离同步
+        // 处理各距离级别的同步，迭代 syncLevels 数组，动态处理距离级别
+        for (const auto& syncLevel : syncLevels) {
+            SyncByDistanceLevel(entity, entityList, syncLevel, delta);
+        }
     }
 }
