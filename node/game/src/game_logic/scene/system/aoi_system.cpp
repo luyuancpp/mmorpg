@@ -113,7 +113,7 @@ void AoiSystem::Update(double delta) {
 		}
 
 		if (actorCreateMessage.entity() > 0) {
-			BroadCastToPlayer(entitiesToNotifyEntry, ClientPlayerSceneServiceNotifyActorCreateMessageId, actorCreateMessage);
+			BroadCastToPlayer( ClientPlayerSceneServiceNotifyActorCreateMessageId, actorCreateMessage, entitiesToNotifyEntry);
 		}
 
 		BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
@@ -189,5 +189,5 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridListComp& gridList, ent
 	}
 
 	SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListDestroyMessageId, actorListDestroyMessage, entity);
-	BroadCastToPlayer(observersToNotifyExit, ClientPlayerSceneServiceNotifyActorDestroyMessageId, actorDestroyMessage);
+	BroadCastToPlayer(ClientPlayerSceneServiceNotifyActorDestroyMessageId, actorDestroyMessage, observersToNotifyExit);
 }

@@ -10,8 +10,24 @@ public:
 		const ::BaseAttributeDeltaS2C* request,
 		::Empty* response);
 
-	static void SyncAttribute(entt::entity player,
-		const ::AttributeDelta* request,
+	static void SyncAttribute2Frames(entt::entity player,
+		const ::AttributeDelta2FramesS2C* request,
+		::Empty* response);
+
+	static void SyncAttribute5Frames(entt::entity player,
+		const ::AttributeDelta5FramesS2C* request,
+		::Empty* response);
+
+	static void SyncAttribute10Frames(entt::entity player,
+		const ::AttributeDelta10FramesS2C* request,
+		::Empty* response);
+
+	static void SyncAttribute30Frames(entt::entity player,
+		const ::AttributeDelta30FramesS2C* request,
+		::Empty* response);
+
+	static void SyncAttribute60Frames(entt::entity player,
+		const ::AttributeDelta60FramesS2C* request,
 		::Empty* response);
 
 	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
@@ -27,8 +43,28 @@ public:
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 1:
-			SyncAttribute(player,
-			::google::protobuf::internal::DownCast<const AttributeDelta*>(request),
+			SyncAttribute2Frames(player,
+			::google::protobuf::internal::DownCast<const AttributeDelta2FramesS2C*>(request),
+			::google::protobuf::internal::DownCast<Empty*>(response));
+		break;
+		case 2:
+			SyncAttribute5Frames(player,
+			::google::protobuf::internal::DownCast<const AttributeDelta5FramesS2C*>(request),
+			::google::protobuf::internal::DownCast<Empty*>(response));
+		break;
+		case 3:
+			SyncAttribute10Frames(player,
+			::google::protobuf::internal::DownCast<const AttributeDelta10FramesS2C*>(request),
+			::google::protobuf::internal::DownCast<Empty*>(response));
+		break;
+		case 4:
+			SyncAttribute30Frames(player,
+			::google::protobuf::internal::DownCast<const AttributeDelta30FramesS2C*>(request),
+			::google::protobuf::internal::DownCast<Empty*>(response));
+		break;
+		case 5:
+			SyncAttribute60Frames(player,
+			::google::protobuf::internal::DownCast<const AttributeDelta60FramesS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		default:

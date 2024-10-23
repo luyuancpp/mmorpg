@@ -65,5 +65,9 @@
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg
 66=EntitySyncServiceSyncBaseAttribute
-67=EntitySyncServiceSyncAttribute
+67=EntitySyncServiceSyncAttribute2Frames
+68=EntitySyncServiceSyncAttribute5Frames
+69=EntitySyncServiceSyncAttribute10Frames
+70=EntitySyncServiceSyncAttribute60Frames
+71=EntitySyncServiceSyncAttribute30Frames
 75=GameServiceEnterScene

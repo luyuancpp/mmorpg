@@ -21,6 +21,11 @@ void ActorStateAttributeSyncUtil::InitializeActorComponents(const entt::entity e
     tls.registry.emplace<CalculatedAttributesPBComponent>(entity);  // 计算的属性组件
     tls.registry.emplace<DerivedAttributesPBComponent>(entity);  // 派生属性组件
     tls.registry.emplace<BaseAttributeDeltaS2C>(entity);  // 属性增量同步消息组件
+    tls.registry.emplace<AttributeDelta2FramesS2C>(entity);
+    tls.registry.emplace<AttributeDelta5FramesS2C>(entity);
+    tls.registry.emplace<AttributeDelta10FramesS2C>(entity);
+    tls.registry.emplace<AttributeDelta30FramesS2C>(entity);
+    tls.registry.emplace<AttributeDelta60FramesS2C>(entity);
 }
 
 // 获取1级范围内的附近实体列表
@@ -43,8 +48,7 @@ void ActorStateAttributeSyncUtil::SyncBasicAttributes(entt::entity entity, const
     // 获取当前实体的增量同步消息
     auto& message = tls.registry.get<BaseAttributeDeltaS2C>(entity);
 
-    // 将同步消息发送给玩家（实体 ID 被传递给消息系统）
-    SendMessageToPlayer(EntitySyncServiceSyncAttributeMessageId, message, entity);
+    BroadCastToPlayer(EntitySyncServiceSyncBaseAttributeMessageId, message, nearbyEntities);
 
     // 发送后清空消息，准备下一次增量数据
     message.Clear();
@@ -56,24 +60,54 @@ void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const Enti
         // 根据不同的同步频率执行不同的同步逻辑
         switch (syncFrequency) {
             case eAttributeSyncFrequency::kSyncEvery2Frames:
-                // TODO: 每2帧同步的逻辑
+                {
+                    auto& message = tls.registry.get<AttributeDelta2FramesS2C>(entity);
+
+                    BroadCastToPlayer(EntitySyncServiceSyncAttribute2FramesMessageId, message, nearbyEntities);
+
+                    message.Clear();
+                }
                 break;
 
             case eAttributeSyncFrequency::kSyncEvery5Frames:
-                // TODO: 每5帧同步的逻辑
+                {
+                    auto& message = tls.registry.get<AttributeDelta5FramesS2C>(entity);
+
+                    BroadCastToPlayer(EntitySyncServiceSyncAttribute5FramesMessageId, message, nearbyEntities);
+
+                    message.Clear();
+                }
                 break;
 
             case eAttributeSyncFrequency::kSyncEvery10Frames:
-                // TODO: 每10帧同步的逻辑
-                break;
+                {
+                    auto& message = tls.registry.get<AttributeDelta10FramesS2C>(entity);
+
+                    BroadCastToPlayer(EntitySyncServiceSyncAttribute10FramesMessageId, message, nearbyEntities);
+
+                    message.Clear();
+                }
+            break;
 
             case eAttributeSyncFrequency::kSyncEvery30Frames:
-                // TODO: 每30帧同步的逻辑，适用于非关键属性
-                break;
+                {
+                    auto& message = tls.registry.get<AttributeDelta30FramesS2C>(entity);
+
+                    BroadCastToPlayer(EntitySyncServiceSyncAttribute30FramesMessageId, message, nearbyEntities);
+
+                    message.Clear();
+                }
+            break;
 
             case eAttributeSyncFrequency::kSyncEvery60Frames:
-                // TODO: 每60帧同步的逻辑，适用于非关键属性
-                break;
+                {
+                    auto& message = tls.registry.get<AttributeDelta60FramesS2C>(entity);
+
+                    BroadCastToPlayer(EntitySyncServiceSyncAttribute60FramesMessageId, message, nearbyEntities);
+
+                    message.Clear();
+                }
+            break;
 
             default:
                 // 其他情况处理

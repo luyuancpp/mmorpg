@@ -157,7 +157,57 @@ void BroadCastToCentre(uint32_t messageId, const google::protobuf::Message& mess
 	}
 }
 
-void BroadCastToPlayer(const EntityUnorderedSet& playerList, const uint32_t messageId, const google::protobuf::Message& message)
+void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message& message, const EntityUnorderedSet& playerList)
+{
+	std::unordered_map<entt::entity, BroadCastSessionIdList> gateList;
+
+	for (auto& player : playerList)
+	{
+		if (!tls.registry.valid(player))
+		{
+			LOG_ERROR << "Invalid player entity in playerList";
+			continue;
+		}
+
+		const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(player);
+		if (!playerNodeInfo)
+		{
+			LOG_ERROR << "Player node info not found for player entity: " << tls.registry.get<Guid>(player);
+			continue;
+		}
+
+		entt::entity gateNodeId{ GetGateNodeId(playerNodeInfo->gate_session_id()) };
+		if (!tls.gateNodeRegistry.valid(gateNodeId))
+		{
+			LOG_ERROR << "Gate node not found for player session ID: " << playerNodeInfo->gate_session_id();
+			continue;
+		}
+
+		gateList[gateNodeId].emplace(playerNodeInfo->gate_session_id());
+	}
+
+	BroadcastToPlayersRequest request;
+	for (auto&& [gateNodeId, sessionIdList] : gateList)
+	{
+		const auto gateNode = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gateNodeId);
+		if (!gateNode)
+		{
+			LOG_ERROR << "RpcSessionPtr not found for gate node";
+			continue;
+		}
+
+		request.mutable_body()->set_message_id(messageId);
+		request.mutable_body()->set_body(message.SerializeAsString());
+		for (auto&& sessionId : sessionIdList)
+		{
+			request.mutable_session_list()->Add(sessionId);
+		}
+
+		(*gateNode)->Send(GateServiceBroadcastToPlayersMessageId, request);
+	}
+}
+
+void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message& message, const EntityVector& playerList)
 {
 	std::unordered_map<entt::entity, BroadCastSessionIdList> gateList;
 
