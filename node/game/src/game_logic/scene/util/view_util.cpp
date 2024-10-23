@@ -92,27 +92,56 @@ double ViewUtil::GetMaxViewRadius(entt::entity observer)
 	return viewRadius;
 }
 
-bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant, double viewRadius)
+bool ViewUtil::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
 {
-	const auto observerTransform = tls.registry.try_get<Transform>(observer);
-	const auto entrantTransform = tls.registry.try_get<Transform>(entrant);
+	const auto viewerTransform = tls.registry.try_get<Transform>(viewer);
+	const auto targetTransform = tls.registry.try_get<Transform>(targetEntity);
 
-	if (!observerTransform || !entrantTransform) {
-		return true; // Consider beyond radius if position information is missing
+	// 如果缺少位置数据，返回 false，表示不在视野内
+	if (!viewerTransform || !targetTransform) {
+		return false;
 	}
 
-	const dtReal observerLocation[] = {
-		observerTransform->location().x(),
-		observerTransform->location().y(),
-		observerTransform->location().z()
+	// 获取观察者和目标实体的位置
+	const dtReal viewerLocation[] = {
+		viewerTransform->location().x(),
+		viewerTransform->location().y(),
+		viewerTransform->location().z()
 	};
-	const dtReal entrantLocation[] = {
-		entrantTransform->location().x(),
-		entrantTransform->location().y(),
-		entrantTransform->location().z()
+	const dtReal targetLocation[] = {
+		targetTransform->location().x(),
+		targetTransform->location().y(),
+		targetTransform->location().z()
 	};
 
-	return dtVdist(observerLocation, entrantLocation) > viewRadius;
+	// 计算实体间的距离，并检查是否在视野范围内
+	return dtVdist(viewerLocation, targetLocation) <= visionRadius;
+}
+
+double ViewUtil::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
+{
+	const auto transform1 = tls.registry.try_get<Transform>(entity1);
+	const auto transform2 = tls.registry.try_get<Transform>(entity2);
+
+	// 如果任一实体缺少位置数据，返回 -1 表示距离不可计算
+	if (!transform1 || !transform2) {
+		return -1.0;
+	}
+
+	// 获取两个实体的位置
+	const dtReal location1[] = {
+		transform1->location().x(),
+		transform1->location().y(),
+		transform1->location().z()
+	};
+	const dtReal location2[] = {
+		transform2->location().x(),
+		transform2->location().y(),
+		transform2->location().z()
+	};
+
+	// 计算并返回两者之间的距离
+	return dtVdist(location1, location2);
 }
 
 void ViewUtil::FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& createMessage)

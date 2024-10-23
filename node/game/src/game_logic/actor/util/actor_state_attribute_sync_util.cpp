@@ -5,6 +5,8 @@
 #include "component/actor_status_comp.pb.h"
 #include "game_logic/actor/constants/actor_state_attribute_constants.h"
 #include "game_logic/network/message_util.h"
+#include "game_logic/scene/comp/scene_comp.h"
+#include "game_logic/scene/util/view_util.h"
 #include "grpc/async_client_call.h"
 #include "service_info/player_state_attribute_sync_service_info.h"
 #include "thread_local/storage.h"
@@ -28,27 +30,71 @@ void ActorStateAttributeSyncUtil::InitializeActorComponents(const entt::entity e
     tls.registry.emplace<AttributeDelta60FramesS2C>(entity);
 }
 
-// 获取1级范围内的附近实体列表
 void ActorStateAttributeSyncUtil::GetNearLevel1EntityList(const entt::entity entity, EntityVector& entityList) {
-    // TODO: 实现1级范围内的实体查找逻辑
+    const auto aoiListComp = tls.registry.try_get<AoiListComp>(entity);
+    if (nullptr == aoiListComp){
+        return;
+    }
+
+    const double viewRadius = ViewUtil::GetMaxViewRadius(entity) * 0.333;
+
+    for (auto& aoiEntity : aoiListComp->aoiList){
+        if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
+        {
+            continue;
+        }
+
+        entityList.emplace_back(aoiEntity);
+    }
 }
 
-// 获取2级范围内的附近实体列表
 void ActorStateAttributeSyncUtil::GetNearLevel2EntityList(const entt::entity entity, EntityVector& entityList) {
-    // TODO: 实现2级范围内的实体查找逻辑
+    const auto aoiListComp = tls.registry.try_get<AoiListComp>(entity);
+    if (nullptr == aoiListComp){
+        return;
+    }
+
+    const double viewRadius = ViewUtil::GetMaxViewRadius(entity) * 0.666;
+
+    for (auto& aoiEntity : aoiListComp->aoiList){
+        if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
+        {
+            continue;
+        }
+
+        entityList.emplace_back(aoiEntity);
+    }
 }
 
-// 获取3级范围内的附近实体列表
 void ActorStateAttributeSyncUtil::GetNearLevel3EntityList(const entt::entity entity, EntityVector& entityList) {
-    // TODO: 实现3级范围内的实体查找逻辑
+    const auto aoiListComp = tls.registry.try_get<AoiListComp>(entity);
+    if (nullptr == aoiListComp){
+        return;
+    }
+
+    const double viewRadius = ViewUtil::GetMaxViewRadius(entity);
+
+    for (auto& aoiEntity : aoiListComp->aoiList){
+        if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
+        {
+            continue;
+        }
+
+        entityList.emplace_back(aoiEntity);
+    }
 }
 
 // 同步基础属性到附近的实体
-void ActorStateAttributeSyncUtil::SyncBasicAttributes(entt::entity entity, const EntityVector& nearbyEntities, double delta) {
+void ActorStateAttributeSyncUtil::SyncBasicAttributes(entt::entity entity,  double delta) {
+    const auto aoiListComp = tls.registry.try_get<AoiListComp>(entity);
+    if (nullptr == aoiListComp){
+        return;
+    }
+    
     // 获取当前实体的增量同步消息
     auto& message = tls.registry.get<BaseAttributeDeltaS2C>(entity);
 
-    BroadCastToPlayer(EntitySyncServiceSyncBaseAttributeMessageId, message, nearbyEntities);
+    BroadCastToPlayer(EntitySyncServiceSyncBaseAttributeMessageId, message, aoiListComp->aoiList);
 
     // 发送后清空消息，准备下一次增量数据
     message.Clear();

@@ -14,7 +14,8 @@ option cc_generic_services = true;
 message BaseAttributeDeltaS2C 
 {
   uint64 entity_id = 1;  // 实体的唯一ID
-  Velocity velocity = 2;  // 速度信息
+  Transform transform = 2;  // 速度信息
+  Velocity velocity = 3;
 }
 
 // 各种帧率同步消息
