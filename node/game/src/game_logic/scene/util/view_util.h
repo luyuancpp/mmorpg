@@ -22,7 +22,7 @@ public:
     static bool ShouldUpdateView(entt::entity observer, entt::entity entrant);
 
     // 填充Actor创建消息信息
-    static void FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage);
+    static void FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& actorCreateMessage);
 
     // 处理玩家离开消息
     static void HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver);
