@@ -16,107 +16,115 @@
 #include "type_alias/actor.h"
 
 void AoiSystem::Update(double delta) {
-	GridSet gridsToEnter, gridsToLeave;
-	EntityUnorderedSet entitiesEnteringMyView, entitiesIEnterViewOf;
+	GridSet neighborGridsToEnter, neighborGridsToLeave;
+	EntityUnorderedSet entitiesEnteringCurrentView, observersNotifiedOfMyEntry;
 
-	for (auto&& [entity, transform, sceneComponent] : tls.registry.view<Transform, SceneEntityComp>().each()) {
+	for (auto&& [currentEntity, transform, sceneComponent] : tls.registry.view<Transform, SceneEntityComp>().each()) {
 
 		if (!tls.sceneRegistry.valid(sceneComponent.sceneEntity)) {
-			LOG_ERROR << "Scene not found for entity " << tls.registry.get<Guid>(entity);
+			LOG_ERROR << "Scene not found for entity " << tls.registry.get<Guid>(currentEntity);
 			continue;
 		}
 
-		gridsToEnter.clear();
-		gridsToLeave.clear();
-		entitiesEnteringMyView.clear();
-		entitiesIEnterViewOf.clear();
+		neighborGridsToEnter.clear();
+		neighborGridsToLeave.clear();
+		entitiesEnteringCurrentView.clear();
+		observersNotifiedOfMyEntry.clear();
 
 		auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent.sceneEntity);
 		const auto currentHexPosition = GridUtil::CalculateHexPosition(transform);
 		const auto currentGridId = GridUtil::GetGridId(currentHexPosition);
 
-		if (!tls.registry.any_of<Hex>(entity)) {
-			gridList[currentGridId].entity_list.emplace(entity);
-			tls.registry.emplace<Hex>(entity, currentHexPosition);
+		// 如果当前实体没有 Hex 位置，添加它
+		if (!tls.registry.any_of<Hex>(currentEntity)) {
+			gridList[currentGridId].entity_list.emplace(currentEntity);
+			tls.registry.emplace<Hex>(currentEntity, currentHexPosition);
 
-			GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
-		}
-		else {
-			const auto previousHexPosition = tls.registry.get<Hex>(entity);
+			GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, neighborGridsToEnter);
+		} else {
+			const auto previousHexPosition = tls.registry.get<Hex>(currentEntity);
 			const auto distance = hex_distance(previousHexPosition, currentHexPosition);
 			if (distance == 0) {
 				continue;
 			}
 
-			GridUtil::GetCurrentAndNeighborGridIds(previousHexPosition, gridsToLeave);
-			GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, gridsToEnter);
+			GridUtil::GetCurrentAndNeighborGridIds(previousHexPosition, neighborGridsToLeave);
+			GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, neighborGridsToEnter);
 
-			for (const auto& grid : gridsToEnter) {
-				gridsToLeave.erase(grid);
+			for (const auto& grid : neighborGridsToEnter) {
+				neighborGridsToLeave.erase(grid);
 			}
-			for (const auto& grid : gridsToLeave) {
-				gridsToEnter.erase(grid);
+			for (const auto& grid : neighborGridsToLeave) {
+				neighborGridsToEnter.erase(grid);
 			}
 
 			const auto previousGridId = GridUtil::GetGridId(previousHexPosition);
-			gridList[previousGridId].entity_list.erase(entity);
+			gridList[previousGridId].entity_list.erase(currentEntity);
 
-			gridList[currentGridId].entity_list.emplace(entity);
+			gridList[currentGridId].entity_list.emplace(currentEntity);
 
-			tls.registry.remove<Hex>(entity);
-			tls.registry.emplace<Hex>(entity, currentHexPosition);
+			tls.registry.remove<Hex>(currentEntity);
+			tls.registry.emplace<Hex>(currentEntity, currentHexPosition);
 		}
 
 		actorCreateMessage.Clear();
 		actorListCreateMessage.Clear();
 
-		for (const auto& gridId : gridsToEnter) {
+		for (const auto& gridId : neighborGridsToEnter) {
 			auto gridIt = gridList.find(gridId);
 			if (gridIt == gridList.end()) {
 				continue;
 			}
 
-			for (const auto& viewEntrant : gridIt->second.entity_list) {
-				if (viewEntrant == entity || 
-					!tls.registry.any_of<Npc>(viewEntrant) || 
-					!ViewUtil::ShouldSendNpcEnterMessage(entity, viewEntrant)) {
+			// 处理进入当前实体视野的 NPC
+			for (const auto& otherEntity : gridIt->second.entity_list) {
+				if (otherEntity == currentEntity || 
+					!tls.registry.any_of<Npc>(otherEntity) || 
+					!ViewUtil::ShouldSendNpcEnterMessage(currentEntity, otherEntity)) {
 					continue;
 				}
 
-				ViewUtil::FillActorCreateMessageInfo(entity, viewEntrant, actorCreateMessage);
-				InterestUtil::AddAoiEntity(entity, viewEntrant);
+				ViewUtil::FillActorCreateMessageInfo(currentEntity, otherEntity, actorCreateMessage);
+				InterestUtil::AddAoiEntity(currentEntity, otherEntity);
 			}
 
-			for (const auto& viewEntrant : gridIt->second.entity_list) {
-				if (viewEntrant == entity || tls.registry.any_of<Npc>(entity)) {
+			// 处理当前实体进入其他实体视野或其他实体进入当前实体视野
+			for (const auto& otherEntity : gridIt->second.entity_list) {
+				if (otherEntity == currentEntity || tls.registry.any_of<Npc>(currentEntity)) {
 					continue;
 				}
 
-				if (ViewUtil::ShouldUpdateView(viewEntrant, entity)) {
-					ViewUtil::FillActorCreateMessageInfo(viewEntrant, entity, actorCreateMessage);
-					entitiesIEnterViewOf.emplace(viewEntrant);
-					InterestUtil::AddAoiEntity(viewEntrant, entity);
+				// 当前实体进入其他实体的视野
+				if (ViewUtil::ShouldUpdateView(otherEntity, currentEntity)) {
+					ViewUtil::FillActorCreateMessageInfo(otherEntity, currentEntity, actorCreateMessage);
+					observersNotifiedOfMyEntry.emplace(otherEntity);
+					InterestUtil::AddAoiEntity(otherEntity, currentEntity);
 				}
 
-				if (ViewUtil::ShouldUpdateView(entity, viewEntrant)) {
-					ViewUtil::FillActorCreateMessageInfo(entity, viewEntrant, *actorListCreateMessage.add_actor_list());
-					entitiesEnteringMyView.emplace(viewEntrant);
-					InterestUtil::AddAoiEntity(entity, viewEntrant);
+				// 其他实体进入当前实体的视野
+				if (ViewUtil::ShouldUpdateView(currentEntity, otherEntity)) {
+					ViewUtil::FillActorCreateMessageInfo(currentEntity, otherEntity, *actorListCreateMessage.add_actor_list());
+					entitiesEnteringCurrentView.emplace(otherEntity);
+					InterestUtil::AddAoiEntity(currentEntity, otherEntity);
 				}
 			}
 		}
 
+		// 发送消息给进入视野的实体
 		if (!actorListCreateMessage.actor_list().empty()) {
-			SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListCreateMessageId, actorListCreateMessage, entity);
+			SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListCreateMessageId, actorListCreateMessage, currentEntity);
 		}
 
+		// 通知其他实体当前实体进入了他们的视野
 		if (actorCreateMessage.entity() > 0) {
-			BroadCastToPlayer(ClientPlayerSceneServiceNotifyActorCreateMessageId, actorCreateMessage, entitiesIEnterViewOf);
+			BroadCastToPlayer(ClientPlayerSceneServiceNotifyActorCreateMessageId, actorCreateMessage, observersNotifiedOfMyEntry);
 		}
 
-		BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
+		// 处理离开网格的情况
+		BroadCastLeaveGridMessage(gridList, currentEntity, neighborGridsToLeave);
 	}
 }
+
 
 
 void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
