@@ -6,8 +6,8 @@ class EntityStateSyncServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
-	static void SyncVelocity(entt::entity player,
-		const ::SyncEntityVelocityS2C* request,
+	static void SyncBaseStateAttribute(entt::entity player,
+		const ::SyncBaseStateAttributeDeltaS2C* request,
 		::Empty* response);
 
 	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
@@ -18,8 +18,8 @@ public:
 		switch(method->index())
 		{
 		case 0:
-			SyncVelocity(player,
-			::google::protobuf::internal::DownCast<const SyncEntityVelocityS2C*>(request),
+			SyncBaseStateAttribute(player,
+			::google::protobuf::internal::DownCast<const SyncBaseStateAttributeDeltaS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		default:

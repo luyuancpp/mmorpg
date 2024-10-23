@@ -1,8 +1,10 @@
 package handler
 
 import (
-	"robot/pb/game"
 	"robot/logic/gameobject"
+	"robot/pb/game"
 )
 
 func EntityStateSyncServiceSyncVelocityHandler(player *gameobject.Player, response *game.SyncEntityVelocityS2C) {
+
+}

@@ -33,8 +33,8 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 		handlePlayerClientCommonServiceSendTipToClient(player, response.Body)
 	case game.PlayerClientCommonServiceKickPlayerMessageId:
 		handlePlayerClientCommonServiceKickPlayer(player, response.Body)
-	case game.EntityStateSyncServiceSyncVelocityMessageId:
-		handleEntityStateSyncServiceSyncVelocity(player, response.Body)
+	case game.EntityStateSyncServiceSyncBaseStateAttributeMessageId:
+		handleEntityStateSyncServiceSyncBaseStateAttribute(player, response.Body)
 	case game.ClientPlayerSceneServiceEnterSceneMessageId:
 		handleClientPlayerSceneServiceEnterScene(player, response.Body)
 	case game.ClientPlayerSceneServiceNotifyEnterSceneMessageId:
@@ -104,13 +104,13 @@ func handlePlayerClientCommonServiceKickPlayer(player *gameobject.Player, body [
 	}
 	PlayerClientCommonServiceKickPlayerHandler(player, message)
 }
-func handleEntityStateSyncServiceSyncVelocity(player *gameobject.Player, body []byte) {
-	message := &game.SyncEntityVelocityS2C{}
+func handleEntityStateSyncServiceSyncBaseStateAttribute(player *gameobject.Player, body []byte) {
+	message := &game.SyncBaseStateAttributeDeltaS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal SyncEntityVelocityS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal SyncBaseStateAttributeDeltaS2C", zap.Error(err))
 		return
 	}
-	EntityStateSyncServiceSyncVelocityHandler(player, message)
+	EntityStateSyncServiceSyncBaseStateAttributeHandler(player, message)
 }
 func handleClientPlayerSceneServiceEnterScene(player *gameobject.Player, body []byte) {
 	message := &game.EnterSceneC2SResponse{}

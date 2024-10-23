@@ -6,9 +6,9 @@
 
 void InitEntityStateSyncServiceLua()
 {
-	tls_lua_state["EntityStateSyncServiceSyncVelocityMessageId"] = 66;
-	tls_lua_state["EntityStateSyncServiceSyncVelocityIndex"] = 0;
-	tls_lua_state["EntityStateSyncServiceSyncVelocity"] = []()-> const ::google::protobuf::MethodDescriptor* {
+	tls_lua_state["EntityStateSyncServiceSyncBaseStateAttributeMessageId"] = 67;
+	tls_lua_state["EntityStateSyncServiceSyncBaseStateAttributeIndex"] = 0;
+	tls_lua_state["EntityStateSyncServiceSyncBaseStateAttribute"] = []()-> const ::google::protobuf::MethodDescriptor* {
 		return EntityStateSyncService_Stub::descriptor()->method(0);
 	};
 

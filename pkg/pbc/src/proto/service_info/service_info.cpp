@@ -89,8 +89,8 @@ g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListCreateMessageId)
 g_message_info[ClientPlayerSceneServiceNotifyActorListDestroyMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorListDestroy","ActorListDestroyS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
 g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListDestroyMessageId);
 
-g_message_info[EntityStateSyncServiceSyncVelocityMessageId] = RpcService{"EntityStateSyncService","SyncVelocity","SyncEntityVelocityS2C","Empty",std::make_unique_for_overwrite<EntityStateSyncServiceImpl>()};
-g_c2s_service_id.emplace(EntityStateSyncServiceSyncVelocityMessageId);
+g_message_info[EntityStateSyncServiceSyncBaseStateAttributeMessageId] = RpcService{"EntityStateSyncService","SyncBaseStateAttribute","SyncBaseStateAttributeDeltaS2C","Empty",std::make_unique_for_overwrite<EntityStateSyncServiceImpl>()};
+g_c2s_service_id.emplace(EntityStateSyncServiceSyncBaseStateAttributeMessageId);
 
 g_message_info[GamePlayerSceneServiceEnterSceneMessageId] = RpcService{"GamePlayerSceneService","EnterScene","GsEnterSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};
 g_message_info[GamePlayerSceneServiceLeaveSceneMessageId] = RpcService{"GamePlayerSceneService","LeaveScene","GsLeaveSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};

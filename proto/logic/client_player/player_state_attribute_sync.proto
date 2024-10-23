@@ -10,13 +10,14 @@ import "logic/component/actor_comp.proto";
 
 option cc_generic_services = true;
 
-message SyncEntityVelocityS2C 
-{
-  uint64 entity_id = 1;       // 实体的唯一ID
-  Velocity velocity = 2;      // 速度信息，Velocity 类型定义在导入的 proto 文件中
+// 消息定义，用于同步实体的属性增量数据
+message SyncBaseStateAttributeDeltaS2C {
+  uint64 entity_id = 1;  // 实体的唯一ID
+  Velocity velocity = 2;      // 速度信息
 }
 
+// 服务定义，用于处理实体状态的同步
 service EntityStateSyncService 
 {
-  rpc SyncVelocity (SyncEntityVelocityS2C) returns (Empty);
+  rpc SyncBaseStateAttribute (SyncBaseStateAttributeDeltaS2C) returns (Empty);  // 同步实体的属性状态
 }
