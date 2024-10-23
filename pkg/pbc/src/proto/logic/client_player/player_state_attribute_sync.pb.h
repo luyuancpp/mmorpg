@@ -55,9 +55,9 @@ struct TableStruct_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto;
-class SyncEntityVelocityS2C;
-struct SyncEntityVelocityS2CDefaultTypeInternal;
-extern SyncEntityVelocityS2CDefaultTypeInternal _SyncEntityVelocityS2C_default_instance_;
+class SyncBaseStateAttributeDeltaS2C;
+struct SyncBaseStateAttributeDeltaS2CDefaultTypeInternal;
+extern SyncBaseStateAttributeDeltaS2CDefaultTypeInternal _SyncBaseStateAttributeDeltaS2C_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -69,23 +69,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class SyncEntityVelocityS2C final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:SyncEntityVelocityS2C) */ {
+class SyncBaseStateAttributeDeltaS2C final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SyncBaseStateAttributeDeltaS2C) */ {
  public:
-  inline SyncEntityVelocityS2C() : SyncEntityVelocityS2C(nullptr) {}
-  ~SyncEntityVelocityS2C() override;
+  inline SyncBaseStateAttributeDeltaS2C() : SyncBaseStateAttributeDeltaS2C(nullptr) {}
+  ~SyncBaseStateAttributeDeltaS2C() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SyncEntityVelocityS2C(
+  explicit PROTOBUF_CONSTEXPR SyncBaseStateAttributeDeltaS2C(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline SyncEntityVelocityS2C(const SyncEntityVelocityS2C& from) : SyncEntityVelocityS2C(nullptr, from) {}
-  inline SyncEntityVelocityS2C(SyncEntityVelocityS2C&& from) noexcept
-      : SyncEntityVelocityS2C(nullptr, std::move(from)) {}
-  inline SyncEntityVelocityS2C& operator=(const SyncEntityVelocityS2C& from) {
+  inline SyncBaseStateAttributeDeltaS2C(const SyncBaseStateAttributeDeltaS2C& from) : SyncBaseStateAttributeDeltaS2C(nullptr, from) {}
+  inline SyncBaseStateAttributeDeltaS2C(SyncBaseStateAttributeDeltaS2C&& from) noexcept
+      : SyncBaseStateAttributeDeltaS2C(nullptr, std::move(from)) {}
+  inline SyncBaseStateAttributeDeltaS2C& operator=(const SyncBaseStateAttributeDeltaS2C& from) {
     CopyFrom(from);
     return *this;
   }
-  inline SyncEntityVelocityS2C& operator=(SyncEntityVelocityS2C&& from) noexcept {
+  inline SyncBaseStateAttributeDeltaS2C& operator=(SyncBaseStateAttributeDeltaS2C&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -117,16 +117,16 @@ class SyncEntityVelocityS2C final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const SyncEntityVelocityS2C& default_instance() {
+  static const SyncBaseStateAttributeDeltaS2C& default_instance() {
     return *internal_default_instance();
   }
-  static inline const SyncEntityVelocityS2C* internal_default_instance() {
-    return reinterpret_cast<const SyncEntityVelocityS2C*>(
-        &_SyncEntityVelocityS2C_default_instance_);
+  static inline const SyncBaseStateAttributeDeltaS2C* internal_default_instance() {
+    return reinterpret_cast<const SyncBaseStateAttributeDeltaS2C*>(
+        &_SyncBaseStateAttributeDeltaS2C_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(SyncEntityVelocityS2C& a, SyncEntityVelocityS2C& b) { a.Swap(&b); }
-  inline void Swap(SyncEntityVelocityS2C* other) {
+  friend void swap(SyncBaseStateAttributeDeltaS2C& a, SyncBaseStateAttributeDeltaS2C& b) { a.Swap(&b); }
+  inline void Swap(SyncBaseStateAttributeDeltaS2C* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -138,7 +138,7 @@ class SyncEntityVelocityS2C final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(SyncEntityVelocityS2C* other) {
+  void UnsafeArenaSwap(SyncBaseStateAttributeDeltaS2C* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -146,13 +146,13 @@ class SyncEntityVelocityS2C final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  SyncEntityVelocityS2C* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<SyncEntityVelocityS2C>(arena);
+  SyncBaseStateAttributeDeltaS2C* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<SyncBaseStateAttributeDeltaS2C>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SyncEntityVelocityS2C& from);
+  void CopyFrom(const SyncBaseStateAttributeDeltaS2C& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SyncEntityVelocityS2C& from) { SyncEntityVelocityS2C::MergeImpl(*this, from); }
+  void MergeFrom(const SyncBaseStateAttributeDeltaS2C& from) { SyncBaseStateAttributeDeltaS2C::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -173,16 +173,16 @@ class SyncEntityVelocityS2C final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(SyncEntityVelocityS2C* other);
+  void InternalSwap(SyncBaseStateAttributeDeltaS2C* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "SyncEntityVelocityS2C"; }
+  static ::absl::string_view FullMessageName() { return "SyncBaseStateAttributeDeltaS2C"; }
 
  protected:
-  explicit SyncEntityVelocityS2C(::google::protobuf::Arena* arena);
-  SyncEntityVelocityS2C(::google::protobuf::Arena* arena, const SyncEntityVelocityS2C& from);
-  SyncEntityVelocityS2C(::google::protobuf::Arena* arena, SyncEntityVelocityS2C&& from) noexcept
-      : SyncEntityVelocityS2C(arena) {
+  explicit SyncBaseStateAttributeDeltaS2C(::google::protobuf::Arena* arena);
+  SyncBaseStateAttributeDeltaS2C(::google::protobuf::Arena* arena, const SyncBaseStateAttributeDeltaS2C& from);
+  SyncBaseStateAttributeDeltaS2C(::google::protobuf::Arena* arena, SyncBaseStateAttributeDeltaS2C&& from) noexcept
+      : SyncBaseStateAttributeDeltaS2C(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -222,7 +222,7 @@ class SyncEntityVelocityS2C final : public ::google::protobuf::Message
   void _internal_set_entity_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:SyncEntityVelocityS2C)
+  // @@protoc_insertion_point(class_scope:SyncBaseStateAttributeDeltaS2C)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -272,8 +272,8 @@ class EntityStateSyncService : public ::google::protobuf::Service {
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
-  virtual void SyncVelocity(::google::protobuf::RpcController* controller,
-                        const ::SyncEntityVelocityS2C* request,
+  virtual void SyncBaseStateAttribute(::google::protobuf::RpcController* controller,
+                        const ::SyncBaseStateAttributeDeltaS2C* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
 
@@ -307,8 +307,8 @@ class EntityStateSyncService_Stub final : public EntityStateSyncService {
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
 
   // implements EntityStateSyncService ------------------------------------------
-  void SyncVelocity(::google::protobuf::RpcController* controller,
-                        const ::SyncEntityVelocityS2C* request,
+  void SyncBaseStateAttribute(::google::protobuf::RpcController* controller,
+                        const ::SyncBaseStateAttributeDeltaS2C* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
 
@@ -329,46 +329,46 @@ class EntityStateSyncService_Stub final : public EntityStateSyncService {
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// SyncEntityVelocityS2C
+// SyncBaseStateAttributeDeltaS2C
 
 // uint64 entity_id = 1;
-inline void SyncEntityVelocityS2C::clear_entity_id() {
+inline void SyncBaseStateAttributeDeltaS2C::clear_entity_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.entity_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t SyncEntityVelocityS2C::entity_id() const {
-  // @@protoc_insertion_point(field_get:SyncEntityVelocityS2C.entity_id)
+inline ::uint64_t SyncBaseStateAttributeDeltaS2C::entity_id() const {
+  // @@protoc_insertion_point(field_get:SyncBaseStateAttributeDeltaS2C.entity_id)
   return _internal_entity_id();
 }
-inline void SyncEntityVelocityS2C::set_entity_id(::uint64_t value) {
+inline void SyncBaseStateAttributeDeltaS2C::set_entity_id(::uint64_t value) {
   _internal_set_entity_id(value);
-  // @@protoc_insertion_point(field_set:SyncEntityVelocityS2C.entity_id)
+  // @@protoc_insertion_point(field_set:SyncBaseStateAttributeDeltaS2C.entity_id)
 }
-inline ::uint64_t SyncEntityVelocityS2C::_internal_entity_id() const {
+inline ::uint64_t SyncBaseStateAttributeDeltaS2C::_internal_entity_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.entity_id_;
 }
-inline void SyncEntityVelocityS2C::_internal_set_entity_id(::uint64_t value) {
+inline void SyncBaseStateAttributeDeltaS2C::_internal_set_entity_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.entity_id_ = value;
 }
 
 // .Velocity velocity = 2;
-inline bool SyncEntityVelocityS2C::has_velocity() const {
+inline bool SyncBaseStateAttributeDeltaS2C::has_velocity() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.velocity_ != nullptr);
   return value;
 }
-inline const ::Velocity& SyncEntityVelocityS2C::_internal_velocity() const {
+inline const ::Velocity& SyncBaseStateAttributeDeltaS2C::_internal_velocity() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::Velocity* p = _impl_.velocity_;
   return p != nullptr ? *p : reinterpret_cast<const ::Velocity&>(::_Velocity_default_instance_);
 }
-inline const ::Velocity& SyncEntityVelocityS2C::velocity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:SyncEntityVelocityS2C.velocity)
+inline const ::Velocity& SyncBaseStateAttributeDeltaS2C::velocity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SyncBaseStateAttributeDeltaS2C.velocity)
   return _internal_velocity();
 }
-inline void SyncEntityVelocityS2C::unsafe_arena_set_allocated_velocity(::Velocity* value) {
+inline void SyncBaseStateAttributeDeltaS2C::unsafe_arena_set_allocated_velocity(::Velocity* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.velocity_);
@@ -379,9 +379,9 @@ inline void SyncEntityVelocityS2C::unsafe_arena_set_allocated_velocity(::Velocit
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:SyncEntityVelocityS2C.velocity)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:SyncBaseStateAttributeDeltaS2C.velocity)
 }
-inline ::Velocity* SyncEntityVelocityS2C::release_velocity() {
+inline ::Velocity* SyncBaseStateAttributeDeltaS2C::release_velocity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -400,16 +400,16 @@ inline ::Velocity* SyncEntityVelocityS2C::release_velocity() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::Velocity* SyncEntityVelocityS2C::unsafe_arena_release_velocity() {
+inline ::Velocity* SyncBaseStateAttributeDeltaS2C::unsafe_arena_release_velocity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:SyncEntityVelocityS2C.velocity)
+  // @@protoc_insertion_point(field_release:SyncBaseStateAttributeDeltaS2C.velocity)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::Velocity* temp = _impl_.velocity_;
   _impl_.velocity_ = nullptr;
   return temp;
 }
-inline ::Velocity* SyncEntityVelocityS2C::_internal_mutable_velocity() {
+inline ::Velocity* SyncBaseStateAttributeDeltaS2C::_internal_mutable_velocity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.velocity_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::Velocity>(GetArena());
@@ -417,13 +417,13 @@ inline ::Velocity* SyncEntityVelocityS2C::_internal_mutable_velocity() {
   }
   return _impl_.velocity_;
 }
-inline ::Velocity* SyncEntityVelocityS2C::mutable_velocity() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::Velocity* SyncBaseStateAttributeDeltaS2C::mutable_velocity() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::Velocity* _msg = _internal_mutable_velocity();
-  // @@protoc_insertion_point(field_mutable:SyncEntityVelocityS2C.velocity)
+  // @@protoc_insertion_point(field_mutable:SyncBaseStateAttributeDeltaS2C.velocity)
   return _msg;
 }
-inline void SyncEntityVelocityS2C::set_allocated_velocity(::Velocity* value) {
+inline void SyncBaseStateAttributeDeltaS2C::set_allocated_velocity(::Velocity* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -441,7 +441,7 @@ inline void SyncEntityVelocityS2C::set_allocated_velocity(::Velocity* value) {
   }
 
   _impl_.velocity_ = reinterpret_cast<::Velocity*>(value);
-  // @@protoc_insertion_point(field_set_allocated:SyncEntityVelocityS2C.velocity)
+  // @@protoc_insertion_point(field_set_allocated:SyncBaseStateAttributeDeltaS2C.velocity)
 }
 
 #ifdef __GNUC__
