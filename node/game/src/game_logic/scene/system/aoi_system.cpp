@@ -79,35 +79,35 @@ void AoiSystem::Update(double delta) {
 				continue;
 			}
 
-			for (const auto& entrant : gridIt->second.entity_list) {
+			for (const auto& viewEntrant : gridIt->second.entity_list) {
 				// Handle NPC entering my view
-				if (entrant == entity ||
-					!tls.registry.any_of<Npc>(entrant) ||
-					!ViewUtil::ShouldSendNpcEnterMessage(entity, entrant)) {
+				if (viewEntrant == entity ||
+					!tls.registry.any_of<Npc>(viewEntrant) ||
+					!ViewUtil::ShouldSendNpcEnterMessage(entity, viewEntrant)) {
 					continue;
 				}
 
-				ViewUtil::FillActorCreateMessageInfo(entity, entrant, actorCreateMessage);
-				InterestUtil::AddAoiEntity(entity, entrant);
+				ViewUtil::FillActorCreateMessageInfo(entity, viewEntrant, actorCreateMessage);
+				InterestUtil::AddAoiEntity(entity, viewEntrant);
 			}
 
-			for (const auto& entrant : gridIt->second.entity_list) {
-				if (entrant == entity ||
+			for (const auto& viewEntrant : gridIt->second.entity_list) {
+				if (viewEntrant == entity ||
 					tls.registry.any_of<Npc>(entity)) {
 					continue;
 				}
 
 				// I enter others' view
-				if (ViewUtil::ShouldUpdateView(entrant, entity)) {
-					ViewUtil::FillActorCreateMessageInfo(entrant, entity, actorCreateMessage);
-					entitiesToNotifyEntry.emplace(entrant);
-					InterestUtil::AddAoiEntity(entrant, entity);
+				if (ViewUtil::ShouldUpdateView(viewEntrant, entity)) {
+					ViewUtil::FillActorCreateMessageInfo(viewEntrant, entity, actorCreateMessage);
+					entitiesToNotifyEntry.emplace(viewEntrant);
+					InterestUtil::AddAoiEntity(viewEntrant, entity);
 				}
 
 				// Others enter my view
-				if (ViewUtil::ShouldUpdateView(entity, entrant)) {
-					ViewUtil::FillActorCreateMessageInfo(entity, entrant, *actorListCreateMessage.add_actor_list());
-					InterestUtil::AddAoiEntity(entity, entrant);
+				if (ViewUtil::ShouldUpdateView(entity, viewEntrant)) {
+					ViewUtil::FillActorCreateMessageInfo(entity, viewEntrant, *actorListCreateMessage.add_actor_list());
+					InterestUtil::AddAoiEntity(entity, viewEntrant);
 				}
 			}
 		}
@@ -183,12 +183,15 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridListComp& gridList, ent
 		if (it == gridList.end()) {
 			continue;
 		}
-		for (const auto& observer : it->second.entity_list) {
-			observersToNotifyExit.emplace(observer);
-			actorListDestroyMessage.add_entity(entt::to_entity(observer));
+		for (const auto& viewLeaver : it->second.entity_list) {
+			observersToNotifyExit.emplace(viewLeaver);
+			actorListDestroyMessage.add_entity(entt::to_entity(viewLeaver));
 
-			ViewUtil::HandlePlayerLeaveMessage(observer, entity);
-			ViewUtil::HandlePlayerLeaveMessage(entity, observer);
+			ViewUtil::HandlePlayerLeaveMessage(viewLeaver, entity);
+			ViewUtil::HandlePlayerLeaveMessage(entity, viewLeaver);
+
+			InterestUtil::RemoveAoiEntity(entity, viewLeaver);
+			InterestUtil::RemoveAoiEntity(viewLeaver, entity);
 		}
 	}
 
