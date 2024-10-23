@@ -59,7 +59,7 @@ void World::Update()
 			BuffSystem::Update(fixedDeltaTime);
 			ActorStateAttributeSyncSystem::Update(fixedDeltaTime);
 
-			tlsGame.frameTime.set_frame_count(tlsGame.frameTime.frame_count() + 1);
+			tlsGame.frameTime.set_current_frame(tlsGame.frameTime.current_frame() + 1);
 		}
 		simulationIterations++;
 	}

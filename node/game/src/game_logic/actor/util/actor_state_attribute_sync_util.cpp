@@ -32,6 +32,7 @@ void ActorStateAttributeSyncUtil::GetNearLevel3EntityList(const entt::entity ent
 void ActorStateAttributeSyncUtil::SyncBasicAttributes(entt::entity entity, const EntityVector& nearbyEntities,
     double delta)
 {
+    
 }
 
 void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency, double delta)
@@ -40,8 +41,6 @@ void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const Enti
     {
         // 根据同步频率来决定同步逻辑
         switch (syncFrequency) {
-        case eAttributeSyncFrequency::kSyncEvery1Frame:
-            break;
 
         case eAttributeSyncFrequency::kSyncEvery2Frames:
             break;
@@ -55,7 +54,9 @@ void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const Enti
         case eAttributeSyncFrequency::kSyncEvery30Frames:
             // 长时间同步一次，适用于非关键属性
             break;
-
+        case eAttributeSyncFrequency::kSyncEvery60Frames:
+            // 长时间同步一次，适用于非关键属性
+                break;
         default:
             break;
         }

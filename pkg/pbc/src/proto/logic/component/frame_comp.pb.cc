@@ -27,7 +27,7 @@ inline constexpr FrameTime::Impl_::Impl_(
       : previous_time_{::uint64_t{0u}},
         delta_time_{0},
         time_accumulator_{0},
-        frame_count_{::uint64_t{0u}},
+        current_frame_{::uint64_t{0u}},
         target_fps_{0u},
         _cached_size_{0} {}
 
@@ -64,7 +64,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::FrameTime, _impl_.delta_time_),
         PROTOBUF_FIELD_OFFSET(::FrameTime, _impl_.target_fps_),
         PROTOBUF_FIELD_OFFSET(::FrameTime, _impl_.time_accumulator_),
-        PROTOBUF_FIELD_OFFSET(::FrameTime, _impl_.frame_count_),
+        PROTOBUF_FIELD_OFFSET(::FrameTime, _impl_.current_frame_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -76,17 +76,17 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fframe_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n logic/component/frame_comp.proto\"y\n\tFr"
+    "\n logic/component/frame_comp.proto\"{\n\tFr"
     "ameTime\022\025\n\rprevious_time\030\001 \001(\004\022\022\n\ndelta_"
     "time\030\002 \001(\001\022\022\n\ntarget_fps\030\003 \001(\r\022\030\n\020time_a"
-    "ccumulator\030\004 \001(\001\022\023\n\013frame_count\030\005 \001(\004B\tZ"
-    "\007pb/gameb\006proto3"
+    "ccumulator\030\004 \001(\001\022\025\n\rcurrent_frame\030\005 \001(\004B"
+    "\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fframe_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fframe_5fcomp_2eproto = {
     false,
     false,
-    176,
+    178,
     descriptor_table_protodef_logic_2fcomponent_2fframe_5fcomp_2eproto,
     "logic/component/frame_comp.proto",
     &descriptor_table_logic_2fcomponent_2fframe_5fcomp_2eproto_once,
@@ -220,9 +220,9 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> FrameTime::_table_ = {
     // double time_accumulator = 4;
     {::_pbi::TcParser::FastF64S1,
      {33, 63, 0, PROTOBUF_FIELD_OFFSET(FrameTime, _impl_.time_accumulator_)}},
-    // uint64 frame_count = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FrameTime, _impl_.frame_count_), 63>(),
-     {40, 63, 0, PROTOBUF_FIELD_OFFSET(FrameTime, _impl_.frame_count_)}},
+    // uint64 current_frame = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FrameTime, _impl_.current_frame_), 63>(),
+     {40, 63, 0, PROTOBUF_FIELD_OFFSET(FrameTime, _impl_.current_frame_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
@@ -240,8 +240,8 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> FrameTime::_table_ = {
     // double time_accumulator = 4;
     {PROTOBUF_FIELD_OFFSET(FrameTime, _impl_.time_accumulator_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // uint64 frame_count = 5;
-    {PROTOBUF_FIELD_OFFSET(FrameTime, _impl_.frame_count_), 0, 0,
+    // uint64 current_frame = 5;
+    {PROTOBUF_FIELD_OFFSET(FrameTime, _impl_.current_frame_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -294,11 +294,11 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> FrameTime::_table_ = {
         4, this->_internal_time_accumulator(), target);
   }
 
-  // uint64 frame_count = 5;
-  if (this->_internal_frame_count() != 0) {
+  // uint64 current_frame = 5;
+  if (this->_internal_current_frame() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        5, this->_internal_frame_count(), target);
+        5, this->_internal_current_frame(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -344,10 +344,10 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> FrameTime::_table_ = {
     total_size += 9;
   }
 
-  // uint64 frame_count = 5;
-  if (this->_internal_frame_count() != 0) {
+  // uint64 current_frame = 5;
+  if (this->_internal_current_frame() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_frame_count());
+        this->_internal_current_frame());
   }
 
   // uint32 target_fps = 3;
@@ -387,8 +387,8 @@ void FrameTime::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   if (raw_time_accumulator != 0) {
     _this->_impl_.time_accumulator_ = from._impl_.time_accumulator_;
   }
-  if (from._internal_frame_count() != 0) {
-    _this->_impl_.frame_count_ = from._impl_.frame_count_;
+  if (from._internal_current_frame() != 0) {
+    _this->_impl_.current_frame_ = from._impl_.current_frame_;
   }
   if (from._internal_target_fps() != 0) {
     _this->_impl_.target_fps_ = from._impl_.target_fps_;
