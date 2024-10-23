@@ -30,5 +30,8 @@
     <ClCompile Include="..\..\node\game\src\game_logic\scene\util\grid_util.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="mock_interest_util.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

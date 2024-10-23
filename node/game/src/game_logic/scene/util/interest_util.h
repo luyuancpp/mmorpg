@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include <entt/src/entt/entity/entity.hpp>
 
-class InterestManager {
+class InterestUtil {
 public:
     static void InitializeActorComponents(entt::entity entity);
     
