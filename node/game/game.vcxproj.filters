@@ -198,6 +198,9 @@
     <ClCompile Include="src\game_logic\actor\system\actor_state_attribute_sync_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\scene\util\interest_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -417,6 +420,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\actor\constants\actor_state_attribute_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\scene\util\interest_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\scene\comp\scene_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
