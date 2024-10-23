@@ -14,19 +14,19 @@ using SyncFrequencyArray = std::array<uint32_t, kSyncFrequencyArraySize>;
 
 // 定义不同距离级别的同步频率
 constexpr SyncFrequencyArray kLevel1SyncFrequencies{
-    eAttributeSyncFrequency::kSyncEvery1Frame,
     eAttributeSyncFrequency::kSyncEvery2Frames, 
     eAttributeSyncFrequency::kSyncEvery5Frames, 
     eAttributeSyncFrequency::kSyncEvery10Frames, 
-    eAttributeSyncFrequency::kSyncEvery30Frames};
+    eAttributeSyncFrequency::kSyncEvery30Frames,
+    eAttributeSyncFrequency::kSyncEvery60Frames};
 
 constexpr SyncFrequencyArray kLevel2SyncFrequencies{
-    eAttributeSyncFrequency::kSyncEvery1Frame,
     eAttributeSyncFrequency::kSyncEvery2Frames, 
-    eAttributeSyncFrequency::kSyncEvery5Frames};
+    eAttributeSyncFrequency::kSyncEvery5Frames,
+    eAttributeSyncFrequency::kSyncEvery10Frames};
 
 constexpr SyncFrequencyArray kLevel3SyncFrequencies{
-    eAttributeSyncFrequency::kSyncEvery1Frame};
+    eAttributeSyncFrequency::kSyncEvery2Frames};
 
 // 定义距离级别同步配置结构体，包含同步频率和获取实体列表的函数指针
 struct DistanceSyncConfig {
@@ -43,7 +43,7 @@ constexpr DistanceSyncConfig kDistanceSyncConfigs[] = {
 
 // 通用的同步函数，根据不同距离级别执行同步
 void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& nearbyEntityList, const DistanceSyncConfig& distanceSyncConfig, const double deltaTime) {
-    const auto currentFrame = tlsGame.frameTime.frame_count();
+    const auto currentFrame = tlsGame.frameTime.current_frame();
 
     // 获取该距离级别的实体列表
     distanceSyncConfig.retrieveEntityList(entity, nearbyEntityList);

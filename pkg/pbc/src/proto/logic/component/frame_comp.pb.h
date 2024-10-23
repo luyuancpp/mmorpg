@@ -191,7 +191,7 @@ class FrameTime final : public ::google::protobuf::Message
     kPreviousTimeFieldNumber = 1,
     kDeltaTimeFieldNumber = 2,
     kTimeAccumulatorFieldNumber = 4,
-    kFrameCountFieldNumber = 5,
+    kCurrentFrameFieldNumber = 5,
     kTargetFpsFieldNumber = 3,
   };
   // uint64 previous_time = 1;
@@ -224,14 +224,14 @@ class FrameTime final : public ::google::protobuf::Message
   void _internal_set_time_accumulator(double value);
 
   public:
-  // uint64 frame_count = 5;
-  void clear_frame_count() ;
-  ::uint64_t frame_count() const;
-  void set_frame_count(::uint64_t value);
+  // uint64 current_frame = 5;
+  void clear_current_frame() ;
+  ::uint64_t current_frame() const;
+  void set_current_frame(::uint64_t value);
 
   private:
-  ::uint64_t _internal_frame_count() const;
-  void _internal_set_frame_count(::uint64_t value);
+  ::uint64_t _internal_current_frame() const;
+  void _internal_set_current_frame(::uint64_t value);
 
   public:
   // uint32 target_fps = 3;
@@ -268,7 +268,7 @@ class FrameTime final : public ::google::protobuf::Message
     ::uint64_t previous_time_;
     double delta_time_;
     double time_accumulator_;
-    ::uint64_t frame_count_;
+    ::uint64_t current_frame_;
     ::uint32_t target_fps_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -381,26 +381,26 @@ inline void FrameTime::_internal_set_time_accumulator(double value) {
   _impl_.time_accumulator_ = value;
 }
 
-// uint64 frame_count = 5;
-inline void FrameTime::clear_frame_count() {
+// uint64 current_frame = 5;
+inline void FrameTime::clear_current_frame() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.frame_count_ = ::uint64_t{0u};
+  _impl_.current_frame_ = ::uint64_t{0u};
 }
-inline ::uint64_t FrameTime::frame_count() const {
-  // @@protoc_insertion_point(field_get:FrameTime.frame_count)
-  return _internal_frame_count();
+inline ::uint64_t FrameTime::current_frame() const {
+  // @@protoc_insertion_point(field_get:FrameTime.current_frame)
+  return _internal_current_frame();
 }
-inline void FrameTime::set_frame_count(::uint64_t value) {
-  _internal_set_frame_count(value);
-  // @@protoc_insertion_point(field_set:FrameTime.frame_count)
+inline void FrameTime::set_current_frame(::uint64_t value) {
+  _internal_set_current_frame(value);
+  // @@protoc_insertion_point(field_set:FrameTime.current_frame)
 }
-inline ::uint64_t FrameTime::_internal_frame_count() const {
+inline ::uint64_t FrameTime::_internal_current_frame() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.frame_count_;
+  return _impl_.current_frame_;
 }
-inline void FrameTime::_internal_set_frame_count(::uint64_t value) {
+inline void FrameTime::_internal_set_current_frame(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.frame_count_ = value;
+  _impl_.current_frame_ = value;
 }
 
 #ifdef __GNUC__
