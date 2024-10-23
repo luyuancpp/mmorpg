@@ -115,15 +115,15 @@ bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant, d
 	return dtVdist(observerLocation, entrantLocation) > viewRadius;
 }
 
-void ViewUtil::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& createMessage)
+void ViewUtil::FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& createMessage)
 {
-	createMessage.set_entity(entt::to_integral(entity));
+	createMessage.set_entity(entt::to_integral(entrant));
 
-	if (const auto entrantTransform = tls.registry.try_get<Transform>(entity)) {
+	if (const auto entrantTransform = tls.registry.try_get<Transform>(entrant)) {
 		createMessage.mutable_transform()->CopyFrom(*entrantTransform);
 	}
 
-	if (const auto guid = tls.registry.try_get<Guid>(entity)) {
+	if (const auto guid = tls.registry.try_get<Guid>(entrant)) {
 		createMessage.set_guid(*guid);
 	}
 }
