@@ -58,7 +58,7 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 	ActorStateAttributeSyncUtil::InitializeActorComponents(player);
 	SkillUtil::InitializeActorComponents(player);
 	BuffUtil::InitializeActorComponents(player);
-	InterestManager::InitializeActorComponents(player);
+	InterestUtil::InitializeActorComponents(player);
 ///<<< END WRITING YOUR CODE
 }
 

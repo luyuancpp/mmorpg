@@ -11,6 +11,7 @@
 #include "service_info/player_scene_service_info.h"
 #include "hexagons_grid.h"
 #include "game_logic/scene/util/grid_util.h"
+#include "game_logic/scene/util/interest_util.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
 
@@ -78,32 +79,35 @@ void AoiSystem::Update(double delta) {
 				continue;
 			}
 
-			for (const auto& observer : gridIt->second.entity_list) {
+			for (const auto& entrant : gridIt->second.entity_list) {
 				// Handle NPC entering my view
-				if (observer == entity ||
-					!tls.registry.any_of<Npc>(observer) ||
-					!ViewUtil::ShouldSendNpcEnterMessage(entity, observer)) {
+				if (entrant == entity ||
+					!tls.registry.any_of<Npc>(entrant) ||
+					!ViewUtil::ShouldSendNpcEnterMessage(entity, entrant)) {
 					continue;
 				}
 
-				ViewUtil::FillActorCreateMessageInfo(entity, observer, actorCreateMessage);
+				ViewUtil::FillActorCreateMessageInfo(entity, entrant, actorCreateMessage);
+				InterestUtil::AddAoiEntity(entity, entrant);
 			}
 
-			for (const auto& observer : gridIt->second.entity_list) {
-				if (observer == entity ||
+			for (const auto& entrant : gridIt->second.entity_list) {
+				if (entrant == entity ||
 					tls.registry.any_of<Npc>(entity)) {
 					continue;
 				}
 
 				// I enter others' view
-				if (ViewUtil::ShouldUpdateView(observer, entity)) {
-					ViewUtil::FillActorCreateMessageInfo(observer, entity, actorCreateMessage);
-					entitiesToNotifyEntry.emplace(observer);
+				if (ViewUtil::ShouldUpdateView(entrant, entity)) {
+					ViewUtil::FillActorCreateMessageInfo(entrant, entity, actorCreateMessage);
+					entitiesToNotifyEntry.emplace(entrant);
+					InterestUtil::AddAoiEntity(entrant, entity);
 				}
 
 				// Others enter my view
-				if (ViewUtil::ShouldUpdateView(entity, observer)) {
-					ViewUtil::FillActorCreateMessageInfo(entity, observer, *actorListCreateMessage.add_actor_list());
+				if (ViewUtil::ShouldUpdateView(entity, entrant)) {
+					ViewUtil::FillActorCreateMessageInfo(entity, entrant, *actorListCreateMessage.add_actor_list());
+					InterestUtil::AddAoiEntity(entity, entrant);
 				}
 			}
 		}
