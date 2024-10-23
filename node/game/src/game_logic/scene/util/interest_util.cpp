@@ -28,14 +28,14 @@ void InterestUtil::RemoveWatcher(const entt::entity watcher, const entt::entity 
 
 void InterestUtil::AddAoiEntity(const entt::entity watcher, const entt::entity target)
 {
-    if (watcher == entt::null || target == entt::null || !tls.registry.any_of<AoiListComp>(watcher)) return;
+    if (watcher == entt::null || target == entt::null) return;
 
     tls.registry.get<AoiListComp>(watcher).aoiList.erase(target);
 }
 
 void InterestUtil::RemoveAoiEntity(const entt::entity watcher, const entt::entity target)
 {
-    if (watcher == entt::null || target == entt::null || !tls.registry.any_of<AoiListComp>(watcher)) return;
+    if (watcher == entt::null || target == entt::null ) return;
 
     tls.registry.get<AoiListComp>(watcher).aoiList.erase(target);
 }

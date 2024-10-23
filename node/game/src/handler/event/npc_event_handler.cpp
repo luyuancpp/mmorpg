@@ -6,6 +6,7 @@
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/util/skill_util.h"
 #include "game_logic/npc/util/npc_util.h"
+#include "game_logic/scene/util/interest_util.h"
 ///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
 {
@@ -32,7 +33,7 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
     NpcUtil::InitializeNpcComponents(npc);
     SkillUtil::InitializeActorComponents(npc);
     BuffUtil::InitializeActorComponents(npc);
-
+    InterestUtil::InitializeActorComponents(npc);
 ///<<< END WRITING YOUR CODE
 }
 

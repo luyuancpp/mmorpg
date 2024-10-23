@@ -31,13 +31,7 @@ void ActorStateAttributeSyncUtil::InitializeActorComponents(const entt::entity e
 }
 
 void ActorStateAttributeSyncUtil::GetNearLevel1EntityList(const entt::entity entity, EntityVector& entityList) {
-    const auto aoiListComp = tls.registry.try_get<AoiListComp>(entity);
-    if (nullptr == aoiListComp){
-        return;
-    }
-
-    for (auto& aoiEntity : aoiListComp->aoiList){
-
+    for (auto& aoiEntity : tls.registry.get<AoiListComp>(entity).aoiList){
         const double viewRadius = ViewUtil::GetMaxViewRadius(aoiEntity) * 0.333;
 
         if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
@@ -50,13 +44,7 @@ void ActorStateAttributeSyncUtil::GetNearLevel1EntityList(const entt::entity ent
 }
 
 void ActorStateAttributeSyncUtil::GetNearLevel2EntityList(const entt::entity entity, EntityVector& entityList) {
-    const auto aoiListComp = tls.registry.try_get<AoiListComp>(entity);
-    if (nullptr == aoiListComp){
-        return;
-    }
-
-    for (auto& aoiEntity : aoiListComp->aoiList){
-
+    for (auto& aoiEntity : tls.registry.get<AoiListComp>(entity).aoiList){
         const double viewRadius = ViewUtil::GetMaxViewRadius(aoiEntity) * 0.666;
 
         if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
@@ -69,13 +57,7 @@ void ActorStateAttributeSyncUtil::GetNearLevel2EntityList(const entt::entity ent
 }
 
 void ActorStateAttributeSyncUtil::GetNearLevel3EntityList(const entt::entity entity, EntityVector& entityList) {
-    const auto aoiListComp = tls.registry.try_get<AoiListComp>(entity);
-    if (nullptr == aoiListComp){
-        return;
-    }
-
-    for (auto& aoiEntity : aoiListComp->aoiList){
-
+    for (auto& aoiEntity : tls.registry.get<AoiListComp>(entity).aoiList){
         const double viewRadius = ViewUtil::GetMaxViewRadius(aoiEntity);
 
         if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
