@@ -7,6 +7,7 @@
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/player/util/player_skill_util.h"
 #include "game_logic/combat/skill/util/skill_util.h"
+#include "game_logic/scene/util/interest_util.h"
 ///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
 {
@@ -57,6 +58,7 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 	ActorStateAttributeSyncUtil::InitializeActorComponents(player);
 	SkillUtil::InitializeActorComponents(player);
 	BuffUtil::InitializeActorComponents(player);
+	InterestManager::InitializeActorComponents(player);
 ///<<< END WRITING YOUR CODE
 }
 
