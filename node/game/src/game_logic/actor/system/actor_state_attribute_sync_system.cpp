@@ -49,7 +49,7 @@ void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& ne
     distanceSyncConfig.retrieveEntityList(entity, nearbyEntityList);
 
     // 始终同步基础属性
-    ActorStateAttributeSyncUtil::SyncBasicAttributes(entity, nearbyEntityList, deltaTime);
+    ActorStateAttributeSyncUtil::SyncBasicAttributes(entity, deltaTime);
 
     // 根据每个帧同步频率配置进行属性同步
     for (const auto& frequency : distanceSyncConfig.syncFrequencies) {

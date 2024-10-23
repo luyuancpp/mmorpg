@@ -43,8 +43,7 @@ void AoiSystem::Update(double delta) {
 			GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, neighborGridsToEnter);
 		} else {
 			const auto previousHexPosition = tls.registry.get<Hex>(currentEntity);
-			const auto distance = hex_distance(previousHexPosition, currentHexPosition);
-			if (distance == 0) {
+			if (hex_distance(previousHexPosition, currentHexPosition) <= 0) {
 				continue;
 			}
 

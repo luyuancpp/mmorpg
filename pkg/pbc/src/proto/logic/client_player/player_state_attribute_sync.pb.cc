@@ -120,7 +120,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr BaseAttributeDeltaS2C::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        velocity_{nullptr},
+        transform_{nullptr},
         entity_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -153,7 +153,7 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_.entity_id_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_.velocity_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_.transform_),
         ~0u,
         0,
         ~0u,  // no _has_bits_
@@ -226,25 +226,25 @@ const char descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fstate_5f
     "bute_sync.proto\032\020common/tip.proto\032\021commo"
     "n/comp.proto\032\022common/empty.proto\032 logic/"
     "component/skill_comp.proto\032 logic/compon"
-    "ent/actor_comp.proto\"G\n\025BaseAttributeDel"
-    "taS2C\022\021\n\tentity_id\030\001 \001(\004\022\033\n\010velocity\030\002 \001"
-    "(\0132\t.Velocity\"-\n\030AttributeDelta2FramesS2"
-    "C\022\021\n\tentity_id\030\001 \001(\004\"-\n\030AttributeDelta5F"
-    "ramesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031Attribute"
-    "Delta10FramesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031A"
-    "ttributeDelta30FramesS2C\022\021\n\tentity_id\030\001 "
-    "\001(\004\".\n\031AttributeDelta60FramesS2C\022\021\n\tenti"
-    "ty_id\030\001 \001(\0042\365\002\n\021EntitySyncService\0223\n\021Syn"
-    "cBaseAttribute\022\026.BaseAttributeDeltaS2C\032\006"
-    ".Empty\0229\n\024SyncAttribute2Frames\022\031.Attribu"
-    "teDelta2FramesS2C\032\006.Empty\0229\n\024SyncAttribu"
-    "te5Frames\022\031.AttributeDelta5FramesS2C\032\006.E"
-    "mpty\022;\n\025SyncAttribute10Frames\022\032.Attribut"
-    "eDelta10FramesS2C\032\006.Empty\022;\n\025SyncAttribu"
-    "te30Frames\022\032.AttributeDelta30FramesS2C\032\006"
-    ".Empty\022;\n\025SyncAttribute60Frames\022\032.Attrib"
-    "uteDelta60FramesS2C\032\006.EmptyB\014Z\007pb/game\200\001"
-    "\001b\006proto3"
+    "ent/actor_comp.proto\"I\n\025BaseAttributeDel"
+    "taS2C\022\021\n\tentity_id\030\001 \001(\004\022\035\n\ttransform\030\002 "
+    "\001(\0132\n.Transform\"-\n\030AttributeDelta2Frames"
+    "S2C\022\021\n\tentity_id\030\001 \001(\004\"-\n\030AttributeDelta"
+    "5FramesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031Attribu"
+    "teDelta10FramesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n"
+    "\031AttributeDelta30FramesS2C\022\021\n\tentity_id\030"
+    "\001 \001(\004\".\n\031AttributeDelta60FramesS2C\022\021\n\ten"
+    "tity_id\030\001 \001(\0042\365\002\n\021EntitySyncService\0223\n\021S"
+    "yncBaseAttribute\022\026.BaseAttributeDeltaS2C"
+    "\032\006.Empty\0229\n\024SyncAttribute2Frames\022\031.Attri"
+    "buteDelta2FramesS2C\032\006.Empty\0229\n\024SyncAttri"
+    "bute5Frames\022\031.AttributeDelta5FramesS2C\032\006"
+    ".Empty\022;\n\025SyncAttribute10Frames\022\032.Attrib"
+    "uteDelta10FramesS2C\032\006.Empty\022;\n\025SyncAttri"
+    "bute30Frames\022\032.AttributeDelta30FramesS2C"
+    "\032\006.Empty\022;\n\025SyncAttribute60Frames\022\032.Attr"
+    "ibuteDelta60FramesS2C\032\006.EmptyB\014Z\007pb/game"
+    "\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[5] =
     {
@@ -258,7 +258,7 @@ static ::absl::once_flag descriptor_table_logic_2fclient_5fplayer_2fplayer_5fsta
 const ::_pbi::DescriptorTable descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto = {
     false,
     false,
-    889,
+    891,
     descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto,
     "logic/client_player/player_state_attribute_sync.proto",
     &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
@@ -296,9 +296,9 @@ class BaseAttributeDeltaS2C::_Internal {
     8 * PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_._has_bits_);
 };
 
-void BaseAttributeDeltaS2C::clear_velocity() {
+void BaseAttributeDeltaS2C::clear_transform() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.velocity_ != nullptr) _impl_.velocity_->Clear();
+  if (_impl_.transform_ != nullptr) _impl_.transform_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
 BaseAttributeDeltaS2C::BaseAttributeDeltaS2C(::google::protobuf::Arena* arena)
@@ -322,8 +322,8 @@ BaseAttributeDeltaS2C::BaseAttributeDeltaS2C(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.velocity_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::Velocity>(
-                              arena, *from._impl_.velocity_)
+  _impl_.transform_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::Transform>(
+                              arena, *from._impl_.transform_)
                         : nullptr;
   _impl_.entity_id_ = from._impl_.entity_id_;
 
@@ -337,10 +337,10 @@ inline PROTOBUF_NDEBUG_INLINE BaseAttributeDeltaS2C::Impl_::Impl_(
 inline void BaseAttributeDeltaS2C::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, velocity_),
+               offsetof(Impl_, transform_),
            0,
            offsetof(Impl_, entity_id_) -
-               offsetof(Impl_, velocity_) +
+               offsetof(Impl_, transform_) +
                sizeof(Impl_::entity_id_));
 }
 BaseAttributeDeltaS2C::~BaseAttributeDeltaS2C() {
@@ -350,7 +350,7 @@ BaseAttributeDeltaS2C::~BaseAttributeDeltaS2C() {
 }
 inline void BaseAttributeDeltaS2C::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.velocity_;
+  delete _impl_.transform_;
   _impl_.~Impl_();
 }
 
@@ -377,8 +377,8 @@ PROTOBUF_NOINLINE void BaseAttributeDeltaS2C::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.velocity_ != nullptr);
-    _impl_.velocity_->Clear();
+    ABSL_DCHECK(_impl_.transform_ != nullptr);
+    _impl_.transform_->Clear();
   }
   _impl_.entity_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
@@ -410,9 +410,9 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BaseAttributeDeltaS2C::_table_ = {
     ::_pbi::TcParser::GetTable<::BaseAttributeDeltaS2C>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .Velocity velocity = 2;
+    // .Transform transform = 2;
     {::_pbi::TcParser::FastMtS1,
-     {18, 0, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.velocity_)}},
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.transform_)}},
     // uint64 entity_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributeDeltaS2C, _impl_.entity_id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.entity_id_)}},
@@ -422,11 +422,11 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BaseAttributeDeltaS2C::_table_ = {
     // uint64 entity_id = 1;
     {PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.entity_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // .Velocity velocity = 2;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.velocity_), _Internal::kHasBitsOffset + 0, 0,
+    // .Transform transform = 2;
+    {PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::Velocity>()},
+    {::_pbi::TcParser::GetTable<::Transform>()},
   }}, {{
   }},
 };
@@ -446,10 +446,10 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BaseAttributeDeltaS2C::_table_ = {
   }
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .Velocity velocity = 2;
+  // .Transform transform = 2;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        2, *_impl_.velocity_, _impl_.velocity_->GetCachedSize(), target, stream);
+        2, *_impl_.transform_, _impl_.transform_->GetCachedSize(), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -469,11 +469,11 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BaseAttributeDeltaS2C::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .Velocity velocity = 2;
+  // .Transform transform = 2;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.velocity_);
+        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.transform_);
   }
 
   // uint64 entity_id = 1;
@@ -497,12 +497,12 @@ void BaseAttributeDeltaS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, c
 
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.velocity_ != nullptr);
-    if (_this->_impl_.velocity_ == nullptr) {
-      _this->_impl_.velocity_ =
-          ::google::protobuf::Message::CopyConstruct<::Velocity>(arena, *from._impl_.velocity_);
+    ABSL_DCHECK(from._impl_.transform_ != nullptr);
+    if (_this->_impl_.transform_ == nullptr) {
+      _this->_impl_.transform_ =
+          ::google::protobuf::Message::CopyConstruct<::Transform>(arena, *from._impl_.transform_);
     } else {
-      _this->_impl_.velocity_->MergeFrom(*from._impl_.velocity_);
+      _this->_impl_.transform_->MergeFrom(*from._impl_.transform_);
     }
   }
   if (from._internal_entity_id() != 0) {
@@ -530,9 +530,9 @@ void BaseAttributeDeltaS2C::InternalSwap(BaseAttributeDeltaS2C* PROTOBUF_RESTRIC
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.entity_id_)
       + sizeof(BaseAttributeDeltaS2C::_impl_.entity_id_)
-      - PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.velocity_)>(
-          reinterpret_cast<char*>(&_impl_.velocity_),
-          reinterpret_cast<char*>(&other->_impl_.velocity_));
+      - PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.transform_)>(
+          reinterpret_cast<char*>(&_impl_.transform_),
+          reinterpret_cast<char*>(&other->_impl_.transform_));
 }
 
 ::google::protobuf::Metadata BaseAttributeDeltaS2C::GetMetadata() const {

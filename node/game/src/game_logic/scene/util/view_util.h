@@ -22,7 +22,7 @@ public:
     static bool ShouldUpdateView(entt::entity observer, entt::entity entrant);
 
     // 填充Actor创建消息信息
-    static void FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& actorCreateMessage);
+    static void FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& createMessage);
 
     // 处理玩家离开消息
     static void HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver);
@@ -36,6 +36,8 @@ public:
 
     // 检查参与者是否超出视野半径
     static bool IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
+
+    static double GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2);
     
     // 获取观察者的最大视野半径
     static double GetMaxViewRadius(entt::entity observer);
