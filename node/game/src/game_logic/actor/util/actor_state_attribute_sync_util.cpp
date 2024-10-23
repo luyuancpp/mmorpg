@@ -36,9 +36,10 @@ void ActorStateAttributeSyncUtil::GetNearLevel1EntityList(const entt::entity ent
         return;
     }
 
-    const double viewRadius = ViewUtil::GetMaxViewRadius(entity) * 0.333;
-
     for (auto& aoiEntity : aoiListComp->aoiList){
+
+        const double viewRadius = ViewUtil::GetMaxViewRadius(aoiEntity) * 0.333;
+
         if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
         {
             continue;
@@ -54,9 +55,10 @@ void ActorStateAttributeSyncUtil::GetNearLevel2EntityList(const entt::entity ent
         return;
     }
 
-    const double viewRadius = ViewUtil::GetMaxViewRadius(entity) * 0.666;
-
     for (auto& aoiEntity : aoiListComp->aoiList){
+
+        const double viewRadius = ViewUtil::GetMaxViewRadius(aoiEntity) * 0.666;
+
         if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
         {
             continue;
@@ -72,9 +74,10 @@ void ActorStateAttributeSyncUtil::GetNearLevel3EntityList(const entt::entity ent
         return;
     }
 
-    const double viewRadius = ViewUtil::GetMaxViewRadius(entity);
-
     for (auto& aoiEntity : aoiListComp->aoiList){
+
+        const double viewRadius = ViewUtil::GetMaxViewRadius(aoiEntity);
+
         if (!ViewUtil::IsWithinViewRadius(aoiEntity, entity, viewRadius))
         {
             continue;
@@ -85,7 +88,7 @@ void ActorStateAttributeSyncUtil::GetNearLevel3EntityList(const entt::entity ent
 }
 
 // 同步基础属性到附近的实体
-void ActorStateAttributeSyncUtil::SyncBasicAttributes(entt::entity entity,  double delta) {
+void ActorStateAttributeSyncUtil::SyncBasicAttributes(entt::entity entity) {
     const auto aoiListComp = tls.registry.try_get<AoiListComp>(entity);
     if (nullptr == aoiListComp){
         return;
@@ -101,7 +104,7 @@ void ActorStateAttributeSyncUtil::SyncBasicAttributes(entt::entity entity,  doub
 }
 
 // 同步属性，根据频率决定同步内容
-void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency, double delta) {
+void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const EntityVector& nearbyEntities, uint32_t syncFrequency) {
     for (const auto& nearbyEntity : nearbyEntities) {
         // 根据不同的同步频率执行不同的同步逻辑
         switch (syncFrequency) {
