@@ -36,9 +36,9 @@ struct DistanceSyncConfig {
 
 // 定义不同距离级别的同步配置
 constexpr DistanceSyncConfig kDistanceSyncConfigs[] = {
-    {kLevel1SyncFrequencies, ActorStateAttributeSyncUtil::GetNearLevel1EntityList},
-    {kLevel2SyncFrequencies, ActorStateAttributeSyncUtil::GetNearLevel2EntityList},
-    {kLevel3SyncFrequencies, ActorStateAttributeSyncUtil::GetNearLevel3EntityList}
+    {kLevel1SyncFrequencies, ActorStateAttributeSyncUtil::GetNearbyLevel1Entities},
+    {kLevel2SyncFrequencies, ActorStateAttributeSyncUtil::GetNearbyLevel2Entities},
+    {kLevel3SyncFrequencies, ActorStateAttributeSyncUtil::GetNearbyLevel3Entities}
 };
 
 // 通用的同步函数，根据不同距离级别执行同步
