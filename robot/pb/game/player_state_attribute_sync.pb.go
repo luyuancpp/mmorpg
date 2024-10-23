@@ -76,25 +76,17 @@ func (x *BaseAttributeDeltaS2C) GetVelocity() *Velocity {
 	return nil
 }
 
-// 综合多种帧率的同步消息
-type AttributeDelta struct {
+// 各种帧率同步消息
+type AttributeDelta2FramesS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	EntityId uint64 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
-	// Types that are assignable to SyncFrequency:
-	//
-	//	*AttributeDelta_Delta_2Frames
-	//	*AttributeDelta_Delta_5Frames
-	//	*AttributeDelta_Delta_10Frames
-	//	*AttributeDelta_Delta_30Frames
-	//	*AttributeDelta_Delta_60Frames
-	SyncFrequency isAttributeDelta_SyncFrequency `protobuf_oneof:"sync_frequency"`
 }
 
-func (x *AttributeDelta) Reset() {
-	*x = AttributeDelta{}
+func (x *AttributeDelta2FramesS2C) Reset() {
+	*x = AttributeDelta2FramesS2C{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,13 +94,13 @@ func (x *AttributeDelta) Reset() {
 	}
 }
 
-func (x *AttributeDelta) String() string {
+func (x *AttributeDelta2FramesS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AttributeDelta) ProtoMessage() {}
+func (*AttributeDelta2FramesS2C) ProtoMessage() {}
 
-func (x *AttributeDelta) ProtoReflect() protoreflect.Message {
+func (x *AttributeDelta2FramesS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -120,96 +112,19 @@ func (x *AttributeDelta) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AttributeDelta.ProtoReflect.Descriptor instead.
-func (*AttributeDelta) Descriptor() ([]byte, []int) {
+// Deprecated: Use AttributeDelta2FramesS2C.ProtoReflect.Descriptor instead.
+func (*AttributeDelta2FramesS2C) Descriptor() ([]byte, []int) {
 	return file_logic_client_player_player_state_attribute_sync_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *AttributeDelta) GetEntityId() uint64 {
+func (x *AttributeDelta2FramesS2C) GetEntityId() uint64 {
 	if x != nil {
 		return x.EntityId
 	}
 	return 0
 }
 
-func (m *AttributeDelta) GetSyncFrequency() isAttributeDelta_SyncFrequency {
-	if m != nil {
-		return m.SyncFrequency
-	}
-	return nil
-}
-
-func (x *AttributeDelta) GetDelta_2Frames() *AttributeDelta2Frames {
-	if x, ok := x.GetSyncFrequency().(*AttributeDelta_Delta_2Frames); ok {
-		return x.Delta_2Frames
-	}
-	return nil
-}
-
-func (x *AttributeDelta) GetDelta_5Frames() *AttributeDelta5Frames {
-	if x, ok := x.GetSyncFrequency().(*AttributeDelta_Delta_5Frames); ok {
-		return x.Delta_5Frames
-	}
-	return nil
-}
-
-func (x *AttributeDelta) GetDelta_10Frames() *AttributeDelta10Frames {
-	if x, ok := x.GetSyncFrequency().(*AttributeDelta_Delta_10Frames); ok {
-		return x.Delta_10Frames
-	}
-	return nil
-}
-
-func (x *AttributeDelta) GetDelta_30Frames() *AttributeDelta30Frames {
-	if x, ok := x.GetSyncFrequency().(*AttributeDelta_Delta_30Frames); ok {
-		return x.Delta_30Frames
-	}
-	return nil
-}
-
-func (x *AttributeDelta) GetDelta_60Frames() *AttributeDelta60Frames {
-	if x, ok := x.GetSyncFrequency().(*AttributeDelta_Delta_60Frames); ok {
-		return x.Delta_60Frames
-	}
-	return nil
-}
-
-type isAttributeDelta_SyncFrequency interface {
-	isAttributeDelta_SyncFrequency()
-}
-
-type AttributeDelta_Delta_2Frames struct {
-	Delta_2Frames *AttributeDelta2Frames `protobuf:"bytes,2,opt,name=delta_2_frames,json=delta2Frames,proto3,oneof"`
-}
-
-type AttributeDelta_Delta_5Frames struct {
-	Delta_5Frames *AttributeDelta5Frames `protobuf:"bytes,3,opt,name=delta_5_frames,json=delta5Frames,proto3,oneof"`
-}
-
-type AttributeDelta_Delta_10Frames struct {
-	Delta_10Frames *AttributeDelta10Frames `protobuf:"bytes,4,opt,name=delta_10_frames,json=delta10Frames,proto3,oneof"`
-}
-
-type AttributeDelta_Delta_30Frames struct {
-	Delta_30Frames *AttributeDelta30Frames `protobuf:"bytes,5,opt,name=delta_30_frames,json=delta30Frames,proto3,oneof"`
-}
-
-type AttributeDelta_Delta_60Frames struct {
-	Delta_60Frames *AttributeDelta60Frames `protobuf:"bytes,6,opt,name=delta_60_frames,json=delta60Frames,proto3,oneof"`
-}
-
-func (*AttributeDelta_Delta_2Frames) isAttributeDelta_SyncFrequency() {}
-
-func (*AttributeDelta_Delta_5Frames) isAttributeDelta_SyncFrequency() {}
-
-func (*AttributeDelta_Delta_10Frames) isAttributeDelta_SyncFrequency() {}
-
-func (*AttributeDelta_Delta_30Frames) isAttributeDelta_SyncFrequency() {}
-
-func (*AttributeDelta_Delta_60Frames) isAttributeDelta_SyncFrequency() {}
-
-// 各种帧率同步消息
-type AttributeDelta2Frames struct {
+type AttributeDelta5FramesS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -217,8 +132,8 @@ type AttributeDelta2Frames struct {
 	EntityId uint64 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
 }
 
-func (x *AttributeDelta2Frames) Reset() {
-	*x = AttributeDelta2Frames{}
+func (x *AttributeDelta5FramesS2C) Reset() {
+	*x = AttributeDelta5FramesS2C{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -226,13 +141,13 @@ func (x *AttributeDelta2Frames) Reset() {
 	}
 }
 
-func (x *AttributeDelta2Frames) String() string {
+func (x *AttributeDelta5FramesS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AttributeDelta2Frames) ProtoMessage() {}
+func (*AttributeDelta5FramesS2C) ProtoMessage() {}
 
-func (x *AttributeDelta2Frames) ProtoReflect() protoreflect.Message {
+func (x *AttributeDelta5FramesS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -244,19 +159,19 @@ func (x *AttributeDelta2Frames) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AttributeDelta2Frames.ProtoReflect.Descriptor instead.
-func (*AttributeDelta2Frames) Descriptor() ([]byte, []int) {
+// Deprecated: Use AttributeDelta5FramesS2C.ProtoReflect.Descriptor instead.
+func (*AttributeDelta5FramesS2C) Descriptor() ([]byte, []int) {
 	return file_logic_client_player_player_state_attribute_sync_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *AttributeDelta2Frames) GetEntityId() uint64 {
+func (x *AttributeDelta5FramesS2C) GetEntityId() uint64 {
 	if x != nil {
 		return x.EntityId
 	}
 	return 0
 }
 
-type AttributeDelta5Frames struct {
+type AttributeDelta10FramesS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -264,8 +179,8 @@ type AttributeDelta5Frames struct {
 	EntityId uint64 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
 }
 
-func (x *AttributeDelta5Frames) Reset() {
-	*x = AttributeDelta5Frames{}
+func (x *AttributeDelta10FramesS2C) Reset() {
+	*x = AttributeDelta10FramesS2C{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -273,13 +188,13 @@ func (x *AttributeDelta5Frames) Reset() {
 	}
 }
 
-func (x *AttributeDelta5Frames) String() string {
+func (x *AttributeDelta10FramesS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AttributeDelta5Frames) ProtoMessage() {}
+func (*AttributeDelta10FramesS2C) ProtoMessage() {}
 
-func (x *AttributeDelta5Frames) ProtoReflect() protoreflect.Message {
+func (x *AttributeDelta10FramesS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -291,19 +206,19 @@ func (x *AttributeDelta5Frames) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AttributeDelta5Frames.ProtoReflect.Descriptor instead.
-func (*AttributeDelta5Frames) Descriptor() ([]byte, []int) {
+// Deprecated: Use AttributeDelta10FramesS2C.ProtoReflect.Descriptor instead.
+func (*AttributeDelta10FramesS2C) Descriptor() ([]byte, []int) {
 	return file_logic_client_player_player_state_attribute_sync_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *AttributeDelta5Frames) GetEntityId() uint64 {
+func (x *AttributeDelta10FramesS2C) GetEntityId() uint64 {
 	if x != nil {
 		return x.EntityId
 	}
 	return 0
 }
 
-type AttributeDelta10Frames struct {
+type AttributeDelta30FramesS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -311,8 +226,8 @@ type AttributeDelta10Frames struct {
 	EntityId uint64 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
 }
 
-func (x *AttributeDelta10Frames) Reset() {
-	*x = AttributeDelta10Frames{}
+func (x *AttributeDelta30FramesS2C) Reset() {
+	*x = AttributeDelta30FramesS2C{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -320,13 +235,13 @@ func (x *AttributeDelta10Frames) Reset() {
 	}
 }
 
-func (x *AttributeDelta10Frames) String() string {
+func (x *AttributeDelta30FramesS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AttributeDelta10Frames) ProtoMessage() {}
+func (*AttributeDelta30FramesS2C) ProtoMessage() {}
 
-func (x *AttributeDelta10Frames) ProtoReflect() protoreflect.Message {
+func (x *AttributeDelta30FramesS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -338,19 +253,19 @@ func (x *AttributeDelta10Frames) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AttributeDelta10Frames.ProtoReflect.Descriptor instead.
-func (*AttributeDelta10Frames) Descriptor() ([]byte, []int) {
+// Deprecated: Use AttributeDelta30FramesS2C.ProtoReflect.Descriptor instead.
+func (*AttributeDelta30FramesS2C) Descriptor() ([]byte, []int) {
 	return file_logic_client_player_player_state_attribute_sync_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *AttributeDelta10Frames) GetEntityId() uint64 {
+func (x *AttributeDelta30FramesS2C) GetEntityId() uint64 {
 	if x != nil {
 		return x.EntityId
 	}
 	return 0
 }
 
-type AttributeDelta30Frames struct {
+type AttributeDelta60FramesS2C struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -358,8 +273,8 @@ type AttributeDelta30Frames struct {
 	EntityId uint64 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
 }
 
-func (x *AttributeDelta30Frames) Reset() {
-	*x = AttributeDelta30Frames{}
+func (x *AttributeDelta60FramesS2C) Reset() {
+	*x = AttributeDelta60FramesS2C{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -367,13 +282,13 @@ func (x *AttributeDelta30Frames) Reset() {
 	}
 }
 
-func (x *AttributeDelta30Frames) String() string {
+func (x *AttributeDelta60FramesS2C) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AttributeDelta30Frames) ProtoMessage() {}
+func (*AttributeDelta60FramesS2C) ProtoMessage() {}
 
-func (x *AttributeDelta30Frames) ProtoReflect() protoreflect.Message {
+func (x *AttributeDelta60FramesS2C) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -385,59 +300,12 @@ func (x *AttributeDelta30Frames) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AttributeDelta30Frames.ProtoReflect.Descriptor instead.
-func (*AttributeDelta30Frames) Descriptor() ([]byte, []int) {
+// Deprecated: Use AttributeDelta60FramesS2C.ProtoReflect.Descriptor instead.
+func (*AttributeDelta60FramesS2C) Descriptor() ([]byte, []int) {
 	return file_logic_client_player_player_state_attribute_sync_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *AttributeDelta30Frames) GetEntityId() uint64 {
-	if x != nil {
-		return x.EntityId
-	}
-	return 0
-}
-
-type AttributeDelta60Frames struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	EntityId uint64 `protobuf:"varint,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"` // 实体的唯一ID
-}
-
-func (x *AttributeDelta60Frames) Reset() {
-	*x = AttributeDelta60Frames{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AttributeDelta60Frames) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AttributeDelta60Frames) ProtoMessage() {}
-
-func (x *AttributeDelta60Frames) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_client_player_player_state_attribute_sync_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AttributeDelta60Frames.ProtoReflect.Descriptor instead.
-func (*AttributeDelta60Frames) Descriptor() ([]byte, []int) {
-	return file_logic_client_player_player_state_attribute_sync_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *AttributeDelta60Frames) GetEntityId() uint64 {
+func (x *AttributeDelta60FramesS2C) GetEntityId() uint64 {
 	if x != nil {
 		return x.EntityId
 	}
@@ -464,57 +332,49 @@ var file_logic_client_player_player_state_attribute_sync_proto_rawDesc = []byte{
 	0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x49, 0x64, 0x12, 0x25, 0x0a, 0x08, 0x76, 0x65,
 	0x6c, 0x6f, 0x63, 0x69, 0x74, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x56,
 	0x65, 0x6c, 0x6f, 0x63, 0x69, 0x74, 0x79, 0x52, 0x08, 0x76, 0x65, 0x6c, 0x6f, 0x63, 0x69, 0x74,
-	0x79, 0x22, 0x88, 0x03, 0x0a, 0x0e, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44,
-	0x65, 0x6c, 0x74, 0x61, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x5f, 0x69,
-	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x49,
-	0x64, 0x12, 0x3e, 0x0a, 0x0e, 0x64, 0x65, 0x6c, 0x74, 0x61, 0x5f, 0x32, 0x5f, 0x66, 0x72, 0x61,
-	0x6d, 0x65, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x41, 0x74, 0x74, 0x72,
-	0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x32, 0x46, 0x72, 0x61, 0x6d, 0x65,
-	0x73, 0x48, 0x00, 0x52, 0x0c, 0x64, 0x65, 0x6c, 0x74, 0x61, 0x32, 0x46, 0x72, 0x61, 0x6d, 0x65,
-	0x73, 0x12, 0x3e, 0x0a, 0x0e, 0x64, 0x65, 0x6c, 0x74, 0x61, 0x5f, 0x35, 0x5f, 0x66, 0x72, 0x61,
-	0x6d, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x41, 0x74, 0x74, 0x72,
-	0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x35, 0x46, 0x72, 0x61, 0x6d, 0x65,
-	0x73, 0x48, 0x00, 0x52, 0x0c, 0x64, 0x65, 0x6c, 0x74, 0x61, 0x35, 0x46, 0x72, 0x61, 0x6d, 0x65,
-	0x73, 0x12, 0x41, 0x0a, 0x0f, 0x64, 0x65, 0x6c, 0x74, 0x61, 0x5f, 0x31, 0x30, 0x5f, 0x66, 0x72,
-	0x61, 0x6d, 0x65, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x41, 0x74, 0x74,
-	0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x31, 0x30, 0x46, 0x72, 0x61,
-	0x6d, 0x65, 0x73, 0x48, 0x00, 0x52, 0x0d, 0x64, 0x65, 0x6c, 0x74, 0x61, 0x31, 0x30, 0x46, 0x72,
-	0x61, 0x6d, 0x65, 0x73, 0x12, 0x41, 0x0a, 0x0f, 0x64, 0x65, 0x6c, 0x74, 0x61, 0x5f, 0x33, 0x30,
-	0x5f, 0x66, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e,
-	0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x33, 0x30,
-	0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x48, 0x00, 0x52, 0x0d, 0x64, 0x65, 0x6c, 0x74, 0x61, 0x33,
-	0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x41, 0x0a, 0x0f, 0x64, 0x65, 0x6c, 0x74, 0x61,
-	0x5f, 0x36, 0x30, 0x5f, 0x66, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x17, 0x2e, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74,
-	0x61, 0x36, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x48, 0x00, 0x52, 0x0d, 0x64, 0x65, 0x6c,
-	0x74, 0x61, 0x36, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x42, 0x10, 0x0a, 0x0e, 0x73, 0x79,
-	0x6e, 0x63, 0x5f, 0x66, 0x72, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x79, 0x22, 0x34, 0x0a, 0x15,
-	0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x32, 0x46,
-	0x72, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x5f,
-	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
-	0x49, 0x64, 0x22, 0x34, 0x0a, 0x15, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44,
-	0x65, 0x6c, 0x74, 0x61, 0x35, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x1b, 0x0a, 0x09, 0x65,
-	0x6e, 0x74, 0x69, 0x74, 0x79, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08,
-	0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x49, 0x64, 0x22, 0x35, 0x0a, 0x16, 0x41, 0x74, 0x74, 0x72,
-	0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x31, 0x30, 0x46, 0x72, 0x61, 0x6d,
-	0x65, 0x73, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x49, 0x64, 0x22,
-	0x35, 0x0a, 0x16, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74,
-	0x61, 0x33, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e, 0x74,
-	0x69, 0x74, 0x79, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e,
-	0x74, 0x69, 0x74, 0x79, 0x49, 0x64, 0x22, 0x35, 0x0a, 0x16, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62,
-	0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x36, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73,
+	0x79, 0x22, 0x37, 0x0a, 0x18, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65,
+	0x6c, 0x74, 0x61, 0x32, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x53, 0x32, 0x43, 0x12, 0x1b, 0x0a,
+	0x09, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x49, 0x64, 0x22, 0x37, 0x0a, 0x18, 0x41, 0x74,
+	0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x35, 0x46, 0x72, 0x61,
+	0x6d, 0x65, 0x73, 0x53, 0x32, 0x43, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74,
+	0x79, 0x49, 0x64, 0x22, 0x38, 0x0a, 0x19, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65,
+	0x44, 0x65, 0x6c, 0x74, 0x61, 0x31, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x53, 0x32, 0x43,
 	0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x49, 0x64, 0x32, 0x72, 0x0a,
-	0x11, 0x45, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x53, 0x79, 0x6e, 0x63, 0x53, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x12, 0x33, 0x0a, 0x11, 0x53, 0x79, 0x6e, 0x63, 0x42, 0x61, 0x73, 0x65, 0x41, 0x74,
-	0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x12, 0x16, 0x2e, 0x42, 0x61, 0x73, 0x65, 0x41, 0x74,
-	0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x53, 0x32, 0x43, 0x1a,
-	0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x28, 0x0a, 0x0d, 0x53, 0x79, 0x6e, 0x63, 0x41,
-	0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x12, 0x0f, 0x2e, 0x41, 0x74, 0x74, 0x72, 0x69,
-	0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74,
-	0x79, 0x42, 0x0c, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x80, 0x01, 0x01, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x49, 0x64, 0x22, 0x38, 0x0a,
+	0x19, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x33,
+	0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x53, 0x32, 0x43, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e,
+	0x74, 0x69, 0x74, 0x79, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65,
+	0x6e, 0x74, 0x69, 0x74, 0x79, 0x49, 0x64, 0x22, 0x38, 0x0a, 0x19, 0x41, 0x74, 0x74, 0x72, 0x69,
+	0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x36, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65,
+	0x73, 0x53, 0x32, 0x43, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x49,
+	0x64, 0x32, 0xf5, 0x02, 0x0a, 0x11, 0x45, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x53, 0x79, 0x6e, 0x63,
+	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x33, 0x0a, 0x11, 0x53, 0x79, 0x6e, 0x63, 0x42,
+	0x61, 0x73, 0x65, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x12, 0x16, 0x2e, 0x42,
+	0x61, 0x73, 0x65, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74,
+	0x61, 0x53, 0x32, 0x43, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x39, 0x0a, 0x14,
+	0x53, 0x79, 0x6e, 0x63, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x32, 0x46, 0x72,
+	0x61, 0x6d, 0x65, 0x73, 0x12, 0x19, 0x2e, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65,
+	0x44, 0x65, 0x6c, 0x74, 0x61, 0x32, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x53, 0x32, 0x43, 0x1a,
+	0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x39, 0x0a, 0x14, 0x53, 0x79, 0x6e, 0x63, 0x41,
+	0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x35, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x12,
+	0x19, 0x2e, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61,
+	0x35, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x53, 0x32, 0x43, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70,
+	0x74, 0x79, 0x12, 0x3b, 0x0a, 0x15, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62,
+	0x75, 0x74, 0x65, 0x31, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x1a, 0x2e, 0x41, 0x74,
+	0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x31, 0x30, 0x46, 0x72,
+	0x61, 0x6d, 0x65, 0x73, 0x53, 0x32, 0x43, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12,
+	0x3b, 0x0a, 0x15, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65,
+	0x33, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x1a, 0x2e, 0x41, 0x74, 0x74, 0x72, 0x69,
+	0x62, 0x75, 0x74, 0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x33, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65,
+	0x73, 0x53, 0x32, 0x43, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x3b, 0x0a, 0x15,
+	0x53, 0x79, 0x6e, 0x63, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x36, 0x30, 0x46,
+	0x72, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x1a, 0x2e, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
+	0x65, 0x44, 0x65, 0x6c, 0x74, 0x61, 0x36, 0x30, 0x46, 0x72, 0x61, 0x6d, 0x65, 0x73, 0x53, 0x32,
+	0x43, 0x1a, 0x06, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x42, 0x0c, 0x5a, 0x07, 0x70, 0x62, 0x2f,
+	0x67, 0x61, 0x6d, 0x65, 0x80, 0x01, 0x01, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -529,34 +389,36 @@ func file_logic_client_player_player_state_attribute_sync_proto_rawDescGZIP() []
 	return file_logic_client_player_player_state_attribute_sync_proto_rawDescData
 }
 
-var file_logic_client_player_player_state_attribute_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_logic_client_player_player_state_attribute_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_logic_client_player_player_state_attribute_sync_proto_goTypes = []any{
-	(*BaseAttributeDeltaS2C)(nil),  // 0: BaseAttributeDeltaS2C
-	(*AttributeDelta)(nil),         // 1: AttributeDelta
-	(*AttributeDelta2Frames)(nil),  // 2: AttributeDelta2Frames
-	(*AttributeDelta5Frames)(nil),  // 3: AttributeDelta5Frames
-	(*AttributeDelta10Frames)(nil), // 4: AttributeDelta10Frames
-	(*AttributeDelta30Frames)(nil), // 5: AttributeDelta30Frames
-	(*AttributeDelta60Frames)(nil), // 6: AttributeDelta60Frames
-	(*Velocity)(nil),               // 7: Velocity
-	(*Empty)(nil),                  // 8: Empty
+	(*BaseAttributeDeltaS2C)(nil),     // 0: BaseAttributeDeltaS2C
+	(*AttributeDelta2FramesS2C)(nil),  // 1: AttributeDelta2FramesS2C
+	(*AttributeDelta5FramesS2C)(nil),  // 2: AttributeDelta5FramesS2C
+	(*AttributeDelta10FramesS2C)(nil), // 3: AttributeDelta10FramesS2C
+	(*AttributeDelta30FramesS2C)(nil), // 4: AttributeDelta30FramesS2C
+	(*AttributeDelta60FramesS2C)(nil), // 5: AttributeDelta60FramesS2C
+	(*Velocity)(nil),                  // 6: Velocity
+	(*Empty)(nil),                     // 7: Empty
 }
 var file_logic_client_player_player_state_attribute_sync_proto_depIdxs = []int32{
-	7, // 0: BaseAttributeDeltaS2C.velocity:type_name -> Velocity
-	2, // 1: AttributeDelta.delta_2_frames:type_name -> AttributeDelta2Frames
-	3, // 2: AttributeDelta.delta_5_frames:type_name -> AttributeDelta5Frames
-	4, // 3: AttributeDelta.delta_10_frames:type_name -> AttributeDelta10Frames
-	5, // 4: AttributeDelta.delta_30_frames:type_name -> AttributeDelta30Frames
-	6, // 5: AttributeDelta.delta_60_frames:type_name -> AttributeDelta60Frames
-	0, // 6: EntitySyncService.SyncBaseAttribute:input_type -> BaseAttributeDeltaS2C
-	1, // 7: EntitySyncService.SyncAttribute:input_type -> AttributeDelta
-	8, // 8: EntitySyncService.SyncBaseAttribute:output_type -> Empty
-	8, // 9: EntitySyncService.SyncAttribute:output_type -> Empty
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	6, // 0: BaseAttributeDeltaS2C.velocity:type_name -> Velocity
+	0, // 1: EntitySyncService.SyncBaseAttribute:input_type -> BaseAttributeDeltaS2C
+	1, // 2: EntitySyncService.SyncAttribute2Frames:input_type -> AttributeDelta2FramesS2C
+	2, // 3: EntitySyncService.SyncAttribute5Frames:input_type -> AttributeDelta5FramesS2C
+	3, // 4: EntitySyncService.SyncAttribute10Frames:input_type -> AttributeDelta10FramesS2C
+	4, // 5: EntitySyncService.SyncAttribute30Frames:input_type -> AttributeDelta30FramesS2C
+	5, // 6: EntitySyncService.SyncAttribute60Frames:input_type -> AttributeDelta60FramesS2C
+	7, // 7: EntitySyncService.SyncBaseAttribute:output_type -> Empty
+	7, // 8: EntitySyncService.SyncAttribute2Frames:output_type -> Empty
+	7, // 9: EntitySyncService.SyncAttribute5Frames:output_type -> Empty
+	7, // 10: EntitySyncService.SyncAttribute10Frames:output_type -> Empty
+	7, // 11: EntitySyncService.SyncAttribute30Frames:output_type -> Empty
+	7, // 12: EntitySyncService.SyncAttribute60Frames:output_type -> Empty
+	7, // [7:13] is the sub-list for method output_type
+	1, // [1:7] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_logic_client_player_player_state_attribute_sync_proto_init() }
@@ -583,7 +445,7 @@ func file_logic_client_player_player_state_attribute_sync_proto_init() {
 			}
 		}
 		file_logic_client_player_player_state_attribute_sync_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*AttributeDelta); i {
+			switch v := v.(*AttributeDelta2FramesS2C); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -595,7 +457,7 @@ func file_logic_client_player_player_state_attribute_sync_proto_init() {
 			}
 		}
 		file_logic_client_player_player_state_attribute_sync_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*AttributeDelta2Frames); i {
+			switch v := v.(*AttributeDelta5FramesS2C); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -607,7 +469,7 @@ func file_logic_client_player_player_state_attribute_sync_proto_init() {
 			}
 		}
 		file_logic_client_player_player_state_attribute_sync_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*AttributeDelta5Frames); i {
+			switch v := v.(*AttributeDelta10FramesS2C); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -619,7 +481,7 @@ func file_logic_client_player_player_state_attribute_sync_proto_init() {
 			}
 		}
 		file_logic_client_player_player_state_attribute_sync_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*AttributeDelta10Frames); i {
+			switch v := v.(*AttributeDelta30FramesS2C); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -631,7 +493,7 @@ func file_logic_client_player_player_state_attribute_sync_proto_init() {
 			}
 		}
 		file_logic_client_player_player_state_attribute_sync_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*AttributeDelta30Frames); i {
+			switch v := v.(*AttributeDelta60FramesS2C); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -642,25 +504,6 @@ func file_logic_client_player_player_state_attribute_sync_proto_init() {
 				return nil
 			}
 		}
-		file_logic_client_player_player_state_attribute_sync_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*AttributeDelta60Frames); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
-	file_logic_client_player_player_state_attribute_sync_proto_msgTypes[1].OneofWrappers = []any{
-		(*AttributeDelta_Delta_2Frames)(nil),
-		(*AttributeDelta_Delta_5Frames)(nil),
-		(*AttributeDelta_Delta_10Frames)(nil),
-		(*AttributeDelta_Delta_30Frames)(nil),
-		(*AttributeDelta_Delta_60Frames)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -668,7 +511,7 @@ func file_logic_client_player_player_state_attribute_sync_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_logic_client_player_player_state_attribute_sync_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

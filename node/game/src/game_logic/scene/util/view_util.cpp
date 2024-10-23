@@ -139,7 +139,7 @@ const google::protobuf::Message& message, bool excludingSel)
 {
 	EntityUnorderedSet entites;
 	GridUtil::GetEntitiesInGridAndNeighbors(entity, entites, excludingSel);
-	BroadCastToPlayer(entites, message_id, message);
+	BroadCastToPlayer(message_id, message, entites);
 }
 
 void ViewUtil::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
@@ -147,7 +147,7 @@ void ViewUtil::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint3
 {
 	EntityUnorderedSet entites;
 	GridUtil::GetEntitiesInViewAndNearby(entity, entites);
-	BroadCastToPlayer(entites, message_id, message);
+	BroadCastToPlayer(message_id, message, entites);
 }
 
 void ViewUtil::LookAtPosition(entt::entity entity, const Vector3& pos) {

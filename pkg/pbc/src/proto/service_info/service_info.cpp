@@ -91,8 +91,16 @@ g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListDestroyMessageId
 
 g_message_info[EntitySyncServiceSyncBaseAttributeMessageId] = RpcService{"EntitySyncService","SyncBaseAttribute","BaseAttributeDeltaS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
 g_c2s_service_id.emplace(EntitySyncServiceSyncBaseAttributeMessageId);
-g_message_info[EntitySyncServiceSyncAttributeMessageId] = RpcService{"EntitySyncService","SyncAttribute","AttributeDelta","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
-g_c2s_service_id.emplace(EntitySyncServiceSyncAttributeMessageId);
+g_message_info[EntitySyncServiceSyncAttribute2FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute2Frames","AttributeDelta2FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
+g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute2FramesMessageId);
+g_message_info[EntitySyncServiceSyncAttribute5FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute5Frames","AttributeDelta5FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
+g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute5FramesMessageId);
+g_message_info[EntitySyncServiceSyncAttribute10FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute10Frames","AttributeDelta10FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
+g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute10FramesMessageId);
+g_message_info[EntitySyncServiceSyncAttribute30FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute30Frames","AttributeDelta30FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
+g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute30FramesMessageId);
+g_message_info[EntitySyncServiceSyncAttribute60FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute60Frames","AttributeDelta60FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
+g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute60FramesMessageId);
 
 g_message_info[GamePlayerSceneServiceEnterSceneMessageId] = RpcService{"GamePlayerSceneService","EnterScene","GsEnterSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};
 g_message_info[GamePlayerSceneServiceLeaveSceneMessageId] = RpcService{"GamePlayerSceneService","LeaveScene","GsLeaveSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};

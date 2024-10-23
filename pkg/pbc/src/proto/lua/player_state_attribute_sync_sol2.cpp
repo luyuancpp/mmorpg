@@ -14,66 +14,39 @@ sol::property(&BaseAttributeDeltaS2C::entity_id, &BaseAttributeDeltaS2C::set_ent
 &BaseAttributeDeltaS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<AttributeDelta>("AttributeDelta",
+tls_lua_state.new_usertype<AttributeDelta2FramesS2C>("AttributeDelta2FramesS2C",
 "entity_id",
-sol::property(&AttributeDelta::entity_id, &AttributeDelta::set_entity_id),
-"delta_2_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.delta_2_frames();},
-"mutable_delta_2_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.mutable_delta_2_frames();},
-"delta_5_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.delta_5_frames();},
-"mutable_delta_5_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.mutable_delta_5_frames();},
-"delta_10_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.delta_10_frames();},
-"mutable_delta_10_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.mutable_delta_10_frames();},
-"delta_30_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.delta_30_frames();},
-"mutable_delta_30_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.mutable_delta_30_frames();},
-"delta_60_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.delta_60_frames();},
-"mutable_delta_60_frames",
-[](AttributeDelta& pb) ->decltype(auto){ return pb.mutable_delta_60_frames();},
+sol::property(&AttributeDelta2FramesS2C::entity_id, &AttributeDelta2FramesS2C::set_entity_id),
 "DebugString",
-&AttributeDelta::DebugString,
+&AttributeDelta2FramesS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<AttributeDelta2Frames>("AttributeDelta2Frames",
+tls_lua_state.new_usertype<AttributeDelta5FramesS2C>("AttributeDelta5FramesS2C",
 "entity_id",
-sol::property(&AttributeDelta2Frames::entity_id, &AttributeDelta2Frames::set_entity_id),
+sol::property(&AttributeDelta5FramesS2C::entity_id, &AttributeDelta5FramesS2C::set_entity_id),
 "DebugString",
-&AttributeDelta2Frames::DebugString,
+&AttributeDelta5FramesS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<AttributeDelta5Frames>("AttributeDelta5Frames",
+tls_lua_state.new_usertype<AttributeDelta10FramesS2C>("AttributeDelta10FramesS2C",
 "entity_id",
-sol::property(&AttributeDelta5Frames::entity_id, &AttributeDelta5Frames::set_entity_id),
+sol::property(&AttributeDelta10FramesS2C::entity_id, &AttributeDelta10FramesS2C::set_entity_id),
 "DebugString",
-&AttributeDelta5Frames::DebugString,
+&AttributeDelta10FramesS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<AttributeDelta10Frames>("AttributeDelta10Frames",
+tls_lua_state.new_usertype<AttributeDelta30FramesS2C>("AttributeDelta30FramesS2C",
 "entity_id",
-sol::property(&AttributeDelta10Frames::entity_id, &AttributeDelta10Frames::set_entity_id),
+sol::property(&AttributeDelta30FramesS2C::entity_id, &AttributeDelta30FramesS2C::set_entity_id),
 "DebugString",
-&AttributeDelta10Frames::DebugString,
+&AttributeDelta30FramesS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<AttributeDelta30Frames>("AttributeDelta30Frames",
+tls_lua_state.new_usertype<AttributeDelta60FramesS2C>("AttributeDelta60FramesS2C",
 "entity_id",
-sol::property(&AttributeDelta30Frames::entity_id, &AttributeDelta30Frames::set_entity_id),
+sol::property(&AttributeDelta60FramesS2C::entity_id, &AttributeDelta60FramesS2C::set_entity_id),
 "DebugString",
-&AttributeDelta30Frames::DebugString,
-sol::base_classes, sol::bases<::google::protobuf::Message>());
-
-tls_lua_state.new_usertype<AttributeDelta60Frames>("AttributeDelta60Frames",
-"entity_id",
-sol::property(&AttributeDelta60Frames::entity_id, &AttributeDelta60Frames::set_entity_id),
-"DebugString",
-&AttributeDelta60Frames::DebugString,
+&AttributeDelta60FramesS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }
