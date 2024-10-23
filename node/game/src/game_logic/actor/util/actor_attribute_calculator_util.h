@@ -9,5 +9,5 @@ public:
 
     static void UpdateActorState(entt::entity actorEntity);
 
-    static void Update(entt::entity actorEntity, uint32_t attributeBit);
+    static void MarkAttributeForUpdate(entt::entity actorEntity, uint32_t attributeBit);
 };

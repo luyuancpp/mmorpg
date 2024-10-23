@@ -1,103 +1,67 @@
 ﻿#include "actor_attribute_calculator_util.h"
+#include <array>
+#include <bitset>
 #include "component/actor_status_comp.pb.h"
 #include "game_logic/actor/comp/actor_atrribute_comp.h"
 #include "game_logic/actor/constants/actor_state_attribute_calculator_constants.h"
 #include "thread_local/storage.h"
 
+// 初始化计算工具
+void ActorAttributeCalculatorUtil::Initialize() {}
 
-
-void ActorAttributeCalculatorUtil::Initialize() {
-}
-
-void ActorAttributeCalculatorUtil::InitializeActorComponents(entt::entity entity)
-{
+// 初始化属性组件
+void ActorAttributeCalculatorUtil::InitializeActorComponents(entt::entity entity) {
     tls.registry.emplace<ActorAttributeBitSetComp>(entity);
 }
 
-
-// 更新生命值
-void UpdateVelocity(const entt::entity enttiy) {
-    // 计算当前生命值，示例为基础生命值 + 血量增益 - 伤害值
-    //calculatedAttributes.currentHealth = BaseAttributesPBComponent.baseHealth + derivedAttributes.healthBonus - derivedAttributes.damageTaken;
-
-    // 确保生命值不低于零
-    //calculatedAttributes.currentHealth = std::max(calculatedAttributes.currentHealth, 0.0);
+// 更新速度属性
+void UpdateVelocity(entt::entity entity) {
+    // 计算速度属性逻辑
+    // 示例：calculatedAttributes.currentVelocity = BaseAttributes.velocity + derivedAttributes.velocityBonus;
 }
 
-// 更新生命值
-void UpdateHealth(entt::entity enttiy) {
-    // 计算当前生命值，示例为基础生命值 + 血量增益 - 伤害值
-    //calculatedAttributes.currentHealth = BaseAttributesPBComponent.baseHealth + derivedAttributes.healthBonus - derivedAttributes.damageTaken;
-
-    // 确保生命值不低于零
-    //calculatedAttributes.currentHealth = std::max(calculatedAttributes.currentHealth, 0.0);
+// 更新生命值属性
+void UpdateHealth(entt::entity entity) {
+    // 计算生命值属性逻辑
 }
 
-// 更新能量值
-static void UpdateEnergy(entt::entity enttiy) {
-    // 计算当前能量值，示例为基础能量值 + 能量增益 - 能量消耗
-    //calculatedAttributes.currentEnergy = BaseAttributesPBComponent.baseEnergy + derivedAttributes.energyBonus - derivedAttributes.energyUsed;
-
-    // 确保能量值不低于零
-    //calculatedAttributes.currentEnergy = std::max(calculatedAttributes.currentEnergy, 0.0);
+// 更新能量值属性
+void UpdateEnergy(entt::entity entity) {
+    // 计算能量值属性逻辑
 }
 
 // 更新状态效果
-void UpdateStatusEffects(entt::entity enttiy) {
-    // 示例逻辑：检查并更新状态效果（如中毒、减速等）
-    //auto& statusEffects = tls.registry.get<StatusEffectsComponent>(actorEntity);
-
-    //for (const auto& effect : statusEffects.activeEffects) {
-        // 根据状态效果更新角色的属性
-       // ApplyStatusEffect(effect, derivedAttributes);
-    //}
+void UpdateStatusEffects(entt::entity entity) {
+    // 更新实体的状态效果（例如中毒、减速等）
 }
 
-// 应用单个状态效果
-static void ApplyStatusEffect(entt::entity enttiy) {
-    // 处理不同类型的状态效果
-    //switch (effect.type) {
-    //case StatusEffectType::Poison:
-    //    derivedAttributes.damageTaken += effect.value; // 增加伤害
-    //    break;
-    //case StatusEffectType::Slow:
-    //    derivedAttributes.movementSpeed -= effect.value; // 降低移动速度
-    //    break;
-    //    // 其他状态效果...
-    //default:
-    //    break;
-    //}
-}
+// 属性计算配置
+struct AttributeCalculatorConfig {
+    uint32_t attributeIndex;  // 属性索引
+    void (*updateFunction)(entt::entity);  // 属性更新函数指针
+};
 
-// 计算并更新角色的状态属性
+// 定义一个属性和对应计算函数的映射表
+constexpr std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs = {{
+    {kVelocity, UpdateVelocity},
+    // 可以在这里继续添加其他属性的计算函数
+}};
+
+// 更新实体状态属性
 void ActorAttributeCalculatorUtil::UpdateActorState(entt::entity actorEntity) {
-    //// 获取角色的基础属性
-    //const auto& BaseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(actorEntity);
-    //auto& derivedAttributes = tls.registry.get<DerivedAttributesPBComponent>(actorEntity);
-    //auto& calculatedAttributes = tls.registry.get<CalculatedAttributesPBComponent>(actorEntity);
+    auto& attributeBits = tls.registry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
 
-    //// 计算生命值
-    //UpdateHealth(BaseAttributesPBComponent, derivedAttributes, calculatedAttributes);
-
-    //// 计算能量值
-    //UpdateEnergy(BaseAttributesPBComponent, derivedAttributes, calculatedAttributes);
-
-    //// 计算其他状态属性
-    //UpdateStatusEffects(actorEntity, derivedAttributes);
+    // 遍历每个属性，如果对应的位被设置，则执行属性计算函数
+    for (const auto& config : kAttributeConfigs) {
+        if (attributeBits.test(config.attributeIndex)) {
+            config.updateFunction(actorEntity);  // 调用对应的计算函数
+            attributeBits.reset(config.attributeIndex);  // 重置位，表示属性已经重新计算
+        }
+    }
 }
 
-struct AttributeCalculatorConfig
-{
-    uint32_t attributeIndex = 0;
-    void (*updateFunction)(const entt::entity);
-
-};
-
-constexpr std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kDistanceSyncConfigs = {
-    {eAttributeCalculator::kVelocity, UpdateVelocity},
-};
-
-void ActorAttributeCalculatorUtil::Update(entt::entity actorEntity, uint32_t attributeBit)
-{
-    tls.registry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits.set(attributeBit);
+// 设置某个属性需要更新
+void ActorAttributeCalculatorUtil::MarkAttributeForUpdate(entt::entity actorEntity, uint32_t attributeBit) {
+    auto& attributeBits = tls.registry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
+    attributeBits.set(attributeBit);  // 标记对应的位，表示该属性需要更新
 }

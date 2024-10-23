@@ -1,6 +1,8 @@
 ﻿#include "modifier_buff_util.h"
 #include "buff_config.h"
 #include "buff_config.pb.h"
+#include "game_logic/actor/constants/actor_state_attribute_calculator_constants.h"
+#include "game_logic/actor/util/actor_attribute_calculator_util.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "thread_local/storage.h"
@@ -11,8 +13,13 @@ bool ModifierBuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const Bu
         return false;
     }
 
-    // 检查是否是速度相关的 buff
-    return IsMovementSpeedBuff(buffTable);
+    if(IsMovementSpeedBuff(buffTable))
+    {
+        ActorAttributeCalculatorUtil::MarkAttributeForUpdate(parent, kVelocity);
+        return  true;
+    }
+
+    return  false;
 }
 
 void ModifierBuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,
@@ -35,8 +42,13 @@ bool ModifierBuffUtil::OnBuffRemove(entt::entity parent, uint64_t buffId) {
         return false;
     }
 
-    // 检查是否是速度相关的 buff
-    return IsMovementSpeedBuff(buffTable);
+    if(IsMovementSpeedBuff(buffTable))
+    {
+        ActorAttributeCalculatorUtil::MarkAttributeForUpdate(parent, kVelocity);
+        return  true;
+    }
+
+    return  false;
 }
 
 bool ModifierBuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId) {
