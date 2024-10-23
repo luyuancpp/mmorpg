@@ -85,6 +85,7 @@ void AoiSystem::Update(double delta) {
 
 				ViewUtil::FillActorCreateMessageInfo(currentEntity, otherEntity, actorCreateMessage);
 				InterestUtil::AddAoiEntity(currentEntity, otherEntity);
+				InterestUtil::AddAoiEntity(otherEntity, currentEntity);
 			}
 
 			// 处理当前实体进入其他实体视野或其他实体进入当前实体视野
