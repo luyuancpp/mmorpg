@@ -66,5 +66,6 @@ const GamePlayerServiceExitGameMessageId = 62
 const GateServiceSendMessageToPlayerMessageId = 63
 const GameServiceRouteNodeStringMsgMessageId = 64
 const GameServiceRoutePlayerStringMsgMessageId = 65
-const EntityStateSyncServiceSyncBaseStateAttributeMessageId = 67
+const EntitySyncServiceSyncBaseAttributeMessageId = 66
+const EntitySyncServiceSyncAttributeMessageId = 67
 const GameServiceEnterSceneMessageId = 75
