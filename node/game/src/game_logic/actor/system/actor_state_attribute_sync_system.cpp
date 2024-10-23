@@ -42,19 +42,16 @@ constexpr DistanceSyncConfig kDistanceSyncConfigs[] = {
 };
 
 // 通用的同步函数，根据不同距离级别执行同步
-void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& nearbyEntityList, const DistanceSyncConfig& distanceSyncConfig, const double deltaTime) {
+void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& nearbyEntityList, const DistanceSyncConfig& distanceSyncConfig) {
     const auto currentFrame = tlsGame.frameTime.current_frame();
 
     // 获取该距离级别的实体列表
     distanceSyncConfig.retrieveEntityList(entity, nearbyEntityList);
 
-    // 始终同步基础属性
-    ActorStateAttributeSyncUtil::SyncBasicAttributes(entity, deltaTime);
-
     // 根据每个帧同步频率配置进行属性同步
     for (const auto& frequency : distanceSyncConfig.syncFrequencies) {
         if (currentFrame % frequency == 0) {
-            ActorStateAttributeSyncUtil::SyncAttributes(entity, nearbyEntityList, frequency, deltaTime);
+            ActorStateAttributeSyncUtil::SyncAttributes(entity, nearbyEntityList, frequency);
         }
     }
 
@@ -69,9 +66,12 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 
     for (auto [entity, transform] : tls.registry.view<Transform>().each())
     {
+        // 始终同步基础属性
+        ActorStateAttributeSyncUtil::SyncBasicAttributes(entity);
+
         // 处理各距离级别的同步，迭代 kDistanceSyncConfigs 数组，动态处理距离级别
         for (const auto& distanceSyncConfig : kDistanceSyncConfigs) {
-            SyncAttributesForDistanceLevel(entity, nearbyEntityList, distanceSyncConfig, delta);
+            SyncAttributesForDistanceLevel(entity, nearbyEntityList, distanceSyncConfig);
         }
     }
 }
