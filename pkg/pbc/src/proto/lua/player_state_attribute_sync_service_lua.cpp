@@ -4,12 +4,18 @@
 #include "logic/client_player/player_state_attribute_sync.pb.h"
 
 
-void InitEntityStateSyncServiceLua()
+void InitEntitySyncServiceLua()
 {
-	tls_lua_state["EntityStateSyncServiceSyncBaseStateAttributeMessageId"] = 67;
-	tls_lua_state["EntityStateSyncServiceSyncBaseStateAttributeIndex"] = 0;
-	tls_lua_state["EntityStateSyncServiceSyncBaseStateAttribute"] = []()-> const ::google::protobuf::MethodDescriptor* {
-		return EntityStateSyncService_Stub::descriptor()->method(0);
+	tls_lua_state["EntitySyncServiceSyncBaseAttributeMessageId"] = 66;
+	tls_lua_state["EntitySyncServiceSyncBaseAttributeIndex"] = 0;
+	tls_lua_state["EntitySyncServiceSyncBaseAttribute"] = []()-> const ::google::protobuf::MethodDescriptor* {
+		return EntitySyncService_Stub::descriptor()->method(0);
+	};
+
+	tls_lua_state["EntitySyncServiceSyncAttributeMessageId"] = 67;
+	tls_lua_state["EntitySyncServiceSyncAttributeIndex"] = 1;
+	tls_lua_state["EntitySyncServiceSyncAttribute"] = []()-> const ::google::protobuf::MethodDescriptor* {
+		return EntitySyncService_Stub::descriptor()->method(1);
 	};
 
 }

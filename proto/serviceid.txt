@@ -64,5 +64,6 @@
 63=GateServiceSendMessageToPlayer
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg
-67=EntityStateSyncServiceSyncBaseStateAttribute
+66=EntitySyncServiceSyncBaseAttribute
+67=EntitySyncServiceSyncAttribute
 75=GameServiceEnterScene

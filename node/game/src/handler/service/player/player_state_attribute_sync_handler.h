@@ -2,12 +2,16 @@
 #include "logic/client_player/player_state_attribute_sync.pb.h"
 #include "player_service.h"
 #include "macros/return_define.h"
-class EntityStateSyncServiceHandler : public ::PlayerService
+class EntitySyncServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
-	static void SyncBaseStateAttribute(entt::entity player,
-		const ::SyncBaseStateAttributeDeltaS2C* request,
+	static void SyncBaseAttribute(entt::entity player,
+		const ::BaseAttributeDeltaS2C* request,
+		::Empty* response);
+
+	static void SyncAttribute(entt::entity player,
+		const ::AttributeDelta* request,
 		::Empty* response);
 
 	void CallMethod(const ::google::protobuf::MethodDescriptor* method,
@@ -18,8 +22,13 @@ public:
 		switch(method->index())
 		{
 		case 0:
-			SyncBaseStateAttribute(player,
-			::google::protobuf::internal::DownCast<const SyncBaseStateAttributeDeltaS2C*>(request),
+			SyncBaseAttribute(player,
+			::google::protobuf::internal::DownCast<const BaseAttributeDeltaS2C*>(request),
+			::google::protobuf::internal::DownCast<Empty*>(response));
+		break;
+		case 1:
+			SyncAttribute(player,
+			::google::protobuf::internal::DownCast<const AttributeDelta*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		default:

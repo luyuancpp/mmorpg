@@ -10,14 +10,56 @@ import "logic/component/actor_comp.proto";
 
 option cc_generic_services = true;
 
-// 消息定义，用于同步实体的属性增量数据
-message SyncBaseStateAttributeDeltaS2C {
+// 消息定义，用于同步实体的基础属性增量
+message BaseAttributeDeltaS2C 
+{
   uint64 entity_id = 1;  // 实体的唯一ID
-  Velocity velocity = 2;      // 速度信息
+  Velocity velocity = 2; // 速度信息
 }
 
-// 服务定义，用于处理实体状态的同步
-service EntityStateSyncService 
+// 综合多种帧率的同步消息
+message AttributeDelta 
 {
-  rpc SyncBaseStateAttribute (SyncBaseStateAttributeDeltaS2C) returns (Empty);  // 同步实体的属性状态
+  uint64 entity_id = 1;  // 实体的唯一ID
+  oneof sync_frequency 
+  {
+    AttributeDelta2Frames delta_2_frames = 2;
+    AttributeDelta5Frames delta_5_frames = 3;
+    AttributeDelta10Frames delta_10_frames = 4;
+    AttributeDelta30Frames delta_30_frames = 5;
+    AttributeDelta60Frames delta_60_frames = 6;
+  }
+}
+
+// 各种帧率同步消息
+message AttributeDelta2Frames 
+{
+  uint64 entity_id = 1;  // 实体的唯一ID
+}
+
+message AttributeDelta5Frames 
+{
+  uint64 entity_id = 1;  // 实体的唯一ID
+}
+
+message AttributeDelta10Frames 
+{
+  uint64 entity_id = 1;  // 实体的唯一ID
+}
+
+message AttributeDelta30Frames 
+{
+  uint64 entity_id = 1;  // 实体的唯一ID
+}
+
+message AttributeDelta60Frames 
+{
+  uint64 entity_id = 1;  // 实体的唯一ID
+}
+
+// 服务定义，用于处理实体属性的同步
+service EntitySyncService 
+{
+  rpc SyncBaseAttribute (BaseAttributeDeltaS2C) returns (Empty);  // 同步基础属性状态
+  rpc SyncAttribute (AttributeDelta) returns (Empty);  // 同步带有帧率的属性状态
 }
