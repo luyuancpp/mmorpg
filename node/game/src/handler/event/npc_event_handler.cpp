@@ -2,6 +2,7 @@
 #include "logic/event/npc_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "game_logic/actor/util/actor_attribute_calculator_util.h"
 #include "game_logic/actor/util/actor_state_attribute_sync_util.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/util/skill_util.h"
@@ -34,6 +35,7 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
     SkillUtil::InitializeActorComponents(npc);
     BuffUtil::InitializeActorComponents(npc);
     InterestUtil::InitializeActorComponents(npc);
+    ActorAttributeCalculatorUtil::InitializeActorComponents(npc);
 ///<<< END WRITING YOUR CODE
 }
 

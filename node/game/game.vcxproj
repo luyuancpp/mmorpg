@@ -137,7 +137,9 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\game_logic\actor\comp\actor_atrribute_comp.cpp" />
     <ClCompile Include="src\game_logic\actor\system\actor_state_attribute_sync_system.cpp" />
+    <ClCompile Include="src\game_logic\actor\util\actor_attribute_calculator_util.cpp" />
     <ClCompile Include="src\game_logic\actor\util\actor_state_attribute_sync_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff_util.cpp" />
@@ -200,8 +202,11 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\thread_local\storage_game.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\game_logic\actor\comp\actor_atrribute_comp.h" />
+    <ClInclude Include="src\game_logic\actor\constants\actor_state_attribute_calculator_constants.h" />
     <ClInclude Include="src\game_logic\actor\constants\actor_state_attribute_constants.h" />
     <ClInclude Include="src\game_logic\actor\system\actor_state_attribute_sync_system.h" />
+    <ClInclude Include="src\game_logic\actor\util\actor_attribute_calculator_util.h" />
     <ClInclude Include="src\game_logic\actor\util\actor_state_attribute_sync_util.h" />
     <ClInclude Include="src\game_logic\combat\skill\comp\skill_comp.h" />
     <ClInclude Include="src\game_logic\combat\buff\comp\buff_comp.h" />

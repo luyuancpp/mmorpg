@@ -3,6 +3,7 @@
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "component/npc_comp.pb.h"
+#include "game_logic/actor/util/actor_attribute_calculator_util.h"
 #include "game_logic/actor/util/actor_state_attribute_sync_util.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/player/util/player_skill_util.h"
@@ -59,6 +60,7 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 	SkillUtil::InitializeActorComponents(player);
 	BuffUtil::InitializeActorComponents(player);
 	InterestUtil::InitializeActorComponents(player);
+	ActorAttributeCalculatorUtil::InitializeActorComponents(player);
 ///<<< END WRITING YOUR CODE
 }
 
