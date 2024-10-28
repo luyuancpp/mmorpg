@@ -30,6 +30,7 @@ enum eBuffType {
      kBuffTypeHealthRegeneration = 40,                // 持续恢复生命值
      kBuffTypeManaRegeneration = 41,                  // 持续恢复法力值
      kBuffTypeHealthRegenerationBasedOnLostHealth = 42, // 根据已损失生命值的每秒回复
+     kBuffTypeNoDamageOrSkillHitInLastSeconds = 43,                   // 在若在过去s秒内，没有受到伤害或者被敌方英雄技能命中
 
     // Debuff 类
     kBuffTypePoison = 50,                // 中毒，持续扣除生命值
