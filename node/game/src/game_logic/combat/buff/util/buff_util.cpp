@@ -99,10 +99,15 @@ void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
     }
 
     const auto buffTableId = buffIt->second.buffPb.buff_table_id();
+
+    auto [buffTable, result] = GetBuffTable(buffTableId);
+    if (!buffTable) {
+        return ;
+    }
     
-    OnBuffRemove(parent, buffId);
+    OnBuffRemove(parent, buffIt->second, buffTable);
     buffList.erase(buffId);
-    OnBuffDestroy(parent, buffTableId);
+    OnBuffDestroy(parent, buffIt->second, buffTable);
 }
 
 uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
@@ -178,25 +183,40 @@ void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const Sk
     // Implement logic if needed
 }
 
-void BuffUtil::OnBuffRemove(entt::entity parent, uint64_t buffId)
+void BuffUtil::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
-    if (ModifierBuffUtil::OnBuffRemove(parent, buffId)){
+    if (ModifierBuffUtil::OnBuffRemove(parent, buffComp, buffTable)){
         return;
-    }else if ( ModifierBuffUtil::OnBuffRemove(parent, buffId)){
+    }else if ( ModifierBuffUtil::OnBuffRemove(parent, buffComp, buffTable)){
         return;
     }
 }
 
-void BuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
+void BuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
     // Implement logic if needed
 }
 
 void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
 {
-    if (ModifierBuffUtil::OnIntervalThink(parent, buffId)){
+    auto& buffList = tls.registry.get<BuffListComp>(parent);
+    const auto buffIt = buffList.find(buffId);
+
+    if (buffIt == buffList.end()) {
+        LOG_ERROR << "Cannot find buff " << buffId;
         return;
-    }else if ( ModifierBuffUtil::OnIntervalThink(parent, buffId)){
+    }
+
+    const auto buffTableId = buffIt->second.buffPb.buff_table_id();
+
+    auto [buffTable, result] = GetBuffTable(buffTableId);
+    if (!buffTable) {
+        return ;
+    }
+    
+    if (ModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
+        return;
+    }else if ( ModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
         return;
     }
     // Implement interval logic if needed
@@ -289,4 +309,8 @@ void BuffUtil::OnAfterDead(entt::entity parent)
 void BuffUtil::OnKill(entt::entity parent)
 {
 
+}
+
+void BuffUtil::OnAbilityHit(entt::entity parent)
+{
 }

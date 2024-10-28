@@ -27,8 +27,9 @@ enum eBuffType {
     kBuffTypeDispel = 35,                // 驱散，移除buff或debuff
 
     // 持续恢复类 Buff
-    kBuffTypeHealthRegeneration = 40,    // 持续恢复生命值
-    kBuffTypeManaRegeneration = 41,      // 持续恢复法力值
+     kBuffTypeHealthRegeneration = 40,                // 持续恢复生命值
+     kBuffTypeManaRegeneration = 41,                  // 持续恢复法力值
+     kBuffTypeHealthRegenerationBasedOnLostHealth = 42, // 根据已损失生命值的每秒回复
 
     // Debuff 类
     kBuffTypePoison = 50,                // 中毒，持续扣除生命值

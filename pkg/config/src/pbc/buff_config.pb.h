@@ -290,18 +290,20 @@ class BuffTable final : public ::google::protobuf::Message
     kTagFieldNumber = 4,
     kImmunetagFieldNumber = 5,
     kDispeltagFieldNumber = 6,
-    kIntervaleffectFieldNumber = 13,
+    kIntervaleffectFieldNumber = 14,
+    kHealthregenerationFieldNumber = 17,
     kIdFieldNumber = 1,
     kNocasterFieldNumber = 2,
     kBufftypeFieldNumber = 3,
     kLevelFieldNumber = 7,
-    kDurationFieldNumber = 9,
     kMaxlayerFieldNumber = 8,
-    kForceinterruptFieldNumber = 10,
-    kIntervalFieldNumber = 11,
-    kMovementSpeedBoostFieldNumber = 14,
-    kMovementSpeedReductionFieldNumber = 15,
-    kIntervalcountFieldNumber = 12,
+    kInfinitedurationFieldNumber = 9,
+    kDurationFieldNumber = 10,
+    kIntervalFieldNumber = 12,
+    kForceinterruptFieldNumber = 11,
+    kIntervalcountFieldNumber = 13,
+    kMovementSpeedBoostFieldNumber = 15,
+    kMovementSpeedReductionFieldNumber = 16,
   };
   // map<string, bool> tag = 4;
   int tag_size() const;
@@ -348,7 +350,7 @@ class BuffTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, bool>* _internal_mutable_dispeltag();
 
   public:
-  // repeated double intervaleffect = 13;
+  // repeated double intervaleffect = 14;
   int intervaleffect_size() const;
   private:
   int _internal_intervaleffect_size() const;
@@ -364,6 +366,22 @@ class BuffTable final : public ::google::protobuf::Message
   private:
   const ::google::protobuf::RepeatedField<double>& _internal_intervaleffect() const;
   ::google::protobuf::RepeatedField<double>* _internal_mutable_intervaleffect();
+
+  public:
+  // string healthregeneration = 17;
+  void clear_healthregeneration() ;
+  const std::string& healthregeneration() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_healthregeneration(Arg_&& arg, Args_... args);
+  std::string* mutable_healthregeneration();
+  PROTOBUF_NODISCARD std::string* release_healthregeneration();
+  void set_allocated_healthregeneration(std::string* value);
+
+  private:
+  const std::string& _internal_healthregeneration() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_healthregeneration(
+      const std::string& value);
+  std::string* _internal_mutable_healthregeneration();
 
   public:
   // uint32 id = 1;
@@ -406,16 +424,6 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_level(::uint32_t value);
 
   public:
-  // double duration = 9;
-  void clear_duration() ;
-  double duration() const;
-  void set_duration(double value);
-
-  private:
-  double _internal_duration() const;
-  void _internal_set_duration(double value);
-
-  public:
   // uint32 maxlayer = 8;
   void clear_maxlayer() ;
   ::uint32_t maxlayer() const;
@@ -426,17 +434,27 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_maxlayer(::uint32_t value);
 
   public:
-  // uint32 forceinterrupt = 10;
-  void clear_forceinterrupt() ;
-  ::uint32_t forceinterrupt() const;
-  void set_forceinterrupt(::uint32_t value);
+  // uint32 infiniteduration = 9;
+  void clear_infiniteduration() ;
+  ::uint32_t infiniteduration() const;
+  void set_infiniteduration(::uint32_t value);
 
   private:
-  ::uint32_t _internal_forceinterrupt() const;
-  void _internal_set_forceinterrupt(::uint32_t value);
+  ::uint32_t _internal_infiniteduration() const;
+  void _internal_set_infiniteduration(::uint32_t value);
 
   public:
-  // double interval = 11;
+  // double duration = 10;
+  void clear_duration() ;
+  double duration() const;
+  void set_duration(double value);
+
+  private:
+  double _internal_duration() const;
+  void _internal_set_duration(double value);
+
+  public:
+  // double interval = 12;
   void clear_interval() ;
   double interval() const;
   void set_interval(double value);
@@ -446,27 +464,17 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_interval(double value);
 
   public:
-  // double movement_speed_boost = 14;
-  void clear_movement_speed_boost() ;
-  double movement_speed_boost() const;
-  void set_movement_speed_boost(double value);
+  // uint32 forceinterrupt = 11;
+  void clear_forceinterrupt() ;
+  ::uint32_t forceinterrupt() const;
+  void set_forceinterrupt(::uint32_t value);
 
   private:
-  double _internal_movement_speed_boost() const;
-  void _internal_set_movement_speed_boost(double value);
+  ::uint32_t _internal_forceinterrupt() const;
+  void _internal_set_forceinterrupt(::uint32_t value);
 
   public:
-  // double movement_speed_reduction = 15;
-  void clear_movement_speed_reduction() ;
-  double movement_speed_reduction() const;
-  void set_movement_speed_reduction(double value);
-
-  private:
-  double _internal_movement_speed_reduction() const;
-  void _internal_set_movement_speed_reduction(double value);
-
-  public:
-  // uint32 intervalcount = 12;
+  // uint32 intervalcount = 13;
   void clear_intervalcount() ;
   ::uint32_t intervalcount() const;
   void set_intervalcount(::uint32_t value);
@@ -476,13 +484,33 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_intervalcount(::uint32_t value);
 
   public:
+  // double movement_speed_boost = 15;
+  void clear_movement_speed_boost() ;
+  double movement_speed_boost() const;
+  void set_movement_speed_boost(double value);
+
+  private:
+  double _internal_movement_speed_boost() const;
+  void _internal_set_movement_speed_boost(double value);
+
+  public:
+  // double movement_speed_reduction = 16;
+  void clear_movement_speed_reduction() ;
+  double movement_speed_reduction() const;
+  void set_movement_speed_reduction(double value);
+
+  private:
+  double _internal_movement_speed_reduction() const;
+  void _internal_set_movement_speed_reduction(double value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BuffTable)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 15, 3,
-      47, 2>
+      5, 17, 3,
+      73, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -510,17 +538,19 @@ class BuffTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         dispeltag_;
     ::google::protobuf::RepeatedField<double> intervaleffect_;
+    ::google::protobuf::internal::ArenaStringPtr healthregeneration_;
     ::uint32_t id_;
     ::uint32_t nocaster_;
     ::uint32_t bufftype_;
     ::uint32_t level_;
-    double duration_;
     ::uint32_t maxlayer_;
-    ::uint32_t forceinterrupt_;
+    ::uint32_t infiniteduration_;
+    double duration_;
     double interval_;
+    ::uint32_t forceinterrupt_;
+    ::uint32_t intervalcount_;
     double movement_speed_boost_;
     double movement_speed_reduction_;
-    ::uint32_t intervalcount_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -918,7 +948,29 @@ inline void BuffTable::_internal_set_maxlayer(::uint32_t value) {
   _impl_.maxlayer_ = value;
 }
 
-// double duration = 9;
+// uint32 infiniteduration = 9;
+inline void BuffTable::clear_infiniteduration() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.infiniteduration_ = 0u;
+}
+inline ::uint32_t BuffTable::infiniteduration() const {
+  // @@protoc_insertion_point(field_get:BuffTable.infiniteduration)
+  return _internal_infiniteduration();
+}
+inline void BuffTable::set_infiniteduration(::uint32_t value) {
+  _internal_set_infiniteduration(value);
+  // @@protoc_insertion_point(field_set:BuffTable.infiniteduration)
+}
+inline ::uint32_t BuffTable::_internal_infiniteduration() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.infiniteduration_;
+}
+inline void BuffTable::_internal_set_infiniteduration(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.infiniteduration_ = value;
+}
+
+// double duration = 10;
 inline void BuffTable::clear_duration() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.duration_ = 0;
@@ -940,7 +992,7 @@ inline void BuffTable::_internal_set_duration(double value) {
   _impl_.duration_ = value;
 }
 
-// uint32 forceinterrupt = 10;
+// uint32 forceinterrupt = 11;
 inline void BuffTable::clear_forceinterrupt() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.forceinterrupt_ = 0u;
@@ -962,7 +1014,7 @@ inline void BuffTable::_internal_set_forceinterrupt(::uint32_t value) {
   _impl_.forceinterrupt_ = value;
 }
 
-// double interval = 11;
+// double interval = 12;
 inline void BuffTable::clear_interval() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.interval_ = 0;
@@ -984,7 +1036,7 @@ inline void BuffTable::_internal_set_interval(double value) {
   _impl_.interval_ = value;
 }
 
-// uint32 intervalcount = 12;
+// uint32 intervalcount = 13;
 inline void BuffTable::clear_intervalcount() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.intervalcount_ = 0u;
@@ -1006,7 +1058,7 @@ inline void BuffTable::_internal_set_intervalcount(::uint32_t value) {
   _impl_.intervalcount_ = value;
 }
 
-// repeated double intervaleffect = 13;
+// repeated double intervaleffect = 14;
 inline int BuffTable::_internal_intervaleffect_size() const {
   return _internal_intervaleffect().size();
 }
@@ -1051,7 +1103,7 @@ inline ::google::protobuf::RepeatedField<double>* BuffTable::_internal_mutable_i
   return &_impl_.intervaleffect_;
 }
 
-// double movement_speed_boost = 14;
+// double movement_speed_boost = 15;
 inline void BuffTable::clear_movement_speed_boost() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.movement_speed_boost_ = 0;
@@ -1073,7 +1125,7 @@ inline void BuffTable::_internal_set_movement_speed_boost(double value) {
   _impl_.movement_speed_boost_ = value;
 }
 
-// double movement_speed_reduction = 15;
+// double movement_speed_reduction = 16;
 inline void BuffTable::clear_movement_speed_reduction() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.movement_speed_reduction_ = 0;
@@ -1093,6 +1145,56 @@ inline double BuffTable::_internal_movement_speed_reduction() const {
 inline void BuffTable::_internal_set_movement_speed_reduction(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.movement_speed_reduction_ = value;
+}
+
+// string healthregeneration = 17;
+inline void BuffTable::clear_healthregeneration() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.healthregeneration_.ClearToEmpty();
+}
+inline const std::string& BuffTable::healthregeneration() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuffTable.healthregeneration)
+  return _internal_healthregeneration();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuffTable::set_healthregeneration(Arg_&& arg,
+                                                     Args_... args) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.healthregeneration_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuffTable.healthregeneration)
+}
+inline std::string* BuffTable::mutable_healthregeneration() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_healthregeneration();
+  // @@protoc_insertion_point(field_mutable:BuffTable.healthregeneration)
+  return _s;
+}
+inline const std::string& BuffTable::_internal_healthregeneration() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.healthregeneration_.Get();
+}
+inline void BuffTable::_internal_set_healthregeneration(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.healthregeneration_.Set(value, GetArena());
+}
+inline std::string* BuffTable::_internal_mutable_healthregeneration() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.healthregeneration_.Mutable( GetArena());
+}
+inline std::string* BuffTable::release_healthregeneration() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:BuffTable.healthregeneration)
+  return _impl_.healthregeneration_.Release();
+}
+inline void BuffTable::set_allocated_healthregeneration(std::string* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.healthregeneration_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.healthregeneration_.IsDefault()) {
+          _impl_.healthregeneration_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:BuffTable.healthregeneration)
 }
 
 // -------------------------------------------------------------------

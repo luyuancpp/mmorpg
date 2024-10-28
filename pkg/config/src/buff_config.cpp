@@ -18,6 +18,12 @@ void BuffConfigurationTable::Load() {
 
     }
 
+    {
+      expression_healthregeneration_.Init({
+   "level", 
+   "health"
+     });
+    }
 }
 
 

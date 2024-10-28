@@ -4,8 +4,8 @@
 #include "muduo/base/CountDownLatch.h"
 
 #include "skill_config.h"
-#include "mission_config.h"
 #include "buff_config.h"
+#include "mission_config.h"
 #include "condition_config.h"
 #include "testmultikey_config.h"
 #include "test_config.h"
@@ -19,8 +19,8 @@
 void LoadAllConfig()
 {
     SkillConfigurationTable::Instance().Load();
-    MissionConfigurationTable::Instance().Load();
     BuffConfigurationTable::Instance().Load();
+    MissionConfigurationTable::Instance().Load();
     ConditionConfigurationTable::Instance().Load();
     TestMultiKeyConfigurationTable::Instance().Load();
     TestConfigurationTable::Instance().Load();
@@ -52,7 +52,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    MissionConfigurationTable::Instance().Load();
+    BuffConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -63,7 +63,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    BuffConfigurationTable::Instance().Load();
+    MissionConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
