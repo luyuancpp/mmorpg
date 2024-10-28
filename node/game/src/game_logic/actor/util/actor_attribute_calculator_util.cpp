@@ -4,10 +4,10 @@
 #include <bitset>
 
 #include "buff_config.h"
-#include "proto/logic/client_player/player_state_attribute_sync.pb.h"
 #include "game_logic/actor/comp/actor_atrribute_comp.h"
 #include "game_logic/actor/constants/actor_state_attribute_calculator_constants.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
+#include "proto/logic/client_player/player_state_attribute_sync.pb.h"
 #include "thread_local/storage.h"
 
 // 初始化属性计算工具，不执行任何操作，但为将来可能的初始化逻辑预留
