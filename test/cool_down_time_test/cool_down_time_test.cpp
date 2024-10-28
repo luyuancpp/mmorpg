@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+﻿#include <gtest/gtest.h>
 #include "time/util/cooldown_time_util.h"  // �����㽫����� CoolDownTimeMillisecondUtil ���������ͷ�ļ���
 
 // Test Fixture
