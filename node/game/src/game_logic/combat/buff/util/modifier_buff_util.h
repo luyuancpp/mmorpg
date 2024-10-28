@@ -22,9 +22,6 @@ public:
 	
 	static bool OnIntervalThink(entt::entity parent, uint64_t buffId);
 
-	// 修改实体属性
-	static void ModifyAttributes(entt::entity parent, uint64_t buffId);
-
 private:
 	// 检查是否为速度相关的 Buff
 	static bool IsMovementSpeedBuff(const BuffTable* buffTable);
