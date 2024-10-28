@@ -46,7 +46,15 @@ std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs
 }};
 
 // 标记属性需要更新的位
-void ActorAttributeCalculatorUtil::MarkAttributeForUpdate(entt::entity actorEntity, uint32_t attributeBit) {
+void ActorAttributeCalculatorUtil::MarkAttributeForUpdate(const entt::entity actorEntity, const uint32_t attributeBit) {
     auto& attributeBits = tls.registry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
     attributeBits.set(attributeBit);  // 设置指定位，表示该属性需要更新
+}
+
+void ActorAttributeCalculatorUtil::ImmediateCalculateAttributes(const entt::entity entity, const uint32_t attributeBit)
+{
+    if (attributeBit >= kAttributeConfigs.size()){
+        return;
+    }
+    kAttributeConfigs[attributeBit].updateFunction(entity);
 }

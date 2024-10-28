@@ -14,4 +14,6 @@ public:
     static void InitializeActorComponents(entt::entity entity);
 
     static void MarkAttributeForUpdate(entt::entity actorEntity, uint32_t attributeBit);
+
+    static void ImmediateCalculateAttributes(entt::entity entity, uint32_t attributeBit);
 };
