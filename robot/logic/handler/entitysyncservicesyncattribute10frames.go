@@ -5,4 +5,4 @@ import (
 	"robot/logic/gameobject"
 )
 
-func EntitySyncServiceSyncAttribute10FramesHandler(player *gameobject.Player, response *game.AttributeDelta10Frames) {
+func EntitySyncServiceSyncAttribute10FramesHandler(player *gameobject.Player, response *game.AttributeDelta10FramesS2C) {

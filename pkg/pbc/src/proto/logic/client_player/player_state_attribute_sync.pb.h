@@ -1045,6 +1045,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kTransformFieldNumber = 2,
+    kVelocityFieldNumber = 3,
     kEntityIdFieldNumber = 1,
   };
   // .Transform transform = 2;
@@ -1062,6 +1063,21 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   ::Transform* _internal_mutable_transform();
 
   public:
+  // .Velocity velocity = 3;
+  bool has_velocity() const;
+  void clear_velocity() ;
+  const ::Velocity& velocity() const;
+  PROTOBUF_NODISCARD ::Velocity* release_velocity();
+  ::Velocity* mutable_velocity();
+  void set_allocated_velocity(::Velocity* value);
+  void unsafe_arena_set_allocated_velocity(::Velocity* value);
+  ::Velocity* unsafe_arena_release_velocity();
+
+  private:
+  const ::Velocity& _internal_velocity() const;
+  ::Velocity* _internal_mutable_velocity();
+
+  public:
   // uint64 entity_id = 1;
   void clear_entity_id() ;
   ::uint64_t entity_id() const;
@@ -1077,7 +1093,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 1,
+      2, 3, 2,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -1096,6 +1112,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::Transform* transform_;
+    ::Velocity* velocity_;
     ::uint64_t entity_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1332,6 +1349,97 @@ inline void BaseAttributeDeltaS2C::set_allocated_transform(::Transform* value) {
 
   _impl_.transform_ = reinterpret_cast<::Transform*>(value);
   // @@protoc_insertion_point(field_set_allocated:BaseAttributeDeltaS2C.transform)
+}
+
+// .Velocity velocity = 3;
+inline bool BaseAttributeDeltaS2C::has_velocity() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.velocity_ != nullptr);
+  return value;
+}
+inline const ::Velocity& BaseAttributeDeltaS2C::_internal_velocity() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::Velocity* p = _impl_.velocity_;
+  return p != nullptr ? *p : reinterpret_cast<const ::Velocity&>(::_Velocity_default_instance_);
+}
+inline const ::Velocity& BaseAttributeDeltaS2C::velocity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseAttributeDeltaS2C.velocity)
+  return _internal_velocity();
+}
+inline void BaseAttributeDeltaS2C::unsafe_arena_set_allocated_velocity(::Velocity* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.velocity_);
+  }
+  _impl_.velocity_ = reinterpret_cast<::Velocity*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeDeltaS2C.velocity)
+}
+inline ::Velocity* BaseAttributeDeltaS2C::release_velocity() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::Velocity* released = _impl_.velocity_;
+  _impl_.velocity_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::Velocity* BaseAttributeDeltaS2C::unsafe_arena_release_velocity() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:BaseAttributeDeltaS2C.velocity)
+
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::Velocity* temp = _impl_.velocity_;
+  _impl_.velocity_ = nullptr;
+  return temp;
+}
+inline ::Velocity* BaseAttributeDeltaS2C::_internal_mutable_velocity() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.velocity_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::Velocity>(GetArena());
+    _impl_.velocity_ = reinterpret_cast<::Velocity*>(p);
+  }
+  return _impl_.velocity_;
+}
+inline ::Velocity* BaseAttributeDeltaS2C::mutable_velocity() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000002u;
+  ::Velocity* _msg = _internal_mutable_velocity();
+  // @@protoc_insertion_point(field_mutable:BaseAttributeDeltaS2C.velocity)
+  return _msg;
+}
+inline void BaseAttributeDeltaS2C::set_allocated_velocity(::Velocity* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.velocity_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+
+  _impl_.velocity_ = reinterpret_cast<::Velocity*>(value);
+  // @@protoc_insertion_point(field_set_allocated:BaseAttributeDeltaS2C.velocity)
 }
 
 // -------------------------------------------------------------------

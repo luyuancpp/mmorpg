@@ -2,9 +2,12 @@
 #include "actor_attribute_calculator_util.h"
 #include <array>
 #include <bitset>
-#include "proto/logic/component/actor_status_comp.pb.h"
+
+#include "buff_config.h"
+#include "proto/logic/client_player/player_state_attribute_sync.pb.h"
 #include "game_logic/actor/comp/actor_atrribute_comp.h"
 #include "game_logic/actor/constants/actor_state_attribute_calculator_constants.h"
+#include "game_logic/combat/buff/comp/buff_comp.h"
 #include "thread_local/storage.h"
 
 // 初始化属性计算工具，不执行任何操作，但为将来可能的初始化逻辑预留
@@ -17,8 +20,24 @@ void ActorAttributeCalculatorUtil::InitializeActorComponents(entt::entity entity
 
 // 更新速度属性
 void UpdateVelocity(entt::entity entity) {
-    // 计算速度属性的逻辑
-    // 示例: calculatedAttributes.currentVelocity = BaseAttributes.velocity + derivedAttributes.velocityBonus;
+    auto& velocity =  tls.registry.get<Velocity>(entity);
+    velocity.Clear();
+    
+    for (const auto&  buffCompPb : tls.registry.get<BuffListComp>(entity) | std::views::values){
+        auto [currentBuffTable, fetchResult] = GetBuffTable(buffCompPb.buffPb.buff_table_id());
+        if (nullptr == currentBuffTable){
+            continue;
+        }
+        velocity.set_x(velocity.x() +  currentBuffTable->movement_speed_boost());
+        velocity.set_y(velocity.y() +  currentBuffTable->movement_speed_boost());
+        velocity.set_z(velocity.z() +  currentBuffTable->movement_speed_boost());
+
+        velocity.set_x(velocity.x() -  currentBuffTable->movement_speed_reduction());
+        velocity.set_y(velocity.y() -  currentBuffTable->movement_speed_reduction());
+        velocity.set_z(velocity.z() -  currentBuffTable->movement_speed_reduction());
+    }
+
+    tls.registry.get<BaseAttributeDeltaS2C>(entity).mutable_velocity()->CopyFrom(velocity);
 }
 
 // 更新生命值属性

@@ -10,6 +10,10 @@ sol::property(&BaseAttributeDeltaS2C::entity_id, &BaseAttributeDeltaS2C::set_ent
 [](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.transform();},
 "mutable_transform",
 [](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.mutable_transform();},
+"velocity",
+[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.velocity();},
+"mutable_velocity",
+[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.mutable_velocity();},
 "DebugString",
 &BaseAttributeDeltaS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
