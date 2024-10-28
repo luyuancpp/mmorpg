@@ -1,7 +1,7 @@
 ﻿#include "actor_attribute_calculator_util.h"
 #include <array>
 #include <bitset>
-#include "component/actor_status_comp.pb.h"
+#include "proto/logic/component/actor_status_comp.pb.h"
 #include "game_logic/actor/comp/actor_atrribute_comp.h"
 #include "game_logic/actor/constants/actor_state_attribute_calculator_constants.h"
 #include "thread_local/storage.h"

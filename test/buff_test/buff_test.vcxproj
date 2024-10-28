@@ -152,6 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\node\game\src\game_logic\actor\util\actor_attribute_calculator_util.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\util\modifier_buff_util.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
