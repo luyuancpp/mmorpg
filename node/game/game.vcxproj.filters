@@ -204,6 +204,12 @@
     <ClCompile Include="src\game_logic\actor\util\actor_attribute_calculator_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\actor\comp\actor_atrribute_comp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_logic\actor\system\actor_attribute_calculator_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -435,6 +441,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\actor\constants\actor_state_attribute_calculator_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\actor\comp\actor_atrribute_comp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\actor\system\actor_attribute_calculator_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
