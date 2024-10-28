@@ -19,9 +19,8 @@ public:
 
 	// Buff 销毁时的处理
 	static bool OnBuffDestroy(entt::entity parent, uint32_t buffTableId);
-
-	// 修改实体状态
-	static void ModifyState(entt::entity parent, uint64_t buffId);
+	
+	static bool OnIntervalThink(entt::entity parent, uint64_t buffId);
 
 	// 修改实体属性
 	static void ModifyAttributes(entt::entity parent, uint64_t buffId);

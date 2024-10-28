@@ -15,6 +15,8 @@ public:
 	static bool OnBuffRemove(entt::entity parent, uint64_t buffId);
 
 	static bool OnBuffDestroy(entt::entity parent, uint32_t buffTableId);
+
+	static bool OnIntervalThink(entt::entity parent, uint64_t buffId);
 	
 	// Apply motion effects
 	static void ApplyMotion();

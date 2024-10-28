@@ -56,8 +56,9 @@ bool ModifierBuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId) 
     return false;
 }
 
-void ModifierBuffUtil::ModifyState(entt::entity parent, uint64_t buffId) {
-    // 当前未实现，可以添加状态修改的逻辑
+bool ModifierBuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
+{
+    return true;
 }
 
 void ModifierBuffUtil::ModifyAttributes(entt::entity parent, uint64_t buffId) {

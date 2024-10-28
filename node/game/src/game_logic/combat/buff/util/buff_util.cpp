@@ -194,6 +194,11 @@ void BuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
 
 void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
 {
+    if (ModifierBuffUtil::OnIntervalThink(parent, buffId)){
+        return;
+    }else if ( ModifierBuffUtil::OnIntervalThink(parent, buffId)){
+        return;
+    }
     // Implement interval logic if needed
 }
 

@@ -9,7 +9,7 @@ bool CanApplyMoreTicks(const PeriodicBuffPbComponent& periodicBuff, const BuffTa
     return (buffTable->intervalcount() <= 0) || (periodicBuff.ticks_done() + 1 <= buffTable->intervalcount());
 }
 
-void UpdatePeriodicBuff(entt::entity target, uint64_t buffId, BuffComp& buffComp, double delta) {
+void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffComp& buffComp, double delta) {
     auto [buffTable, result] = GetBuffTable(buffComp.buffPb.buff_table_id());
     if (!buffTable || buffTable->interval() <= 0) {
         return;
