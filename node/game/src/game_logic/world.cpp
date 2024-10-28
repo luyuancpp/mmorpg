@@ -5,6 +5,7 @@
 #include "game_logic/common/constants/fps_constants.h"
 #include "Recast/Recast.h"
 #undef TEXT
+#include "actor/system/actor_attribute_calculator_system.h"
 #include "actor/system/actor_state_attribute_sync_system.h"
 #include "combat/buff/system/buff_system.h"
 #include "game_logic/player/util/player_session_util.h"
@@ -57,6 +58,7 @@ void World::Update()
 			MovementSystem::Update(fixedDeltaTime);
 			MovementAccelerationSystem::Update(fixedDeltaTime);
 			BuffSystem::Update(fixedDeltaTime);
+			ActorAttributeCalculatorSystem::Update(fixedDeltaTime);
 			ActorStateAttributeSyncSystem::Update(fixedDeltaTime);
 
 			tlsGame.frameTime.set_current_frame(tlsGame.frameTime.current_frame() + 1);
