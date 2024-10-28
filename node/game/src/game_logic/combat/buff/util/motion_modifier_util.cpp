@@ -20,6 +20,11 @@ bool MotionModifierBuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTab
     return  false;
 }
 
+bool MotionModifierBuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
+{
+    return false;
+}
+
 void MotionModifierBuffUtil::ApplyMotion()
 {
 
