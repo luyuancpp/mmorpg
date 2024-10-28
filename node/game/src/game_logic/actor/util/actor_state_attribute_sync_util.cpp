@@ -100,7 +100,14 @@ void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const Enti
             case eAttributeSyncFrequency::kSyncEvery2Frames:
                 {
                     auto& syncMessage = tls.registry.get<AttributeDelta2FramesS2C>(entity);
+                    
+                    if (syncMessage.ByteSizeLong() <= 0)
+                    {
+                        return;
+                    }
+                    
                     BroadCastToPlayer(EntitySyncServiceSyncAttribute2FramesMessageId, syncMessage, nearbyEntities);
+                    
                     syncMessage.Clear();
                 }
                 break;
@@ -108,7 +115,14 @@ void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const Enti
             case eAttributeSyncFrequency::kSyncEvery5Frames:
                 {
                     auto& syncMessage = tls.registry.get<AttributeDelta5FramesS2C>(entity);
+                    
+                    if (syncMessage.ByteSizeLong() <= 0)
+                    {
+                        return;
+                    }
+                    
                     BroadCastToPlayer(EntitySyncServiceSyncAttribute5FramesMessageId, syncMessage, nearbyEntities);
+                    
                     syncMessage.Clear();
                 }
                 break;
@@ -116,7 +130,14 @@ void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const Enti
             case eAttributeSyncFrequency::kSyncEvery10Frames:
                 {
                     auto& syncMessage = tls.registry.get<AttributeDelta10FramesS2C>(entity);
+
+                    if (syncMessage.ByteSizeLong() <= 0)
+                    {
+                        return;
+                    }
+                    
                     BroadCastToPlayer(EntitySyncServiceSyncAttribute10FramesMessageId, syncMessage, nearbyEntities);
+                    
                     syncMessage.Clear();
                 }
                 break;
@@ -124,7 +145,14 @@ void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const Enti
             case eAttributeSyncFrequency::kSyncEvery30Frames:
                 {
                     auto& syncMessage = tls.registry.get<AttributeDelta30FramesS2C>(entity);
+                    
+                    if (syncMessage.ByteSizeLong() <= 0)
+                    {
+                        return;
+                    }
+                    
                     BroadCastToPlayer(EntitySyncServiceSyncAttribute30FramesMessageId, syncMessage, nearbyEntities);
+                    
                     syncMessage.Clear();
                 }
                 break;
@@ -132,7 +160,14 @@ void ActorStateAttributeSyncUtil::SyncAttributes(entt::entity entity, const Enti
             case eAttributeSyncFrequency::kSyncEvery60Frames:
                 {
                     auto& syncMessage = tls.registry.get<AttributeDelta60FramesS2C>(entity);
+
+                    if (syncMessage.ByteSizeLong() <= 0)
+                    {
+                        return;
+                    }
+                    
                     BroadCastToPlayer(EntitySyncServiceSyncAttribute60FramesMessageId, syncMessage, nearbyEntities);
+                    
                     syncMessage.Clear();
                 }
                 break;
