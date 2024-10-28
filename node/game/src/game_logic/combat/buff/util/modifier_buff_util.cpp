@@ -61,10 +61,6 @@ bool ModifierBuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
     return true;
 }
 
-void ModifierBuffUtil::ModifyAttributes(entt::entity parent, uint64_t buffId) {
-    // 当前未实现，可以添加属性修改的逻辑
-}
-
 bool ModifierBuffUtil::IsMovementSpeedBuff(const BuffTable* buffTable) {
     return buffTable->bufftype() == kBuffTypeMovementSpeedReduction || 
            buffTable->bufftype() == kBuffTypeMovementSpeedBoost;
