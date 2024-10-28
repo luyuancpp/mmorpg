@@ -12,11 +12,11 @@ public:
 
 	static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp);
 
-	static bool OnBuffRemove(entt::entity parent, uint64_t buffId);
+	static bool OnBuffRemove(entt::entity parent, BuffComp& buff, const BuffTable* buffTable);
 
-	static bool OnBuffDestroy(entt::entity parent, uint32_t buffTableId);
+	static bool OnBuffDestroy(entt::entity parent, BuffComp& buff, const BuffTable* buffTable);
 
-	static bool OnIntervalThink(entt::entity parent, uint64_t buffId);
+	static bool OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
 	
 	// Apply motion effects
 	static void ApplyMotion();

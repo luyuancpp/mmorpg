@@ -10,17 +10,25 @@ void MotionModifierBuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTab
 {
 }
 
-bool MotionModifierBuffUtil::OnBuffRemove(entt::entity parent, uint64_t buffId)
+bool MotionModifierBuffUtil::OnBuffRemove(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)
 {
+    if (buffTable == nullptr) {
+        return false;
+    }
+    
     return  false;
 }
 
-bool MotionModifierBuffUtil::OnBuffDestroy(entt::entity parent, uint32_t buffTableId)
+bool MotionModifierBuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)
 {
+    if (buffTable == nullptr) {
+        return false;
+    }
+    
     return  false;
 }
 
-bool MotionModifierBuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
+bool MotionModifierBuffUtil::OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
     return false;
 }
