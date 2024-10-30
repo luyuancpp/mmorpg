@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "buff_config.h"
+#include "buff_util.h"
 #include "common_error_tip.pb.h"
+#include "proto/logic/component/actor_status_comp.pb.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "thread_local/storage.h"
@@ -9,10 +11,22 @@
 class BuffImplUtil
 {
 public:
-    static void OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+    static void OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
     {
-        if(OnIntervalThinkLastDamageOrSkillHitTime(parent, buffComp, buffTable)){
-            return;
+        switch (buffTable->bufftype())
+        {
+        case kBuffTypeNoDamageOrSkillHitInLastSeconds:
+            {
+                OnIntervalThinkLastDamageOrSkillHitTime(parent, buffComp, buffTable);
+            }
+            break;
+        case kBuffTypeHealthRegenerationBasedOnLostHealth:
+            {
+                OnIntervalThinkLastDamageOrSkillHitTime(parent, buffComp, buffTable);
+            }
+            break;
+        default:
+            break;
         }
     }
 
@@ -48,12 +62,11 @@ public:
         }
     }
 
-    static bool OnIntervalThinkLastDamageOrSkillHitTime(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+    static bool OnIntervalThinkLastDamageOrSkillHitTime(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
     {
         if (buffTable == nullptr ||
-            buffTable->nodamageorskillhitinlastseconds() <= 0 ||
-            kBuffTypeNoDamageOrSkillHitInLastSeconds != buffTable->bufftype()) {
-            return false;
+            buffTable->nodamageorskillhitinlastseconds() <= 0 ) {
+                return false;
         }
 
         const auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
@@ -75,5 +88,33 @@ public:
         }
         
         return true;
+    }
+
+    static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+    {
+        if (buffTable == nullptr ) {
+                return false;
+            }
+
+        //todo 及时计算 max_health
+        auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(parent);
+        auto& derivedAttributesPBComponent = tls.registry.get<DerivedAttributesPBComponent>(parent);
+        auto& levelComponent = tls.registry.get<LevelComponent>(parent);
+        
+        auto lostHealth = derivedAttributesPBComponent.max_health() - baseAttributesPBComponent.health();  // 计算已损失生命值
+
+        BuffConfigurationTable::Instance().SetHealthregenerationParam(
+            { static_cast<double>(levelComponent.level()),  static_cast<double>(lostHealth)});
+
+        auto healingAmount = BuffConfigurationTable::Instance().GetHealthregeneration(buffTable->id());
+        // 计算回复后的生命值，确保不超过最大生命值
+        auto currentHealth = std::min(derivedAttributesPBComponent.max_health(),
+            static_cast<uint64_t>(baseAttributesPBComponent.health() + healingAmount));
+
+        baseAttributesPBComponent.set_health(currentHealth);
+        
+        LOG_TRACE << "Healing applied, current health: " << currentHealth ;
+        
+        return  true;
     }
 };

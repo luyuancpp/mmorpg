@@ -1,10 +1,11 @@
 ﻿#pragma once
+#include <functional>
 #include <entt/src/entt/entity/entity.hpp>
 
 // 属性计算配置
 struct AttributeCalculatorConfig {
-    uint32_t attributeIndex;  // 属性索引
-    void (*updateFunction)(entt::entity);  // 属性更新函数指针
+    uint32_t attributeIndex{0};  // 属性索引
+    std::function<void(entt::entity)> updateFunction;;  // 属性更新函数指针
 };
 
 class ActorAttributeCalculatorUtil {

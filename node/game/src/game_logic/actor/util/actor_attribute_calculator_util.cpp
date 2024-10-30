@@ -70,10 +70,21 @@ void ActorAttributeCalculatorUtil::MarkAttributeForUpdate(const entt::entity act
     attributeBits.set(attributeBit);  // 设置指定位，表示该属性需要更新
 }
 
-void ActorAttributeCalculatorUtil::ImmediateCalculateAttributes(const entt::entity entity, const uint32_t attributeBit)
+void ActorAttributeCalculatorUtil::ImmediateCalculateAttributes(const entt::entity actorEntity, const uint32_t attributeBit)
 {
     if (attributeBit >= kAttributeConfigs.size()){
         return;
     }
-    kAttributeConfigs[attributeBit].updateFunction(entity);
+
+    if (const auto& attributeBits = tls.registry.get<ActorAttributeBitSetComp>(actorEntity).attributeBits;
+        !attributeBits.test(attributeBit)){
+        return;
+    } 
+    
+    const auto& updateFunction = kAttributeConfigs[attributeBit].updateFunction;
+    if (!updateFunction){
+        return;
+    }
+    
+    updateFunction(actorEntity);
 }
