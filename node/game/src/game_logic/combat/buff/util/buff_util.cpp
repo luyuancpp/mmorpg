@@ -4,6 +4,7 @@
 #include <muduo/base/Logging.h>
 #include "buff_config.h"
 #include "buff_error_tip.pb.h"
+#include "buff_impl_util.h"
 #include "common_error_tip.pb.h"
 #include "modifier_buff_util.h"
 #include "motion_modifier_util.h"
@@ -46,6 +47,26 @@ void BuffUtil::InitializeActorComponents(entt::entity entity)
     tls.registry.emplace<BuffListComp>(entity);
 }
 
+BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
+    switch (buffTable->bufftype()) {
+    case kBuffTypeNoDamageOrSkillHitInLastSeconds:
+        {
+            return std::make_shared<BuffNoDamageOrSkillHitInLastSecondsPbComp>();
+        }
+        break;
+    default:
+        return nullptr;
+        break;
+    }
+    
+    return  nullptr;
+}
+
+template<class DerivedBuffDataType>
+std::shared_ptr<DerivedBuffDataType> GetBuffDataPtr(BuffComp& buffComp) {
+    return std::dynamic_pointer_cast<DerivedBuffDataType>(buffComp.dataPbPtr);
+}
+
 uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
@@ -66,13 +87,15 @@ uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buf
     newBuff.buffPb.set_caster(abilityContext->caster());
     newBuff.buffPb.set_processed_caster(buffTable->nocaster() ? entt::null : abilityContext->caster());
 
-    if ( !OnBuffAwake(parent, buffTableId) ) {
+    if (!OnBuffAwake(parent, buffTableId)) {
         return kOK;
     }
-    
+
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
     newBuff.buffPb.set_buff_id(newBuffId);
-    newBuff.abilityContext = abilityContext;
+    newBuff.skillContext = abilityContext;
+
+    newBuff.dataPbPtr = CreateBuffDataPtr(buffTable);
 
     auto [fst, snd] = buffList.emplace(newBuffId, std::move(newBuff));
     OnBuffStart(parent, fst->second, buffTable);
@@ -81,7 +104,7 @@ uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buf
         fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
             OnBuffExpire(parent, newBuffId);
         });
-    } else if (IsZero(buffTable->duration())) {//todo std::is_zero
+    } else if (IsZero(buffTable->duration())) {
         OnBuffExpire(parent, newBuffId);
     }
 
@@ -286,6 +309,8 @@ void BuffUtil::OnBeforeTakeDamage(entt::entity parent, DamageEventPbComponent& d
 
 void BuffUtil::OnAfterTakeDamage(entt::entity parent, DamageEventPbComponent& damageEvent)
 {
+    BuffImplUtil::UpdateLastDamageOrSkillHitTime(entt::to_entity(damageEvent.attacker_id()), parent);
+
     // 检查并应用额外效果
     //auto& buffs = tls.registry.get<BuffListComp>(event.target);
     //for (auto& [buffId, buff] : buffs) {
@@ -311,8 +336,9 @@ void BuffUtil::OnKill(entt::entity parent)
 
 }
 
-void BuffUtil::OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity)
-{
+void BuffUtil::OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity){
+    BuffImplUtil::UpdateLastDamageOrSkillHitTime(casterEntity, targetEntity);
+    
     if (ModifierBuffUtil::OnSkillHit(casterEntity, targetEntity)){
         return;
     } else if (MotionModifierBuffUtil::OnSkillHit(casterEntity, targetEntity))

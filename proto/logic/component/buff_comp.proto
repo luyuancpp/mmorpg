@@ -25,6 +25,7 @@ message BuffPbComponent
   uint64 processed_caster = 8; // 根据表处理后的施法者
   bytes data = 9; // 各种类型buff的各种数据
   BuffPeriodicBuffPbComponent  periodic = 10;
+  map<uint64, bool> sub_buff_list_id = 11;
 }
 
 message DamageEventPbComponent
@@ -38,5 +39,5 @@ message DamageEventPbComponent
 
 message BuffNoDamageOrSkillHitInLastSecondsPbComp
 {
-  uint32 last_time = 1;
+  uint64 last_time = 1;
 }

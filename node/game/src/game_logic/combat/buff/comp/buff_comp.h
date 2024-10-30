@@ -5,11 +5,14 @@
 #include "game_logic/combat/skill/comp//skill_comp.h"
 #include "logic/component/buff_comp.pb.h"
 
+using BuffMessagePtr = std::shared_ptr<google::protobuf::Message>;
+
 struct BuffComp
 {
     BuffPbComponent buffPb;
-    SkillContextPtrComp abilityContext;
+    SkillContextPtrComp skillContext;
     TimerTaskComp expireTimerTaskComp;
+    BuffMessagePtr dataPbPtr;
 };
 
 using BuffListComp = std::map<uint64_t, BuffComp>;
