@@ -809,49 +809,49 @@ class player_database final : public ::google::protobuf::Message
   ::PlayerSkillListPBComponent* _internal_mutable_skill_list();
 
   public:
-  // .PlayerUint32PBComponent uint32_pb_component = 5;
+  // .PlayerUint32PbComponent uint32_pb_component = 5;
   bool has_uint32_pb_component() const;
   void clear_uint32_pb_component() ;
-  const ::PlayerUint32PBComponent& uint32_pb_component() const;
-  PROTOBUF_NODISCARD ::PlayerUint32PBComponent* release_uint32_pb_component();
-  ::PlayerUint32PBComponent* mutable_uint32_pb_component();
-  void set_allocated_uint32_pb_component(::PlayerUint32PBComponent* value);
-  void unsafe_arena_set_allocated_uint32_pb_component(::PlayerUint32PBComponent* value);
-  ::PlayerUint32PBComponent* unsafe_arena_release_uint32_pb_component();
+  const ::PlayerUint32PbComponent& uint32_pb_component() const;
+  PROTOBUF_NODISCARD ::PlayerUint32PbComponent* release_uint32_pb_component();
+  ::PlayerUint32PbComponent* mutable_uint32_pb_component();
+  void set_allocated_uint32_pb_component(::PlayerUint32PbComponent* value);
+  void unsafe_arena_set_allocated_uint32_pb_component(::PlayerUint32PbComponent* value);
+  ::PlayerUint32PbComponent* unsafe_arena_release_uint32_pb_component();
 
   private:
-  const ::PlayerUint32PBComponent& _internal_uint32_pb_component() const;
-  ::PlayerUint32PBComponent* _internal_mutable_uint32_pb_component();
+  const ::PlayerUint32PbComponent& _internal_uint32_pb_component() const;
+  ::PlayerUint32PbComponent* _internal_mutable_uint32_pb_component();
 
   public:
-  // .BaseAttributesPBComponent derived_attributes_component = 6;
+  // .BaseAttributesPbComponent derived_attributes_component = 6;
   bool has_derived_attributes_component() const;
   void clear_derived_attributes_component() ;
-  const ::BaseAttributesPBComponent& derived_attributes_component() const;
-  PROTOBUF_NODISCARD ::BaseAttributesPBComponent* release_derived_attributes_component();
-  ::BaseAttributesPBComponent* mutable_derived_attributes_component();
-  void set_allocated_derived_attributes_component(::BaseAttributesPBComponent* value);
-  void unsafe_arena_set_allocated_derived_attributes_component(::BaseAttributesPBComponent* value);
-  ::BaseAttributesPBComponent* unsafe_arena_release_derived_attributes_component();
+  const ::BaseAttributesPbComponent& derived_attributes_component() const;
+  PROTOBUF_NODISCARD ::BaseAttributesPbComponent* release_derived_attributes_component();
+  ::BaseAttributesPbComponent* mutable_derived_attributes_component();
+  void set_allocated_derived_attributes_component(::BaseAttributesPbComponent* value);
+  void unsafe_arena_set_allocated_derived_attributes_component(::BaseAttributesPbComponent* value);
+  ::BaseAttributesPbComponent* unsafe_arena_release_derived_attributes_component();
 
   private:
-  const ::BaseAttributesPBComponent& _internal_derived_attributes_component() const;
-  ::BaseAttributesPBComponent* _internal_mutable_derived_attributes_component();
+  const ::BaseAttributesPbComponent& _internal_derived_attributes_component() const;
+  ::BaseAttributesPbComponent* _internal_mutable_derived_attributes_component();
 
   public:
-  // .LevelComponent level_component = 7;
+  // .LevelPbComponent level_component = 7;
   bool has_level_component() const;
   void clear_level_component() ;
-  const ::LevelComponent& level_component() const;
-  PROTOBUF_NODISCARD ::LevelComponent* release_level_component();
-  ::LevelComponent* mutable_level_component();
-  void set_allocated_level_component(::LevelComponent* value);
-  void unsafe_arena_set_allocated_level_component(::LevelComponent* value);
-  ::LevelComponent* unsafe_arena_release_level_component();
+  const ::LevelPbComponent& level_component() const;
+  PROTOBUF_NODISCARD ::LevelPbComponent* release_level_component();
+  ::LevelPbComponent* mutable_level_component();
+  void set_allocated_level_component(::LevelPbComponent* value);
+  void unsafe_arena_set_allocated_level_component(::LevelPbComponent* value);
+  ::LevelPbComponent* unsafe_arena_release_level_component();
 
   private:
-  const ::LevelComponent& _internal_level_component() const;
-  ::LevelComponent* _internal_mutable_level_component();
+  const ::LevelPbComponent& _internal_level_component() const;
+  ::LevelPbComponent* _internal_mutable_level_component();
 
   public:
   // uint64 player_id = 1;
@@ -890,9 +890,9 @@ class player_database final : public ::google::protobuf::Message
     ::Transform* transform_;
     ::PlayerUint64PBComponent* uint64_pb_component_;
     ::PlayerSkillListPBComponent* skill_list_;
-    ::PlayerUint32PBComponent* uint32_pb_component_;
-    ::BaseAttributesPBComponent* derived_attributes_component_;
-    ::LevelComponent* level_component_;
+    ::PlayerUint32PbComponent* uint32_pb_component_;
+    ::BaseAttributesPbComponent* derived_attributes_component_;
+    ::LevelPbComponent* level_component_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1762,27 +1762,27 @@ inline void player_database::set_allocated_skill_list(::PlayerSkillListPBCompone
   // @@protoc_insertion_point(field_set_allocated:player_database.skill_list)
 }
 
-// .PlayerUint32PBComponent uint32_pb_component = 5;
+// .PlayerUint32PbComponent uint32_pb_component = 5;
 inline bool player_database::has_uint32_pb_component() const {
   bool value = (_impl_._has_bits_[0] & 0x00000008u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.uint32_pb_component_ != nullptr);
   return value;
 }
-inline const ::PlayerUint32PBComponent& player_database::_internal_uint32_pb_component() const {
+inline const ::PlayerUint32PbComponent& player_database::_internal_uint32_pb_component() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::PlayerUint32PBComponent* p = _impl_.uint32_pb_component_;
-  return p != nullptr ? *p : reinterpret_cast<const ::PlayerUint32PBComponent&>(::_PlayerUint32PBComponent_default_instance_);
+  const ::PlayerUint32PbComponent* p = _impl_.uint32_pb_component_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerUint32PbComponent&>(::_PlayerUint32PbComponent_default_instance_);
 }
-inline const ::PlayerUint32PBComponent& player_database::uint32_pb_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::PlayerUint32PbComponent& player_database::uint32_pb_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:player_database.uint32_pb_component)
   return _internal_uint32_pb_component();
 }
-inline void player_database::unsafe_arena_set_allocated_uint32_pb_component(::PlayerUint32PBComponent* value) {
+inline void player_database::unsafe_arena_set_allocated_uint32_pb_component(::PlayerUint32PbComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.uint32_pb_component_);
   }
-  _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PBComponent*>(value);
+  _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PbComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000008u;
   } else {
@@ -1790,11 +1790,11 @@ inline void player_database::unsafe_arena_set_allocated_uint32_pb_component(::Pl
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.uint32_pb_component)
 }
-inline ::PlayerUint32PBComponent* player_database::release_uint32_pb_component() {
+inline ::PlayerUint32PbComponent* player_database::release_uint32_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000008u;
-  ::PlayerUint32PBComponent* released = _impl_.uint32_pb_component_;
+  ::PlayerUint32PbComponent* released = _impl_.uint32_pb_component_;
   _impl_.uint32_pb_component_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1809,30 +1809,30 @@ inline ::PlayerUint32PBComponent* player_database::release_uint32_pb_component()
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerUint32PBComponent* player_database::unsafe_arena_release_uint32_pb_component() {
+inline ::PlayerUint32PbComponent* player_database::unsafe_arena_release_uint32_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:player_database.uint32_pb_component)
 
   _impl_._has_bits_[0] &= ~0x00000008u;
-  ::PlayerUint32PBComponent* temp = _impl_.uint32_pb_component_;
+  ::PlayerUint32PbComponent* temp = _impl_.uint32_pb_component_;
   _impl_.uint32_pb_component_ = nullptr;
   return temp;
 }
-inline ::PlayerUint32PBComponent* player_database::_internal_mutable_uint32_pb_component() {
+inline ::PlayerUint32PbComponent* player_database::_internal_mutable_uint32_pb_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.uint32_pb_component_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerUint32PBComponent>(GetArena());
-    _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PBComponent*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerUint32PbComponent>(GetArena());
+    _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PbComponent*>(p);
   }
   return _impl_.uint32_pb_component_;
 }
-inline ::PlayerUint32PBComponent* player_database::mutable_uint32_pb_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerUint32PbComponent* player_database::mutable_uint32_pb_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000008u;
-  ::PlayerUint32PBComponent* _msg = _internal_mutable_uint32_pb_component();
+  ::PlayerUint32PbComponent* _msg = _internal_mutable_uint32_pb_component();
   // @@protoc_insertion_point(field_mutable:player_database.uint32_pb_component)
   return _msg;
 }
-inline void player_database::set_allocated_uint32_pb_component(::PlayerUint32PBComponent* value) {
+inline void player_database::set_allocated_uint32_pb_component(::PlayerUint32PbComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -1849,31 +1849,31 @@ inline void player_database::set_allocated_uint32_pb_component(::PlayerUint32PBC
     _impl_._has_bits_[0] &= ~0x00000008u;
   }
 
-  _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PBComponent*>(value);
+  _impl_.uint32_pb_component_ = reinterpret_cast<::PlayerUint32PbComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database.uint32_pb_component)
 }
 
-// .BaseAttributesPBComponent derived_attributes_component = 6;
+// .BaseAttributesPbComponent derived_attributes_component = 6;
 inline bool player_database::has_derived_attributes_component() const {
   bool value = (_impl_._has_bits_[0] & 0x00000010u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.derived_attributes_component_ != nullptr);
   return value;
 }
-inline const ::BaseAttributesPBComponent& player_database::_internal_derived_attributes_component() const {
+inline const ::BaseAttributesPbComponent& player_database::_internal_derived_attributes_component() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::BaseAttributesPBComponent* p = _impl_.derived_attributes_component_;
-  return p != nullptr ? *p : reinterpret_cast<const ::BaseAttributesPBComponent&>(::_BaseAttributesPBComponent_default_instance_);
+  const ::BaseAttributesPbComponent* p = _impl_.derived_attributes_component_;
+  return p != nullptr ? *p : reinterpret_cast<const ::BaseAttributesPbComponent&>(::_BaseAttributesPbComponent_default_instance_);
 }
-inline const ::BaseAttributesPBComponent& player_database::derived_attributes_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::BaseAttributesPbComponent& player_database::derived_attributes_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:player_database.derived_attributes_component)
   return _internal_derived_attributes_component();
 }
-inline void player_database::unsafe_arena_set_allocated_derived_attributes_component(::BaseAttributesPBComponent* value) {
+inline void player_database::unsafe_arena_set_allocated_derived_attributes_component(::BaseAttributesPbComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.derived_attributes_component_);
   }
-  _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPBComponent*>(value);
+  _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPbComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000010u;
   } else {
@@ -1881,11 +1881,11 @@ inline void player_database::unsafe_arena_set_allocated_derived_attributes_compo
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.derived_attributes_component)
 }
-inline ::BaseAttributesPBComponent* player_database::release_derived_attributes_component() {
+inline ::BaseAttributesPbComponent* player_database::release_derived_attributes_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000010u;
-  ::BaseAttributesPBComponent* released = _impl_.derived_attributes_component_;
+  ::BaseAttributesPbComponent* released = _impl_.derived_attributes_component_;
   _impl_.derived_attributes_component_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1900,30 +1900,30 @@ inline ::BaseAttributesPBComponent* player_database::release_derived_attributes_
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::BaseAttributesPBComponent* player_database::unsafe_arena_release_derived_attributes_component() {
+inline ::BaseAttributesPbComponent* player_database::unsafe_arena_release_derived_attributes_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:player_database.derived_attributes_component)
 
   _impl_._has_bits_[0] &= ~0x00000010u;
-  ::BaseAttributesPBComponent* temp = _impl_.derived_attributes_component_;
+  ::BaseAttributesPbComponent* temp = _impl_.derived_attributes_component_;
   _impl_.derived_attributes_component_ = nullptr;
   return temp;
 }
-inline ::BaseAttributesPBComponent* player_database::_internal_mutable_derived_attributes_component() {
+inline ::BaseAttributesPbComponent* player_database::_internal_mutable_derived_attributes_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.derived_attributes_component_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::BaseAttributesPBComponent>(GetArena());
-    _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPBComponent*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::BaseAttributesPbComponent>(GetArena());
+    _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPbComponent*>(p);
   }
   return _impl_.derived_attributes_component_;
 }
-inline ::BaseAttributesPBComponent* player_database::mutable_derived_attributes_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::BaseAttributesPbComponent* player_database::mutable_derived_attributes_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000010u;
-  ::BaseAttributesPBComponent* _msg = _internal_mutable_derived_attributes_component();
+  ::BaseAttributesPbComponent* _msg = _internal_mutable_derived_attributes_component();
   // @@protoc_insertion_point(field_mutable:player_database.derived_attributes_component)
   return _msg;
 }
-inline void player_database::set_allocated_derived_attributes_component(::BaseAttributesPBComponent* value) {
+inline void player_database::set_allocated_derived_attributes_component(::BaseAttributesPbComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -1940,31 +1940,31 @@ inline void player_database::set_allocated_derived_attributes_component(::BaseAt
     _impl_._has_bits_[0] &= ~0x00000010u;
   }
 
-  _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPBComponent*>(value);
+  _impl_.derived_attributes_component_ = reinterpret_cast<::BaseAttributesPbComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database.derived_attributes_component)
 }
 
-// .LevelComponent level_component = 7;
+// .LevelPbComponent level_component = 7;
 inline bool player_database::has_level_component() const {
   bool value = (_impl_._has_bits_[0] & 0x00000020u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.level_component_ != nullptr);
   return value;
 }
-inline const ::LevelComponent& player_database::_internal_level_component() const {
+inline const ::LevelPbComponent& player_database::_internal_level_component() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::LevelComponent* p = _impl_.level_component_;
-  return p != nullptr ? *p : reinterpret_cast<const ::LevelComponent&>(::_LevelComponent_default_instance_);
+  const ::LevelPbComponent* p = _impl_.level_component_;
+  return p != nullptr ? *p : reinterpret_cast<const ::LevelPbComponent&>(::_LevelPbComponent_default_instance_);
 }
-inline const ::LevelComponent& player_database::level_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::LevelPbComponent& player_database::level_component() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:player_database.level_component)
   return _internal_level_component();
 }
-inline void player_database::unsafe_arena_set_allocated_level_component(::LevelComponent* value) {
+inline void player_database::unsafe_arena_set_allocated_level_component(::LevelPbComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.level_component_);
   }
-  _impl_.level_component_ = reinterpret_cast<::LevelComponent*>(value);
+  _impl_.level_component_ = reinterpret_cast<::LevelPbComponent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000020u;
   } else {
@@ -1972,11 +1972,11 @@ inline void player_database::unsafe_arena_set_allocated_level_component(::LevelC
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.level_component)
 }
-inline ::LevelComponent* player_database::release_level_component() {
+inline ::LevelPbComponent* player_database::release_level_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000020u;
-  ::LevelComponent* released = _impl_.level_component_;
+  ::LevelPbComponent* released = _impl_.level_component_;
   _impl_.level_component_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1991,30 +1991,30 @@ inline ::LevelComponent* player_database::release_level_component() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::LevelComponent* player_database::unsafe_arena_release_level_component() {
+inline ::LevelPbComponent* player_database::unsafe_arena_release_level_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:player_database.level_component)
 
   _impl_._has_bits_[0] &= ~0x00000020u;
-  ::LevelComponent* temp = _impl_.level_component_;
+  ::LevelPbComponent* temp = _impl_.level_component_;
   _impl_.level_component_ = nullptr;
   return temp;
 }
-inline ::LevelComponent* player_database::_internal_mutable_level_component() {
+inline ::LevelPbComponent* player_database::_internal_mutable_level_component() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.level_component_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::LevelComponent>(GetArena());
-    _impl_.level_component_ = reinterpret_cast<::LevelComponent*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::LevelPbComponent>(GetArena());
+    _impl_.level_component_ = reinterpret_cast<::LevelPbComponent*>(p);
   }
   return _impl_.level_component_;
 }
-inline ::LevelComponent* player_database::mutable_level_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::LevelPbComponent* player_database::mutable_level_component() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000020u;
-  ::LevelComponent* _msg = _internal_mutable_level_component();
+  ::LevelPbComponent* _msg = _internal_mutable_level_component();
   // @@protoc_insertion_point(field_mutable:player_database.level_component)
   return _msg;
 }
-inline void player_database::set_allocated_level_component(::LevelComponent* value) {
+inline void player_database::set_allocated_level_component(::LevelPbComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -2031,7 +2031,7 @@ inline void player_database::set_allocated_level_component(::LevelComponent* val
     _impl_._has_bits_[0] &= ~0x00000020u;
   }
 
-  _impl_.level_component_ = reinterpret_cast<::LevelComponent*>(value);
+  _impl_.level_component_ = reinterpret_cast<::LevelPbComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database.level_component)
 }
 

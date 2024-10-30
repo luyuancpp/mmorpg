@@ -30,7 +30,7 @@ message PlayerUint64PBComponent
 	uint64 registration_timestamp  = 1;
 }
 
-message PlayerUint32PBComponent
+message PlayerUint32PbComponent
 {
 	uint32 class  = 1;
 }

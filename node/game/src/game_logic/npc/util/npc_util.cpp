@@ -6,8 +6,8 @@
 
 void NpcUtil::InitializeNpcComponents(entt::entity npc)
 {
-    tls.registry.emplace<BaseAttributesPBComponent>(npc);
-    tls.registry.emplace<LevelComponent>(npc);
+    tls.registry.emplace<BaseAttributesPbComponent>(npc);
+    tls.registry.emplace<LevelPbComponent>(npc);
 }
 
 void NpcUtil::CreateNpc()
@@ -18,5 +18,5 @@ void NpcUtil::CreateNpc()
     initializeNpcComponents.set_entity(entt::to_integral(npc));
     tls.dispatcher.trigger(initializeNpcComponents);
 
-    tls.registry.get<LevelComponent>(npc).set_level(1);
+    tls.registry.get<LevelPbComponent>(npc).set_level(1);
 }

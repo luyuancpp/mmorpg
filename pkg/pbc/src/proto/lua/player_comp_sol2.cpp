@@ -37,11 +37,11 @@ sol::property(&PlayerUint64PBComponent::registration_timestamp, &PlayerUint64PBC
 &PlayerUint64PBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<PlayerUint32PBComponent>("PlayerUint32PBComponent",
+tls_lua_state.new_usertype<PlayerUint32PbComponent>("PlayerUint32PbComponent",
 "class",
-sol::property(&PlayerUint32PBComponent::class, &PlayerUint32PBComponent::set_class),
+sol::property(&PlayerUint32PbComponent::class, &PlayerUint32PbComponent::set_class),
 "DebugString",
-&PlayerUint32PBComponent::DebugString,
+&PlayerUint32PbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

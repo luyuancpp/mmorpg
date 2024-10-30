@@ -5,14 +5,14 @@ import "common/comp.proto";
 
 
 // 计算属性，服务器端计算
-message CalculatedAttributesPBComponent {
+message CalculatedAttributesPbComponent {
     uint64 attack_power = 1;   // 攻击力
     uint64 defense_power = 2;  // 防御力
 	bool isDead = 3; // 独立的生死状态
 }
 
 // 衍生属性，服务器端计算
-message DerivedAttributesPBComponent {
+message DerivedAttributesPbComponent {
     uint64 max_health = 1;     // 最大生命值
 }
 

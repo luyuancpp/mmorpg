@@ -3,22 +3,22 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2actor_status_comp()
 {
-tls_lua_state.new_usertype<CalculatedAttributesPBComponent>("CalculatedAttributesPBComponent",
+tls_lua_state.new_usertype<CalculatedAttributesPbComponent>("CalculatedAttributesPbComponent",
 "attack_power",
-sol::property(&CalculatedAttributesPBComponent::attack_power, &CalculatedAttributesPBComponent::set_attack_power),
+sol::property(&CalculatedAttributesPbComponent::attack_power, &CalculatedAttributesPbComponent::set_attack_power),
 "defense_power",
-sol::property(&CalculatedAttributesPBComponent::defense_power, &CalculatedAttributesPBComponent::set_defense_power),
+sol::property(&CalculatedAttributesPbComponent::defense_power, &CalculatedAttributesPbComponent::set_defense_power),
 "isDead",
-sol::property(&CalculatedAttributesPBComponent::isDead, &CalculatedAttributesPBComponent::set_isDead),
+sol::property(&CalculatedAttributesPbComponent::isDead, &CalculatedAttributesPbComponent::set_isDead),
 "DebugString",
-&CalculatedAttributesPBComponent::DebugString,
+&CalculatedAttributesPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<DerivedAttributesPBComponent>("DerivedAttributesPBComponent",
+tls_lua_state.new_usertype<DerivedAttributesPbComponent>("DerivedAttributesPbComponent",
 "max_health",
-sol::property(&DerivedAttributesPBComponent::max_health, &DerivedAttributesPBComponent::set_max_health),
+sol::property(&DerivedAttributesPbComponent::max_health, &DerivedAttributesPbComponent::set_max_health),
 "DebugString",
-&DerivedAttributesPBComponent::DebugString,
+&DerivedAttributesPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

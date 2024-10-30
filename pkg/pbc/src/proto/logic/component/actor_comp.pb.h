@@ -53,12 +53,12 @@ extern const ::google::protobuf::internal::DescriptorTable
 class Acceleration;
 struct AccelerationDefaultTypeInternal;
 extern AccelerationDefaultTypeInternal _Acceleration_default_instance_;
-class BaseAttributesPBComponent;
-struct BaseAttributesPBComponentDefaultTypeInternal;
-extern BaseAttributesPBComponentDefaultTypeInternal _BaseAttributesPBComponent_default_instance_;
-class LevelComponent;
-struct LevelComponentDefaultTypeInternal;
-extern LevelComponentDefaultTypeInternal _LevelComponent_default_instance_;
+class BaseAttributesPbComponent;
+struct BaseAttributesPbComponentDefaultTypeInternal;
+extern BaseAttributesPbComponentDefaultTypeInternal _BaseAttributesPbComponent_default_instance_;
+class LevelPbComponent;
+struct LevelPbComponentDefaultTypeInternal;
+extern LevelPbComponentDefaultTypeInternal _LevelPbComponent_default_instance_;
 class Location;
 struct LocationDefaultTypeInternal;
 extern LocationDefaultTypeInternal _Location_default_instance_;
@@ -1019,23 +1019,23 @@ class Location final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class LevelComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:LevelComponent) */ {
+class LevelPbComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:LevelPbComponent) */ {
  public:
-  inline LevelComponent() : LevelComponent(nullptr) {}
-  ~LevelComponent() override;
+  inline LevelPbComponent() : LevelPbComponent(nullptr) {}
+  ~LevelPbComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR LevelComponent(
+  explicit PROTOBUF_CONSTEXPR LevelPbComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline LevelComponent(const LevelComponent& from) : LevelComponent(nullptr, from) {}
-  inline LevelComponent(LevelComponent&& from) noexcept
-      : LevelComponent(nullptr, std::move(from)) {}
-  inline LevelComponent& operator=(const LevelComponent& from) {
+  inline LevelPbComponent(const LevelPbComponent& from) : LevelPbComponent(nullptr, from) {}
+  inline LevelPbComponent(LevelPbComponent&& from) noexcept
+      : LevelPbComponent(nullptr, std::move(from)) {}
+  inline LevelPbComponent& operator=(const LevelPbComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline LevelComponent& operator=(LevelComponent&& from) noexcept {
+  inline LevelPbComponent& operator=(LevelPbComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -1067,16 +1067,16 @@ class LevelComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const LevelComponent& default_instance() {
+  static const LevelPbComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const LevelComponent* internal_default_instance() {
-    return reinterpret_cast<const LevelComponent*>(
-        &_LevelComponent_default_instance_);
+  static inline const LevelPbComponent* internal_default_instance() {
+    return reinterpret_cast<const LevelPbComponent*>(
+        &_LevelPbComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 8;
-  friend void swap(LevelComponent& a, LevelComponent& b) { a.Swap(&b); }
-  inline void Swap(LevelComponent* other) {
+  friend void swap(LevelPbComponent& a, LevelPbComponent& b) { a.Swap(&b); }
+  inline void Swap(LevelPbComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -1088,7 +1088,7 @@ class LevelComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(LevelComponent* other) {
+  void UnsafeArenaSwap(LevelPbComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1096,13 +1096,13 @@ class LevelComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  LevelComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<LevelComponent>(arena);
+  LevelPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<LevelPbComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const LevelComponent& from);
+  void CopyFrom(const LevelPbComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const LevelComponent& from) { LevelComponent::MergeImpl(*this, from); }
+  void MergeFrom(const LevelPbComponent& from) { LevelPbComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -1123,16 +1123,16 @@ class LevelComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(LevelComponent* other);
+  void InternalSwap(LevelPbComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "LevelComponent"; }
+  static ::absl::string_view FullMessageName() { return "LevelPbComponent"; }
 
  protected:
-  explicit LevelComponent(::google::protobuf::Arena* arena);
-  LevelComponent(::google::protobuf::Arena* arena, const LevelComponent& from);
-  LevelComponent(::google::protobuf::Arena* arena, LevelComponent&& from) noexcept
-      : LevelComponent(arena) {
+  explicit LevelPbComponent(::google::protobuf::Arena* arena);
+  LevelPbComponent(::google::protobuf::Arena* arena, const LevelPbComponent& from);
+  LevelPbComponent(::google::protobuf::Arena* arena, LevelPbComponent&& from) noexcept
+      : LevelPbComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -1156,7 +1156,7 @@ class LevelComponent final : public ::google::protobuf::Message
   void _internal_set_level(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:LevelComponent)
+  // @@protoc_insertion_point(class_scope:LevelPbComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1186,23 +1186,23 @@ class LevelComponent final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class BaseAttributesPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BaseAttributesPBComponent) */ {
+class BaseAttributesPbComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BaseAttributesPbComponent) */ {
  public:
-  inline BaseAttributesPBComponent() : BaseAttributesPBComponent(nullptr) {}
-  ~BaseAttributesPBComponent() override;
+  inline BaseAttributesPbComponent() : BaseAttributesPbComponent(nullptr) {}
+  ~BaseAttributesPbComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BaseAttributesPBComponent(
+  explicit PROTOBUF_CONSTEXPR BaseAttributesPbComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline BaseAttributesPBComponent(const BaseAttributesPBComponent& from) : BaseAttributesPBComponent(nullptr, from) {}
-  inline BaseAttributesPBComponent(BaseAttributesPBComponent&& from) noexcept
-      : BaseAttributesPBComponent(nullptr, std::move(from)) {}
-  inline BaseAttributesPBComponent& operator=(const BaseAttributesPBComponent& from) {
+  inline BaseAttributesPbComponent(const BaseAttributesPbComponent& from) : BaseAttributesPbComponent(nullptr, from) {}
+  inline BaseAttributesPbComponent(BaseAttributesPbComponent&& from) noexcept
+      : BaseAttributesPbComponent(nullptr, std::move(from)) {}
+  inline BaseAttributesPbComponent& operator=(const BaseAttributesPbComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BaseAttributesPBComponent& operator=(BaseAttributesPBComponent&& from) noexcept {
+  inline BaseAttributesPbComponent& operator=(BaseAttributesPbComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -1234,16 +1234,16 @@ class BaseAttributesPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BaseAttributesPBComponent& default_instance() {
+  static const BaseAttributesPbComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const BaseAttributesPBComponent* internal_default_instance() {
-    return reinterpret_cast<const BaseAttributesPBComponent*>(
-        &_BaseAttributesPBComponent_default_instance_);
+  static inline const BaseAttributesPbComponent* internal_default_instance() {
+    return reinterpret_cast<const BaseAttributesPbComponent*>(
+        &_BaseAttributesPbComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 7;
-  friend void swap(BaseAttributesPBComponent& a, BaseAttributesPBComponent& b) { a.Swap(&b); }
-  inline void Swap(BaseAttributesPBComponent* other) {
+  friend void swap(BaseAttributesPbComponent& a, BaseAttributesPbComponent& b) { a.Swap(&b); }
+  inline void Swap(BaseAttributesPbComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -1255,7 +1255,7 @@ class BaseAttributesPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BaseAttributesPBComponent* other) {
+  void UnsafeArenaSwap(BaseAttributesPbComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1263,13 +1263,13 @@ class BaseAttributesPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BaseAttributesPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<BaseAttributesPBComponent>(arena);
+  BaseAttributesPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<BaseAttributesPbComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BaseAttributesPBComponent& from);
+  void CopyFrom(const BaseAttributesPbComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BaseAttributesPBComponent& from) { BaseAttributesPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const BaseAttributesPbComponent& from) { BaseAttributesPbComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -1290,16 +1290,16 @@ class BaseAttributesPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(BaseAttributesPBComponent* other);
+  void InternalSwap(BaseAttributesPbComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "BaseAttributesPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "BaseAttributesPbComponent"; }
 
  protected:
-  explicit BaseAttributesPBComponent(::google::protobuf::Arena* arena);
-  BaseAttributesPBComponent(::google::protobuf::Arena* arena, const BaseAttributesPBComponent& from);
-  BaseAttributesPBComponent(::google::protobuf::Arena* arena, BaseAttributesPBComponent&& from) noexcept
-      : BaseAttributesPBComponent(arena) {
+  explicit BaseAttributesPbComponent(::google::protobuf::Arena* arena);
+  BaseAttributesPbComponent(::google::protobuf::Arena* arena, const BaseAttributesPbComponent& from);
+  BaseAttributesPbComponent(::google::protobuf::Arena* arena, BaseAttributesPbComponent&& from) noexcept
+      : BaseAttributesPbComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -1389,7 +1389,7 @@ class BaseAttributesPBComponent final : public ::google::protobuf::Message
   void _internal_set_resistance(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:BaseAttributesPBComponent)
+  // @@protoc_insertion_point(class_scope:BaseAttributesPbComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -2499,184 +2499,184 @@ inline void ViewRadius::_internal_set_radius(double value) {
 
 // -------------------------------------------------------------------
 
-// BaseAttributesPBComponent
+// BaseAttributesPbComponent
 
 // uint64 strength = 1;
-inline void BaseAttributesPBComponent::clear_strength() {
+inline void BaseAttributesPbComponent::clear_strength() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.strength_ = ::uint64_t{0u};
 }
-inline ::uint64_t BaseAttributesPBComponent::strength() const {
-  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.strength)
+inline ::uint64_t BaseAttributesPbComponent::strength() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPbComponent.strength)
   return _internal_strength();
 }
-inline void BaseAttributesPBComponent::set_strength(::uint64_t value) {
+inline void BaseAttributesPbComponent::set_strength(::uint64_t value) {
   _internal_set_strength(value);
-  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.strength)
+  // @@protoc_insertion_point(field_set:BaseAttributesPbComponent.strength)
 }
-inline ::uint64_t BaseAttributesPBComponent::_internal_strength() const {
+inline ::uint64_t BaseAttributesPbComponent::_internal_strength() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.strength_;
 }
-inline void BaseAttributesPBComponent::_internal_set_strength(::uint64_t value) {
+inline void BaseAttributesPbComponent::_internal_set_strength(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.strength_ = value;
 }
 
 // uint64 stamina = 2;
-inline void BaseAttributesPBComponent::clear_stamina() {
+inline void BaseAttributesPbComponent::clear_stamina() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.stamina_ = ::uint64_t{0u};
 }
-inline ::uint64_t BaseAttributesPBComponent::stamina() const {
-  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.stamina)
+inline ::uint64_t BaseAttributesPbComponent::stamina() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPbComponent.stamina)
   return _internal_stamina();
 }
-inline void BaseAttributesPBComponent::set_stamina(::uint64_t value) {
+inline void BaseAttributesPbComponent::set_stamina(::uint64_t value) {
   _internal_set_stamina(value);
-  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.stamina)
+  // @@protoc_insertion_point(field_set:BaseAttributesPbComponent.stamina)
 }
-inline ::uint64_t BaseAttributesPBComponent::_internal_stamina() const {
+inline ::uint64_t BaseAttributesPbComponent::_internal_stamina() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.stamina_;
 }
-inline void BaseAttributesPBComponent::_internal_set_stamina(::uint64_t value) {
+inline void BaseAttributesPbComponent::_internal_set_stamina(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.stamina_ = value;
 }
 
 // uint64 health = 3;
-inline void BaseAttributesPBComponent::clear_health() {
+inline void BaseAttributesPbComponent::clear_health() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.health_ = ::uint64_t{0u};
 }
-inline ::uint64_t BaseAttributesPBComponent::health() const {
-  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.health)
+inline ::uint64_t BaseAttributesPbComponent::health() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPbComponent.health)
   return _internal_health();
 }
-inline void BaseAttributesPBComponent::set_health(::uint64_t value) {
+inline void BaseAttributesPbComponent::set_health(::uint64_t value) {
   _internal_set_health(value);
-  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.health)
+  // @@protoc_insertion_point(field_set:BaseAttributesPbComponent.health)
 }
-inline ::uint64_t BaseAttributesPBComponent::_internal_health() const {
+inline ::uint64_t BaseAttributesPbComponent::_internal_health() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.health_;
 }
-inline void BaseAttributesPBComponent::_internal_set_health(::uint64_t value) {
+inline void BaseAttributesPbComponent::_internal_set_health(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.health_ = value;
 }
 
 // uint64 mana = 4;
-inline void BaseAttributesPBComponent::clear_mana() {
+inline void BaseAttributesPbComponent::clear_mana() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mana_ = ::uint64_t{0u};
 }
-inline ::uint64_t BaseAttributesPBComponent::mana() const {
-  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.mana)
+inline ::uint64_t BaseAttributesPbComponent::mana() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPbComponent.mana)
   return _internal_mana();
 }
-inline void BaseAttributesPBComponent::set_mana(::uint64_t value) {
+inline void BaseAttributesPbComponent::set_mana(::uint64_t value) {
   _internal_set_mana(value);
-  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.mana)
+  // @@protoc_insertion_point(field_set:BaseAttributesPbComponent.mana)
 }
-inline ::uint64_t BaseAttributesPBComponent::_internal_mana() const {
+inline ::uint64_t BaseAttributesPbComponent::_internal_mana() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.mana_;
 }
-inline void BaseAttributesPBComponent::_internal_set_mana(::uint64_t value) {
+inline void BaseAttributesPbComponent::_internal_set_mana(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.mana_ = value;
 }
 
 // uint64 critchance = 5;
-inline void BaseAttributesPBComponent::clear_critchance() {
+inline void BaseAttributesPbComponent::clear_critchance() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.critchance_ = ::uint64_t{0u};
 }
-inline ::uint64_t BaseAttributesPBComponent::critchance() const {
-  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.critchance)
+inline ::uint64_t BaseAttributesPbComponent::critchance() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPbComponent.critchance)
   return _internal_critchance();
 }
-inline void BaseAttributesPBComponent::set_critchance(::uint64_t value) {
+inline void BaseAttributesPbComponent::set_critchance(::uint64_t value) {
   _internal_set_critchance(value);
-  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.critchance)
+  // @@protoc_insertion_point(field_set:BaseAttributesPbComponent.critchance)
 }
-inline ::uint64_t BaseAttributesPBComponent::_internal_critchance() const {
+inline ::uint64_t BaseAttributesPbComponent::_internal_critchance() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.critchance_;
 }
-inline void BaseAttributesPBComponent::_internal_set_critchance(::uint64_t value) {
+inline void BaseAttributesPbComponent::_internal_set_critchance(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.critchance_ = value;
 }
 
 // uint64 armor = 6;
-inline void BaseAttributesPBComponent::clear_armor() {
+inline void BaseAttributesPbComponent::clear_armor() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.armor_ = ::uint64_t{0u};
 }
-inline ::uint64_t BaseAttributesPBComponent::armor() const {
-  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.armor)
+inline ::uint64_t BaseAttributesPbComponent::armor() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPbComponent.armor)
   return _internal_armor();
 }
-inline void BaseAttributesPBComponent::set_armor(::uint64_t value) {
+inline void BaseAttributesPbComponent::set_armor(::uint64_t value) {
   _internal_set_armor(value);
-  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.armor)
+  // @@protoc_insertion_point(field_set:BaseAttributesPbComponent.armor)
 }
-inline ::uint64_t BaseAttributesPBComponent::_internal_armor() const {
+inline ::uint64_t BaseAttributesPbComponent::_internal_armor() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.armor_;
 }
-inline void BaseAttributesPBComponent::_internal_set_armor(::uint64_t value) {
+inline void BaseAttributesPbComponent::_internal_set_armor(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.armor_ = value;
 }
 
 // uint64 resistance = 7;
-inline void BaseAttributesPBComponent::clear_resistance() {
+inline void BaseAttributesPbComponent::clear_resistance() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.resistance_ = ::uint64_t{0u};
 }
-inline ::uint64_t BaseAttributesPBComponent::resistance() const {
-  // @@protoc_insertion_point(field_get:BaseAttributesPBComponent.resistance)
+inline ::uint64_t BaseAttributesPbComponent::resistance() const {
+  // @@protoc_insertion_point(field_get:BaseAttributesPbComponent.resistance)
   return _internal_resistance();
 }
-inline void BaseAttributesPBComponent::set_resistance(::uint64_t value) {
+inline void BaseAttributesPbComponent::set_resistance(::uint64_t value) {
   _internal_set_resistance(value);
-  // @@protoc_insertion_point(field_set:BaseAttributesPBComponent.resistance)
+  // @@protoc_insertion_point(field_set:BaseAttributesPbComponent.resistance)
 }
-inline ::uint64_t BaseAttributesPBComponent::_internal_resistance() const {
+inline ::uint64_t BaseAttributesPbComponent::_internal_resistance() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.resistance_;
 }
-inline void BaseAttributesPBComponent::_internal_set_resistance(::uint64_t value) {
+inline void BaseAttributesPbComponent::_internal_set_resistance(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.resistance_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// LevelComponent
+// LevelPbComponent
 
 // uint32 level = 1;
-inline void LevelComponent::clear_level() {
+inline void LevelPbComponent::clear_level() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.level_ = 0u;
 }
-inline ::uint32_t LevelComponent::level() const {
-  // @@protoc_insertion_point(field_get:LevelComponent.level)
+inline ::uint32_t LevelPbComponent::level() const {
+  // @@protoc_insertion_point(field_get:LevelPbComponent.level)
   return _internal_level();
 }
-inline void LevelComponent::set_level(::uint32_t value) {
+inline void LevelPbComponent::set_level(::uint32_t value) {
   _internal_set_level(value);
-  // @@protoc_insertion_point(field_set:LevelComponent.level)
+  // @@protoc_insertion_point(field_set:LevelPbComponent.level)
 }
-inline ::uint32_t LevelComponent::_internal_level() const {
+inline ::uint32_t LevelPbComponent::_internal_level() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.level_;
 }
-inline void LevelComponent::_internal_set_level(::uint32_t value) {
+inline void LevelPbComponent::_internal_set_level(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.level_ = value;
 }

@@ -97,21 +97,20 @@ public:
             }
 
         //todo 及时计算 max_health
-        auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(parent);
-        auto& derivedAttributesPBComponent = tls.registry.get<DerivedAttributesPBComponent>(parent);
-        auto& levelComponent = tls.registry.get<LevelComponent>(parent);
+        auto& baseAttributesPbComponent = tls.registry.get<BaseAttributesPbComponent>(parent);
+        const auto& derivedAttributesPbComponent = tls.registry.get<DerivedAttributesPbComponent>(parent);
+        const auto& levelComponent = tls.registry.get<LevelPbComponent>(parent);
         
-        auto lostHealth = derivedAttributesPBComponent.max_health() - baseAttributesPBComponent.health();  // 计算已损失生命值
+        auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();  // 计算已损失生命值
 
         BuffConfigurationTable::Instance().SetHealthregenerationParam(
             { static_cast<double>(levelComponent.level()),  static_cast<double>(lostHealth)});
 
-        auto healingAmount = BuffConfigurationTable::Instance().GetHealthregeneration(buffTable->id());
-        // 计算回复后的生命值，确保不超过最大生命值
-        auto currentHealth = std::min(derivedAttributesPBComponent.max_health(),
-            static_cast<uint64_t>(baseAttributesPBComponent.health() + healingAmount));
+        const auto healingAmount = BuffConfigurationTable::Instance().GetHealthregeneration(buffTable->id());
+        const auto currentHealth = std::min(derivedAttributesPbComponent.max_health(),
+                                            static_cast<uint64_t>(baseAttributesPbComponent.health() + healingAmount));
 
-        baseAttributesPBComponent.set_health(currentHealth);
+        baseAttributesPbComponent.set_health(currentHealth);
         
         LOG_TRACE << "Healing applied, current health: " << currentHealth ;
         

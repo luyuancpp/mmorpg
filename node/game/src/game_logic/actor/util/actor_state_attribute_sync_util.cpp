@@ -21,8 +21,8 @@ void ActorStateAttributeSyncUtil::Initialize() {
 void ActorStateAttributeSyncUtil::InitializeActorComponents(const entt::entity entity) {
     // 在实体上添加速度、计算属性、派生属性和同步消息组件
     tls.registry.emplace<Velocity>(entity);
-    tls.registry.emplace<CalculatedAttributesPBComponent>(entity);
-    tls.registry.emplace<DerivedAttributesPBComponent>(entity);
+    tls.registry.emplace<CalculatedAttributesPbComponent>(entity);
+    tls.registry.emplace<DerivedAttributesPbComponent>(entity);
     tls.registry.emplace<BaseAttributeDeltaS2C>(entity);
     tls.registry.emplace<AttributeDelta2FramesS2C>(entity);
     tls.registry.emplace<AttributeDelta5FramesS2C>(entity);
