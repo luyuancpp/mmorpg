@@ -330,6 +330,7 @@ class MissionPBComponent final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kProgressFieldNumber = 3,
+    kDataFieldNumber = 4,
     kIdFieldNumber = 1,
     kStatusFieldNumber = 2,
   };
@@ -349,6 +350,22 @@ class MissionPBComponent final : public ::google::protobuf::Message
   private:
   const ::google::protobuf::RepeatedField<::uint32_t>& _internal_progress() const;
   ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_progress();
+
+  public:
+  // bytes data = 4;
+  void clear_data() ;
+  const std::string& data() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_data(Arg_&& arg, Args_... args);
+  std::string* mutable_data();
+  PROTOBUF_NODISCARD std::string* release_data();
+  void set_allocated_data(std::string* value);
+
+  private:
+  const std::string& _internal_data() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_data(
+      const std::string& value);
+  std::string* _internal_mutable_data();
 
   public:
   // uint32 id = 1;
@@ -376,7 +393,7 @@ class MissionPBComponent final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 0,
+      2, 4, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -394,6 +411,7 @@ class MissionPBComponent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::RepeatedField<::uint32_t> progress_;
     mutable ::google::protobuf::internal::CachedSize _progress_cached_byte_size_;
+    ::google::protobuf::internal::ArenaStringPtr data_;
     ::uint32_t id_;
     ::uint32_t status_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
@@ -1007,6 +1025,56 @@ MissionPBComponent::_internal_progress() const {
 inline ::google::protobuf::RepeatedField<::uint32_t>* MissionPBComponent::_internal_mutable_progress() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.progress_;
+}
+
+// bytes data = 4;
+inline void MissionPBComponent::clear_data() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.data_.ClearToEmpty();
+}
+inline const std::string& MissionPBComponent::data() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:MissionPBComponent.data)
+  return _internal_data();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void MissionPBComponent::set_data(Arg_&& arg,
+                                                     Args_... args) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.data_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:MissionPBComponent.data)
+}
+inline std::string* MissionPBComponent::mutable_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_data();
+  // @@protoc_insertion_point(field_mutable:MissionPBComponent.data)
+  return _s;
+}
+inline const std::string& MissionPBComponent::_internal_data() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.data_.Get();
+}
+inline void MissionPBComponent::_internal_set_data(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.data_.Set(value, GetArena());
+}
+inline std::string* MissionPBComponent::_internal_mutable_data() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.data_.Mutable( GetArena());
+}
+inline std::string* MissionPBComponent::release_data() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:MissionPBComponent.data)
+  return _impl_.data_.Release();
+}
+inline void MissionPBComponent::set_allocated_data(std::string* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.data_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.data_.IsDefault()) {
+          _impl_.data_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:MissionPBComponent.data)
 }
 
 // -------------------------------------------------------------------

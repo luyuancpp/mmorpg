@@ -311,6 +311,12 @@ void BuffUtil::OnKill(entt::entity parent)
 
 }
 
-void BuffUtil::OnAbilityHit(entt::entity parent)
+void BuffUtil::OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity)
 {
+    if (ModifierBuffUtil::OnSkillHit(casterEntity, targetEntity)){
+        return;
+    } else if (MotionModifierBuffUtil::OnSkillHit(casterEntity, targetEntity))
+    {
+        return;
+    }
 }

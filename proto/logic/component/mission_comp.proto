@@ -15,6 +15,7 @@ message MissionPBComponent
 	uint32 id = 1;
 	uint32 status = 2;
 	repeated uint32 progress = 3;
+	bytes data = 4; // 各种类型buff的各种数据
 }
 
 message MissionListPBComponent

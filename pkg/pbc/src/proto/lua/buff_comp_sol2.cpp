@@ -27,6 +27,10 @@ sol::property(&BuffPbComponent::caster, &BuffPbComponent::set_caster),
 sol::property(&BuffPbComponent::triggerdamage, &BuffPbComponent::set_triggerdamage),
 "processed_caster",
 sol::property(&BuffPbComponent::processed_caster, &BuffPbComponent::set_processed_caster),
+"data",
+[](BuffPbComponent& pb) ->decltype(auto){ return pb.data();},
+"mutable_data",
+[](BuffPbComponent& pb) ->decltype(auto){ return pb.mutable_data();},
 "DebugString",
 &BuffPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
@@ -46,13 +50,18 @@ sol::property(&DamageEventPbComponent::damage_type, &DamageEventPbComponent::set
 &DamageEventPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<PeriodicBuffPbComponent>("PeriodicBuffPbComponent",
+tls_lua_state.new_usertype<BuffPeriodicBuffPbComponent>("BuffPeriodicBuffPbComponent",
 "periodic_timer",
-sol::property(&PeriodicBuffPbComponent::periodic_timer, &PeriodicBuffPbComponent::set_periodic_timer),
+sol::property(&BuffPeriodicBuffPbComponent::periodic_timer, &BuffPeriodicBuffPbComponent::set_periodic_timer),
 "ticks_done",
-sol::property(&PeriodicBuffPbComponent::ticks_done, &PeriodicBuffPbComponent::set_ticks_done),
+sol::property(&BuffPeriodicBuffPbComponent::ticks_done, &BuffPeriodicBuffPbComponent::set_ticks_done),
 "DebugString",
-&PeriodicBuffPbComponent::DebugString,
+&BuffPeriodicBuffPbComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
+tls_lua_state.new_usertype<BuffNoDamageOrSkillHitInLastSecondsPbComp>("BuffNoDamageOrSkillHitInLastSecondsPbComp",
+"DebugString",
+&BuffNoDamageOrSkillHitInLastSecondsPbComp::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }

@@ -55,6 +55,11 @@ bool ModifierBuffUtil::OnIntervalThink(entt::entity parent, BuffComp& buffComp, 
     return true;
 }
 
+bool ModifierBuffUtil::OnSkillHit(entt::entity caster, entt::entity target)
+{
+    return true;
+}
+
 bool ModifierBuffUtil::IsMovementSpeedBuff(const BuffTable* buffTable) {
     return buffTable->bufftype() == kBuffTypeMovementSpeedReduction || 
            buffTable->bufftype() == kBuffTypeMovementSpeedBoost;
