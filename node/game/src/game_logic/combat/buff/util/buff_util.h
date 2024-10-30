@@ -25,7 +25,7 @@ public:
 
     static std::tuple<uint32_t, uint64_t>  AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
-    static void OnBuffExpire(entt::entity parent, uint64_t buffId);
+    static void RemoveBuff(entt::entity parent, uint64_t buffId);
 
     //Buff创建前检查当前Buff是否可创建。
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。
@@ -56,15 +56,9 @@ public:
     // 提供OnIntervalThink抽象接口供策划配置具体效果。
 
     static void OnIntervalThink(entt::entity parent, uint64_t buffId);
+
+    static void OnBuffExpire(entt::entity parent, uint64_t buffId);
     
-    //Buff还可以通过请求改变运动来触发相关效果。
-    //通过策划配置时调用ApplyMotion操作，提供OnMotionUpdate和OnMotionInterrupt接口供策划配置具体效果。
-    static void ApplyMotion();
-
-    static void OnMotionUpdate();
-
-    static void OnMotionInterrupt();
-
     //监听某个主动技能执行成功
     static void OnSkillExecuted(SkillExecutedEvent& event);
 
