@@ -64,10 +64,22 @@ struct BuffPeriodicBuffPbComponentDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffPeriodicBuffPbComponentDefaultTypeInternal _BuffPeriodicBuffPbComponent_default_instance_;
+      template <typename>
+PROTOBUF_CONSTEXPR BuffPbComponent_SubBuffListIdEntry_DoNotUse::BuffPbComponent_SubBuffListIdEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct BuffPbComponent_SubBuffListIdEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BuffPbComponent_SubBuffListIdEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BuffPbComponent_SubBuffListIdEntry_DoNotUseDefaultTypeInternal() {}
+  union {
+    BuffPbComponent_SubBuffListIdEntry_DoNotUse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffPbComponent_SubBuffListIdEntry_DoNotUseDefaultTypeInternal _BuffPbComponent_SubBuffListIdEntry_DoNotUse_default_instance_;
 
 inline constexpr BuffNoDamageOrSkillHitInLastSecondsPbComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : last_time_{0u},
+      : last_time_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -106,6 +118,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr BuffPbComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        sub_buff_list_id_{},
         data_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
@@ -132,7 +145,7 @@ struct BuffPbComponentDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffPbComponentDefaultTypeInternal _BuffPbComponent_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[5];
+static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[6];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fbuff_5fcomp_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -159,6 +172,18 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::BuffPeriodicBuffPbComponent, _impl_.periodic_timer_),
         PROTOBUF_FIELD_OFFSET(::BuffPeriodicBuffPbComponent, _impl_.ticks_done_),
+        PROTOBUF_FIELD_OFFSET(::BuffPbComponent_SubBuffListIdEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::BuffPbComponent_SubBuffListIdEntry_DoNotUse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::BuffPbComponent_SubBuffListIdEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::BuffPbComponent_SubBuffListIdEntry_DoNotUse, value_),
+        0,
+        1,
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -177,6 +202,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.processed_caster_),
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.data_),
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.periodic_),
+        PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.sub_buff_list_id_),
         ~0u,
         ~0u,
         ~0u,
@@ -187,6 +213,7 @@ const ::uint32_t
         ~0u,
         ~0u,
         0,
+        ~0u,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::DamageEventPbComponent, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -215,13 +242,15 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::BuffContextPBComponent)},
         {9, -1, -1, sizeof(::BuffPeriodicBuffPbComponent)},
-        {19, 37, -1, sizeof(::BuffPbComponent)},
-        {47, -1, -1, sizeof(::DamageEventPbComponent)},
-        {60, -1, -1, sizeof(::BuffNoDamageOrSkillHitInLastSecondsPbComp)},
+        {19, 29, -1, sizeof(::BuffPbComponent_SubBuffListIdEntry_DoNotUse)},
+        {31, 50, -1, sizeof(::BuffPbComponent)},
+        {61, -1, -1, sizeof(::DamageEventPbComponent)},
+        {74, -1, -1, sizeof(::BuffNoDamageOrSkillHitInLastSecondsPbComp)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_BuffContextPBComponent_default_instance_._instance,
     &::_BuffPeriodicBuffPbComponent_default_instance_._instance,
+    &::_BuffPbComponent_SubBuffListIdEntry_DoNotUse_default_instance_._instance,
     &::_BuffPbComponent_default_instance_._instance,
     &::_DamageEventPbComponent_default_instance_._instance,
     &::_BuffNoDamageOrSkillHitInLastSecondsPbComp_default_instance_._instance,
@@ -231,31 +260,33 @@ const char descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto[] A
     "\n\037logic/component/buff_comp.proto\".\n\026Buf"
     "fContextPBComponent\022\024\n\014damage_value\030\001 \001("
     "\002\"I\n\033BuffPeriodicBuffPbComponent\022\026\n\016peri"
-    "odic_timer\030\001 \001(\001\022\022\n\nticks_done\030\002 \001(\r\"\362\001\n"
+    "odic_timer\030\001 \001(\001\022\022\n\nticks_done\030\002 \001(\r\"\347\002\n"
     "\017BuffPbComponent\022\017\n\007buff_id\030\001 \001(\004\022\025\n\rbuf"
     "f_table_id\030\002 \001(\r\022\022\n\nability_id\030\003 \001(\r\022\025\n\r"
     "parent_entity\030\004 \001(\004\022\r\n\005layer\030\005 \001(\r\022\016\n\006ca"
     "ster\030\006 \001(\004\022\025\n\rtriggerdamage\030\007 \001(\010\022\030\n\020pro"
     "cessed_caster\030\010 \001(\004\022\014\n\004data\030\t \001(\014\022.\n\010per"
     "iodic\030\n \001(\0132\034.BuffPeriodicBuffPbComponen"
-    "t\"t\n\026DamageEventPbComponent\022\020\n\010skill_id\030"
-    "\001 \001(\004\022\023\n\013attacker_id\030\002 \001(\004\022\016\n\006target\030\003 \001"
-    "(\004\022\016\n\006damage\030\004 \001(\001\022\023\n\013damage_type\030\005 \001(\r\""
-    ">\n)BuffNoDamageOrSkillHitInLastSecondsPb"
-    "Comp\022\021\n\tlast_time\030\001 \001(\rB\tZ\007pb/gameb\006prot"
-    "o3"
+    "t\022=\n\020sub_buff_list_id\030\013 \003(\0132#.BuffPbComp"
+    "onent.SubBuffListIdEntry\0324\n\022SubBuffListI"
+    "dEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\010:\0028\001\"t"
+    "\n\026DamageEventPbComponent\022\020\n\010skill_id\030\001 \001"
+    "(\004\022\023\n\013attacker_id\030\002 \001(\004\022\016\n\006target\030\003 \001(\004\022"
+    "\016\n\006damage\030\004 \001(\001\022\023\n\013damage_type\030\005 \001(\r\">\n)"
+    "BuffNoDamageOrSkillHitInLastSecondsPbCom"
+    "p\022\021\n\tlast_time\030\001 \001(\004B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto = {
     false,
     false,
-    602,
+    719,
     descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto,
     "logic/component/buff_comp.proto",
     &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
     nullptr,
     0,
-    5,
+    6,
     schemas,
     file_default_instances,
     TableStruct_logic_2fcomponent_2fbuff_5fcomp_2eproto::offsets,
@@ -696,6 +727,16 @@ void BuffPeriodicBuffPbComponent::InternalSwap(BuffPeriodicBuffPbComponent* PROT
 }
 // ===================================================================
 
+BuffPbComponent_SubBuffListIdEntry_DoNotUse::BuffPbComponent_SubBuffListIdEntry_DoNotUse() {}
+BuffPbComponent_SubBuffListIdEntry_DoNotUse::BuffPbComponent_SubBuffListIdEntry_DoNotUse(::google::protobuf::Arena* arena)
+    : SuperType(arena) {}
+::google::protobuf::Metadata BuffPbComponent_SubBuffListIdEntry_DoNotUse::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[2]);
+}
+// ===================================================================
+
 class BuffPbComponent::_Internal {
  public:
   using HasBits = decltype(std::declval<BuffPbComponent>()._impl_._has_bits_);
@@ -713,6 +754,7 @@ inline PROTOBUF_NDEBUG_INLINE BuffPbComponent::Impl_::Impl_(
     const Impl_& from)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
+        sub_buff_list_id_{visibility, arena, from.sub_buff_list_id_},
         data_(arena, from.data_) {}
 
 BuffPbComponent::BuffPbComponent(
@@ -742,6 +784,7 @@ inline PROTOBUF_NDEBUG_INLINE BuffPbComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0},
+        sub_buff_list_id_{visibility, arena},
         data_(arena) {}
 
 inline void BuffPbComponent::SharedCtor(::_pb::Arena* arena) {
@@ -786,6 +829,7 @@ PROTOBUF_NOINLINE void BuffPbComponent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  _impl_.sub_buff_list_id_.Clear();
   _impl_.data_.ClearToEmpty();
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -807,16 +851,16 @@ const char* BuffPbComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 10, 1, 0, 2> BuffPbComponent::_table_ = {
+const ::_pbi::TcParseTable<4, 11, 2, 0, 2> BuffPbComponent::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_._has_bits_),
     0, // no _extensions_
-    10, 120,  // max_field_number, fast_idx_mask
+    11, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294966272,  // skipmap
+    4294965248,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    10,  // num_field_entries
-    1,  // num_aux_entries
+    11,  // num_field_entries
+    2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_BuffPbComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
@@ -893,8 +937,15 @@ const ::_pbi::TcParseTable<4, 10, 1, 0, 2> BuffPbComponent::_table_ = {
     // .BuffPeriodicBuffPbComponent periodic = 10;
     {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.periodic_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // map<uint64, bool> sub_buff_list_id = 11;
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.sub_buff_list_id_), -1, 1,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }}, {{
     {::_pbi::TcParser::GetTable<::BuffPeriodicBuffPbComponent>()},
+    {::_pbi::TcParser::GetMapAuxInfo<
+        decltype(BuffPbComponent()._impl_.sub_buff_list_id_)>(
+        0, 0, 0, 4,
+        8)},
   }}, {{
   }},
 };
@@ -975,6 +1026,27 @@ const ::_pbi::TcParseTable<4, 10, 1, 0, 2> BuffPbComponent::_table_ = {
         10, *_impl_.periodic_, _impl_.periodic_->GetCachedSize(), target, stream);
   }
 
+  // map<uint64, bool> sub_buff_list_id = 11;
+  if (!_internal_sub_buff_list_id().empty()) {
+    using MapType = ::google::protobuf::Map<::uint64_t, bool>;
+    using WireHelper = _pbi::MapEntryFuncs<::uint64_t, bool,
+                                   _pbi::WireFormatLite::TYPE_UINT64,
+                                   _pbi::WireFormatLite::TYPE_BOOL>;
+    const auto& field = _internal_sub_buff_list_id();
+
+    if (stream->IsSerializationDeterministic() && field.size() > 1) {
+      for (const auto& entry : ::google::protobuf::internal::MapSorterFlat<MapType>(field)) {
+        target = WireHelper::InternalSerialize(
+            11, entry.first, entry.second, target, stream);
+      }
+    } else {
+      for (const auto& entry : field) {
+        target = WireHelper::InternalSerialize(
+            11, entry.first, entry.second, target, stream);
+      }
+    }
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -992,6 +1064,13 @@ const ::_pbi::TcParseTable<4, 10, 1, 0, 2> BuffPbComponent::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  // map<uint64, bool> sub_buff_list_id = 11;
+  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_sub_buff_list_id_size());
+  for (const auto& entry : _internal_sub_buff_list_id()) {
+    total_size += _pbi::MapEntryFuncs<::uint64_t, bool,
+                                   _pbi::WireFormatLite::TYPE_UINT64,
+                                   _pbi::WireFormatLite::TYPE_BOOL>::ByteSizeLong(entry.first, entry.second);
+  }
   // bytes data = 9;
   if (!this->_internal_data().empty()) {
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
@@ -1065,6 +1144,7 @@ void BuffPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  _this->_impl_.sub_buff_list_id_.MergeFrom(from._impl_.sub_buff_list_id_);
   if (!from._internal_data().empty()) {
     _this->_internal_set_data(from._internal_data());
   }
@@ -1123,6 +1203,7 @@ void BuffPbComponent::InternalSwap(BuffPbComponent* PROTOBUF_RESTRICT other) {
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.sub_buff_list_id_.InternalSwap(&other->_impl_.sub_buff_list_id_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.data_, &other->_impl_.data_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.processed_caster_)
@@ -1135,7 +1216,7 @@ void BuffPbComponent::InternalSwap(BuffPbComponent* PROTOBUF_RESTRICT other) {
 ::google::protobuf::Metadata BuffPbComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[2]);
+                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[3]);
 }
 // ===================================================================
 
@@ -1429,7 +1510,7 @@ void DamageEventPbComponent::InternalSwap(DamageEventPbComponent* PROTOBUF_RESTR
 ::google::protobuf::Metadata DamageEventPbComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[3]);
+                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[4]);
 }
 // ===================================================================
 
@@ -1487,7 +1568,7 @@ PROTOBUF_NOINLINE void BuffNoDamageOrSkillHitInLastSecondsPbComp::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.last_time_ = 0u;
+  _impl_.last_time_ = ::uint64_t{0u};
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -1516,15 +1597,15 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> BuffNoDamageOrSkillHitInLastSecondsPbC
     ::_pbi::TcParser::GetTable<::BuffNoDamageOrSkillHitInLastSecondsPbComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 last_time = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_.last_time_), 63>(),
+    // uint64 last_time = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_.last_time_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_.last_time_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint32 last_time = 1;
+    // uint64 last_time = 1;
     {PROTOBUF_FIELD_OFFSET(BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_.last_time_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
@@ -1538,10 +1619,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> BuffNoDamageOrSkillHitInLastSecondsPbC
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint32 last_time = 1;
+  // uint64 last_time = 1;
   if (this->_internal_last_time() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
         1, this->_internal_last_time(), target);
   }
 
@@ -1562,9 +1643,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> BuffNoDamageOrSkillHitInLastSecondsPbC
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint32 last_time = 1;
+  // uint64 last_time = 1;
   if (this->_internal_last_time() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
         this->_internal_last_time());
   }
 
@@ -1606,7 +1687,7 @@ void BuffNoDamageOrSkillHitInLastSecondsPbComp::InternalSwap(BuffNoDamageOrSkill
 ::google::protobuf::Metadata BuffNoDamageOrSkillHitInLastSecondsPbComp::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[4]);
+                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[5]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

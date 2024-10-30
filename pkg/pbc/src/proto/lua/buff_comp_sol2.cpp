@@ -44,6 +44,19 @@ sol::property(&BuffPbComponent::processed_caster, &BuffPbComponent::set_processe
 [](BuffPbComponent& pb) ->decltype(auto){ return pb.();},
 "mutable_",
 [](BuffPbComponent& pb) ->decltype(auto){ return pb.mutable_();},
+"count_sub_buff_list_id",
+[](BuffPbComponent& pb, uint64_t key) ->decltype(auto){ return pb.sub_buff_list_id().count(key);},
+"insert_sub_buff_list_id",
+[](BuffPbComponent& pb, uint64_t key, bool value) ->decltype(auto){ return pb.mutable_sub_buff_list_id()->emplace(key, value).second;},
+"sub_buff_list_id",
+[](BuffPbComponent& pb, uint64_t key) ->decltype(auto){
+ auto it =  pb.mutable_sub_buff_list_id()->find(key);
+ if (it == pb.mutable_sub_buff_list_id()->end()){ return bool(); }
+ return it->second;},
+"sub_buff_list_id_size",
+&BuffPbComponent::sub_buff_list_id_size,
+"clear_sub_buff_list_id",
+&BuffPbComponent::clear_sub_buff_list_id,
 "DebugString",
 &BuffPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

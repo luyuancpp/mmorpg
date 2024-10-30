@@ -64,6 +64,8 @@ inline constexpr BuffTable::Impl_::Impl_(
         immunetag_{},
         dispeltag_{},
         intervaleffect_{},
+        subbuff_{},
+        _subbuff_cached_byte_size_{0},
         healthregeneration_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
@@ -79,6 +81,7 @@ inline constexpr BuffTable::Impl_::Impl_(
         intervalcount_{0u},
         movement_speed_boost_{0},
         movement_speed_reduction_{0},
+        nodamageorskillhitinlastseconds_{0},
         _cached_size_{0} {}
 
 template <typename>
@@ -182,6 +185,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.movement_speed_boost_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.movement_speed_reduction_),
         PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.healthregeneration_),
+        PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.subbuff_),
+        PROTOBUF_FIELD_OFFSET(::BuffTable, _impl_.nodamageorskillhitinlastseconds_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::BuffTabledData, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -199,7 +204,7 @@ static const ::_pbi::MigrationSchema
         {12, 22, -1, sizeof(::BuffTable_ImmunetagEntry_DoNotUse)},
         {24, 34, -1, sizeof(::BuffTable_DispeltagEntry_DoNotUse)},
         {36, -1, -1, sizeof(::BuffTable)},
-        {61, -1, -1, sizeof(::BuffTabledData)},
+        {63, -1, -1, sizeof(::BuffTabledData)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_BuffTable_TagEntry_DoNotUse_default_instance_._instance,
@@ -210,7 +215,7 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_buff_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\021buff_config.proto\"\313\004\n\tBuffTable\022\n\n\002id\030"
+    "\n\021buff_config.proto\"\205\005\n\tBuffTable\022\n\n\002id\030"
     "\001 \001(\r\022\020\n\010nocaster\030\002 \001(\r\022\020\n\010bufftype\030\003 \001("
     "\r\022 \n\003tag\030\004 \003(\0132\023.BuffTable.TagEntry\022,\n\ti"
     "mmunetag\030\005 \003(\0132\031.BuffTable.ImmunetagEntr"
@@ -221,18 +226,20 @@ const char descriptor_table_protodef_buff_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECT
     "\030\014 \001(\001\022\025\n\rintervalcount\030\r \001(\r\022\026\n\016interva"
     "leffect\030\016 \003(\001\022\034\n\024movement_speed_boost\030\017 "
     "\001(\001\022 \n\030movement_speed_reduction\030\020 \001(\001\022\032\n"
-    "\022healthregeneration\030\021 \001(\t\032*\n\010TagEntry\022\013\n"
-    "\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\0320\n\016Immunet"
-    "agEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\032"
-    "0\n\016DispeltagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030"
-    "\002 \001(\010:\0028\001\"*\n\016BuffTabledData\022\030\n\004data\030\001 \003("
-    "\0132\n.BuffTableB\tZ\007pb/gameb\006proto3"
+    "\022healthregeneration\030\021 \001(\t\022\017\n\007subbuff\030\022 \003"
+    "(\r\022\'\n\037nodamageorskillhitinlastseconds\030\023 "
+    "\001(\001\032*\n\010TagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 "
+    "\001(\010:\0028\001\0320\n\016ImmunetagEntry\022\013\n\003key\030\001 \001(\t\022\r"
+    "\n\005value\030\002 \001(\010:\0028\001\0320\n\016DispeltagEntry\022\013\n\003k"
+    "ey\030\001 \001(\t\022\r\n\005value\030\002 \001(\010:\0028\001\"*\n\016BuffTable"
+    "dData\022\030\n\004data\030\001 \003(\0132\n.BuffTableB\tZ\007pb/ga"
+    "meb\006proto3"
 };
 static ::absl::once_flag descriptor_table_buff_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_buff_5fconfig_2eproto = {
     false,
     false,
-    672,
+    730,
     descriptor_table_protodef_buff_5fconfig_2eproto,
     "buff_config.proto",
     &descriptor_table_buff_5fconfig_2eproto_once,
@@ -309,6 +316,8 @@ inline PROTOBUF_NDEBUG_INLINE BuffTable::Impl_::Impl_(
         immunetag_{visibility, arena, from.immunetag_},
         dispeltag_{visibility, arena, from.dispeltag_},
         intervaleffect_{visibility, arena, from.intervaleffect_},
+        subbuff_{visibility, arena, from.subbuff_},
+        _subbuff_cached_byte_size_{0},
         healthregeneration_(arena, from.healthregeneration_),
         _cached_size_{0} {}
 
@@ -325,9 +334,9 @@ BuffTable::BuffTable(
                offsetof(Impl_, id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, id_),
-           offsetof(Impl_, movement_speed_reduction_) -
+           offsetof(Impl_, nodamageorskillhitinlastseconds_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::movement_speed_reduction_));
+               sizeof(Impl_::nodamageorskillhitinlastseconds_));
 
   // @@protoc_insertion_point(copy_constructor:BuffTable)
 }
@@ -338,6 +347,8 @@ inline PROTOBUF_NDEBUG_INLINE BuffTable::Impl_::Impl_(
         immunetag_{visibility, arena},
         dispeltag_{visibility, arena},
         intervaleffect_{visibility, arena},
+        subbuff_{visibility, arena},
+        _subbuff_cached_byte_size_{0},
         healthregeneration_(arena),
         _cached_size_{0} {}
 
@@ -346,9 +357,9 @@ inline void BuffTable::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, movement_speed_reduction_) -
+           offsetof(Impl_, nodamageorskillhitinlastseconds_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::movement_speed_reduction_));
+               sizeof(Impl_::nodamageorskillhitinlastseconds_));
 }
 BuffTable::~BuffTable() {
   // @@protoc_insertion_point(destructor:BuffTable)
@@ -386,10 +397,11 @@ PROTOBUF_NOINLINE void BuffTable::Clear() {
   _impl_.immunetag_.Clear();
   _impl_.dispeltag_.Clear();
   _impl_.intervaleffect_.Clear();
+  _impl_.subbuff_.Clear();
   _impl_.healthregeneration_.ClearToEmpty();
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.movement_speed_reduction_) -
-      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.movement_speed_reduction_));
+      reinterpret_cast<char*>(&_impl_.nodamageorskillhitinlastseconds_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.nodamageorskillhitinlastseconds_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -401,15 +413,15 @@ const char* BuffTable::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<5, 17, 3, 73, 2> BuffTable::_table_ = {
+const ::_pbi::TcParseTable<5, 19, 3, 73, 2> BuffTable::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    17, 248,  // max_field_number, fast_idx_mask
+    19, 248,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294836224,  // skipmap
+    4294443008,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    17,  // num_field_entries
+    19,  // num_field_entries
     3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_BuffTable_default_instance_._instance,
@@ -464,8 +476,12 @@ const ::_pbi::TcParseTable<5, 17, 3, 73, 2> BuffTable::_table_ = {
     // string healthregeneration = 17;
     {::_pbi::TcParser::FastUS2,
      {394, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.healthregeneration_)}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // repeated uint32 subbuff = 18;
+    {::_pbi::TcParser::FastV32P2,
+     {402, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.subbuff_)}},
+    // double nodamageorskillhitinlastseconds = 19;
+    {::_pbi::TcParser::FastF64S2,
+     {409, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.nodamageorskillhitinlastseconds_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -532,6 +548,12 @@ const ::_pbi::TcParseTable<5, 17, 3, 73, 2> BuffTable::_table_ = {
     // string healthregeneration = 17;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.healthregeneration_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // repeated uint32 subbuff = 18;
+    {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.subbuff_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
+    // double nodamageorskillhitinlastseconds = 19;
+    {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.nodamageorskillhitinlastseconds_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
   }}, {{
     {::_pbi::TcParser::GetMapAuxInfo<
         decltype(BuffTable()._impl_.tag_)>(
@@ -760,6 +782,27 @@ const ::_pbi::TcParseTable<5, 17, 3, 73, 2> BuffTable::_table_ = {
     target = stream->WriteStringMaybeAliased(17, _s, target);
   }
 
+  // repeated uint32 subbuff = 18;
+  {
+    int byte_size = _impl_._subbuff_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteUInt32Packed(
+          18, _internal_subbuff(), byte_size, target);
+    }
+  }
+
+  // double nodamageorskillhitinlastseconds = 19;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_nodamageorskillhitinlastseconds = this->_internal_nodamageorskillhitinlastseconds();
+  ::uint64_t raw_nodamageorskillhitinlastseconds;
+  memcpy(&raw_nodamageorskillhitinlastseconds, &tmp_nodamageorskillhitinlastseconds, sizeof(tmp_nodamageorskillhitinlastseconds));
+  if (raw_nodamageorskillhitinlastseconds != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+        19, this->_internal_nodamageorskillhitinlastseconds(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -806,6 +849,19 @@ const ::_pbi::TcParseTable<5, 17, 3, 73, 2> BuffTable::_table_ = {
     std::size_t tag_size = data_size == 0
         ? 0
         : 1 + ::_pbi::WireFormatLite::Int32Size(
+                            static_cast<int32_t>(data_size))
+    ;
+    total_size += tag_size + data_size;
+  }
+  // repeated uint32 subbuff = 18;
+  {
+    std::size_t data_size = ::_pbi::WireFormatLite::UInt32Size(
+        this->_internal_subbuff())
+    ;
+    _impl_._subbuff_cached_byte_size_.Set(::_pbi::ToCachedSize(data_size));
+    std::size_t tag_size = data_size == 0
+        ? 0
+        : 2 + ::_pbi::WireFormatLite::Int32Size(
                             static_cast<int32_t>(data_size))
     ;
     total_size += tag_size + data_size;
@@ -904,6 +960,16 @@ const ::_pbi::TcParseTable<5, 17, 3, 73, 2> BuffTable::_table_ = {
     total_size += 10;
   }
 
+  // double nodamageorskillhitinlastseconds = 19;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_nodamageorskillhitinlastseconds = this->_internal_nodamageorskillhitinlastseconds();
+  ::uint64_t raw_nodamageorskillhitinlastseconds;
+  memcpy(&raw_nodamageorskillhitinlastseconds, &tmp_nodamageorskillhitinlastseconds, sizeof(tmp_nodamageorskillhitinlastseconds));
+  if (raw_nodamageorskillhitinlastseconds != 0) {
+    total_size += 10;
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -920,6 +986,7 @@ void BuffTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   _this->_impl_.immunetag_.MergeFrom(from._impl_.immunetag_);
   _this->_impl_.dispeltag_.MergeFrom(from._impl_.dispeltag_);
   _this->_internal_mutable_intervaleffect()->MergeFrom(from._internal_intervaleffect());
+  _this->_internal_mutable_subbuff()->MergeFrom(from._internal_subbuff());
   if (!from._internal_healthregeneration().empty()) {
     _this->_internal_set_healthregeneration(from._internal_healthregeneration());
   }
@@ -979,6 +1046,14 @@ void BuffTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   if (raw_movement_speed_reduction != 0) {
     _this->_impl_.movement_speed_reduction_ = from._impl_.movement_speed_reduction_;
   }
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_nodamageorskillhitinlastseconds = from._internal_nodamageorskillhitinlastseconds();
+  ::uint64_t raw_nodamageorskillhitinlastseconds;
+  memcpy(&raw_nodamageorskillhitinlastseconds, &tmp_nodamageorskillhitinlastseconds, sizeof(tmp_nodamageorskillhitinlastseconds));
+  if (raw_nodamageorskillhitinlastseconds != 0) {
+    _this->_impl_.nodamageorskillhitinlastseconds_ = from._impl_.nodamageorskillhitinlastseconds_;
+  }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -1002,10 +1077,11 @@ void BuffTable::InternalSwap(BuffTable* PROTOBUF_RESTRICT other) {
   _impl_.immunetag_.InternalSwap(&other->_impl_.immunetag_);
   _impl_.dispeltag_.InternalSwap(&other->_impl_.dispeltag_);
   _impl_.intervaleffect_.InternalSwap(&other->_impl_.intervaleffect_);
+  _impl_.subbuff_.InternalSwap(&other->_impl_.subbuff_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.healthregeneration_, &other->_impl_.healthregeneration_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.movement_speed_reduction_)
-      + sizeof(BuffTable::_impl_.movement_speed_reduction_)
+      PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.nodamageorskillhitinlastseconds_)
+      + sizeof(BuffTable::_impl_.nodamageorskillhitinlastseconds_)
       - PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));

@@ -291,6 +291,7 @@ class BuffTable final : public ::google::protobuf::Message
     kImmunetagFieldNumber = 5,
     kDispeltagFieldNumber = 6,
     kIntervaleffectFieldNumber = 14,
+    kSubbuffFieldNumber = 18,
     kHealthregenerationFieldNumber = 17,
     kIdFieldNumber = 1,
     kNocasterFieldNumber = 2,
@@ -304,6 +305,7 @@ class BuffTable final : public ::google::protobuf::Message
     kIntervalcountFieldNumber = 13,
     kMovementSpeedBoostFieldNumber = 15,
     kMovementSpeedReductionFieldNumber = 16,
+    kNodamageorskillhitinlastsecondsFieldNumber = 19,
   };
   // map<string, bool> tag = 4;
   int tag_size() const;
@@ -366,6 +368,24 @@ class BuffTable final : public ::google::protobuf::Message
   private:
   const ::google::protobuf::RepeatedField<double>& _internal_intervaleffect() const;
   ::google::protobuf::RepeatedField<double>* _internal_mutable_intervaleffect();
+
+  public:
+  // repeated uint32 subbuff = 18;
+  int subbuff_size() const;
+  private:
+  int _internal_subbuff_size() const;
+
+  public:
+  void clear_subbuff() ;
+  ::uint32_t subbuff(int index) const;
+  void set_subbuff(int index, ::uint32_t value);
+  void add_subbuff(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& subbuff() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* mutable_subbuff();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_subbuff() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_subbuff();
 
   public:
   // string healthregeneration = 17;
@@ -504,12 +524,22 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_movement_speed_reduction(double value);
 
   public:
+  // double nodamageorskillhitinlastseconds = 19;
+  void clear_nodamageorskillhitinlastseconds() ;
+  double nodamageorskillhitinlastseconds() const;
+  void set_nodamageorskillhitinlastseconds(double value);
+
+  private:
+  double _internal_nodamageorskillhitinlastseconds() const;
+  void _internal_set_nodamageorskillhitinlastseconds(double value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BuffTable)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 17, 3,
+      5, 19, 3,
       73, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -538,6 +568,8 @@ class BuffTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
         dispeltag_;
     ::google::protobuf::RepeatedField<double> intervaleffect_;
+    ::google::protobuf::RepeatedField<::uint32_t> subbuff_;
+    mutable ::google::protobuf::internal::CachedSize _subbuff_cached_byte_size_;
     ::google::protobuf::internal::ArenaStringPtr healthregeneration_;
     ::uint32_t id_;
     ::uint32_t nocaster_;
@@ -551,6 +583,7 @@ class BuffTable final : public ::google::protobuf::Message
     ::uint32_t intervalcount_;
     double movement_speed_boost_;
     double movement_speed_reduction_;
+    double nodamageorskillhitinlastseconds_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1195,6 +1228,73 @@ inline void BuffTable::set_allocated_healthregeneration(std::string* value) {
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:BuffTable.healthregeneration)
+}
+
+// repeated uint32 subbuff = 18;
+inline int BuffTable::_internal_subbuff_size() const {
+  return _internal_subbuff().size();
+}
+inline int BuffTable::subbuff_size() const {
+  return _internal_subbuff_size();
+}
+inline void BuffTable::clear_subbuff() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.subbuff_.Clear();
+}
+inline ::uint32_t BuffTable::subbuff(int index) const {
+  // @@protoc_insertion_point(field_get:BuffTable.subbuff)
+  return _internal_subbuff().Get(index);
+}
+inline void BuffTable::set_subbuff(int index, ::uint32_t value) {
+  _internal_mutable_subbuff()->Set(index, value);
+  // @@protoc_insertion_point(field_set:BuffTable.subbuff)
+}
+inline void BuffTable::add_subbuff(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_subbuff()->Add(value);
+  // @@protoc_insertion_point(field_add:BuffTable.subbuff)
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>& BuffTable::subbuff() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:BuffTable.subbuff)
+  return _internal_subbuff();
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* BuffTable::mutable_subbuff()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:BuffTable.subbuff)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _internal_mutable_subbuff();
+}
+inline const ::google::protobuf::RepeatedField<::uint32_t>&
+BuffTable::_internal_subbuff() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.subbuff_;
+}
+inline ::google::protobuf::RepeatedField<::uint32_t>* BuffTable::_internal_mutable_subbuff() {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return &_impl_.subbuff_;
+}
+
+// double nodamageorskillhitinlastseconds = 19;
+inline void BuffTable::clear_nodamageorskillhitinlastseconds() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.nodamageorskillhitinlastseconds_ = 0;
+}
+inline double BuffTable::nodamageorskillhitinlastseconds() const {
+  // @@protoc_insertion_point(field_get:BuffTable.nodamageorskillhitinlastseconds)
+  return _internal_nodamageorskillhitinlastseconds();
+}
+inline void BuffTable::set_nodamageorskillhitinlastseconds(double value) {
+  _internal_set_nodamageorskillhitinlastseconds(value);
+  // @@protoc_insertion_point(field_set:BuffTable.nodamageorskillhitinlastseconds)
+}
+inline double BuffTable::_internal_nodamageorskillhitinlastseconds() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.nodamageorskillhitinlastseconds_;
+}
+inline void BuffTable::_internal_set_nodamageorskillhitinlastseconds(double value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.nodamageorskillhitinlastseconds_ = value;
 }
 
 // -------------------------------------------------------------------
