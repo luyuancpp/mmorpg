@@ -10,7 +10,6 @@
 #include "motion_modifier_util.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
-#include "macros/return_define.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
@@ -18,10 +17,10 @@
 
 uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 {
-    uint64_t newBuffId;
+    uint64_t newBuffId = UINT64_MAX;
     do {
         newBuffId = tlsGame.buffIdGenerator.Generate();
-    } while (buffList.contains(newBuffId));
+    } while (buffList.contains(newBuffId) || newBuffId == UINT64_MAX);
     return newBuffId;
 }
 
@@ -67,20 +66,22 @@ std::shared_ptr<DerivedBuffDataType> GetBuffDataPtr(BuffComp& buffComp) {
     return std::dynamic_pointer_cast<DerivedBuffDataType>(buffComp.dataPbPtr);
 }
 
-uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
+std::tuple<uint32_t, uint64_t>  BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (!buffTable) {
-        return result;
+        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
     }
 
     result = CanCreateBuff(parent, buffTableId);
-    CHECK_RETURN_IF_NOT_OK(result);
+    if(result != kOK){
+        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
+    }
 
     auto& buffList = tls.registry.get<BuffListComp>(parent);
 
     if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
-        return kOK;
+        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
     }
 
     BuffComp newBuff;
@@ -88,7 +89,7 @@ uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buf
     newBuff.buffPb.set_processed_caster(buffTable->nocaster() ? entt::null : abilityContext->caster());
 
     if (!OnBuffAwake(parent, buffTableId)) {
-        return kOK;
+        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
     }
 
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
@@ -108,7 +109,7 @@ uint32_t BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buf
         OnBuffExpire(parent, newBuffId);
     }
 
-    return kOK;
+    return std::make_tuple<uint32_t, uint64_t>(kOK, std::move(newBuffId));
 }
 
 void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
