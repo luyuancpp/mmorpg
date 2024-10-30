@@ -163,7 +163,7 @@ bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, con
     return false;
 }
 
-bool BuffUtil::OnBuffAwake(entt::entity parent, uint32_t buffTableId){
+bool BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId){
     auto [newBuffTable, result] = GetBuffTable(buffTableId);
     if (!newBuffTable) {
         return result;

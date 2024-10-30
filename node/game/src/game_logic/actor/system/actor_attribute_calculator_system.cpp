@@ -12,7 +12,7 @@ void ActorAttributeCalculatorSystem::Update(double delta)
     {
         auto& attributeBits = actorAttributeBitSetComp.attributeBits;
         for (const auto& [attributeIndex, updateFunction] : kAttributeConfigs) {
-            if (attributeBits.test(attributeIndex)) {
+            if (updateFunction && attributeBits.test(attributeIndex)) {
                 updateFunction(entity);
                 attributeBits.reset(attributeIndex);
             }
