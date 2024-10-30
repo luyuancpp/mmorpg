@@ -15,7 +15,7 @@ void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffCo
         return;
     }
 
-    auto& periodicBuff = buffComp.periodicBuffPbComponent;
+    auto& periodicBuff = *buffComp.buffPb.mutable_periodic();
     double periodicTimer = periodicBuff.periodic_timer() + delta;
 
     for (uint32_t i = 0; i < 5 && CanApplyMoreTicks(periodicBuff, buffTable); ++i ) {
