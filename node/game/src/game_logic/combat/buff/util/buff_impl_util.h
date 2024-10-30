@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "buff_config.h"
+#include "common_error_tip.pb.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "thread_local/storage.h"
@@ -16,6 +17,8 @@ public:
     }
 
     static void UpdateLastDamageOrSkillHitTime(const entt::entity casterEntity, const entt::entity targetEntity){
+        UInt64Set removeBuffIdList;
+        
         for (auto& buffComp : tls.registry.get<BuffListComp>(targetEntity) | std::views::values){
             auto [buffTable, result] = GetBuffTable(buffComp.buffPb.buff_table_id());
             if (buffTable == nullptr) {
@@ -28,13 +31,20 @@ public:
                     if (nullptr == dataPtr){
                         continue;
                     }
-                
+
+                    removeBuffIdList.emplace(buffComp.buffPb.buff_id());
+                    
                     dataPtr->set_last_time(TimeUtil::NowMilliseconds());
             }
                 break;
             default:
                 break;
             }
+        }
+
+        for (auto& removeBuffId : removeBuffIdList)
+        {
+            BuffUtil::RemoveBuff(targetEntity, removeBuffId);
         }
     }
 
@@ -56,7 +66,12 @@ public:
         }
 
         for (auto& subBuff : buffTable->subbuff()){
-            BuffUtil::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
+            auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
+            if (result != kOK || newBuffId == UINT64_MAX)
+            {
+                continue;
+            }
+            buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
         }
         
         return true;

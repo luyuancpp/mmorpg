@@ -44,7 +44,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the AddOrUpdateBuff method
-	auto [result, buffId] = BuffUtil::AddOrUpdateBuff(parent, buffTableId, abilityContext);
+	auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, buffTableId, abilityContext);
 
 	// Verify the result
 	EXPECT_EQ(result, kOK);

@@ -61,11 +61,6 @@ BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     return  nullptr;
 }
 
-template<class DerivedBuffDataType>
-std::shared_ptr<DerivedBuffDataType> GetBuffDataPtr(BuffComp& buffComp) {
-    return std::dynamic_pointer_cast<DerivedBuffDataType>(buffComp.dataPbPtr);
-}
-
 std::tuple<uint32_t, uint64_t>  BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
@@ -110,6 +105,10 @@ std::tuple<uint32_t, uint64_t>  BuffUtil::AddOrUpdateBuff(const entt::entity par
     }
 
     return std::make_tuple<uint32_t, uint64_t>(kOK, std::move(newBuffId));
+}
+
+void BuffUtil::RemoveBuff(const entt::entity parent, const uint64_t buffId){
+    OnBuffExpire(parent, buffId);
 }
 
 void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
@@ -250,22 +249,6 @@ void BuffUtil::OnSkillExecuted(SkillExecutedEvent& event)
 {
     // Implement event handling logic
 }
-
-void BuffUtil::ApplyMotion()
-{
-
-}
-
-void BuffUtil::OnMotionUpdate()
-{
-
-}
-
-void BuffUtil::OnMotionInterrupt()
-{
-
-}
-
 
 void BuffUtil::OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent)
 {
