@@ -22,26 +22,26 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr DerivedAttributesPBComponent::Impl_::Impl_(
+inline constexpr DerivedAttributesPbComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : max_health_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR DerivedAttributesPBComponent::DerivedAttributesPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR DerivedAttributesPbComponent::DerivedAttributesPbComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct DerivedAttributesPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR DerivedAttributesPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~DerivedAttributesPBComponentDefaultTypeInternal() {}
+struct DerivedAttributesPbComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR DerivedAttributesPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~DerivedAttributesPbComponentDefaultTypeInternal() {}
   union {
-    DerivedAttributesPBComponent _instance;
+    DerivedAttributesPbComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DerivedAttributesPBComponentDefaultTypeInternal _DerivedAttributesPBComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DerivedAttributesPbComponentDefaultTypeInternal _DerivedAttributesPbComponent_default_instance_;
 
-inline constexpr CalculatedAttributesPBComponent::Impl_::Impl_(
+inline constexpr CalculatedAttributesPbComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : attack_power_{::uint64_t{0u}},
         defense_power_{::uint64_t{0u}},
@@ -49,18 +49,18 @@ inline constexpr CalculatedAttributesPBComponent::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CalculatedAttributesPBComponent::CalculatedAttributesPBComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CalculatedAttributesPbComponent::CalculatedAttributesPbComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct CalculatedAttributesPBComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CalculatedAttributesPBComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CalculatedAttributesPBComponentDefaultTypeInternal() {}
+struct CalculatedAttributesPbComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CalculatedAttributesPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CalculatedAttributesPbComponentDefaultTypeInternal() {}
   union {
-    CalculatedAttributesPBComponent _instance;
+    CalculatedAttributesPbComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CalculatedAttributesPBComponentDefaultTypeInternal _CalculatedAttributesPBComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CalculatedAttributesPbComponentDefaultTypeInternal _CalculatedAttributesPbComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto[2];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto = nullptr;
@@ -70,43 +70,43 @@ const ::uint32_t
     TableStruct_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPBComponent, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPbComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPBComponent, _impl_.attack_power_),
-        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPBComponent, _impl_.defense_power_),
-        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPBComponent, _impl_.isdead_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPbComponent, _impl_.attack_power_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPbComponent, _impl_.defense_power_),
+        PROTOBUF_FIELD_OFFSET(::CalculatedAttributesPbComponent, _impl_.isdead_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::DerivedAttributesPBComponent, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::DerivedAttributesPbComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::DerivedAttributesPBComponent, _impl_.max_health_),
+        PROTOBUF_FIELD_OFFSET(::DerivedAttributesPbComponent, _impl_.max_health_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::CalculatedAttributesPBComponent)},
-        {11, -1, -1, sizeof(::DerivedAttributesPBComponent)},
+        {0, -1, -1, sizeof(::CalculatedAttributesPbComponent)},
+        {11, -1, -1, sizeof(::DerivedAttributesPbComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_CalculatedAttributesPBComponent_default_instance_._instance,
-    &::_DerivedAttributesPBComponent_default_instance_._instance,
+    &::_CalculatedAttributesPbComponent_default_instance_._instance,
+    &::_DerivedAttributesPbComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\'logic/component/actor_status_comp.prot"
     "o\032\021common/comp.proto\"^\n\037CalculatedAttrib"
-    "utesPBComponent\022\024\n\014attack_power\030\001 \001(\004\022\025\n"
+    "utesPbComponent\022\024\n\014attack_power\030\001 \001(\004\022\025\n"
     "\rdefense_power\030\002 \001(\004\022\016\n\006isDead\030\003 \001(\010\"2\n\034"
-    "DerivedAttributesPBComponent\022\022\n\nmax_heal"
+    "DerivedAttributesPbComponent\022\022\n\nmax_heal"
     "th\030\001 \001(\004B\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto_deps[1] =
@@ -148,26 +148,26 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2f
 }
 // ===================================================================
 
-class CalculatedAttributesPBComponent::_Internal {
+class CalculatedAttributesPbComponent::_Internal {
  public:
 };
 
-CalculatedAttributesPBComponent::CalculatedAttributesPBComponent(::google::protobuf::Arena* arena)
+CalculatedAttributesPbComponent::CalculatedAttributesPbComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CalculatedAttributesPBComponent)
+  // @@protoc_insertion_point(arena_constructor:CalculatedAttributesPbComponent)
 }
-CalculatedAttributesPBComponent::CalculatedAttributesPBComponent(
-    ::google::protobuf::Arena* arena, const CalculatedAttributesPBComponent& from)
-    : CalculatedAttributesPBComponent(arena) {
+CalculatedAttributesPbComponent::CalculatedAttributesPbComponent(
+    ::google::protobuf::Arena* arena, const CalculatedAttributesPbComponent& from)
+    : CalculatedAttributesPbComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE CalculatedAttributesPBComponent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE CalculatedAttributesPbComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void CalculatedAttributesPBComponent::SharedCtor(::_pb::Arena* arena) {
+inline void CalculatedAttributesPbComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, attack_power_),
@@ -176,32 +176,32 @@ inline void CalculatedAttributesPBComponent::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, attack_power_) +
                sizeof(Impl_::isdead_));
 }
-CalculatedAttributesPBComponent::~CalculatedAttributesPBComponent() {
-  // @@protoc_insertion_point(destructor:CalculatedAttributesPBComponent)
+CalculatedAttributesPbComponent::~CalculatedAttributesPbComponent() {
+  // @@protoc_insertion_point(destructor:CalculatedAttributesPbComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void CalculatedAttributesPBComponent::SharedDtor() {
+inline void CalculatedAttributesPbComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-CalculatedAttributesPBComponent::GetClassData() const {
+CalculatedAttributesPbComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_._cached_size_),
               false,
           },
-          &CalculatedAttributesPBComponent::MergeImpl,
-          &CalculatedAttributesPBComponent::kDescriptorMethods,
+          &CalculatedAttributesPbComponent::MergeImpl,
+          &CalculatedAttributesPbComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void CalculatedAttributesPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:CalculatedAttributesPBComponent)
+PROTOBUF_NOINLINE void CalculatedAttributesPbComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:CalculatedAttributesPbComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -213,7 +213,7 @@ PROTOBUF_NOINLINE void CalculatedAttributesPBComponent::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* CalculatedAttributesPBComponent::_InternalParse(
+const char* CalculatedAttributesPbComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -221,7 +221,7 @@ const char* CalculatedAttributesPBComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2> CalculatedAttributesPBComponent::_table_ = {
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2> CalculatedAttributesPbComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -232,33 +232,33 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> CalculatedAttributesPBComponent::_tabl
     3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_CalculatedAttributesPBComponent_default_instance_._instance,
+    &_CalculatedAttributesPbComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CalculatedAttributesPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CalculatedAttributesPbComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 attack_power = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesPBComponent, _impl_.attack_power_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.attack_power_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesPbComponent, _impl_.attack_power_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.attack_power_)}},
     // uint64 defense_power = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesPBComponent, _impl_.defense_power_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.defense_power_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesPbComponent, _impl_.defense_power_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.defense_power_)}},
     // bool isDead = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CalculatedAttributesPBComponent, _impl_.isdead_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.isdead_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CalculatedAttributesPbComponent, _impl_.isdead_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.isdead_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 attack_power = 1;
-    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.attack_power_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.attack_power_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 defense_power = 2;
-    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.defense_power_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.defense_power_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // bool isDead = 3;
-    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.isdead_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.isdead_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
   }},
   // no aux_entries
@@ -266,10 +266,10 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> CalculatedAttributesPBComponent::_tabl
   }},
 };
 
-::uint8_t* CalculatedAttributesPBComponent::_InternalSerialize(
+::uint8_t* CalculatedAttributesPbComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:CalculatedAttributesPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:CalculatedAttributesPbComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -299,12 +299,12 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> CalculatedAttributesPBComponent::_tabl
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:CalculatedAttributesPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:CalculatedAttributesPbComponent)
   return target;
 }
 
-::size_t CalculatedAttributesPBComponent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:CalculatedAttributesPBComponent)
+::size_t CalculatedAttributesPbComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:CalculatedAttributesPbComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -332,10 +332,10 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> CalculatedAttributesPBComponent::_tabl
 }
 
 
-void CalculatedAttributesPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CalculatedAttributesPBComponent*>(&to_msg);
-  auto& from = static_cast<const CalculatedAttributesPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CalculatedAttributesPBComponent)
+void CalculatedAttributesPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CalculatedAttributesPbComponent*>(&to_msg);
+  auto& from = static_cast<const CalculatedAttributesPbComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CalculatedAttributesPbComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -352,84 +352,84 @@ void CalculatedAttributesPBComponent::MergeImpl(::google::protobuf::MessageLite&
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CalculatedAttributesPBComponent::CopyFrom(const CalculatedAttributesPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CalculatedAttributesPBComponent)
+void CalculatedAttributesPbComponent::CopyFrom(const CalculatedAttributesPbComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CalculatedAttributesPbComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool CalculatedAttributesPBComponent::IsInitialized() const {
+PROTOBUF_NOINLINE bool CalculatedAttributesPbComponent::IsInitialized() const {
   return true;
 }
 
-void CalculatedAttributesPBComponent::InternalSwap(CalculatedAttributesPBComponent* PROTOBUF_RESTRICT other) {
+void CalculatedAttributesPbComponent::InternalSwap(CalculatedAttributesPbComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.isdead_)
-      + sizeof(CalculatedAttributesPBComponent::_impl_.isdead_)
-      - PROTOBUF_FIELD_OFFSET(CalculatedAttributesPBComponent, _impl_.attack_power_)>(
+      PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.isdead_)
+      + sizeof(CalculatedAttributesPbComponent::_impl_.isdead_)
+      - PROTOBUF_FIELD_OFFSET(CalculatedAttributesPbComponent, _impl_.attack_power_)>(
           reinterpret_cast<char*>(&_impl_.attack_power_),
           reinterpret_cast<char*>(&other->_impl_.attack_power_));
 }
 
-::google::protobuf::Metadata CalculatedAttributesPBComponent::GetMetadata() const {
+::google::protobuf::Metadata CalculatedAttributesPbComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto[0]);
 }
 // ===================================================================
 
-class DerivedAttributesPBComponent::_Internal {
+class DerivedAttributesPbComponent::_Internal {
  public:
 };
 
-DerivedAttributesPBComponent::DerivedAttributesPBComponent(::google::protobuf::Arena* arena)
+DerivedAttributesPbComponent::DerivedAttributesPbComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:DerivedAttributesPBComponent)
+  // @@protoc_insertion_point(arena_constructor:DerivedAttributesPbComponent)
 }
-DerivedAttributesPBComponent::DerivedAttributesPBComponent(
-    ::google::protobuf::Arena* arena, const DerivedAttributesPBComponent& from)
-    : DerivedAttributesPBComponent(arena) {
+DerivedAttributesPbComponent::DerivedAttributesPbComponent(
+    ::google::protobuf::Arena* arena, const DerivedAttributesPbComponent& from)
+    : DerivedAttributesPbComponent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE DerivedAttributesPBComponent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE DerivedAttributesPbComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void DerivedAttributesPBComponent::SharedCtor(::_pb::Arena* arena) {
+inline void DerivedAttributesPbComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   _impl_.max_health_ = {};
 }
-DerivedAttributesPBComponent::~DerivedAttributesPBComponent() {
-  // @@protoc_insertion_point(destructor:DerivedAttributesPBComponent)
+DerivedAttributesPbComponent::~DerivedAttributesPbComponent() {
+  // @@protoc_insertion_point(destructor:DerivedAttributesPbComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void DerivedAttributesPBComponent::SharedDtor() {
+inline void DerivedAttributesPbComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-DerivedAttributesPBComponent::GetClassData() const {
+DerivedAttributesPbComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(DerivedAttributesPBComponent, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(DerivedAttributesPbComponent, _impl_._cached_size_),
               false,
           },
-          &DerivedAttributesPBComponent::MergeImpl,
-          &DerivedAttributesPBComponent::kDescriptorMethods,
+          &DerivedAttributesPbComponent::MergeImpl,
+          &DerivedAttributesPbComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void DerivedAttributesPBComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:DerivedAttributesPBComponent)
+PROTOBUF_NOINLINE void DerivedAttributesPbComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:DerivedAttributesPbComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -439,7 +439,7 @@ PROTOBUF_NOINLINE void DerivedAttributesPBComponent::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* DerivedAttributesPBComponent::_InternalParse(
+const char* DerivedAttributesPbComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -447,7 +447,7 @@ const char* DerivedAttributesPBComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> DerivedAttributesPBComponent::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> DerivedAttributesPbComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -458,20 +458,20 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> DerivedAttributesPBComponent::_table_ 
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_DerivedAttributesPBComponent_default_instance_._instance,
+    &_DerivedAttributesPbComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::DerivedAttributesPBComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::DerivedAttributesPbComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 max_health = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DerivedAttributesPBComponent, _impl_.max_health_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(DerivedAttributesPBComponent, _impl_.max_health_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DerivedAttributesPbComponent, _impl_.max_health_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(DerivedAttributesPbComponent, _impl_.max_health_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 max_health = 1;
-    {PROTOBUF_FIELD_OFFSET(DerivedAttributesPBComponent, _impl_.max_health_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(DerivedAttributesPbComponent, _impl_.max_health_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -479,10 +479,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> DerivedAttributesPBComponent::_table_ 
   }},
 };
 
-::uint8_t* DerivedAttributesPBComponent::_InternalSerialize(
+::uint8_t* DerivedAttributesPbComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:DerivedAttributesPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:DerivedAttributesPbComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -498,12 +498,12 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> DerivedAttributesPBComponent::_table_ 
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:DerivedAttributesPBComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:DerivedAttributesPbComponent)
   return target;
 }
 
-::size_t DerivedAttributesPBComponent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:DerivedAttributesPBComponent)
+::size_t DerivedAttributesPbComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:DerivedAttributesPbComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -520,10 +520,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> DerivedAttributesPBComponent::_table_ 
 }
 
 
-void DerivedAttributesPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<DerivedAttributesPBComponent*>(&to_msg);
-  auto& from = static_cast<const DerivedAttributesPBComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:DerivedAttributesPBComponent)
+void DerivedAttributesPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<DerivedAttributesPbComponent*>(&to_msg);
+  auto& from = static_cast<const DerivedAttributesPbComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:DerivedAttributesPbComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -534,24 +534,24 @@ void DerivedAttributesPBComponent::MergeImpl(::google::protobuf::MessageLite& to
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void DerivedAttributesPBComponent::CopyFrom(const DerivedAttributesPBComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:DerivedAttributesPBComponent)
+void DerivedAttributesPbComponent::CopyFrom(const DerivedAttributesPbComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:DerivedAttributesPbComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool DerivedAttributesPBComponent::IsInitialized() const {
+PROTOBUF_NOINLINE bool DerivedAttributesPbComponent::IsInitialized() const {
   return true;
 }
 
-void DerivedAttributesPBComponent::InternalSwap(DerivedAttributesPBComponent* PROTOBUF_RESTRICT other) {
+void DerivedAttributesPbComponent::InternalSwap(DerivedAttributesPbComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
         swap(_impl_.max_health_, other->_impl_.max_health_);
 }
 
-::google::protobuf::Metadata DerivedAttributesPBComponent::GetMetadata() const {
+::google::protobuf::Metadata DerivedAttributesPbComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto[1]);

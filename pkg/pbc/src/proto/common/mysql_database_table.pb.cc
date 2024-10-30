@@ -237,19 +237,19 @@ const char descriptor_table_protodef_common_2fmysql_5fdatabase_5ftable_2eproto[]
     "account\030\001 \001(\t:\013\222\265\030\007account\"{\n\026player_cen"
     "tre_database\022\021\n\tplayer_id\030\001 \001(\004\0222\n\nscene"
     "_info\030\002 \001(\0132\036.PlayerSceneContextPBCompon"
-    "ent:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"\352\002\n\017play"
+    "ent:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"\354\002\n\017play"
     "er_database\022\021\n\tplayer_id\030\001 \001(\004\022\035\n\ttransf"
     "orm\030\002 \001(\0132\n.Transform\0225\n\023uint64_pb_compo"
     "nent\030\003 \001(\0132\030.PlayerUint64PBComponent\022/\n\n"
     "skill_list\030\004 \001(\0132\033.PlayerSkillListPBComp"
     "onent\0225\n\023uint32_pb_component\030\005 \001(\0132\030.Pla"
-    "yerUint32PBComponent\022@\n\034derived_attribut"
-    "es_component\030\006 \001(\0132\032.BaseAttributesPBCom"
-    "ponent\022(\n\017level_component\030\007 \001(\0132\017.LevelC"
-    "omponent:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"B\n\021"
-    "player_database_1\022\021\n\tplayer_id\030\001 \001(\004:\032\222\265"
-    "\030\tplayer_id\262\265\030\tplayer_idB\tZ\007pb/gameb\006pro"
-    "to3"
+    "yerUint32PbComponent\022@\n\034derived_attribut"
+    "es_component\030\006 \001(\0132\032.BaseAttributesPbCom"
+    "ponent\022*\n\017level_component\030\007 \001(\0132\021.LevelP"
+    "bComponent:\032\222\265\030\tplayer_id\262\265\030\tplayer_id\"B"
+    "\n\021player_database_1\022\021\n\tplayer_id\030\001 \001(\004:\032"
+    "\222\265\030\tplayer_id\262\265\030\tplayer_idB\tZ\007pb/gameb\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_deps[7] =
     {
@@ -265,7 +265,7 @@ static ::absl::once_flag descriptor_table_common_2fmysql_5fdatabase_5ftable_2epr
 const ::_pbi::DescriptorTable descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    1003,
+    1005,
     descriptor_table_protodef_common_2fmysql_5fdatabase_5ftable_2eproto,
     "common/mysql_database_table.proto",
     &descriptor_table_common_2fmysql_5fdatabase_5ftable_2eproto_once,
@@ -1095,13 +1095,13 @@ player_database::player_database(
   _impl_.skill_list_ = (cached_has_bits & 0x00000004u) ? ::google::protobuf::Message::CopyConstruct<::PlayerSkillListPBComponent>(
                               arena, *from._impl_.skill_list_)
                         : nullptr;
-  _impl_.uint32_pb_component_ = (cached_has_bits & 0x00000008u) ? ::google::protobuf::Message::CopyConstruct<::PlayerUint32PBComponent>(
+  _impl_.uint32_pb_component_ = (cached_has_bits & 0x00000008u) ? ::google::protobuf::Message::CopyConstruct<::PlayerUint32PbComponent>(
                               arena, *from._impl_.uint32_pb_component_)
                         : nullptr;
-  _impl_.derived_attributes_component_ = (cached_has_bits & 0x00000010u) ? ::google::protobuf::Message::CopyConstruct<::BaseAttributesPBComponent>(
+  _impl_.derived_attributes_component_ = (cached_has_bits & 0x00000010u) ? ::google::protobuf::Message::CopyConstruct<::BaseAttributesPbComponent>(
                               arena, *from._impl_.derived_attributes_component_)
                         : nullptr;
-  _impl_.level_component_ = (cached_has_bits & 0x00000020u) ? ::google::protobuf::Message::CopyConstruct<::LevelComponent>(
+  _impl_.level_component_ = (cached_has_bits & 0x00000020u) ? ::google::protobuf::Message::CopyConstruct<::LevelPbComponent>(
                               arena, *from._impl_.level_component_)
                         : nullptr;
   _impl_.player_id_ = from._impl_.player_id_;
@@ -1229,13 +1229,13 @@ const ::_pbi::TcParseTable<3, 7, 6, 0, 2> player_database::_table_ = {
     // .PlayerSkillListPBComponent skill_list = 4;
     {::_pbi::TcParser::FastMtS1,
      {34, 2, 2, PROTOBUF_FIELD_OFFSET(player_database, _impl_.skill_list_)}},
-    // .PlayerUint32PBComponent uint32_pb_component = 5;
+    // .PlayerUint32PbComponent uint32_pb_component = 5;
     {::_pbi::TcParser::FastMtS1,
      {42, 3, 3, PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint32_pb_component_)}},
-    // .BaseAttributesPBComponent derived_attributes_component = 6;
+    // .BaseAttributesPbComponent derived_attributes_component = 6;
     {::_pbi::TcParser::FastMtS1,
      {50, 4, 4, PROTOBUF_FIELD_OFFSET(player_database, _impl_.derived_attributes_component_)}},
-    // .LevelComponent level_component = 7;
+    // .LevelPbComponent level_component = 7;
     {::_pbi::TcParser::FastMtS1,
      {58, 5, 5, PROTOBUF_FIELD_OFFSET(player_database, _impl_.level_component_)}},
   }}, {{
@@ -1253,22 +1253,22 @@ const ::_pbi::TcParseTable<3, 7, 6, 0, 2> player_database::_table_ = {
     // .PlayerSkillListPBComponent skill_list = 4;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.skill_list_), _Internal::kHasBitsOffset + 2, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .PlayerUint32PBComponent uint32_pb_component = 5;
+    // .PlayerUint32PbComponent uint32_pb_component = 5;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.uint32_pb_component_), _Internal::kHasBitsOffset + 3, 3,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .BaseAttributesPBComponent derived_attributes_component = 6;
+    // .BaseAttributesPbComponent derived_attributes_component = 6;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.derived_attributes_component_), _Internal::kHasBitsOffset + 4, 4,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .LevelComponent level_component = 7;
+    // .LevelPbComponent level_component = 7;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.level_component_), _Internal::kHasBitsOffset + 5, 5,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::Transform>()},
     {::_pbi::TcParser::GetTable<::PlayerUint64PBComponent>()},
     {::_pbi::TcParser::GetTable<::PlayerSkillListPBComponent>()},
-    {::_pbi::TcParser::GetTable<::PlayerUint32PBComponent>()},
-    {::_pbi::TcParser::GetTable<::BaseAttributesPBComponent>()},
-    {::_pbi::TcParser::GetTable<::LevelComponent>()},
+    {::_pbi::TcParser::GetTable<::PlayerUint32PbComponent>()},
+    {::_pbi::TcParser::GetTable<::BaseAttributesPbComponent>()},
+    {::_pbi::TcParser::GetTable<::LevelPbComponent>()},
   }}, {{
   }},
 };
@@ -1306,19 +1306,19 @@ const ::_pbi::TcParseTable<3, 7, 6, 0, 2> player_database::_table_ = {
         4, *_impl_.skill_list_, _impl_.skill_list_->GetCachedSize(), target, stream);
   }
 
-  // .PlayerUint32PBComponent uint32_pb_component = 5;
+  // .PlayerUint32PbComponent uint32_pb_component = 5;
   if (cached_has_bits & 0x00000008u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         5, *_impl_.uint32_pb_component_, _impl_.uint32_pb_component_->GetCachedSize(), target, stream);
   }
 
-  // .BaseAttributesPBComponent derived_attributes_component = 6;
+  // .BaseAttributesPbComponent derived_attributes_component = 6;
   if (cached_has_bits & 0x00000010u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         6, *_impl_.derived_attributes_component_, _impl_.derived_attributes_component_->GetCachedSize(), target, stream);
   }
 
-  // .LevelComponent level_component = 7;
+  // .LevelPbComponent level_component = 7;
   if (cached_has_bits & 0x00000020u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         7, *_impl_.level_component_, _impl_.level_component_->GetCachedSize(), target, stream);
@@ -1361,19 +1361,19 @@ const ::_pbi::TcParseTable<3, 7, 6, 0, 2> player_database::_table_ = {
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.skill_list_);
     }
 
-    // .PlayerUint32PBComponent uint32_pb_component = 5;
+    // .PlayerUint32PbComponent uint32_pb_component = 5;
     if (cached_has_bits & 0x00000008u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.uint32_pb_component_);
     }
 
-    // .BaseAttributesPBComponent derived_attributes_component = 6;
+    // .BaseAttributesPbComponent derived_attributes_component = 6;
     if (cached_has_bits & 0x00000010u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.derived_attributes_component_);
     }
 
-    // .LevelComponent level_component = 7;
+    // .LevelPbComponent level_component = 7;
     if (cached_has_bits & 0x00000020u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.level_component_);
@@ -1432,7 +1432,7 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
       ABSL_DCHECK(from._impl_.uint32_pb_component_ != nullptr);
       if (_this->_impl_.uint32_pb_component_ == nullptr) {
         _this->_impl_.uint32_pb_component_ =
-            ::google::protobuf::Message::CopyConstruct<::PlayerUint32PBComponent>(arena, *from._impl_.uint32_pb_component_);
+            ::google::protobuf::Message::CopyConstruct<::PlayerUint32PbComponent>(arena, *from._impl_.uint32_pb_component_);
       } else {
         _this->_impl_.uint32_pb_component_->MergeFrom(*from._impl_.uint32_pb_component_);
       }
@@ -1441,7 +1441,7 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
       ABSL_DCHECK(from._impl_.derived_attributes_component_ != nullptr);
       if (_this->_impl_.derived_attributes_component_ == nullptr) {
         _this->_impl_.derived_attributes_component_ =
-            ::google::protobuf::Message::CopyConstruct<::BaseAttributesPBComponent>(arena, *from._impl_.derived_attributes_component_);
+            ::google::protobuf::Message::CopyConstruct<::BaseAttributesPbComponent>(arena, *from._impl_.derived_attributes_component_);
       } else {
         _this->_impl_.derived_attributes_component_->MergeFrom(*from._impl_.derived_attributes_component_);
       }
@@ -1450,7 +1450,7 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
       ABSL_DCHECK(from._impl_.level_component_ != nullptr);
       if (_this->_impl_.level_component_ == nullptr) {
         _this->_impl_.level_component_ =
-            ::google::protobuf::Message::CopyConstruct<::LevelComponent>(arena, *from._impl_.level_component_);
+            ::google::protobuf::Message::CopyConstruct<::LevelPbComponent>(arena, *from._impl_.level_component_);
       } else {
         _this->_impl_.level_component_->MergeFrom(*from._impl_.level_component_);
       }

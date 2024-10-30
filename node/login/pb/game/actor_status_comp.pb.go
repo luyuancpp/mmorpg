@@ -21,7 +21,7 @@ const (
 )
 
 // 计算属性，服务器端计算
-type CalculatedAttributesPBComponent struct {
+type CalculatedAttributesPbComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -31,8 +31,8 @@ type CalculatedAttributesPBComponent struct {
 	IsDead       bool   `protobuf:"varint,3,opt,name=isDead,proto3" json:"isDead,omitempty"`                                 // 独立的生死状态
 }
 
-func (x *CalculatedAttributesPBComponent) Reset() {
-	*x = CalculatedAttributesPBComponent{}
+func (x *CalculatedAttributesPbComponent) Reset() {
+	*x = CalculatedAttributesPbComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_actor_status_comp_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -40,13 +40,13 @@ func (x *CalculatedAttributesPBComponent) Reset() {
 	}
 }
 
-func (x *CalculatedAttributesPBComponent) String() string {
+func (x *CalculatedAttributesPbComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CalculatedAttributesPBComponent) ProtoMessage() {}
+func (*CalculatedAttributesPbComponent) ProtoMessage() {}
 
-func (x *CalculatedAttributesPBComponent) ProtoReflect() protoreflect.Message {
+func (x *CalculatedAttributesPbComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_actor_status_comp_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -58,26 +58,26 @@ func (x *CalculatedAttributesPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CalculatedAttributesPBComponent.ProtoReflect.Descriptor instead.
-func (*CalculatedAttributesPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use CalculatedAttributesPbComponent.ProtoReflect.Descriptor instead.
+func (*CalculatedAttributesPbComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_actor_status_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CalculatedAttributesPBComponent) GetAttackPower() uint64 {
+func (x *CalculatedAttributesPbComponent) GetAttackPower() uint64 {
 	if x != nil {
 		return x.AttackPower
 	}
 	return 0
 }
 
-func (x *CalculatedAttributesPBComponent) GetDefensePower() uint64 {
+func (x *CalculatedAttributesPbComponent) GetDefensePower() uint64 {
 	if x != nil {
 		return x.DefensePower
 	}
 	return 0
 }
 
-func (x *CalculatedAttributesPBComponent) GetIsDead() bool {
+func (x *CalculatedAttributesPbComponent) GetIsDead() bool {
 	if x != nil {
 		return x.IsDead
 	}
@@ -85,7 +85,7 @@ func (x *CalculatedAttributesPBComponent) GetIsDead() bool {
 }
 
 // 衍生属性，服务器端计算
-type DerivedAttributesPBComponent struct {
+type DerivedAttributesPbComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -93,8 +93,8 @@ type DerivedAttributesPBComponent struct {
 	MaxHealth uint64 `protobuf:"varint,1,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"` // 最大生命值
 }
 
-func (x *DerivedAttributesPBComponent) Reset() {
-	*x = DerivedAttributesPBComponent{}
+func (x *DerivedAttributesPbComponent) Reset() {
+	*x = DerivedAttributesPbComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_actor_status_comp_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,13 +102,13 @@ func (x *DerivedAttributesPBComponent) Reset() {
 	}
 }
 
-func (x *DerivedAttributesPBComponent) String() string {
+func (x *DerivedAttributesPbComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DerivedAttributesPBComponent) ProtoMessage() {}
+func (*DerivedAttributesPbComponent) ProtoMessage() {}
 
-func (x *DerivedAttributesPBComponent) ProtoReflect() protoreflect.Message {
+func (x *DerivedAttributesPbComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_actor_status_comp_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -120,12 +120,12 @@ func (x *DerivedAttributesPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DerivedAttributesPBComponent.ProtoReflect.Descriptor instead.
-func (*DerivedAttributesPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use DerivedAttributesPbComponent.ProtoReflect.Descriptor instead.
+func (*DerivedAttributesPbComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_actor_status_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *DerivedAttributesPBComponent) GetMaxHealth() uint64 {
+func (x *DerivedAttributesPbComponent) GetMaxHealth() uint64 {
 	if x != nil {
 		return x.MaxHealth
 	}
@@ -140,7 +140,7 @@ var file_logic_component_actor_status_comp_proto_rawDesc = []byte{
 	0x6f, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x11, 0x63, 0x6f, 0x6d, 0x6d, 0x6f,
 	0x6e, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x81, 0x01, 0x0a,
 	0x1f, 0x43, 0x61, 0x6c, 0x63, 0x75, 0x6c, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x74, 0x72, 0x69,
-	0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
+	0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
 	0x12, 0x21, 0x0a, 0x0c, 0x61, 0x74, 0x74, 0x61, 0x63, 0x6b, 0x5f, 0x70, 0x6f, 0x77, 0x65, 0x72,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x61, 0x74, 0x74, 0x61, 0x63, 0x6b, 0x50, 0x6f,
 	0x77, 0x65, 0x72, 0x12, 0x23, 0x0a, 0x0d, 0x64, 0x65, 0x66, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x70,
@@ -148,7 +148,7 @@ var file_logic_component_actor_status_comp_proto_rawDesc = []byte{
 	0x6e, 0x73, 0x65, 0x50, 0x6f, 0x77, 0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x69, 0x73, 0x44, 0x65,
 	0x61, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x69, 0x73, 0x44, 0x65, 0x61, 0x64,
 	0x22, 0x3d, 0x0a, 0x1c, 0x44, 0x65, 0x72, 0x69, 0x76, 0x65, 0x64, 0x41, 0x74, 0x74, 0x72, 0x69,
-	0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
+	0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
 	0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x61, 0x78, 0x5f, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x6d, 0x61, 0x78, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x42,
 	0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
@@ -169,8 +169,8 @@ func file_logic_component_actor_status_comp_proto_rawDescGZIP() []byte {
 
 var file_logic_component_actor_status_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_logic_component_actor_status_comp_proto_goTypes = []any{
-	(*CalculatedAttributesPBComponent)(nil), // 0: CalculatedAttributesPBComponent
-	(*DerivedAttributesPBComponent)(nil),    // 1: DerivedAttributesPBComponent
+	(*CalculatedAttributesPbComponent)(nil), // 0: CalculatedAttributesPbComponent
+	(*DerivedAttributesPbComponent)(nil),    // 1: DerivedAttributesPbComponent
 }
 var file_logic_component_actor_status_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -188,7 +188,7 @@ func file_logic_component_actor_status_comp_proto_init() {
 	file_common_comp_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_logic_component_actor_status_comp_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*CalculatedAttributesPBComponent); i {
+			switch v := v.(*CalculatedAttributesPbComponent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -200,7 +200,7 @@ func file_logic_component_actor_status_comp_proto_init() {
 			}
 		}
 		file_logic_component_actor_status_comp_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*DerivedAttributesPBComponent); i {
+			switch v := v.(*DerivedAttributesPbComponent); i {
 			case 0:
 				return &v.state
 			case 1:

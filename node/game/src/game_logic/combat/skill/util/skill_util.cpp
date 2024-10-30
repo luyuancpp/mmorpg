@@ -504,19 +504,19 @@ void SkillUtil::RemoveEffect(entt::entity casterEntity, const uint64_t skillId) 
 
 // 判断目标是否已死亡
 bool IsTargetDead(entt::entity targetEntity) {
-    auto& targetBaseAttributes = tls.registry.get<BaseAttributesPBComponent>(targetEntity);
+    auto& targetBaseAttributes = tls.registry.get<BaseAttributesPbComponent>(targetEntity);
     return targetBaseAttributes.health() <= 0;
 }
 
 
 double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity target, double baseDamage) {
     // 获取施法者的属性，例如力量和暴击率
-    auto& casterAttributes = tls.registry.get<BaseAttributesPBComponent>(casterEntity);
+    auto& casterAttributes = tls.registry.get<BaseAttributesPbComponent>(casterEntity);
     double critChance = casterAttributes.critchance();
     double strength = casterAttributes.strength();
 
     // 获取目标的属性，例如护甲和抗性
-    auto& targetAttributes = tls.registry.get<BaseAttributesPBComponent>(target);
+    auto& targetAttributes = tls.registry.get<BaseAttributesPbComponent>(target);
     double armor = targetAttributes.armor();
     double resistance = targetAttributes.resistance();
 
@@ -551,7 +551,7 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
         return;
     }
 
-    // 获取目标的 BaseAttributesPBComponent 用于判断是否死亡
+    // 获取目标的 BaseAttributesPbComponent 用于判断是否死亡
     auto targetEntity = entt::to_entity(damageEvent.target());
 
     // 如果目标已经死亡，停止进一步处理
@@ -561,7 +561,7 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
     }
 
     // 获取施法者的等级组件并设置伤害参数
-    auto& levelComponent = tls.registry.get<LevelComponent>(casterEntity);
+    auto& levelComponent = tls.registry.get<LevelPbComponent>(casterEntity);
     SkillConfigurationTable::Instance().SetDamageParam({ static_cast<double>(levelComponent.level()) });
 
     // 设置攻击者 ID
@@ -585,7 +585,7 @@ void TriggerBeforeDamageEvents(const entt::entity casterEntity, const entt::enti
 }
 
 // 处理目标生命值的减少
-void ApplyDamage(BaseAttributesPBComponent& baseAttributesPBComponent, const DamageEventPbComponent& damageEvent) {
+void ApplyDamage(BaseAttributesPbComponent& baseAttributesPBComponent, const DamageEventPbComponent& damageEvent) {
     const auto damage = static_cast<uint64_t>(std::ceil(damageEvent.damage()));
 
     if (baseAttributesPBComponent.health() > damage) {
@@ -630,7 +630,7 @@ void HandleTargetDeath(const entt::entity casterEntity, const entt::entity targe
 
 // 处理具体的伤害逻辑
 void DealDamage(DamageEventPbComponent& damageEvent, const entt::entity caster, const entt::entity target) {
-	auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPBComponent>(target);
+	auto& baseAttributesPBComponent = tls.registry.get<BaseAttributesPbComponent>(target);
 
 	// 如果目标已死亡，直接返回
 	if (IsTargetDead(target)) {

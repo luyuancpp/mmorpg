@@ -448,7 +448,7 @@ func (x *ViewRadius) GetRadius() float64 {
 }
 
 // 玩家基础属性组件，仅存储与战斗相关的基础属性
-type BaseAttributesPBComponent struct {
+type BaseAttributesPbComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -462,8 +462,8 @@ type BaseAttributesPBComponent struct {
 	Resistance uint64 `protobuf:"varint,7,opt,name=resistance,proto3" json:"resistance,omitempty"` // 抗性
 }
 
-func (x *BaseAttributesPBComponent) Reset() {
-	*x = BaseAttributesPBComponent{}
+func (x *BaseAttributesPbComponent) Reset() {
+	*x = BaseAttributesPbComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_actor_comp_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -471,13 +471,13 @@ func (x *BaseAttributesPBComponent) Reset() {
 	}
 }
 
-func (x *BaseAttributesPBComponent) String() string {
+func (x *BaseAttributesPbComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BaseAttributesPBComponent) ProtoMessage() {}
+func (*BaseAttributesPbComponent) ProtoMessage() {}
 
-func (x *BaseAttributesPBComponent) ProtoReflect() protoreflect.Message {
+func (x *BaseAttributesPbComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_actor_comp_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -489,54 +489,54 @@ func (x *BaseAttributesPBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BaseAttributesPBComponent.ProtoReflect.Descriptor instead.
-func (*BaseAttributesPBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use BaseAttributesPbComponent.ProtoReflect.Descriptor instead.
+func (*BaseAttributesPbComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *BaseAttributesPBComponent) GetStrength() uint64 {
+func (x *BaseAttributesPbComponent) GetStrength() uint64 {
 	if x != nil {
 		return x.Strength
 	}
 	return 0
 }
 
-func (x *BaseAttributesPBComponent) GetStamina() uint64 {
+func (x *BaseAttributesPbComponent) GetStamina() uint64 {
 	if x != nil {
 		return x.Stamina
 	}
 	return 0
 }
 
-func (x *BaseAttributesPBComponent) GetHealth() uint64 {
+func (x *BaseAttributesPbComponent) GetHealth() uint64 {
 	if x != nil {
 		return x.Health
 	}
 	return 0
 }
 
-func (x *BaseAttributesPBComponent) GetMana() uint64 {
+func (x *BaseAttributesPbComponent) GetMana() uint64 {
 	if x != nil {
 		return x.Mana
 	}
 	return 0
 }
 
-func (x *BaseAttributesPBComponent) GetCritchance() uint64 {
+func (x *BaseAttributesPbComponent) GetCritchance() uint64 {
 	if x != nil {
 		return x.Critchance
 	}
 	return 0
 }
 
-func (x *BaseAttributesPBComponent) GetArmor() uint64 {
+func (x *BaseAttributesPbComponent) GetArmor() uint64 {
 	if x != nil {
 		return x.Armor
 	}
 	return 0
 }
 
-func (x *BaseAttributesPBComponent) GetResistance() uint64 {
+func (x *BaseAttributesPbComponent) GetResistance() uint64 {
 	if x != nil {
 		return x.Resistance
 	}
@@ -544,7 +544,7 @@ func (x *BaseAttributesPBComponent) GetResistance() uint64 {
 }
 
 // 玩家等级组件，专注于管理等级及与等级相关的功能
-type LevelComponent struct {
+type LevelPbComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -552,8 +552,8 @@ type LevelComponent struct {
 	Level uint32 `protobuf:"varint,1,opt,name=level,proto3" json:"level,omitempty"` // 玩家等级
 }
 
-func (x *LevelComponent) Reset() {
-	*x = LevelComponent{}
+func (x *LevelPbComponent) Reset() {
+	*x = LevelPbComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_actor_comp_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -561,13 +561,13 @@ func (x *LevelComponent) Reset() {
 	}
 }
 
-func (x *LevelComponent) String() string {
+func (x *LevelPbComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LevelComponent) ProtoMessage() {}
+func (*LevelPbComponent) ProtoMessage() {}
 
-func (x *LevelComponent) ProtoReflect() protoreflect.Message {
+func (x *LevelPbComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_actor_comp_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -579,12 +579,12 @@ func (x *LevelComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LevelComponent.ProtoReflect.Descriptor instead.
-func (*LevelComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use LevelPbComponent.ProtoReflect.Descriptor instead.
+func (*LevelPbComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *LevelComponent) GetLevel() uint32 {
+func (x *LevelPbComponent) GetLevel() uint32 {
 	if x != nil {
 		return x.Level
 	}
@@ -625,7 +625,7 @@ var file_logic_component_actor_comp_proto_rawDesc = []byte{
 	0x56, 0x69, 0x65, 0x77, 0x52, 0x61, 0x64, 0x69, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x61,
 	0x64, 0x69, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x06, 0x72, 0x61, 0x64, 0x69,
 	0x75, 0x73, 0x22, 0xd3, 0x01, 0x0a, 0x19, 0x42, 0x61, 0x73, 0x65, 0x41, 0x74, 0x74, 0x72, 0x69,
-	0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
+	0x62, 0x75, 0x74, 0x65, 0x73, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
 	0x12, 0x1a, 0x0a, 0x08, 0x73, 0x74, 0x72, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x04, 0x52, 0x08, 0x73, 0x74, 0x72, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x12, 0x18, 0x0a, 0x07,
 	0x73, 0x74, 0x61, 0x6d, 0x69, 0x6e, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x73,
@@ -637,11 +637,11 @@ var file_logic_component_actor_comp_proto_rawDesc = []byte{
 	0x63, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x61, 0x72, 0x6d, 0x6f, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28,
 	0x04, 0x52, 0x05, 0x61, 0x72, 0x6d, 0x6f, 0x72, 0x12, 0x1e, 0x0a, 0x0a, 0x72, 0x65, 0x73, 0x69,
 	0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x72, 0x65,
-	0x73, 0x69, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x22, 0x26, 0x0a, 0x0e, 0x4c, 0x65, 0x76, 0x65,
-	0x6c, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6c, 0x65,
-	0x76, 0x65, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x6c, 0x65, 0x76, 0x65, 0x6c,
-	0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x73, 0x69, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x22, 0x28, 0x0a, 0x10, 0x4c, 0x65, 0x76, 0x65,
+	0x6c, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05,
+	0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x6c, 0x65, 0x76,
+	0x65, 0x6c, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -665,8 +665,8 @@ var file_logic_component_actor_comp_proto_goTypes = []any{
 	(*Velocity)(nil),                  // 4: Velocity
 	(*Acceleration)(nil),              // 5: Acceleration
 	(*ViewRadius)(nil),                // 6: ViewRadius
-	(*BaseAttributesPBComponent)(nil), // 7: BaseAttributesPBComponent
-	(*LevelComponent)(nil),            // 8: LevelComponent
+	(*BaseAttributesPbComponent)(nil), // 7: BaseAttributesPbComponent
+	(*LevelPbComponent)(nil),          // 8: LevelPbComponent
 	(*Vector3)(nil),                   // 9: Vector3
 }
 var file_logic_component_actor_comp_proto_depIdxs = []int32{
@@ -772,7 +772,7 @@ func file_logic_component_actor_comp_proto_init() {
 			}
 		}
 		file_logic_component_actor_comp_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*BaseAttributesPBComponent); i {
+			switch v := v.(*BaseAttributesPbComponent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -784,7 +784,7 @@ func file_logic_component_actor_comp_proto_init() {
 			}
 		}
 		file_logic_component_actor_comp_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*LevelComponent); i {
+			switch v := v.(*LevelPbComponent); i {
 			case 0:
 				return &v.state
 			case 1:

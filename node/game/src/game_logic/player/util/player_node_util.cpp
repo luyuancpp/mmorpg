@@ -53,7 +53,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	{
 		tls.registry.get<PlayerUint64PBComponent>(player).set_registration_timestamp(TimeUtil::NowSecondsUTC());
 
-		tls.registry.get<LevelComponent>(player).set_level(1);
+		tls.registry.get<LevelPbComponent>(player).set_level(1);
 		
 		RegisterPlayerEvent registerPlayer;
 		registerPlayer.set_entity(entt::to_integral(player));

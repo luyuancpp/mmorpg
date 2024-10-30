@@ -268,7 +268,7 @@ func (x *PlayerUint64PBComponent) GetRegistrationTimestamp() uint64 {
 	return 0
 }
 
-type PlayerUint32PBComponent struct {
+type PlayerUint32PbComponent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -276,8 +276,8 @@ type PlayerUint32PBComponent struct {
 	Class uint32 `protobuf:"varint,1,opt,name=class,proto3" json:"class,omitempty"`
 }
 
-func (x *PlayerUint32PBComponent) Reset() {
-	*x = PlayerUint32PBComponent{}
+func (x *PlayerUint32PbComponent) Reset() {
+	*x = PlayerUint32PbComponent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_logic_component_player_comp_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -285,13 +285,13 @@ func (x *PlayerUint32PBComponent) Reset() {
 	}
 }
 
-func (x *PlayerUint32PBComponent) String() string {
+func (x *PlayerUint32PbComponent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PlayerUint32PBComponent) ProtoMessage() {}
+func (*PlayerUint32PbComponent) ProtoMessage() {}
 
-func (x *PlayerUint32PBComponent) ProtoReflect() protoreflect.Message {
+func (x *PlayerUint32PbComponent) ProtoReflect() protoreflect.Message {
 	mi := &file_logic_component_player_comp_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -303,12 +303,12 @@ func (x *PlayerUint32PBComponent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PlayerUint32PBComponent.ProtoReflect.Descriptor instead.
-func (*PlayerUint32PBComponent) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlayerUint32PbComponent.ProtoReflect.Descriptor instead.
+func (*PlayerUint32PbComponent) Descriptor() ([]byte, []int) {
 	return file_logic_component_player_comp_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *PlayerUint32PBComponent) GetClass() uint32 {
+func (x *PlayerUint32PbComponent) GetClass() uint32 {
 	if x != nil {
 		return x.Class
 	}
@@ -332,7 +332,7 @@ var file_logic_component_player_comp_proto_rawDesc = []byte{
 	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x15,
 	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x69, 0x6d, 0x65,
 	0x73, 0x74, 0x61, 0x6d, 0x70, 0x22, 0x2f, 0x0a, 0x17, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x55,
-	0x69, 0x6e, 0x74, 0x33, 0x32, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
+	0x69, 0x6e, 0x74, 0x33, 0x32, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74,
 	0x12, 0x14, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52,
 	0x05, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d,
 	0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
@@ -358,7 +358,7 @@ var file_logic_component_player_comp_proto_goTypes = []any{
 	(*Account)(nil),                 // 3: Account
 	(*UnregisterPlayer)(nil),        // 4: UnregisterPlayer
 	(*PlayerUint64PBComponent)(nil), // 5: PlayerUint64PBComponent
-	(*PlayerUint32PBComponent)(nil), // 6: PlayerUint32PBComponent
+	(*PlayerUint32PbComponent)(nil), // 6: PlayerUint32PbComponent
 }
 var file_logic_component_player_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -447,7 +447,7 @@ func file_logic_component_player_comp_proto_init() {
 			}
 		}
 		file_logic_component_player_comp_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*PlayerUint32PBComponent); i {
+			switch v := v.(*PlayerUint32PbComponent); i {
 			case 0:
 				return &v.state
 			case 1:

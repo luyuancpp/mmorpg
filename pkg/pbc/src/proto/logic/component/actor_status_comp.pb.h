@@ -50,12 +50,12 @@ struct TableStruct_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2factor_5fstatus_5fcomp_2eproto;
-class CalculatedAttributesPBComponent;
-struct CalculatedAttributesPBComponentDefaultTypeInternal;
-extern CalculatedAttributesPBComponentDefaultTypeInternal _CalculatedAttributesPBComponent_default_instance_;
-class DerivedAttributesPBComponent;
-struct DerivedAttributesPBComponentDefaultTypeInternal;
-extern DerivedAttributesPBComponentDefaultTypeInternal _DerivedAttributesPBComponent_default_instance_;
+class CalculatedAttributesPbComponent;
+struct CalculatedAttributesPbComponentDefaultTypeInternal;
+extern CalculatedAttributesPbComponentDefaultTypeInternal _CalculatedAttributesPbComponent_default_instance_;
+class DerivedAttributesPbComponent;
+struct DerivedAttributesPbComponentDefaultTypeInternal;
+extern DerivedAttributesPbComponentDefaultTypeInternal _DerivedAttributesPbComponent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -67,23 +67,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class DerivedAttributesPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:DerivedAttributesPBComponent) */ {
+class DerivedAttributesPbComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:DerivedAttributesPbComponent) */ {
  public:
-  inline DerivedAttributesPBComponent() : DerivedAttributesPBComponent(nullptr) {}
-  ~DerivedAttributesPBComponent() override;
+  inline DerivedAttributesPbComponent() : DerivedAttributesPbComponent(nullptr) {}
+  ~DerivedAttributesPbComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR DerivedAttributesPBComponent(
+  explicit PROTOBUF_CONSTEXPR DerivedAttributesPbComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline DerivedAttributesPBComponent(const DerivedAttributesPBComponent& from) : DerivedAttributesPBComponent(nullptr, from) {}
-  inline DerivedAttributesPBComponent(DerivedAttributesPBComponent&& from) noexcept
-      : DerivedAttributesPBComponent(nullptr, std::move(from)) {}
-  inline DerivedAttributesPBComponent& operator=(const DerivedAttributesPBComponent& from) {
+  inline DerivedAttributesPbComponent(const DerivedAttributesPbComponent& from) : DerivedAttributesPbComponent(nullptr, from) {}
+  inline DerivedAttributesPbComponent(DerivedAttributesPbComponent&& from) noexcept
+      : DerivedAttributesPbComponent(nullptr, std::move(from)) {}
+  inline DerivedAttributesPbComponent& operator=(const DerivedAttributesPbComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline DerivedAttributesPBComponent& operator=(DerivedAttributesPBComponent&& from) noexcept {
+  inline DerivedAttributesPbComponent& operator=(DerivedAttributesPbComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -115,16 +115,16 @@ class DerivedAttributesPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const DerivedAttributesPBComponent& default_instance() {
+  static const DerivedAttributesPbComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const DerivedAttributesPBComponent* internal_default_instance() {
-    return reinterpret_cast<const DerivedAttributesPBComponent*>(
-        &_DerivedAttributesPBComponent_default_instance_);
+  static inline const DerivedAttributesPbComponent* internal_default_instance() {
+    return reinterpret_cast<const DerivedAttributesPbComponent*>(
+        &_DerivedAttributesPbComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(DerivedAttributesPBComponent& a, DerivedAttributesPBComponent& b) { a.Swap(&b); }
-  inline void Swap(DerivedAttributesPBComponent* other) {
+  friend void swap(DerivedAttributesPbComponent& a, DerivedAttributesPbComponent& b) { a.Swap(&b); }
+  inline void Swap(DerivedAttributesPbComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -136,7 +136,7 @@ class DerivedAttributesPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(DerivedAttributesPBComponent* other) {
+  void UnsafeArenaSwap(DerivedAttributesPbComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -144,13 +144,13 @@ class DerivedAttributesPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  DerivedAttributesPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<DerivedAttributesPBComponent>(arena);
+  DerivedAttributesPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<DerivedAttributesPbComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const DerivedAttributesPBComponent& from);
+  void CopyFrom(const DerivedAttributesPbComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const DerivedAttributesPBComponent& from) { DerivedAttributesPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const DerivedAttributesPbComponent& from) { DerivedAttributesPbComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -171,16 +171,16 @@ class DerivedAttributesPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(DerivedAttributesPBComponent* other);
+  void InternalSwap(DerivedAttributesPbComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "DerivedAttributesPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "DerivedAttributesPbComponent"; }
 
  protected:
-  explicit DerivedAttributesPBComponent(::google::protobuf::Arena* arena);
-  DerivedAttributesPBComponent(::google::protobuf::Arena* arena, const DerivedAttributesPBComponent& from);
-  DerivedAttributesPBComponent(::google::protobuf::Arena* arena, DerivedAttributesPBComponent&& from) noexcept
-      : DerivedAttributesPBComponent(arena) {
+  explicit DerivedAttributesPbComponent(::google::protobuf::Arena* arena);
+  DerivedAttributesPbComponent(::google::protobuf::Arena* arena, const DerivedAttributesPbComponent& from);
+  DerivedAttributesPbComponent(::google::protobuf::Arena* arena, DerivedAttributesPbComponent&& from) noexcept
+      : DerivedAttributesPbComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -204,7 +204,7 @@ class DerivedAttributesPBComponent final : public ::google::protobuf::Message
   void _internal_set_max_health(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:DerivedAttributesPBComponent)
+  // @@protoc_insertion_point(class_scope:DerivedAttributesPbComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -234,23 +234,23 @@ class DerivedAttributesPBComponent final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:CalculatedAttributesPBComponent) */ {
+class CalculatedAttributesPbComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CalculatedAttributesPbComponent) */ {
  public:
-  inline CalculatedAttributesPBComponent() : CalculatedAttributesPBComponent(nullptr) {}
-  ~CalculatedAttributesPBComponent() override;
+  inline CalculatedAttributesPbComponent() : CalculatedAttributesPbComponent(nullptr) {}
+  ~CalculatedAttributesPbComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR CalculatedAttributesPBComponent(
+  explicit PROTOBUF_CONSTEXPR CalculatedAttributesPbComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline CalculatedAttributesPBComponent(const CalculatedAttributesPBComponent& from) : CalculatedAttributesPBComponent(nullptr, from) {}
-  inline CalculatedAttributesPBComponent(CalculatedAttributesPBComponent&& from) noexcept
-      : CalculatedAttributesPBComponent(nullptr, std::move(from)) {}
-  inline CalculatedAttributesPBComponent& operator=(const CalculatedAttributesPBComponent& from) {
+  inline CalculatedAttributesPbComponent(const CalculatedAttributesPbComponent& from) : CalculatedAttributesPbComponent(nullptr, from) {}
+  inline CalculatedAttributesPbComponent(CalculatedAttributesPbComponent&& from) noexcept
+      : CalculatedAttributesPbComponent(nullptr, std::move(from)) {}
+  inline CalculatedAttributesPbComponent& operator=(const CalculatedAttributesPbComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline CalculatedAttributesPBComponent& operator=(CalculatedAttributesPBComponent&& from) noexcept {
+  inline CalculatedAttributesPbComponent& operator=(CalculatedAttributesPbComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -282,16 +282,16 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const CalculatedAttributesPBComponent& default_instance() {
+  static const CalculatedAttributesPbComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const CalculatedAttributesPBComponent* internal_default_instance() {
-    return reinterpret_cast<const CalculatedAttributesPBComponent*>(
-        &_CalculatedAttributesPBComponent_default_instance_);
+  static inline const CalculatedAttributesPbComponent* internal_default_instance() {
+    return reinterpret_cast<const CalculatedAttributesPbComponent*>(
+        &_CalculatedAttributesPbComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(CalculatedAttributesPBComponent& a, CalculatedAttributesPBComponent& b) { a.Swap(&b); }
-  inline void Swap(CalculatedAttributesPBComponent* other) {
+  friend void swap(CalculatedAttributesPbComponent& a, CalculatedAttributesPbComponent& b) { a.Swap(&b); }
+  inline void Swap(CalculatedAttributesPbComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -303,7 +303,7 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(CalculatedAttributesPBComponent* other) {
+  void UnsafeArenaSwap(CalculatedAttributesPbComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -311,13 +311,13 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  CalculatedAttributesPBComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<CalculatedAttributesPBComponent>(arena);
+  CalculatedAttributesPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<CalculatedAttributesPbComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const CalculatedAttributesPBComponent& from);
+  void CopyFrom(const CalculatedAttributesPbComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const CalculatedAttributesPBComponent& from) { CalculatedAttributesPBComponent::MergeImpl(*this, from); }
+  void MergeFrom(const CalculatedAttributesPbComponent& from) { CalculatedAttributesPbComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -338,16 +338,16 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(CalculatedAttributesPBComponent* other);
+  void InternalSwap(CalculatedAttributesPbComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "CalculatedAttributesPBComponent"; }
+  static ::absl::string_view FullMessageName() { return "CalculatedAttributesPbComponent"; }
 
  protected:
-  explicit CalculatedAttributesPBComponent(::google::protobuf::Arena* arena);
-  CalculatedAttributesPBComponent(::google::protobuf::Arena* arena, const CalculatedAttributesPBComponent& from);
-  CalculatedAttributesPBComponent(::google::protobuf::Arena* arena, CalculatedAttributesPBComponent&& from) noexcept
-      : CalculatedAttributesPBComponent(arena) {
+  explicit CalculatedAttributesPbComponent(::google::protobuf::Arena* arena);
+  CalculatedAttributesPbComponent(::google::protobuf::Arena* arena, const CalculatedAttributesPbComponent& from);
+  CalculatedAttributesPbComponent(::google::protobuf::Arena* arena, CalculatedAttributesPbComponent&& from) noexcept
+      : CalculatedAttributesPbComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -393,7 +393,7 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
   void _internal_set_isdead(bool value);
 
   public:
-  // @@protoc_insertion_point(class_scope:CalculatedAttributesPBComponent)
+  // @@protoc_insertion_point(class_scope:CalculatedAttributesPbComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -438,96 +438,96 @@ class CalculatedAttributesPBComponent final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// CalculatedAttributesPBComponent
+// CalculatedAttributesPbComponent
 
 // uint64 attack_power = 1;
-inline void CalculatedAttributesPBComponent::clear_attack_power() {
+inline void CalculatedAttributesPbComponent::clear_attack_power() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.attack_power_ = ::uint64_t{0u};
 }
-inline ::uint64_t CalculatedAttributesPBComponent::attack_power() const {
-  // @@protoc_insertion_point(field_get:CalculatedAttributesPBComponent.attack_power)
+inline ::uint64_t CalculatedAttributesPbComponent::attack_power() const {
+  // @@protoc_insertion_point(field_get:CalculatedAttributesPbComponent.attack_power)
   return _internal_attack_power();
 }
-inline void CalculatedAttributesPBComponent::set_attack_power(::uint64_t value) {
+inline void CalculatedAttributesPbComponent::set_attack_power(::uint64_t value) {
   _internal_set_attack_power(value);
-  // @@protoc_insertion_point(field_set:CalculatedAttributesPBComponent.attack_power)
+  // @@protoc_insertion_point(field_set:CalculatedAttributesPbComponent.attack_power)
 }
-inline ::uint64_t CalculatedAttributesPBComponent::_internal_attack_power() const {
+inline ::uint64_t CalculatedAttributesPbComponent::_internal_attack_power() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.attack_power_;
 }
-inline void CalculatedAttributesPBComponent::_internal_set_attack_power(::uint64_t value) {
+inline void CalculatedAttributesPbComponent::_internal_set_attack_power(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.attack_power_ = value;
 }
 
 // uint64 defense_power = 2;
-inline void CalculatedAttributesPBComponent::clear_defense_power() {
+inline void CalculatedAttributesPbComponent::clear_defense_power() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.defense_power_ = ::uint64_t{0u};
 }
-inline ::uint64_t CalculatedAttributesPBComponent::defense_power() const {
-  // @@protoc_insertion_point(field_get:CalculatedAttributesPBComponent.defense_power)
+inline ::uint64_t CalculatedAttributesPbComponent::defense_power() const {
+  // @@protoc_insertion_point(field_get:CalculatedAttributesPbComponent.defense_power)
   return _internal_defense_power();
 }
-inline void CalculatedAttributesPBComponent::set_defense_power(::uint64_t value) {
+inline void CalculatedAttributesPbComponent::set_defense_power(::uint64_t value) {
   _internal_set_defense_power(value);
-  // @@protoc_insertion_point(field_set:CalculatedAttributesPBComponent.defense_power)
+  // @@protoc_insertion_point(field_set:CalculatedAttributesPbComponent.defense_power)
 }
-inline ::uint64_t CalculatedAttributesPBComponent::_internal_defense_power() const {
+inline ::uint64_t CalculatedAttributesPbComponent::_internal_defense_power() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.defense_power_;
 }
-inline void CalculatedAttributesPBComponent::_internal_set_defense_power(::uint64_t value) {
+inline void CalculatedAttributesPbComponent::_internal_set_defense_power(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.defense_power_ = value;
 }
 
 // bool isDead = 3;
-inline void CalculatedAttributesPBComponent::clear_isdead() {
+inline void CalculatedAttributesPbComponent::clear_isdead() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.isdead_ = false;
 }
-inline bool CalculatedAttributesPBComponent::isdead() const {
-  // @@protoc_insertion_point(field_get:CalculatedAttributesPBComponent.isDead)
+inline bool CalculatedAttributesPbComponent::isdead() const {
+  // @@protoc_insertion_point(field_get:CalculatedAttributesPbComponent.isDead)
   return _internal_isdead();
 }
-inline void CalculatedAttributesPBComponent::set_isdead(bool value) {
+inline void CalculatedAttributesPbComponent::set_isdead(bool value) {
   _internal_set_isdead(value);
-  // @@protoc_insertion_point(field_set:CalculatedAttributesPBComponent.isDead)
+  // @@protoc_insertion_point(field_set:CalculatedAttributesPbComponent.isDead)
 }
-inline bool CalculatedAttributesPBComponent::_internal_isdead() const {
+inline bool CalculatedAttributesPbComponent::_internal_isdead() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.isdead_;
 }
-inline void CalculatedAttributesPBComponent::_internal_set_isdead(bool value) {
+inline void CalculatedAttributesPbComponent::_internal_set_isdead(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.isdead_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// DerivedAttributesPBComponent
+// DerivedAttributesPbComponent
 
 // uint64 max_health = 1;
-inline void DerivedAttributesPBComponent::clear_max_health() {
+inline void DerivedAttributesPbComponent::clear_max_health() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.max_health_ = ::uint64_t{0u};
 }
-inline ::uint64_t DerivedAttributesPBComponent::max_health() const {
-  // @@protoc_insertion_point(field_get:DerivedAttributesPBComponent.max_health)
+inline ::uint64_t DerivedAttributesPbComponent::max_health() const {
+  // @@protoc_insertion_point(field_get:DerivedAttributesPbComponent.max_health)
   return _internal_max_health();
 }
-inline void DerivedAttributesPBComponent::set_max_health(::uint64_t value) {
+inline void DerivedAttributesPbComponent::set_max_health(::uint64_t value) {
   _internal_set_max_health(value);
-  // @@protoc_insertion_point(field_set:DerivedAttributesPBComponent.max_health)
+  // @@protoc_insertion_point(field_set:DerivedAttributesPbComponent.max_health)
 }
-inline ::uint64_t DerivedAttributesPBComponent::_internal_max_health() const {
+inline ::uint64_t DerivedAttributesPbComponent::_internal_max_health() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.max_health_;
 }
-inline void DerivedAttributesPBComponent::_internal_set_max_health(::uint64_t value) {
+inline void DerivedAttributesPbComponent::_internal_set_max_health(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.max_health_ = value;
 }
