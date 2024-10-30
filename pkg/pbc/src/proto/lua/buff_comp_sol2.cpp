@@ -10,6 +10,15 @@ sol::property(&BuffContextPBComponent::damage_value, &BuffContextPBComponent::se
 &BuffContextPBComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<BuffPeriodicBuffPbComponent>("BuffPeriodicBuffPbComponent",
+"periodic_timer",
+sol::property(&BuffPeriodicBuffPbComponent::periodic_timer, &BuffPeriodicBuffPbComponent::set_periodic_timer),
+"ticks_done",
+sol::property(&BuffPeriodicBuffPbComponent::ticks_done, &BuffPeriodicBuffPbComponent::set_ticks_done),
+"DebugString",
+&BuffPeriodicBuffPbComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 tls_lua_state.new_usertype<BuffPbComponent>("BuffPbComponent",
 "buff_id",
 sol::property(&BuffPbComponent::buff_id, &BuffPbComponent::set_buff_id),
@@ -31,6 +40,10 @@ sol::property(&BuffPbComponent::processed_caster, &BuffPbComponent::set_processe
 [](BuffPbComponent& pb) ->decltype(auto){ return pb.data();},
 "mutable_data",
 [](BuffPbComponent& pb) ->decltype(auto){ return pb.mutable_data();},
+"",
+[](BuffPbComponent& pb) ->decltype(auto){ return pb.();},
+"mutable_",
+[](BuffPbComponent& pb) ->decltype(auto){ return pb.mutable_();},
 "DebugString",
 &BuffPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
@@ -50,16 +63,9 @@ sol::property(&DamageEventPbComponent::damage_type, &DamageEventPbComponent::set
 &DamageEventPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<BuffPeriodicBuffPbComponent>("BuffPeriodicBuffPbComponent",
-"periodic_timer",
-sol::property(&BuffPeriodicBuffPbComponent::periodic_timer, &BuffPeriodicBuffPbComponent::set_periodic_timer),
-"ticks_done",
-sol::property(&BuffPeriodicBuffPbComponent::ticks_done, &BuffPeriodicBuffPbComponent::set_ticks_done),
-"DebugString",
-&BuffPeriodicBuffPbComponent::DebugString,
-sol::base_classes, sol::bases<::google::protobuf::Message>());
-
 tls_lua_state.new_usertype<BuffNoDamageOrSkillHitInLastSecondsPbComp>("BuffNoDamageOrSkillHitInLastSecondsPbComp",
+"last_time",
+sol::property(&BuffNoDamageOrSkillHitInLastSecondsPbComp::last_time, &BuffNoDamageOrSkillHitInLastSecondsPbComp::set_last_time),
 "DebugString",
 &BuffNoDamageOrSkillHitInLastSecondsPbComp::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

@@ -65,36 +65,14 @@ struct BuffPeriodicBuffPbComponentDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffPeriodicBuffPbComponentDefaultTypeInternal _BuffPeriodicBuffPbComponent_default_instance_;
 
-inline constexpr BuffPbComponent::Impl_::Impl_(
+inline constexpr BuffNoDamageOrSkillHitInLastSecondsPbComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : data_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        buff_id_{::uint64_t{0u}},
-        buff_table_id_{0u},
-        ability_id_{0u},
-        parent_entity_{::uint64_t{0u}},
-        caster_{::uint64_t{0u}},
-        layer_{0u},
-        triggerdamage_{false},
-        processed_caster_{::uint64_t{0u}},
+      : last_time_{0u},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR BuffPbComponent::BuffPbComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR BuffNoDamageOrSkillHitInLastSecondsPbComp::BuffNoDamageOrSkillHitInLastSecondsPbComp(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct BuffPbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR BuffPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~BuffPbComponentDefaultTypeInternal() {}
-  union {
-    BuffPbComponent _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffPbComponentDefaultTypeInternal _BuffPbComponent_default_instance_;
-      template <typename>
-PROTOBUF_CONSTEXPR BuffNoDamageOrSkillHitInLastSecondsPbComp::BuffNoDamageOrSkillHitInLastSecondsPbComp(::_pbi::ConstantInitialized) {}
 struct BuffNoDamageOrSkillHitInLastSecondsPbCompDefaultTypeInternal {
   PROTOBUF_CONSTEXPR BuffNoDamageOrSkillHitInLastSecondsPbCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~BuffNoDamageOrSkillHitInLastSecondsPbCompDefaultTypeInternal() {}
@@ -124,6 +102,36 @@ struct BuffContextPBComponentDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffContextPBComponentDefaultTypeInternal _BuffContextPBComponent_default_instance_;
+
+inline constexpr BuffPbComponent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        data_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        periodic_{nullptr},
+        buff_id_{::uint64_t{0u}},
+        buff_table_id_{0u},
+        ability_id_{0u},
+        parent_entity_{::uint64_t{0u}},
+        caster_{::uint64_t{0u}},
+        layer_{0u},
+        triggerdamage_{false},
+        processed_caster_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR BuffPbComponent::BuffPbComponent(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct BuffPbComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BuffPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BuffPbComponentDefaultTypeInternal() {}
+  union {
+    BuffPbComponent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BuffPbComponentDefaultTypeInternal _BuffPbComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[5];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fcomponent_2fbuff_5fcomp_2eproto = nullptr;
@@ -142,6 +150,16 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::BuffContextPBComponent, _impl_.damage_value_),
         ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::BuffPeriodicBuffPbComponent, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::BuffPeriodicBuffPbComponent, _impl_.periodic_timer_),
+        PROTOBUF_FIELD_OFFSET(::BuffPeriodicBuffPbComponent, _impl_.ticks_done_),
+        PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -158,6 +176,17 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.triggerdamage_),
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.processed_caster_),
         PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::BuffPbComponent, _impl_.periodic_),
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        0,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::DamageEventPbComponent, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -172,16 +201,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::DamageEventPbComponent, _impl_.damage_),
         PROTOBUF_FIELD_OFFSET(::DamageEventPbComponent, _impl_.damage_type_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::BuffPeriodicBuffPbComponent, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::BuffPeriodicBuffPbComponent, _impl_.periodic_timer_),
-        PROTOBUF_FIELD_OFFSET(::BuffPeriodicBuffPbComponent, _impl_.ticks_done_),
-        ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::BuffNoDamageOrSkillHitInLastSecondsPbComp, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -189,45 +208,48 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_.last_time_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::BuffContextPBComponent)},
-        {9, -1, -1, sizeof(::BuffPbComponent)},
-        {26, -1, -1, sizeof(::DamageEventPbComponent)},
-        {39, -1, -1, sizeof(::BuffPeriodicBuffPbComponent)},
-        {49, -1, -1, sizeof(::BuffNoDamageOrSkillHitInLastSecondsPbComp)},
+        {9, -1, -1, sizeof(::BuffPeriodicBuffPbComponent)},
+        {19, 37, -1, sizeof(::BuffPbComponent)},
+        {47, -1, -1, sizeof(::DamageEventPbComponent)},
+        {60, -1, -1, sizeof(::BuffNoDamageOrSkillHitInLastSecondsPbComp)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_BuffContextPBComponent_default_instance_._instance,
+    &::_BuffPeriodicBuffPbComponent_default_instance_._instance,
     &::_BuffPbComponent_default_instance_._instance,
     &::_DamageEventPbComponent_default_instance_._instance,
-    &::_BuffPeriodicBuffPbComponent_default_instance_._instance,
     &::_BuffNoDamageOrSkillHitInLastSecondsPbComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\037logic/component/buff_comp.proto\".\n\026Buf"
     "fContextPBComponent\022\024\n\014damage_value\030\001 \001("
-    "\002\"\302\001\n\017BuffPbComponent\022\017\n\007buff_id\030\001 \001(\004\022\025"
-    "\n\rbuff_table_id\030\002 \001(\r\022\022\n\nability_id\030\003 \001("
-    "\r\022\025\n\rparent_entity\030\004 \001(\004\022\r\n\005layer\030\005 \001(\r\022"
-    "\016\n\006caster\030\006 \001(\004\022\025\n\rtriggerdamage\030\007 \001(\010\022\030"
-    "\n\020processed_caster\030\010 \001(\004\022\014\n\004data\030\t \001(\014\"t"
-    "\n\026DamageEventPbComponent\022\020\n\010skill_id\030\001 \001"
-    "(\004\022\023\n\013attacker_id\030\002 \001(\004\022\016\n\006target\030\003 \001(\004\022"
-    "\016\n\006damage\030\004 \001(\001\022\023\n\013damage_type\030\005 \001(\r\"I\n\033"
-    "BuffPeriodicBuffPbComponent\022\026\n\016periodic_"
-    "timer\030\001 \001(\001\022\022\n\nticks_done\030\002 \001(\r\"+\n)BuffN"
-    "oDamageOrSkillHitInLastSecondsPbCompB\tZ\007"
-    "pb/gameb\006proto3"
+    "\002\"I\n\033BuffPeriodicBuffPbComponent\022\026\n\016peri"
+    "odic_timer\030\001 \001(\001\022\022\n\nticks_done\030\002 \001(\r\"\362\001\n"
+    "\017BuffPbComponent\022\017\n\007buff_id\030\001 \001(\004\022\025\n\rbuf"
+    "f_table_id\030\002 \001(\r\022\022\n\nability_id\030\003 \001(\r\022\025\n\r"
+    "parent_entity\030\004 \001(\004\022\r\n\005layer\030\005 \001(\r\022\016\n\006ca"
+    "ster\030\006 \001(\004\022\025\n\rtriggerdamage\030\007 \001(\010\022\030\n\020pro"
+    "cessed_caster\030\010 \001(\004\022\014\n\004data\030\t \001(\014\022.\n\010per"
+    "iodic\030\n \001(\0132\034.BuffPeriodicBuffPbComponen"
+    "t\"t\n\026DamageEventPbComponent\022\020\n\010skill_id\030"
+    "\001 \001(\004\022\023\n\013attacker_id\030\002 \001(\004\022\016\n\006target\030\003 \001"
+    "(\004\022\016\n\006damage\030\004 \001(\001\022\023\n\013damage_type\030\005 \001(\r\""
+    ">\n)BuffNoDamageOrSkillHitInLastSecondsPb"
+    "Comp\022\021\n\tlast_time\030\001 \001(\rB\tZ\007pb/gameb\006prot"
+    "o3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto = {
     false,
     false,
-    535,
+    602,
     descriptor_table_protodef_logic_2fcomponent_2fbuff_5fcomp_2eproto,
     "logic/component/buff_comp.proto",
     &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
@@ -449,8 +471,236 @@ void BuffContextPBComponent::InternalSwap(BuffContextPBComponent* PROTOBUF_RESTR
 }
 // ===================================================================
 
+class BuffPeriodicBuffPbComponent::_Internal {
+ public:
+};
+
+BuffPeriodicBuffPbComponent::BuffPeriodicBuffPbComponent(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:BuffPeriodicBuffPbComponent)
+}
+BuffPeriodicBuffPbComponent::BuffPeriodicBuffPbComponent(
+    ::google::protobuf::Arena* arena, const BuffPeriodicBuffPbComponent& from)
+    : BuffPeriodicBuffPbComponent(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE BuffPeriodicBuffPbComponent::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void BuffPeriodicBuffPbComponent::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, periodic_timer_),
+           0,
+           offsetof(Impl_, ticks_done_) -
+               offsetof(Impl_, periodic_timer_) +
+               sizeof(Impl_::ticks_done_));
+}
+BuffPeriodicBuffPbComponent::~BuffPeriodicBuffPbComponent() {
+  // @@protoc_insertion_point(destructor:BuffPeriodicBuffPbComponent)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void BuffPeriodicBuffPbComponent::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+BuffPeriodicBuffPbComponent::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_._cached_size_),
+              false,
+          },
+          &BuffPeriodicBuffPbComponent::MergeImpl,
+          &BuffPeriodicBuffPbComponent::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void BuffPeriodicBuffPbComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:BuffPeriodicBuffPbComponent)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.periodic_timer_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.ticks_done_) -
+      reinterpret_cast<char*>(&_impl_.periodic_timer_)) + sizeof(_impl_.ticks_done_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* BuffPeriodicBuffPbComponent::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> BuffPeriodicBuffPbComponent::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_BuffPeriodicBuffPbComponent_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::BuffPeriodicBuffPbComponent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 ticks_done = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffPeriodicBuffPbComponent, _impl_.ticks_done_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.ticks_done_)}},
+    // double periodic_timer = 1;
+    {::_pbi::TcParser::FastF64S1,
+     {9, 63, 0, PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.periodic_timer_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // double periodic_timer = 1;
+    {PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.periodic_timer_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
+    // uint32 ticks_done = 2;
+    {PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.ticks_done_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* BuffPeriodicBuffPbComponent::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:BuffPeriodicBuffPbComponent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // double periodic_timer = 1;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_periodic_timer = this->_internal_periodic_timer();
+  ::uint64_t raw_periodic_timer;
+  memcpy(&raw_periodic_timer, &tmp_periodic_timer, sizeof(tmp_periodic_timer));
+  if (raw_periodic_timer != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+        1, this->_internal_periodic_timer(), target);
+  }
+
+  // uint32 ticks_done = 2;
+  if (this->_internal_ticks_done() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        2, this->_internal_ticks_done(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:BuffPeriodicBuffPbComponent)
+  return target;
+}
+
+::size_t BuffPeriodicBuffPbComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:BuffPeriodicBuffPbComponent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // double periodic_timer = 1;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_periodic_timer = this->_internal_periodic_timer();
+  ::uint64_t raw_periodic_timer;
+  memcpy(&raw_periodic_timer, &tmp_periodic_timer, sizeof(tmp_periodic_timer));
+  if (raw_periodic_timer != 0) {
+    total_size += 9;
+  }
+
+  // uint32 ticks_done = 2;
+  if (this->_internal_ticks_done() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_ticks_done());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void BuffPeriodicBuffPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BuffPeriodicBuffPbComponent*>(&to_msg);
+  auto& from = static_cast<const BuffPeriodicBuffPbComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:BuffPeriodicBuffPbComponent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_periodic_timer = from._internal_periodic_timer();
+  ::uint64_t raw_periodic_timer;
+  memcpy(&raw_periodic_timer, &tmp_periodic_timer, sizeof(tmp_periodic_timer));
+  if (raw_periodic_timer != 0) {
+    _this->_impl_.periodic_timer_ = from._impl_.periodic_timer_;
+  }
+  if (from._internal_ticks_done() != 0) {
+    _this->_impl_.ticks_done_ = from._impl_.ticks_done_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void BuffPeriodicBuffPbComponent::CopyFrom(const BuffPeriodicBuffPbComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:BuffPeriodicBuffPbComponent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool BuffPeriodicBuffPbComponent::IsInitialized() const {
+  return true;
+}
+
+void BuffPeriodicBuffPbComponent::InternalSwap(BuffPeriodicBuffPbComponent* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.ticks_done_)
+      + sizeof(BuffPeriodicBuffPbComponent::_impl_.ticks_done_)
+      - PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.periodic_timer_)>(
+          reinterpret_cast<char*>(&_impl_.periodic_timer_),
+          reinterpret_cast<char*>(&other->_impl_.periodic_timer_));
+}
+
+::google::protobuf::Metadata BuffPeriodicBuffPbComponent::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
+                                   &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
+                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[1]);
+}
+// ===================================================================
+
 class BuffPbComponent::_Internal {
  public:
+  using HasBits = decltype(std::declval<BuffPbComponent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+    8 * PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_._has_bits_);
 };
 
 BuffPbComponent::BuffPbComponent(::google::protobuf::Arena* arena)
@@ -461,8 +711,9 @@ BuffPbComponent::BuffPbComponent(::google::protobuf::Arena* arena)
 inline PROTOBUF_NDEBUG_INLINE BuffPbComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
-      : data_(arena, from.data_),
-        _cached_size_{0} {}
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        data_(arena, from.data_) {}
 
 BuffPbComponent::BuffPbComponent(
     ::google::protobuf::Arena* arena,
@@ -473,6 +724,10 @@ BuffPbComponent::BuffPbComponent(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.periodic_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::BuffPeriodicBuffPbComponent>(
+                              arena, *from._impl_.periodic_)
+                        : nullptr;
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, buff_id_),
            reinterpret_cast<const char *>(&from._impl_) +
@@ -486,16 +741,16 @@ BuffPbComponent::BuffPbComponent(
 inline PROTOBUF_NDEBUG_INLINE BuffPbComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : data_(arena),
-        _cached_size_{0} {}
+      : _cached_size_{0},
+        data_(arena) {}
 
 inline void BuffPbComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, buff_id_),
+               offsetof(Impl_, periodic_),
            0,
            offsetof(Impl_, processed_caster_) -
-               offsetof(Impl_, buff_id_) +
+               offsetof(Impl_, periodic_) +
                sizeof(Impl_::processed_caster_));
 }
 BuffPbComponent::~BuffPbComponent() {
@@ -506,6 +761,7 @@ BuffPbComponent::~BuffPbComponent() {
 inline void BuffPbComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.data_.Destroy();
+  delete _impl_.periodic_;
   _impl_.~Impl_();
 }
 
@@ -531,9 +787,15 @@ PROTOBUF_NOINLINE void BuffPbComponent::Clear() {
   (void) cached_has_bits;
 
   _impl_.data_.ClearToEmpty();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.periodic_ != nullptr);
+    _impl_.periodic_->Clear();
+  }
   ::memset(&_impl_.buff_id_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.processed_caster_) -
       reinterpret_cast<char*>(&_impl_.buff_id_)) + sizeof(_impl_.processed_caster_));
+  _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -545,17 +807,17 @@ const char* BuffPbComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 9, 0, 0, 2> BuffPbComponent::_table_ = {
+const ::_pbi::TcParseTable<4, 10, 1, 0, 2> BuffPbComponent::_table_ = {
   {
-    0,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_._has_bits_),
     0, // no _extensions_
-    9, 120,  // max_field_number, fast_idx_mask
+    10, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294966784,  // skipmap
+    4294966272,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    9,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
+    10,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
     &_BuffPbComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
@@ -590,7 +852,9 @@ const ::_pbi::TcParseTable<4, 9, 0, 0, 2> BuffPbComponent::_table_ = {
     // bytes data = 9;
     {::_pbi::TcParser::FastBS1,
      {74, 63, 0, PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.data_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // .BuffPeriodicBuffPbComponent periodic = 10;
+    {::_pbi::TcParser::FastMtS1,
+     {82, 0, 0, PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.periodic_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -600,35 +864,38 @@ const ::_pbi::TcParseTable<4, 9, 0, 0, 2> BuffPbComponent::_table_ = {
     65535, 65535
   }}, {{
     // uint64 buff_id = 1;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.buff_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.buff_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint32 buff_table_id = 2;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.buff_table_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.buff_table_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 ability_id = 3;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.ability_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.ability_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint64 parent_entity = 4;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.parent_entity_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.parent_entity_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint32 layer = 5;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.layer_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.layer_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint64 caster = 6;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.caster_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.caster_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // bool triggerdamage = 7;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.triggerdamage_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.triggerdamage_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
     // uint64 processed_caster = 8;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.processed_caster_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.processed_caster_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // bytes data = 9;
-    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.data_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.data_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
-  }},
-  // no aux_entries
-  {{
+    // .BuffPeriodicBuffPbComponent periodic = 10;
+    {PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.periodic_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::BuffPeriodicBuffPbComponent>()},
+  }}, {{
   }},
 };
 
@@ -701,6 +968,13 @@ const ::_pbi::TcParseTable<4, 9, 0, 0, 2> BuffPbComponent::_table_ = {
     target = stream->WriteBytesMaybeAliased(9, _s, target);
   }
 
+  cached_has_bits = _impl_._has_bits_[0];
+  // .BuffPeriodicBuffPbComponent periodic = 10;
+  if (cached_has_bits & 0x00000001u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        10, *_impl_.periodic_, _impl_.periodic_->GetCachedSize(), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -722,6 +996,13 @@ const ::_pbi::TcParseTable<4, 9, 0, 0, 2> BuffPbComponent::_table_ = {
   if (!this->_internal_data().empty()) {
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
                                     this->_internal_data());
+  }
+
+  // .BuffPeriodicBuffPbComponent periodic = 10;
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    total_size +=
+        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.periodic_);
   }
 
   // uint64 buff_id = 1;
@@ -778,6 +1059,7 @@ const ::_pbi::TcParseTable<4, 9, 0, 0, 2> BuffPbComponent::_table_ = {
 void BuffPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<BuffPbComponent*>(&to_msg);
   auto& from = static_cast<const BuffPbComponent&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:BuffPbComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
@@ -785,6 +1067,16 @@ void BuffPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
 
   if (!from._internal_data().empty()) {
     _this->_internal_set_data(from._internal_data());
+  }
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.periodic_ != nullptr);
+    if (_this->_impl_.periodic_ == nullptr) {
+      _this->_impl_.periodic_ =
+          ::google::protobuf::Message::CopyConstruct<::BuffPeriodicBuffPbComponent>(arena, *from._impl_.periodic_);
+    } else {
+      _this->_impl_.periodic_->MergeFrom(*from._impl_.periodic_);
+    }
   }
   if (from._internal_buff_id() != 0) {
     _this->_impl_.buff_id_ = from._impl_.buff_id_;
@@ -810,6 +1102,7 @@ void BuffPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
   if (from._internal_processed_caster() != 0) {
     _this->_impl_.processed_caster_ = from._impl_.processed_caster_;
   }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -829,19 +1122,20 @@ void BuffPbComponent::InternalSwap(BuffPbComponent* PROTOBUF_RESTRICT other) {
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.data_, &other->_impl_.data_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.processed_caster_)
       + sizeof(BuffPbComponent::_impl_.processed_caster_)
-      - PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.buff_id_)>(
-          reinterpret_cast<char*>(&_impl_.buff_id_),
-          reinterpret_cast<char*>(&other->_impl_.buff_id_));
+      - PROTOBUF_FIELD_OFFSET(BuffPbComponent, _impl_.periodic_)>(
+          reinterpret_cast<char*>(&_impl_.periodic_),
+          reinterpret_cast<char*>(&other->_impl_.periodic_));
 }
 
 ::google::protobuf::Metadata BuffPbComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[1]);
+                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[2]);
 }
 // ===================================================================
 
@@ -1135,231 +1429,6 @@ void DamageEventPbComponent::InternalSwap(DamageEventPbComponent* PROTOBUF_RESTR
 ::google::protobuf::Metadata DamageEventPbComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
-                                   file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[2]);
-}
-// ===================================================================
-
-class BuffPeriodicBuffPbComponent::_Internal {
- public:
-};
-
-BuffPeriodicBuffPbComponent::BuffPeriodicBuffPbComponent(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:BuffPeriodicBuffPbComponent)
-}
-BuffPeriodicBuffPbComponent::BuffPeriodicBuffPbComponent(
-    ::google::protobuf::Arena* arena, const BuffPeriodicBuffPbComponent& from)
-    : BuffPeriodicBuffPbComponent(arena) {
-  MergeFrom(from);
-}
-inline PROTOBUF_NDEBUG_INLINE BuffPeriodicBuffPbComponent::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
-
-inline void BuffPeriodicBuffPbComponent::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, periodic_timer_),
-           0,
-           offsetof(Impl_, ticks_done_) -
-               offsetof(Impl_, periodic_timer_) +
-               sizeof(Impl_::ticks_done_));
-}
-BuffPeriodicBuffPbComponent::~BuffPeriodicBuffPbComponent() {
-  // @@protoc_insertion_point(destructor:BuffPeriodicBuffPbComponent)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void BuffPeriodicBuffPbComponent::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.~Impl_();
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-BuffPeriodicBuffPbComponent::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_._cached_size_),
-              false,
-          },
-          &BuffPeriodicBuffPbComponent::MergeImpl,
-          &BuffPeriodicBuffPbComponent::kDescriptorMethods,
-      };
-  return &_data_;
-}
-PROTOBUF_NOINLINE void BuffPeriodicBuffPbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:BuffPeriodicBuffPbComponent)
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  ::memset(&_impl_.periodic_timer_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.ticks_done_) -
-      reinterpret_cast<char*>(&_impl_.periodic_timer_)) + sizeof(_impl_.ticks_done_));
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-const char* BuffPeriodicBuffPbComponent::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
-  return ptr;
-}
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> BuffPeriodicBuffPbComponent::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_BuffPeriodicBuffPbComponent_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::BuffPeriodicBuffPbComponent>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // uint32 ticks_done = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffPeriodicBuffPbComponent, _impl_.ticks_done_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.ticks_done_)}},
-    // double periodic_timer = 1;
-    {::_pbi::TcParser::FastF64S1,
-     {9, 63, 0, PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.periodic_timer_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // double periodic_timer = 1;
-    {PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.periodic_timer_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
-    // uint32 ticks_done = 2;
-    {PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.ticks_done_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
-
-::uint8_t* BuffPeriodicBuffPbComponent::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:BuffPeriodicBuffPbComponent)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // double periodic_timer = 1;
-  static_assert(sizeof(::uint64_t) == sizeof(double),
-                "Code assumes ::uint64_t and double are the same size.");
-  double tmp_periodic_timer = this->_internal_periodic_timer();
-  ::uint64_t raw_periodic_timer;
-  memcpy(&raw_periodic_timer, &tmp_periodic_timer, sizeof(tmp_periodic_timer));
-  if (raw_periodic_timer != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-        1, this->_internal_periodic_timer(), target);
-  }
-
-  // uint32 ticks_done = 2;
-  if (this->_internal_ticks_done() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        2, this->_internal_ticks_done(), target);
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:BuffPeriodicBuffPbComponent)
-  return target;
-}
-
-::size_t BuffPeriodicBuffPbComponent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:BuffPeriodicBuffPbComponent)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  // double periodic_timer = 1;
-  static_assert(sizeof(::uint64_t) == sizeof(double),
-                "Code assumes ::uint64_t and double are the same size.");
-  double tmp_periodic_timer = this->_internal_periodic_timer();
-  ::uint64_t raw_periodic_timer;
-  memcpy(&raw_periodic_timer, &tmp_periodic_timer, sizeof(tmp_periodic_timer));
-  if (raw_periodic_timer != 0) {
-    total_size += 9;
-  }
-
-  // uint32 ticks_done = 2;
-  if (this->_internal_ticks_done() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_ticks_done());
-  }
-
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void BuffPeriodicBuffPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<BuffPeriodicBuffPbComponent*>(&to_msg);
-  auto& from = static_cast<const BuffPeriodicBuffPbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:BuffPeriodicBuffPbComponent)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  static_assert(sizeof(::uint64_t) == sizeof(double),
-                "Code assumes ::uint64_t and double are the same size.");
-  double tmp_periodic_timer = from._internal_periodic_timer();
-  ::uint64_t raw_periodic_timer;
-  memcpy(&raw_periodic_timer, &tmp_periodic_timer, sizeof(tmp_periodic_timer));
-  if (raw_periodic_timer != 0) {
-    _this->_impl_.periodic_timer_ = from._impl_.periodic_timer_;
-  }
-  if (from._internal_ticks_done() != 0) {
-    _this->_impl_.ticks_done_ = from._impl_.ticks_done_;
-  }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void BuffPeriodicBuffPbComponent::CopyFrom(const BuffPeriodicBuffPbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:BuffPeriodicBuffPbComponent)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-PROTOBUF_NOINLINE bool BuffPeriodicBuffPbComponent::IsInitialized() const {
-  return true;
-}
-
-void BuffPeriodicBuffPbComponent::InternalSwap(BuffPeriodicBuffPbComponent* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.ticks_done_)
-      + sizeof(BuffPeriodicBuffPbComponent::_impl_.ticks_done_)
-      - PROTOBUF_FIELD_OFFSET(BuffPeriodicBuffPbComponent, _impl_.periodic_timer_)>(
-          reinterpret_cast<char*>(&_impl_.periodic_timer_),
-          reinterpret_cast<char*>(&other->_impl_.periodic_timer_));
-}
-
-::google::protobuf::Metadata BuffPeriodicBuffPbComponent::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
-                                   &descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2fbuff_5fcomp_2eproto[3]);
 }
 // ===================================================================
@@ -1369,28 +1438,170 @@ class BuffNoDamageOrSkillHitInLastSecondsPbComp::_Internal {
 };
 
 BuffNoDamageOrSkillHitInLastSecondsPbComp::BuffNoDamageOrSkillHitInLastSecondsPbComp(::google::protobuf::Arena* arena)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:BuffNoDamageOrSkillHitInLastSecondsPbComp)
 }
 BuffNoDamageOrSkillHitInLastSecondsPbComp::BuffNoDamageOrSkillHitInLastSecondsPbComp(
-    ::google::protobuf::Arena* arena,
-    const BuffNoDamageOrSkillHitInLastSecondsPbComp& from)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-  BuffNoDamageOrSkillHitInLastSecondsPbComp* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
+    ::google::protobuf::Arena* arena, const BuffNoDamageOrSkillHitInLastSecondsPbComp& from)
+    : BuffNoDamageOrSkillHitInLastSecondsPbComp(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE BuffNoDamageOrSkillHitInLastSecondsPbComp::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
 
-  // @@protoc_insertion_point(copy_constructor:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+inline void BuffNoDamageOrSkillHitInLastSecondsPbComp::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.last_time_ = {};
+}
+BuffNoDamageOrSkillHitInLastSecondsPbComp::~BuffNoDamageOrSkillHitInLastSecondsPbComp() {
+  // @@protoc_insertion_point(destructor:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void BuffNoDamageOrSkillHitInLastSecondsPbComp::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+BuffNoDamageOrSkillHitInLastSecondsPbComp::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_._cached_size_),
+              false,
+          },
+          &BuffNoDamageOrSkillHitInLastSecondsPbComp::MergeImpl,
+          &BuffNoDamageOrSkillHitInLastSecondsPbComp::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void BuffNoDamageOrSkillHitInLastSecondsPbComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.last_time_ = 0u;
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* BuffNoDamageOrSkillHitInLastSecondsPbComp::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
 }
 
 
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> BuffNoDamageOrSkillHitInLastSecondsPbComp::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_BuffNoDamageOrSkillHitInLastSecondsPbComp_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::BuffNoDamageOrSkillHitInLastSecondsPbComp>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 last_time = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_.last_time_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_.last_time_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 last_time = 1;
+    {PROTOBUF_FIELD_OFFSET(BuffNoDamageOrSkillHitInLastSecondsPbComp, _impl_.last_time_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* BuffNoDamageOrSkillHitInLastSecondsPbComp::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 last_time = 1;
+  if (this->_internal_last_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        1, this->_internal_last_time(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+  return target;
+}
+
+::size_t BuffNoDamageOrSkillHitInLastSecondsPbComp::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint32 last_time = 1;
+  if (this->_internal_last_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_last_time());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
 
 
+void BuffNoDamageOrSkillHitInLastSecondsPbComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp*>(&to_msg);
+  auto& from = static_cast<const BuffNoDamageOrSkillHitInLastSecondsPbComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
 
+  if (from._internal_last_time() != 0) {
+    _this->_impl_.last_time_ = from._impl_.last_time_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
 
+void BuffNoDamageOrSkillHitInLastSecondsPbComp::CopyFrom(const BuffNoDamageOrSkillHitInLastSecondsPbComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
 
+PROTOBUF_NOINLINE bool BuffNoDamageOrSkillHitInLastSecondsPbComp::IsInitialized() const {
+  return true;
+}
 
+void BuffNoDamageOrSkillHitInLastSecondsPbComp::InternalSwap(BuffNoDamageOrSkillHitInLastSecondsPbComp* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.last_time_, other->_impl_.last_time_);
+}
 
 ::google::protobuf::Metadata BuffNoDamageOrSkillHitInLastSecondsPbComp::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2fbuff_5fcomp_2eproto_getter,
