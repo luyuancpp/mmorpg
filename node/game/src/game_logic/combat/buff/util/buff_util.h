@@ -89,6 +89,6 @@ public:
     //监听我方击杀目标时触发
     static void OnKill(entt::entity parent);
 
-    static void OnAbilityHit(entt::entity parent);
+    static void OnSkillHit(entt::entity casterEntity, entt::entity targetEntity);
 
 };

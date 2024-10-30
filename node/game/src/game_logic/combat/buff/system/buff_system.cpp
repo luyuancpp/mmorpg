@@ -5,7 +5,7 @@
 #include "proto/logic/component/buff_comp.pb.h"
 #include "thread_local/storage.h"
 
-bool CanApplyMoreTicks(const PeriodicBuffPbComponent& periodicBuff, const BuffTable* buffTable) {
+bool CanApplyMoreTicks(const BuffPeriodicBuffPbComponent& periodicBuff, const BuffTable* buffTable) {
     return (buffTable->intervalcount() <= 0) || (periodicBuff.ticks_done() + 1 <= buffTable->intervalcount());
 }
 

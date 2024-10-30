@@ -23,19 +23,17 @@
 #include "time/util/cooldown_time_util.h"
 #include "time/util/time_util.h"
 
-// Generate a unique skill ID that is not present in the given buff lists
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
-    uint64_t newSkillId;
-    do {
-        newSkillId = tlsGame.skillIdGenerator.Generate();
-    } while (casterBuffList.contains(newSkillId) || targetBuffList.contains(newSkillId));
-    return newSkillId;
+	uint64_t newSkillId;
+	do {
+		newSkillId = tlsGame.skillIdGenerator.Generate();
+	} while (casterBuffList.contains(newSkillId) || targetBuffList.contains(newSkillId));
+	return newSkillId;
 }
 
-// Initialize an entity with necessary skill components
 void SkillUtil::InitializeActorComponents(entt::entity entity) {
-    tls.registry.emplace<SkillContextCompMap>(entity);
-    tls.registry.emplace<CooldownTimeListComp>(entity);
+	tls.registry.emplace<SkillContextCompMap>(entity);
+	tls.registry.emplace<CooldownTimeListComp>(entity);
 }
 
 void SkillUtil::StartCooldown(entt::entity caster, const SkillTable* skillTable) {
@@ -49,7 +47,6 @@ void SkillUtil::StartCooldown(entt::entity caster, const SkillTable* skillTable)
 	}
 }
 
-// Look at the target position
 void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* request) {
 	if (request->has_position()) {
 		ViewUtil::LookAtPosition(caster, request->position());
@@ -61,7 +58,6 @@ void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* r
 	}
 }
 
-// Create skill context for the caster
 std::shared_ptr<SkillContextPBComponent> CreateSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request) {
 	auto context = std::make_shared<SkillContextPBComponent>();
 	context->set_caster(entt::to_integral(caster));
@@ -72,7 +68,6 @@ std::shared_ptr<SkillContextPBComponent> CreateSkillContext(entt::entity caster,
 	return context;
 }
 
-// Add skill context to the caster and target maps
 void AddSkillContext(entt::entity caster, const ReleaseSkillSkillRequest* request, std::shared_ptr<SkillContextPBComponent> context) {
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
 	casterSkillContextMap.emplace(context->skillid(), context);
@@ -97,39 +92,48 @@ void ConsumeResources(entt::entity caster, const SkillTable* skillTable) {
 	}
 }
 
-// Release a skill and perform necessary actions
-uint32_t SkillUtil::ReleaseSkill(entt::entity caster, const ReleaseSkillSkillRequest* request) {
+void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t targetId) {
+	const entt::entity targetEntity{targetId};
+	if (!tls.registry.valid(targetEntity)) {
+		return;
+	}
+	BuffUtil::OnSkillHit(casterEntity, targetEntity);
+}
+
+uint32_t SkillUtil::ReleaseSkill(const entt::entity casterEntity, const ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kOK || !skillTable) return result;
 
-	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(caster, request));
-	LookAtTargetPosition(caster, request);
-	BroadcastSkillUsedMessage(caster, request);
+	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(casterEntity, request));
+	LookAtTargetPosition(casterEntity, request);
+	BroadcastSkillUsedMessage(casterEntity, request);
     
-	const auto context = CreateSkillContext(caster, request);
-	AddSkillContext(caster, request, context);
+	const auto context = CreateSkillContext(casterEntity, request);
+	AddSkillContext(casterEntity, request, context);
     
-	ConsumeItems(caster, skillTable);
-	ConsumeResources(caster, skillTable);
-	StartCooldown(caster, skillTable);
-	SetupCastingTimer(caster, skillTable, context->skillid());
+	ConsumeItems(casterEntity, skillTable);
+	ConsumeResources(casterEntity, skillTable);
+	StartCooldown(casterEntity, skillTable);
+	SetupCastingTimer(casterEntity, skillTable, context->skillid());
+
+	ApplySkillHitEffectIfValid(casterEntity, request->target_id());
 
 	return kOK;
 }
 
-uint32_t CheckPlayerLevel(const entt::entity caster, const SkillTable* skillTable) {
-	if (!tls.registry.any_of<Player>(caster))
+uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* skillTable) {
+	if (!tls.registry.any_of<Player>(casterEntity))
 	{
 		return  kOK;
 	}
 	return kOK;
 }
 
-uint32_t CheckBuff(const entt::entity caster, const SkillTable* skillTable) {
+uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
 	return kOK;
 }
 
-uint32_t CheckState(const entt::entity caster, const SkillTable* skillTable) {
+uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
 	for (auto& resource : skillTable->requestresource()){
 		
 	}
@@ -137,33 +141,33 @@ uint32_t CheckState(const entt::entity caster, const SkillTable* skillTable) {
 	return kOK;
 }
 
-uint32_t CheckItemUse(const entt::entity caster, const SkillTable* skillTable) {
+uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTable) {
 	for (auto& item : skillTable->requireditem()){
 		
 	}
 	return kOK;
 }
 
-uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity caster, const ::ReleaseSkillSkillRequest* request) {
+uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kOK) {
 		return result;
 	}
 
 	CHECK_RETURN_IF_NOT_OK(ValidateTarget(request));
-	CHECK_RETURN_IF_NOT_OK(CheckCooldown(caster, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckCasting(caster, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckRecovery(caster, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckChannel(caster, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckPlayerLevel(caster, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckBuff(caster, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckState(caster, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckItemUse(caster, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckCooldown(casterEntity, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckCasting(casterEntity, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckRecovery(casterEntity, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckChannel(casterEntity, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckPlayerLevel(casterEntity, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckBuff(casterEntity, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckState(casterEntity, skillTable));
+	CHECK_RETURN_IF_NOT_OK(CheckItemUse(casterEntity, skillTable));
 	return kOK;
 }
 
-bool SkillUtil::IsSkillOfType(const uint32_t skillTableID, const uint32_t skillType) {
-	auto [skillTable, result] = GetSkillTable(skillTableID);
+bool SkillUtil::IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType) {
+	auto [skillTable, result] = GetSkillTable(skillTableId);
 	if (skillTable == nullptr) {
 		return false;
 	}
@@ -181,19 +185,19 @@ void SkillUtil::HandleSkillInitialize() {
 	// Implementation here
 }
 
-void SkillUtil::HandleGeneralSkillSpell(const entt::entity caster, const uint64_t skillId) {
-	HandleSkillSpell(caster, skillId);
+void SkillUtil::HandleGeneralSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
+	HandleSkillSpell(casterEntity, skillId);
 
-	LOG_INFO << "Handling general skill spell. Caster: " << entt::to_integral(caster)
+	LOG_INFO << "Handling general skill spell. Caster: " << entt::to_integral(casterEntity)
 		<< ", Skill ID: " << skillId;
 
-	TriggerSkillEffect(caster, skillId);
-	HandleSkillRecovery(caster, skillId);
+	TriggerSkillEffect(casterEntity, skillId);
+	HandleSkillRecovery(casterEntity, skillId);
 }
 
 // Set up a timer for skill recovery after casting
-void SkillUtil::HandleSkillRecovery(const entt::entity caster, uint64_t skillId) {
-	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+void SkillUtil::HandleSkillRecovery(const entt::entity casterEntity, uint64_t skillId) {
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(casterEntity);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
 
 	if (skillContentIt == casterSkillContextMap.end()) {
@@ -205,17 +209,17 @@ void SkillUtil::HandleSkillRecovery(const entt::entity caster, uint64_t skillId)
 		return;
 	}
 
-	auto& recoveryTimer = tls.registry.emplace_or_replace<RecoveryTimerComp>(caster).timer;
-	recoveryTimer.RunAfter(skillTable->recoverytime(), [caster, skillId] {
-		return HandleSkillFinish(caster, skillId);
+	auto& recoveryTimer = tls.registry.emplace_or_replace<RecoveryTimerComp>(casterEntity).timer;
+	recoveryTimer.RunAfter(skillTable->recoverytime(), [casterEntity, skillId] {
+		return HandleSkillFinish(casterEntity, skillId);
 		});
 }
 
-void SkillUtil::HandleSkillFinish(const entt::entity caster, uint64_t skillId) {
+void SkillUtil::HandleSkillFinish(const entt::entity casterEntity, uint64_t skillId) {
 	// Implementation here
 
 	// todo player off line 
-	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(casterEntity);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
 	if (skillContentIt != casterSkillContextMap.end()) {
 		entt::entity target = entt::to_entity(skillContentIt->second->target());
@@ -227,52 +231,52 @@ void SkillUtil::HandleSkillFinish(const entt::entity caster, uint64_t skillId) {
 	}
 }
 
-void SkillUtil::HandleChannelSkillSpell(entt::entity caster, uint64_t skillId) {
+void SkillUtil::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t skillId) {
 	auto [skillTable, result] = GetSkillTable(skillId);
 	if (skillTable == nullptr) {
 		return;
 	}
 
-	LOG_INFO << "Handling channel skill spell. Caster: " << entt::to_integral(caster)
+	LOG_INFO << "Handling channel skill spell. Caster: " << entt::to_integral(casterEntity)
 		<< ", Skill ID: " << skillId;
 
-	HandleSkillSpell(caster, skillId);
+	HandleSkillSpell(casterEntity, skillId);
 
-	auto& channelFinishTimer = tls.registry.emplace_or_replace<ChannelFinishTimerComp>(caster).timer;
-	channelFinishTimer.RunAfter(skillTable->channelfinish(), [caster, skillId] {
-		return HandleChannelFinish(caster, skillId);
+	auto& channelFinishTimer = tls.registry.emplace_or_replace<ChannelFinishTimerComp>(casterEntity).timer;
+	channelFinishTimer.RunAfter(skillTable->channelfinish(), [casterEntity, skillId] {
+		return HandleChannelFinish(casterEntity, skillId);
 		});
 
-	auto& channelIntervalTimer = tls.registry.emplace_or_replace<ChannelIntervalTimerComp>(caster).timer;
-	channelIntervalTimer.RunEvery(skillTable->channelthink(), [caster, skillId] {
-		return HandleChannelThink(caster, skillId);
+	auto& channelIntervalTimer = tls.registry.emplace_or_replace<ChannelIntervalTimerComp>(casterEntity).timer;
+	channelIntervalTimer.RunEvery(skillTable->channelthink(), [casterEntity, skillId] {
+		return HandleChannelThink(casterEntity, skillId);
 		});
 }
 
 // Placeholder for channeling think logic
-void SkillUtil::HandleChannelThink(entt::entity caster, uint64_t skillId) {
+void SkillUtil::HandleChannelThink(entt::entity casterEntity, uint64_t skillId) {
 	// TODO: Implement channel think logic here
 }
 
-void SkillUtil::HandleChannelFinish(const entt::entity caster, const uint64_t skillId) {
-	tls.registry.remove<ChannelIntervalTimerComp>(caster);
-	HandleSkillRecovery(caster, skillId);
+void SkillUtil::HandleChannelFinish(const entt::entity casterEntity, const uint64_t skillId) {
+	tls.registry.remove<ChannelIntervalTimerComp>(casterEntity);
+	HandleSkillRecovery(casterEntity, skillId);
 }
 
-void SkillUtil::HandleSkillToggleOn(const entt::entity caster, const uint64_t skillId) {
-	TriggerSkillEffect(caster, skillId);
+void SkillUtil::HandleSkillToggleOn(const entt::entity casterEntity, const uint64_t skillId) {
+	TriggerSkillEffect(casterEntity, skillId);
 }
 
-void SkillUtil::HandleSkillToggleOff(const entt::entity caster, const uint64_t skillId) {
-	RemoveEffect(caster, skillId);
+void SkillUtil::HandleSkillToggleOff(const entt::entity casterEntity, const uint64_t skillId) {
+	RemoveEffect(casterEntity, skillId);
 }
 
-void SkillUtil::HandleSkillActivate(const entt::entity caster, const uint64_t skillId) {
-	TriggerSkillEffect(caster, skillId);
+void SkillUtil::HandleSkillActivate(const entt::entity casterEntity, const uint64_t skillId) {
+	TriggerSkillEffect(casterEntity, skillId);
 }
 
-void SkillUtil::HandleSkillDeactivate(const entt::entity caster, const uint64_t skillId) {
-	RemoveEffect(caster, skillId);
+void SkillUtil::HandleSkillDeactivate(const entt::entity casterEntity, const uint64_t skillId) {
+	RemoveEffect(casterEntity, skillId);
 }
 
 uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
@@ -332,13 +336,13 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	return err;  // 返回错误状态（如果有）
 }
 
-uint32_t SkillUtil::CheckCooldown(const entt::entity caster, const SkillTable* skillTable) {
-	if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(caster)) {
+uint32_t SkillUtil::CheckCooldown(const entt::entity casterEntity, const SkillTable* skillTable) {
+	if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(casterEntity)) {
 		if (const auto it = coolDownTimeListComp->cooldown_list().find(skillTable->cooldown_id());
 			it != coolDownTimeListComp->cooldown_list().end() &&
 			CoolDownTimeMillisecondUtil::IsInCooldown(it->second)) {
 			LOG_ERROR << "Skill ID: " << skillTable->id()
-				<< " is in cooldown for player: " << entt::to_integral(caster)
+				<< " is in cooldown for player: " << entt::to_integral(casterEntity)
 				<< ". Cooldown ID: " << skillTable->cooldown_id()
 				<< ". Time remaining: " << CoolDownTimeMillisecondUtil::Remaining(it->second) << "ms";
 			return kSkillCooldownNotReady;
@@ -348,13 +352,13 @@ uint32_t SkillUtil::CheckCooldown(const entt::entity caster, const SkillTable* s
 	return kOK;
 }
 
-uint32_t SkillUtil::CheckCasting(const entt::entity caster, const SkillTable* skillTable) {
-	if (const auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(caster)) {
+uint32_t SkillUtil::CheckCasting(const entt::entity casterEntity, const SkillTable* skillTable) {
+	if (const auto* castTimerComp = tls.registry.try_get<CastingTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && castTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently casting. Sending interrupt message.";
-			SendSkillInterruptedMessage(caster, skillTable->id());
-			tls.registry.remove<CastingTimerComp>(caster);
+			SendSkillInterruptedMessage(casterEntity, skillTable->id());
+			tls.registry.remove<CastingTimerComp>(casterEntity);
 			return kOK;
 		}
 		
@@ -363,19 +367,19 @@ uint32_t SkillUtil::CheckCasting(const entt::entity caster, const SkillTable* sk
 				<< " is currently casting and cannot be interrupted.";
 			return kSkillUnInterruptible;
 		}
-		tls.registry.remove<CastingTimerComp>(caster);
+		tls.registry.remove<CastingTimerComp>(casterEntity);
 	}
 
 	return kOK;
 }
 
-uint32_t SkillUtil::CheckRecovery(const entt::entity caster, const SkillTable* skillTable) {
-	if (const auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(caster)) {
+uint32_t SkillUtil::CheckRecovery(const entt::entity casterEntity, const SkillTable* skillTable) {
+	if (const auto* recoveryTimeTimerComp = tls.registry.try_get<RecoveryTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently casting. Sending interrupt message.";
-			SendSkillInterruptedMessage(caster, skillTable->id());
-			tls.registry.remove<RecoveryTimerComp>(caster);
+			SendSkillInterruptedMessage(casterEntity, skillTable->id());
+			tls.registry.remove<RecoveryTimerComp>(casterEntity);
 			return kOK;
 		}
 		
@@ -384,20 +388,20 @@ uint32_t SkillUtil::CheckRecovery(const entt::entity caster, const SkillTable* s
 				<< " is currently casting and cannot be interrupted.";
 			return kSkillUnInterruptible;
 		}
-		tls.registry.remove<RecoveryTimerComp>(caster);
+		tls.registry.remove<RecoveryTimerComp>(casterEntity);
 	}
 
 	return kOK;
 }
 
-uint32_t SkillUtil::CheckChannel(const entt::entity caster, const SkillTable* skillTable) {
-	if (const auto* channelFinishTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(caster)) {
+uint32_t SkillUtil::CheckChannel(const entt::entity casterEntity, const SkillTable* skillTable) {
+	if (const auto* channelFinishTimerComp = tls.registry.try_get<ChannelFinishTimerComp>(casterEntity)) {
 		if (skillTable->immediately() && channelFinishTimerComp->timer.IsActive()) {
 			LOG_INFO << "Immediate skill: " << skillTable->id()
 				<< " is currently casting. Sending interrupt message.";
-			SendSkillInterruptedMessage(caster, skillTable->id());
+			SendSkillInterruptedMessage(casterEntity, skillTable->id());
 			// TODO: Implement logic for handling the skill interruption
-			tls.registry.remove<ChannelFinishTimerComp>(caster);
+			tls.registry.remove<ChannelFinishTimerComp>(casterEntity);
 			return kOK;
 		}
 
@@ -408,55 +412,55 @@ uint32_t SkillUtil::CheckChannel(const entt::entity caster, const SkillTable* sk
 		}
 
 		// TODO: Implement logic for handling the skill interruption
-		tls.registry.remove<ChannelFinishTimerComp>(caster);
+		tls.registry.remove<ChannelFinishTimerComp>(casterEntity);
 	}
 
 	return kOK;
 }
 
-void SkillUtil::BroadcastSkillUsedMessage(const entt::entity caster, const ::ReleaseSkillSkillRequest* request) {
+void SkillUtil::BroadcastSkillUsedMessage(const entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request) {
 	SkillUsedS2C skillUsedS2C;
-	skillUsedS2C.set_entity(entt::to_integral(caster));
+	skillUsedS2C.set_entity(entt::to_integral(casterEntity));
 	skillUsedS2C.add_target_entity(request->target_id());
 	skillUsedS2C.set_skill_table_id(request->skill_table_id());
 	skillUsedS2C.mutable_position()->CopyFrom(request->position());
 
 	ViewUtil::BroadcastMessageToVisiblePlayers(
-		caster,
+		casterEntity,
 		PlayerSkillServiceNotifySkillUsedMessageId,
 		skillUsedS2C
 	);
 }
 
-void SkillUtil::SetupCastingTimer(entt::entity caster, const SkillTable* skillTable, uint64_t skillId) {
-	auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(caster).timer;
+void SkillUtil::SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId) {
+	auto& castingTimer = tls.registry.emplace_or_replace<CastingTimerComp>(casterEntity).timer;
 	if (IsSkillOfType(skillTable->id(), kGeneralSkill)) {
-		castingTimer.RunAfter(skillTable->castpoint(), [caster, skillId] {
-			return HandleGeneralSkillSpell(caster, skillId);
+		castingTimer.RunAfter(skillTable->castpoint(), [casterEntity, skillId] {
+			return HandleGeneralSkillSpell(casterEntity, skillId);
 			});
 	}
 	else if (IsSkillOfType(skillTable->id(), kChannelSkill)) {
-		castingTimer.RunAfter(skillTable->castpoint(), [caster, skillId] {
-			return HandleChannelSkillSpell(caster, skillId);
+		castingTimer.RunAfter(skillTable->castpoint(), [casterEntity, skillId] {
+			return HandleChannelSkillSpell(casterEntity, skillId);
 			});
 	}
 }
 
-void SkillUtil::SendSkillInterruptedMessage(const entt::entity caster, const uint32_t skillTableId) {
+void SkillUtil::SendSkillInterruptedMessage(const entt::entity casterEntity, const uint32_t skillTableId) {
 	SkillInterruptedS2C skillInterruptedS2C;
-	skillInterruptedS2C.set_entity(entt::to_integral(caster));
+	skillInterruptedS2C.set_entity(entt::to_integral(casterEntity));
 	skillInterruptedS2C.set_skill_table_id(skillTableId);
 	//skillInterruptedS2C.set_skill_id(skillTableID);
 
 	ViewUtil::BroadcastMessageToVisiblePlayers(
-		caster,
+		casterEntity,
 		PlayerSkillServiceNotifySkillInterruptedMessageId,
 		skillInterruptedS2C
 	);
 }
 
-void SkillUtil::TriggerSkillEffect(const entt::entity caster, const uint64_t skillId) {
-	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+void SkillUtil::TriggerSkillEffect(const entt::entity casterEntity, const uint64_t skillId) {
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(casterEntity);
 	const auto skillContextIt = casterSkillContextMap.find(skillId);
 
 	if (skillContextIt == casterSkillContextMap.end()) {
@@ -471,15 +475,15 @@ void SkillUtil::TriggerSkillEffect(const entt::entity caster, const uint64_t ski
 		return;
 	}
 
-	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(caster) << ", Skill ID: " << skillId;
+	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(casterEntity) << ", Skill ID: " << skillId;
 
 	for (const auto& effect : skillTable->effect()) {
 		BuffUtil::AddOrUpdateBuff(entt::to_entity(skillContext->target()), effect, skillContext);
 	}
 }
 
-void SkillUtil::RemoveEffect(entt::entity caster, const uint64_t skillId) {
-	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+void SkillUtil::RemoveEffect(entt::entity casterEntity, const uint64_t skillId) {
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(casterEntity);
 	auto skillContentIt = casterSkillContextMap.find(skillId);
 
 	if (skillContentIt == casterSkillContextMap.end()) {
@@ -505,9 +509,9 @@ bool IsTargetDead(entt::entity targetEntity) {
 }
 
 
-double CalculateFinalDamage(const entt::entity caster, const entt::entity target, double baseDamage) {
+double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity target, double baseDamage) {
     // 获取施法者的属性，例如力量和暴击率
-    auto& casterAttributes = tls.registry.get<BaseAttributesPBComponent>(caster);
+    auto& casterAttributes = tls.registry.get<BaseAttributesPBComponent>(casterEntity);
     double critChance = casterAttributes.critchance();
     double strength = casterAttributes.strength();
 
@@ -530,9 +534,9 @@ double CalculateFinalDamage(const entt::entity caster, const entt::entity target
 }
 
 
-void CalculateSkillDamage(const entt::entity caster, DamageEventPbComponent& damageEvent) {
+void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponent& damageEvent) {
     // 获取施法者的技能上下文
-    auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+    auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(casterEntity);
     auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
 
     if (skillContentIt == casterSkillContextMap.end()) {
@@ -557,17 +561,17 @@ void CalculateSkillDamage(const entt::entity caster, DamageEventPbComponent& dam
     }
 
     // 获取施法者的等级组件并设置伤害参数
-    auto& levelComponent = tls.registry.get<LevelComponent>(caster);
+    auto& levelComponent = tls.registry.get<LevelComponent>(casterEntity);
     SkillConfigurationTable::Instance().SetDamageParam({ static_cast<double>(levelComponent.level()) });
 
     // 设置攻击者 ID
-    damageEvent.set_attacker_id(entt::to_integral(caster));
+    damageEvent.set_attacker_id(entt::to_integral(casterEntity));
 
     // 计算技能的基础伤害
     double baseDamage = SkillConfigurationTable::Instance().GetDamage(skillContentIt->second->skilltableid());
 
     // 计算最终伤害
-    double finalDamage = CalculateFinalDamage(caster, targetEntity, baseDamage);
+    double finalDamage = CalculateFinalDamage(casterEntity, targetEntity, baseDamage);
 
     // 设置最终的伤害值
     damageEvent.set_damage(finalDamage);
@@ -575,8 +579,8 @@ void CalculateSkillDamage(const entt::entity caster, DamageEventPbComponent& dam
 
 
 // 触发伤害前的事件
-void TriggerBeforeDamageEvents(const entt::entity caster, const entt::entity target, DamageEventPbComponent& damageEvent) {
-    BuffUtil::OnBeforeGiveDamage(caster, damageEvent);
+void TriggerBeforeDamageEvents(const entt::entity casterEntity, const entt::entity target, DamageEventPbComponent& damageEvent) {
+    BuffUtil::OnBeforeGiveDamage(casterEntity, damageEvent);
     BuffUtil::OnBeforeTakeDamage(target, damageEvent);
 }
 
@@ -593,22 +597,22 @@ void ApplyDamage(BaseAttributesPBComponent& baseAttributesPBComponent, const Dam
 }
 
 // 触发被击杀事件
-void TriggerBeKillEvent(const entt::entity caster, const entt::entity target) {
+void TriggerBeKillEvent(const entt::entity casterEntity, const entt::entity target) {
 	BeKillEvent beKillEvent;
-	beKillEvent.set_caster(entt::to_integral(caster));
+	beKillEvent.set_caster(entt::to_integral(casterEntity));
 	beKillEvent.set_target(entt::to_integral(target));
 
 	tls.dispatcher.trigger(beKillEvent);
 }
 
 // 触发伤害后的事件
-void TriggerAfterDamageEvents(const entt::entity caster, const entt::entity target, DamageEventPbComponent& damageEvent) {
-	BuffUtil::OnAfterGiveDamage(caster, damageEvent);
+void TriggerAfterDamageEvents(const entt::entity casterEntity, const entt::entity target, DamageEventPbComponent& damageEvent) {
+	BuffUtil::OnAfterGiveDamage(casterEntity, damageEvent);
 	BuffUtil::OnAfterTakeDamage(target, damageEvent);
 }
 
 // 处理目标死亡逻辑
-void HandleTargetDeath(const entt::entity caster, const entt::entity target, const DamageEventPbComponent& damageEvent) {
+void HandleTargetDeath(const entt::entity casterEntity, const entt::entity target, const DamageEventPbComponent& damageEvent) {
     // 触发死亡前的事件
     BuffUtil::OnBeforeDead(target); 
 
@@ -616,12 +620,12 @@ void HandleTargetDeath(const entt::entity caster, const entt::entity target, con
     BuffUtil::OnAfterDead(target);
 
     // 如果不是自杀，触发击杀事件
-    if (caster != target) {
-        BuffUtil::OnKill(caster);
+    if (casterEntity != target) {
+        BuffUtil::OnKill(casterEntity);
     }
 
     // 生成并触发被击杀事件
-    TriggerBeKillEvent(caster, target);
+    TriggerBeKillEvent(casterEntity, target);
 }
 
 // 处理具体的伤害逻辑
@@ -651,8 +655,8 @@ void DealDamage(DamageEventPbComponent& damageEvent, const entt::entity caster, 
 	TriggerAfterDamageEvents(caster, target, damageEvent);
 }
 
-void SkillUtil::HandleSkillSpell(const entt::entity caster, const uint64_t skillId) {
-	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(caster);
+void SkillUtil::HandleSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
+	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(casterEntity);
 	const auto skillContextIt = casterSkillContextMap.find(skillId);
 
 	if (skillContextIt == casterSkillContextMap.end()) {
@@ -666,12 +670,12 @@ void SkillUtil::HandleSkillSpell(const entt::entity caster, const uint64_t skill
 	DamageEventPbComponent damageEvent;
 	damageEvent.set_skill_id(skillId);
 	damageEvent.set_target(skillContext->target());
-	CalculateSkillDamage(caster, damageEvent); // 计算伤害
-	DealDamage(damageEvent, caster, targetEntity); // 处理伤害
+	CalculateSkillDamage(casterEntity, damageEvent); // 计算伤害
+	DealDamage(damageEvent, casterEntity, targetEntity); // 处理伤害
 
 	// 触发技能执行事件
 	SkillExecutedEvent skillExecutedEvent;
-	skillExecutedEvent.set_caster(entt::to_integral(caster));
+	skillExecutedEvent.set_caster(entt::to_integral(casterEntity));
 	skillExecutedEvent.set_target(skillContext->target());
 	BuffUtil::OnSkillExecuted(skillExecutedEvent);
 }

@@ -20,6 +20,7 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
+#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -52,15 +53,18 @@ extern const ::google::protobuf::internal::DescriptorTable
 class BuffContextPBComponent;
 struct BuffContextPBComponentDefaultTypeInternal;
 extern BuffContextPBComponentDefaultTypeInternal _BuffContextPBComponent_default_instance_;
+class BuffNoDamageOrSkillHitInLastSecondsPbComp;
+struct BuffNoDamageOrSkillHitInLastSecondsPbCompDefaultTypeInternal;
+extern BuffNoDamageOrSkillHitInLastSecondsPbCompDefaultTypeInternal _BuffNoDamageOrSkillHitInLastSecondsPbComp_default_instance_;
 class BuffPbComponent;
 struct BuffPbComponentDefaultTypeInternal;
 extern BuffPbComponentDefaultTypeInternal _BuffPbComponent_default_instance_;
+class BuffPeriodicBuffPbComponent;
+struct BuffPeriodicBuffPbComponentDefaultTypeInternal;
+extern BuffPeriodicBuffPbComponentDefaultTypeInternal _BuffPeriodicBuffPbComponent_default_instance_;
 class DamageEventPbComponent;
 struct DamageEventPbComponentDefaultTypeInternal;
 extern DamageEventPbComponentDefaultTypeInternal _DamageEventPbComponent_default_instance_;
-class PeriodicBuffPbComponent;
-struct PeriodicBuffPbComponentDefaultTypeInternal;
-extern PeriodicBuffPbComponentDefaultTypeInternal _PeriodicBuffPbComponent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -70,185 +74,6 @@ namespace protobuf {
 // ===================================================================
 
 
-// -------------------------------------------------------------------
-
-class PeriodicBuffPbComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:PeriodicBuffPbComponent) */ {
- public:
-  inline PeriodicBuffPbComponent() : PeriodicBuffPbComponent(nullptr) {}
-  ~PeriodicBuffPbComponent() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR PeriodicBuffPbComponent(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline PeriodicBuffPbComponent(const PeriodicBuffPbComponent& from) : PeriodicBuffPbComponent(nullptr, from) {}
-  inline PeriodicBuffPbComponent(PeriodicBuffPbComponent&& from) noexcept
-      : PeriodicBuffPbComponent(nullptr, std::move(from)) {}
-  inline PeriodicBuffPbComponent& operator=(const PeriodicBuffPbComponent& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline PeriodicBuffPbComponent& operator=(PeriodicBuffPbComponent&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const PeriodicBuffPbComponent& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const PeriodicBuffPbComponent* internal_default_instance() {
-    return reinterpret_cast<const PeriodicBuffPbComponent*>(
-        &_PeriodicBuffPbComponent_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 3;
-  friend void swap(PeriodicBuffPbComponent& a, PeriodicBuffPbComponent& b) { a.Swap(&b); }
-  inline void Swap(PeriodicBuffPbComponent* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(PeriodicBuffPbComponent* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  PeriodicBuffPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<PeriodicBuffPbComponent>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const PeriodicBuffPbComponent& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const PeriodicBuffPbComponent& from) { PeriodicBuffPbComponent::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(PeriodicBuffPbComponent* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "PeriodicBuffPbComponent"; }
-
- protected:
-  explicit PeriodicBuffPbComponent(::google::protobuf::Arena* arena);
-  PeriodicBuffPbComponent(::google::protobuf::Arena* arena, const PeriodicBuffPbComponent& from);
-  PeriodicBuffPbComponent(::google::protobuf::Arena* arena, PeriodicBuffPbComponent&& from) noexcept
-      : PeriodicBuffPbComponent(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPeriodicTimerFieldNumber = 1,
-    kTicksDoneFieldNumber = 2,
-  };
-  // double periodic_timer = 1;
-  void clear_periodic_timer() ;
-  double periodic_timer() const;
-  void set_periodic_timer(double value);
-
-  private:
-  double _internal_periodic_timer() const;
-  void _internal_set_periodic_timer(double value);
-
-  public:
-  // uint32 ticks_done = 2;
-  void clear_ticks_done() ;
-  ::uint32_t ticks_done() const;
-  void set_ticks_done(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_ticks_done() const;
-  void _internal_set_ticks_done(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:PeriodicBuffPbComponent)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 0,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    double periodic_timer_;
-    ::uint32_t ticks_done_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_logic_2fcomponent_2fbuff_5fcomp_2eproto;
-};
 // -------------------------------------------------------------------
 
 class DamageEventPbComponent final : public ::google::protobuf::Message
@@ -466,6 +291,185 @@ class DamageEventPbComponent final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class BuffPeriodicBuffPbComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BuffPeriodicBuffPbComponent) */ {
+ public:
+  inline BuffPeriodicBuffPbComponent() : BuffPeriodicBuffPbComponent(nullptr) {}
+  ~BuffPeriodicBuffPbComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR BuffPeriodicBuffPbComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline BuffPeriodicBuffPbComponent(const BuffPeriodicBuffPbComponent& from) : BuffPeriodicBuffPbComponent(nullptr, from) {}
+  inline BuffPeriodicBuffPbComponent(BuffPeriodicBuffPbComponent&& from) noexcept
+      : BuffPeriodicBuffPbComponent(nullptr, std::move(from)) {}
+  inline BuffPeriodicBuffPbComponent& operator=(const BuffPeriodicBuffPbComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BuffPeriodicBuffPbComponent& operator=(BuffPeriodicBuffPbComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BuffPeriodicBuffPbComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const BuffPeriodicBuffPbComponent* internal_default_instance() {
+    return reinterpret_cast<const BuffPeriodicBuffPbComponent*>(
+        &_BuffPeriodicBuffPbComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(BuffPeriodicBuffPbComponent& a, BuffPeriodicBuffPbComponent& b) { a.Swap(&b); }
+  inline void Swap(BuffPeriodicBuffPbComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BuffPeriodicBuffPbComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BuffPeriodicBuffPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<BuffPeriodicBuffPbComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const BuffPeriodicBuffPbComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const BuffPeriodicBuffPbComponent& from) { BuffPeriodicBuffPbComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(BuffPeriodicBuffPbComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "BuffPeriodicBuffPbComponent"; }
+
+ protected:
+  explicit BuffPeriodicBuffPbComponent(::google::protobuf::Arena* arena);
+  BuffPeriodicBuffPbComponent(::google::protobuf::Arena* arena, const BuffPeriodicBuffPbComponent& from);
+  BuffPeriodicBuffPbComponent(::google::protobuf::Arena* arena, BuffPeriodicBuffPbComponent&& from) noexcept
+      : BuffPeriodicBuffPbComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPeriodicTimerFieldNumber = 1,
+    kTicksDoneFieldNumber = 2,
+  };
+  // double periodic_timer = 1;
+  void clear_periodic_timer() ;
+  double periodic_timer() const;
+  void set_periodic_timer(double value);
+
+  private:
+  double _internal_periodic_timer() const;
+  void _internal_set_periodic_timer(double value);
+
+  public:
+  // uint32 ticks_done = 2;
+  void clear_ticks_done() ;
+  ::uint32_t ticks_done() const;
+  void set_ticks_done(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_ticks_done() const;
+  void _internal_set_ticks_done(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:BuffPeriodicBuffPbComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    double periodic_timer_;
+    ::uint32_t ticks_done_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2fbuff_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
 class BuffPbComponent final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:BuffPbComponent) */ {
  public:
@@ -591,6 +595,7 @@ class BuffPbComponent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
+    kDataFieldNumber = 9,
     kBuffIdFieldNumber = 1,
     kBuffTableIdFieldNumber = 2,
     kAbilityIdFieldNumber = 3,
@@ -600,6 +605,22 @@ class BuffPbComponent final : public ::google::protobuf::Message
     kTriggerdamageFieldNumber = 7,
     kProcessedCasterFieldNumber = 8,
   };
+  // bytes data = 9;
+  void clear_data() ;
+  const std::string& data() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_data(Arg_&& arg, Args_... args);
+  std::string* mutable_data();
+  PROTOBUF_NODISCARD std::string* release_data();
+  void set_allocated_data(std::string* value);
+
+  private:
+  const std::string& _internal_data() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_data(
+      const std::string& value);
+  std::string* _internal_mutable_data();
+
+  public:
   // uint64 buff_id = 1;
   void clear_buff_id() ;
   ::uint64_t buff_id() const;
@@ -685,7 +706,7 @@ class BuffPbComponent final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 8, 0,
+      4, 9, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -701,6 +722,7 @@ class BuffPbComponent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::ArenaStringPtr data_;
     ::uint64_t buff_id_;
     ::uint32_t buff_table_id_;
     ::uint32_t ability_id_;
@@ -713,6 +735,134 @@ class BuffPbComponent final : public ::google::protobuf::Message
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2fbuff_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
+class BuffNoDamageOrSkillHitInLastSecondsPbComp final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:BuffNoDamageOrSkillHitInLastSecondsPbComp) */ {
+ public:
+  inline BuffNoDamageOrSkillHitInLastSecondsPbComp() : BuffNoDamageOrSkillHitInLastSecondsPbComp(nullptr) {}
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR BuffNoDamageOrSkillHitInLastSecondsPbComp(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline BuffNoDamageOrSkillHitInLastSecondsPbComp(const BuffNoDamageOrSkillHitInLastSecondsPbComp& from) : BuffNoDamageOrSkillHitInLastSecondsPbComp(nullptr, from) {}
+  inline BuffNoDamageOrSkillHitInLastSecondsPbComp(BuffNoDamageOrSkillHitInLastSecondsPbComp&& from) noexcept
+      : BuffNoDamageOrSkillHitInLastSecondsPbComp(nullptr, std::move(from)) {}
+  inline BuffNoDamageOrSkillHitInLastSecondsPbComp& operator=(const BuffNoDamageOrSkillHitInLastSecondsPbComp& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BuffNoDamageOrSkillHitInLastSecondsPbComp& operator=(BuffNoDamageOrSkillHitInLastSecondsPbComp&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BuffNoDamageOrSkillHitInLastSecondsPbComp& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const BuffNoDamageOrSkillHitInLastSecondsPbComp* internal_default_instance() {
+    return reinterpret_cast<const BuffNoDamageOrSkillHitInLastSecondsPbComp*>(
+        &_BuffNoDamageOrSkillHitInLastSecondsPbComp_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(BuffNoDamageOrSkillHitInLastSecondsPbComp& a, BuffNoDamageOrSkillHitInLastSecondsPbComp& b) { a.Swap(&b); }
+  inline void Swap(BuffNoDamageOrSkillHitInLastSecondsPbComp* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BuffNoDamageOrSkillHitInLastSecondsPbComp* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BuffNoDamageOrSkillHitInLastSecondsPbComp* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<BuffNoDamageOrSkillHitInLastSecondsPbComp>(arena);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const BuffNoDamageOrSkillHitInLastSecondsPbComp& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const BuffNoDamageOrSkillHitInLastSecondsPbComp& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
+  }
+
+  public:
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "BuffNoDamageOrSkillHitInLastSecondsPbComp"; }
+
+ protected:
+  explicit BuffNoDamageOrSkillHitInLastSecondsPbComp(::google::protobuf::Arena* arena);
+  BuffNoDamageOrSkillHitInLastSecondsPbComp(::google::protobuf::Arena* arena, const BuffNoDamageOrSkillHitInLastSecondsPbComp& from);
+  BuffNoDamageOrSkillHitInLastSecondsPbComp(::google::protobuf::Arena* arena, BuffNoDamageOrSkillHitInLastSecondsPbComp&& from) noexcept
+      : BuffNoDamageOrSkillHitInLastSecondsPbComp(arena) {
+    *this = ::std::move(from);
+  }
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  // @@protoc_insertion_point(class_scope:BuffNoDamageOrSkillHitInLastSecondsPbComp)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
   friend struct ::TableStruct_logic_2fcomponent_2fbuff_5fcomp_2eproto;
 };
 // -------------------------------------------------------------------
@@ -1101,6 +1251,56 @@ inline void BuffPbComponent::_internal_set_processed_caster(::uint64_t value) {
   _impl_.processed_caster_ = value;
 }
 
+// bytes data = 9;
+inline void BuffPbComponent::clear_data() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.data_.ClearToEmpty();
+}
+inline const std::string& BuffPbComponent::data() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuffPbComponent.data)
+  return _internal_data();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuffPbComponent::set_data(Arg_&& arg,
+                                                     Args_... args) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.data_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuffPbComponent.data)
+}
+inline std::string* BuffPbComponent::mutable_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_data();
+  // @@protoc_insertion_point(field_mutable:BuffPbComponent.data)
+  return _s;
+}
+inline const std::string& BuffPbComponent::_internal_data() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.data_.Get();
+}
+inline void BuffPbComponent::_internal_set_data(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.data_.Set(value, GetArena());
+}
+inline std::string* BuffPbComponent::_internal_mutable_data() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.data_.Mutable( GetArena());
+}
+inline std::string* BuffPbComponent::release_data() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:BuffPbComponent.data)
+  return _impl_.data_.Release();
+}
+inline void BuffPbComponent::set_allocated_data(std::string* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.data_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.data_.IsDefault()) {
+          _impl_.data_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:BuffPbComponent.data)
+}
+
 // -------------------------------------------------------------------
 
 // DamageEventPbComponent
@@ -1217,51 +1417,55 @@ inline void DamageEventPbComponent::_internal_set_damage_type(::uint32_t value) 
 
 // -------------------------------------------------------------------
 
-// PeriodicBuffPbComponent
+// BuffPeriodicBuffPbComponent
 
 // double periodic_timer = 1;
-inline void PeriodicBuffPbComponent::clear_periodic_timer() {
+inline void BuffPeriodicBuffPbComponent::clear_periodic_timer() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.periodic_timer_ = 0;
 }
-inline double PeriodicBuffPbComponent::periodic_timer() const {
-  // @@protoc_insertion_point(field_get:PeriodicBuffPbComponent.periodic_timer)
+inline double BuffPeriodicBuffPbComponent::periodic_timer() const {
+  // @@protoc_insertion_point(field_get:BuffPeriodicBuffPbComponent.periodic_timer)
   return _internal_periodic_timer();
 }
-inline void PeriodicBuffPbComponent::set_periodic_timer(double value) {
+inline void BuffPeriodicBuffPbComponent::set_periodic_timer(double value) {
   _internal_set_periodic_timer(value);
-  // @@protoc_insertion_point(field_set:PeriodicBuffPbComponent.periodic_timer)
+  // @@protoc_insertion_point(field_set:BuffPeriodicBuffPbComponent.periodic_timer)
 }
-inline double PeriodicBuffPbComponent::_internal_periodic_timer() const {
+inline double BuffPeriodicBuffPbComponent::_internal_periodic_timer() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.periodic_timer_;
 }
-inline void PeriodicBuffPbComponent::_internal_set_periodic_timer(double value) {
+inline void BuffPeriodicBuffPbComponent::_internal_set_periodic_timer(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.periodic_timer_ = value;
 }
 
 // uint32 ticks_done = 2;
-inline void PeriodicBuffPbComponent::clear_ticks_done() {
+inline void BuffPeriodicBuffPbComponent::clear_ticks_done() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.ticks_done_ = 0u;
 }
-inline ::uint32_t PeriodicBuffPbComponent::ticks_done() const {
-  // @@protoc_insertion_point(field_get:PeriodicBuffPbComponent.ticks_done)
+inline ::uint32_t BuffPeriodicBuffPbComponent::ticks_done() const {
+  // @@protoc_insertion_point(field_get:BuffPeriodicBuffPbComponent.ticks_done)
   return _internal_ticks_done();
 }
-inline void PeriodicBuffPbComponent::set_ticks_done(::uint32_t value) {
+inline void BuffPeriodicBuffPbComponent::set_ticks_done(::uint32_t value) {
   _internal_set_ticks_done(value);
-  // @@protoc_insertion_point(field_set:PeriodicBuffPbComponent.ticks_done)
+  // @@protoc_insertion_point(field_set:BuffPeriodicBuffPbComponent.ticks_done)
 }
-inline ::uint32_t PeriodicBuffPbComponent::_internal_ticks_done() const {
+inline ::uint32_t BuffPeriodicBuffPbComponent::_internal_ticks_done() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.ticks_done_;
 }
-inline void PeriodicBuffPbComponent::_internal_set_ticks_done(::uint32_t value) {
+inline void BuffPeriodicBuffPbComponent::_internal_set_ticks_done(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.ticks_done_ = value;
 }
+
+// -------------------------------------------------------------------
+
+// BuffNoDamageOrSkillHitInLastSecondsPbComp
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

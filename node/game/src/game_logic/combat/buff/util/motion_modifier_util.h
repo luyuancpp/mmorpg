@@ -18,8 +18,6 @@ public:
 
 	static bool OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
 	
-	// Apply motion effects
-	static void ApplyMotion();
+	static bool OnSkillHit(entt::entity caster, entt::entity target);
 
-	static void ModifyMotion();
 };

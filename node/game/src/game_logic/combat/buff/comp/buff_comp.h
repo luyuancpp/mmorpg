@@ -9,7 +9,7 @@ struct BuffComp
 {
     BuffPbComponent buffPb;
     SkillContextPtrComp abilityContext;
-    PeriodicBuffPbComponent periodicBuffPbComponent;
+    BuffPeriodicBuffPbComponent periodicBuffPbComponent;
     TimerTaskComp expireTimerTaskComp;
 };
 

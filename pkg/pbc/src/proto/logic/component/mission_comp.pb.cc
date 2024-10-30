@@ -38,6 +38,9 @@ inline constexpr MissionPBComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : progress_{},
         _progress_cached_byte_size_{0},
+        data_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         id_{0u},
         status_{0u},
         _cached_size_{0} {}
@@ -150,6 +153,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.status_),
         PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.progress_),
+        PROTOBUF_FIELD_OFFSET(::MissionPBComponent, _impl_.data_),
         PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, _has_bits_),
         PROTOBUF_FIELD_OFFSET(::MissionListPBComponent_MissionsEntry_DoNotUse, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -224,12 +228,12 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::MissionPBComponent)},
-        {11, 21, -1, sizeof(::MissionListPBComponent_MissionsEntry_DoNotUse)},
-        {23, 33, -1, sizeof(::MissionListPBComponent_CompleteMissionsEntry_DoNotUse)},
-        {35, 45, -1, sizeof(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse)},
-        {47, -1, -1, sizeof(::MissionListPBComponent)},
-        {59, 69, -1, sizeof(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse)},
-        {71, -1, -1, sizeof(::RewardListPBComponent)},
+        {12, 22, -1, sizeof(::MissionListPBComponent_MissionsEntry_DoNotUse)},
+        {24, 34, -1, sizeof(::MissionListPBComponent_CompleteMissionsEntry_DoNotUse)},
+        {36, 46, -1, sizeof(::MissionListPBComponent_MissionBeginTimeEntry_DoNotUse)},
+        {48, -1, -1, sizeof(::MissionListPBComponent)},
+        {60, 70, -1, sizeof(::RewardListPBComponent_CanRewardMissionIdEntry_DoNotUse)},
+        {72, -1, -1, sizeof(::RewardListPBComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_MissionPBComponent_default_instance_._instance,
@@ -242,37 +246,37 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_logic_2fcomponent_2fmission_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\"logic/component/mission_comp.proto\"\313\001\n"
+    "\n\"logic/component/mission_comp.proto\"\331\001\n"
     "\022MissionPBComponent\022\n\n\002id\030\001 \001(\r\022\016\n\006statu"
-    "s\030\002 \001(\r\022\020\n\010progress\030\003 \003(\r\"\206\001\n\016eMissionSt"
-    "atus\022\024\n\020E_MISSION_NORMAL\020\000\022\031\n\025E_MISSION_"
-    "ACHIEVEMENT\020\001\022\026\n\022E_MISSION_COMPLETE\020\002\022\026\n"
-    "\022E_MISSION_TIME_OUT\020\003\022\023\n\017E_MISSION_FAILD"
-    "\020\004\"\231\004\n\026MissionListPBComponent\0227\n\010mission"
-    "s\030\001 \003(\0132%.MissionListPBComponent.Mission"
-    "sEntry\022H\n\021complete_missions\030\002 \003(\0132-.Miss"
-    "ionListPBComponent.CompleteMissionsEntry"
-    "\022I\n\022mission_begin_time\030\003 \003(\0132-.MissionLi"
-    "stPBComponent.MissionBeginTimeEntry\022\014\n\004t"
-    "ype\030\004 \001(\r\032D\n\rMissionsEntry\022\013\n\003key\030\001 \001(\r\022"
-    "\"\n\005value\030\002 \001(\0132\023.MissionPBComponent:\0028\001\032"
-    "7\n\025CompleteMissionsEntry\022\013\n\003key\030\001 \001(\r\022\r\n"
-    "\005value\030\002 \001(\010:\0028\001\0327\n\025MissionBeginTimeEntr"
-    "y\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\004:\0028\001\"k\n\014eMi"
-    "ssionType\022\022\n\016kPlayerMission\020\000\022\025\n\021kPlayer"
-    "Achievment\020\001\022\030\n\024kPlayerDailyActivity\020\002\022\026"
-    "\n\022kPlayerMissionSize\020\003\"\241\001\n\025RewardListPBC"
-    "omponent\022M\n\025can_reward_mission_id\030\002 \003(\0132"
-    "..RewardListPBComponent.CanRewardMission"
-    "IdEntry\0329\n\027CanRewardMissionIdEntry\022\013\n\003ke"
-    "y\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001B\tZ\007pb/gameb\006p"
-    "roto3"
+    "s\030\002 \001(\r\022\020\n\010progress\030\003 \003(\r\022\014\n\004data\030\004 \001(\014\""
+    "\206\001\n\016eMissionStatus\022\024\n\020E_MISSION_NORMAL\020\000"
+    "\022\031\n\025E_MISSION_ACHIEVEMENT\020\001\022\026\n\022E_MISSION"
+    "_COMPLETE\020\002\022\026\n\022E_MISSION_TIME_OUT\020\003\022\023\n\017E"
+    "_MISSION_FAILD\020\004\"\231\004\n\026MissionListPBCompon"
+    "ent\0227\n\010missions\030\001 \003(\0132%.MissionListPBCom"
+    "ponent.MissionsEntry\022H\n\021complete_mission"
+    "s\030\002 \003(\0132-.MissionListPBComponent.Complet"
+    "eMissionsEntry\022I\n\022mission_begin_time\030\003 \003"
+    "(\0132-.MissionListPBComponent.MissionBegin"
+    "TimeEntry\022\014\n\004type\030\004 \001(\r\032D\n\rMissionsEntry"
+    "\022\013\n\003key\030\001 \001(\r\022\"\n\005value\030\002 \001(\0132\023.MissionPB"
+    "Component:\0028\001\0327\n\025CompleteMissionsEntry\022\013"
+    "\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001\0327\n\025Missio"
+    "nBeginTimeEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 "
+    "\001(\004:\0028\001\"k\n\014eMissionType\022\022\n\016kPlayerMissio"
+    "n\020\000\022\025\n\021kPlayerAchievment\020\001\022\030\n\024kPlayerDai"
+    "lyActivity\020\002\022\026\n\022kPlayerMissionSize\020\003\"\241\001\n"
+    "\025RewardListPBComponent\022M\n\025can_reward_mis"
+    "sion_id\030\002 \003(\0132..RewardListPBComponent.Ca"
+    "nRewardMissionIdEntry\0329\n\027CanRewardMissio"
+    "nIdEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001"
+    "B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto = {
     false,
     false,
-    965,
+    979,
     descriptor_table_protodef_logic_2fcomponent_2fmission_5fcomp_2eproto,
     "logic/component/mission_comp.proto",
     &descriptor_table_logic_2fcomponent_2fmission_5fcomp_2eproto_once,
@@ -362,6 +366,7 @@ inline PROTOBUF_NDEBUG_INLINE MissionPBComponent::Impl_::Impl_(
     const Impl_& from)
       : progress_{visibility, arena, from.progress_},
         _progress_cached_byte_size_{0},
+        data_(arena, from.data_),
         _cached_size_{0} {}
 
 MissionPBComponent::MissionPBComponent(
@@ -388,6 +393,7 @@ inline PROTOBUF_NDEBUG_INLINE MissionPBComponent::Impl_::Impl_(
     ::google::protobuf::Arena* arena)
       : progress_{visibility, arena},
         _progress_cached_byte_size_{0},
+        data_(arena),
         _cached_size_{0} {}
 
 inline void MissionPBComponent::SharedCtor(::_pb::Arena* arena) {
@@ -406,6 +412,7 @@ MissionPBComponent::~MissionPBComponent() {
 }
 inline void MissionPBComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.data_.Destroy();
   _impl_.~Impl_();
 }
 
@@ -431,6 +438,7 @@ PROTOBUF_NOINLINE void MissionPBComponent::Clear() {
   (void) cached_has_bits;
 
   _impl_.progress_.Clear();
+  _impl_.data_.ClearToEmpty();
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.status_) -
       reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.status_));
@@ -445,15 +453,15 @@ const char* MissionPBComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComponent::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 0, 0, 2> MissionPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
+    4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     &_MissionPBComponent_default_instance_._instance,
@@ -462,7 +470,9 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComponent::_table_ = {
     ::_pbi::TcParser::GetTable<::MissionPBComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // bytes data = 4;
+    {::_pbi::TcParser::FastBS1,
+     {34, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.data_)}},
     // uint32 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MissionPBComponent, _impl_.id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.id_)}},
@@ -484,6 +494,9 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComponent::_table_ = {
     // repeated uint32 progress = 3;
     {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.progress_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
+    // bytes data = 4;
+    {PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.data_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
@@ -520,6 +533,12 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComponent::_table_ = {
     }
   }
 
+  // bytes data = 4;
+  if (!this->_internal_data().empty()) {
+    const std::string& _s = this->_internal_data();
+    target = stream->WriteBytesMaybeAliased(4, _s, target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -550,6 +569,12 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MissionPBComponent::_table_ = {
     ;
     total_size += tag_size + data_size;
   }
+  // bytes data = 4;
+  if (!this->_internal_data().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                    this->_internal_data());
+  }
+
   // uint32 id = 1;
   if (this->_internal_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
@@ -575,6 +600,9 @@ void MissionPBComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
   (void) cached_has_bits;
 
   _this->_internal_mutable_progress()->MergeFrom(from._internal_progress());
+  if (!from._internal_data().empty()) {
+    _this->_internal_set_data(from._internal_data());
+  }
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
   }
@@ -597,8 +625,11 @@ PROTOBUF_NOINLINE bool MissionPBComponent::IsInitialized() const {
 
 void MissionPBComponent::InternalSwap(MissionPBComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.progress_.InternalSwap(&other->_impl_.progress_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.data_, &other->_impl_.data_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MissionPBComponent, _impl_.status_)
       + sizeof(MissionPBComponent::_impl_.status_)

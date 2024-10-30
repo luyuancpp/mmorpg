@@ -33,12 +33,8 @@ bool MotionModifierBuffUtil::OnIntervalThink(entt::entity parent, BuffComp& buff
     return false;
 }
 
-void MotionModifierBuffUtil::ApplyMotion()
+
+bool MotionModifierBuffUtil::OnSkillHit(entt::entity caster, entt::entity target)
 {
-
+    return  true;
 }
-
-void MotionModifierBuffUtil::ModifyMotion()
-{
-}
-

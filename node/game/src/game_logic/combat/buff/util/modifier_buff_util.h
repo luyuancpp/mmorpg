@@ -22,6 +22,7 @@ public:
 	
 	static bool OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
 
+	static bool OnSkillHit(entt::entity caster, entt::entity target);
 private:
 	// 检查是否为速度相关的 Buff
 	static bool IsMovementSpeedBuff(const BuffTable* buffTable);
