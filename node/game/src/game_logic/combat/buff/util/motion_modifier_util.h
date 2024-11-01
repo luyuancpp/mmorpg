@@ -18,6 +18,6 @@ public:
 
 	static bool OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
 	
-	static bool OnSkillHit(entt::entity caster, entt::entity target);
+	static void OnSkillHit(entt::entity caster, entt::entity target);
 
 };
