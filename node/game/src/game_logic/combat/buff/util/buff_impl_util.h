@@ -11,24 +11,28 @@
 class BuffImplUtil
 {
 public:
-    static void OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+    static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
     {
         switch (buffTable->bufftype())
         {
         case kBuffTypeNoDamageOrSkillHitInLastSeconds:
             {
                 OnIntervalThinkLastDamageOrSkillHitTime(parent, buffComp, buffTable);
-            }
-            break;
-        case kBuffTypeHealthRegenerationBasedOnLostHealth:
-            {
-                OnIntervalThinkLastDamageOrSkillHitTime(parent, buffComp, buffTable);
+                return true;
             }
             break;
         default:
+            return false;
             break;
         }
+
+        return  false;
     }
+
+    static void OnSkillHit(entt::entity casterEntity, entt::entity targetEntity){
+        UpdateLastDamageOrSkillHitTime(casterEntity, targetEntity);
+    }
+
 
     static void UpdateLastDamageOrSkillHitTime(const entt::entity casterEntity, const entt::entity targetEntity){
         UInt64Set removeBuffIdList;
@@ -90,30 +94,5 @@ public:
         return true;
     }
 
-    static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
-    {
-        if (buffTable == nullptr ) {
-                return false;
-            }
-
-        //todo 及时计算 max_health
-        auto& baseAttributesPbComponent = tls.registry.get<BaseAttributesPbComponent>(parent);
-        const auto& derivedAttributesPbComponent = tls.registry.get<DerivedAttributesPbComponent>(parent);
-        const auto& levelComponent = tls.registry.get<LevelPbComponent>(parent);
-        
-        auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();  // 计算已损失生命值
-
-        BuffConfigurationTable::Instance().SetHealthregenerationParam(
-            { static_cast<double>(levelComponent.level()),  static_cast<double>(lostHealth)});
-
-        const auto healingAmount = BuffConfigurationTable::Instance().GetHealthregeneration(buffTable->id());
-        const auto currentHealth = std::min(derivedAttributesPbComponent.max_health(),
-                                            static_cast<uint64_t>(baseAttributesPbComponent.health() + healingAmount));
-
-        baseAttributesPbComponent.set_health(currentHealth);
-        
-        LOG_TRACE << "Healing applied, current health: " << currentHealth ;
-        
-        return  true;
-    }
+    
 };

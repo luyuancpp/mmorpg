@@ -236,8 +236,10 @@ void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
     if (!buffTable) {
         return ;
     }
-    
-    if (ModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
+
+    if (BuffImplUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
+        return;
+    }else if (ModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
         return;
     }else if ( ModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
         return;
@@ -321,12 +323,7 @@ void BuffUtil::OnKill(entt::entity parent)
 }
 
 void BuffUtil::OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity){
-    BuffImplUtil::UpdateLastDamageOrSkillHitTime(casterEntity, targetEntity);
-    
-    if (ModifierBuffUtil::OnSkillHit(casterEntity, targetEntity)){
-        return;
-    } else if (MotionModifierBuffUtil::OnSkillHit(casterEntity, targetEntity))
-    {
-        return;
-    }
+    BuffImplUtil::OnSkillHit(casterEntity, targetEntity);
+    ModifierBuffUtil::OnSkillHit(casterEntity, targetEntity);
+    MotionModifierBuffUtil::OnSkillHit(casterEntity, targetEntity);
 }

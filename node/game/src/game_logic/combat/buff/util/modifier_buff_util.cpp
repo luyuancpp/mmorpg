@@ -1,5 +1,6 @@
 ﻿#include "modifier_buff_util.h"
 #include "buff_config.pb.h"
+#include "modifier_buff_impl_util.h"
 #include "game_logic/actor/constants/actor_state_attribute_calculator_constants.h"
 #include "game_logic/actor/util/actor_attribute_calculator_util.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
@@ -52,12 +53,12 @@ bool ModifierBuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buff, const 
 
 bool ModifierBuffUtil::OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
-    return true;
+    return ModifierBuffUtilImplUtil::OnIntervalThink(parent, buffComp, buffTable);
 }
 
-bool ModifierBuffUtil::OnSkillHit(entt::entity caster, entt::entity target)
+void ModifierBuffUtil::OnSkillHit(entt::entity caster, entt::entity target)
 {
-    return true;
+    ModifierBuffUtilImplUtil::OnSkillHit(caster, target);
 }
 
 bool ModifierBuffUtil::IsMovementSpeedBuff(const BuffTable* buffTable) {

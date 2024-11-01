@@ -1,5 +1,7 @@
 #include "motion_modifier_util.h"
 
+#include "motion_modifier_impl_util.h"
+
 bool MotionModifierBuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)
 {
     return true;
@@ -30,11 +32,11 @@ bool MotionModifierBuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buff, 
 
 bool MotionModifierBuffUtil::OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
-    return false;
+    return MotionModifierBuffImpUtil::OnIntervalThink(parent, buffComp, buffTable);
 }
 
 
-bool MotionModifierBuffUtil::OnSkillHit(entt::entity caster, entt::entity target)
+void MotionModifierBuffUtil::OnSkillHit(entt::entity caster, entt::entity target)
 {
-    return  true;
+    MotionModifierBuffImpUtil::OnSkillHit(caster, target);
 }
