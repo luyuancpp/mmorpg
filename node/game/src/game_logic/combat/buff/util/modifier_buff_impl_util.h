@@ -44,8 +44,9 @@ public:
             { static_cast<double>(levelComponent.level()),  static_cast<double>(lostHealth)});
 
         const auto healingAmount = BuffConfigurationTable::Instance().GetHealthregeneration(buffTable->id());
-        const auto currentHealth = std::min(derivedAttributesPbComponent.max_health(),
-                                            static_cast<uint64_t>(baseAttributesPbComponent.health() + healingAmount));
+        const auto currentHealth = std::min<uint64_t>(derivedAttributesPbComponent.max_health(),
+                                            static_cast<uint64_t>(static_cast<double>(baseAttributesPbComponent.health()) +
+                                                healingAmount));
 
         baseAttributesPbComponent.set_health(currentHealth);
         

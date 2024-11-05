@@ -1,5 +1,4 @@
 ﻿#include "buff_util.h"
-
 #include <ranges>
 #include <muduo/base/Logging.h>
 #include "buff_config.h"
@@ -15,6 +14,7 @@
 #include "thread_local/storage_game.h"
 #include "util/utility.h"
 
+// Buff ID生成逻辑
 uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 {
     uint64_t newBuffId = UINT64_MAX;
@@ -24,6 +24,7 @@ uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
     return newBuffId;
 }
 
+// 目标免疫判定
 bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTable)
 {
     for (const auto& buff : buffList | std::views::values) {
@@ -31,7 +32,6 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTable)
         if (fetchResult != kOK) {
             return true;
         }
-
         for (const auto& tag : buffTable->tag() | std::views::keys) {
             if (currentBuffTable->immunetag().contains(tag)) {
                 return true;
@@ -41,27 +41,25 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTable)
     return false;
 }
 
+// 初始化组件
 void BuffUtil::InitializeActorComponents(entt::entity entity)
 {
     tls.registry.emplace<BuffListComp>(entity);
 }
 
+// 创建 Buff 数据指针
 BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     switch (buffTable->bufftype()) {
     case kBuffTypeNoDamageOrSkillHitInLastSeconds:
-        {
-            return std::make_shared<BuffNoDamageOrSkillHitInLastSecondsPbComp>();
-        }
-        break;
+        return std::make_shared<BuffNoDamageOrSkillHitInLastSecondsPbComp>();
     default:
         return nullptr;
-        break;
     }
-    
-    return  nullptr;
 }
 
-std::tuple<uint32_t, uint64_t>  BuffUtil::AddOrUpdateBuff(const entt::entity parent, const uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
+// 添加或更新 Buff
+std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
+    const entt::entity parent, const uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (!buffTable) {
@@ -90,7 +88,6 @@ std::tuple<uint32_t, uint64_t>  BuffUtil::AddOrUpdateBuff(const entt::entity par
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
     newBuff.buffPb.set_buff_id(newBuffId);
     newBuff.skillContext = abilityContext;
-
     newBuff.dataPbPtr = CreateBuffDataPtr(buffTable);
 
     auto [fst, snd] = buffList.emplace(newBuffId, std::move(newBuff));
@@ -107,10 +104,13 @@ std::tuple<uint32_t, uint64_t>  BuffUtil::AddOrUpdateBuff(const entt::entity par
     return std::make_tuple<uint32_t, uint64_t>(kOK, std::move(newBuffId));
 }
 
-void BuffUtil::RemoveBuff(const entt::entity parent, const uint64_t buffId){
+// 移除 Buff
+void BuffUtil::RemoveBuff(const entt::entity parent, const uint64_t buffId)
+{
     OnBuffExpire(parent, buffId);
 }
 
+// Buff 过期处理
 void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent);
@@ -122,7 +122,6 @@ void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
     }
 
     const auto buffTableId = buffIt->second.buffPb.buff_table_id();
-
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (!buffTable) {
         return ;
@@ -133,6 +132,7 @@ void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
     OnBuffDestroy(parent, buffIt->second, buffTable);
 }
 
+// 检查是否可创建 Buff
 uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
@@ -141,7 +141,6 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
     }
 
     const auto& buffList = tls.registry.get<BuffListComp>(parent);
-
     if (const bool isImmune = IsTargetImmune(buffList, buffTable)){
         return kBuffTargetImmuneToBuff;
     }
@@ -149,6 +148,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
     return kOK;
 }
 
+// 处理已存在的 Buff
 bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
 {
     for (auto& buffList = tls.registry.get<BuffListComp>(parent); auto& buffComp : buffList | std::views::values) {
@@ -163,14 +163,15 @@ bool BuffUtil::HandleExistingBuff(entt::entity parent, uint32_t buffTableId, con
     return false;
 }
 
-bool BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId){
+// Buff 觉醒处理
+bool BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId)
+{
     auto [newBuffTable, result] = GetBuffTable(buffTableId);
     if (!newBuffTable) {
         return result;
     }
 
     UInt64Vector dispelBuffIdList;
-
     for (auto& buffList = tls.registry.get<BuffListComp>(parent); auto& [buffId, buffPbComp] : buffList){
         auto [buffTable, result] = GetBuffTable(buffTableId);
         if (!buffTable) {
@@ -192,19 +193,17 @@ bool BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId
     return newBuffTable->bufftype() == kBuffTypeDispel;
 }
 
-void BuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable){
+// Buff 生命周期相关函数
+void BuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)
+{
     if (ModifierBuffUtil::OnBuffStart(parent, buff, buffTable)) {
         return;
-    } else if (MotionModifierBuffUtil::OnBuffStart(parent, buff, buffTable))
-    {
+    } else if (MotionModifierBuffUtil::OnBuffStart(parent, buff, buffTable)) {
         return;
     }
 }
 
-void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp)
-{
-    // Implement logic if needed
-}
+void BuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffComp& buffComp) {}
 
 void BuffUtil::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
@@ -215,11 +214,9 @@ void BuffUtil::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, const
     }
 }
 
-void BuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
-{
-    // Implement logic if needed
-}
+void BuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {}
 
+// Buff 间隔处理
 void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
 {
     auto& buffList = tls.registry.get<BuffListComp>(parent);
@@ -231,7 +228,6 @@ void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
     }
 
     const auto buffTableId = buffIt->second.buffPb.buff_table_id();
-
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (!buffTable) {
         return ;
@@ -241,12 +237,10 @@ void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
         return;
     }else if (ModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
         return;
-    }else if ( ModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
+    }else if (MotionModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
         return;
     }
-    // Implement interval logic if needed
 }
-
 void BuffUtil::OnSkillExecuted(SkillExecutedEvent& event)
 {
     // Implement event handling logic

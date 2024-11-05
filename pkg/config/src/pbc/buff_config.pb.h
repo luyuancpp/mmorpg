@@ -306,6 +306,8 @@ class BuffTable final : public ::google::protobuf::Message
     kMovementSpeedBoostFieldNumber = 15,
     kMovementSpeedReductionFieldNumber = 16,
     kNodamageorskillhitinlastsecondsFieldNumber = 19,
+    kTimeFieldNumber = 20,
+    kBonusdamageFieldNumber = 21,
   };
   // map<string, bool> tag = 4;
   int tag_size() const;
@@ -534,12 +536,32 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_nodamageorskillhitinlastseconds(double value);
 
   public:
+  // uint32 time = 20;
+  void clear_time() ;
+  ::uint32_t time() const;
+  void set_time(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_time() const;
+  void _internal_set_time(::uint32_t value);
+
+  public:
+  // uint32 bonusdamage = 21;
+  void clear_bonusdamage() ;
+  ::uint32_t bonusdamage() const;
+  void set_bonusdamage(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_bonusdamage() const;
+  void _internal_set_bonusdamage(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:BuffTable)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 19, 3,
+      5, 21, 3,
       73, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -584,6 +606,8 @@ class BuffTable final : public ::google::protobuf::Message
     double movement_speed_boost_;
     double movement_speed_reduction_;
     double nodamageorskillhitinlastseconds_;
+    ::uint32_t time_;
+    ::uint32_t bonusdamage_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1295,6 +1319,50 @@ inline double BuffTable::_internal_nodamageorskillhitinlastseconds() const {
 inline void BuffTable::_internal_set_nodamageorskillhitinlastseconds(double value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.nodamageorskillhitinlastseconds_ = value;
+}
+
+// uint32 time = 20;
+inline void BuffTable::clear_time() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.time_ = 0u;
+}
+inline ::uint32_t BuffTable::time() const {
+  // @@protoc_insertion_point(field_get:BuffTable.time)
+  return _internal_time();
+}
+inline void BuffTable::set_time(::uint32_t value) {
+  _internal_set_time(value);
+  // @@protoc_insertion_point(field_set:BuffTable.time)
+}
+inline ::uint32_t BuffTable::_internal_time() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.time_;
+}
+inline void BuffTable::_internal_set_time(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.time_ = value;
+}
+
+// uint32 bonusdamage = 21;
+inline void BuffTable::clear_bonusdamage() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.bonusdamage_ = 0u;
+}
+inline ::uint32_t BuffTable::bonusdamage() const {
+  // @@protoc_insertion_point(field_get:BuffTable.bonusdamage)
+  return _internal_bonusdamage();
+}
+inline void BuffTable::set_bonusdamage(::uint32_t value) {
+  _internal_set_bonusdamage(value);
+  // @@protoc_insertion_point(field_set:BuffTable.bonusdamage)
+}
+inline ::uint32_t BuffTable::_internal_bonusdamage() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.bonusdamage_;
+}
+inline void BuffTable::_internal_set_bonusdamage(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.bonusdamage_ = value;
 }
 
 // -------------------------------------------------------------------
