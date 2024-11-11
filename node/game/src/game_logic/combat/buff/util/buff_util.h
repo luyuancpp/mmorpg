@@ -2,6 +2,7 @@
 
 #include <entt/src/entt/entity/entity.hpp>
 #include "game_logic/combat/buff/comp/buff_comp.h"
+#include "type_define/type_define.h"
 
 class BuffTable;
 class SkillExecutedEvent;
@@ -26,6 +27,8 @@ public:
     static std::tuple<uint32_t, uint64_t>  AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     static void RemoveBuff(entt::entity parent, uint64_t buffId);
+
+    static void RemoveBuff(entt::entity parent, const UInt64Set& removeBuffIdList);
 
     //Buff创建前检查当前Buff是否可创建。
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。

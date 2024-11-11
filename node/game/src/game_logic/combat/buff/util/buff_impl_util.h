@@ -41,10 +41,8 @@ public:
             // 检查是否为强化下一次普攻的 Buff
             switch (buffTable->bufftype()) {
             case kBuffTypeNextBasicAttack: {
-                    // 增加额外伤害
                     damageEvent.set_damage(damageEvent.damage() + buffTable->bonusdamage());
 
-                    // 记录该 Buff ID 以便移除
                     removeBuffIdList.emplace(buffComp.buffPb.buff_id());
             }
                 break;
@@ -53,10 +51,7 @@ public:
             }
         }
 
-        // 移除触发的Buff，确保只生效一次
-        for (auto& removeBuffId : removeBuffIdList) {
-            BuffUtil::RemoveBuff(parent, removeBuffId);
-        }
+        BuffUtil::RemoveBuff(parent, removeBuffIdList);
     }
 
     
@@ -91,10 +86,7 @@ public:
             }
         }
 
-        for (auto& removeBuffId : removeBuffIdList)
-        {
-            BuffUtil::RemoveBuff(targetEntity, removeBuffId);
-        }
+        BuffUtil::RemoveBuff(casterEntity, removeBuffIdList);
     }
 
     static bool OnIntervalThinkLastDamageOrSkillHitTime(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
