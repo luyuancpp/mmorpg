@@ -110,6 +110,12 @@ void BuffUtil::RemoveBuff(const entt::entity parent, const uint64_t buffId)
     OnBuffExpire(parent, buffId);
 }
 
+void BuffUtil::RemoveBuff(entt::entity parent, const UInt64Set& removeBuffIdList){
+    for (auto& removeBuffId : removeBuffIdList) {
+        BuffUtil::RemoveBuff(parent, removeBuffId);
+    }
+}
+
 // Buff 过期处理
 void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 {
