@@ -248,6 +248,7 @@ void BuffUtil::OnSkillExecuted(SkillExecutedEvent& event)
 
 void BuffUtil::OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent)
 {
+    BuffImplUtil::OnBeforeGiveDamage(parent, damageEvent);
     //class Buff {
     //public:
     //	bool HasFlag(int flag) const;

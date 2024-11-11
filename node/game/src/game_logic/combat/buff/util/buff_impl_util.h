@@ -2,7 +2,6 @@
 #include "buff_config.h"
 #include "buff_util.h"
 #include "common_error_tip.pb.h"
-#include "proto/logic/component/actor_status_comp.pb.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "thread_local/storage.h"
@@ -29,6 +28,38 @@ public:
         return  false;
     }
 
+    static void OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent) {
+        // 保存待移除的Buff ID
+        UInt64Set removeBuffIdList;
+
+        for (auto& buffComp : tls.registry.get<BuffListComp>(parent) | std::views::values) {
+            auto [buffTable, result] = GetBuffTable(buffComp.buffPb.buff_table_id());
+            if (buffTable == nullptr) {
+                continue;
+            }
+
+            // 检查是否为强化下一次普攻的 Buff
+            switch (buffTable->bufftype()) {
+            case kBuffTypeNextBasicAttack: {
+                    // 增加额外伤害
+                    damageEvent.set_damage(damageEvent.damage() + buffTable->bonusdamage());
+
+                    // 记录该 Buff ID 以便移除
+                    removeBuffIdList.emplace(buffComp.buffPb.buff_id());
+            }
+                break;
+            default:
+                break;
+            }
+        }
+
+        // 移除触发的Buff，确保只生效一次
+        for (auto& removeBuffId : removeBuffIdList) {
+            BuffUtil::RemoveBuff(parent, removeBuffId);
+        }
+    }
+
+    
     static void OnSkillHit(entt::entity casterEntity, entt::entity targetEntity){
         UpdateLastDamageOrSkillHitTime(casterEntity, targetEntity);
     }
