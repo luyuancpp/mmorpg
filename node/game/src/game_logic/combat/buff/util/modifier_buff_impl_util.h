@@ -2,6 +2,7 @@
 #include <entt/src/entt/entity/entity.hpp>
 
 #include "buff_impl_util.h"
+#include "component/actor_status_comp.pb.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 
 class ModifierBuffUtilImplUtil{
