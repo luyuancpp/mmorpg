@@ -13,7 +13,7 @@ public:
 	inline  operator entt::entity() { return event_owner_; }
 	inline operator entt::id_type() { return entt::to_integral(event_owner_); }
 	void set_event_owner(entt::entity event_owner) { event_owner_ = event_owner; }
-	inline entt::entity event_owner() const { return event_owner_; };
+	inline entt::entity event_owner() const { return event_owner_; }
 private:
 	entt::entity event_owner_{ entt::null };
 };
@@ -25,4 +25,24 @@ namespace entt
 	}
 }//namespace entt
 
+void Destroy(entt::registry& registry, entt::entity entity);
 
+struct EntityDeleter {
+	entt::registry& registry;
+
+	explicit EntityDeleter(entt::registry& registry) : registry(registry) {}
+
+	void operator()(const entt::entity* entity) const {
+		if (entity) {
+			Destroy(registry, *entity);
+			delete entity;
+		}
+	}
+};
+
+using EntityPtr = std::shared_ptr<entt::entity>;
+
+inline EntityPtr CreateEntityPtr(entt::registry& registry) {
+	const entt::entity entity = registry.create();
+	return EntityPtr(new entt::entity(entity), EntityDeleter(registry));
+}

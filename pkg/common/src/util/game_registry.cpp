@@ -33,3 +33,13 @@ entt::entity GlobalEntity()
     }
     return tls.globalEntity;
 }
+
+//to check 
+void Destroy(entt::registry& registry, entt::entity entity)
+{
+    if (!registry.valid(entity))
+    {
+        return;
+    }
+    registry.destroy(entity);
+}

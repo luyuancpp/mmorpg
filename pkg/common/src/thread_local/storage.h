@@ -27,6 +27,4 @@ public:
 	void ClearForTest();
 };
 
-void Destroy(entt::registry& registry, entt::entity entity);
-
 extern thread_local ThreadLocalStorage tls;
