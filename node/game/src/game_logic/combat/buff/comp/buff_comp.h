@@ -16,3 +16,4 @@ struct BuffComp
 };
 
 using BuffListComp = std::map<uint64_t, BuffComp>;
+using BuffPendingRemoveBuffs = std::unordered_set<uint64_t>;

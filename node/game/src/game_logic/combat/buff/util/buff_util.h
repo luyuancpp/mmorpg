@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <entt/src/entt/entity/entity.hpp>
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "type_define/type_define.h"
 
@@ -30,6 +29,11 @@ public:
 
     static void RemoveBuff(entt::entity parent, const UInt64Set& removeBuffIdList);
 
+    static void MarkBuffForRemoval(entt::entity parent, uint64_t buffId);
+
+    // 帧结束时统一移除所有待移除的 Buff
+    static void RemovePendingBuffs(entt::entity parent, BuffListComp& buffListComp);
+    
     //Buff创建前检查当前Buff是否可创建。
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。
     static uint32_t CanCreateBuff(entt::entity parent, uint32_t buffTableId);
@@ -88,4 +92,9 @@ public:
 
     static void OnSkillHit(entt::entity casterEntity, entt::entity targetEntity);
 
+    static void AddSubBuffs(
+        entt::entity parent,
+        const BuffTable* buffTable,
+        BuffComp& buffComp  // 根据实际类型填写
+    );
 };

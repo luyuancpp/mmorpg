@@ -45,6 +45,7 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTable)
 void BuffUtil::InitializeActorComponents(entt::entity entity)
 {
     tls.registry.emplace<BuffListComp>(entity);
+    tls.registry.emplace<BuffPendingRemoveBuffs>(entity);
 }
 
 // 创建 Buff 数据指针
@@ -114,6 +115,23 @@ void BuffUtil::RemoveBuff(entt::entity parent, const UInt64Set& removeBuffIdList
     for (auto& removeBuffId : removeBuffIdList) {
         BuffUtil::RemoveBuff(parent, removeBuffId);
     }
+}
+
+void BuffUtil::MarkBuffForRemoval(const entt::entity parent, uint64_t buffId) {
+    auto& pendingRemoveBuffs = tls.registry.get<BuffPendingRemoveBuffs>(parent);
+    pendingRemoveBuffs.emplace(buffId);
+}
+
+// 帧结束时统一移除所有待移除的 Buff
+void BuffUtil::RemovePendingBuffs(const entt::entity parent, BuffListComp& buffListComp) {
+    auto& pendingRemoveBuffs = tls.registry.get<BuffPendingRemoveBuffs>(parent);
+    
+    for (const auto& buffId : pendingRemoveBuffs) {
+        buffListComp.erase(buffId);  // 删除 Buff
+        LOG_TRACE << "Buff with ID " << buffId << " removed from entity at end of frame.\n";
+    }
+    
+    pendingRemoveBuffs.clear();
 }
 
 // Buff 过期处理
@@ -327,4 +345,19 @@ void BuffUtil::OnSkillHit(const entt::entity casterEntity, const entt::entity ta
     BuffImplUtil::OnSkillHit(casterEntity, targetEntity);
     ModifierBuffUtil::OnSkillHit(casterEntity, targetEntity);
     MotionModifierBuffUtil::OnSkillHit(casterEntity, targetEntity);
+}
+
+void BuffUtil::AddSubBuffs(entt::entity parent,
+        const BuffTable* buffTable,
+        BuffComp& buffComp)
+{
+    for (auto& subBuff : buffTable->subbuff()) {
+        auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
+
+        if (result != kOK || newBuffId == UINT64_MAX) {
+            continue;
+        }
+
+        buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
+    }
 }

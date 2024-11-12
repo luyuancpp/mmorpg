@@ -1,6 +1,7 @@
 #include "buff_system.h"
 #include <ranges>
 #include "buff_config.h"
+#include "game_logic/combat/buff/util/buff_impl_util.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "proto/logic/component/buff_comp.pb.h"
 #include "thread_local/storage.h"
@@ -40,6 +41,7 @@ void ProcessBuffs(const entt::entity target, BuffListComp& buffListComp, const d
 void BuffSystem::Update(const double delta) {
     for (auto&& [target, buffListComp] : tls.registry.view<BuffListComp>().each()) {
         ProcessBuffs(target, buffListComp, delta);
+        BuffUtil::RemovePendingBuffs(target, buffListComp);
     }
 }
 
