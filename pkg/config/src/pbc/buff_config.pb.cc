@@ -69,6 +69,9 @@ inline constexpr BuffTable::Impl_::Impl_(
         healthregeneration_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        bonusdamage_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         id_{0u},
         nocaster_{0u},
         bufftype_{0u},
@@ -83,7 +86,6 @@ inline constexpr BuffTable::Impl_::Impl_(
         movement_speed_reduction_{0},
         nodamageorskillhitinlastseconds_{0},
         time_{0u},
-        bonusdamage_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -232,7 +234,7 @@ const char descriptor_table_protodef_buff_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECT
     "\001(\001\022 \n\030movement_speed_reduction\030\020 \001(\001\022\032\n"
     "\022healthregeneration\030\021 \001(\t\022\017\n\007subbuff\030\022 \003"
     "(\r\022\'\n\037nodamageorskillhitinlastseconds\030\023 "
-    "\001(\001\022\014\n\004time\030\024 \001(\r\022\023\n\013bonusdamage\030\025 \001(\r\032*"
+    "\001(\001\022\014\n\004time\030\024 \001(\r\022\023\n\013bonusdamage\030\025 \001(\t\032*"
     "\n\010TagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\010:\002"
     "8\001\0320\n\016ImmunetagEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005val"
     "ue\030\002 \001(\010:\0028\001\0320\n\016DispeltagEntry\022\013\n\003key\030\001 "
@@ -324,6 +326,7 @@ inline PROTOBUF_NDEBUG_INLINE BuffTable::Impl_::Impl_(
         subbuff_{visibility, arena, from.subbuff_},
         _subbuff_cached_byte_size_{0},
         healthregeneration_(arena, from.healthregeneration_),
+        bonusdamage_(arena, from.bonusdamage_),
         _cached_size_{0} {}
 
 BuffTable::BuffTable(
@@ -339,9 +342,9 @@ BuffTable::BuffTable(
                offsetof(Impl_, id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, id_),
-           offsetof(Impl_, bonusdamage_) -
+           offsetof(Impl_, time_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::bonusdamage_));
+               sizeof(Impl_::time_));
 
   // @@protoc_insertion_point(copy_constructor:BuffTable)
 }
@@ -355,6 +358,7 @@ inline PROTOBUF_NDEBUG_INLINE BuffTable::Impl_::Impl_(
         subbuff_{visibility, arena},
         _subbuff_cached_byte_size_{0},
         healthregeneration_(arena),
+        bonusdamage_(arena),
         _cached_size_{0} {}
 
 inline void BuffTable::SharedCtor(::_pb::Arena* arena) {
@@ -362,9 +366,9 @@ inline void BuffTable::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, bonusdamage_) -
+           offsetof(Impl_, time_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::bonusdamage_));
+               sizeof(Impl_::time_));
 }
 BuffTable::~BuffTable() {
   // @@protoc_insertion_point(destructor:BuffTable)
@@ -374,6 +378,7 @@ BuffTable::~BuffTable() {
 inline void BuffTable::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.healthregeneration_.Destroy();
+  _impl_.bonusdamage_.Destroy();
   _impl_.~Impl_();
 }
 
@@ -404,9 +409,10 @@ PROTOBUF_NOINLINE void BuffTable::Clear() {
   _impl_.intervaleffect_.Clear();
   _impl_.subbuff_.Clear();
   _impl_.healthregeneration_.ClearToEmpty();
+  _impl_.bonusdamage_.ClearToEmpty();
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.bonusdamage_) -
-      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.bonusdamage_));
+      reinterpret_cast<char*>(&_impl_.time_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.time_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -418,7 +424,7 @@ const char* BuffTable::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<5, 21, 3, 73, 2> BuffTable::_table_ = {
+const ::_pbi::TcParseTable<5, 21, 3, 84, 2> BuffTable::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -490,9 +496,9 @@ const ::_pbi::TcParseTable<5, 21, 3, 73, 2> BuffTable::_table_ = {
     // uint32 time = 20;
     {::_pbi::TcParser::FastV32S2,
      {416, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.time_)}},
-    // uint32 bonusdamage = 21;
-    {::_pbi::TcParser::FastV32S2,
-     {424, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.bonusdamage_)}},
+    // string bonusdamage = 21;
+    {::_pbi::TcParser::FastUS2,
+     {426, 63, 0, PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.bonusdamage_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -566,9 +572,9 @@ const ::_pbi::TcParseTable<5, 21, 3, 73, 2> BuffTable::_table_ = {
     // uint32 time = 20;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.time_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 bonusdamage = 21;
+    // string bonusdamage = 21;
     {PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.bonusdamage_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }}, {{
     {::_pbi::TcParser::GetMapAuxInfo<
         decltype(BuffTable()._impl_.tag_)>(
@@ -583,12 +589,13 @@ const ::_pbi::TcParseTable<5, 21, 3, 73, 2> BuffTable::_table_ = {
         1, 0, 0, 9,
         8)},
   }}, {{
-    "\11\0\0\0\3\11\11\0\0\0\0\0\0\0\0\0\0\22\0\0\0\0\0\0"
+    "\11\0\0\0\3\11\11\0\0\0\0\0\0\0\0\0\0\22\0\0\0\13\0\0"
     "BuffTable"
     "tag"
     "immunetag"
     "dispeltag"
     "healthregeneration"
+    "bonusdamage"
   }},
 };
 
@@ -825,11 +832,12 @@ const ::_pbi::TcParseTable<5, 21, 3, 73, 2> BuffTable::_table_ = {
         20, this->_internal_time(), target);
   }
 
-  // uint32 bonusdamage = 21;
-  if (this->_internal_bonusdamage() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        21, this->_internal_bonusdamage(), target);
+  // string bonusdamage = 21;
+  if (!this->_internal_bonusdamage().empty()) {
+    const std::string& _s = this->_internal_bonusdamage();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "BuffTable.bonusdamage");
+    target = stream->WriteStringMaybeAliased(21, _s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -899,6 +907,12 @@ const ::_pbi::TcParseTable<5, 21, 3, 73, 2> BuffTable::_table_ = {
   if (!this->_internal_healthregeneration().empty()) {
     total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                     this->_internal_healthregeneration());
+  }
+
+  // string bonusdamage = 21;
+  if (!this->_internal_bonusdamage().empty()) {
+    total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_bonusdamage());
   }
 
   // uint32 id = 1;
@@ -1005,12 +1019,6 @@ const ::_pbi::TcParseTable<5, 21, 3, 73, 2> BuffTable::_table_ = {
                                     this->_internal_time());
   }
 
-  // uint32 bonusdamage = 21;
-  if (this->_internal_bonusdamage() != 0) {
-    total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
-                                    this->_internal_bonusdamage());
-  }
-
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -1030,6 +1038,9 @@ void BuffTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   _this->_internal_mutable_subbuff()->MergeFrom(from._internal_subbuff());
   if (!from._internal_healthregeneration().empty()) {
     _this->_internal_set_healthregeneration(from._internal_healthregeneration());
+  }
+  if (!from._internal_bonusdamage().empty()) {
+    _this->_internal_set_bonusdamage(from._internal_bonusdamage());
   }
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
@@ -1098,9 +1109,6 @@ void BuffTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::googl
   if (from._internal_time() != 0) {
     _this->_impl_.time_ = from._impl_.time_;
   }
-  if (from._internal_bonusdamage() != 0) {
-    _this->_impl_.bonusdamage_ = from._impl_.bonusdamage_;
-  }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -1126,9 +1134,10 @@ void BuffTable::InternalSwap(BuffTable* PROTOBUF_RESTRICT other) {
   _impl_.intervaleffect_.InternalSwap(&other->_impl_.intervaleffect_);
   _impl_.subbuff_.InternalSwap(&other->_impl_.subbuff_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.healthregeneration_, &other->_impl_.healthregeneration_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.bonusdamage_, &other->_impl_.bonusdamage_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.bonusdamage_)
-      + sizeof(BuffTable::_impl_.bonusdamage_)
+      PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.time_)
+      + sizeof(BuffTable::_impl_.time_)
       - PROTOBUF_FIELD_OFFSET(BuffTable, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));

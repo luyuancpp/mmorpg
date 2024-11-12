@@ -97,4 +97,10 @@ public:
         const BuffTable* buffTable,
         BuffComp& buffComp  // 根据实际类型填写
     );
+
+    static void AddSubBuffsWithoutCheck(
+       entt::entity parent,
+       const BuffTable* buffTable,
+       BuffComp& buffComp  // 根据实际类型填写
+   );
 };

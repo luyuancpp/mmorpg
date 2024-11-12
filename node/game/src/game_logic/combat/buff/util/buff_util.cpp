@@ -373,3 +373,23 @@ void BuffUtil::AddSubBuffs(entt::entity parent,
         buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
     }
 }
+
+// 添加子 Buff，不进行已添加检查
+void BuffUtil::AddSubBuffsWithoutCheck(entt::entity parent,
+                                       const BuffTable* buffTable,
+                                       BuffComp& buffComp)
+{
+    // 直接添加子 Buff，不检查是否已添加过
+    for (const auto& subBuff : buffTable->subbuff()) {
+        // 调用 BuffUtil 的 AddOrUpdateBuff 进行 Buff 添加或更新
+        auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
+
+        // 如果 Buff 添加失败或者 Buff ID 无效，则跳过
+        if (result != kOK || newBuffId == UINT64_MAX) {
+            continue;
+        }
+
+        // 将新添加的 Buff ID 添加到子 Buff 列表中，初始化为 false 表示未激活
+        buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
+    }
+}

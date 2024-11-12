@@ -59,6 +59,7 @@ enum skill_error : int {
   kSkillInvalidTargetId = 90,
   kSkillInvalidTarget = 91,
   kSkillCooldownNotReady = 92,
+  kSkillCannotBeCastInCurrentState = 93,
   skill_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   skill_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -68,8 +69,8 @@ enum skill_error : int {
 bool skill_error_IsValid(int value);
 extern const uint32_t skill_error_internal_data_[];
 constexpr skill_error skill_error_MIN = static_cast<skill_error>(0);
-constexpr skill_error skill_error_MAX = static_cast<skill_error>(92);
-constexpr int skill_error_ARRAYSIZE = 92 + 1;
+constexpr skill_error skill_error_MAX = static_cast<skill_error>(93);
+constexpr int skill_error_ARRAYSIZE = 93 + 1;
 const ::google::protobuf::EnumDescriptor*
 skill_error_descriptor();
 template <typename T>
