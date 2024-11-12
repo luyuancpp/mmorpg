@@ -26,6 +26,7 @@ message BuffPbComponent
   bytes data = 9; // 各种类型buff的各种数据
   BuffPeriodicBuffPbComponent  periodic = 10;
   map<uint64, bool> sub_buff_list_id = 11;
+  bool has_added_sub_buff = 12;
 }
 
 message DamageEventPbComponent
