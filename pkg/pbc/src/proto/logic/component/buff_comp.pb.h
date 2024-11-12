@@ -968,9 +968,10 @@ class BuffPbComponent final : public ::google::protobuf::Message
     kAbilityIdFieldNumber = 3,
     kParentEntityFieldNumber = 4,
     kCasterFieldNumber = 6,
+    kProcessedCasterFieldNumber = 8,
     kLayerFieldNumber = 5,
     kTriggerdamageFieldNumber = 7,
-    kProcessedCasterFieldNumber = 8,
+    kHasAddedSubBuffFieldNumber = 12,
   };
   // map<uint64, bool> sub_buff_list_id = 11;
   int sub_buff_list_id_size() const;
@@ -1068,6 +1069,16 @@ class BuffPbComponent final : public ::google::protobuf::Message
   void _internal_set_caster(::uint64_t value);
 
   public:
+  // uint64 processed_caster = 8;
+  void clear_processed_caster() ;
+  ::uint64_t processed_caster() const;
+  void set_processed_caster(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_processed_caster() const;
+  void _internal_set_processed_caster(::uint64_t value);
+
+  public:
   // uint32 layer = 5;
   void clear_layer() ;
   ::uint32_t layer() const;
@@ -1088,14 +1099,14 @@ class BuffPbComponent final : public ::google::protobuf::Message
   void _internal_set_triggerdamage(bool value);
 
   public:
-  // uint64 processed_caster = 8;
-  void clear_processed_caster() ;
-  ::uint64_t processed_caster() const;
-  void set_processed_caster(::uint64_t value);
+  // bool has_added_sub_buff = 12;
+  void clear_has_added_sub_buff() ;
+  bool has_added_sub_buff() const;
+  void set_has_added_sub_buff(bool value);
 
   private:
-  ::uint64_t _internal_processed_caster() const;
-  void _internal_set_processed_caster(::uint64_t value);
+  bool _internal_has_added_sub_buff() const;
+  void _internal_set_has_added_sub_buff(bool value);
 
   public:
   // @@protoc_insertion_point(class_scope:BuffPbComponent)
@@ -1103,7 +1114,7 @@ class BuffPbComponent final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 11, 2,
+      4, 12, 2,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -1132,9 +1143,10 @@ class BuffPbComponent final : public ::google::protobuf::Message
     ::uint32_t ability_id_;
     ::uint64_t parent_entity_;
     ::uint64_t caster_;
+    ::uint64_t processed_caster_;
     ::uint32_t layer_;
     bool triggerdamage_;
-    ::uint64_t processed_caster_;
+    bool has_added_sub_buff_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1581,6 +1593,28 @@ inline ::google::protobuf::Map<::uint64_t, bool>* BuffPbComponent::_internal_mut
 inline ::google::protobuf::Map<::uint64_t, bool>* BuffPbComponent::mutable_sub_buff_list_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_map:BuffPbComponent.sub_buff_list_id)
   return _internal_mutable_sub_buff_list_id();
+}
+
+// bool has_added_sub_buff = 12;
+inline void BuffPbComponent::clear_has_added_sub_buff() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.has_added_sub_buff_ = false;
+}
+inline bool BuffPbComponent::has_added_sub_buff() const {
+  // @@protoc_insertion_point(field_get:BuffPbComponent.has_added_sub_buff)
+  return _internal_has_added_sub_buff();
+}
+inline void BuffPbComponent::set_has_added_sub_buff(bool value) {
+  _internal_set_has_added_sub_buff(value);
+  // @@protoc_insertion_point(field_set:BuffPbComponent.has_added_sub_buff)
+}
+inline bool BuffPbComponent::_internal_has_added_sub_buff() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.has_added_sub_buff_;
+}
+inline void BuffPbComponent::_internal_set_has_added_sub_buff(bool value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.has_added_sub_buff_ = value;
 }
 
 // -------------------------------------------------------------------

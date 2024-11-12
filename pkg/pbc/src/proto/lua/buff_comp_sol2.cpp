@@ -57,6 +57,8 @@ sol::property(&BuffPbComponent::processed_caster, &BuffPbComponent::set_processe
 &BuffPbComponent::sub_buff_list_id_size,
 "clear_sub_buff_list_id",
 &BuffPbComponent::clear_sub_buff_list_id,
+"has_added_sub_buff",
+sol::property(&BuffPbComponent::has_added_sub_buff, &BuffPbComponent::set_has_added_sub_buff),
 "DebugString",
 &BuffPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

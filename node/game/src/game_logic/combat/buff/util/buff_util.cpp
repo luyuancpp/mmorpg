@@ -348,16 +348,28 @@ void BuffUtil::OnSkillHit(const entt::entity casterEntity, const entt::entity ta
 }
 
 void BuffUtil::AddSubBuffs(entt::entity parent,
-        const BuffTable* buffTable,
-        BuffComp& buffComp)
+                            const BuffTable* buffTable,
+                            BuffComp& buffComp)
 {
-    for (auto& subBuff : buffTable->subbuff()) {
+    // 如果已经添加过子 Buff，就跳过
+    if (buffComp.buffPb.has_added_sub_buff()) {
+        return;
+    }
+
+    // 标记为已经添加了子 Buff
+    buffComp.buffPb.set_has_added_sub_buff(true);
+
+    // 遍历并添加子 Buff
+    for (const auto& subBuff : buffTable->subbuff()) {
+        // 调用 BuffUtil 的 AddOrUpdateBuff 进行 Buff 添加或更新
         auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
 
+        // 如果 Buff 添加失败或者 Buff ID 无效，则跳过
         if (result != kOK || newBuffId == UINT64_MAX) {
             continue;
         }
 
+        // 将新添加的 Buff ID 添加到子 Buff 列表中，初始化为 false 表示未激活
         buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
     }
 }
