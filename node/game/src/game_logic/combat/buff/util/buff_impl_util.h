@@ -28,9 +28,12 @@ public:
 
             switch (buffTable->bufftype()) {
             case kBuffTypeNextBasicAttack:
-                damageEvent.set_damage(damageEvent.damage() + buffTable->bonusdamage());
-                removeBuffIdList.emplace(buffComp.buffPb.buff_id());
-                BuffUtil::AddSubBuffs(parent, buffTable, buffComp);
+                {
+                    const auto bonus_damage = BuffConfigurationTable::Instance().GetBonusdamage(buffTable->id());
+                    damageEvent.set_damage(damageEvent.damage() + bonus_damage);
+                    removeBuffIdList.emplace(buffComp.buffPb.buff_id());
+                    BuffUtil::AddSubBuffs(parent, buffTable, buffComp);
+                }
                 break;
             default:
                 break;

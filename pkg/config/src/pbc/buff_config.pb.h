@@ -293,6 +293,7 @@ class BuffTable final : public ::google::protobuf::Message
     kIntervaleffectFieldNumber = 14,
     kSubbuffFieldNumber = 18,
     kHealthregenerationFieldNumber = 17,
+    kBonusdamageFieldNumber = 21,
     kIdFieldNumber = 1,
     kNocasterFieldNumber = 2,
     kBufftypeFieldNumber = 3,
@@ -307,7 +308,6 @@ class BuffTable final : public ::google::protobuf::Message
     kMovementSpeedReductionFieldNumber = 16,
     kNodamageorskillhitinlastsecondsFieldNumber = 19,
     kTimeFieldNumber = 20,
-    kBonusdamageFieldNumber = 21,
   };
   // map<string, bool> tag = 4;
   int tag_size() const;
@@ -404,6 +404,22 @@ class BuffTable final : public ::google::protobuf::Message
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_healthregeneration(
       const std::string& value);
   std::string* _internal_mutable_healthregeneration();
+
+  public:
+  // string bonusdamage = 21;
+  void clear_bonusdamage() ;
+  const std::string& bonusdamage() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_bonusdamage(Arg_&& arg, Args_... args);
+  std::string* mutable_bonusdamage();
+  PROTOBUF_NODISCARD std::string* release_bonusdamage();
+  void set_allocated_bonusdamage(std::string* value);
+
+  private:
+  const std::string& _internal_bonusdamage() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_bonusdamage(
+      const std::string& value);
+  std::string* _internal_mutable_bonusdamage();
 
   public:
   // uint32 id = 1;
@@ -546,23 +562,13 @@ class BuffTable final : public ::google::protobuf::Message
   void _internal_set_time(::uint32_t value);
 
   public:
-  // uint32 bonusdamage = 21;
-  void clear_bonusdamage() ;
-  ::uint32_t bonusdamage() const;
-  void set_bonusdamage(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_bonusdamage() const;
-  void _internal_set_bonusdamage(::uint32_t value);
-
-  public:
   // @@protoc_insertion_point(class_scope:BuffTable)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       5, 21, 3,
-      73, 2>
+      84, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -593,6 +599,7 @@ class BuffTable final : public ::google::protobuf::Message
     ::google::protobuf::RepeatedField<::uint32_t> subbuff_;
     mutable ::google::protobuf::internal::CachedSize _subbuff_cached_byte_size_;
     ::google::protobuf::internal::ArenaStringPtr healthregeneration_;
+    ::google::protobuf::internal::ArenaStringPtr bonusdamage_;
     ::uint32_t id_;
     ::uint32_t nocaster_;
     ::uint32_t bufftype_;
@@ -607,7 +614,6 @@ class BuffTable final : public ::google::protobuf::Message
     double movement_speed_reduction_;
     double nodamageorskillhitinlastseconds_;
     ::uint32_t time_;
-    ::uint32_t bonusdamage_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1343,26 +1349,54 @@ inline void BuffTable::_internal_set_time(::uint32_t value) {
   _impl_.time_ = value;
 }
 
-// uint32 bonusdamage = 21;
+// string bonusdamage = 21;
 inline void BuffTable::clear_bonusdamage() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.bonusdamage_ = 0u;
+  _impl_.bonusdamage_.ClearToEmpty();
 }
-inline ::uint32_t BuffTable::bonusdamage() const {
+inline const std::string& BuffTable::bonusdamage() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:BuffTable.bonusdamage)
   return _internal_bonusdamage();
 }
-inline void BuffTable::set_bonusdamage(::uint32_t value) {
-  _internal_set_bonusdamage(value);
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuffTable::set_bonusdamage(Arg_&& arg,
+                                                     Args_... args) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.bonusdamage_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:BuffTable.bonusdamage)
 }
-inline ::uint32_t BuffTable::_internal_bonusdamage() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.bonusdamage_;
+inline std::string* BuffTable::mutable_bonusdamage() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_bonusdamage();
+  // @@protoc_insertion_point(field_mutable:BuffTable.bonusdamage)
+  return _s;
 }
-inline void BuffTable::_internal_set_bonusdamage(::uint32_t value) {
+inline const std::string& BuffTable::_internal_bonusdamage() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.bonusdamage_.Get();
+}
+inline void BuffTable::_internal_set_bonusdamage(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.bonusdamage_ = value;
+  _impl_.bonusdamage_.Set(value, GetArena());
+}
+inline std::string* BuffTable::_internal_mutable_bonusdamage() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.bonusdamage_.Mutable( GetArena());
+}
+inline std::string* BuffTable::release_bonusdamage() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:BuffTable.bonusdamage)
+  return _impl_.bonusdamage_.Release();
+}
+inline void BuffTable::set_allocated_bonusdamage(std::string* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.bonusdamage_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.bonusdamage_.IsDefault()) {
+          _impl_.bonusdamage_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:BuffTable.bonusdamage)
 }
 
 // -------------------------------------------------------------------

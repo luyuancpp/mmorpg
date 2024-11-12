@@ -11,12 +11,18 @@ enum eTargetRequirement : uint32_t {
 	kAreaOfEffect = 1 << 2        // 以指定地点为目标
 };
 
-
-// Enum for ability types
-enum eAbilityType : uint32_t {
+enum eSkillType : uint32_t {
 	kPassiveSkill = 1 << 0,    // 被动技能
 	kGeneralSkill = 1 << 1,    // 普通施法技能
 	kChannelSkill = 1 << 2,    // 持续施法技能
 	kToggleSkill = 1 << 3,     // 开关类技能
-	kActivateSkill = 1 << 4    // 激活类技能
+	kActivateSkill = 1 << 4,    // 激活类技能
+	kBasicAttack   = 1 << 5  // 普通攻击技能的单独枚举
+};
+
+enum eStateType : uint32_t {
+	kNormal        = 0,   // 正常状态
+	kSilenced      = 1,   // 沉默状态
+	kDisarmed      = 2,   // 缴械状态
+	kStunned       = 3    // 眩晕状态
 };

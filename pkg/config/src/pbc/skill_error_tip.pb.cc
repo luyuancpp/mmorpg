@@ -29,17 +29,18 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_skill_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\025skill_error_tip.proto*\214\001\n\013skill_error\022"
+    "\n\025skill_error_tip.proto*\262\001\n\013skill_error\022"
     "\022\n\016kSkill_errorOK\020\000\022\031\n\025kSkillUnInterrupt"
     "ible\020Y\022\031\n\025kSkillInvalidTargetId\020Z\022\027\n\023kSk"
     "illInvalidTarget\020[\022\032\n\026kSkillCooldownNotR"
-    "eady\020\\B\tZ\007pb/gameb\006proto3"
+    "eady\020\\\022$\n kSkillCannotBeCastInCurrentSta"
+    "te\020]B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5ferror_5ftip_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_skill_5ferror_5ftip_2eproto = {
     false,
     false,
-    185,
+    223,
     descriptor_table_protodef_skill_5ferror_5ftip_2eproto,
     "skill_error_tip.proto",
     &descriptor_table_skill_5ferror_5ftip_2eproto_once,
@@ -73,7 +74,7 @@ const ::google::protobuf::EnumDescriptor* skill_error_descriptor() {
   return file_level_enum_descriptors_skill_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t skill_error_internal_data_[] = {
-    65536u, 96u, 0u, 0u, 251658240u, };
+    65536u, 96u, 0u, 0u, 520093696u, };
 bool skill_error_IsValid(int value) {
   return ::_pbi::ValidateEnum(value, skill_error_internal_data_);
 }

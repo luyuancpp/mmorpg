@@ -129,7 +129,30 @@ uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* ski
 	return kOK;
 }
 
+// 状态-技能类型权限表，行表示状态，列表示技能类型
+bool skillPermissionTable[4][6] = {
+	// Passive, General, Channel, Toggle, Activate, BasicAttack
+	{ true,  true,   true,   true,   true,   true  },  // 正常状态
+	{ true,  false,  false,  false,  false,  true  },  // 沉默状态
+	{ true,  true,   true,   true,   true,   false },  // 缴械状态
+	{ false, false,  false,  false,  false,  false }   // 眩晕状态
+};
+
+// 判断当前状态下是否可以使用指定技能
+bool canUseSkillInCurrentState(eStateType state, eSkillType skill) {
+	return skillPermissionTable[state][skill];
+}
+
 uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
+	auto currentState = kNormal;  
+	auto skillType = kBasicAttack;  // 假设当前想要使用普通攻击
+
+	if (!canUseSkillInCurrentState(currentState, skillType)) {
+		return kSkillCannotBeCastInCurrentState;
+	} else {
+		return  kOK;
+	}
+	
 	return kOK;
 }
 
