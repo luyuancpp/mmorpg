@@ -10,31 +10,17 @@
 
 class BuffImplUtil
 {
-private:
-
 public:
 
-    static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
-    {
-        switch (buffTable->bufftype())
-        {
-        case kBuffTypeNoDamageOrSkillHitInLastSeconds:
-            {
-                OnIntervalThinkLastDamageOrSkillHitTime(parent, buffComp, buffTable);
-                return true;
-            }
-            break;
-        default:
-            return false;
-            break;
+    static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
+        if (buffTable->bufftype() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
+            OnIntervalThinkLastDamageOrSkillHitTime(parent, buffComp, buffTable);
+            return true;
         }
-
         return false;
     }
 
-    // 改为延迟移除 Buff
     static void OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent) {
-        // 保存待移除的 Buff ID
         UInt64Set removeBuffIdList;
 
         for (auto& buffComp : tls.registry.get<BuffListComp>(parent) | std::views::values) {
@@ -43,14 +29,11 @@ public:
                 continue;
             }
 
-            // 检查是否为强化下一次普攻的 Buff
             switch (buffTable->bufftype()) {
             case kBuffTypeNextBasicAttack: {
-                damageEvent.set_damage(damageEvent.damage() + buffTable->bonusdamage());
-                    
-                removeBuffIdList.emplace(buffComp.buffPb.buff_id());
-                    
-                BuffUtil::AddSubBuffs(parent, buffTable, buffComp);
+                    damageEvent.set_damage(damageEvent.damage() + buffTable->bonusdamage());
+                    removeBuffIdList.emplace(buffComp.buffPb.buff_id());
+                    BuffUtil::AddSubBuffs(parent, buffTable, buffComp);
             }
                 break;
             default:
@@ -67,8 +50,8 @@ public:
 
     static void UpdateLastDamageOrSkillHitTime(const entt::entity casterEntity, const entt::entity targetEntity) {
         UInt64Set removeBuffIdList;
-        
-        for (auto& buffComp : tls.registry.get<BuffListComp>(targetEntity) | std::views::values){
+    
+        for (auto& buffComp : tls.registry.get<BuffListComp>(targetEntity) | std::views::values) {
             auto [buffTable, result] = GetBuffTable(buffComp.buffPb.buff_table_id());
             if (buffTable == nullptr) {
                 continue;
@@ -76,15 +59,12 @@ public:
 
             switch (buffTable->bufftype()) {
             case kBuffTypeNoDamageOrSkillHitInLastSeconds: {
-                auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
-                if (nullptr == dataPtr){
-                    continue;
-                }
-
-                // 将 Buff 标记为待移除
-                removeBuffIdList.emplace(buffComp.buffPb.buff_id());
-
-                dataPtr->set_last_time(TimeUtil::NowMilliseconds());
+                    auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
+                    if (dataPtr == nullptr) {
+                        continue;
+                    }
+                    removeBuffIdList.emplace(buffComp.buffPb.buff_id());
+                    dataPtr->set_last_time(TimeUtil::NowMilliseconds());
             }
                 break;
             default:
@@ -95,23 +75,22 @@ public:
         BuffUtil::RemoveBuff(casterEntity, removeBuffIdList);
     }
 
-    static bool OnIntervalThinkLastDamageOrSkillHitTime(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
-    {
+    static bool OnIntervalThinkLastDamageOrSkillHitTime(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
         if (buffTable == nullptr || buffTable->nodamageorskillhitinlastseconds() <= 0) {
             return false;
         }
 
         const auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
-        if (nullptr == dataPtr){
+        if (dataPtr == nullptr) {
             return false;
         }
 
-        if (static_cast<double>(TimeUtil::NowMilliseconds() - dataPtr->last_time()) > buffTable->nodamageorskillhitinlastseconds()){
+        if (static_cast<double>(TimeUtil::NowMilliseconds() - dataPtr->last_time()) > buffTable->nodamageorskillhitinlastseconds()) {
             return true;
         }
 
         BuffUtil::AddSubBuffs(parent, buffTable, buffComp);
-        
         return true;
     }
+
 };
