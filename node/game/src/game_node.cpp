@@ -5,7 +5,7 @@
 #include "all_config.h"
 #include "game_config/deploy_json.h"
 #include "game_logic/world.h"
-#include "game_logic/config/config_util.h"
+#include "game_logic/core/config/config_util.h"
 #include "grpc/deploy/deploy_client.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
