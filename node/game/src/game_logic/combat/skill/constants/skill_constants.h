@@ -20,9 +20,3 @@ enum eSkillType : uint32_t {
 	kBasicAttack   = 1 << 5  // 普通攻击技能的单独枚举
 };
 
-enum eStateType : uint32_t {
-	kNormal        = 0,   // 正常状态
-	kSilenced      = 1,   // 沉默状态
-	kDisarmed      = 2,   // 缴械状态
-	kStunned       = 3    // 眩晕状态
-};

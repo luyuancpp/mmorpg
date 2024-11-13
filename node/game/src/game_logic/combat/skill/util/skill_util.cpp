@@ -3,6 +3,7 @@
 #include <muduo/base/Logging.h>
 
 #include "entity_error_tip.pb.h"
+#include "skillpermission_config.h"
 #include "skill_config.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
@@ -129,32 +130,41 @@ uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* ski
 	return kOK;
 }
 
-// 状态-技能类型权限表，行表示状态，列表示技能类型
-bool skillPermissionTable[4][6] = {
-	// Passive, General, Channel, Toggle, Activate, BasicAttack
-	{ true,  true,   true,   true,   true,   true  },  // 正常状态
-	{ true,  false,  false,  false,  false,  true  },  // 沉默状态
-	{ true,  true,   true,   true,   true,   false },  // 缴械状态
-	{ false, false,  false,  false,  false,  false }   // 眩晕状态
-};
+uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
+	auto [skillPermissionTable, result] = GetSkillPermissionTable(state);
+	if (nullptr == skillPermissionTable){
+		return  result;
+	}
 
-// 判断当前状态下是否可以使用指定技能
-bool canUseSkillInCurrentState(eStateType state, eSkillType skill) {
-	return skillPermissionTable[state][skill];
+	const auto skillTypeIndex = (1 << skill);
+	if (skillTypeIndex >= skillPermissionTable->skilltype_size())
+	{
+		return kInvalidTableData;
+	}
+	
+	return  skillPermissionTable->skilltype(skillTypeIndex);
+}
+
+uint32_t GetEntityState(const entt::entity casterEntity){
+	return 0;
 }
 
 uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
-	auto currentState = kNormal;  
-	auto skillType = kBasicAttack;  // 假设当前想要使用普通攻击
+	// Retrieve the current state of the caster entity
+	const auto currentState = GetEntityState(casterEntity);  // Replace with actual state retrieval logic
 
-	if (!canUseSkillInCurrentState(currentState, skillType)) {
-		return kSkillCannotBeCastInCurrentState;
-	} else {
-		return  kOK;
+	// Check each skill in the skill table
+	for (const auto& skillType : skillTable->skill_type()) {
+		const auto skill = static_cast<eSkillType>(skillType);  
+		const auto result = canUseSkillInCurrentState(currentState, skill);
+		if (result != kOK) {
+			return result;  // Return error code if any skill can't be used
+		}
 	}
-	
-	return kOK;
+
+	return kOK;  // All skills can be used in the current state
 }
+
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
 	for (auto& resource : skillTable->requestresource()){
