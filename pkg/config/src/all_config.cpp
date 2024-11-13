@@ -12,6 +12,7 @@
 #include "item_config.h"
 #include "globalvariable_config.h"
 #include "mainscene_config.h"
+#include "actionstate_config.h"
 #include "skillpermission_config.h"
 #include "scene_config.h"
 #include "class_config.h"
@@ -28,6 +29,7 @@ void LoadAllConfig()
     ItemConfigurationTable::Instance().Load();
     GlobalVariableConfigurationTable::Instance().Load();
     MainSceneConfigurationTable::Instance().Load();
+    ActionStateConfigurationTable::Instance().Load();
     SkillPermissionConfigurationTable::Instance().Load();
     SceneConfigurationTable::Instance().Load();
     ClassConfigurationTable::Instance().Load();
@@ -37,7 +39,7 @@ void LoadAllConfig()
 
 void LoadAllConfigAsyncWhenServerLaunch()
 {
-    static muduo::CountDownLatch latch_(14);
+    static muduo::CountDownLatch latch_(15);
 
     /// Begin
     {
@@ -132,6 +134,17 @@ void LoadAllConfigAsyncWhenServerLaunch()
         std::thread t([&]() {
 
     MainSceneConfigurationTable::Instance().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    /// End
+
+    /// Begin
+    {
+        std::thread t([&]() {
+
+    ActionStateConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();

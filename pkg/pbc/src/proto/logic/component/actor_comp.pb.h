@@ -27,6 +27,9 @@
 #include "google/protobuf/message.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
+#include "google/protobuf/map.h"  // IWYU pragma: export
+#include "google/protobuf/map_entry.h"
+#include "google/protobuf/map_field_inl.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "common/comp.pb.h"
 // @@protoc_insertion_point(includes)
@@ -53,6 +56,12 @@ extern const ::google::protobuf::internal::DescriptorTable
 class Acceleration;
 struct AccelerationDefaultTypeInternal;
 extern AccelerationDefaultTypeInternal _Acceleration_default_instance_;
+class ActorStatePbComponent;
+struct ActorStatePbComponentDefaultTypeInternal;
+extern ActorStatePbComponentDefaultTypeInternal _ActorStatePbComponent_default_instance_;
+class ActorStatePbComponent_StateListEntry_DoNotUse;
+struct ActorStatePbComponent_StateListEntry_DoNotUseDefaultTypeInternal;
+extern ActorStatePbComponent_StateListEntry_DoNotUseDefaultTypeInternal _ActorStatePbComponent_StateListEntry_DoNotUse_default_instance_;
 class BaseAttributesPbComponent;
 struct BaseAttributesPbComponentDefaultTypeInternal;
 extern BaseAttributesPbComponentDefaultTypeInternal _BaseAttributesPbComponent_default_instance_;
@@ -1425,6 +1434,32 @@ class BaseAttributesPbComponent final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class ActorStatePbComponent_StateListEntry_DoNotUse final
+    : public ::google::protobuf::internal::MapEntry<
+          ActorStatePbComponent_StateListEntry_DoNotUse, ::uint32_t, bool,
+          ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+          ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
+ public:
+  using SuperType = ::google::protobuf::internal::MapEntry<
+      ActorStatePbComponent_StateListEntry_DoNotUse, ::uint32_t, bool,
+      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+      ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
+  ActorStatePbComponent_StateListEntry_DoNotUse();
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ActorStatePbComponent_StateListEntry_DoNotUse(
+      ::google::protobuf::internal::ConstantInitialized);
+  explicit ActorStatePbComponent_StateListEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const ActorStatePbComponent_StateListEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const ActorStatePbComponent_StateListEntry_DoNotUse*>(
+        &_ActorStatePbComponent_StateListEntry_DoNotUse_default_instance_);
+  }
+  static bool ValidateKey(void*) { return true; }
+  static bool ValidateValue(void*) { return true; }
+  ::google::protobuf::Metadata GetMetadata() const final;
+  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
 class Acceleration final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:Acceleration) */ {
  public:
@@ -1816,6 +1851,181 @@ class Transform final : public ::google::protobuf::Message
     ::Vector3* location_;
     ::Rotation* rotation_;
     ::Scale* scale_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fcomponent_2factor_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ActorStatePbComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ActorStatePbComponent) */ {
+ public:
+  inline ActorStatePbComponent() : ActorStatePbComponent(nullptr) {}
+  ~ActorStatePbComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ActorStatePbComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ActorStatePbComponent(const ActorStatePbComponent& from) : ActorStatePbComponent(nullptr, from) {}
+  inline ActorStatePbComponent(ActorStatePbComponent&& from) noexcept
+      : ActorStatePbComponent(nullptr, std::move(from)) {}
+  inline ActorStatePbComponent& operator=(const ActorStatePbComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ActorStatePbComponent& operator=(ActorStatePbComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ActorStatePbComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ActorStatePbComponent* internal_default_instance() {
+    return reinterpret_cast<const ActorStatePbComponent*>(
+        &_ActorStatePbComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 10;
+  friend void swap(ActorStatePbComponent& a, ActorStatePbComponent& b) { a.Swap(&b); }
+  inline void Swap(ActorStatePbComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ActorStatePbComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ActorStatePbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ActorStatePbComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ActorStatePbComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ActorStatePbComponent& from) { ActorStatePbComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ActorStatePbComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ActorStatePbComponent"; }
+
+ protected:
+  explicit ActorStatePbComponent(::google::protobuf::Arena* arena);
+  ActorStatePbComponent(::google::protobuf::Arena* arena, const ActorStatePbComponent& from);
+  ActorStatePbComponent(::google::protobuf::Arena* arena, ActorStatePbComponent&& from) noexcept
+      : ActorStatePbComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kStateListFieldNumber = 1,
+  };
+  // map<uint32, bool> state_list = 1;
+  int state_list_size() const;
+  private:
+  int _internal_state_list_size() const;
+
+  public:
+  void clear_state_list() ;
+  const ::google::protobuf::Map<::uint32_t, bool>& state_list() const;
+  ::google::protobuf::Map<::uint32_t, bool>* mutable_state_list();
+
+  private:
+  const ::google::protobuf::Map<::uint32_t, bool>& _internal_state_list() const;
+  ::google::protobuf::Map<::uint32_t, bool>* _internal_mutable_state_list();
+
+  public:
+  // @@protoc_insertion_point(class_scope:ActorStatePbComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::MapField<ActorStatePbComponent_StateListEntry_DoNotUse, ::uint32_t, bool,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
+        state_list_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2679,6 +2889,40 @@ inline ::uint32_t LevelPbComponent::_internal_level() const {
 inline void LevelPbComponent::_internal_set_level(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.level_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// ActorStatePbComponent
+
+// map<uint32, bool> state_list = 1;
+inline int ActorStatePbComponent::_internal_state_list_size() const {
+  return _internal_state_list().size();
+}
+inline int ActorStatePbComponent::state_list_size() const {
+  return _internal_state_list_size();
+}
+inline void ActorStatePbComponent::clear_state_list() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.state_list_.Clear();
+}
+inline const ::google::protobuf::Map<::uint32_t, bool>& ActorStatePbComponent::_internal_state_list() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.state_list_.GetMap();
+}
+inline const ::google::protobuf::Map<::uint32_t, bool>& ActorStatePbComponent::state_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:ActorStatePbComponent.state_list)
+  return _internal_state_list();
+}
+inline ::google::protobuf::Map<::uint32_t, bool>* ActorStatePbComponent::_internal_mutable_state_list() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.state_list_.MutableMap();
+}
+inline ::google::protobuf::Map<::uint32_t, bool>* ActorStatePbComponent::mutable_state_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:ActorStatePbComponent.state_list)
+  return _internal_mutable_state_list();
 }
 
 #ifdef __GNUC__
