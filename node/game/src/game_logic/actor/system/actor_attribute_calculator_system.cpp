@@ -1,6 +1,6 @@
 #include "actor_attribute_calculator_system.h"
 
-#include "game_logic/actor/comp/actor_atrribute_comp.h"
+#include "game_logic/actor/attribute/comp/actor_atrribute_comp.h"
 #include "game_logic/actor/util/actor_attribute_calculator_util.h"
 #include "thread_local/storage.h"
 
