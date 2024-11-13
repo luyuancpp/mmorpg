@@ -1,18 +1,16 @@
 #include "world.h"
 
-#include <ctime>
 
-#include "game_logic/common/constants/fps_constants.h"
-#include "Recast/Recast.h"
-#undef TEXT
 #include "actor/system/actor_attribute_calculator_system.h"
 #include "actor/system/actor_state_attribute_sync_system.h"
 #include "combat/buff/system/buff_system.h"
+#include "game_logic/core/constants/fps_constants.h"
 #include "game_logic/player/util/player_session_util.h"
 #include "game_logic/scene/system/aoi_system.h"
 #include "game_logic/scene/system/movement_acceleration_system.h"
 #include "game_logic/scene/system/movement_system.h"
 #include "game_logic/scene/util/view_util.h"
+#include "Recast/Recast.h"
 #include "thread_local/storage_game.h"
 
 #include "proto/logic/component/frame_comp.pb.h"

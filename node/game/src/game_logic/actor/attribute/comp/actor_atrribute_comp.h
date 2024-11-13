@@ -2,7 +2,7 @@
 
 #include <bitset>
 
-#include "game_logic/actor/constants/actor_state_attribute_calculator_constants.h"
+#include "game_logic/actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 
 struct ActorAttributeBitSetComp
 {

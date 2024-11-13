@@ -1,11 +1,10 @@
 ﻿// actor_attribute_calculator_util.cpp
 #include "actor_attribute_calculator_util.h"
 #include <array>
-#include <bitset>
 
 #include "buff_config.h"
-#include "game_logic/actor/comp/actor_atrribute_comp.h"
-#include "game_logic/actor/constants/actor_state_attribute_calculator_constants.h"
+#include "game_logic/actor/attribute/comp/actor_atrribute_comp.h"
+#include "game_logic/actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "proto/logic/client_player/player_state_attribute_sync.pb.h"
 #include "thread_local/storage.h"
