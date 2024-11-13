@@ -4,7 +4,7 @@
 #include "client_player/player_state_attribute_sync.pb.h"
 #include "component/actor_comp.pb.h"
 #include "component/actor_status_comp.pb.h"
-#include "game_logic/actor/constants/actor_state_attribute_constants.h"
+#include "game_logic/actor/attribute/constants/actor_state_attribute_constants.h"
 #include "game_logic/network/message_util.h"
 #include "game_logic/scene/comp/scene_comp.h"
 #include "game_logic/scene/util/view_util.h"
