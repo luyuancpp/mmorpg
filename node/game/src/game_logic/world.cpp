@@ -1,8 +1,8 @@
 #include "world.h"
 
 
-#include "actor/system/actor_attribute_calculator_system.h"
-#include "actor/system/actor_state_attribute_sync_system.h"
+#include "actor/attribute/system/actor_attribute_calculator_system.h"
+#include "actor/attribute/system/actor_state_attribute_sync_system.h"
 #include "combat/buff/system/buff_system.h"
 #include "game_logic/core/constants/fps_constants.h"
 #include "game_logic/player/util/player_session_util.h"

@@ -1,8 +1,8 @@
 #include "actor_state_attribute_sync_system.h"
 
 #include "component/actor_comp.pb.h"
-#include "game_logic/actor/constants/actor_state_attribute_constants.h"
-#include "game_logic/actor/util/actor_state_attribute_sync_util.h"
+#include "game_logic/actor/attribute/constants/actor_state_attribute_constants.h"
+#include "game_logic/actor/attribute/util/actor_state_attribute_sync_util.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 

@@ -2,7 +2,7 @@
 #include "buff_config.pb.h"
 #include "modifier_buff_impl_util.h"
 #include "game_logic/actor/attribute/constants/actor_state_attribute_calculator_constants.h"
-#include "game_logic/actor/util/actor_attribute_calculator_util.h"
+#include "game_logic/actor/attribute/util/actor_attribute_calculator_util.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "thread_local/storage.h"
