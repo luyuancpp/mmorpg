@@ -137,6 +137,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\game_logic\actor\actionstate\util\actor_action_state_util.cpp" />
     <ClCompile Include="src\game_logic\actor\attribute\comp\actor_atrribute_comp.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -829,6 +830,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   <ItemGroup>
     <ClInclude Include="src\game_logic\actor\actionstate\constants\actor_effect_state_constants.h" />
     <ClInclude Include="src\game_logic\actor\actionstate\constants\actor_state_constants.h" />
+    <ClInclude Include="src\game_logic\actor\actionstate\util\actor_action_state_util.h" />
     <ClInclude Include="src\game_logic\actor\attribute\comp\actor_atrribute_comp.h" />
     <ClInclude Include="src\game_logic\actor\attribute\constants\actor_state_attribute_calculator_constants.h" />
     <ClInclude Include="src\game_logic\actor\attribute\constants\actor_state_attribute_constants.h" />
@@ -915,7 +917,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   <ItemGroup>
     <Folder Include="src\game_logic\actor\actionstate\comp\" />
     <Folder Include="src\game_logic\actor\actionstate\system\" />
-    <Folder Include="src\game_logic\actor\actionstate\util\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

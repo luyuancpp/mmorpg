@@ -69,3 +69,6 @@ message LevelPbComponent {
     uint32 level = 1;  // 玩家等级
 }
 
+message ActorStatePbComponent {
+    map<uint32, bool> state_list = 1; 
+}

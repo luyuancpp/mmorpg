@@ -108,4 +108,22 @@ sol::property(&LevelPbComponent::level, &LevelPbComponent::set_level),
 &LevelPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<ActorStatePbComponent>("ActorStatePbComponent",
+"count_state_list",
+[](ActorStatePbComponent& pb, uint32_t key) ->decltype(auto){ return pb.state_list().count(key);},
+"insert_state_list",
+[](ActorStatePbComponent& pb, uint32_t key, bool value) ->decltype(auto){ return pb.mutable_state_list()->emplace(key, value).second;},
+"state_list",
+[](ActorStatePbComponent& pb, uint32_t key) ->decltype(auto){
+ auto it =  pb.mutable_state_list()->find(key);
+ if (it == pb.mutable_state_list()->end()){ return bool(); }
+ return it->second;},
+"state_list_size",
+&ActorStatePbComponent::state_list_size,
+"clear_state_list",
+&ActorStatePbComponent::clear_state_list,
+"DebugString",
+&ActorStatePbComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 }

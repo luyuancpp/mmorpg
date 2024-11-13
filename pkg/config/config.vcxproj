@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\actionstate_config.cpp" />
     <ClCompile Include="src\all_config.cpp" />
     <ClCompile Include="src\buff_config.cpp" />
     <ClCompile Include="src\class_config.cpp" />
@@ -30,6 +31,7 @@
     <ClCompile Include="src\mission_config.cpp" />
     <ClCompile Include="src\monsterbase_config.cpp" />
     <ClCompile Include="src\pbc\ability_operator.pb.cc" />
+    <ClCompile Include="src\pbc\actionstate_config.pb.cc" />
     <ClCompile Include="src\pbc\bag_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\bag_operator.pb.cc" />
     <ClCompile Include="src\pbc\buff_config.pb.cc" />
@@ -62,6 +64,7 @@
     <ClCompile Include="src\test_config.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\actionstate_config.h" />
     <ClInclude Include="src\all_config.h" />
     <ClInclude Include="src\buff_config.h" />
     <ClInclude Include="src\class_config.h" />
@@ -75,6 +78,7 @@
     <ClInclude Include="src\mission_config.h" />
     <ClInclude Include="src\monsterbase_config.h" />
     <ClInclude Include="src\pbc\ability_operator.pb.h" />
+    <ClInclude Include="src\pbc\actionstate_config.pb.h" />
     <ClInclude Include="src\pbc\bag_error_tip.pb.h" />
     <ClInclude Include="src\pbc\bag_operator.pb.h" />
     <ClInclude Include="src\pbc\buff_config.pb.h" />

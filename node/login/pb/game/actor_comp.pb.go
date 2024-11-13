@@ -591,6 +591,53 @@ func (x *LevelPbComponent) GetLevel() uint32 {
 	return 0
 }
 
+type ActorStatePbComponent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	StateList map[uint32]bool `protobuf:"bytes,1,rep,name=state_list,json=stateList,proto3" json:"state_list,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+}
+
+func (x *ActorStatePbComponent) Reset() {
+	*x = ActorStatePbComponent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_logic_component_actor_comp_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ActorStatePbComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActorStatePbComponent) ProtoMessage() {}
+
+func (x *ActorStatePbComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_logic_component_actor_comp_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActorStatePbComponent.ProtoReflect.Descriptor instead.
+func (*ActorStatePbComponent) Descriptor() ([]byte, []int) {
+	return file_logic_component_actor_comp_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ActorStatePbComponent) GetStateList() map[uint32]bool {
+	if x != nil {
+		return x.StateList
+	}
+	return nil
+}
+
 var File_logic_component_actor_comp_proto protoreflect.FileDescriptor
 
 var file_logic_component_actor_comp_proto_rawDesc = []byte{
@@ -640,8 +687,18 @@ var file_logic_component_actor_comp_proto_rawDesc = []byte{
 	0x73, 0x69, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x22, 0x28, 0x0a, 0x10, 0x4c, 0x65, 0x76, 0x65,
 	0x6c, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05,
 	0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x6c, 0x65, 0x76,
-	0x65, 0x6c, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x6c, 0x22, 0x9b, 0x01, 0x0a, 0x15, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x53, 0x74, 0x61, 0x74,
+	0x65, 0x50, 0x62, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x44, 0x0a, 0x0a,
+	0x73, 0x74, 0x61, 0x74, 0x65, 0x5f, 0x6c, 0x69, 0x73, 0x74, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x25, 0x2e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x53, 0x74, 0x61, 0x74, 0x65, 0x50, 0x62, 0x43,
+	0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x4c, 0x69,
+	0x73, 0x74, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x09, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4c, 0x69,
+	0x73, 0x74, 0x1a, 0x3c, 0x0a, 0x0e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x45,
+	0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0d, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01,
+	0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -656,7 +713,7 @@ func file_logic_component_actor_comp_proto_rawDescGZIP() []byte {
 	return file_logic_component_actor_comp_proto_rawDescData
 }
 
-var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_logic_component_actor_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_logic_component_actor_comp_proto_goTypes = []any{
 	(*Location)(nil),                  // 0: Location
 	(*Rotation)(nil),                  // 1: Rotation
@@ -667,17 +724,20 @@ var file_logic_component_actor_comp_proto_goTypes = []any{
 	(*ViewRadius)(nil),                // 6: ViewRadius
 	(*BaseAttributesPbComponent)(nil), // 7: BaseAttributesPbComponent
 	(*LevelPbComponent)(nil),          // 8: LevelPbComponent
-	(*Vector3)(nil),                   // 9: Vector3
+	(*ActorStatePbComponent)(nil),     // 9: ActorStatePbComponent
+	nil,                               // 10: ActorStatePbComponent.StateListEntry
+	(*Vector3)(nil),                   // 11: Vector3
 }
 var file_logic_component_actor_comp_proto_depIdxs = []int32{
-	9, // 0: Transform.location:type_name -> Vector3
-	1, // 1: Transform.rotation:type_name -> Rotation
-	2, // 2: Transform.scale:type_name -> Scale
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	11, // 0: Transform.location:type_name -> Vector3
+	1,  // 1: Transform.rotation:type_name -> Rotation
+	2,  // 2: Transform.scale:type_name -> Scale
+	10, // 3: ActorStatePbComponent.state_list:type_name -> ActorStatePbComponent.StateListEntry
+	4,  // [4:4] is the sub-list for method output_type
+	4,  // [4:4] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_logic_component_actor_comp_proto_init() }
@@ -795,6 +855,18 @@ func file_logic_component_actor_comp_proto_init() {
 				return nil
 			}
 		}
+		file_logic_component_actor_comp_proto_msgTypes[9].Exporter = func(v any, i int) any {
+			switch v := v.(*ActorStatePbComponent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -802,7 +874,7 @@ func file_logic_component_actor_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_logic_component_actor_comp_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
