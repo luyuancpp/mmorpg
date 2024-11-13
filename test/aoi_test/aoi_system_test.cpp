@@ -1,17 +1,13 @@
 ﻿// test_aoi_system.cpp
 
-#include <gtest/gtest.h>
 #include "game_logic/scene/system/aoi_system.h"
-#include "scene/comp/scene_comp.h"
-#include "game_logic/scene/comp/grid_comp.h"
-#include "proto/logic/component/actor_comp.pb.h"
-#include "proto/logic/component/npc_comp.pb.h"
-#include "proto/logic/event/scene_event.pb.h"
-#include "muduo/base/Logging.h"
-#include "game_logic/network/message_util.h"
-#include "service_info/player_scene_service_info.h"
+#include <gtest/gtest.h>
 #include "hexagons_grid.h"
+#include "game_logic/core/network/message_util.h"
+#include "game_logic/scene/comp/grid_comp.h"
 #include "game_logic/scene/util/grid_util.h"
+#include "proto/logic/component/actor_comp.pb.h"
+#include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
 #include "util/random.h"

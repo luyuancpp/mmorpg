@@ -1,6 +1,6 @@
 #include "game_player_scene_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "game_logic/network/message_util.h"
+#include "game_logic/core/network/message_util.h"
 #include "game_logic/player/util/player_node_util.h"
 #include "game_logic/player/util/player_scene_util.h"
 #include "proto/logic/client_player/player_scene.pb.h"
