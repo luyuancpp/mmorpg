@@ -17,9 +17,9 @@ void PlayerTipUtil::SendToPlayer(entt::entity player, uint32_t tipId, const Stri
 	SendMessageToPlayer(PlayerClientCommonServiceSendTipToClientMessageId, message, player);
 }
 
-void PlayerTipUtil::SendToPlayer(Guid playerId, uint32_t tipId, const StringVector& strParam)
+void PlayerTipUtil::SendToPlayer(const Guid playerId, const uint32_t tipId, const StringVector& strParam)
 {
-	entt::entity playerEntity = tlsCommonLogic.GetPlayer(playerId);
+	const entt::entity playerEntity = tlsCommonLogic.GetPlayer(playerId);
 	if (playerEntity == entt::null)
 	{
 		LOG_ERROR << "Player not found for ID: " << playerId;

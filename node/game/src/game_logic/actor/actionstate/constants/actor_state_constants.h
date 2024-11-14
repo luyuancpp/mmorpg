@@ -18,6 +18,6 @@ enum eActorAction : uint32_t {
 
 enum eActionStateMode : uint32_t {
     kActionStateMutualExclusion,// 互斥，禁止执行
-    kActionStateAllow,// 不互斥，允许执行
-    kActionStateInterruptAndExecute,// 打断并执行
+    kActionStatePermitted,// 不互斥，允许执行
+    kActionStateInterrupt,// 打断并执行
 };

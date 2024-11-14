@@ -7,7 +7,7 @@
 
 inline uint32_t MountUtil::MountActor(const entt::entity actorEntity)
 {
-    if (const auto result = ActorActionStateUtil::TryToPerformAction(actorEntity, kActorActionMountActor);
+    if (const auto result = ActorActionStateUtil::TryPerformAction(actorEntity, kActorActionMountActor);
         result != kSuccess) {
         return result;
     }
@@ -16,11 +16,10 @@ inline uint32_t MountUtil::MountActor(const entt::entity actorEntity)
     return kSuccess;
 }
 
-uint32_t MountUtil::UnmountActor(entt::entity actorEntity)
+uint32_t MountUtil::UnmountActor(const entt::entity actorEntity)
 {
-    if (const auto result = ActorActionStateUtil::GetStatusCode(actorEntity, kActorActionUnmountActor, kActorStateMounted);
-        result != kSuccess) {
-        return result;
+    if (!ActorActionStateUtil::HasState(actorEntity, kActorStateMounted)) {
+        return kMountNotMounted;
     }
     // 执行下坐骑逻辑
     return kSuccess;
