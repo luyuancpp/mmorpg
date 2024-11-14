@@ -54,7 +54,7 @@ void ActorActionStateUtil::InitializeActorComponents(entt::entity entity) {
 
 uint32_t ActorActionStateUtil::AddStateForAction(entt::entity actorEntity, uint32_t actorState) {
     // 调用 AddState 来添加状态
-    RETURN_IF_FAILED(AddState(actorEntity, actorState));
+    RETURN_ON_ERROR(AddState(actorEntity, actorState));
 
     // 你可以在这里添加其他逻辑，例如日志记录等
     return kSuccess;
@@ -71,7 +71,7 @@ uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         // 检查该状态是否与动作冲突
-        RETURN_IF_FAILED(CheckForStateConflict(actionStateTable, actorState));
+        RETURN_ON_ERROR(CheckForStateConflict(actionStateTable, actorState));
     }
 
     // 检查并处理中断状态
@@ -82,7 +82,7 @@ uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32
     }
 
     // 如果所有检查通过，可以添加状态并执行动作
-    RETURN_IF_FAILED(AddStateForAction(actorEntity, actorAction));
+    RETURN_ON_ERROR(AddStateForAction(actorEntity, actorAction));
 
     // 执行动作成功
     return kSuccess;
@@ -99,7 +99,7 @@ uint32_t ActorActionStateUtil::CanExecuteActionWithoutStateChange(entt::entity a
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         // 检查该状态是否与动作冲突
-        RETURN_IF_FAILED(CheckForStateConflict(actionStateTable, actorState));
+        RETURN_ON_ERROR(CheckForStateConflict(actionStateTable, actorState));
     }
 
     // 如果通过所有检查，则允许执行动作
