@@ -8,14 +8,15 @@ enum eActorState : uint32_t {
     kActorStateActorStateMax      // 状态的边界值
 };
 
-enum eActorAction {
+enum eActorAction : uint32_t {
     kActorActionUseSkill,        // 尝试使用技能
     kActorActionJoinFollow,      // 尝试进入组队跟随
+    kActorActionMountActor,      // 尝试上坐骑
+    kActorActionUnmountActor,    //尝试下坐骑
     // 可以继续添加其他动作
 };
 
-enum eActionStateFlag
-{
+enum eActionStateMode : uint32_t {
     kActionStateMutualExclusion,// 互斥，禁止执行
     kActionStateAllow,// 不互斥，允许执行
     kActionStateInterruptAndExecute,// 打断并执行

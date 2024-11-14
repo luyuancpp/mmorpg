@@ -29,18 +29,18 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_common_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\026common_error_tip.proto*\263\001\n\014common_erro"
-    "r\022\023\n\017kCommon_errorOK\020\000\022\007\n\003kOK\020\000\022\023\n\017kInva"
-    "lidTableId\020\001\022\025\n\021kInvalidTableData\020\002\022\027\n\023k"
-    "ServiceUnavailable\020\003\022\021\n\rkEntityIsNull\020\004\022"
-    "\025\n\021kInvalidParameter\020\005\022\022\n\016kServerCrashed"
-    "\020\006\032\002\020\001B\tZ\007pb/gameb\006proto3"
+    "\n\026common_error_tip.proto*\270\001\n\014common_erro"
+    "r\022\023\n\017kCommon_errorOK\020\000\022\014\n\010kSuccess\020\000\022\023\n\017"
+    "kInvalidTableId\020\001\022\025\n\021kInvalidTableData\020\002"
+    "\022\027\n\023kServiceUnavailable\020\003\022\021\n\rkEntityIsNu"
+    "ll\020\004\022\025\n\021kInvalidParameter\020\005\022\022\n\016kServerCr"
+    "ashed\020\006\032\002\020\001B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_common_5ferror_5ftip_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_common_5ferror_5ftip_2eproto = {
     false,
     false,
-    225,
+    230,
     descriptor_table_protodef_common_5ferror_5ftip_2eproto,
     "common_error_tip.proto",
     &descriptor_table_common_5ferror_5ftip_2eproto_once,

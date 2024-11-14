@@ -225,7 +225,7 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyId;',
         '        return { nullptr, kInvalidTableId };',
         '    }',
-        '    return { it->second, kOK };',
+        '    return { it->second, kSuccess };',
         '}\n\n',
     ])
 
