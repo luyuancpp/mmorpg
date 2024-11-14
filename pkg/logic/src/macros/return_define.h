@@ -2,16 +2,10 @@
 
 #include <cstdint>
 
-#define CHECK_RETURN_IF_NOT_OK(f)\
- do { \
-    {\
-        uint32_t ret(f);\
-        if (ret != kSuccess)\
-        {\
-            return ret;\
-        }\
-    }\
- } while (false)
+#define RETURN_IF_FAILED(result)  \
+if ((result) != kSuccess) {   \
+return (result);          \
+}
 
 #define SET_ERROR_AND_RETURN_IF_NOT_OK(tip_code)\
  do { \

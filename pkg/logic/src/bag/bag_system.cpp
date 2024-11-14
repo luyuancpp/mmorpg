@@ -146,7 +146,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems) {
 
 
 uint32_t Bag::RemoveItems(const U32U32UnorderedMap& itemsToRemove) {
-    CHECK_RETURN_IF_NOT_OK(HasSufficientItems(itemsToRemove));
+    RETURN_IF_FAILED(HasSufficientItems(itemsToRemove));
 
     auto itemsToErase = itemsToRemove;
     EntityVector itemsToRemoveReal;
