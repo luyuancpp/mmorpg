@@ -41,7 +41,7 @@ uint32_t MissionsComponent::IsMissionUnaccepted(const uint32_t missionId) const
 	{
 		return kMissionIdRepeated; // Return kMissionIdRepeated if mission is already accepted
 	}
-	return kOK; // Return kOK if mission is not accepted
+	return kSuccess; // Return kSuccess if mission is not accepted
 }
 
 uint32_t MissionsComponent::IsMissionUncompleted(const uint32_t missionId) const
@@ -51,5 +51,5 @@ uint32_t MissionsComponent::IsMissionUncompleted(const uint32_t missionId) const
 	{
 		return kMissionAlreadyCompleted; // Return kMissionAlreadyCompleted if mission is already completed
 	}
-	return kOK; // Return kOK if mission is not completed
+	return kSuccess; // Return kSuccess if mission is not completed
 }

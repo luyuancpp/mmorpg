@@ -24,7 +24,7 @@ void CentrePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Cen
 
 	ChangeSceneInfoPBComponent changeSceneInfo;
 	PlayerChangeSceneUtil::CopySceneInfoToChangeInfo(changeSceneInfo, request->scene_info());
-	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(player, changeSceneInfo); ret != kOK)
+	if (const auto ret = PlayerChangeSceneUtil::PushChangeSceneInfo(player, changeSceneInfo); ret != kSuccess)
 	{
 		LOG_ERROR << "Failed to push change scene info for player " << tls.registry.get<Guid>(player) << ": " << ret;
 		PlayerTipUtil::SendToPlayer(player, ret, {});

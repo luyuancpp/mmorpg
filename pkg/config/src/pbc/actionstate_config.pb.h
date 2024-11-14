@@ -194,17 +194,17 @@ class state final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kStateFlagFieldNumber = 1,
+    kStateModeFieldNumber = 1,
     kStateTipFieldNumber = 2,
   };
-  // uint32 state_flag = 1;
-  void clear_state_flag() ;
-  ::uint32_t state_flag() const;
-  void set_state_flag(::uint32_t value);
+  // uint32 state_mode = 1;
+  void clear_state_mode() ;
+  ::uint32_t state_mode() const;
+  void set_state_mode(::uint32_t value);
 
   private:
-  ::uint32_t _internal_state_flag() const;
-  void _internal_set_state_flag(::uint32_t value);
+  ::uint32_t _internal_state_mode() const;
+  void _internal_set_state_mode(::uint32_t value);
 
   public:
   // uint32 state_tip = 2;
@@ -238,7 +238,7 @@ class state final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint32_t state_flag_;
+    ::uint32_t state_mode_;
     ::uint32_t state_tip_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -623,26 +623,26 @@ class ActionStateTabledData final : public ::google::protobuf::Message
 
 // state
 
-// uint32 state_flag = 1;
-inline void state::clear_state_flag() {
+// uint32 state_mode = 1;
+inline void state::clear_state_mode() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.state_flag_ = 0u;
+  _impl_.state_mode_ = 0u;
 }
-inline ::uint32_t state::state_flag() const {
-  // @@protoc_insertion_point(field_get:state.state_flag)
-  return _internal_state_flag();
+inline ::uint32_t state::state_mode() const {
+  // @@protoc_insertion_point(field_get:state.state_mode)
+  return _internal_state_mode();
 }
-inline void state::set_state_flag(::uint32_t value) {
-  _internal_set_state_flag(value);
-  // @@protoc_insertion_point(field_set:state.state_flag)
+inline void state::set_state_mode(::uint32_t value) {
+  _internal_set_state_mode(value);
+  // @@protoc_insertion_point(field_set:state.state_mode)
 }
-inline ::uint32_t state::_internal_state_flag() const {
+inline ::uint32_t state::_internal_state_mode() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.state_flag_;
+  return _impl_.state_mode_;
 }
-inline void state::_internal_set_state_flag(::uint32_t value) {
+inline void state::_internal_set_state_mode(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.state_flag_ = value;
+  _impl_.state_mode_ = value;
 }
 
 // uint32 state_tip = 2;

@@ -27,6 +27,6 @@ std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTable(con
         LOG_ERROR << "Mission table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

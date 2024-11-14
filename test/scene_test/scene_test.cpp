@@ -908,7 +908,7 @@ TEST(GS, CheckEnterRoomScene)
 	tls.registry.emplace<Guid>(player2, 100); // Player 2 with GUID 100
 
 	// Test cases
-	EXPECT_EQ(kOK, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));
+	EXPECT_EQ(kSuccess, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player1 }));
 	EXPECT_EQ(kCheckEnterSceneCreator, SceneUtil::CheckPlayerEnterScene({ .scene = scene, .enter = player2 }));
 }
 

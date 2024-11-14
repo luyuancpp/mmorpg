@@ -103,7 +103,7 @@ void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t 
 
 uint32_t SkillUtil::ReleaseSkill(const entt::entity casterEntity, const ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
-	if (result != kOK || !skillTable) return result;
+	if (result != kSuccess || !skillTable) return result;
 
 	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(casterEntity, request));
 	LookAtTargetPosition(casterEntity, request);
@@ -119,15 +119,15 @@ uint32_t SkillUtil::ReleaseSkill(const entt::entity casterEntity, const ReleaseS
 
 	ApplySkillHitEffectIfValid(casterEntity, request->target_id());
 
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* skillTable) {
 	if (!tls.registry.any_of<Player>(casterEntity))
 	{
-		return  kOK;
+		return  kSuccess;
 	}
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
@@ -157,12 +157,12 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 	for (const auto& skillType : skillTable->skill_type()) {
 		const auto skill = static_cast<eSkillType>(skillType);  
 		const auto result = canUseSkillInCurrentState(currentState, skill);
-		if (result != kOK) {
+		if (result != kSuccess) {
 			return result;  // Return error code if any skill can't be used
 		}
 	}
 
-	return kOK;  // All skills can be used in the current state
+	return kSuccess;  // All skills can be used in the current state
 }
 
 
@@ -171,19 +171,19 @@ uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTabl
 		
 	}
 	
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTable) {
 	for (auto& item : skillTable->requireditem()){
 		
 	}
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request) {
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
-	if (result != kOK) {
+	if (result != kSuccess) {
 		return result;
 	}
 
@@ -196,7 +196,7 @@ uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity casterEntity, con
 	CHECK_RETURN_IF_NOT_OK(CheckBuff(casterEntity, skillTable));
 	CHECK_RETURN_IF_NOT_OK(CheckState(casterEntity, skillTable));
 	CHECK_RETURN_IF_NOT_OK(CheckItemUse(casterEntity, skillTable));
-	return kOK;
+	return kSuccess;
 }
 
 bool SkillUtil::IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType) {
@@ -315,7 +315,7 @@ void SkillUtil::HandleSkillDeactivate(const entt::entity casterEntity, const uin
 uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	// 获取技能表
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
-	if (result != kOK || skillTable == nullptr) {
+	if (result != kSuccess || skillTable == nullptr) {
 		return result;
 	}
 
@@ -328,13 +328,13 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	}
 
 	// 默认错误状态
-	uint32_t err = kOK;
+	uint32_t err = kSuccess;
 
 	// 遍历技能目标类型
 	for (auto& tabSkillType : skillTable->target_type()) {
 		// 检查不需要目标的情况
 		if ((1 << tabSkillType) == kNoTargetRequired) {
-			return kOK;  // 无需进一步检查
+			return kSuccess;  // 无需进一步检查
 		}
 
 		// 检查是否为目标技能
@@ -357,12 +357,12 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 				return kSkillInvalidTargetId;
 			}
 
-			return kOK;  // 验证通过
+			return kSuccess;  // 验证通过
 		}
 
 		// 检查范围技能
 		if ((1 << tabSkillType) == kAreaOfEffect) {
-			return kOK;  // 验证通过
+			return kSuccess;  // 验证通过
 		}
 	}
 
@@ -382,7 +382,7 @@ uint32_t SkillUtil::CheckCooldown(const entt::entity casterEntity, const SkillTa
 		}
 	}
 
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t SkillUtil::CheckCasting(const entt::entity casterEntity, const SkillTable* skillTable) {
@@ -392,7 +392,7 @@ uint32_t SkillUtil::CheckCasting(const entt::entity casterEntity, const SkillTab
 				<< " is currently casting. Sending interrupt message.";
 			SendSkillInterruptedMessage(casterEntity, skillTable->id());
 			tls.registry.remove<CastingTimerComp>(casterEntity);
-			return kOK;
+			return kSuccess;
 		}
 		
 		if (!skillTable->immediately() && castTimerComp->timer.IsActive()) {
@@ -403,7 +403,7 @@ uint32_t SkillUtil::CheckCasting(const entt::entity casterEntity, const SkillTab
 		tls.registry.remove<CastingTimerComp>(casterEntity);
 	}
 
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t SkillUtil::CheckRecovery(const entt::entity casterEntity, const SkillTable* skillTable) {
@@ -413,7 +413,7 @@ uint32_t SkillUtil::CheckRecovery(const entt::entity casterEntity, const SkillTa
 				<< " is currently casting. Sending interrupt message.";
 			SendSkillInterruptedMessage(casterEntity, skillTable->id());
 			tls.registry.remove<RecoveryTimerComp>(casterEntity);
-			return kOK;
+			return kSuccess;
 		}
 		
 		if (!skillTable->immediately() && recoveryTimeTimerComp->timer.IsActive()) {
@@ -424,7 +424,7 @@ uint32_t SkillUtil::CheckRecovery(const entt::entity casterEntity, const SkillTa
 		tls.registry.remove<RecoveryTimerComp>(casterEntity);
 	}
 
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t SkillUtil::CheckChannel(const entt::entity casterEntity, const SkillTable* skillTable) {
@@ -435,7 +435,7 @@ uint32_t SkillUtil::CheckChannel(const entt::entity casterEntity, const SkillTab
 			SendSkillInterruptedMessage(casterEntity, skillTable->id());
 			// TODO: Implement logic for handling the skill interruption
 			tls.registry.remove<ChannelFinishTimerComp>(casterEntity);
-			return kOK;
+			return kSuccess;
 		}
 
 		if (!skillTable->immediately() && channelFinishTimerComp->timer.IsActive()) {
@@ -448,7 +448,7 @@ uint32_t SkillUtil::CheckChannel(const entt::entity casterEntity, const SkillTab
 		tls.registry.remove<ChannelFinishTimerComp>(casterEntity);
 	}
 
-	return kOK;
+	return kSuccess;
 }
 
 void SkillUtil::BroadcastSkillUsedMessage(const entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request) {

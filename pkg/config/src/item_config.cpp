@@ -27,6 +27,6 @@ std::pair<const ItemTable*, uint32_t> ItemConfigurationTable::GetTable(const uin
         LOG_ERROR << "Item table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

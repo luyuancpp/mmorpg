@@ -55,7 +55,7 @@ uint32_t MissionUtil::GetMissionReward(const GetRewardParam& param) {
 	// Remove mission ID from reward list
 	rewardMissionIdMap->erase(param.missionId);
 	LOG_INFO << "Removed mission ID from reward list: missionId = " << param.missionId << ", playerId = " << tls.registry.get<Guid>(param.playerId);
-	return kOK;
+	return kSuccess;
 }
 
 // Function to check conditions before accepting a mission
@@ -77,7 +77,7 @@ uint32_t MissionUtil::CheckMissionAcceptance(const AcceptMissionEvent& acceptEve
 		CHECK_CONDITION(missionComp->GetTypeFilter().find(missionTypeSubTypePair) != missionComp->GetTypeFilter().end(), kMissionTypeAlreadyExists);
 	}
 
-	return kOK;
+	return kSuccess;
 }
 
 // Function to accept a mission
@@ -94,7 +94,7 @@ uint32_t MissionUtil::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 
 	// Check acceptance conditions
 	auto ret = CheckMissionAcceptance(acceptEvent, missionComp);
-	if (ret != kOK) {
+	if (ret != kSuccess) {
 		LOG_ERROR << "CheckMissionAcceptance failed for mission_id = " << acceptEvent.mission_id()
 			<< ", playerEntity = " << tls.registry.get<Guid>(playerEntity);
 		return ret;
@@ -136,7 +136,7 @@ uint32_t MissionUtil::AcceptMission(const AcceptMissionEvent& acceptEvent) {
 		LOG_INFO << "Mission accepted for playerEntity = " << tls.registry.get<Guid>(playerEntity) << ", mission_id = " << acceptEvent.mission_id();
 	}
 
-	return kOK;
+	return kSuccess;
 }
 
 // Function to abandon a mission
@@ -168,7 +168,7 @@ uint32_t MissionUtil::AbandonMission(const AbandonParam& param) {
 	// Delete mission classification
 	DeleteMissionClassification(param.playerId, param.missionId);
 	LOG_INFO << "Mission abandoned for playerId = " << tls.registry.get<Guid>(param.playerId) << ", missionId = " << param.missionId;
-	return kOK;
+	return kSuccess;
 }
 
 // Function to complete all missions for a player

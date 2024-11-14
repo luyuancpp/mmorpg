@@ -27,6 +27,6 @@ std::pair<const MonsterBaseTable*, uint32_t> MonsterBaseConfigurationTable::GetT
         LOG_ERROR << "MonsterBase table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

@@ -32,6 +32,6 @@ std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTable(const u
         LOG_ERROR << "Skill table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

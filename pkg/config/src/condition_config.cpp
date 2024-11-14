@@ -27,6 +27,6 @@ std::pair<const ConditionTable*, uint32_t> ConditionConfigurationTable::GetTable
         LOG_ERROR << "Condition table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

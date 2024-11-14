@@ -6,11 +6,11 @@
 
 uint32_t TeamUtil::TryCreateTeam(entt::entity actorEntity)
 {
-    return kOK;
+    return kSuccess;
 }
 
 uint32_t TeamUtil::InitTeamInfo(entt::entity actorEntity)
 {
     ActorActionStateUtil::EnterState(actorEntity, kActorStateTeamFollow);
-    return kOK;
+    return kSuccess;
 }

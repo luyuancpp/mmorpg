@@ -227,7 +227,7 @@ uint32_t SceneUtil::CheckPlayerEnterScene(const EnterSceneParam& param) {
 		return kCheckEnterSceneCreator;
 	}
 
-	return kOK;
+	return kSuccess;
 }
 
 
@@ -251,7 +251,7 @@ uint32_t SceneUtil::CheckScenePlayerSize(entt::entity scene) {
 		return kEnterSceneGsFull;
 	}
 
-	return kOK;
+	return kSuccess;
 }
 
 
