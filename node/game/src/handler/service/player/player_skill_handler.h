@@ -33,7 +33,7 @@ public:
 			ReleaseSkill(player,
 			::google::protobuf::internal::DownCast<const ReleaseSkillSkillRequest*>(request),
 			::google::protobuf::internal::DownCast<ReleaseSkillSkillResponse*>(response));
-			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<ReleaseSkillSkillResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<ReleaseSkillSkillResponse*>(response));
 		break;
 		case 1:
 			NotifySkillUsed(player,
@@ -49,7 +49,7 @@ public:
 			GetSkillList(player,
 			::google::protobuf::internal::DownCast<const GetSkillListRequest*>(request),
 			::google::protobuf::internal::DownCast<GetSkillListResponse*>(response));
-			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<GetSkillListResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<GetSkillListResponse*>(response));
 		break;
 		default:
 		break;

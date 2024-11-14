@@ -7,7 +7,7 @@ if ((result) != kSuccess) {   \
 return (result);          \
 }
 
-#define SET_ERROR_AND_RETURN_IF_NOT_OK(tip_code)\
+#define SET_ERROR_IF_FAILURE(tip_code)\
  do { \
     if ((tip_code) != kSuccess)\
     {\
@@ -16,7 +16,7 @@ return (result);          \
     }\
  } while (false)
 
-#define CHECK_CONDITION(condition, tip_code)\
+#define RETURN_IF_TRUE(condition, tip_code)\
  do { \
     if (condition)\
     {\
@@ -25,7 +25,7 @@ return (result);          \
  } while (false)
 
 
-#define HANDLE_ERROR_MESSAGE(response) \
+#define TRANSFER_ERROR_MESSAGE(response) \
     do { \
         auto* tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity()); \
         if (tipInfoMessage != nullptr && response != nullptr) { \
@@ -35,7 +35,7 @@ return (result);          \
     } while (false)
 
 // 定义宏以检查技能激活前提条件
-#define CHECK_REQUEST(request, fn) \
+#define CHECK_REQUEST_PRECONDITIONS(request, fn) \
 do { \
 auto err = fn(request); \
 if (err != kSuccess) \
