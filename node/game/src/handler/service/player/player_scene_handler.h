@@ -49,7 +49,7 @@ public:
 			EnterScene(player,
 			::google::protobuf::internal::DownCast<const EnterSceneC2SRequest*>(request),
 			::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
-			HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
 		break;
 		case 1:
 			NotifyEnterScene(player,
