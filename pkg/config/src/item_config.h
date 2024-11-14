@@ -25,3 +25,11 @@ private:
 inline std::pair<const ItemTable*, uint32_t> GetItemTable(const uint32_t keyId) { return ItemConfigurationTable::Instance().GetTable(keyId); }
 
 inline const ItemTabledData& GetItemAllTable() { return ItemConfigurationTable::Instance().All(); }
+
+#define FetchAndValidateItemTable(keyId)\
+const auto itemTable, result = ItemConfigurationTable::Instance().GetTable(keyId); \
+if (!(itemTable)) { return (result); }
+
+#define FetchItemTableOrReturnVoid(keyId)\
+const auto itemTable, result = ItemConfigurationTable::Instance().GetTable(keyId); \
+if (!(itemTable)) { return  }

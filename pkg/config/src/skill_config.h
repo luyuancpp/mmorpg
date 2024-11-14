@@ -35,3 +35,11 @@ private:
 inline std::pair<const SkillTable*, uint32_t> GetSkillTable(const uint32_t keyId) { return SkillConfigurationTable::Instance().GetTable(keyId); }
 
 inline const SkillTabledData& GetSkillAllTable() { return SkillConfigurationTable::Instance().All(); }
+
+#define FetchAndValidateSkillTable(keyId)\
+const auto skillTable, result = SkillConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillTable)) { return (result); }
+
+#define FetchSkillTableOrReturnVoid(keyId)\
+const auto skillTable, result = SkillConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillTable)) { return  }

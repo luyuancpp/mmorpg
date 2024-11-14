@@ -25,3 +25,11 @@ private:
 inline std::pair<const ActionStateTable*, uint32_t> GetActionStateTable(const uint32_t keyId) { return ActionStateConfigurationTable::Instance().GetTable(keyId); }
 
 inline const ActionStateTabledData& GetActionStateAllTable() { return ActionStateConfigurationTable::Instance().All(); }
+
+#define FetchAndValidateActionStateTable(keyId)\
+const auto actionStateTable, result = ActionStateConfigurationTable::Instance().GetTable(keyId); \
+if (!(actionStateTable)) { return (result); }
+
+#define FetchActionStateTableOrReturnVoid(keyId)\
+const auto actionStateTable, result = ActionStateConfigurationTable::Instance().GetTable(keyId); \
+if (!(actionStateTable)) { return  }
