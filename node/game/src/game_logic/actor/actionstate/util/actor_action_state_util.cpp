@@ -10,35 +10,36 @@ namespace {
     // 检查某个动作是否与当前状态冲突，若冲突，返回对应的错误码
     uint32_t CheckForStateConflict(const ActionStateTable* actionStateTable, uint32_t actorState) {
         if (actorState >= static_cast<uint32_t>(actionStateTable->state_size())) {
-            return kSuccess;
+            return kSuccess;  // 如果状态无效，返回成功
         }
 
         const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
         if (state.state_mode() == kActionStateMutualExclusion) {
-            return state.state_tip();
+            return state.state_tip();  // 返回冲突的状态提示
         }
-        return kSuccess;
+        return kSuccess;  // 没有冲突
     }
 
     // 中断当前状态并执行该动作
     bool InterruptAndPerformAction(const ActionStateTable* actionStateTable, uint32_t actorState, entt::entity actorEntity) {
         if (actorState >= static_cast<uint32_t>(actionStateTable->state_size())) {
-            return false;  // 无效状态
+            return false;  // 无效状态，返回失败
         }
 
         const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
         if (state.state_mode() == kActionStateInterrupt) {
+            // 触发中断事件
             InterruptCurrentStatePbEvent interruptEvent;
             interruptEvent.set_actor_entity(entt::to_integral(actorEntity));
             interruptEvent.set_actor_state(actorState);
             tls.dispatcher.trigger(interruptEvent);
 
             // 中断当前状态并执行该动作
-            if (const uint32_t interruptResult = ActorActionStateUtil::RemoveState(actorEntity, actorState); interruptResult != kSuccess) {
-                return false;  // 退出失败，返回false
+            const uint32_t interruptResult = ActorActionStateUtil::RemoveState(actorEntity, actorState);
+            if (interruptResult != kSuccess) {
+                return false;  // 中断失败，返回失败
             }
-
-            return true;  // 中断成功，允许执行动作
+            return true;  // 成功中断并执行动作
         }
 
         return false;  // 不需要中断
@@ -50,10 +51,21 @@ void ActorActionStateUtil::InitializeActorComponents(entt::entity entity) {
     tls.registry.emplace<ActorStatePbComponent>(entity);
 }
 
+uint32_t ActorActionStateUtil::AddStateForAction(entt::entity actorEntity, uint32_t actorState) {
+    // 调用 AddState 来添加状态
+    uint32_t result = AddState(actorEntity, actorState);
+    if (result != kSuccess) {
+        return result;  // 如果添加状态失败，返回错误码
+    }
+
+    // 你可以在这里添加其他逻辑，例如日志记录等
+    return kSuccess;
+}
+
 uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32_t actorAction) {
     // 获取该动作对应的状态表
     auto [actionStateTable, result] = GetActionStateTable(actorAction);
-    if (nullptr == actionStateTable) {
+    if (!actionStateTable) {
         return result;  // 返回状态表错误码
     }
 
@@ -63,23 +75,28 @@ uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32
         // 检查该状态是否与动作冲突
         const uint32_t conflictResult = CheckForStateConflict(actionStateTable, actorState);
         if (conflictResult != kSuccess) {
-            return conflictResult;
+            return conflictResult;  // 若状态冲突，返回错误码
         }
     }
 
     // 检查并处理中断状态
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         if (InterruptAndPerformAction(actionStateTable, actorState, actorEntity)) {
-            // 如果当前状态被中断并执行新动作，退出状态检查
-            continue;
+            continue;  // 如果中断成功，继续检查下一个状态
         }
     }
 
-    // 如果没有问题，可以执行动作
+    // 如果所有检查通过，可以添加状态并执行动作
+    const uint32_t addStateResult = AddStateForAction(actorEntity, actorAction);
+    if (addStateResult != kSuccess) {
+        return addStateResult;  // 如果添加状态失败，返回错误码
+    }
+
+    // 执行动作成功
     return kSuccess;
 }
 
-uint32_t ActorActionStateUtil::CanExecuteAction(entt::entity actorEntity, uint32_t actorAction) {
+uint32_t ActorActionStateUtil::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
     // 获取该动作对应的状态表
     auto [actionStateTable, result] = GetActionStateTable(actorAction);
     if (nullptr == actionStateTable) {
@@ -103,33 +120,34 @@ uint32_t ActorActionStateUtil::CanExecuteAction(entt::entity actorEntity, uint32
 bool ActorActionStateUtil::HasState(entt::entity actorEntity, uint32_t state) {
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     if (state >= kActorStateActorStateMax) {
-        return false;  // 无效的状态
+        return false;  // 无效状态
     }
 
-    return actorStatePbComponent.state_list().contains(state);
+    return actorStatePbComponent.state_list().contains(state);  // 检查是否包含指定状态
 }
 
-uint32_t ActorActionStateUtil::GetStateTip(entt::entity actorEntity, uint32_t actorAction, uint32_t actorState) {
+uint32_t ActorActionStateUtil::GetStateTip(const uint32_t actorAction, const uint32_t actorState) {
     // 获取该动作对应的状态表
     auto [actionStateTable, result] = GetActionStateTable(actorAction);
-    if (nullptr == actionStateTable) {
+    if (!actionStateTable) {
         return result;  // 返回状态表错误码
     }
 
     if (actorState >= static_cast<uint32_t>(actionStateTable->state_size())) {
-        return kInvalidParameter;
+        return kInvalidParameter;  // 状态无效
     }
 
     const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
-    return state.state_tip();
+    return state.state_tip();  // 返回状态提示
 }
 
-uint32_t ActorActionStateUtil::AddState(entt::entity actorEntity, uint32_t actorState) {
+uint32_t ActorActionStateUtil::AddState(const entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     if (actorState >= kActorStateActorStateMax || actorStatePbComponent.state_list().contains(actorState)) {
-        return kInvalidParameter;
+        return kInvalidParameter;  // 状态无效或已存在
     }
 
+    // 添加新的状态
     actorStatePbComponent.mutable_state_list()->emplace(std::make_pair(actorState, true));
     return kSuccess;
 }
@@ -137,9 +155,10 @@ uint32_t ActorActionStateUtil::AddState(entt::entity actorEntity, uint32_t actor
 uint32_t ActorActionStateUtil::RemoveState(entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     if (actorState >= kActorStateActorStateMax || !actorStatePbComponent.state_list().contains(actorState)) {
-        return kInvalidParameter;
+        return kInvalidParameter;  // 状态无效或不存在
     }
 
+    // 移除状态
     actorStatePbComponent.mutable_state_list()->erase(actorState);
     return kSuccess;
 }
