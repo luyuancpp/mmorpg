@@ -107,7 +107,7 @@ uint32_t SkillUtil::ReleaseSkill(const entt::entity casterEntity, const ReleaseS
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kSuccess || !skillTable) return result;
 
-	RETURN_IF_FAILED(CheckSkillPrerequisites(casterEntity, request));
+	RETURN_ON_ERROR(CheckSkillPrerequisites(casterEntity, request));
 	LookAtTargetPosition(casterEntity, request);
 	BroadcastSkillUsedMessage(casterEntity, request);
     
@@ -169,7 +169,7 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
-	RETURN_IF_FAILED(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
+	RETURN_ON_ERROR(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
 	
 	return kSuccess;
 }
@@ -187,15 +187,15 @@ uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity casterEntity, con
 		return result;
 	}
 
-	RETURN_IF_FAILED(ValidateTarget(request));
-	RETURN_IF_FAILED(CheckCooldown(casterEntity, skillTable));
-	RETURN_IF_FAILED(CheckCasting(casterEntity, skillTable));
-	RETURN_IF_FAILED(CheckRecovery(casterEntity, skillTable));
-	RETURN_IF_FAILED(CheckChannel(casterEntity, skillTable));
-	RETURN_IF_FAILED(CheckPlayerLevel(casterEntity, skillTable));
-	RETURN_IF_FAILED(CheckBuff(casterEntity, skillTable));
-	RETURN_IF_FAILED(CheckState(casterEntity, skillTable));
-	RETURN_IF_FAILED(CheckItemUse(casterEntity, skillTable));
+	RETURN_ON_ERROR(ValidateTarget(request));
+	RETURN_ON_ERROR(CheckCooldown(casterEntity, skillTable));
+	RETURN_ON_ERROR(CheckCasting(casterEntity, skillTable));
+	RETURN_ON_ERROR(CheckRecovery(casterEntity, skillTable));
+	RETURN_ON_ERROR(CheckChannel(casterEntity, skillTable));
+	RETURN_ON_ERROR(CheckPlayerLevel(casterEntity, skillTable));
+	RETURN_ON_ERROR(CheckBuff(casterEntity, skillTable));
+	RETURN_ON_ERROR(CheckState(casterEntity, skillTable));
+	RETURN_ON_ERROR(CheckItemUse(casterEntity, skillTable));
 	return kSuccess;
 }
 

@@ -105,7 +105,7 @@ func getPlayerMethodHandlerFunctions(methodList RPCMethods) string {
 		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
 
 		if !strings.Contains(method.Response, config.EmptyResponseName) {
-			callFunctionList.WriteString(config.Tab3 + "HANDLE_ERROR_MESSAGE(::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
+			callFunctionList.WriteString(config.Tab3 + "TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
 		}
 
 		callFunctionList.WriteString(config.Tab2 + "break;\n")
