@@ -26,10 +26,10 @@ inline std::pair<const ClassTable*, uint32_t> GetClassTable(const uint32_t keyId
 
 inline const ClassTabledData& GetClassAllTable() { return ClassConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateClassTable(keyId)\
-const auto classTable, result = ClassConfigurationTable::Instance().GetTable(keyId); \
+#define FetchAndValidateClassTable(keyId) \
+const auto [classTable, result] = ClassConfigurationTable::Instance().GetTable(keyId); \
 if (!(classTable)) { return (result); }
 
-#define FetchClassTableOrReturnVoid(keyId)\
-const auto classTable, result = ClassConfigurationTable::Instance().GetTable(keyId); \
+#define FetchClassTableOrReturnVoid(keyId) \
+const auto [classTable, result] = ClassConfigurationTable::Instance().GetTable(keyId); \
 if (!(classTable)) { return  }

@@ -26,10 +26,10 @@ inline std::pair<const MissionTable*, uint32_t> GetMissionTable(const uint32_t k
 
 inline const MissionTabledData& GetMissionAllTable() { return MissionConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateMissionTable(keyId)\
-const auto missionTable, result = MissionConfigurationTable::Instance().GetTable(keyId); \
+#define FetchAndValidateMissionTable(keyId) \
+const auto [missionTable, result] = MissionConfigurationTable::Instance().GetTable(keyId); \
 if (!(missionTable)) { return (result); }
 
-#define FetchMissionTableOrReturnVoid(keyId)\
-const auto missionTable, result = MissionConfigurationTable::Instance().GetTable(keyId); \
+#define FetchMissionTableOrReturnVoid(keyId) \
+const auto [missionTable, result] = MissionConfigurationTable::Instance().GetTable(keyId); \
 if (!(missionTable)) { return  }

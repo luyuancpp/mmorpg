@@ -44,10 +44,10 @@ inline std::pair<const TestMultiKeyTable*, uint32_t> GetTestMultiKeyTable(const 
 
 inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() { return TestMultiKeyConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateTestMultiKeyTable(keyId)\
-const auto testMultiKeyTable, result = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
+#define FetchAndValidateTestMultiKeyTable(keyId) \
+const auto [testMultiKeyTable, result] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
 if (!(testMultiKeyTable)) { return (result); }
 
-#define FetchTestMultiKeyTableOrReturnVoid(keyId)\
-const auto testMultiKeyTable, result = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
+#define FetchTestMultiKeyTableOrReturnVoid(keyId) \
+const auto [testMultiKeyTable, result] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
 if (!(testMultiKeyTable)) { return  }

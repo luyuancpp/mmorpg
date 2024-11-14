@@ -26,10 +26,10 @@ inline std::pair<const MonsterBaseTable*, uint32_t> GetMonsterBaseTable(const ui
 
 inline const MonsterBaseTabledData& GetMonsterBaseAllTable() { return MonsterBaseConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateMonsterBaseTable(keyId)\
-const auto monsterBaseTable, result = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
+#define FetchAndValidateMonsterBaseTable(keyId) \
+const auto [monsterBaseTable, result] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
 if (!(monsterBaseTable)) { return (result); }
 
-#define FetchMonsterBaseTableOrReturnVoid(keyId)\
-const auto monsterBaseTable, result = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
+#define FetchMonsterBaseTableOrReturnVoid(keyId) \
+const auto [monsterBaseTable, result] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
 if (!(monsterBaseTable)) { return  }

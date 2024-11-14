@@ -143,16 +143,16 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'\ninline const {table_data_name}& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::Instance().All(); }}')
 
     header_content.append(
-        f'\n#define FetchAndValidate{sheetname}Table(keyId)\\')
+        f'\n#define FetchAndValidate{sheetname}Table(keyId) \\')
     header_content.append(
-        f'const auto {gen_common.lower_first_letter(sheetname)}Table, result = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, result] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
     header_content.append(
         f'if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ return (result); }}')
 
     header_content.append(
-        f'\n#define Fetch{sheetname}TableOrReturnVoid(keyId)\\')
+        f'\n#define Fetch{sheetname}TableOrReturnVoid(keyId) \\')
     header_content.append(
-        f'const auto {gen_common.lower_first_letter(sheetname)}Table, result = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, result] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
     header_content.append(
         f'if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ return  }}')
 
