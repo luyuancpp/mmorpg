@@ -25,3 +25,11 @@ private:
 inline std::pair<const SkillPermissionTable*, uint32_t> GetSkillPermissionTable(const uint32_t keyId) { return SkillPermissionConfigurationTable::Instance().GetTable(keyId); }
 
 inline const SkillPermissionTabledData& GetSkillPermissionAllTable() { return SkillPermissionConfigurationTable::Instance().All(); }
+
+#define FetchAndValidateSkillPermissionTable(keyId)\
+const auto skillPermissionTable, result = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillPermissionTable)) { return (result); }
+
+#define FetchSkillPermissionTableOrReturnVoid(keyId)\
+const auto skillPermissionTable, result = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillPermissionTable)) { return  }

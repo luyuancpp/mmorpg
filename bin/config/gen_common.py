@@ -199,3 +199,8 @@ def count_words_by_comma(text):
 
     # 返回单词数量和单词列表
     return len(words), words
+
+def lower_first_letter(s):
+    if not s:  # 检查字符串是否为空
+        return s
+    return s[0].lower() + s[1:]  # 将首字母小写并拼接其余部分

@@ -25,3 +25,11 @@ private:
 inline std::pair<const MainSceneTable*, uint32_t> GetMainSceneTable(const uint32_t keyId) { return MainSceneConfigurationTable::Instance().GetTable(keyId); }
 
 inline const MainSceneTabledData& GetMainSceneAllTable() { return MainSceneConfigurationTable::Instance().All(); }
+
+#define FetchAndValidateMainSceneTable(keyId)\
+const auto mainSceneTable, result = MainSceneConfigurationTable::Instance().GetTable(keyId); \
+if (!(mainSceneTable)) { return (result); }
+
+#define FetchMainSceneTableOrReturnVoid(keyId)\
+const auto mainSceneTable, result = MainSceneConfigurationTable::Instance().GetTable(keyId); \
+if (!(mainSceneTable)) { return  }

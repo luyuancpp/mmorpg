@@ -25,3 +25,11 @@ private:
 inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(const uint32_t keyId) { return GlobalVariableConfigurationTable::Instance().GetTable(keyId); }
 
 inline const GlobalVariableTabledData& GetGlobalVariableAllTable() { return GlobalVariableConfigurationTable::Instance().All(); }
+
+#define FetchAndValidateGlobalVariableTable(keyId)\
+const auto globalVariableTable, result = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
+if (!(globalVariableTable)) { return (result); }
+
+#define FetchGlobalVariableTableOrReturnVoid(keyId)\
+const auto globalVariableTable, result = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
+if (!(globalVariableTable)) { return  }

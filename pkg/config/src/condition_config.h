@@ -25,3 +25,11 @@ private:
 inline std::pair<const ConditionTable*, uint32_t> GetConditionTable(const uint32_t keyId) { return ConditionConfigurationTable::Instance().GetTable(keyId); }
 
 inline const ConditionTabledData& GetConditionAllTable() { return ConditionConfigurationTable::Instance().All(); }
+
+#define FetchAndValidateConditionTable(keyId)\
+const auto conditionTable, result = ConditionConfigurationTable::Instance().GetTable(keyId); \
+if (!(conditionTable)) { return (result); }
+
+#define FetchConditionTableOrReturnVoid(keyId)\
+const auto conditionTable, result = ConditionConfigurationTable::Instance().GetTable(keyId); \
+if (!(conditionTable)) { return  }

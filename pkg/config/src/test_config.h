@@ -25,3 +25,11 @@ private:
 inline std::pair<const TestTable*, uint32_t> GetTestTable(const uint32_t keyId) { return TestConfigurationTable::Instance().GetTable(keyId); }
 
 inline const TestTabledData& GetTestAllTable() { return TestConfigurationTable::Instance().All(); }
+
+#define FetchAndValidateTestTable(keyId)\
+const auto testTable, result = TestConfigurationTable::Instance().GetTable(keyId); \
+if (!(testTable)) { return (result); }
+
+#define FetchTestTableOrReturnVoid(keyId)\
+const auto testTable, result = TestConfigurationTable::Instance().GetTable(keyId); \
+if (!(testTable)) { return  }
