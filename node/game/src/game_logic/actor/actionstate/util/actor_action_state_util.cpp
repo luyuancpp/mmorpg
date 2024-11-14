@@ -62,11 +62,8 @@ uint32_t ActorActionStateUtil::AddStateForAction(entt::entity actorEntity, uint3
 
 uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32_t actorAction) {
     // 获取该动作对应的状态表
-    auto [actionStateTable, result] = GetActionStateTable(actorAction);
-    if (!actionStateTable) {
-        return result;  // 返回状态表错误码
-    }
-
+    FetchAndValidateActionStateTable(actorAction);
+    
     // 遍历角色的所有状态，检查是否可以执行该动作
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
@@ -89,12 +86,8 @@ uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32
 }
 
 uint32_t ActorActionStateUtil::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
-    // 获取该动作对应的状态表
-    auto [actionStateTable, result] = GetActionStateTable(actorAction);
-    if (nullptr == actionStateTable) {
-        return result;  // 返回状态表错误码
-    }
-
+    FetchAndValidateActionStateTable(actorAction);
+    
     // 获取角色状态组件并检查是否允许执行动作
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
@@ -116,11 +109,7 @@ bool ActorActionStateUtil::HasState(const entt::entity actorEntity, const uint32
 }
 
 uint32_t ActorActionStateUtil::GetStateTip(const uint32_t actorAction, const uint32_t actorState) {
-    // 获取该动作对应的状态表
-    auto [actionStateTable, result] = GetActionStateTable(actorAction);
-    if (!actionStateTable) {
-        return result;  // 返回状态表错误码
-    }
+    FetchAndValidateActionStateTable(actorAction);
 
     if (actorState >= static_cast<uint32_t>(actionStateTable->state_size())) {
         return kInvalidParameter;  // 状态无效
