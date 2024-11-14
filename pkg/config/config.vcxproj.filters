@@ -144,6 +144,12 @@
     <ClCompile Include="src\pbc\actionstate_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\pbc\actor_action_error_tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\mount_error_tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\all_config.h">
@@ -279,6 +285,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\actionstate_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\actor_action_error_tip.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\mount_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
