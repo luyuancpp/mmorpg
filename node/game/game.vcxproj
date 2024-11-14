@@ -773,6 +773,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
       <EnableModules>true</EnableModules>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
+    <ClCompile Include="src\game_logic\mount\util\mount_util.cpp" />
     <ClCompile Include="src\game_logic\npc\util\npc_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_player_database_1_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_player_database_util.cpp" />
@@ -780,6 +781,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\scene\util\grid_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\interest_util.cpp" />
     <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp" />
+    <ClCompile Include="src\game_logic\team\util\team_util.cpp" />
     <ClCompile Include="src\handler\event\buff_event_handler.cpp" />
     <ClCompile Include="src\handler\event\combat_event_handler.cpp" />
     <ClCompile Include="src\handler\event\event_handler.cpp" />
@@ -852,6 +854,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\core\network\message_util.h" />
     <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_util.h" />
     <ClInclude Include="src\game_logic\core\utils\redis_util.h" />
+    <ClInclude Include="src\game_logic\mount\util\mount_util.h" />
     <ClInclude Include="src\game_logic\npc\util\npc_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_skill_util.h" />
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h" />
@@ -865,6 +868,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\scene\util\grid_util.h" />
     <ClInclude Include="src\game_logic\scene\util\interest_util.h" />
     <ClInclude Include="src\game_logic\scene\util\navigation_util.h" />
+    <ClInclude Include="src\game_logic\team\util\team_util.h" />
     <ClInclude Include="src\handler\event\buff_event_handler.h" />
     <ClInclude Include="src\handler\event\combat_event_handler.h" />
     <ClInclude Include="src\handler\event\event_handler.h" />
