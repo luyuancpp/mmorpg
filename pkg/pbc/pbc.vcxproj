@@ -67,6 +67,7 @@
     <ClCompile Include="src\proto\logic\constants\node.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\scene.pb.cc" />
     <ClCompile Include="src\proto\logic\constants\test_switch.pb.cc" />
+    <ClCompile Include="src\proto\logic\event\actor_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\buff_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\combat_event.pb.cc" />
     <ClCompile Include="src\proto\logic\event\mission_event.pb.cc" />
@@ -133,6 +134,7 @@
     <ClInclude Include="src\proto\logic\constants\node.pb.h" />
     <ClInclude Include="src\proto\logic\constants\scene.pb.h" />
     <ClInclude Include="src\proto\logic\constants\test_switch.pb.h" />
+    <ClInclude Include="src\proto\logic\event\actor_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\buff_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\combat_event.pb.h" />
     <ClInclude Include="src\proto\logic\event\mission_event.pb.h" />
