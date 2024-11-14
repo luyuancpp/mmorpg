@@ -2,7 +2,6 @@
 
 #include "game_node.h"
 #include "game_logic/core/network/message_util.h"
-#include "network/gate_session.h"
 #include "proto/common/centre_service.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"

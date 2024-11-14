@@ -5,6 +5,8 @@
 #include "entity_error_tip.pb.h"
 #include "skillpermission_config.h"
 #include "skill_config.h"
+#include "game_logic/actor/actionstate/constants/actor_state_constants.h"
+#include "game_logic/actor/actionstate/util/actor_action_state_util.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
@@ -167,9 +169,7 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
-	for (auto& resource : skillTable->requestresource()){
-		
-	}
+	CHECK_RETURN_IF_NOT_OK(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
 	
 	return kSuccess;
 }
