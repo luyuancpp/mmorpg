@@ -107,7 +107,7 @@ uint32_t SkillUtil::ReleaseSkill(const entt::entity casterEntity, const ReleaseS
 	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
 	if (result != kSuccess || !skillTable) return result;
 
-	CHECK_RETURN_IF_NOT_OK(CheckSkillPrerequisites(casterEntity, request));
+	RETURN_IF_FAILED(CheckSkillPrerequisites(casterEntity, request));
 	LookAtTargetPosition(casterEntity, request);
 	BroadcastSkillUsedMessage(casterEntity, request);
     
@@ -169,7 +169,7 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
-	CHECK_RETURN_IF_NOT_OK(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
+	RETURN_IF_FAILED(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
 	
 	return kSuccess;
 }
@@ -187,15 +187,15 @@ uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity casterEntity, con
 		return result;
 	}
 
-	CHECK_RETURN_IF_NOT_OK(ValidateTarget(request));
-	CHECK_RETURN_IF_NOT_OK(CheckCooldown(casterEntity, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckCasting(casterEntity, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckRecovery(casterEntity, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckChannel(casterEntity, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckPlayerLevel(casterEntity, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckBuff(casterEntity, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckState(casterEntity, skillTable));
-	CHECK_RETURN_IF_NOT_OK(CheckItemUse(casterEntity, skillTable));
+	RETURN_IF_FAILED(ValidateTarget(request));
+	RETURN_IF_FAILED(CheckCooldown(casterEntity, skillTable));
+	RETURN_IF_FAILED(CheckCasting(casterEntity, skillTable));
+	RETURN_IF_FAILED(CheckRecovery(casterEntity, skillTable));
+	RETURN_IF_FAILED(CheckChannel(casterEntity, skillTable));
+	RETURN_IF_FAILED(CheckPlayerLevel(casterEntity, skillTable));
+	RETURN_IF_FAILED(CheckBuff(casterEntity, skillTable));
+	RETURN_IF_FAILED(CheckState(casterEntity, skillTable));
+	RETURN_IF_FAILED(CheckItemUse(casterEntity, skillTable));
 	return kSuccess;
 }
 
