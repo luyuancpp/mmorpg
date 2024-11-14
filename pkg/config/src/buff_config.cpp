@@ -33,6 +33,6 @@ std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTable(const uin
         LOG_ERROR << "Buff table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

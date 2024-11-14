@@ -27,6 +27,6 @@ std::pair<const MainSceneTable*, uint32_t> MainSceneConfigurationTable::GetTable
         LOG_ERROR << "MainScene table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

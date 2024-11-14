@@ -24,7 +24,7 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 
 inline constexpr state::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : state_flag_{0u},
+      : state_mode_{0u},
         state_tip_{0u},
         _cached_size_{0} {}
 
@@ -96,7 +96,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::state, _impl_.state_flag_),
+        PROTOBUF_FIELD_OFFSET(::state, _impl_.state_mode_),
         PROTOBUF_FIELD_OFFSET(::state, _impl_.state_tip_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::ActionStateTable, _internal_metadata_),
@@ -133,7 +133,7 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_actionstate_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\030actionstate_config.proto\".\n\005state\022\022\n\ns"
-    "tate_flag\030\001 \001(\r\022\021\n\tstate_tip\030\002 \001(\r\"5\n\020Ac"
+    "tate_mode\030\001 \001(\r\022\021\n\tstate_tip\030\002 \001(\r\"5\n\020Ac"
     "tionStateTable\022\n\n\002id\030\001 \001(\r\022\025\n\005state\030\002 \003("
     "\0132\006.state\"8\n\025ActionStateTabledData\022\037\n\004da"
     "ta\030\001 \003(\0132\021.ActionStateTableB\tZ\007pb/gameb\006"
@@ -196,10 +196,10 @@ inline PROTOBUF_NDEBUG_INLINE state::Impl_::Impl_(
 inline void state::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, state_flag_),
+               offsetof(Impl_, state_mode_),
            0,
            offsetof(Impl_, state_tip_) -
-               offsetof(Impl_, state_flag_) +
+               offsetof(Impl_, state_mode_) +
                sizeof(Impl_::state_tip_));
 }
 state::~state() {
@@ -233,9 +233,9 @@ PROTOBUF_NOINLINE void state::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ::memset(&_impl_.state_flag_, 0, static_cast<::size_t>(
+  ::memset(&_impl_.state_mode_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.state_tip_) -
-      reinterpret_cast<char*>(&_impl_.state_flag_)) + sizeof(_impl_.state_tip_));
+      reinterpret_cast<char*>(&_impl_.state_mode_)) + sizeof(_impl_.state_tip_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -267,14 +267,14 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> state::_table_ = {
     // uint32 state_tip = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(state, _impl_.state_tip_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(state, _impl_.state_tip_)}},
-    // uint32 state_flag = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(state, _impl_.state_flag_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(state, _impl_.state_flag_)}},
+    // uint32 state_mode = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(state, _impl_.state_mode_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(state, _impl_.state_mode_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint32 state_flag = 1;
-    {PROTOBUF_FIELD_OFFSET(state, _impl_.state_flag_), 0, 0,
+    // uint32 state_mode = 1;
+    {PROTOBUF_FIELD_OFFSET(state, _impl_.state_mode_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 state_tip = 2;
     {PROTOBUF_FIELD_OFFSET(state, _impl_.state_tip_), 0, 0,
@@ -292,11 +292,11 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> state::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint32 state_flag = 1;
-  if (this->_internal_state_flag() != 0) {
+  // uint32 state_mode = 1;
+  if (this->_internal_state_mode() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        1, this->_internal_state_flag(), target);
+        1, this->_internal_state_mode(), target);
   }
 
   // uint32 state_tip = 2;
@@ -323,10 +323,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> state::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint32 state_flag = 1;
-  if (this->_internal_state_flag() != 0) {
+  // uint32 state_mode = 1;
+  if (this->_internal_state_mode() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_state_flag());
+        this->_internal_state_mode());
   }
 
   // uint32 state_tip = 2;
@@ -347,8 +347,8 @@ void state::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::p
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_state_flag() != 0) {
-    _this->_impl_.state_flag_ = from._impl_.state_flag_;
+  if (from._internal_state_mode() != 0) {
+    _this->_impl_.state_mode_ = from._impl_.state_mode_;
   }
   if (from._internal_state_tip() != 0) {
     _this->_impl_.state_tip_ = from._impl_.state_tip_;
@@ -373,9 +373,9 @@ void state::InternalSwap(state* PROTOBUF_RESTRICT other) {
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(state, _impl_.state_tip_)
       + sizeof(state::_impl_.state_tip_)
-      - PROTOBUF_FIELD_OFFSET(state, _impl_.state_flag_)>(
-          reinterpret_cast<char*>(&_impl_.state_flag_),
-          reinterpret_cast<char*>(&other->_impl_.state_flag_));
+      - PROTOBUF_FIELD_OFFSET(state, _impl_.state_mode_)>(
+          reinterpret_cast<char*>(&_impl_.state_mode_),
+          reinterpret_cast<char*>(&other->_impl_.state_mode_));
 }
 
 ::google::protobuf::Metadata state::GetMetadata() const {

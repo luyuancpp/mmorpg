@@ -12,15 +12,15 @@ namespace
     {
         if (actorState >= static_cast<uint32_t>(actionStateTable->state_size()))
         {
-            return kOK;
+            return kSuccess;
         }
 
         const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
-        if (state.state_flag() == kActionStateMutualExclusion)
+        if (state.state_mode() == kActionStateMutualExclusion)
         {
             return state.state_tip();
         }
-        return kOK;
+        return kSuccess;
     }
 
     // 检查某个动作是否允许，若允许，继续执行；若有中断标志，则跳过
@@ -32,7 +32,7 @@ namespace
         }
 
         const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
-        return state.state_flag() == kActionStateInterruptAndExecute;
+        return state.state_mode() == kActionStateInterruptAndExecute;
     }
 }
 
@@ -57,7 +57,7 @@ uint32_t ActorActionStateUtil::TryToPerformAction(entt::entity actorEntity, uint
     {
         // 检查该状态是否与动作互斥
         uint32_t exclusionResult = CheckMutualExclusionState(actionStateTable, actorState);
-        if (exclusionResult != kOK)
+        if (exclusionResult != kSuccess)
         {
             return exclusionResult;
         }
@@ -69,13 +69,13 @@ uint32_t ActorActionStateUtil::TryToPerformAction(entt::entity actorEntity, uint
         }
     }
 
-    return kOK;  // 如果没有问题，可以执行动作
+    return kSuccess;  // 如果没有问题，可以执行动作
 }
 
 uint32_t ActorActionStateUtil::CanPerformAction(entt::entity actorEntity, uint32_t action)
 {
-    // 暂时返回 kOK，表示允许执行动作。可以在未来扩展更多的检查逻辑。
-    return kOK;
+    // 暂时返回 kSuccess，表示允许执行动作。可以在未来扩展更多的检查逻辑。
+    return kSuccess;
 }
 
 bool ActorActionStateUtil::IsInState(entt::entity actorEntity, uint32_t state)
@@ -101,11 +101,11 @@ uint32_t ActorActionStateUtil::EnterState(entt::entity actorEntity, uint32_t sta
 
     // 进入新状态
     actorStatePbComponent.mutable_state_list()->emplace(std::make_pair(state, true));
-    return kOK;
+    return kSuccess;
 }
 
 uint32_t ActorActionStateUtil::InterruptCurrentAction(entt::entity actorEntity, uint32_t state)
 {
-    // 目前没有明确的中断逻辑，返回 kOK
-    return kOK;
+    // 目前没有明确的中断逻辑，返回 kSuccess
+    return kSuccess;
 }

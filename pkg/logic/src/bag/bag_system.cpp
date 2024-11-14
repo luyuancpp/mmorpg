@@ -66,7 +66,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
 
     for (const auto& try_item : try_add_item_map) {
         auto [itemTable, result] = GetItemTable(try_item.first);
-        if (!itemTable || result != kOK) {
+        if (!itemTable || result != kSuccess) {
             return result;
         }
 
@@ -89,7 +89,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
     }
 
     if (!has_stack_item) {
-        return kOK;
+        return kSuccess;
     }
 
     for (const auto& [_, item] : itemRegistry.view<ItemPBComponent>().each()) {
@@ -122,7 +122,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
         empty_size -= need_grid_size;
     }
 
-    return kOK;
+    return kSuccess;
 }
 
 uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems) {
@@ -141,7 +141,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems) {
         }
     }
 
-    return itemsToCheck.empty() ? kOK : kBagInsufficientItems;
+    return itemsToCheck.empty() ? kSuccess : kBagInsufficientItems;
 }
 
 
@@ -176,7 +176,7 @@ uint32_t Bag::RemoveItems(const U32U32UnorderedMap& itemsToRemove) {
         }
     }
 
-    return kOK;
+    return kSuccess;
 }
 
 uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p) {
@@ -208,7 +208,7 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p) {
     }
 
     item.set_size(item.size() - p.size_);
-    return kOK;
+    return kSuccess;
 }
 
 void Bag::Neaten()
@@ -459,7 +459,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 
 		if (needStackSize <= 0)//可以放完
 		{
-			return kOK;
+			return kSuccess;
 		}
 
 		//放到新格子里面
@@ -491,7 +491,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
             OnNewGrid(newItemPBComp.item_id());
 		}
 	}
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t Bag::RemoveItem(Guid del_guid)
@@ -511,7 +511,7 @@ uint32_t Bag::RemoveItem(Guid del_guid)
 		pos_.erase(pit.first);
 		break;
 	}
-	return kOK;
+	return kSuccess;
 }
 
 void Bag::Unlock(std::size_t sz)

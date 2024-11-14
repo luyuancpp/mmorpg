@@ -47,7 +47,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, buffTableId, abilityContext);
 
 	// Verify the result
-	EXPECT_EQ(result, kOK);
+	EXPECT_EQ(result, kSuccess);
 
 	// Verify that the Buff was added to the BuffListComp
 	const auto& buffList = tls.registry.get<BuffListComp>(parent);
@@ -73,7 +73,7 @@ TEST_F(BuffUtilTest, CanCreateBuffSuccess) {
 	uint32_t result = BuffUtil::CanCreateBuff(parent, buffTableId);
 
 	// Verify the result
-	EXPECT_EQ(result, kOK);
+	EXPECT_EQ(result, kSuccess);
 }
 
 // 你可以添加更多的测试用例来验证其他静态方法的行为

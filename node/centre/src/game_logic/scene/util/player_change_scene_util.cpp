@@ -25,7 +25,7 @@ uint32_t PlayerChangeSceneUtil::PushChangeSceneInfo(entt::entity player, const C
 
 	changeSceneQueue->changeSceneQueue.push_back(changeInfo);
 	changeSceneQueue->changeSceneQueue.back().set_change_time(TimeUtil::NowSecondsUTC());
-	return kOK;
+	return kSuccess;
 }
 
 // 移除队列中首个切换场景信息

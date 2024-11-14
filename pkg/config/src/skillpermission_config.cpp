@@ -27,6 +27,6 @@ std::pair<const SkillPermissionTable*, uint32_t> SkillPermissionConfigurationTab
         LOG_ERROR << "SkillPermission table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

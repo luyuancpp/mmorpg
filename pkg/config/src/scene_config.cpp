@@ -27,6 +27,6 @@ std::pair<const SceneTable*, uint32_t> SceneConfigurationTable::GetTable(const u
         LOG_ERROR << "Scene table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

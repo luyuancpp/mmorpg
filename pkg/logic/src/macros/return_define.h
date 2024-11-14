@@ -6,7 +6,7 @@
  do { \
     {\
         uint32_t ret(f);\
-        if (ret != kOK)\
+        if (ret != kSuccess)\
         {\
             return ret;\
         }\
@@ -15,7 +15,7 @@
 
 #define SET_ERROR_AND_RETURN_IF_NOT_OK(tip_code)\
  do { \
-    if ((tip_code) != kOK)\
+    if ((tip_code) != kSuccess)\
     {\
         response->mutable_error()->set_id(tip_code);\
         return;\
@@ -44,7 +44,7 @@
 #define CHECK_REQUEST(request, fn) \
 do { \
 auto err = fn(request); \
-if (err != kOK) \
+if (err != kSuccess) \
 { \
 tls.globalRegistry.emplace_or_replace<TipInfoMessage>(GlobalEntity()).set_id(err); \
 return;\
@@ -55,7 +55,7 @@ return;\
 #define CHECK_PLAYER_REQUEST(request, fn) \
 do { \
 auto err = fn(player, request); \
-if (err != kOK) \
+if (err != kSuccess) \
 { \
 tls.globalRegistry.emplace_or_replace<TipInfoMessage>(GlobalEntity()).set_id(err); \
 return;\

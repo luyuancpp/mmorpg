@@ -55,7 +55,7 @@ namespace protobuf {
 
 enum common_error : int {
   kCommon_errorOK = 0,
-  kOK = 0,
+  kSuccess = 0,
   kInvalidTableId = 1,
   kInvalidTableData = 2,
   kServiceUnavailable = 3,

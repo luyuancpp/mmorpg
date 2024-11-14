@@ -33,7 +33,7 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::Ge
         LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 
 
@@ -43,7 +43,7 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::Ge
         LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetByUint32Key(uint32_t keyId) const {
@@ -52,7 +52,7 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::Ge
         LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetByIn32Key(int32_t keyId) const {
@@ -61,7 +61,7 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::Ge
         LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetByMstringkey(const std::string& keyId) const {
@@ -70,7 +70,7 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::Ge
         LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetByMuint32Key(uint32_t keyId) const {
@@ -79,7 +79,7 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::Ge
         LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetByMin32Key(int32_t keyId) const {
@@ -88,5 +88,5 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::Ge
         LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }

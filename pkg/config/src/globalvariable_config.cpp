@@ -27,6 +27,6 @@ std::pair<const GlobalVariableTable*, uint32_t> GlobalVariableConfigurationTable
         LOG_ERROR << "GlobalVariable table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

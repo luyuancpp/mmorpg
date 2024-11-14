@@ -27,6 +27,6 @@ std::pair<const ActionStateTable*, uint32_t> ActionStateConfigurationTable::GetT
         LOG_ERROR << "ActionState table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

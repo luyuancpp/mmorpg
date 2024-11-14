@@ -35,14 +35,14 @@ void PlayerSceneUtil::HandleLoginEnterScene(entt::entity playerEntity)
     // Check if previous scene is valid
     if (tls.sceneRegistry.valid(entt::entity{ playerSceneInfo->scene_info().guid() }))
     {
-        if (kOK == SceneUtil::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfo->scene_info().guid() }, .enter = playerEntity }))
+        if (kSuccess == SceneUtil::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfo->scene_info().guid() }, .enter = playerEntity }))
         {
             currentSceneId = entt::entity{ playerSceneInfo->scene_info().guid() };
         }
     }
     else if (tls.sceneRegistry.valid(entt::entity{ playerSceneInfo->scene_info_last_time().guid() }))
     {
-        if (kOK == SceneUtil::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfo->scene_info_last_time().guid() }, .enter = playerEntity }))
+        if (kSuccess == SceneUtil::CheckPlayerEnterScene({ .scene = entt::entity{ playerSceneInfo->scene_info_last_time().guid() }, .enter = playerEntity }))
         {
             lastVisitedSceneId = entt::entity{ playerSceneInfo->scene_info_last_time().guid() };
         }
@@ -223,7 +223,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 
 	if (!changeSceneInfo.ignore_full())
 	{
-		if (const auto ret = SceneUtil::CheckScenePlayerSize(toScene); ret != kOK)
+		if (const auto ret = SceneUtil::CheckScenePlayerSize(toScene); ret != kSuccess)
 		{
 			LOG_WARN << "Scene player size check failed for player: " << playerId << ", ret: " << ret;
 			PlayerTipUtil::SendToPlayer(playerEntity, ret, {});

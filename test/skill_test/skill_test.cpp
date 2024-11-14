@@ -68,7 +68,7 @@ TEST_F(SkillUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
         .WillRepeatedly(Return(&tableSkill));
 
     uint32_t result = skillUtil->ValidateTarget(&request);
-    EXPECT_EQ(result, kOK);
+    EXPECT_EQ(result, kSuccess);
 }
 
 TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
@@ -108,7 +108,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownInactive_ReturnsOk) {
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
 
     uint32_t result = skillUtil->CheckCooldown(caster, tableSkill.get());
-    EXPECT_EQ(result, kOK);
+    EXPECT_EQ(result, kSuccess);
 }
 
 TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateSkill_ReturnsOk) {
@@ -121,7 +121,7 @@ TEST_F(SkillUtilTest, HandleCastingTimer_ImmediateSkill_ReturnsOk) {
         .WillRepeatedly(Return(tableSkill.get()));
 
     uint32_t result = skillUtil->CheckCasting(caster, tableSkill.get());
-    EXPECT_EQ(result, kOK);
+    EXPECT_EQ(result, kSuccess);
 }
 
 TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateSkill_ReturnsOk) {
@@ -134,7 +134,7 @@ TEST_F(SkillUtilTest, HandleRecoveryTimeTimer_ImmediateSkill_ReturnsOk) {
         .WillRepeatedly(Return(tableSkill.get()));
 
     uint32_t result = skillUtil->CheckRecovery(caster, tableSkill.get());
-    EXPECT_EQ(result, kOK);
+    EXPECT_EQ(result, kSuccess);
 }
 
 TEST_F(SkillUtilTest, HandleChannelTimeTimer_ImmediateSkill_ReturnsOk) {
@@ -148,7 +148,7 @@ TEST_F(SkillUtilTest, HandleChannelTimeTimer_ImmediateSkill_ReturnsOk) {
         .WillRepeatedly(Return(tableSkill.get()));
 
     uint32_t result = skillUtil->CheckChannel(caster, tableSkill.get());
-    EXPECT_EQ(result, kOK);
+    EXPECT_EQ(result, kSuccess);
 }
 
 TEST_F(SkillUtilTest, BroadcastSkillUsedMessage_CreatesMessage) {

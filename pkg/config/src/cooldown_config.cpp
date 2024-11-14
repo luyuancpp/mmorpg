@@ -27,6 +27,6 @@ std::pair<const CooldownTable*, uint32_t> CooldownConfigurationTable::GetTable(c
         LOG_ERROR << "Cooldown table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

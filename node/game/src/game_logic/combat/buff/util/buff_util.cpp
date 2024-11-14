@@ -29,7 +29,7 @@ bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTable)
 {
     for (const auto& buff : buffList | std::views::values) {
         auto [currentBuffTable, fetchResult] = GetBuffTable(buff.buffPb.buff_table_id());
-        if (fetchResult != kOK) {
+        if (fetchResult != kSuccess) {
             return true;
         }
         for (const auto& tag : buffTable->tag() | std::views::keys) {
@@ -68,7 +68,7 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
     }
 
     result = CanCreateBuff(parent, buffTableId);
-    if(result != kOK){
+    if(result != kSuccess){
         return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
     }
 
@@ -102,7 +102,7 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
         OnBuffExpire(parent, newBuffId);
     }
 
-    return std::make_tuple<uint32_t, uint64_t>(kOK, std::move(newBuffId));
+    return std::make_tuple<uint32_t, uint64_t>(kSuccess, std::move(newBuffId));
 }
 
 // 移除 Buff
@@ -160,7 +160,7 @@ void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
-    if (result != kOK) {
+    if (result != kSuccess) {
         return result;
     }
 
@@ -169,7 +169,7 @@ uint32_t BuffUtil::CanCreateBuff(entt::entity parent, uint32_t buffTableId)
         return kBuffTargetImmuneToBuff;
     }
     
-    return kOK;
+    return kSuccess;
 }
 
 // 处理已存在的 Buff
@@ -365,7 +365,7 @@ void BuffUtil::AddSubBuffs(entt::entity parent,
         auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
 
         // 如果 Buff 添加失败或者 Buff ID 无效，则跳过
-        if (result != kOK || newBuffId == UINT64_MAX) {
+        if (result != kSuccess || newBuffId == UINT64_MAX) {
             continue;
         }
 
@@ -385,7 +385,7 @@ void BuffUtil::AddSubBuffsWithoutCheck(entt::entity parent,
         auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
 
         // 如果 Buff 添加失败或者 Buff ID 无效，则跳过
-        if (result != kOK || newBuffId == UINT64_MAX) {
+        if (result != kSuccess || newBuffId == UINT64_MAX) {
             continue;
         }
 

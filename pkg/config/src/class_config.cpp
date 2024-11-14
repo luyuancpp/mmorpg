@@ -27,6 +27,6 @@ std::pair<const ClassTable*, uint32_t> ClassConfigurationTable::GetTable(const u
         LOG_ERROR << "Class table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

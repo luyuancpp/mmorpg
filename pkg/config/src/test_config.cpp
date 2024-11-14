@@ -27,6 +27,6 @@ std::pair<const TestTable*, uint32_t> TestConfigurationTable::GetTable(const uin
         LOG_ERROR << "Test table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
-    return { it->second, kOK };
+    return { it->second, kSuccess };
 }
 

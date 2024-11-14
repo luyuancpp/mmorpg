@@ -298,7 +298,7 @@ uint32_t TeamSystem::CreateTeam(const CreateTeamParams& param)
 		AddMember(entt::to_integral(team_entity), member_it);
 	}
 	last_team_id_ = entt::to_integral(team_entity);
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::JoinTeam(const Guid team_id, const Guid guid)
@@ -327,7 +327,7 @@ uint32_t TeamSystem::JoinTeam(const Guid team_id, const Guid guid)
 		try_team->applicants_.erase(applicant_it);
 	}
 	AddMember(team_id, guid);
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::JoinTeam(const UInt64Set& member_list, const Guid team_id)
@@ -352,7 +352,7 @@ uint32_t TeamSystem::JoinTeam(const UInt64Set& member_list, const Guid team_id)
 	{
 		CHECK_RETURN_IF_NOT_OK(JoinTeam(team_id, member_it));
 	}
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::CheckMemberInTeam(const UInt64Set& member_list)
@@ -364,7 +364,7 @@ uint32_t TeamSystem::CheckMemberInTeam(const UInt64Set& member_list)
 			return kTeamMemberInTeam;
 		}
 	}
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::LeaveTeam(const Guid guid)
@@ -394,7 +394,7 @@ uint32_t TeamSystem::LeaveTeam(const Guid guid)
 	{
 		EraseTeam(try_team->GetEntityId());
 	}
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::KickMember(const Guid team_id, const Guid current_leader_id, const Guid be_kick_id)
@@ -426,7 +426,7 @@ uint32_t TeamSystem::KickMember(const Guid team_id, const Guid current_leader_id
 		return kTeamMemberNotInTeam;
 	}
 	DelMember(team_id, be_kick_id);
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::Disbanded(const Guid team_id, const Guid current_leader_id)
@@ -451,7 +451,7 @@ uint32_t TeamSystem::Disbanded(const Guid team_id, const Guid current_leader_id)
 		DelMember(team_id, member_it);
 	}
 	EraseTeam(team_entity);
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::DisbandedTeamNoLeader(const Guid team_id)
@@ -494,7 +494,7 @@ uint32_t TeamSystem::AppointLeader(const Guid team_id, const Guid current_leader
 		return kTeamAppointSelf;
 	}
 	try_team->OnAppointLeader(new_leader_id);
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::ApplyToTeam(Guid team_id, Guid guid)
@@ -522,7 +522,7 @@ uint32_t TeamSystem::ApplyToTeam(Guid team_id, Guid guid)
 		try_team->applicants_.erase(try_team->applicants_.begin());
 	}
 	try_team->applicants_.emplace_back(guid);
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::DelApplicant(Guid team_id, Guid guid)
@@ -542,7 +542,7 @@ uint32_t TeamSystem::DelApplicant(Guid team_id, Guid guid)
 	{
 		try_team->applicants_.erase(app_it);
 	}
-	return kOK;
+	return kSuccess;
 }
 
 void TeamSystem::ClearApplyList(const Guid team_id)
@@ -586,7 +586,7 @@ uint32_t TeamSystem::AddMember(Guid team_id, Guid guid)
 	}
 	try_team->members_.emplace_back(guid);
 	tls.registry.emplace<TeamId>(pit->second).set_team_id(entt::to_integral(team_id));
-	return kOK;
+	return kSuccess;
 }
 
 uint32_t TeamSystem::DelMember(Guid team_id, Guid guid)
@@ -609,5 +609,5 @@ uint32_t TeamSystem::DelMember(Guid team_id, Guid guid)
 		return kTeamPlayerNotFound;
 	}
 	tls.registry.remove<TeamId>(pit->second);
-	return kOK;
+	return kSuccess;
 }
