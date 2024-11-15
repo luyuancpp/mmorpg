@@ -32,4 +32,4 @@ if (!(mainSceneTable)) { return (result); }
 
 #define FetchMainSceneTableOrReturnVoid(keyId) \
 const auto [mainSceneTable, result] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-if (!(mainSceneTable)) { return  }
+if (!(mainSceneTable)) { return ;}

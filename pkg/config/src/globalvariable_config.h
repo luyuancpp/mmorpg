@@ -32,4 +32,4 @@ if (!(globalVariableTable)) { return (result); }
 
 #define FetchGlobalVariableTableOrReturnVoid(keyId) \
 const auto [globalVariableTable, result] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-if (!(globalVariableTable)) { return  }
+if (!(globalVariableTable)) { return ;}

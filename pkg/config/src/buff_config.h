@@ -52,4 +52,4 @@ if (!(buffTable)) { return (result); }
 
 #define FetchBuffTableOrReturnVoid(keyId) \
 const auto [buffTable, result] = BuffConfigurationTable::Instance().GetTable(keyId); \
-if (!(buffTable)) { return  }
+if (!(buffTable)) { return ;}

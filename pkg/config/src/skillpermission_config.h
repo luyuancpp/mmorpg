@@ -32,4 +32,4 @@ if (!(skillPermissionTable)) { return (result); }
 
 #define FetchSkillPermissionTableOrReturnVoid(keyId) \
 const auto [skillPermissionTable, result] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillPermissionTable)) { return  }
+if (!(skillPermissionTable)) { return ;}

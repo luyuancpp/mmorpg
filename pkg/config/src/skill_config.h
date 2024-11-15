@@ -42,4 +42,4 @@ if (!(skillTable)) { return (result); }
 
 #define FetchSkillTableOrReturnVoid(keyId) \
 const auto [skillTable, result] = SkillConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillTable)) { return  }
+if (!(skillTable)) { return ;}

@@ -32,4 +32,4 @@ if (!(actionStateTable)) { return (result); }
 
 #define FetchActionStateTableOrReturnVoid(keyId) \
 const auto [actionStateTable, result] = ActionStateConfigurationTable::Instance().GetTable(keyId); \
-if (!(actionStateTable)) { return  }
+if (!(actionStateTable)) { return ;}

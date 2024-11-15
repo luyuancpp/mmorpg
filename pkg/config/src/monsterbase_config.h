@@ -32,4 +32,4 @@ if (!(monsterBaseTable)) { return (result); }
 
 #define FetchMonsterBaseTableOrReturnVoid(keyId) \
 const auto [monsterBaseTable, result] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-if (!(monsterBaseTable)) { return  }
+if (!(monsterBaseTable)) { return ;}
