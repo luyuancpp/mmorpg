@@ -7,6 +7,11 @@ if ((result) != kSuccess) {   \
 return (result);          \
 }
 
+#define RETURN_FALSE_ON_ERROR(result) \
+if ((result) != kSuccess) {           \
+return false;                     \
+}
+
 #define SET_ERROR_IF_FAILURE(tip_code) \
 if ((tip_code) != kSuccess) { \
 response->mutable_error()->set_id(tip_code); \
