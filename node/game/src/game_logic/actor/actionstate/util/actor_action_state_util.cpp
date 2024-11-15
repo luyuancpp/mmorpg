@@ -14,8 +14,8 @@ namespace {
             return kSuccess;  // 如果状态无效，返回成功
         }
 
-        const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
-        if (state.state_mode() == kActionStateMutualExclusion) {
+        if (const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
+            state.state_mode() == kActionStateMutualExclusion) {
             return state.state_tip();  // 返回冲突的状态提示
         }
         return kSuccess;  // 没有冲突
@@ -27,8 +27,8 @@ namespace {
             return false;  // 无效状态，返回失败
         }
 
-        const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
-        if (state.state_mode() == kActionStateInterrupt) {
+        if (const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
+            state.state_mode() == kActionStateInterrupt) {
             // 触发中断事件
             InterruptCurrentStatePbEvent interruptEvent;
             interruptEvent.set_actor_entity(entt::to_integral(actorEntity));
@@ -36,10 +36,8 @@ namespace {
             tls.dispatcher.trigger(interruptEvent);
 
             // 中断当前状态并执行该动作
-            const uint32_t interruptResult = ActorActionStateUtil::RemoveState(actorEntity, actorState);
-            if (interruptResult != kSuccess) {
-                return false;  // 中断失败，返回失败
-            }
+            RETURN_FALSE_ON_ERROR(ActorActionStateUtil::RemoveState(actorEntity, actorState));
+            
             return true;  // 成功中断并执行动作
         }
 
