@@ -188,16 +188,16 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kEntityFieldNumber = 1,
+    kActorEntityFieldNumber = 1,
   };
-  // uint64 entity = 1;
-  void clear_entity() ;
-  ::uint64_t entity() const;
-  void set_entity(::uint64_t value);
+  // uint64 actor_entity = 1;
+  void clear_actor_entity() ;
+  ::uint64_t actor_entity() const;
+  void set_actor_entity(::uint64_t value);
 
   private:
-  ::uint64_t _internal_entity() const;
-  void _internal_set_entity(::uint64_t value);
+  ::uint64_t _internal_actor_entity() const;
+  void _internal_set_actor_entity(::uint64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:InitializeNpcComponentsEvent)
@@ -221,7 +221,7 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t entity_;
+    ::uint64_t actor_entity_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -245,26 +245,26 @@ class InitializeNpcComponentsEvent final : public ::google::protobuf::Message
 
 // InitializeNpcComponentsEvent
 
-// uint64 entity = 1;
-inline void InitializeNpcComponentsEvent::clear_entity() {
+// uint64 actor_entity = 1;
+inline void InitializeNpcComponentsEvent::clear_actor_entity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.entity_ = ::uint64_t{0u};
+  _impl_.actor_entity_ = ::uint64_t{0u};
 }
-inline ::uint64_t InitializeNpcComponentsEvent::entity() const {
-  // @@protoc_insertion_point(field_get:InitializeNpcComponentsEvent.entity)
-  return _internal_entity();
+inline ::uint64_t InitializeNpcComponentsEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:InitializeNpcComponentsEvent.actor_entity)
+  return _internal_actor_entity();
 }
-inline void InitializeNpcComponentsEvent::set_entity(::uint64_t value) {
-  _internal_set_entity(value);
-  // @@protoc_insertion_point(field_set:InitializeNpcComponentsEvent.entity)
+inline void InitializeNpcComponentsEvent::set_actor_entity(::uint64_t value) {
+  _internal_set_actor_entity(value);
+  // @@protoc_insertion_point(field_set:InitializeNpcComponentsEvent.actor_entity)
 }
-inline ::uint64_t InitializeNpcComponentsEvent::_internal_entity() const {
+inline ::uint64_t InitializeNpcComponentsEvent::_internal_actor_entity() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.entity_;
+  return _impl_.actor_entity_;
 }
-inline void InitializeNpcComponentsEvent::_internal_set_entity(::uint64_t value) {
+inline void InitializeNpcComponentsEvent::_internal_set_actor_entity(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.entity_ = value;
+  _impl_.actor_entity_ = value;
 }
 
 #ifdef __GNUC__

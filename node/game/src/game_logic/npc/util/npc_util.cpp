@@ -15,7 +15,7 @@ void NpcUtil::CreateNpc()
     auto npc = tls.registry.create();
     
     InitializeNpcComponentsEvent initializeNpcComponents;
-    initializeNpcComponents.set_entity(entt::to_integral(npc));
+    initializeNpcComponents.set_actor_entity(entt::to_integral(npc));
     tls.dispatcher.trigger(initializeNpcComponents);
 
     tls.registry.get<LevelPbComponent>(npc).set_level(1);

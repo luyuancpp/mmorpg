@@ -24,7 +24,7 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 
 inline constexpr InitializeNpcComponentsEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : entity_{::uint64_t{0u}},
+      : actor_entity_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -56,7 +56,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::InitializeNpcComponentsEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::InitializeNpcComponentsEvent, _impl_.actor_entity_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -68,15 +68,15 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_logic_2fevent_2fnpc_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\033logic/event/npc_event.proto\".\n\034Initial"
-    "izeNpcComponentsEvent\022\016\n\006entity\030\001 \001(\004B\tZ"
-    "\007pb/gameb\006proto3"
+    "\n\033logic/event/npc_event.proto\"4\n\034Initial"
+    "izeNpcComponentsEvent\022\024\n\014actor_entity\030\001 "
+    "\001(\004B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fevent_2fnpc_5fevent_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fevent_2fnpc_5fevent_2eproto = {
     false,
     false,
-    96,
+    102,
     descriptor_table_protodef_logic_2fevent_2fnpc_5fevent_2eproto,
     "logic/event/npc_event.proto",
     &descriptor_table_logic_2fevent_2fnpc_5fevent_2eproto_once,
@@ -128,7 +128,7 @@ inline PROTOBUF_NDEBUG_INLINE InitializeNpcComponentsEvent::Impl_::Impl_(
 
 inline void InitializeNpcComponentsEvent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.entity_ = {};
+  _impl_.actor_entity_ = {};
 }
 InitializeNpcComponentsEvent::~InitializeNpcComponentsEvent() {
   // @@protoc_insertion_point(destructor:InitializeNpcComponentsEvent)
@@ -161,7 +161,7 @@ PROTOBUF_NOINLINE void InitializeNpcComponentsEvent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.entity_ = ::uint64_t{0u};
+  _impl_.actor_entity_ = ::uint64_t{0u};
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -190,14 +190,14 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> InitializeNpcComponentsEvent::_table_ 
     ::_pbi::TcParser::GetTable<::InitializeNpcComponentsEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(InitializeNpcComponentsEvent, _impl_.entity_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_.entity_)}},
+    // uint64 actor_entity = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(InitializeNpcComponentsEvent, _impl_.actor_entity_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_.actor_entity_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_.entity_), 0, 0,
+    // uint64 actor_entity = 1;
+    {PROTOBUF_FIELD_OFFSET(InitializeNpcComponentsEvent, _impl_.actor_entity_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -212,11 +212,11 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> InitializeNpcComponentsEvent::_table_ 
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 entity = 1;
-  if (this->_internal_entity() != 0) {
+  // uint64 actor_entity = 1;
+  if (this->_internal_actor_entity() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_entity(), target);
+        1, this->_internal_actor_entity(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -236,10 +236,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> InitializeNpcComponentsEvent::_table_ 
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 entity = 1;
-  if (this->_internal_entity() != 0) {
+  // uint64 actor_entity = 1;
+  if (this->_internal_actor_entity() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_entity());
+        this->_internal_actor_entity());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -254,8 +254,8 @@ void InitializeNpcComponentsEvent::MergeImpl(::google::protobuf::MessageLite& to
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_entity() != 0) {
-    _this->_impl_.entity_ = from._impl_.entity_;
+  if (from._internal_actor_entity() != 0) {
+    _this->_impl_.actor_entity_ = from._impl_.actor_entity_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -274,7 +274,7 @@ PROTOBUF_NOINLINE bool InitializeNpcComponentsEvent::IsInitialized() const {
 void InitializeNpcComponentsEvent::InternalSwap(InitializeNpcComponentsEvent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.entity_, other->_impl_.entity_);
+        swap(_impl_.actor_entity_, other->_impl_.actor_entity_);
 }
 
 ::google::protobuf::Metadata InitializeNpcComponentsEvent::GetMetadata() const {

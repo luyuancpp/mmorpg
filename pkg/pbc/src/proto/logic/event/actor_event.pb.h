@@ -49,6 +49,9 @@ struct TableStruct_logic_2fevent_2factor_5fevent_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fevent_2factor_5fevent_2eproto;
+class InitializeActorComponentsEvent;
+struct InitializeActorComponentsEventDefaultTypeInternal;
+extern InitializeActorComponentsEventDefaultTypeInternal _InitializeActorComponentsEvent_default_instance_;
 class InterruptCurrentStatePbEvent;
 struct InterruptCurrentStatePbEventDefaultTypeInternal;
 extern InterruptCurrentStatePbEventDefaultTypeInternal _InterruptCurrentStatePbEvent_default_instance_;
@@ -118,7 +121,7 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
     return reinterpret_cast<const InterruptCurrentStatePbEvent*>(
         &_InterruptCurrentStatePbEvent_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 0;
+  static constexpr int kIndexInFileMessages = 1;
   friend void swap(InterruptCurrentStatePbEvent& a, InterruptCurrentStatePbEvent& b) { a.Swap(&b); }
   inline void Swap(InterruptCurrentStatePbEvent* other) {
     if (other == this) return;
@@ -252,6 +255,173 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
   union { Impl_ _impl_; };
   friend struct ::TableStruct_logic_2fevent_2factor_5fevent_2eproto;
 };
+// -------------------------------------------------------------------
+
+class InitializeActorComponentsEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:InitializeActorComponentsEvent) */ {
+ public:
+  inline InitializeActorComponentsEvent() : InitializeActorComponentsEvent(nullptr) {}
+  ~InitializeActorComponentsEvent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR InitializeActorComponentsEvent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline InitializeActorComponentsEvent(const InitializeActorComponentsEvent& from) : InitializeActorComponentsEvent(nullptr, from) {}
+  inline InitializeActorComponentsEvent(InitializeActorComponentsEvent&& from) noexcept
+      : InitializeActorComponentsEvent(nullptr, std::move(from)) {}
+  inline InitializeActorComponentsEvent& operator=(const InitializeActorComponentsEvent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline InitializeActorComponentsEvent& operator=(InitializeActorComponentsEvent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const InitializeActorComponentsEvent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const InitializeActorComponentsEvent* internal_default_instance() {
+    return reinterpret_cast<const InitializeActorComponentsEvent*>(
+        &_InitializeActorComponentsEvent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 0;
+  friend void swap(InitializeActorComponentsEvent& a, InitializeActorComponentsEvent& b) { a.Swap(&b); }
+  inline void Swap(InitializeActorComponentsEvent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(InitializeActorComponentsEvent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  InitializeActorComponentsEvent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<InitializeActorComponentsEvent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const InitializeActorComponentsEvent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const InitializeActorComponentsEvent& from) { InitializeActorComponentsEvent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(InitializeActorComponentsEvent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "InitializeActorComponentsEvent"; }
+
+ protected:
+  explicit InitializeActorComponentsEvent(::google::protobuf::Arena* arena);
+  InitializeActorComponentsEvent(::google::protobuf::Arena* arena, const InitializeActorComponentsEvent& from);
+  InitializeActorComponentsEvent(::google::protobuf::Arena* arena, InitializeActorComponentsEvent&& from) noexcept
+      : InitializeActorComponentsEvent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kActorEntityFieldNumber = 1,
+  };
+  // uint64 actor_entity = 1;
+  void clear_actor_entity() ;
+  ::uint64_t actor_entity() const;
+  void set_actor_entity(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_actor_entity() const;
+  void _internal_set_actor_entity(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:InitializeActorComponentsEvent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t actor_entity_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fevent_2factor_5fevent_2eproto;
+};
 
 // ===================================================================
 
@@ -265,6 +435,32 @@ class InterruptCurrentStatePbEvent final : public ::google::protobuf::Message
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// InitializeActorComponentsEvent
+
+// uint64 actor_entity = 1;
+inline void InitializeActorComponentsEvent::clear_actor_entity() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.actor_entity_ = ::uint64_t{0u};
+}
+inline ::uint64_t InitializeActorComponentsEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:InitializeActorComponentsEvent.actor_entity)
+  return _internal_actor_entity();
+}
+inline void InitializeActorComponentsEvent::set_actor_entity(::uint64_t value) {
+  _internal_set_actor_entity(value);
+  // @@protoc_insertion_point(field_set:InitializeActorComponentsEvent.actor_entity)
+}
+inline ::uint64_t InitializeActorComponentsEvent::_internal_actor_entity() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.actor_entity_;
+}
+inline void InitializeActorComponentsEvent::_internal_set_actor_entity(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.actor_entity_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // InterruptCurrentStatePbEvent

@@ -27,11 +27,11 @@ void PlayerEventHandler::UnRegister()
 void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto player = entt::to_entity(event.entity());
+	auto player = entt::to_entity(event.actor_entity());
 
 	if (!tls.registry.valid(player))
 	{
-		LOG_ERROR << "Player Not Found :" << event.entity();
+		LOG_ERROR << "Player Not Found :" << event.actor_entity();
 		return;
 	}
 
@@ -49,11 +49,11 @@ void PlayerEventHandler::PlayerUpgradeEventHandler(const PlayerUpgradeEvent& eve
 void PlayerEventHandler::InitializePlayerComponentsEventHandler(const InitializePlayerComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto player = entt::to_entity(event.entity());
+	auto player = entt::to_entity(event.actor_entity());
 
 	if (!tls.registry.valid(player))
 	{
-		LOG_ERROR << "Player Not Found :" << event.entity();
+		LOG_ERROR << "Player Not Found :" << event.actor_entity();
 		return;
 	}
 	ActorStateAttributeSyncUtil::InitializeActorComponents(player);

@@ -55,7 +55,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 		tls.registry.get<LevelPbComponent>(player).set_level(1);
 		
 		RegisterPlayerEvent registerPlayer;
-		registerPlayer.set_entity(entt::to_integral(player));
+		registerPlayer.set_actor_entity(entt::to_integral(player));
 		tls.dispatcher.trigger(registerPlayer);
 	}
 
@@ -63,7 +63,7 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	tls.registry.emplace<PlayerNodeInfoPBComponent>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
 	InitializePlayerComponentsEvent initializePlayerComponents;
-	initializePlayerComponents.set_entity(entt::to_integral(player));
+	initializePlayerComponents.set_actor_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(initializePlayerComponents);
 	
 	// Notify game node about player entering

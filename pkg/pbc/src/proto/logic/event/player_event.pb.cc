@@ -24,7 +24,7 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 
 inline constexpr RegisterPlayerEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : entity_{::uint64_t{0u}},
+      : actor_entity_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -43,7 +43,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr PlayerUpgradeEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : entity_{::uint64_t{0u}},
+      : actor_entity_{::uint64_t{0u}},
         new_level_{0u},
         _cached_size_{0} {}
 
@@ -63,7 +63,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr InitializePlayerComponentsEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : entity_{::uint64_t{0u}},
+      : actor_entity_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -95,7 +95,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::RegisterPlayerEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::RegisterPlayerEvent, _impl_.actor_entity_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::PlayerUpgradeEvent, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -104,7 +104,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::PlayerUpgradeEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::PlayerUpgradeEvent, _impl_.actor_entity_),
         PROTOBUF_FIELD_OFFSET(::PlayerUpgradeEvent, _impl_.new_level_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::InitializePlayerComponentsEvent, _internal_metadata_),
@@ -114,7 +114,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::InitializePlayerComponentsEvent, _impl_.entity_),
+        PROTOBUF_FIELD_OFFSET(::InitializePlayerComponentsEvent, _impl_.actor_entity_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -130,17 +130,18 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_logic_2fevent_2fplayer_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\036logic/event/player_event.proto\"%\n\023Regi"
-    "sterPlayerEvent\022\016\n\006entity\030\001 \001(\004\"7\n\022Playe"
-    "rUpgradeEvent\022\016\n\006entity\030\001 \001(\004\022\021\n\tnew_lev"
-    "el\030\002 \001(\r\"1\n\037InitializePlayerComponentsEv"
-    "ent\022\016\n\006entity\030\001 \001(\004B\tZ\007pb/gameb\006proto3"
+    "\n\036logic/event/player_event.proto\"+\n\023Regi"
+    "sterPlayerEvent\022\024\n\014actor_entity\030\001 \001(\004\"=\n"
+    "\022PlayerUpgradeEvent\022\024\n\014actor_entity\030\001 \001("
+    "\004\022\021\n\tnew_level\030\002 \001(\r\"7\n\037InitializePlayer"
+    "ComponentsEvent\022\024\n\014actor_entity\030\001 \001(\004B\tZ"
+    "\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fevent_2fplayer_5fevent_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fevent_2fplayer_5fevent_2eproto = {
     false,
     false,
-    198,
+    216,
     descriptor_table_protodef_logic_2fevent_2fplayer_5fevent_2eproto,
     "logic/event/player_event.proto",
     &descriptor_table_logic_2fevent_2fplayer_5fevent_2eproto_once,
@@ -192,7 +193,7 @@ inline PROTOBUF_NDEBUG_INLINE RegisterPlayerEvent::Impl_::Impl_(
 
 inline void RegisterPlayerEvent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.entity_ = {};
+  _impl_.actor_entity_ = {};
 }
 RegisterPlayerEvent::~RegisterPlayerEvent() {
   // @@protoc_insertion_point(destructor:RegisterPlayerEvent)
@@ -225,7 +226,7 @@ PROTOBUF_NOINLINE void RegisterPlayerEvent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.entity_ = ::uint64_t{0u};
+  _impl_.actor_entity_ = ::uint64_t{0u};
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -254,14 +255,14 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> RegisterPlayerEvent::_table_ = {
     ::_pbi::TcParser::GetTable<::RegisterPlayerEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RegisterPlayerEvent, _impl_.entity_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterPlayerEvent, _impl_.entity_)}},
+    // uint64 actor_entity = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RegisterPlayerEvent, _impl_.actor_entity_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterPlayerEvent, _impl_.actor_entity_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(RegisterPlayerEvent, _impl_.entity_), 0, 0,
+    // uint64 actor_entity = 1;
+    {PROTOBUF_FIELD_OFFSET(RegisterPlayerEvent, _impl_.actor_entity_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -276,11 +277,11 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> RegisterPlayerEvent::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 entity = 1;
-  if (this->_internal_entity() != 0) {
+  // uint64 actor_entity = 1;
+  if (this->_internal_actor_entity() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_entity(), target);
+        1, this->_internal_actor_entity(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -300,10 +301,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> RegisterPlayerEvent::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 entity = 1;
-  if (this->_internal_entity() != 0) {
+  // uint64 actor_entity = 1;
+  if (this->_internal_actor_entity() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_entity());
+        this->_internal_actor_entity());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -318,8 +319,8 @@ void RegisterPlayerEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_entity() != 0) {
-    _this->_impl_.entity_ = from._impl_.entity_;
+  if (from._internal_actor_entity() != 0) {
+    _this->_impl_.actor_entity_ = from._impl_.actor_entity_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -338,7 +339,7 @@ PROTOBUF_NOINLINE bool RegisterPlayerEvent::IsInitialized() const {
 void RegisterPlayerEvent::InternalSwap(RegisterPlayerEvent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.entity_, other->_impl_.entity_);
+        swap(_impl_.actor_entity_, other->_impl_.actor_entity_);
 }
 
 ::google::protobuf::Metadata RegisterPlayerEvent::GetMetadata() const {
@@ -370,10 +371,10 @@ inline PROTOBUF_NDEBUG_INLINE PlayerUpgradeEvent::Impl_::Impl_(
 inline void PlayerUpgradeEvent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, entity_),
+               offsetof(Impl_, actor_entity_),
            0,
            offsetof(Impl_, new_level_) -
-               offsetof(Impl_, entity_) +
+               offsetof(Impl_, actor_entity_) +
                sizeof(Impl_::new_level_));
 }
 PlayerUpgradeEvent::~PlayerUpgradeEvent() {
@@ -407,9 +408,9 @@ PROTOBUF_NOINLINE void PlayerUpgradeEvent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  ::memset(&_impl_.entity_, 0, static_cast<::size_t>(
+  ::memset(&_impl_.actor_entity_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.new_level_) -
-      reinterpret_cast<char*>(&_impl_.entity_)) + sizeof(_impl_.new_level_));
+      reinterpret_cast<char*>(&_impl_.actor_entity_)) + sizeof(_impl_.new_level_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -441,14 +442,14 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerUpgradeEvent::_table_ = {
     // uint32 new_level = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerUpgradeEvent, _impl_.new_level_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.new_level_)}},
-    // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerUpgradeEvent, _impl_.entity_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.entity_)}},
+    // uint64 actor_entity = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerUpgradeEvent, _impl_.actor_entity_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.actor_entity_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.entity_), 0, 0,
+    // uint64 actor_entity = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.actor_entity_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint32 new_level = 2;
     {PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.new_level_), 0, 0,
@@ -466,11 +467,11 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerUpgradeEvent::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 entity = 1;
-  if (this->_internal_entity() != 0) {
+  // uint64 actor_entity = 1;
+  if (this->_internal_actor_entity() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_entity(), target);
+        1, this->_internal_actor_entity(), target);
   }
 
   // uint32 new_level = 2;
@@ -497,10 +498,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> PlayerUpgradeEvent::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 entity = 1;
-  if (this->_internal_entity() != 0) {
+  // uint64 actor_entity = 1;
+  if (this->_internal_actor_entity() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_entity());
+        this->_internal_actor_entity());
   }
 
   // uint32 new_level = 2;
@@ -521,8 +522,8 @@ void PlayerUpgradeEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_entity() != 0) {
-    _this->_impl_.entity_ = from._impl_.entity_;
+  if (from._internal_actor_entity() != 0) {
+    _this->_impl_.actor_entity_ = from._impl_.actor_entity_;
   }
   if (from._internal_new_level() != 0) {
     _this->_impl_.new_level_ = from._impl_.new_level_;
@@ -547,9 +548,9 @@ void PlayerUpgradeEvent::InternalSwap(PlayerUpgradeEvent* PROTOBUF_RESTRICT othe
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.new_level_)
       + sizeof(PlayerUpgradeEvent::_impl_.new_level_)
-      - PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.entity_)>(
-          reinterpret_cast<char*>(&_impl_.entity_),
-          reinterpret_cast<char*>(&other->_impl_.entity_));
+      - PROTOBUF_FIELD_OFFSET(PlayerUpgradeEvent, _impl_.actor_entity_)>(
+          reinterpret_cast<char*>(&_impl_.actor_entity_),
+          reinterpret_cast<char*>(&other->_impl_.actor_entity_));
 }
 
 ::google::protobuf::Metadata PlayerUpgradeEvent::GetMetadata() const {
@@ -580,7 +581,7 @@ inline PROTOBUF_NDEBUG_INLINE InitializePlayerComponentsEvent::Impl_::Impl_(
 
 inline void InitializePlayerComponentsEvent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.entity_ = {};
+  _impl_.actor_entity_ = {};
 }
 InitializePlayerComponentsEvent::~InitializePlayerComponentsEvent() {
   // @@protoc_insertion_point(destructor:InitializePlayerComponentsEvent)
@@ -613,7 +614,7 @@ PROTOBUF_NOINLINE void InitializePlayerComponentsEvent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.entity_ = ::uint64_t{0u};
+  _impl_.actor_entity_ = ::uint64_t{0u};
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -642,14 +643,14 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> InitializePlayerComponentsEvent::_tabl
     ::_pbi::TcParser::GetTable<::InitializePlayerComponentsEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(InitializePlayerComponentsEvent, _impl_.entity_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(InitializePlayerComponentsEvent, _impl_.entity_)}},
+    // uint64 actor_entity = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(InitializePlayerComponentsEvent, _impl_.actor_entity_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(InitializePlayerComponentsEvent, _impl_.actor_entity_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(InitializePlayerComponentsEvent, _impl_.entity_), 0, 0,
+    // uint64 actor_entity = 1;
+    {PROTOBUF_FIELD_OFFSET(InitializePlayerComponentsEvent, _impl_.actor_entity_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -664,11 +665,11 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> InitializePlayerComponentsEvent::_tabl
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 entity = 1;
-  if (this->_internal_entity() != 0) {
+  // uint64 actor_entity = 1;
+  if (this->_internal_actor_entity() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-        1, this->_internal_entity(), target);
+        1, this->_internal_actor_entity(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -688,10 +689,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> InitializePlayerComponentsEvent::_tabl
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint64 entity = 1;
-  if (this->_internal_entity() != 0) {
+  // uint64 actor_entity = 1;
+  if (this->_internal_actor_entity() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-        this->_internal_entity());
+        this->_internal_actor_entity());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -706,8 +707,8 @@ void InitializePlayerComponentsEvent::MergeImpl(::google::protobuf::MessageLite&
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_entity() != 0) {
-    _this->_impl_.entity_ = from._impl_.entity_;
+  if (from._internal_actor_entity() != 0) {
+    _this->_impl_.actor_entity_ = from._impl_.actor_entity_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -726,7 +727,7 @@ PROTOBUF_NOINLINE bool InitializePlayerComponentsEvent::IsInitialized() const {
 void InitializePlayerComponentsEvent::InternalSwap(InitializePlayerComponentsEvent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.entity_, other->_impl_.entity_);
+        swap(_impl_.actor_entity_, other->_impl_.actor_entity_);
 }
 
 ::google::protobuf::Metadata InitializePlayerComponentsEvent::GetMetadata() const {

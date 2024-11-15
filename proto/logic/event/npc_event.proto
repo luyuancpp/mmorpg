@@ -4,5 +4,5 @@ option go_package = "pb/game";
 
 message InitializeNpcComponentsEvent
 {
-  uint64 entity = 1;
+  uint64 actor_entity = 1;
 }
