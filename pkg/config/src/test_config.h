@@ -32,4 +32,4 @@ if (!(testTable)) { return (result); }
 
 #define FetchTestTableOrReturnVoid(keyId) \
 const auto [testTable, result] = TestConfigurationTable::Instance().GetTable(keyId); \
-if (!(testTable)) { return  }
+if (!(testTable)) { return ;}

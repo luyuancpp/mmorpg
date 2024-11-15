@@ -32,4 +32,4 @@ if (!(cooldownTable)) { return (result); }
 
 #define FetchCooldownTableOrReturnVoid(keyId) \
 const auto [cooldownTable, result] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-if (!(cooldownTable)) { return  }
+if (!(cooldownTable)) { return ;}

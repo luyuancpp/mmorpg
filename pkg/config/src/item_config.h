@@ -32,4 +32,4 @@ if (!(itemTable)) { return (result); }
 
 #define FetchItemTableOrReturnVoid(keyId) \
 const auto [itemTable, result] = ItemConfigurationTable::Instance().GetTable(keyId); \
-if (!(itemTable)) { return  }
+if (!(itemTable)) { return ;}

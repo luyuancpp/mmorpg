@@ -50,4 +50,4 @@ if (!(testMultiKeyTable)) { return (result); }
 
 #define FetchTestMultiKeyTableOrReturnVoid(keyId) \
 const auto [testMultiKeyTable, result] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-if (!(testMultiKeyTable)) { return  }
+if (!(testMultiKeyTable)) { return ;}

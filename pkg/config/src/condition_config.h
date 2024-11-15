@@ -32,4 +32,4 @@ if (!(conditionTable)) { return (result); }
 
 #define FetchConditionTableOrReturnVoid(keyId) \
 const auto [conditionTable, result] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-if (!(conditionTable)) { return  }
+if (!(conditionTable)) { return ;}

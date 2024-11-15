@@ -32,4 +32,4 @@ if (!(classTable)) { return (result); }
 
 #define FetchClassTableOrReturnVoid(keyId) \
 const auto [classTable, result] = ClassConfigurationTable::Instance().GetTable(keyId); \
-if (!(classTable)) { return  }
+if (!(classTable)) { return ;}

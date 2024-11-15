@@ -36,9 +36,9 @@ public:
     
     //Buff创建前检查当前Buff是否可创建。
     //一般主要是检测目标身上是否存在免疫该Buff的相关Buff，如果被免疫则不会创建该Buff。
-    static uint32_t CanCreateBuff(entt::entity parent, uint32_t buffTableId);
+    static uint32_t CanCreateBuff(entt::entity parentEntity, uint32_t buffTableId);
 
-    static bool HandleExistingBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
+    static bool HandleExistingBuff(entt::entity parentEntity, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     //Buff在实例化之后，生效之前（还未加入到Buff容器中）时会抛出一个OnBuffAwake事件。
     // 如果存在某种Buff的效果是：受到负面效果时，驱散当前所有负面效果，并给自己加一个护盾。

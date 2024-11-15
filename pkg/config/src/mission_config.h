@@ -32,4 +32,4 @@ if (!(missionTable)) { return (result); }
 
 #define FetchMissionTableOrReturnVoid(keyId) \
 const auto [missionTable, result] = MissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(missionTable)) { return  }
+if (!(missionTable)) { return ;}
