@@ -22,11 +22,11 @@ void NpcEventHandler::UnRegister()
 void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto npc = entt::to_entity(event.entity());
+    auto npc = entt::to_entity(event.actor_entity());
 
     if (!tls.registry.valid(npc))
     {
-        LOG_ERROR << "Npc Not Found :" << event.entity();
+        LOG_ERROR << "Npc Not Found :" << event.actor_entity();
         return;
     }
     

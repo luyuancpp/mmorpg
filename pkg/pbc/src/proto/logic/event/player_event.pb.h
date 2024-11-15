@@ -194,16 +194,16 @@ class RegisterPlayerEvent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kEntityFieldNumber = 1,
+    kActorEntityFieldNumber = 1,
   };
-  // uint64 entity = 1;
-  void clear_entity() ;
-  ::uint64_t entity() const;
-  void set_entity(::uint64_t value);
+  // uint64 actor_entity = 1;
+  void clear_actor_entity() ;
+  ::uint64_t actor_entity() const;
+  void set_actor_entity(::uint64_t value);
 
   private:
-  ::uint64_t _internal_entity() const;
-  void _internal_set_entity(::uint64_t value);
+  ::uint64_t _internal_actor_entity() const;
+  void _internal_set_actor_entity(::uint64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:RegisterPlayerEvent)
@@ -227,7 +227,7 @@ class RegisterPlayerEvent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t entity_;
+    ::uint64_t actor_entity_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -361,17 +361,17 @@ class PlayerUpgradeEvent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kEntityFieldNumber = 1,
+    kActorEntityFieldNumber = 1,
     kNewLevelFieldNumber = 2,
   };
-  // uint64 entity = 1;
-  void clear_entity() ;
-  ::uint64_t entity() const;
-  void set_entity(::uint64_t value);
+  // uint64 actor_entity = 1;
+  void clear_actor_entity() ;
+  ::uint64_t actor_entity() const;
+  void set_actor_entity(::uint64_t value);
 
   private:
-  ::uint64_t _internal_entity() const;
-  void _internal_set_entity(::uint64_t value);
+  ::uint64_t _internal_actor_entity() const;
+  void _internal_set_actor_entity(::uint64_t value);
 
   public:
   // uint32 new_level = 2;
@@ -405,7 +405,7 @@ class PlayerUpgradeEvent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t entity_;
+    ::uint64_t actor_entity_;
     ::uint32_t new_level_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -540,16 +540,16 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kEntityFieldNumber = 1,
+    kActorEntityFieldNumber = 1,
   };
-  // uint64 entity = 1;
-  void clear_entity() ;
-  ::uint64_t entity() const;
-  void set_entity(::uint64_t value);
+  // uint64 actor_entity = 1;
+  void clear_actor_entity() ;
+  ::uint64_t actor_entity() const;
+  void set_actor_entity(::uint64_t value);
 
   private:
-  ::uint64_t _internal_entity() const;
-  void _internal_set_entity(::uint64_t value);
+  ::uint64_t _internal_actor_entity() const;
+  void _internal_set_actor_entity(::uint64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:InitializePlayerComponentsEvent)
@@ -573,7 +573,7 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::uint64_t entity_;
+    ::uint64_t actor_entity_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -597,52 +597,52 @@ class InitializePlayerComponentsEvent final : public ::google::protobuf::Message
 
 // RegisterPlayerEvent
 
-// uint64 entity = 1;
-inline void RegisterPlayerEvent::clear_entity() {
+// uint64 actor_entity = 1;
+inline void RegisterPlayerEvent::clear_actor_entity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.entity_ = ::uint64_t{0u};
+  _impl_.actor_entity_ = ::uint64_t{0u};
 }
-inline ::uint64_t RegisterPlayerEvent::entity() const {
-  // @@protoc_insertion_point(field_get:RegisterPlayerEvent.entity)
-  return _internal_entity();
+inline ::uint64_t RegisterPlayerEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:RegisterPlayerEvent.actor_entity)
+  return _internal_actor_entity();
 }
-inline void RegisterPlayerEvent::set_entity(::uint64_t value) {
-  _internal_set_entity(value);
-  // @@protoc_insertion_point(field_set:RegisterPlayerEvent.entity)
+inline void RegisterPlayerEvent::set_actor_entity(::uint64_t value) {
+  _internal_set_actor_entity(value);
+  // @@protoc_insertion_point(field_set:RegisterPlayerEvent.actor_entity)
 }
-inline ::uint64_t RegisterPlayerEvent::_internal_entity() const {
+inline ::uint64_t RegisterPlayerEvent::_internal_actor_entity() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.entity_;
+  return _impl_.actor_entity_;
 }
-inline void RegisterPlayerEvent::_internal_set_entity(::uint64_t value) {
+inline void RegisterPlayerEvent::_internal_set_actor_entity(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.entity_ = value;
+  _impl_.actor_entity_ = value;
 }
 
 // -------------------------------------------------------------------
 
 // PlayerUpgradeEvent
 
-// uint64 entity = 1;
-inline void PlayerUpgradeEvent::clear_entity() {
+// uint64 actor_entity = 1;
+inline void PlayerUpgradeEvent::clear_actor_entity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.entity_ = ::uint64_t{0u};
+  _impl_.actor_entity_ = ::uint64_t{0u};
 }
-inline ::uint64_t PlayerUpgradeEvent::entity() const {
-  // @@protoc_insertion_point(field_get:PlayerUpgradeEvent.entity)
-  return _internal_entity();
+inline ::uint64_t PlayerUpgradeEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:PlayerUpgradeEvent.actor_entity)
+  return _internal_actor_entity();
 }
-inline void PlayerUpgradeEvent::set_entity(::uint64_t value) {
-  _internal_set_entity(value);
-  // @@protoc_insertion_point(field_set:PlayerUpgradeEvent.entity)
+inline void PlayerUpgradeEvent::set_actor_entity(::uint64_t value) {
+  _internal_set_actor_entity(value);
+  // @@protoc_insertion_point(field_set:PlayerUpgradeEvent.actor_entity)
 }
-inline ::uint64_t PlayerUpgradeEvent::_internal_entity() const {
+inline ::uint64_t PlayerUpgradeEvent::_internal_actor_entity() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.entity_;
+  return _impl_.actor_entity_;
 }
-inline void PlayerUpgradeEvent::_internal_set_entity(::uint64_t value) {
+inline void PlayerUpgradeEvent::_internal_set_actor_entity(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.entity_ = value;
+  _impl_.actor_entity_ = value;
 }
 
 // uint32 new_level = 2;
@@ -671,26 +671,26 @@ inline void PlayerUpgradeEvent::_internal_set_new_level(::uint32_t value) {
 
 // InitializePlayerComponentsEvent
 
-// uint64 entity = 1;
-inline void InitializePlayerComponentsEvent::clear_entity() {
+// uint64 actor_entity = 1;
+inline void InitializePlayerComponentsEvent::clear_actor_entity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.entity_ = ::uint64_t{0u};
+  _impl_.actor_entity_ = ::uint64_t{0u};
 }
-inline ::uint64_t InitializePlayerComponentsEvent::entity() const {
-  // @@protoc_insertion_point(field_get:InitializePlayerComponentsEvent.entity)
-  return _internal_entity();
+inline ::uint64_t InitializePlayerComponentsEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:InitializePlayerComponentsEvent.actor_entity)
+  return _internal_actor_entity();
 }
-inline void InitializePlayerComponentsEvent::set_entity(::uint64_t value) {
-  _internal_set_entity(value);
-  // @@protoc_insertion_point(field_set:InitializePlayerComponentsEvent.entity)
+inline void InitializePlayerComponentsEvent::set_actor_entity(::uint64_t value) {
+  _internal_set_actor_entity(value);
+  // @@protoc_insertion_point(field_set:InitializePlayerComponentsEvent.actor_entity)
 }
-inline ::uint64_t InitializePlayerComponentsEvent::_internal_entity() const {
+inline ::uint64_t InitializePlayerComponentsEvent::_internal_actor_entity() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.entity_;
+  return _impl_.actor_entity_;
 }
-inline void InitializePlayerComponentsEvent::_internal_set_entity(::uint64_t value) {
+inline void InitializePlayerComponentsEvent::_internal_set_actor_entity(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.entity_ = value;
+  _impl_.actor_entity_ = value;
 }
 
 #ifdef __GNUC__

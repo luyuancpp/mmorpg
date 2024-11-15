@@ -4,15 +4,15 @@
 void Pb2sol2player_event()
 {
 tls_lua_state.new_usertype<RegisterPlayerEvent>("RegisterPlayerEvent",
-"entity",
-sol::property(&RegisterPlayerEvent::entity, &RegisterPlayerEvent::set_entity),
+"actor_entity",
+sol::property(&RegisterPlayerEvent::actor_entity, &RegisterPlayerEvent::set_actor_entity),
 "DebugString",
 &RegisterPlayerEvent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<PlayerUpgradeEvent>("PlayerUpgradeEvent",
-"entity",
-sol::property(&PlayerUpgradeEvent::entity, &PlayerUpgradeEvent::set_entity),
+"actor_entity",
+sol::property(&PlayerUpgradeEvent::actor_entity, &PlayerUpgradeEvent::set_actor_entity),
 "new_level",
 sol::property(&PlayerUpgradeEvent::new_level, &PlayerUpgradeEvent::set_new_level),
 "DebugString",
@@ -20,8 +20,8 @@ sol::property(&PlayerUpgradeEvent::new_level, &PlayerUpgradeEvent::set_new_level
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<InitializePlayerComponentsEvent>("InitializePlayerComponentsEvent",
-"entity",
-sol::property(&InitializePlayerComponentsEvent::entity, &InitializePlayerComponentsEvent::set_entity),
+"actor_entity",
+sol::property(&InitializePlayerComponentsEvent::actor_entity, &InitializePlayerComponentsEvent::set_actor_entity),
 "DebugString",
 &InitializePlayerComponentsEvent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
