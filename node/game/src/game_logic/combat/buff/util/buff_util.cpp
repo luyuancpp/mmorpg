@@ -260,9 +260,9 @@ void BuffUtil::OnSkillExecuted(SkillExecutedEvent& event)
     // Implement event handling logic
 }
 
-void BuffUtil::OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent)
+void BuffUtil::OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
 {
-    BuffImplUtil::OnBeforeGiveDamage(parent, damageEvent);
+    BuffImplUtil::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
     //class Buff {
     //public:
     //	bool HasFlag(int flag) const;
@@ -280,7 +280,7 @@ void BuffUtil::OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& d
 }
 
 
-void BuffUtil::OnAfterGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent)
+void BuffUtil::OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
 {
     // 检查并应用DOT效果
     //for (auto& buff : tls.registry.get<BuffListComp>(event.target)) {
@@ -291,7 +291,7 @@ void BuffUtil::OnAfterGiveDamage(entt::entity parent, DamageEventPbComponent& da
     //}
 }
 
-void BuffUtil::OnBeforeTakeDamage(entt::entity parent, DamageEventPbComponent& damageEvent)
+void BuffUtil::OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
 {
     //auto& buffs = tls.registry.get<BuffListComp>(event.target);
     //for (auto& [buffId, buff] : buffs) {
@@ -302,9 +302,9 @@ void BuffUtil::OnBeforeTakeDamage(entt::entity parent, DamageEventPbComponent& d
     //}
 }
 
-void BuffUtil::OnAfterTakeDamage(entt::entity parent, DamageEventPbComponent& damageEvent)
+void BuffUtil::OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent)
 {
-    BuffImplUtil::UpdateLastDamageOrSkillHitTime(entt::to_entity(damageEvent.attacker_id()), parent);
+    BuffImplUtil::UpdateLastDamageOrSkillHitTime(entt::to_entity(damageEvent.attacker_id()), casterEntity);
 
     // 检查并应用额外效果
     //auto& buffs = tls.registry.get<BuffListComp>(event.target);

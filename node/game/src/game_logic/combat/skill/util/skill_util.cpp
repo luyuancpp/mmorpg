@@ -583,9 +583,9 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
 
 
 // 触发伤害前的事件
-void TriggerBeforeDamageEvents(const entt::entity casterEntity, const entt::entity target, DamageEventPbComponent& damageEvent) {
-    BuffUtil::OnBeforeGiveDamage(casterEntity, damageEvent);
-    BuffUtil::OnBeforeTakeDamage(target, damageEvent);
+void TriggerBeforeDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
+    BuffUtil::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
+    BuffUtil::OnBeforeTakeDamage(casterEntity, targetEntity, damageEvent);
 }
 
 // 处理目标生命值的减少
@@ -610,9 +610,9 @@ void TriggerBeKillEvent(const entt::entity casterEntity, const entt::entity targ
 }
 
 // 触发伤害后的事件
-void TriggerAfterDamageEvents(const entt::entity casterEntity, const entt::entity target, DamageEventPbComponent& damageEvent) {
-	BuffUtil::OnAfterGiveDamage(casterEntity, damageEvent);
-	BuffUtil::OnAfterTakeDamage(target, damageEvent);
+void TriggerAfterDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
+	BuffUtil::OnAfterGiveDamage(casterEntity, targetEntity, damageEvent);
+	BuffUtil::OnAfterTakeDamage(casterEntity, targetEntity, damageEvent);
 }
 
 // 处理目标死亡逻辑
