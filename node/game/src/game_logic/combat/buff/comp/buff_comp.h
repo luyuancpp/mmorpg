@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <memory>
-#include "game_logic/combat/skill/comp//skill_comp.h"
+#include "game_logic/combat/skill/comp/skill_comp.h"
 #include "logic/component/buff_comp.pb.h"
 
 using BuffMessagePtr = std::shared_ptr<google::protobuf::Message>;

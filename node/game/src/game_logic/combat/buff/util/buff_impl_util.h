@@ -31,7 +31,11 @@ public:
                     const auto bonus_damage = BuffConfigurationTable::Instance().GetBonusdamage(buffTable->id());
                     damageEvent.set_damage(damageEvent.damage() + bonus_damage);
                     removeBuffIdList.emplace(buffComp.buffPb.buff_id());
-                    BuffUtil::AddSubBuffs(casterEntity, buffTable, buffComp);
+                    if (BuffUtil::AddSubBuffs(casterEntity, buffTable, buffComp))
+                    {
+                        BuffUtil::AddTargetSubBuffs(targetEntity, buffTable);
+                    }
+
                 }
                 break;
             default:
