@@ -1,6 +1,7 @@
 #include "player_node_util.h"
 
 #include "game_node.h"
+#include "event/actor_event.pb.h"
 #include "game_logic/core/network/message_util.h"
 #include "proto/common/centre_service.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"
@@ -62,6 +63,10 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_databas
 	tls.registry.emplace<ViewRadius>(player).set_radius(10);
 	tls.registry.emplace<PlayerNodeInfoPBComponent>(player).set_centre_node_id(asyncIt->second.centre_node_id());
 
+	InitializeActorComponentsEvent initializeActorComponentsEvent;
+	initializeActorComponentsEvent.set_actor_entity(entt::to_integral(player));
+	tls.dispatcher.trigger(initializeActorComponentsEvent);
+	
 	InitializePlayerComponentsEvent initializePlayerComponents;
 	initializePlayerComponents.set_actor_entity(entt::to_integral(player));
 	tls.dispatcher.trigger(initializePlayerComponents);
