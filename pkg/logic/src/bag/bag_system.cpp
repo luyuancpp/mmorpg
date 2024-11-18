@@ -65,10 +65,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
     bool has_stack_item = false;
 
     for (const auto& try_item : try_add_item_map) {
-        auto [itemTable, result] = GetItemTable(try_item.first);
-        if (!itemTable || result != kSuccess) {
-            return result;
-        }
+		FetchAndValidateItemTable(try_item.first);
 
         if (itemTable->max_statck_size() <= 0) {
             LOG_ERROR << "config error:" << try_item.first << "player:" << PlayerGuid();
@@ -98,7 +95,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
                 continue;
             }
 
-            auto [itemTable, _] = GetItemTable(ji.first);
+			FetchItemTableOrContinue(ji.first);
             auto remain_stack_size = itemTable->max_statck_size() - item.size();
             if (remain_stack_size <= 0) {
                 continue;
@@ -114,7 +111,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
     }
 
     for (const auto& it : need_stack_sizes) {
-        auto [itemTable, _] = GetItemTable(it.first);
+		FetchItemTableOrContinue(it.first);
         auto need_grid_size = CalculateStackGridSize(it.second, itemTable->max_statck_size());
         if (empty_size <= 0 || empty_size < need_grid_size) {
             return kBagItemNotStacked;
@@ -217,10 +214,7 @@ void Bag::Neaten()
 
 	for (auto&& [e, item] : itemRegistry.view<ItemPBComponent>().each())
 	{
-		auto [itemTable, result] = GetItemTable(item.config_id());
-		if (nullptr == itemTable){
-			continue;
-		}
+		FetchItemTableOrContinue(item.config_id());
 
 		if (itemTable->max_statck_size() <= 1)
 		{
@@ -264,12 +258,8 @@ void Bag::Neaten()
 
 		auto& firstItem = itemRegistry.get<ItemPBComponent>(*itemList.begin());
 
-		auto [itemTable, result] = GetItemTable(firstItem.config_id());
-		if (nullptr == itemTable)
-		{
-			continue;
-		}
-
+		FetchItemTableOrContinue(firstItem.config_id());
+	
 		//计算总的，然后用总的放到每个格子里面
 		uint32_t totalStackSize = 0;
 		for (auto& e : itemList)
@@ -333,10 +323,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		return kBagAddItemInvalidParam;
 	}
 
-	auto [itemTable, result] = GetItemTable(itemPBCompCopy.config_id());
-	if (itemTable == nullptr){
-		return result;
-	}
+	FetchAndValidateItemTable(itemPBCompCopy.config_id());
 
 	if (itemTable->max_statck_size() <= 0)
 	{
