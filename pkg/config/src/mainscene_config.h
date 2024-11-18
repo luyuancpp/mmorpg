@@ -27,9 +27,17 @@ inline std::pair<const MainSceneTable*, uint32_t> GetMainSceneTable(const uint32
 inline const MainSceneTabledData& GetMainSceneAllTable() { return MainSceneConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateMainSceneTable(keyId) \
-const auto [mainSceneTable, result] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-if (!(mainSceneTable)) { return (result); }
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
+if (!(mainSceneTable)) { return (fetchResult); }
 
 #define FetchMainSceneTableOrReturnVoid(keyId) \
-const auto [mainSceneTable, result] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
 if (!(mainSceneTable)) { return ;}
+
+#define FetchMainSceneTableOrContinue(keyId) \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
+if (!(mainSceneTable)) { continue; }
+
+#define FetchMainSceneTableOrReturnFalse(keyId) \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
+if (!(mainSceneTable)) { return false; }

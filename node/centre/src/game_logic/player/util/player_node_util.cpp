@@ -164,12 +164,9 @@ void PlayerNodeUtil::HandleAbnormalExit(Guid playerID)
 		return;
 	}
 
-	auto [tableAbnormalLogout, result] = GetGlobalVariableTable(kGlobalVariable_Abnormal_logout);
-	if (nullptr != tableAbnormalLogout)
-	{
-		tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(tableAbnormalLogout->todouble(), [playerID]() {Logout(playerID); });
-	}
+	FetchGlobalVariableTableOrReturnVoid(kGlobalVariable_Abnormal_logout);
 
+	tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(globalVariableTable->todouble(), [playerID]() {Logout(playerID); });
 }
 
 void PlayerNodeUtil::Logout(Guid playerID)

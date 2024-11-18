@@ -27,9 +27,17 @@ inline std::pair<const TestTable*, uint32_t> GetTestTable(const uint32_t keyId) 
 inline const TestTabledData& GetTestAllTable() { return TestConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateTestTable(keyId) \
-const auto [testTable, result] = TestConfigurationTable::Instance().GetTable(keyId); \
-if (!(testTable)) { return (result); }
+const auto [testTable, fetchResult] = TestConfigurationTable::Instance().GetTable(keyId); \
+if (!(testTable)) { return (fetchResult); }
 
 #define FetchTestTableOrReturnVoid(keyId) \
-const auto [testTable, result] = TestConfigurationTable::Instance().GetTable(keyId); \
+const auto [testTable, fetchResult] = TestConfigurationTable::Instance().GetTable(keyId); \
 if (!(testTable)) { return ;}
+
+#define FetchTestTableOrContinue(keyId) \
+const auto [testTable, fetchResult] = TestConfigurationTable::Instance().GetTable(keyId); \
+if (!(testTable)) { continue; }
+
+#define FetchTestTableOrReturnFalse(keyId) \
+const auto [testTable, fetchResult] = TestConfigurationTable::Instance().GetTable(keyId); \
+if (!(testTable)) { return false; }

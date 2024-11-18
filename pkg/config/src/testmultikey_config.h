@@ -45,9 +45,17 @@ inline std::pair<const TestMultiKeyTable*, uint32_t> GetTestMultiKeyTable(const 
 inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() { return TestMultiKeyConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateTestMultiKeyTable(keyId) \
-const auto [testMultiKeyTable, result] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-if (!(testMultiKeyTable)) { return (result); }
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
+if (!(testMultiKeyTable)) { return (fetchResult); }
 
 #define FetchTestMultiKeyTableOrReturnVoid(keyId) \
-const auto [testMultiKeyTable, result] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
 if (!(testMultiKeyTable)) { return ;}
+
+#define FetchTestMultiKeyTableOrContinue(keyId) \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
+if (!(testMultiKeyTable)) { continue; }
+
+#define FetchTestMultiKeyTableOrReturnFalse(keyId) \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
+if (!(testMultiKeyTable)) { return false; }

@@ -145,16 +145,30 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     header_content.append(
         f'\n#define FetchAndValidate{sheetname}Table(keyId) \\')
     header_content.append(
-        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, result] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
     header_content.append(
-        f'if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ return (result); }}')
+        f'if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ return (fetchResult); }}')
 
     header_content.append(
         f'\n#define Fetch{sheetname}TableOrReturnVoid(keyId) \\')
     header_content.append(
-        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, result] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
     header_content.append(
         f'if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ return ;}}')
+
+    header_content.append(
+        f'\n#define Fetch{sheetname}TableOrContinue(keyId) \\')
+    header_content.append(
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+    header_content.append(
+        f'if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ continue; }}')
+
+    header_content.append(
+        f'\n#define Fetch{sheetname}TableOrReturnFalse(keyId) \\')
+    header_content.append(
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+    header_content.append(
+        f'if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ return false; }}')
 
     return '\n'.join(header_content)
 

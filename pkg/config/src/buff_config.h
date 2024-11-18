@@ -47,9 +47,17 @@ inline std::pair<const BuffTable*, uint32_t> GetBuffTable(const uint32_t keyId) 
 inline const BuffTabledData& GetBuffAllTable() { return BuffConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateBuffTable(keyId) \
-const auto [buffTable, result] = BuffConfigurationTable::Instance().GetTable(keyId); \
-if (!(buffTable)) { return (result); }
+const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
+if (!(buffTable)) { return (fetchResult); }
 
 #define FetchBuffTableOrReturnVoid(keyId) \
-const auto [buffTable, result] = BuffConfigurationTable::Instance().GetTable(keyId); \
+const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
 if (!(buffTable)) { return ;}
+
+#define FetchBuffTableOrContinue(keyId) \
+const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
+if (!(buffTable)) { continue; }
+
+#define FetchBuffTableOrReturnFalse(keyId) \
+const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
+if (!(buffTable)) { return false; }
