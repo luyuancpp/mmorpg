@@ -2,13 +2,7 @@
 #include "logic/event/player_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "component/npc_comp.pb.h"
-#include "game_logic/actor/attribute/util/actor_attribute_calculator_util.h"
-#include "game_logic/actor/attribute/util/actor_state_attribute_sync_util.h"
-#include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/player/util/player_skill_util.h"
-#include "game_logic/combat/skill/util/skill_util.h"
-#include "game_logic/scene/util/interest_util.h"
 ///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
 {
@@ -56,11 +50,7 @@ void PlayerEventHandler::InitializePlayerComponentsEventHandler(const Initialize
 		LOG_ERROR << "Player Not Found :" << event.actor_entity();
 		return;
 	}
-	ActorStateAttributeSyncUtil::InitializeActorComponents(player);
-	SkillUtil::InitializeActorComponents(player);
-	BuffUtil::InitializeActorComponents(player);
-	InterestUtil::InitializeActorComponents(player);
-	ActorAttributeCalculatorUtil::InitializeActorComponents(player);
+
 ///<<< END WRITING YOUR CODE
 }
 
