@@ -38,8 +38,8 @@ public:
         auto& baseAttributesPbComponent = tls.registry.get<BaseAttributesPbComponent>(parent);
         const auto& derivedAttributesPbComponent = tls.registry.get<DerivedAttributesPbComponent>(parent);
         const auto& levelComponent = tls.registry.get<LevelPbComponent>(parent);
-        
-        auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();  // 计算已损失生命值
+
+        const auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();  // 计算已损失生命值
 
         BuffConfigurationTable::Instance().SetHealthregenerationParam(
             { static_cast<double>(levelComponent.level()),  static_cast<double>(lostHealth)});

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+
+message SilenceAddedPbEvent 
+{
+    uint64 actor_entity = 1;
+    uint64 source_buff_id = 2;
+}
+
+message SilenceRemovedEvent 
+{
+    uint64 actor_entity = 1;
+    uint64 source_buff_id = 2;
+}
