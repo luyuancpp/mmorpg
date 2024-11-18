@@ -25,6 +25,8 @@ public:
 
     static std::tuple<uint32_t, uint64_t>  AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
+    static std::tuple<uint32_t, uint64_t> AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId);
+
     static void RemoveBuff(entt::entity parent, uint64_t buffId);
 
     static void RemoveBuff(entt::entity parent, const UInt64Set& removeBuffIdList);
@@ -92,11 +94,16 @@ public:
 
     static void OnSkillHit(entt::entity casterEntity, entt::entity targetEntity);
 
-    static void AddSubBuffs(
+    static bool AddSubBuffs(
         entt::entity parent,
         const BuffTable* buffTable,
         BuffComp& buffComp  // 根据实际类型填写
     );
+
+    static void AddTargetSubBuffs(
+      entt::entity targetEntity,
+      const BuffTable* buffTable
+  );
 
     static void AddSubBuffsWithoutCheck(
        entt::entity parent,

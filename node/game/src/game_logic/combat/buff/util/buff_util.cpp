@@ -58,9 +58,11 @@ BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     }
 }
 
-// 添加或更新 Buff
+// 添加或更新 Buff（有 abilityContext 参数的版本）
 std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
-    const entt::entity parent, const uint32_t buffTableId, const SkillContextPtrComp& abilityContext)
+    const entt::entity parent, 
+    const uint32_t buffTableId, 
+    const SkillContextPtrComp& abilityContext)
 {
     auto [buffTable, result] = GetBuffTable(buffTableId);
     if (!buffTable) {
@@ -79,8 +81,11 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
     }
 
     BuffComp newBuff;
-    newBuff.buffPb.set_caster(abilityContext->caster());
-    newBuff.buffPb.set_processed_caster(buffTable->nocaster() ? entt::null : abilityContext->caster());
+    if (nullptr != abilityContext)
+    {
+        newBuff.buffPb.set_caster(abilityContext->caster());
+    }
+    newBuff.buffPb.set_processed_caster(buffTable->nocaster() ? entt::null : (abilityContext ? abilityContext->caster() : entt::null));
 
     if (!OnBuffAwake(parent, buffTableId)) {
         return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
@@ -104,6 +109,15 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
 
     return std::make_tuple<uint32_t, uint64_t>(kSuccess, std::move(newBuffId));
 }
+
+// 添加或更新 Buff（无 abilityContext 参数的版本）
+std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
+    const entt::entity parent, 
+    const uint32_t buffTableId)
+{
+    return AddOrUpdateBuff(parent, buffTableId, nullptr);
+}
+
 
 // 移除 Buff
 void BuffUtil::RemoveBuff(const entt::entity parent, const uint64_t buffId)
@@ -337,13 +351,18 @@ void BuffUtil::OnSkillHit(const entt::entity casterEntity, const entt::entity ta
     MotionModifierBuffUtil::OnSkillHit(casterEntity, targetEntity);
 }
 
-void BuffUtil::AddSubBuffs(entt::entity parent,
+bool BuffUtil::AddSubBuffs(entt::entity parent,
                             const BuffTable* buffTable,
                             BuffComp& buffComp)
 {
+    if (nullptr == buffTable)
+    {
+        return false;;
+    }
+    
     // 如果已经添加过子 Buff，就跳过
     if (buffComp.buffPb.has_added_sub_buff()) {
-        return;
+        return false;
     }
 
     // 标记为已经添加了子 Buff
@@ -361,6 +380,20 @@ void BuffUtil::AddSubBuffs(entt::entity parent,
 
         // 将新添加的 Buff ID 添加到子 Buff 列表中，初始化为 false 表示未激活
         buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
+    }
+
+    return true;
+}
+
+void BuffUtil::AddTargetSubBuffs(entt::entity targetEntity, const BuffTable* buffTable)
+{
+    if (nullptr == buffTable)
+    {
+        return;
+    }
+    
+    for (auto& targetSubBuffTableId : buffTable->targetsubbuff()){
+        AddOrUpdateBuff(targetEntity, targetSubBuffTableId);
     }
 }
 
