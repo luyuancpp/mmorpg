@@ -19,10 +19,10 @@ public:
         return false;
     }
 
-    static void OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent) {
+    static void OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
         UInt64Set removeBuffIdList;
 
-        for (auto& buffComp : tls.registry.get<BuffListComp>(parent) | std::views::values) {
+        for (auto& buffComp : tls.registry.get<BuffListComp>(casterEntity) | std::views::values) {
            FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
             switch (buffTable->bufftype()) {
@@ -31,7 +31,7 @@ public:
                     const auto bonus_damage = BuffConfigurationTable::Instance().GetBonusdamage(buffTable->id());
                     damageEvent.set_damage(damageEvent.damage() + bonus_damage);
                     removeBuffIdList.emplace(buffComp.buffPb.buff_id());
-                    BuffUtil::AddSubBuffs(parent, buffTable, buffComp);
+                    BuffUtil::AddSubBuffs(casterEntity, buffTable, buffComp);
                 }
                 break;
             default:
@@ -39,7 +39,7 @@ public:
             }
         }
 
-        BuffUtil::RemoveBuff(parent, removeBuffIdList);
+        BuffUtil::RemoveBuff(casterEntity, removeBuffIdList);
     }
 
     static void OnSkillHit(entt::entity casterEntity, entt::entity targetEntity) {
@@ -53,11 +53,11 @@ public:
             FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
             if (buffTable->bufftype() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
-                auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
-                if (dataPtr) {
-                    removeBuffIdList.emplace(buffComp.buffPb.buff_id());
+                if (const auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr)) {
                     dataPtr->set_last_time(TimeUtil::NowMilliseconds());
                 }
+
+                removeBuffIdList.emplace(buffComp.buffPb.buff_id());
             }
         }
 

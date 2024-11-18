@@ -70,16 +70,16 @@ public:
     static void OnSkillExecuted(SkillExecutedEvent& event);
 
     //监听我方给目标造成伤害时触发
-    static void OnBeforeGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent);
+    static void OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent);
 
     //监听我方给目标造成伤害时触发
-    static void OnAfterGiveDamage(entt::entity parent, DamageEventPbComponent& damageEvent);
+    static void OnAfterGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent);
 
     //监听我方受到伤害时触发
-    static void OnBeforeTakeDamage(entt::entity parent, DamageEventPbComponent& damageEvent);
+    static void OnBeforeTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent);
 
     //监听我方受到伤害时触发
-    static void OnAfterTakeDamage(entt::entity parent, DamageEventPbComponent& damageEvent);   
+    static void OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent);
 
     //监听我方死亡时触发
     static void OnBeforeDead(entt::entity parent);
