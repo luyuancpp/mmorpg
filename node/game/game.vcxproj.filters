@@ -222,6 +222,9 @@
     <ClCompile Include="src\handler\event\actor_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\event\actor_combat_state_event_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -486,6 +489,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\actor_event_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\event\actor_combat_state_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

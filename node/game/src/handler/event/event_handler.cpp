@@ -1,4 +1,5 @@
 #include "event_handler.h"
+#include "actor_combat_state_event_handler.h"
 #include "actor_event_handler.h"
 #include "buff_event_handler.h"
 #include "combat_event_handler.h"
@@ -10,6 +11,7 @@
 #include "skill_event_handler.h"
 void EventHandler::Register()
 {
+ActorCombatStateEventHandler::Register();
 ActorEventHandler::Register();
 BuffEventHandler::Register();
 CombatEventHandler::Register();
@@ -22,6 +24,7 @@ SkillEventHandler::Register();
 }
 void EventHandler::UnRegister()
 {
+ActorCombatStateEventHandler::UnRegister();
 ActorEventHandler::UnRegister();
 BuffEventHandler::UnRegister();
 CombatEventHandler::UnRegister();
