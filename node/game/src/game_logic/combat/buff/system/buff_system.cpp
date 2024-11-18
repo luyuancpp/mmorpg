@@ -11,8 +11,9 @@ bool CanApplyMoreTicks(const BuffPeriodicBuffPbComponent& periodicBuff, const Bu
 }
 
 void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffComp& buffComp, double delta) {
-    auto [buffTable, result] = GetBuffTable(buffComp.buffPb.buff_table_id());
-    if (!buffTable || buffTable->interval() <= 0) {
+    FetchBuffTableOrReturnVoid(buffComp.buffPb.buff_table_id());
+
+    if (buffTable->interval() <= 0) {
         return;
     }
 

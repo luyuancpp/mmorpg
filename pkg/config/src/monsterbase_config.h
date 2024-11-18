@@ -27,9 +27,17 @@ inline std::pair<const MonsterBaseTable*, uint32_t> GetMonsterBaseTable(const ui
 inline const MonsterBaseTabledData& GetMonsterBaseAllTable() { return MonsterBaseConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateMonsterBaseTable(keyId) \
-const auto [monsterBaseTable, result] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-if (!(monsterBaseTable)) { return (result); }
+const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
+if (!(monsterBaseTable)) { return (fetchResult); }
 
 #define FetchMonsterBaseTableOrReturnVoid(keyId) \
-const auto [monsterBaseTable, result] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
+const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
 if (!(monsterBaseTable)) { return ;}
+
+#define FetchMonsterBaseTableOrContinue(keyId) \
+const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
+if (!(monsterBaseTable)) { continue; }
+
+#define FetchMonsterBaseTableOrReturnFalse(keyId) \
+const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
+if (!(monsterBaseTable)) { return false; }

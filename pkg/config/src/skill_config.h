@@ -37,9 +37,17 @@ inline std::pair<const SkillTable*, uint32_t> GetSkillTable(const uint32_t keyId
 inline const SkillTabledData& GetSkillAllTable() { return SkillConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateSkillTable(keyId) \
-const auto [skillTable, result] = SkillConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillTable)) { return (result); }
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillTable)) { return (fetchResult); }
 
 #define FetchSkillTableOrReturnVoid(keyId) \
-const auto [skillTable, result] = SkillConfigurationTable::Instance().GetTable(keyId); \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
 if (!(skillTable)) { return ;}
+
+#define FetchSkillTableOrContinue(keyId) \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillTable)) { continue; }
+
+#define FetchSkillTableOrReturnFalse(keyId) \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillTable)) { return false; }

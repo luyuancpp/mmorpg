@@ -27,9 +27,17 @@ inline std::pair<const SkillPermissionTable*, uint32_t> GetSkillPermissionTable(
 inline const SkillPermissionTabledData& GetSkillPermissionAllTable() { return SkillPermissionConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateSkillPermissionTable(keyId) \
-const auto [skillPermissionTable, result] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillPermissionTable)) { return (result); }
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillPermissionTable)) { return (fetchResult); }
 
 #define FetchSkillPermissionTableOrReturnVoid(keyId) \
-const auto [skillPermissionTable, result] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
 if (!(skillPermissionTable)) { return ;}
+
+#define FetchSkillPermissionTableOrContinue(keyId) \
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillPermissionTable)) { continue; }
+
+#define FetchSkillPermissionTableOrReturnFalse(keyId) \
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
+if (!(skillPermissionTable)) { return false; }

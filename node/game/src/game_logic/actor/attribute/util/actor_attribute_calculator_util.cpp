@@ -23,17 +23,15 @@ void UpdateVelocity(entt::entity entity) {
     velocity.Clear();
     
     for (const auto&  buffCompPb : tls.registry.get<BuffListComp>(entity) | std::views::values){
-        auto [currentBuffTable, fetchResult] = GetBuffTable(buffCompPb.buffPb.buff_table_id());
-        if (nullptr == currentBuffTable){
-            continue;
-        }
-        velocity.set_x(velocity.x() +  currentBuffTable->movement_speed_boost());
-        velocity.set_y(velocity.y() +  currentBuffTable->movement_speed_boost());
-        velocity.set_z(velocity.z() +  currentBuffTable->movement_speed_boost());
+        FetchBuffTableOrContinue(buffCompPb.buffPb.buff_table_id());
 
-        velocity.set_x(velocity.x() -  currentBuffTable->movement_speed_reduction());
-        velocity.set_y(velocity.y() -  currentBuffTable->movement_speed_reduction());
-        velocity.set_z(velocity.z() -  currentBuffTable->movement_speed_reduction());
+        velocity.set_x(velocity.x() + buffTable->movement_speed_boost());
+        velocity.set_y(velocity.y() + buffTable->movement_speed_boost());
+        velocity.set_z(velocity.z() + buffTable->movement_speed_boost());
+
+        velocity.set_x(velocity.x() - buffTable->movement_speed_reduction());
+        velocity.set_y(velocity.y() - buffTable->movement_speed_reduction());
+        velocity.set_z(velocity.z() - buffTable->movement_speed_reduction());
     }
 
     tls.registry.get<BaseAttributeDeltaS2C>(entity).mutable_velocity()->CopyFrom(velocity);

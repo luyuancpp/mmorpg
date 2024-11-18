@@ -119,8 +119,9 @@ uint32_t ActorActionStateUtil::GetStateTip(const uint32_t actorAction, const uin
 
 uint32_t ActorActionStateUtil::AddState(const entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
-    if (actorState >= kActorStateActorStateMax || actorStatePbComponent.state_list().contains(actorState)) {
-        return kInvalidParameter;  // 状态无效或已存在
+    if (actorState >= kActorStateActorStateMax ||
+        actorStatePbComponent.state_list().contains(actorState)) {
+        return kInvalidParameter; 
     }
 
     // 添加新的状态
@@ -130,8 +131,9 @@ uint32_t ActorActionStateUtil::AddState(const entt::entity actorEntity, uint32_t
 
 uint32_t ActorActionStateUtil::RemoveState(entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
-    if (actorState >= kActorStateActorStateMax || !actorStatePbComponent.state_list().contains(actorState)) {
-        return kInvalidParameter;  // 状态无效或不存在
+    if (actorState >= kActorStateActorStateMax ||
+        !actorStatePbComponent.state_list().contains(actorState)) {
+        return kInvalidParameter;
     }
 
     // 移除状态

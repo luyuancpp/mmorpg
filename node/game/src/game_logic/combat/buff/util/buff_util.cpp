@@ -188,15 +188,12 @@ bool BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId
 {
     auto [newBuffTable, result] = GetBuffTable(buffTableId);
     if (!newBuffTable) {
-        return result;
+        return true;
     }
 
     UInt64Vector dispelBuffIdList;
     for (auto& buffList = tls.registry.get<BuffListComp>(parent); auto& [buffId, buffPbComp] : buffList){
-        auto [buffTable, result] = GetBuffTable(buffTableId);
-        if (!buffTable) {
-            continue;
-        }
+        FetchBuffTableOrContinue(buffTableId);
 
         for (const auto& removeTag : newBuffTable->dispeltag() | std::views::keys){
             if (buffTable->tag().contains(removeTag)){

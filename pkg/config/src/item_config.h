@@ -27,9 +27,17 @@ inline std::pair<const ItemTable*, uint32_t> GetItemTable(const uint32_t keyId) 
 inline const ItemTabledData& GetItemAllTable() { return ItemConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateItemTable(keyId) \
-const auto [itemTable, result] = ItemConfigurationTable::Instance().GetTable(keyId); \
-if (!(itemTable)) { return (result); }
+const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(keyId); \
+if (!(itemTable)) { return (fetchResult); }
 
 #define FetchItemTableOrReturnVoid(keyId) \
-const auto [itemTable, result] = ItemConfigurationTable::Instance().GetTable(keyId); \
+const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(keyId); \
 if (!(itemTable)) { return ;}
+
+#define FetchItemTableOrContinue(keyId) \
+const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(keyId); \
+if (!(itemTable)) { continue; }
+
+#define FetchItemTableOrReturnFalse(keyId) \
+const auto [itemTable, fetchResult] = ItemConfigurationTable::Instance().GetTable(keyId); \
+if (!(itemTable)) { return false; }

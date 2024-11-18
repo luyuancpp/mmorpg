@@ -27,9 +27,17 @@ inline std::pair<const ConditionTable*, uint32_t> GetConditionTable(const uint32
 inline const ConditionTabledData& GetConditionAllTable() { return ConditionConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateConditionTable(keyId) \
-const auto [conditionTable, result] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-if (!(conditionTable)) { return (result); }
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
+if (!(conditionTable)) { return (fetchResult); }
 
 #define FetchConditionTableOrReturnVoid(keyId) \
-const auto [conditionTable, result] = ConditionConfigurationTable::Instance().GetTable(keyId); \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
 if (!(conditionTable)) { return ;}
+
+#define FetchConditionTableOrContinue(keyId) \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
+if (!(conditionTable)) { continue; }
+
+#define FetchConditionTableOrReturnFalse(keyId) \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
+if (!(conditionTable)) { return false; }

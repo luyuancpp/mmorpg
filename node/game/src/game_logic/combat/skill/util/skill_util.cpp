@@ -104,8 +104,7 @@ void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t 
 }
 
 uint32_t SkillUtil::ReleaseSkill(const entt::entity casterEntity, const ReleaseSkillSkillRequest* request) {
-	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
-	if (result != kSuccess || !skillTable) return result;
+	FetchAndValidateSkillTable(request->skill_table_id());
 
 	RETURN_ON_ERROR(CheckSkillPrerequisites(casterEntity, request));
 	LookAtTargetPosition(casterEntity, request);
@@ -133,10 +132,7 @@ uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* ski
 }
 
 uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
-	auto [skillPermissionTable, result] = GetSkillPermissionTable(state);
-	if (nullptr == skillPermissionTable){
-		return  result;
-	}
+	FetchAndValidateSkillPermissionTable(state);
 
 	const auto skillTypeIndex = (1 << skill);
 	if (skillTypeIndex >= skillPermissionTable->skilltype_size())
@@ -200,10 +196,7 @@ uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity casterEntity, con
 }
 
 bool SkillUtil::IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType) {
-	auto [skillTable, result] = GetSkillTable(skillTableId);
-	if (skillTable == nullptr) {
-		return false;
-	}
+	FetchSkillTableOrReturnFalse(skillTableId);
 
 	for (auto& tabSkillType : skillTable->skill_type()) {
 		if ((1 << tabSkillType) == skillType) {
@@ -237,10 +230,7 @@ void SkillUtil::HandleSkillRecovery(const entt::entity casterEntity, uint64_t sk
 		return;
 	}
 
-	auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
-	if (skillTable == nullptr) {
-		return;
-	}
+	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
 
 	auto& recoveryTimer = tls.registry.emplace_or_replace<RecoveryTimerComp>(casterEntity).timer;
 	recoveryTimer.RunAfter(skillTable->recoverytime(), [casterEntity, skillId] {
@@ -265,10 +255,7 @@ void SkillUtil::HandleSkillFinish(const entt::entity casterEntity, uint64_t skil
 }
 
 void SkillUtil::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t skillId) {
-	auto [skillTable, result] = GetSkillTable(skillId);
-	if (skillTable == nullptr) {
-		return;
-	}
+	FetchSkillTableOrReturnVoid(skillId);
 
 	LOG_INFO << "Handling channel skill spell. Caster: " << entt::to_integral(casterEntity)
 		<< ", Skill ID: " << skillId;
@@ -313,11 +300,7 @@ void SkillUtil::HandleSkillDeactivate(const entt::entity casterEntity, const uin
 }
 
 uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
-	// 获取技能表
-	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
-	if (result != kSuccess || skillTable == nullptr) {
-		return result;
-	}
+	FetchAndValidateSkillTable(request->skill_table_id());
 
 	// 检查目标ID的有效性
 	if (!skillTable->target_type().empty() && request->target_id() <= 0) {
@@ -502,11 +485,7 @@ void SkillUtil::TriggerSkillEffect(const entt::entity casterEntity, const uint64
 
 	const auto& skillContext = skillContextIt->second;
 	
-	auto [skillTable, result] = GetSkillTable(skillContext->skilltableid());
-	if (skillTable == nullptr) {
-		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
-		return;
-	}
+	FetchSkillTableOrReturnVoid(skillContext->skilltableid());
 
 	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(casterEntity) << ", Skill ID: " << skillId;
 
@@ -523,11 +502,7 @@ void SkillUtil::RemoveEffect(entt::entity casterEntity, const uint64_t skillId) 
 		return;
 	}
 	
-	auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
-	if (skillTable == nullptr) {
-		LOG_ERROR << "Failed to get skill table for Skill ID: " << skillId;
-		return;
-	}
+	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
 
 	for (const auto& effect : skillTable->effect()) {
 		// TODO: Implement effect removal logic here
@@ -578,11 +553,7 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
     }
 
     // 获取技能表
-    auto [skillTable, result] = GetSkillTable(skillContentIt->second->skilltableid());
-    if (!skillTable) {
-        LOG_ERROR << "Failed to get skill table for Skill ID: " << damageEvent.skill_id();
-        return;
-    }
+	FetchSkillTableOrReturnVoid(skillContentIt->second->skilltableid());
 
     // 获取目标的 BaseAttributesPbComponent 用于判断是否死亡
     auto targetEntity = entt::to_entity(damageEvent.target());

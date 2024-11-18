@@ -27,9 +27,17 @@ inline std::pair<const CooldownTable*, uint32_t> GetCooldownTable(const uint32_t
 inline const CooldownTabledData& GetCooldownAllTable() { return CooldownConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateCooldownTable(keyId) \
-const auto [cooldownTable, result] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-if (!(cooldownTable)) { return (result); }
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
+if (!(cooldownTable)) { return (fetchResult); }
 
 #define FetchCooldownTableOrReturnVoid(keyId) \
-const auto [cooldownTable, result] = CooldownConfigurationTable::Instance().GetTable(keyId); \
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
 if (!(cooldownTable)) { return ;}
+
+#define FetchCooldownTableOrContinue(keyId) \
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
+if (!(cooldownTable)) { continue; }
+
+#define FetchCooldownTableOrReturnFalse(keyId) \
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
+if (!(cooldownTable)) { return false; }

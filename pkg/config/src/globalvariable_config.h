@@ -27,9 +27,17 @@ inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(co
 inline const GlobalVariableTabledData& GetGlobalVariableAllTable() { return GlobalVariableConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateGlobalVariableTable(keyId) \
-const auto [globalVariableTable, result] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-if (!(globalVariableTable)) { return (result); }
+const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
+if (!(globalVariableTable)) { return (fetchResult); }
 
 #define FetchGlobalVariableTableOrReturnVoid(keyId) \
-const auto [globalVariableTable, result] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
+const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
 if (!(globalVariableTable)) { return ;}
+
+#define FetchGlobalVariableTableOrContinue(keyId) \
+const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
+if (!(globalVariableTable)) { continue; }
+
+#define FetchGlobalVariableTableOrReturnFalse(keyId) \
+const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
+if (!(globalVariableTable)) { return false; }

@@ -23,8 +23,7 @@ public:
         UInt64Set removeBuffIdList;
 
         for (auto& buffComp : tls.registry.get<BuffListComp>(parent) | std::views::values) {
-            const BuffTable* buffTable = GetValidBuffTable(buffComp);
-            if (!buffTable) continue;
+           FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
             switch (buffTable->bufftype()) {
             case kBuffTypeNextBasicAttack:
@@ -51,8 +50,7 @@ public:
         UInt64Set removeBuffIdList;
 
         for (auto& buffComp : tls.registry.get<BuffListComp>(targetEntity) | std::views::values) {
-            const BuffTable* buffTable = GetValidBuffTable(buffComp);
-            if (!buffTable) continue;
+            FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
             if (buffTable->bufftype() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
                 auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
@@ -67,11 +65,6 @@ public:
     }
 
 private:
-
-    static const BuffTable* GetValidBuffTable(const BuffComp& buffComp) {
-        auto [buffTable, result] = GetBuffTable(buffComp.buffPb.buff_table_id());
-        return buffTable;
-    }
 
     static bool OnIntervalThinkLastDamageOrSkillHitTime(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
         if (buffTable->nodamageorskillhitinlastseconds() <= 0) {

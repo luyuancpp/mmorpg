@@ -27,9 +27,17 @@ inline std::pair<const ActionStateTable*, uint32_t> GetActionStateTable(const ui
 inline const ActionStateTabledData& GetActionStateAllTable() { return ActionStateConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateActionStateTable(keyId) \
-const auto [actionStateTable, result] = ActionStateConfigurationTable::Instance().GetTable(keyId); \
-if (!(actionStateTable)) { return (result); }
+const auto [actionStateTable, fetchResult] = ActionStateConfigurationTable::Instance().GetTable(keyId); \
+if (!(actionStateTable)) { return (fetchResult); }
 
 #define FetchActionStateTableOrReturnVoid(keyId) \
-const auto [actionStateTable, result] = ActionStateConfigurationTable::Instance().GetTable(keyId); \
+const auto [actionStateTable, fetchResult] = ActionStateConfigurationTable::Instance().GetTable(keyId); \
 if (!(actionStateTable)) { return ;}
+
+#define FetchActionStateTableOrContinue(keyId) \
+const auto [actionStateTable, fetchResult] = ActionStateConfigurationTable::Instance().GetTable(keyId); \
+if (!(actionStateTable)) { continue; }
+
+#define FetchActionStateTableOrReturnFalse(keyId) \
+const auto [actionStateTable, fetchResult] = ActionStateConfigurationTable::Instance().GetTable(keyId); \
+if (!(actionStateTable)) { return false; }
