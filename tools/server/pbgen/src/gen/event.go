@@ -12,11 +12,38 @@ import (
 	"strings"
 )
 
-func getClassName(fd os.DirEntry) string {
-	className := strings.Split(fd.Name(), "_")[0]
-	caString := cases.Title(language.English)
-	className = caString.String(className) + "EventHandler"
-	return className
+// getClassName 根据文件名生成类名，支持所有部分首字母大写，并追加后缀
+func getClassName(fd os.DirEntry, suffix string) string {
+	// 获取文件名
+	name := fd.Name()
+	if name == "" {
+		return ""
+	}
+
+	// 移除文件扩展名
+	baseName := strings.TrimSuffix(name, filepath.Ext(name))
+
+	// 按 "_" 分隔文件名
+	parts := strings.Split(baseName, "_")
+
+	// 初始化 Title 转换器
+	titleConverter := cases.Title(language.English)
+
+	// 遍历每部分，将非空部分的首字母大写
+	var capitalizedParts []string
+	for _, part := range parts {
+		if part != "" { // 跳过空字符串
+			capitalizedParts = append(capitalizedParts, titleConverter.String(part))
+		}
+	}
+
+	// 如果没有有效部分，返回默认类名
+	if len(capitalizedParts) == 0 {
+		return "Default" + suffix
+	}
+
+	// 拼接所有部分并加上后缀
+	return strings.Join(capitalizedParts, "") + suffix
 }
 
 func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
@@ -44,7 +71,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 
 	dataHead := "#pragma once\n\n"
 
-	className := getClassName(fd)
+	className := getClassName(fd, config.ClassNameSuffix)
 
 	var classDeclareHeader string
 	var registerFunctionBody string
@@ -120,8 +147,8 @@ func WriteEventHandlerFile() {
 		cppIncludeData += config.IncludeBegin +
 			strings.Replace(filepath.Base(strings.ToLower(fd.Name())), config.ProtoEx, config.HandlerHeaderExtension, 1) +
 			config.IncludeEndLine
-		registerData += getClassName(fd) + "::Register();\n"
-		unRegisterData += getClassName(fd) + "::UnRegister();\n"
+		registerData += getClassName(fd, config.ClassNameSuffix) + "::Register();\n"
+		unRegisterData += getClassName(fd, config.ClassNameSuffix) + "::UnRegister();\n"
 	}
 	eventHeadData := "#pragma once\n\n"
 	eventHeadData += "class EventHandler\n{\npublic:\n"

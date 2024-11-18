@@ -173,6 +173,7 @@ const (
 	MacroReturnIncludeName          = "#include \"macros/return_define.h\""
 	ClientLuaProjectRelative        = "script/lua/service/"
 	GatePrefixName                  = "gate"
+	ClassNameSuffix                 = "Handler"
 )
 
 const (
