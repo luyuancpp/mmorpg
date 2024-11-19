@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+import "common/comp.proto";
+
+enum eCombatState
+{
+	kSilence = 0;
+}
+
+message CombatStatePbComponent 
+{
+    map<uint64, bool> sources = 1;
+}
+
+message CombatStateListPbComponent 
+{
+    map<uint32, CombatStatePbComponent> state_list = 1;
+}

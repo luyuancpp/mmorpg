@@ -44,6 +44,7 @@
     <ClCompile Include="src\proto\logic\client_player\player_scene.pb.cc" />
     <ClCompile Include="src\proto\logic\client_player\player_skill.pb.cc" />
     <ClCompile Include="src\proto\logic\client_player\player_state_attribute_sync.pb.cc" />
+    <ClCompile Include="src\proto\logic\component\actor_combat_state_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\actor_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\actor_status_comp.pb.cc" />
     <ClCompile Include="src\proto\logic\component\buff_comp.pb.cc" />
@@ -112,6 +113,7 @@
     <ClInclude Include="src\proto\logic\client_player\player_scene.pb.h" />
     <ClInclude Include="src\proto\logic\client_player\player_skill.pb.h" />
     <ClInclude Include="src\proto\logic\client_player\player_state_attribute_sync.pb.h" />
+    <ClInclude Include="src\proto\logic\component\actor_combat_state_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\actor_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\actor_status_comp.pb.h" />
     <ClInclude Include="src\proto\logic\component\buff_comp.pb.h" />
