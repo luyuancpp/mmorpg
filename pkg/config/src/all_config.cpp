@@ -10,9 +10,9 @@
 #include "testmultikey_config.h"
 #include "test_config.h"
 #include "item_config.h"
+#include "actoractionstate_config.h"
 #include "globalvariable_config.h"
 #include "mainscene_config.h"
-#include "actionstate_config.h"
 #include "skillpermission_config.h"
 #include "scene_config.h"
 #include "class_config.h"
@@ -27,9 +27,9 @@ void LoadAllConfig()
     TestMultiKeyConfigurationTable::Instance().Load();
     TestConfigurationTable::Instance().Load();
     ItemConfigurationTable::Instance().Load();
+    ActorActionStateConfigurationTable::Instance().Load();
     GlobalVariableConfigurationTable::Instance().Load();
     MainSceneConfigurationTable::Instance().Load();
-    ActionStateConfigurationTable::Instance().Load();
     SkillPermissionConfigurationTable::Instance().Load();
     SceneConfigurationTable::Instance().Load();
     ClassConfigurationTable::Instance().Load();
@@ -122,6 +122,17 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
+    ActorActionStateConfigurationTable::Instance().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    /// End
+
+    /// Begin
+    {
+        std::thread t([&]() {
+
     GlobalVariableConfigurationTable::Instance().Load();
             latch_.countDown();
         });
@@ -134,17 +145,6 @@ void LoadAllConfigAsyncWhenServerLaunch()
         std::thread t([&]() {
 
     MainSceneConfigurationTable::Instance().Load();
-            latch_.countDown();
-        });
-        t.detach();
-    }
-    /// End
-
-    /// Begin
-    {
-        std::thread t([&]() {
-
-    ActionStateConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
