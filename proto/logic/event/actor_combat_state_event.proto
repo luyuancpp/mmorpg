@@ -9,7 +9,7 @@ message SilenceAddedPbEvent
     uint64 source_buff_id = 2;
 }
 
-message SilenceRemovedEvent 
+message SilenceRemovedPbEvent 
 {
     uint64 actor_entity = 1;
     uint64 source_buff_id = 2;

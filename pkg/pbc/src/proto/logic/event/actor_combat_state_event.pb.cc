@@ -22,25 +22,25 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr SilenceRemovedEvent::Impl_::Impl_(
+inline constexpr SilenceRemovedPbEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : actor_entity_{::uint64_t{0u}},
         source_buff_id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR SilenceRemovedEvent::SilenceRemovedEvent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR SilenceRemovedPbEvent::SilenceRemovedPbEvent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct SilenceRemovedEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SilenceRemovedEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SilenceRemovedEventDefaultTypeInternal() {}
+struct SilenceRemovedPbEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SilenceRemovedPbEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SilenceRemovedPbEventDefaultTypeInternal() {}
   union {
-    SilenceRemovedEvent _instance;
+    SilenceRemovedPbEvent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SilenceRemovedEventDefaultTypeInternal _SilenceRemovedEvent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SilenceRemovedPbEventDefaultTypeInternal _SilenceRemovedPbEvent_default_instance_;
 
 inline constexpr SilenceAddedPbEvent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -80,40 +80,40 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SilenceAddedPbEvent, _impl_.actor_entity_),
         PROTOBUF_FIELD_OFFSET(::SilenceAddedPbEvent, _impl_.source_buff_id_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::SilenceRemovedEvent, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::SilenceRemovedPbEvent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::SilenceRemovedEvent, _impl_.actor_entity_),
-        PROTOBUF_FIELD_OFFSET(::SilenceRemovedEvent, _impl_.source_buff_id_),
+        PROTOBUF_FIELD_OFFSET(::SilenceRemovedPbEvent, _impl_.actor_entity_),
+        PROTOBUF_FIELD_OFFSET(::SilenceRemovedPbEvent, _impl_.source_buff_id_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::SilenceAddedPbEvent)},
-        {10, -1, -1, sizeof(::SilenceRemovedEvent)},
+        {10, -1, -1, sizeof(::SilenceRemovedPbEvent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_SilenceAddedPbEvent_default_instance_._instance,
-    &::_SilenceRemovedEvent_default_instance_._instance,
+    &::_SilenceRemovedPbEvent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n*logic/event/actor_combat_state_event.p"
     "roto\"C\n\023SilenceAddedPbEvent\022\024\n\014actor_ent"
-    "ity\030\001 \001(\004\022\026\n\016source_buff_id\030\002 \001(\004\"C\n\023Sil"
-    "enceRemovedEvent\022\024\n\014actor_entity\030\001 \001(\004\022\026"
-    "\n\016source_buff_id\030\002 \001(\004B\tZ\007pb/gameb\006proto"
-    "3"
+    "ity\030\001 \001(\004\022\026\n\016source_buff_id\030\002 \001(\004\"E\n\025Sil"
+    "enceRemovedPbEvent\022\024\n\014actor_entity\030\001 \001(\004"
+    "\022\026\n\016source_buff_id\030\002 \001(\004B\tZ\007pb/gameb\006pro"
+    "to3"
 };
 static ::absl::once_flag descriptor_table_logic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto = {
     false,
     false,
-    201,
+    203,
     descriptor_table_protodef_logic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto,
     "logic/event/actor_combat_state_event.proto",
     &descriptor_table_logic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto_once,
@@ -355,26 +355,26 @@ void SilenceAddedPbEvent::InternalSwap(SilenceAddedPbEvent* PROTOBUF_RESTRICT ot
 }
 // ===================================================================
 
-class SilenceRemovedEvent::_Internal {
+class SilenceRemovedPbEvent::_Internal {
  public:
 };
 
-SilenceRemovedEvent::SilenceRemovedEvent(::google::protobuf::Arena* arena)
+SilenceRemovedPbEvent::SilenceRemovedPbEvent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:SilenceRemovedEvent)
+  // @@protoc_insertion_point(arena_constructor:SilenceRemovedPbEvent)
 }
-SilenceRemovedEvent::SilenceRemovedEvent(
-    ::google::protobuf::Arena* arena, const SilenceRemovedEvent& from)
-    : SilenceRemovedEvent(arena) {
+SilenceRemovedPbEvent::SilenceRemovedPbEvent(
+    ::google::protobuf::Arena* arena, const SilenceRemovedPbEvent& from)
+    : SilenceRemovedPbEvent(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE SilenceRemovedEvent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE SilenceRemovedPbEvent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void SilenceRemovedEvent::SharedCtor(::_pb::Arena* arena) {
+inline void SilenceRemovedPbEvent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, actor_entity_),
@@ -383,32 +383,32 @@ inline void SilenceRemovedEvent::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, actor_entity_) +
                sizeof(Impl_::source_buff_id_));
 }
-SilenceRemovedEvent::~SilenceRemovedEvent() {
-  // @@protoc_insertion_point(destructor:SilenceRemovedEvent)
+SilenceRemovedPbEvent::~SilenceRemovedPbEvent() {
+  // @@protoc_insertion_point(destructor:SilenceRemovedPbEvent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void SilenceRemovedEvent::SharedDtor() {
+inline void SilenceRemovedPbEvent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-SilenceRemovedEvent::GetClassData() const {
+SilenceRemovedPbEvent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(SilenceRemovedEvent, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(SilenceRemovedPbEvent, _impl_._cached_size_),
               false,
           },
-          &SilenceRemovedEvent::MergeImpl,
-          &SilenceRemovedEvent::kDescriptorMethods,
+          &SilenceRemovedPbEvent::MergeImpl,
+          &SilenceRemovedPbEvent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void SilenceRemovedEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:SilenceRemovedEvent)
+PROTOBUF_NOINLINE void SilenceRemovedPbEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:SilenceRemovedPbEvent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -420,7 +420,7 @@ PROTOBUF_NOINLINE void SilenceRemovedEvent::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* SilenceRemovedEvent::_InternalParse(
+const char* SilenceRemovedPbEvent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -428,7 +428,7 @@ const char* SilenceRemovedEvent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> SilenceRemovedEvent::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> SilenceRemovedPbEvent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -439,26 +439,26 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> SilenceRemovedEvent::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_SilenceRemovedEvent_default_instance_._instance,
+    &_SilenceRemovedPbEvent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::SilenceRemovedEvent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::SilenceRemovedPbEvent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 source_buff_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SilenceRemovedEvent, _impl_.source_buff_id_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SilenceRemovedEvent, _impl_.source_buff_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SilenceRemovedPbEvent, _impl_.source_buff_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SilenceRemovedPbEvent, _impl_.source_buff_id_)}},
     // uint64 actor_entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SilenceRemovedEvent, _impl_.actor_entity_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SilenceRemovedEvent, _impl_.actor_entity_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SilenceRemovedPbEvent, _impl_.actor_entity_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SilenceRemovedPbEvent, _impl_.actor_entity_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 actor_entity = 1;
-    {PROTOBUF_FIELD_OFFSET(SilenceRemovedEvent, _impl_.actor_entity_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SilenceRemovedPbEvent, _impl_.actor_entity_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint64 source_buff_id = 2;
-    {PROTOBUF_FIELD_OFFSET(SilenceRemovedEvent, _impl_.source_buff_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(SilenceRemovedPbEvent, _impl_.source_buff_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -466,10 +466,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> SilenceRemovedEvent::_table_ = {
   }},
 };
 
-::uint8_t* SilenceRemovedEvent::_InternalSerialize(
+::uint8_t* SilenceRemovedPbEvent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:SilenceRemovedEvent)
+  // @@protoc_insertion_point(serialize_to_array_start:SilenceRemovedPbEvent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -492,12 +492,12 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> SilenceRemovedEvent::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:SilenceRemovedEvent)
+  // @@protoc_insertion_point(serialize_to_array_end:SilenceRemovedPbEvent)
   return target;
 }
 
-::size_t SilenceRemovedEvent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:SilenceRemovedEvent)
+::size_t SilenceRemovedPbEvent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:SilenceRemovedPbEvent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -520,10 +520,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> SilenceRemovedEvent::_table_ = {
 }
 
 
-void SilenceRemovedEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<SilenceRemovedEvent*>(&to_msg);
-  auto& from = static_cast<const SilenceRemovedEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:SilenceRemovedEvent)
+void SilenceRemovedPbEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<SilenceRemovedPbEvent*>(&to_msg);
+  auto& from = static_cast<const SilenceRemovedPbEvent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:SilenceRemovedPbEvent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -537,29 +537,29 @@ void SilenceRemovedEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void SilenceRemovedEvent::CopyFrom(const SilenceRemovedEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:SilenceRemovedEvent)
+void SilenceRemovedPbEvent::CopyFrom(const SilenceRemovedPbEvent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:SilenceRemovedPbEvent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool SilenceRemovedEvent::IsInitialized() const {
+PROTOBUF_NOINLINE bool SilenceRemovedPbEvent::IsInitialized() const {
   return true;
 }
 
-void SilenceRemovedEvent::InternalSwap(SilenceRemovedEvent* PROTOBUF_RESTRICT other) {
+void SilenceRemovedPbEvent::InternalSwap(SilenceRemovedPbEvent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SilenceRemovedEvent, _impl_.source_buff_id_)
-      + sizeof(SilenceRemovedEvent::_impl_.source_buff_id_)
-      - PROTOBUF_FIELD_OFFSET(SilenceRemovedEvent, _impl_.actor_entity_)>(
+      PROTOBUF_FIELD_OFFSET(SilenceRemovedPbEvent, _impl_.source_buff_id_)
+      + sizeof(SilenceRemovedPbEvent::_impl_.source_buff_id_)
+      - PROTOBUF_FIELD_OFFSET(SilenceRemovedPbEvent, _impl_.actor_entity_)>(
           reinterpret_cast<char*>(&_impl_.actor_entity_),
           reinterpret_cast<char*>(&other->_impl_.actor_entity_));
 }
 
-::google::protobuf::Metadata SilenceRemovedEvent::GetMetadata() const {
+::google::protobuf::Metadata SilenceRemovedPbEvent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto_getter,
                                    &descriptor_table_logic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto_once,
                                    file_level_metadata_logic_2fevent_2factor_5fcombat_5fstate_5fevent_2eproto[1]);

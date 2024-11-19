@@ -5,14 +5,14 @@
 ///<<< END WRITING YOUR CODE
 void ActorCombatStateEventHandler::Register()
 {
-		tls.dispatcher.sink<SilenceAddedPbEvent>().connect<&ActorCombatStateEventHandler::SilenceAddedPbEventHandler>();
-		tls.dispatcher.sink<SilenceRemovedEvent>().connect<&ActorCombatStateEventHandler::SilenceRemovedEventHandler>();
+	tls.dispatcher.sink<SilenceAddedPbEvent>().connect<&ActorCombatStateEventHandler::SilenceAddedPbEventHandler>();
+	tls.dispatcher.sink<SilenceRemovedPbEvent>().connect<&ActorCombatStateEventHandler::SilenceRemovedPbEventHandler>();
 }
 
 void ActorCombatStateEventHandler::UnRegister()
 {
-		tls.dispatcher.sink<SilenceAddedPbEvent>().disconnect<&ActorCombatStateEventHandler::SilenceAddedPbEventHandler>();
-		tls.dispatcher.sink<SilenceRemovedEvent>().disconnect<&ActorCombatStateEventHandler::SilenceRemovedEventHandler>();
+	tls.dispatcher.sink<SilenceAddedPbEvent>().disconnect<&ActorCombatStateEventHandler::SilenceAddedPbEventHandler>();
+	tls.dispatcher.sink<SilenceRemovedPbEvent>().disconnect<&ActorCombatStateEventHandler::SilenceRemovedPbEventHandler>();
 }
 
 void ActorCombatStateEventHandler::SilenceAddedPbEventHandler(const SilenceAddedPbEvent& event)
@@ -21,7 +21,7 @@ void ActorCombatStateEventHandler::SilenceAddedPbEventHandler(const SilenceAdded
 ///<<< END WRITING YOUR CODE
 }
 
-void ActorCombatStateEventHandler::SilenceRemovedEventHandler(const SilenceRemovedEvent& event)
+void ActorCombatStateEventHandler::SilenceRemovedPbEventHandler(const SilenceRemovedPbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

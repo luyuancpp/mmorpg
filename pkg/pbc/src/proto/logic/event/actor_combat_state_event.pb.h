@@ -52,9 +52,9 @@ extern const ::google::protobuf::internal::DescriptorTable
 class SilenceAddedPbEvent;
 struct SilenceAddedPbEventDefaultTypeInternal;
 extern SilenceAddedPbEventDefaultTypeInternal _SilenceAddedPbEvent_default_instance_;
-class SilenceRemovedEvent;
-struct SilenceRemovedEventDefaultTypeInternal;
-extern SilenceRemovedEventDefaultTypeInternal _SilenceRemovedEvent_default_instance_;
+class SilenceRemovedPbEvent;
+struct SilenceRemovedPbEventDefaultTypeInternal;
+extern SilenceRemovedPbEventDefaultTypeInternal _SilenceRemovedPbEvent_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -66,23 +66,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class SilenceRemovedEvent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:SilenceRemovedEvent) */ {
+class SilenceRemovedPbEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SilenceRemovedPbEvent) */ {
  public:
-  inline SilenceRemovedEvent() : SilenceRemovedEvent(nullptr) {}
-  ~SilenceRemovedEvent() override;
+  inline SilenceRemovedPbEvent() : SilenceRemovedPbEvent(nullptr) {}
+  ~SilenceRemovedPbEvent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SilenceRemovedEvent(
+  explicit PROTOBUF_CONSTEXPR SilenceRemovedPbEvent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline SilenceRemovedEvent(const SilenceRemovedEvent& from) : SilenceRemovedEvent(nullptr, from) {}
-  inline SilenceRemovedEvent(SilenceRemovedEvent&& from) noexcept
-      : SilenceRemovedEvent(nullptr, std::move(from)) {}
-  inline SilenceRemovedEvent& operator=(const SilenceRemovedEvent& from) {
+  inline SilenceRemovedPbEvent(const SilenceRemovedPbEvent& from) : SilenceRemovedPbEvent(nullptr, from) {}
+  inline SilenceRemovedPbEvent(SilenceRemovedPbEvent&& from) noexcept
+      : SilenceRemovedPbEvent(nullptr, std::move(from)) {}
+  inline SilenceRemovedPbEvent& operator=(const SilenceRemovedPbEvent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline SilenceRemovedEvent& operator=(SilenceRemovedEvent&& from) noexcept {
+  inline SilenceRemovedPbEvent& operator=(SilenceRemovedPbEvent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -114,16 +114,16 @@ class SilenceRemovedEvent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const SilenceRemovedEvent& default_instance() {
+  static const SilenceRemovedPbEvent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const SilenceRemovedEvent* internal_default_instance() {
-    return reinterpret_cast<const SilenceRemovedEvent*>(
-        &_SilenceRemovedEvent_default_instance_);
+  static inline const SilenceRemovedPbEvent* internal_default_instance() {
+    return reinterpret_cast<const SilenceRemovedPbEvent*>(
+        &_SilenceRemovedPbEvent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(SilenceRemovedEvent& a, SilenceRemovedEvent& b) { a.Swap(&b); }
-  inline void Swap(SilenceRemovedEvent* other) {
+  friend void swap(SilenceRemovedPbEvent& a, SilenceRemovedPbEvent& b) { a.Swap(&b); }
+  inline void Swap(SilenceRemovedPbEvent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -135,7 +135,7 @@ class SilenceRemovedEvent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(SilenceRemovedEvent* other) {
+  void UnsafeArenaSwap(SilenceRemovedPbEvent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -143,13 +143,13 @@ class SilenceRemovedEvent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  SilenceRemovedEvent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<SilenceRemovedEvent>(arena);
+  SilenceRemovedPbEvent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<SilenceRemovedPbEvent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SilenceRemovedEvent& from);
+  void CopyFrom(const SilenceRemovedPbEvent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SilenceRemovedEvent& from) { SilenceRemovedEvent::MergeImpl(*this, from); }
+  void MergeFrom(const SilenceRemovedPbEvent& from) { SilenceRemovedPbEvent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -170,16 +170,16 @@ class SilenceRemovedEvent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(SilenceRemovedEvent* other);
+  void InternalSwap(SilenceRemovedPbEvent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "SilenceRemovedEvent"; }
+  static ::absl::string_view FullMessageName() { return "SilenceRemovedPbEvent"; }
 
  protected:
-  explicit SilenceRemovedEvent(::google::protobuf::Arena* arena);
-  SilenceRemovedEvent(::google::protobuf::Arena* arena, const SilenceRemovedEvent& from);
-  SilenceRemovedEvent(::google::protobuf::Arena* arena, SilenceRemovedEvent&& from) noexcept
-      : SilenceRemovedEvent(arena) {
+  explicit SilenceRemovedPbEvent(::google::protobuf::Arena* arena);
+  SilenceRemovedPbEvent(::google::protobuf::Arena* arena, const SilenceRemovedPbEvent& from);
+  SilenceRemovedPbEvent(::google::protobuf::Arena* arena, SilenceRemovedPbEvent&& from) noexcept
+      : SilenceRemovedPbEvent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -214,7 +214,7 @@ class SilenceRemovedEvent final : public ::google::protobuf::Message
   void _internal_set_source_buff_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:SilenceRemovedEvent)
+  // @@protoc_insertion_point(class_scope:SilenceRemovedPbEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -485,48 +485,48 @@ inline void SilenceAddedPbEvent::_internal_set_source_buff_id(::uint64_t value) 
 
 // -------------------------------------------------------------------
 
-// SilenceRemovedEvent
+// SilenceRemovedPbEvent
 
 // uint64 actor_entity = 1;
-inline void SilenceRemovedEvent::clear_actor_entity() {
+inline void SilenceRemovedPbEvent::clear_actor_entity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.actor_entity_ = ::uint64_t{0u};
 }
-inline ::uint64_t SilenceRemovedEvent::actor_entity() const {
-  // @@protoc_insertion_point(field_get:SilenceRemovedEvent.actor_entity)
+inline ::uint64_t SilenceRemovedPbEvent::actor_entity() const {
+  // @@protoc_insertion_point(field_get:SilenceRemovedPbEvent.actor_entity)
   return _internal_actor_entity();
 }
-inline void SilenceRemovedEvent::set_actor_entity(::uint64_t value) {
+inline void SilenceRemovedPbEvent::set_actor_entity(::uint64_t value) {
   _internal_set_actor_entity(value);
-  // @@protoc_insertion_point(field_set:SilenceRemovedEvent.actor_entity)
+  // @@protoc_insertion_point(field_set:SilenceRemovedPbEvent.actor_entity)
 }
-inline ::uint64_t SilenceRemovedEvent::_internal_actor_entity() const {
+inline ::uint64_t SilenceRemovedPbEvent::_internal_actor_entity() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.actor_entity_;
 }
-inline void SilenceRemovedEvent::_internal_set_actor_entity(::uint64_t value) {
+inline void SilenceRemovedPbEvent::_internal_set_actor_entity(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.actor_entity_ = value;
 }
 
 // uint64 source_buff_id = 2;
-inline void SilenceRemovedEvent::clear_source_buff_id() {
+inline void SilenceRemovedPbEvent::clear_source_buff_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.source_buff_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t SilenceRemovedEvent::source_buff_id() const {
-  // @@protoc_insertion_point(field_get:SilenceRemovedEvent.source_buff_id)
+inline ::uint64_t SilenceRemovedPbEvent::source_buff_id() const {
+  // @@protoc_insertion_point(field_get:SilenceRemovedPbEvent.source_buff_id)
   return _internal_source_buff_id();
 }
-inline void SilenceRemovedEvent::set_source_buff_id(::uint64_t value) {
+inline void SilenceRemovedPbEvent::set_source_buff_id(::uint64_t value) {
   _internal_set_source_buff_id(value);
-  // @@protoc_insertion_point(field_set:SilenceRemovedEvent.source_buff_id)
+  // @@protoc_insertion_point(field_set:SilenceRemovedPbEvent.source_buff_id)
 }
-inline ::uint64_t SilenceRemovedEvent::_internal_source_buff_id() const {
+inline ::uint64_t SilenceRemovedPbEvent::_internal_source_buff_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.source_buff_id_;
 }
-inline void SilenceRemovedEvent::_internal_set_source_buff_id(::uint64_t value) {
+inline void SilenceRemovedPbEvent::_internal_set_source_buff_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.source_buff_id_ = value;
 }
