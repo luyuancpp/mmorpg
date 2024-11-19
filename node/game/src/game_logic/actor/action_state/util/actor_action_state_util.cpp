@@ -1,5 +1,5 @@
 ﻿#include "actor_action_state_util.h"
-#include "actionstate_config.h"
+#include "actoractionstate_config.h"
 #include "common_error_tip.pb.h"
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"
 #include "macros/return_define.h"
@@ -9,12 +9,12 @@
 
 namespace {
     // 检查某个动作是否与当前状态冲突，若冲突，返回对应的错误码
-    uint32_t CheckForStateConflict(const ActionStateTable* actionStateTable, uint32_t actorState) {
-        if (actorState >= static_cast<uint32_t>(actionStateTable->state_size())) {
+    uint32_t CheckForStateConflict(const ActorActionStateTable* actorActionStateTable, uint32_t actorState) {
+        if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
             return kSuccess;  // 如果状态无效，返回成功
         }
 
-        if (const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
+        if (const auto& state = actorActionStateTable->state(static_cast<int32_t>(actorState));
             state.state_mode() == kActionStateMutualExclusion) {
             return state.state_tip();  // 返回冲突的状态提示
         }
@@ -22,12 +22,12 @@ namespace {
     }
 
     // 中断当前状态并执行该动作
-    bool InterruptAndPerformAction(const ActionStateTable* actionStateTable, uint32_t actorState, entt::entity actorEntity) {
-        if (actorState >= static_cast<uint32_t>(actionStateTable->state_size())) {
+    bool InterruptAndPerformAction(const ActorActionStateTable* actorActionStateTable, uint32_t actorState, entt::entity actorEntity) {
+        if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
             return false;  // 无效状态，返回失败
         }
 
-        if (const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
+        if (const auto& state = actorActionStateTable->state(static_cast<int32_t>(actorState));
             state.state_mode() == kActionStateInterrupt) {
             // 触发中断事件
             InterruptCurrentStatePbEvent interruptEvent;
@@ -60,18 +60,18 @@ uint32_t ActorActionStateUtil::AddStateForAction(entt::entity actorEntity, uint3
 
 uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32_t actorAction) {
     // 获取该动作对应的状态表
-    FetchAndValidateActionStateTable(actorAction);
+    FetchAndValidateActorActionStateTable(actorAction);
     
     // 遍历角色的所有状态，检查是否可以执行该动作
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         // 检查该状态是否与动作冲突
-        RETURN_ON_ERROR(CheckForStateConflict(actionStateTable, actorState));
+        RETURN_ON_ERROR(CheckForStateConflict(actorActionStateTable, actorState));
     }
 
     // 检查并处理中断状态
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
-        if (InterruptAndPerformAction(actionStateTable, actorState, actorEntity)) {
+        if (InterruptAndPerformAction(actorActionStateTable, actorState, actorEntity)) {
             continue;  // 如果中断成功，继续检查下一个状态
         }
     }
@@ -84,13 +84,13 @@ uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32
 }
 
 uint32_t ActorActionStateUtil::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
-    FetchAndValidateActionStateTable(actorAction);
+    FetchAndValidateActorActionStateTable(actorAction);
     
     // 获取角色状态组件并检查是否允许执行动作
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
         // 检查该状态是否与动作冲突
-        RETURN_ON_ERROR(CheckForStateConflict(actionStateTable, actorState));
+        RETURN_ON_ERROR(CheckForStateConflict(actorActionStateTable, actorState));
     }
 
     // 如果通过所有检查，则允许执行动作
@@ -107,13 +107,13 @@ bool ActorActionStateUtil::HasState(const entt::entity actorEntity, const uint32
 }
 
 uint32_t ActorActionStateUtil::GetStateTip(const uint32_t actorAction, const uint32_t actorState) {
-    FetchAndValidateActionStateTable(actorAction);
+    FetchAndValidateActorActionStateTable(actorAction);
 
-    if (actorState >= static_cast<uint32_t>(actionStateTable->state_size())) {
+    if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
         return kInvalidParameter;  // 状态无效
     }
 
-    const auto& state = actionStateTable->state(static_cast<int32_t>(actorState));
+    const auto& state = actorActionStateTable->state(static_cast<int32_t>(actorState));
     return state.state_tip();  // 返回状态提示
 }
 

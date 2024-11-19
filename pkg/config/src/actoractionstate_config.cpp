@@ -2,13 +2,13 @@
 #include "src/util/file2string.h"
 #include "muduo/base/Logging.h"
 #include "common_error_tip.pb.h"
-#include "actionstate_config.h"
+#include "actoractionstate_config.h"
 
-void ActionStateConfigurationTable::Load() {
+void ActorActionStateConfigurationTable::Load() {
     data_.Clear();
-    const auto contents = File2String("config/generated/json/actionstate.json");
+    const auto contents = File2String("config/generated/json/actoractionstate.json");
     if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_); !result.ok()) {
-        LOG_FATAL << "ActionState " << result.message().data();
+        LOG_FATAL << "ActorActionState " << result.message().data();
     }
 
     for (int32_t i = 0; i < data_.data_size(); ++i) { 
@@ -21,10 +21,10 @@ void ActionStateConfigurationTable::Load() {
 }
 
 
-std::pair<const ActionStateTable*, uint32_t> ActionStateConfigurationTable::GetTable(const uint32_t keyId) {
+std::pair<const ActorActionStateTable*, uint32_t> ActorActionStateConfigurationTable::GetTable(const uint32_t keyId) {
     const auto it = kv_data_.find(keyId);
     if (it == kv_data_.end()) {
-        LOG_ERROR << "ActionState table not found for ID: " << keyId;
+        LOG_ERROR << "ActorActionState table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
     return { it->second, kSuccess };

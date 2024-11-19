@@ -138,16 +138,16 @@
     <ClCompile Include="src\pbc\skillpermission_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\actionstate_config.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pbc\actionstate_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pbc\actor_action_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pbc\mount_error_tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\actoractionstate_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\actoractionstate_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -281,16 +281,19 @@
     <ClInclude Include="src\pbc\skillpermission_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\actionstate_config.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pbc\actionstate_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pbc\actor_action_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\mount_error_tip.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\actoractionstate_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cpp_table_id_constants_name\actoractionstate_table_id_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\actoractionstate_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
