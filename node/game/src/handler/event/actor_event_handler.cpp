@@ -6,6 +6,7 @@
 #include "game_logic/actor/action_state/util/actor_action_state_util.h"
 #include "game_logic/actor/attribute/util/actor_attribute_calculator_util.h"
 #include "game_logic/actor/attribute/util/actor_state_attribute_sync_util.h"
+#include "game_logic/actor/combat_state/util/combat_state_util.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/util/skill_util.h"
 #include "game_logic/mount/util/mount_util.h"
@@ -33,6 +34,8 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 	InterestUtil::InitializeActorComponents(actorEntity);
 	ActorAttributeCalculatorUtil::InitializeActorComponents(actorEntity);
 	ActorActionStateUtil::InitializeActorComponents(actorEntity);
+	CombatStateUtil::InitializeActorComponents(actorEntity);
+	SkillUtil::InitializeActorComponents(actorEntity);
 ///<<< END WRITING YOUR CODE
 }
 
