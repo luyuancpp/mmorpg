@@ -2,8 +2,8 @@
 
 #include "common_error_tip.pb.h"
 #include "mount_error_tip.pb.h"
-#include "game_logic/actor/actionstate/constants/actor_state_constants.h"
-#include "game_logic/actor/actionstate/util/actor_action_state_util.h"
+#include "game_logic/actor/action_state/constants/actor_state_constants.h"
+#include "game_logic/actor/action_state/util/actor_action_state_util.h"
 #include "macros/return_define.h"
 
 inline uint32_t MountUtil::MountActor(const entt::entity actorEntity)

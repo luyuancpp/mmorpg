@@ -80,9 +80,9 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 	for _, s := range eventList {
 		classDeclareHeader += "class " + s + ";\n"
 		handlerFunction += config.Tab + "static void " + s + "Handler(const " + s + "& event);\n"
-		registerFunctionBody += config.Tab2 + "tls.dispatcher.sink<" + s + ">().connect<&" +
+		registerFunctionBody += config.Tab + "tls.dispatcher.sink<" + s + ">().connect<&" +
 			className + "::" + s + "Handler>();\n"
-		unregisterFunctionBody += config.Tab2 + "tls.dispatcher.sink<" + s + ">().disconnect<&" +
+		unregisterFunctionBody += config.Tab + "tls.dispatcher.sink<" + s + ">().disconnect<&" +
 			className + "::" + s + "Handler>();\n"
 	}
 	dataHead += classDeclareHeader + "\n"

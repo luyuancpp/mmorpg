@@ -5,12 +5,12 @@
 ///<<< END WRITING YOUR CODE
 void SkillEventHandler::Register()
 {
-		tls.dispatcher.sink<SkillExecutedEvent>().connect<&SkillEventHandler::SkillExecutedEventHandler>();
+	tls.dispatcher.sink<SkillExecutedEvent>().connect<&SkillEventHandler::SkillExecutedEventHandler>();
 }
 
 void SkillEventHandler::UnRegister()
 {
-		tls.dispatcher.sink<SkillExecutedEvent>().disconnect<&SkillEventHandler::SkillExecutedEventHandler>();
+	tls.dispatcher.sink<SkillExecutedEvent>().disconnect<&SkillEventHandler::SkillExecutedEventHandler>();
 }
 
 void SkillEventHandler::SkillExecutedEventHandler(const SkillExecutedEvent& event)
