@@ -131,6 +131,16 @@ void BuffUtil::RemoveBuff(const entt::entity parent, const UInt64Set& removeBuff
     }
 }
 
+void BuffUtil::RemoveSubBuff(BuffComp& buffComp, UInt64Set& buffsToRemove)
+{
+    for (auto& [subBuffId,_] : buffComp.buffPb.sub_buff_list_id())
+    {
+        buffsToRemove.emplace(subBuffId);
+    }
+
+    buffComp.buffPb.clear_sub_buff_list_id();
+}
+
 void BuffUtil::MarkBuffForRemoval(const entt::entity parent, uint64_t buffId) {
     auto& pendingRemoveBuffs = tls.registry.get<BuffPendingRemoveBuffs>(parent);
     pendingRemoveBuffs.emplace(buffId);

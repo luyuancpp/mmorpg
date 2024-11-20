@@ -9,97 +9,68 @@
 #include "proto/logic/event/actor_combat_state_event.pb.h"
 #include "thread_local/storage.h"
 #include "time/util/time_util.h"
+#include "util/defer.h"
 
-class BuffImplUtil
-{
+// BuffImplUtil: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑
+class BuffImplUtil {
 public:
-
+    // 定期调用逻辑 (每帧或定时触发)
     static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
-        if (buffTable && buffTable->bufftype() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
-            return OnIntervalThinkLastDamageOrSkillHitTime(parent, buffComp, buffTable);
-        }
-        return false;
-    }
-    
-    static bool OnBuffStart(const entt::entity parent, const BuffComp& buffComp, const BuffTable* buffTable){
-        switch (buffTable->bufftype())
-        {
-        case kBuffTypeSilence:
-            {
-                CombatStateAddedPbEvent combatStateAddedPbEvent;
-                combatStateAddedPbEvent.set_actor_entity(entt::to_integral(parent));
-                combatStateAddedPbEvent.set_source_buff_id(buffComp.buffPb.buff_id());
-                combatStateAddedPbEvent.set_state_type(kActorCombatStateSilence);
-                
-                tls.dispatcher.trigger(combatStateAddedPbEvent);
-                return true;
-            }
-            break;
+        if (!buffTable) return false;
 
-        default:
-            break;
-        }
-
-        return false;
-    }
-
-    static bool OnBuffDestroy(const entt::entity parent, const uint64_t buffId, const BuffTable* buffTable)
-    {
-        switch (buffTable->bufftype())
-        {
-        case kBuffTypeSilence:
-            {
-                CombatStateRemovedPbEvent combatStateRemovedPbEvent;
-                combatStateRemovedPbEvent.set_actor_entity(entt::to_integral(parent));
-                combatStateRemovedPbEvent.set_source_buff_id(buffId);
-                combatStateRemovedPbEvent.set_state_type(kActorCombatStateSilence);
-                
-                tls.dispatcher.trigger(combatStateRemovedPbEvent);
-                return true;
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        return false;
-    }
-
-    
-    static void OnBeforeGiveDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
-        UInt64Set removeBuffIdList;
-
-        for (auto& buffComp : tls.registry.get<BuffListComp>(casterEntity) | std::views::values) {
-           FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
-
-            switch (buffTable->bufftype()) {
-            case kBuffTypeNextBasicAttack:
-                {
-                    const auto bonus_damage = BuffConfigurationTable::Instance().GetBonusdamage(buffTable->id());
-                    damageEvent.set_damage(damageEvent.damage() + bonus_damage);
-                    removeBuffIdList.emplace(buffComp.buffPb.buff_id());
-                    
-                    BuffUtil::AddSubBuffs(casterEntity, buffTable, buffComp);
-                    BuffUtil::AddTargetSubBuffs(targetEntity, buffTable, buffComp.skillContext);
-                }
-                break;
+        switch (buffTable->bufftype()) {
+            case kBuffTypeNoDamageOrSkillHitInLastSeconds:
+                return HandleIntervalNoDamageOrSkillHit(parent, buffComp, buffTable);
             default:
-                break;
-            }
+                return false;
         }
-
-        BuffUtil::RemoveBuff(casterEntity, removeBuffIdList);
     }
 
+    // Buff开始时的逻辑
+    static bool OnBuffStart(const entt::entity parent, const BuffComp& buffComp, const BuffTable* buffTable) {
+        if (!buffTable) return false;
+
+        switch (buffTable->bufftype()) {
+            case kBuffTypeSilence:
+                return HandleBuffStartSilence(parent, buffComp);
+            default:
+                return false;
+        }
+    }
+
+    // Buff销毁时的逻辑
+    static bool OnBuffDestroy(const entt::entity parent, uint64_t buffId, const BuffTable* buffTable) {
+        if (!buffTable) return false;
+
+        switch (buffTable->bufftype()) {
+            case kBuffTypeSilence:
+                return HandleBuffDestroySilence(parent, buffId);
+            default:
+                return false;
+        }
+    }
+
+    // 伤害结算前的逻辑
+    static void OnBeforeGiveDamage(
+        const entt::entity casterEntity,
+        const entt::entity targetEntity,
+        DamageEventPbComponent& damageEvent) {
+        HandleBuffEffectsOnDamage(casterEntity, targetEntity, damageEvent);
+    }
+
+    // 技能命中时的逻辑
     static void OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity) {
         UpdateLastDamageOrSkillHitTime(casterEntity, targetEntity);
     }
 
+    // 更新最后一次伤害或技能命中时间
     static void UpdateLastDamageOrSkillHitTime(const entt::entity casterEntity, const entt::entity targetEntity) {
-        UInt64Set removeBuffIdList;
+        UInt64Set buffsToRemoveTarget;
 
-        for (auto& buffComp : tls.registry.get<BuffListComp>(targetEntity) | std::views::values) {
+        defer(BuffUtil::RemoveBuff(targetEntity, buffsToRemoveTarget));
+        
+        for (auto& buffList = tls.registry.get<BuffListComp>(targetEntity);
+            auto& buffComp : buffList | std::views::values) {
             FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
 
             if (buffTable->bufftype() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
@@ -107,31 +78,98 @@ public:
                     dataPtr->set_last_time(TimeUtil::NowMilliseconds());
                 }
 
-                removeBuffIdList.emplace(buffComp.buffPb.buff_id());
+                BuffUtil::RemoveSubBuff(buffComp, buffsToRemoveTarget);
             }
         }
+    }
+private:
+    // **具体实现部分**
 
-        BuffUtil::RemoveBuff(casterEntity, removeBuffIdList);
+    // Silence Buff 开始逻辑
+    static bool HandleBuffStartSilence(const entt::entity parent, const BuffComp& buffComp) {
+        CombatStateAddedPbEvent event;
+        event.set_actor_entity(entt::to_integral(parent));
+        event.set_source_buff_id(buffComp.buffPb.buff_id());
+        event.set_state_type(kActorCombatStateSilence);
+
+        tls.dispatcher.trigger(event);
+        return true;
     }
 
+    // Silence Buff 销毁逻辑
+    static bool HandleBuffDestroySilence(const entt::entity parent, uint64_t buffId) {
+        CombatStateRemovedPbEvent event;
+        event.set_actor_entity(entt::to_integral(parent));
+        event.set_source_buff_id(buffId);
+        event.set_state_type(kActorCombatStateSilence);
 
-private:
+        tls.dispatcher.trigger(event);
+        return true;
+    }
 
-    static bool OnIntervalThinkLastDamageOrSkillHitTime(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
-        if (buffTable->nodamageorskillhitinlastseconds() <= 0) {
-            return false;
-        }
+    // 无伤害或技能命中时间检查逻辑
+    static bool HandleIntervalNoDamageOrSkillHit(
+        const entt::entity parent,
+        BuffComp& buffComp,
+        const BuffTable* buffTable
+    ) {
+        if (!buffTable || buffTable->nodamageorskillhitinlastseconds() <= 0) return false;
 
-        const auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
-        if (!dataPtr) {
-            return false;
-        }
+        auto dataPtr = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsPbComp>(buffComp.dataPbPtr);
+        if (!dataPtr) return false;
 
-        if (static_cast<double>(TimeUtil::NowMilliseconds() - dataPtr->last_time()) > buffTable->nodamageorskillhitinlastseconds()) {
-            return true;
+        auto elapsedTime = TimeUtil::NowMilliseconds() - dataPtr->last_time();
+        if (static_cast<double>(elapsedTime) > buffTable->nodamageorskillhitinlastseconds()) {
+            return true; // 条件满足
         }
 
         BuffUtil::AddSubBuffs(parent, buffTable, buffComp);
-        return true;
+        return false;
     }
+
+    // Buff对伤害的影响
+    static void HandleBuffEffectsOnDamage(
+        const entt::entity casterEntity,
+        const entt::entity targetEntity,
+        DamageEventPbComponent& damageEvent
+    ) {
+        UInt64Set buffsToRemoveCaster;
+        
+        defer(BuffUtil::RemoveBuff(casterEntity, buffsToRemoveCaster));
+
+        for (auto& buffList = tls.registry.get<BuffListComp>(casterEntity);
+            auto& buffComp : buffList | std::views::values) {
+           FetchBuffTableOrContinue(buffComp.buffPb.buff_table_id());
+
+            switch (buffTable->bufftype()) {
+                case kBuffTypeNextBasicAttack:
+                    ApplyNextBasicAttackBuff(buffComp, buffTable, damageEvent, buffsToRemoveCaster, casterEntity, targetEntity);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+    }
+
+    // 处理下一次基础攻击的 Buff 逻辑
+    static void ApplyNextBasicAttackBuff(
+        BuffComp& buffComp,
+        const BuffTable* buffTable,
+        DamageEventPbComponent& damageEvent,
+        UInt64Set& buffsToRemoveCaster,
+        const entt::entity casterEntity,
+        const entt::entity targetEntity
+    ) {
+        const auto bonusDamage = BuffConfigurationTable::Instance().GetBonusdamage(buffTable->id());
+        damageEvent.set_damage(damageEvent.damage() + bonusDamage);
+
+        buffsToRemoveCaster.emplace(buffComp.buffPb.buff_id());
+
+        BuffUtil::AddSubBuffs(casterEntity, buffTable, buffComp);
+        BuffUtil::AddTargetSubBuffs(targetEntity, buffTable, buffComp.skillContext);
+    }
+
+
+
 };
