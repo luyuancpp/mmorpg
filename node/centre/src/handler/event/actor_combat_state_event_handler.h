@@ -1,7 +1,7 @@
 #pragma once
 
-class SilenceAddedPbEvent;
-class SilenceRemovedPbEvent;
+class CombatStateAddedPbEvent;
+class CombatStateRemovedPbEvent;
 
 class ActorCombatStateEventHandler
 {
@@ -9,6 +9,6 @@ public:
 	static void Register();
 	static void UnRegister();
 
-	static void SilenceAddedPbEventHandler(const SilenceAddedPbEvent& event);
-	static void SilenceRemovedPbEventHandler(const SilenceRemovedPbEvent& event);
+	static void CombatStateAddedPbEventHandler(const CombatStateAddedPbEvent& event);
+	static void CombatStateRemovedPbEventHandler(const CombatStateRemovedPbEvent& event);
 };
