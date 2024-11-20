@@ -30,6 +30,8 @@ public:
     static void RemoveBuff(entt::entity parent, uint64_t buffId);
 
     static void RemoveBuff(entt::entity parent, const UInt64Set& removeBuffIdList);
+    
+    static void RemoveSubBuff(BuffComp& buffComp, UInt64Set& buffsToRemove);
 
     static void MarkBuffForRemoval(entt::entity parent, uint64_t buffId);
 
