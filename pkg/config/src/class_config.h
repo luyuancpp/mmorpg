@@ -32,12 +32,12 @@ if (!(classTable)) { return (fetchResult); }
 
 #define FetchClassTableOrReturnVoid(keyId) \
 const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
-if (!(classTable)) { return ;}
+do {if (!(classTable)) { return ;}} while (0)
 
 #define FetchClassTableOrContinue(keyId) \
 const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
-if (!(classTable)) { continue; }
+do { if (!(classTable)) { continue; }} while (0)
 
 #define FetchClassTableOrReturnFalse(keyId) \
 const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
-if (!(classTable)) { return false; }
+do {if (!(classTable)) { return false; }} while (0)

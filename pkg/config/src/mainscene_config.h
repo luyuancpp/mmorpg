@@ -32,12 +32,12 @@ if (!(mainSceneTable)) { return (fetchResult); }
 
 #define FetchMainSceneTableOrReturnVoid(keyId) \
 const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-if (!(mainSceneTable)) { return ;}
+do {if (!(mainSceneTable)) { return ;}} while (0)
 
 #define FetchMainSceneTableOrContinue(keyId) \
 const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-if (!(mainSceneTable)) { continue; }
+do { if (!(mainSceneTable)) { continue; }} while (0)
 
 #define FetchMainSceneTableOrReturnFalse(keyId) \
 const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-if (!(mainSceneTable)) { return false; }
+do {if (!(mainSceneTable)) { return false; }} while (0)

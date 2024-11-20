@@ -42,12 +42,12 @@ if (!(skillTable)) { return (fetchResult); }
 
 #define FetchSkillTableOrReturnVoid(keyId) \
 const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillTable)) { return ;}
+do {if (!(skillTable)) { return ;}} while (0)
 
 #define FetchSkillTableOrContinue(keyId) \
 const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillTable)) { continue; }
+do { if (!(skillTable)) { continue; }} while (0)
 
 #define FetchSkillTableOrReturnFalse(keyId) \
 const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillTable)) { return false; }
+do {if (!(skillTable)) { return false; }} while (0)

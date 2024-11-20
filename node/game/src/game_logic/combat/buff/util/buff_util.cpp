@@ -164,7 +164,7 @@ void BuffUtil::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
     
     OnBuffRemove(parent, buffIt->second, buffTable);
     buffList.erase(buffId);
-    OnBuffDestroy(parent, buffIt->second, buffTable);
+    OnBuffDestroy(parent, buffId, buffTable);
 }
 
 // 检查是否可创建 Buff
@@ -224,9 +224,12 @@ bool BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId
     return newBuffTable->bufftype() == kBuffTypeDispel;
 }
 
-// Buff 生命周期相关函数
 void BuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)
 {
+    if (BuffImplUtil::OnBuffStart(parent, buff, buffTable)){
+        return;
+    }
+    
     if (ModifierBuffUtil::OnBuffStart(parent, buff, buffTable)) {
         return;
     } else if (MotionModifierBuffUtil::OnBuffStart(parent, buff, buffTable)) {
@@ -245,7 +248,12 @@ void BuffUtil::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, const
     }
 }
 
-void BuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {}
+void BuffUtil::OnBuffDestroy(entt::entity parent, const uint64_t buffId, const BuffTable* buffTable)
+{
+    if (BuffImplUtil::OnBuffDestroy(parent, buffId, buffTable)){
+        return;
+    }
+}
 
 // Buff 间隔处理
 void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
@@ -385,7 +393,9 @@ bool BuffUtil::AddSubBuffs(entt::entity parent,
     return true;
 }
 
-void BuffUtil::AddTargetSubBuffs(entt::entity targetEntity, const BuffTable* buffTable)
+void BuffUtil::AddTargetSubBuffs(const entt::entity targetEntity,
+    const BuffTable* buffTable,
+    const SkillContextPtrComp& abilityContext)
 {
     if (nullptr == buffTable)
     {
@@ -393,7 +403,7 @@ void BuffUtil::AddTargetSubBuffs(entt::entity targetEntity, const BuffTable* buf
     }
     
     for (auto& targetSubBuffTableId : buffTable->targetsubbuff()){
-        AddOrUpdateBuff(targetEntity, targetSubBuffTableId);
+        AddOrUpdateBuff(targetEntity, targetSubBuffTableId, abilityContext);
     }
 }
 

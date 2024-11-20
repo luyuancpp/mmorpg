@@ -32,12 +32,12 @@ if (!(missionTable)) { return (fetchResult); }
 
 #define FetchMissionTableOrReturnVoid(keyId) \
 const auto [missionTable, fetchResult] = MissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(missionTable)) { return ;}
+do {if (!(missionTable)) { return ;}} while (0)
 
 #define FetchMissionTableOrContinue(keyId) \
 const auto [missionTable, fetchResult] = MissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(missionTable)) { continue; }
+do { if (!(missionTable)) { continue; }} while (0)
 
 #define FetchMissionTableOrReturnFalse(keyId) \
 const auto [missionTable, fetchResult] = MissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(missionTable)) { return false; }
+do {if (!(missionTable)) { return false; }} while (0)

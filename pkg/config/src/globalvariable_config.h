@@ -32,12 +32,12 @@ if (!(globalVariableTable)) { return (fetchResult); }
 
 #define FetchGlobalVariableTableOrReturnVoid(keyId) \
 const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-if (!(globalVariableTable)) { return ;}
+do {if (!(globalVariableTable)) { return ;}} while (0)
 
 #define FetchGlobalVariableTableOrContinue(keyId) \
 const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-if (!(globalVariableTable)) { continue; }
+do { if (!(globalVariableTable)) { continue; }} while (0)
 
 #define FetchGlobalVariableTableOrReturnFalse(keyId) \
 const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-if (!(globalVariableTable)) { return false; }
+do {if (!(globalVariableTable)) { return false; }} while (0)

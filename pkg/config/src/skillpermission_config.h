@@ -32,12 +32,12 @@ if (!(skillPermissionTable)) { return (fetchResult); }
 
 #define FetchSkillPermissionTableOrReturnVoid(keyId) \
 const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillPermissionTable)) { return ;}
+do {if (!(skillPermissionTable)) { return ;}} while (0)
 
 #define FetchSkillPermissionTableOrContinue(keyId) \
 const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillPermissionTable)) { continue; }
+do { if (!(skillPermissionTable)) { continue; }} while (0)
 
 #define FetchSkillPermissionTableOrReturnFalse(keyId) \
 const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillPermissionTable)) { return false; }
+do {if (!(skillPermissionTable)) { return false; }} while (0)

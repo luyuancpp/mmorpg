@@ -32,12 +32,12 @@ if (!(cooldownTable)) { return (fetchResult); }
 
 #define FetchCooldownTableOrReturnVoid(keyId) \
 const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-if (!(cooldownTable)) { return ;}
+do {if (!(cooldownTable)) { return ;}} while (0)
 
 #define FetchCooldownTableOrContinue(keyId) \
 const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-if (!(cooldownTable)) { continue; }
+do { if (!(cooldownTable)) { continue; }} while (0)
 
 #define FetchCooldownTableOrReturnFalse(keyId) \
 const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-if (!(cooldownTable)) { return false; }
+do {if (!(cooldownTable)) { return false; }} while (0)
