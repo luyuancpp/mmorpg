@@ -27,7 +27,7 @@ void ActorEventHandler::UnRegister()
 void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeActorComponentsEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	entt::entity actorEntity = entt::to_entity(event.actor_entity());
+	const entt::entity actorEntity = entt::to_entity(event.actor_entity());
 
 	ActorStateAttributeSyncUtil::InitializeActorComponents(actorEntity);
 	BuffUtil::InitializeActorComponents(actorEntity);
@@ -42,7 +42,7 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurrentStatePbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	entt::entity actorEntity = entt::to_entity(event.actor_entity());
+	const entt::entity actorEntity = entt::to_entity(event.actor_entity());
 	if (event.actor_state() == kActorStateMounted)
 	{
 		MountUtil::InterruptAndUnmountActor(actorEntity);
