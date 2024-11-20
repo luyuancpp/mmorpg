@@ -52,12 +52,12 @@ if (!(buffTable)) { return (fetchResult); }
 
 #define FetchBuffTableOrReturnVoid(keyId) \
 const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
-if (!(buffTable)) { return ;}
+do {if (!(buffTable)) { return ;}} while (0)
 
 #define FetchBuffTableOrContinue(keyId) \
 const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
-if (!(buffTable)) { continue; }
+do { if (!(buffTable)) { continue; }} while (0)
 
 #define FetchBuffTableOrReturnFalse(keyId) \
 const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
-if (!(buffTable)) { return false; }
+do {if (!(buffTable)) { return false; }} while (0)

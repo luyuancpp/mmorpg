@@ -32,12 +32,12 @@ if (!(actorActionStateTable)) { return (fetchResult); }
 
 #define FetchActorActionStateTableOrReturnVoid(keyId) \
 const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(keyId); \
-if (!(actorActionStateTable)) { return ;}
+do {if (!(actorActionStateTable)) { return ;}} while (0)
 
 #define FetchActorActionStateTableOrContinue(keyId) \
 const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(keyId); \
-if (!(actorActionStateTable)) { continue; }
+do { if (!(actorActionStateTable)) { continue; }} while (0)
 
 #define FetchActorActionStateTableOrReturnFalse(keyId) \
 const auto [actorActionStateTable, fetchResult] = ActorActionStateConfigurationTable::Instance().GetTable(keyId); \
-if (!(actorActionStateTable)) { return false; }
+do {if (!(actorActionStateTable)) { return false; }} while (0)

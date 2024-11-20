@@ -59,7 +59,7 @@ public:
     static void OnBuffRemove(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
 
     //当Buff销毁后（已从Buff容器中移除），我们提供给策划一个抽象接口OnBuffDestroy，由策划配置具体效果。
-    static void OnBuffDestroy(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);
+    static void OnBuffDestroy(entt::entity parent, const uint64_t buffId, const BuffTable* buffTable);
 
     //Buff还可以创建定时器，以触发间隔持续效果。通过策划配置时调用StartIntervalThink操作，
     // 提供OnIntervalThink抽象接口供策划配置具体效果。
@@ -102,7 +102,8 @@ public:
 
     static void AddTargetSubBuffs(
       entt::entity targetEntity,
-      const BuffTable* buffTable
+      const BuffTable* buffTable,
+      const SkillContextPtrComp& abilityContext
   );
 
     static void AddSubBuffsWithoutCheck(

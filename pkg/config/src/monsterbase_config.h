@@ -32,12 +32,12 @@ if (!(monsterBaseTable)) { return (fetchResult); }
 
 #define FetchMonsterBaseTableOrReturnVoid(keyId) \
 const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-if (!(monsterBaseTable)) { return ;}
+do {if (!(monsterBaseTable)) { return ;}} while (0)
 
 #define FetchMonsterBaseTableOrContinue(keyId) \
 const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-if (!(monsterBaseTable)) { continue; }
+do { if (!(monsterBaseTable)) { continue; }} while (0)
 
 #define FetchMonsterBaseTableOrReturnFalse(keyId) \
 const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-if (!(monsterBaseTable)) { return false; }
+do {if (!(monsterBaseTable)) { return false; }} while (0)

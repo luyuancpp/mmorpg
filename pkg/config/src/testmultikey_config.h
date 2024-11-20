@@ -50,12 +50,12 @@ if (!(testMultiKeyTable)) { return (fetchResult); }
 
 #define FetchTestMultiKeyTableOrReturnVoid(keyId) \
 const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-if (!(testMultiKeyTable)) { return ;}
+do {if (!(testMultiKeyTable)) { return ;}} while (0)
 
 #define FetchTestMultiKeyTableOrContinue(keyId) \
 const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-if (!(testMultiKeyTable)) { continue; }
+do { if (!(testMultiKeyTable)) { continue; }} while (0)
 
 #define FetchTestMultiKeyTableOrReturnFalse(keyId) \
 const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-if (!(testMultiKeyTable)) { return false; }
+do {if (!(testMultiKeyTable)) { return false; }} while (0)

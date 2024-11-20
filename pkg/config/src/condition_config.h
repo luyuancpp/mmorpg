@@ -32,12 +32,12 @@ if (!(conditionTable)) { return (fetchResult); }
 
 #define FetchConditionTableOrReturnVoid(keyId) \
 const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-if (!(conditionTable)) { return ;}
+do {if (!(conditionTable)) { return ;}} while (0)
 
 #define FetchConditionTableOrContinue(keyId) \
 const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-if (!(conditionTable)) { continue; }
+do { if (!(conditionTable)) { continue; }} while (0)
 
 #define FetchConditionTableOrReturnFalse(keyId) \
 const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-if (!(conditionTable)) { return false; }
+do {if (!(conditionTable)) { return false; }} while (0)
