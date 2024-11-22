@@ -195,9 +195,6 @@
     <ClCompile Include="src\proto\logic\event\npc_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\logic\component\actor_status_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\proto\logic\event\combat_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -214,6 +211,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\actor_combat_state_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\component\actor_attribute_state_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -443,9 +443,6 @@
     <ClInclude Include="src\proto\logic\event\npc_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\logic\component\actor_status_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\proto\logic\event\combat_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -465,6 +462,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\actor_combat_state_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\component\actor_attribute_state_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

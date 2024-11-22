@@ -15,5 +15,5 @@ message CombatStatePbComponent
 
 message CombatStateCollectionPbComponent 
 {
-    map<uint32, CombatStatePbComponent> state_list = 1;
+    map<uint32, CombatStatePbComponent> state_collection = 1;
 }

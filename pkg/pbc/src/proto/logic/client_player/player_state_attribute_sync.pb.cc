@@ -21,18 +21,6 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
-      template <typename>
-PROTOBUF_CONSTEXPR CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse(::_pbi::ConstantInitialized) {}
-struct CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal() {}
-  union {
-    CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal _CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_default_instance_;
 
 inline constexpr AttributeDelta60FramesS2C::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -129,25 +117,6 @@ struct AttributeDelta10FramesS2CDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AttributeDelta10FramesS2CDefaultTypeInternal _AttributeDelta10FramesS2C_default_instance_;
 
-inline constexpr CombatStateFlagsPbComponent::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : state_flags_{},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR CombatStateFlagsPbComponent::CombatStateFlagsPbComponent(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct CombatStateFlagsPbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CombatStateFlagsPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CombatStateFlagsPbComponentDefaultTypeInternal() {}
-  union {
-    CombatStateFlagsPbComponent _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateFlagsPbComponentDefaultTypeInternal _CombatStateFlagsPbComponent_default_instance_;
-
 inline constexpr BaseAttributeDeltaS2C::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -169,7 +138,7 @@ struct BaseAttributeDeltaS2CDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BaseAttributeDeltaS2CDefaultTypeInternal _BaseAttributeDeltaS2C_default_instance_;
-static ::_pb::Metadata file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[8];
+static ::_pb::Metadata file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[6];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto = nullptr;
 static const ::_pb::ServiceDescriptor*
@@ -177,27 +146,6 @@ static const ::_pb::ServiceDescriptor*
 const ::uint32_t
     TableStruct_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _has_bits_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, key_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, value_),
-        0,
-        1,
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::CombatStateFlagsPbComponent, _impl_.state_flags_),
         PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -263,18 +211,14 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, 10, -1, sizeof(::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse)},
-        {12, -1, -1, sizeof(::CombatStateFlagsPbComponent)},
-        {21, 33, -1, sizeof(::BaseAttributeDeltaS2C)},
-        {37, -1, -1, sizeof(::AttributeDelta2FramesS2C)},
-        {46, -1, -1, sizeof(::AttributeDelta5FramesS2C)},
-        {55, -1, -1, sizeof(::AttributeDelta10FramesS2C)},
-        {64, -1, -1, sizeof(::AttributeDelta30FramesS2C)},
-        {73, -1, -1, sizeof(::AttributeDelta60FramesS2C)},
+        {0, 12, -1, sizeof(::BaseAttributeDeltaS2C)},
+        {16, -1, -1, sizeof(::AttributeDelta2FramesS2C)},
+        {25, -1, -1, sizeof(::AttributeDelta5FramesS2C)},
+        {34, -1, -1, sizeof(::AttributeDelta10FramesS2C)},
+        {43, -1, -1, sizeof(::AttributeDelta30FramesS2C)},
+        {52, -1, -1, sizeof(::AttributeDelta60FramesS2C)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_default_instance_._instance,
-    &::_CombatStateFlagsPbComponent_default_instance_._instance,
     &::_BaseAttributeDeltaS2C_default_instance_._instance,
     &::_AttributeDelta2FramesS2C_default_instance_._instance,
     &::_AttributeDelta5FramesS2C_default_instance_._instance,
@@ -288,37 +232,35 @@ const char descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fstate_5f
     "bute_sync.proto\032\020common/tip.proto\032\021commo"
     "n/comp.proto\032\022common/empty.proto\032 logic/"
     "component/skill_comp.proto\032 logic/compon"
-    "ent/actor_comp.proto\"\223\001\n\033CombatStateFlag"
-    "sPbComponent\022A\n\013state_flags\030\001 \003(\0132,.Comb"
-    "atStateFlagsPbComponent.StateFlagsEntry\032"
-    "1\n\017StateFlagsEntry\022\013\n\003key\030\001 \001(\r\022\r\n\005value"
-    "\030\002 \001(\010:\0028\001\"\240\001\n\025BaseAttributeDeltaS2C\022\021\n\t"
-    "entity_id\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Tra"
-    "nsform\022\033\n\010velocity\030\003 \001(\0132\t.Velocity\0228\n\022c"
-    "ombat_state_flags\030\004 \001(\0132\034.CombatStateFla"
-    "gsPbComponent\"-\n\030AttributeDelta2FramesS2"
-    "C\022\021\n\tentity_id\030\001 \001(\004\"-\n\030AttributeDelta5F"
-    "ramesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031Attribute"
-    "Delta10FramesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031A"
-    "ttributeDelta30FramesS2C\022\021\n\tentity_id\030\001 "
-    "\001(\004\".\n\031AttributeDelta60FramesS2C\022\021\n\tenti"
-    "ty_id\030\001 \001(\0042\365\002\n\021EntitySyncService\0223\n\021Syn"
-    "cBaseAttribute\022\026.BaseAttributeDeltaS2C\032\006"
-    ".Empty\0229\n\024SyncAttribute2Frames\022\031.Attribu"
-    "teDelta2FramesS2C\032\006.Empty\0229\n\024SyncAttribu"
-    "te5Frames\022\031.AttributeDelta5FramesS2C\032\006.E"
-    "mpty\022;\n\025SyncAttribute10Frames\022\032.Attribut"
-    "eDelta10FramesS2C\032\006.Empty\022;\n\025SyncAttribu"
-    "te30Frames\022\032.AttributeDelta30FramesS2C\032\006"
-    ".Empty\022;\n\025SyncAttribute60Frames\022\032.Attrib"
-    "uteDelta60FramesS2C\032\006.EmptyB\014Z\007pb/game\200\001"
-    "\001b\006proto3"
+    "ent/actor_comp.proto\0320logic/component/ac"
+    "tor_attribute_state_comp.proto\"\240\001\n\025BaseA"
+    "ttributeDeltaS2C\022\021\n\tentity_id\030\001 \001(\004\022\035\n\tt"
+    "ransform\030\002 \001(\0132\n.Transform\022\033\n\010velocity\030\003"
+    " \001(\0132\t.Velocity\0228\n\022combat_state_flags\030\004 "
+    "\001(\0132\034.CombatStateFlagsPbComponent\"-\n\030Att"
+    "ributeDelta2FramesS2C\022\021\n\tentity_id\030\001 \001(\004"
+    "\"-\n\030AttributeDelta5FramesS2C\022\021\n\tentity_i"
+    "d\030\001 \001(\004\".\n\031AttributeDelta10FramesS2C\022\021\n\t"
+    "entity_id\030\001 \001(\004\".\n\031AttributeDelta30Frame"
+    "sS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031AttributeDelt"
+    "a60FramesS2C\022\021\n\tentity_id\030\001 \001(\0042\365\002\n\021Enti"
+    "tySyncService\0223\n\021SyncBaseAttribute\022\026.Bas"
+    "eAttributeDeltaS2C\032\006.Empty\0229\n\024SyncAttrib"
+    "ute2Frames\022\031.AttributeDelta2FramesS2C\032\006."
+    "Empty\0229\n\024SyncAttribute5Frames\022\031.Attribut"
+    "eDelta5FramesS2C\032\006.Empty\022;\n\025SyncAttribut"
+    "e10Frames\022\032.AttributeDelta10FramesS2C\032\006."
+    "Empty\022;\n\025SyncAttribute30Frames\022\032.Attribu"
+    "teDelta30FramesS2C\032\006.Empty\022;\n\025SyncAttrib"
+    "ute60Frames\022\032.AttributeDelta60FramesS2C\032"
+    "\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[5] =
+static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[6] =
     {
         &::descriptor_table_common_2fcomp_2eproto,
         &::descriptor_table_common_2fempty_2eproto,
         &::descriptor_table_common_2ftip_2eproto,
+        &::descriptor_table_logic_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto,
         &::descriptor_table_logic_2fcomponent_2factor_5fcomp_2eproto,
         &::descriptor_table_logic_2fcomponent_2fskill_5fcomp_2eproto,
 };
@@ -326,13 +268,13 @@ static ::absl::once_flag descriptor_table_logic_2fclient_5fplayer_2fplayer_5fsta
 const ::_pbi::DescriptorTable descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto = {
     false,
     false,
-    1129,
+    1029,
     descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto,
     "logic/client_player/player_state_attribute_sync.proto",
     &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
     descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps,
-    5,
-    8,
+    6,
+    6,
     schemas,
     file_default_instances,
     TableStruct_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto::offsets,
@@ -357,220 +299,6 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2f
 }
 // ===================================================================
 
-CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse() {}
-CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse(::google::protobuf::Arena* arena)
-    : SuperType(arena) {}
-::google::protobuf::Metadata CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
-                                   &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
-                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[0]);
-}
-// ===================================================================
-
-class CombatStateFlagsPbComponent::_Internal {
- public:
-};
-
-CombatStateFlagsPbComponent::CombatStateFlagsPbComponent(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CombatStateFlagsPbComponent)
-}
-inline PROTOBUF_NDEBUG_INLINE CombatStateFlagsPbComponent::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from)
-      : state_flags_{visibility, arena, from.state_flags_},
-        _cached_size_{0} {}
-
-CombatStateFlagsPbComponent::CombatStateFlagsPbComponent(
-    ::google::protobuf::Arena* arena,
-    const CombatStateFlagsPbComponent& from)
-    : ::google::protobuf::Message(arena) {
-  CombatStateFlagsPbComponent* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-
-  // @@protoc_insertion_point(copy_constructor:CombatStateFlagsPbComponent)
-}
-inline PROTOBUF_NDEBUG_INLINE CombatStateFlagsPbComponent::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : state_flags_{visibility, arena},
-        _cached_size_{0} {}
-
-inline void CombatStateFlagsPbComponent::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-}
-CombatStateFlagsPbComponent::~CombatStateFlagsPbComponent() {
-  // @@protoc_insertion_point(destructor:CombatStateFlagsPbComponent)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void CombatStateFlagsPbComponent::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.~Impl_();
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-CombatStateFlagsPbComponent::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent, _impl_._cached_size_),
-              false,
-          },
-          &CombatStateFlagsPbComponent::MergeImpl,
-          &CombatStateFlagsPbComponent::kDescriptorMethods,
-      };
-  return &_data_;
-}
-PROTOBUF_NOINLINE void CombatStateFlagsPbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:CombatStateFlagsPbComponent)
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.state_flags_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-const char* CombatStateFlagsPbComponent::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
-  return ptr;
-}
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 1, 0, 2> CombatStateFlagsPbComponent::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_CombatStateFlagsPbComponent_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CombatStateFlagsPbComponent>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    {::_pbi::TcParser::MiniParse, {}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // map<uint32, bool> state_flags = 1;
-    {PROTOBUF_FIELD_OFFSET(CombatStateFlagsPbComponent, _impl_.state_flags_), 0, 0,
-    (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
-  }}, {{
-    {::_pbi::TcParser::GetMapAuxInfo<
-        decltype(CombatStateFlagsPbComponent()._impl_.state_flags_)>(
-        0, 0, 0, 13,
-        8)},
-  }}, {{
-  }},
-};
-
-::uint8_t* CombatStateFlagsPbComponent::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:CombatStateFlagsPbComponent)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // map<uint32, bool> state_flags = 1;
-  if (!_internal_state_flags().empty()) {
-    using MapType = ::google::protobuf::Map<::uint32_t, bool>;
-    using WireHelper = _pbi::MapEntryFuncs<::uint32_t, bool,
-                                   _pbi::WireFormatLite::TYPE_UINT32,
-                                   _pbi::WireFormatLite::TYPE_BOOL>;
-    const auto& field = _internal_state_flags();
-
-    if (stream->IsSerializationDeterministic() && field.size() > 1) {
-      for (const auto& entry : ::google::protobuf::internal::MapSorterFlat<MapType>(field)) {
-        target = WireHelper::InternalSerialize(
-            1, entry.first, entry.second, target, stream);
-      }
-    } else {
-      for (const auto& entry : field) {
-        target = WireHelper::InternalSerialize(
-            1, entry.first, entry.second, target, stream);
-      }
-    }
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:CombatStateFlagsPbComponent)
-  return target;
-}
-
-::size_t CombatStateFlagsPbComponent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:CombatStateFlagsPbComponent)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  // map<uint32, bool> state_flags = 1;
-  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_state_flags_size());
-  for (const auto& entry : _internal_state_flags()) {
-    total_size += _pbi::MapEntryFuncs<::uint32_t, bool,
-                                   _pbi::WireFormatLite::TYPE_UINT32,
-                                   _pbi::WireFormatLite::TYPE_BOOL>::ByteSizeLong(entry.first, entry.second);
-  }
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void CombatStateFlagsPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CombatStateFlagsPbComponent*>(&to_msg);
-  auto& from = static_cast<const CombatStateFlagsPbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateFlagsPbComponent)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  _this->_impl_.state_flags_.MergeFrom(from._impl_.state_flags_);
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void CombatStateFlagsPbComponent::CopyFrom(const CombatStateFlagsPbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateFlagsPbComponent)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-PROTOBUF_NOINLINE bool CombatStateFlagsPbComponent::IsInitialized() const {
-  return true;
-}
-
-void CombatStateFlagsPbComponent::InternalSwap(CombatStateFlagsPbComponent* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  _impl_.state_flags_.InternalSwap(&other->_impl_.state_flags_);
-}
-
-::google::protobuf::Metadata CombatStateFlagsPbComponent::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
-                                   &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
-                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[1]);
-}
-// ===================================================================
-
 class BaseAttributeDeltaS2C::_Internal {
  public:
   using HasBits = decltype(std::declval<BaseAttributeDeltaS2C>()._impl_._has_bits_);
@@ -587,6 +315,11 @@ void BaseAttributeDeltaS2C::clear_velocity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.velocity_ != nullptr) _impl_.velocity_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
+}
+void BaseAttributeDeltaS2C::clear_combat_state_flags() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.combat_state_flags_ != nullptr) _impl_.combat_state_flags_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 BaseAttributeDeltaS2C::BaseAttributeDeltaS2C(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
@@ -903,7 +636,7 @@ void BaseAttributeDeltaS2C::InternalSwap(BaseAttributeDeltaS2C* PROTOBUF_RESTRIC
 ::google::protobuf::Metadata BaseAttributeDeltaS2C::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
-                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[2]);
+                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[0]);
 }
 // ===================================================================
 
@@ -1080,7 +813,7 @@ void AttributeDelta2FramesS2C::InternalSwap(AttributeDelta2FramesS2C* PROTOBUF_R
 ::google::protobuf::Metadata AttributeDelta2FramesS2C::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
-                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[3]);
+                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[1]);
 }
 // ===================================================================
 
@@ -1257,7 +990,7 @@ void AttributeDelta5FramesS2C::InternalSwap(AttributeDelta5FramesS2C* PROTOBUF_R
 ::google::protobuf::Metadata AttributeDelta5FramesS2C::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
-                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[4]);
+                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[2]);
 }
 // ===================================================================
 
@@ -1434,7 +1167,7 @@ void AttributeDelta10FramesS2C::InternalSwap(AttributeDelta10FramesS2C* PROTOBUF
 ::google::protobuf::Metadata AttributeDelta10FramesS2C::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
-                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[5]);
+                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[3]);
 }
 // ===================================================================
 
@@ -1611,7 +1344,7 @@ void AttributeDelta30FramesS2C::InternalSwap(AttributeDelta30FramesS2C* PROTOBUF
 ::google::protobuf::Metadata AttributeDelta30FramesS2C::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
-                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[6]);
+                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[4]);
 }
 // ===================================================================
 
@@ -1788,7 +1521,7 @@ void AttributeDelta60FramesS2C::InternalSwap(AttributeDelta60FramesS2C* PROTOBUF
 ::google::protobuf::Metadata AttributeDelta60FramesS2C::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
-                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[7]);
+                                   file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[5]);
 }
 // ===================================================================
 
