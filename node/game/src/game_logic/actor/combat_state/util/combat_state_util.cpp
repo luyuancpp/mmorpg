@@ -23,10 +23,10 @@ void CombatStateUtil::AddCombatState(const CombatStateAddedPbEvent& event) {
     }
 
     // 查找是否已存在对应的战斗状态
-    auto stateIterator = combatStateCollectionComponent.mutable_state_list()->find(event.state_type());
-    if (stateIterator == combatStateCollectionComponent.mutable_state_list()->end()) {
+    auto stateIterator = combatStateCollectionComponent.mutable_state_collection()->find(event.state_type());
+    if (stateIterator == combatStateCollectionComponent.mutable_state_collection()->end()) {
         // 如果不存在，插入新的战斗状态
-        const auto [newStateIterator, inserted] = combatStateCollectionComponent.mutable_state_list()->emplace(
+        const auto [newStateIterator, inserted] = combatStateCollectionComponent.mutable_state_collection()->emplace(
             event.state_type(), CombatStatePbComponent{});
         if (!inserted) {
             return; // 插入失败，直接返回
@@ -50,8 +50,8 @@ void CombatStateUtil::RemoveCombatState(const CombatStateRemovedPbEvent& event) 
     }
 
     // 查找对应的战斗状态
-    const auto stateIterator = combatStateCollectionComponent.mutable_state_list()->find(event.state_type());
-    if (stateIterator == combatStateCollectionComponent.mutable_state_list()->end()) {
+    const auto stateIterator = combatStateCollectionComponent.mutable_state_collection()->find(event.state_type());
+    if (stateIterator == combatStateCollectionComponent.mutable_state_collection()->end()) {
         return; // 如果状态不存在，直接返回
     }
 
@@ -60,7 +60,7 @@ void CombatStateUtil::RemoveCombatState(const CombatStateRemovedPbEvent& event) 
 
     if (stateIterator->second.sources().empty())
     {
-        combatStateCollectionComponent.mutable_state_list()->erase(stateIterator);
+        combatStateCollectionComponent.mutable_state_collection()->erase(stateIterator);
     }
 
     ActorAttributeCalculatorUtil::MarkAttributeForUpdate(actorEntityId, kCombatState);

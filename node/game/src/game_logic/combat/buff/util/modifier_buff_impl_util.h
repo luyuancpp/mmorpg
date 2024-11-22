@@ -3,7 +3,7 @@
 
 #include "buff_impl_util.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
-#include "proto/logic/component/actor_status_comp.pb.h"
+#include "proto/logic/component/actor_attribute_state_comp.pb.h"
 
 class ModifierBuffUtilImplUtil{
 public:
