@@ -55,9 +55,9 @@ extern ActorActionStateTableDefaultTypeInternal _ActorActionStateTable_default_i
 class ActorActionStateTabledData;
 struct ActorActionStateTabledDataDefaultTypeInternal;
 extern ActorActionStateTabledDataDefaultTypeInternal _ActorActionStateTabledData_default_instance_;
-class state;
-struct stateDefaultTypeInternal;
-extern stateDefaultTypeInternal _state_default_instance_;
+class ActorActionStatestate;
+struct ActorActionStatestateDefaultTypeInternal;
+extern ActorActionStatestateDefaultTypeInternal _ActorActionStatestate_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -69,23 +69,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class state final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:state) */ {
+class ActorActionStatestate final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ActorActionStatestate) */ {
  public:
-  inline state() : state(nullptr) {}
-  ~state() override;
+  inline ActorActionStatestate() : ActorActionStatestate(nullptr) {}
+  ~ActorActionStatestate() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR state(
+  explicit PROTOBUF_CONSTEXPR ActorActionStatestate(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline state(const state& from) : state(nullptr, from) {}
-  inline state(state&& from) noexcept
-      : state(nullptr, std::move(from)) {}
-  inline state& operator=(const state& from) {
+  inline ActorActionStatestate(const ActorActionStatestate& from) : ActorActionStatestate(nullptr, from) {}
+  inline ActorActionStatestate(ActorActionStatestate&& from) noexcept
+      : ActorActionStatestate(nullptr, std::move(from)) {}
+  inline ActorActionStatestate& operator=(const ActorActionStatestate& from) {
     CopyFrom(from);
     return *this;
   }
-  inline state& operator=(state&& from) noexcept {
+  inline ActorActionStatestate& operator=(ActorActionStatestate&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -117,16 +117,16 @@ class state final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const state& default_instance() {
+  static const ActorActionStatestate& default_instance() {
     return *internal_default_instance();
   }
-  static inline const state* internal_default_instance() {
-    return reinterpret_cast<const state*>(
-        &_state_default_instance_);
+  static inline const ActorActionStatestate* internal_default_instance() {
+    return reinterpret_cast<const ActorActionStatestate*>(
+        &_ActorActionStatestate_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(state& a, state& b) { a.Swap(&b); }
-  inline void Swap(state* other) {
+  friend void swap(ActorActionStatestate& a, ActorActionStatestate& b) { a.Swap(&b); }
+  inline void Swap(ActorActionStatestate* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -138,7 +138,7 @@ class state final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(state* other) {
+  void UnsafeArenaSwap(ActorActionStatestate* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -146,13 +146,13 @@ class state final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  state* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<state>(arena);
+  ActorActionStatestate* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ActorActionStatestate>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const state& from);
+  void CopyFrom(const ActorActionStatestate& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const state& from) { state::MergeImpl(*this, from); }
+  void MergeFrom(const ActorActionStatestate& from) { ActorActionStatestate::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -173,16 +173,16 @@ class state final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(state* other);
+  void InternalSwap(ActorActionStatestate* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "state"; }
+  static ::absl::string_view FullMessageName() { return "ActorActionStatestate"; }
 
  protected:
-  explicit state(::google::protobuf::Arena* arena);
-  state(::google::protobuf::Arena* arena, const state& from);
-  state(::google::protobuf::Arena* arena, state&& from) noexcept
-      : state(arena) {
+  explicit ActorActionStatestate(::google::protobuf::Arena* arena);
+  ActorActionStatestate(::google::protobuf::Arena* arena, const ActorActionStatestate& from);
+  ActorActionStatestate(::google::protobuf::Arena* arena, ActorActionStatestate&& from) noexcept
+      : ActorActionStatestate(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -217,7 +217,7 @@ class state final : public ::google::protobuf::Message
   void _internal_set_state_tip(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:state)
+  // @@protoc_insertion_point(class_scope:ActorActionStatestate)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -376,23 +376,23 @@ class ActorActionStateTable final : public ::google::protobuf::Message
     kStateFieldNumber = 2,
     kIdFieldNumber = 1,
   };
-  // repeated .state state = 2;
+  // repeated .ActorActionStatestate state = 2;
   int state_size() const;
   private:
   int _internal_state_size() const;
 
   public:
   void clear_state() ;
-  ::state* mutable_state(int index);
-  ::google::protobuf::RepeatedPtrField<::state>* mutable_state();
+  ::ActorActionStatestate* mutable_state(int index);
+  ::google::protobuf::RepeatedPtrField<::ActorActionStatestate>* mutable_state();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::state>& _internal_state() const;
-  ::google::protobuf::RepeatedPtrField<::state>* _internal_mutable_state();
+  const ::google::protobuf::RepeatedPtrField<::ActorActionStatestate>& _internal_state() const;
+  ::google::protobuf::RepeatedPtrField<::ActorActionStatestate>* _internal_mutable_state();
   public:
-  const ::state& state(int index) const;
-  ::state* add_state();
-  const ::google::protobuf::RepeatedPtrField<::state>& state() const;
+  const ::ActorActionStatestate& state(int index) const;
+  ::ActorActionStatestate* add_state();
+  const ::google::protobuf::RepeatedPtrField<::ActorActionStatestate>& state() const;
   // uint32 id = 1;
   void clear_id() ;
   ::uint32_t id() const;
@@ -424,7 +424,7 @@ class ActorActionStateTable final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::RepeatedPtrField< ::state > state_;
+    ::google::protobuf::RepeatedPtrField< ::ActorActionStatestate > state_;
     ::uint32_t id_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -621,48 +621,48 @@ class ActorActionStateTabledData final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// state
+// ActorActionStatestate
 
 // uint32 state_mode = 1;
-inline void state::clear_state_mode() {
+inline void ActorActionStatestate::clear_state_mode() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.state_mode_ = 0u;
 }
-inline ::uint32_t state::state_mode() const {
-  // @@protoc_insertion_point(field_get:state.state_mode)
+inline ::uint32_t ActorActionStatestate::state_mode() const {
+  // @@protoc_insertion_point(field_get:ActorActionStatestate.state_mode)
   return _internal_state_mode();
 }
-inline void state::set_state_mode(::uint32_t value) {
+inline void ActorActionStatestate::set_state_mode(::uint32_t value) {
   _internal_set_state_mode(value);
-  // @@protoc_insertion_point(field_set:state.state_mode)
+  // @@protoc_insertion_point(field_set:ActorActionStatestate.state_mode)
 }
-inline ::uint32_t state::_internal_state_mode() const {
+inline ::uint32_t ActorActionStatestate::_internal_state_mode() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.state_mode_;
 }
-inline void state::_internal_set_state_mode(::uint32_t value) {
+inline void ActorActionStatestate::_internal_set_state_mode(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.state_mode_ = value;
 }
 
 // uint32 state_tip = 2;
-inline void state::clear_state_tip() {
+inline void ActorActionStatestate::clear_state_tip() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.state_tip_ = 0u;
 }
-inline ::uint32_t state::state_tip() const {
-  // @@protoc_insertion_point(field_get:state.state_tip)
+inline ::uint32_t ActorActionStatestate::state_tip() const {
+  // @@protoc_insertion_point(field_get:ActorActionStatestate.state_tip)
   return _internal_state_tip();
 }
-inline void state::set_state_tip(::uint32_t value) {
+inline void ActorActionStatestate::set_state_tip(::uint32_t value) {
   _internal_set_state_tip(value);
-  // @@protoc_insertion_point(field_set:state.state_tip)
+  // @@protoc_insertion_point(field_set:ActorActionStatestate.state_tip)
 }
-inline ::uint32_t state::_internal_state_tip() const {
+inline ::uint32_t ActorActionStatestate::_internal_state_tip() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.state_tip_;
 }
-inline void state::_internal_set_state_tip(::uint32_t value) {
+inline void ActorActionStatestate::_internal_set_state_tip(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.state_tip_ = value;
 }
@@ -693,7 +693,7 @@ inline void ActorActionStateTable::_internal_set_id(::uint32_t value) {
   _impl_.id_ = value;
 }
 
-// repeated .state state = 2;
+// repeated .ActorActionStatestate state = 2;
 inline int ActorActionStateTable::_internal_state_size() const {
   return _internal_state().size();
 }
@@ -704,39 +704,39 @@ inline void ActorActionStateTable::clear_state() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.state_.Clear();
 }
-inline ::state* ActorActionStateTable::mutable_state(int index)
+inline ::ActorActionStatestate* ActorActionStateTable::mutable_state(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:ActorActionStateTable.state)
   return _internal_mutable_state()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::state>* ActorActionStateTable::mutable_state()
+inline ::google::protobuf::RepeatedPtrField<::ActorActionStatestate>* ActorActionStateTable::mutable_state()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:ActorActionStateTable.state)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_state();
 }
-inline const ::state& ActorActionStateTable::state(int index) const
+inline const ::ActorActionStatestate& ActorActionStateTable::state(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:ActorActionStateTable.state)
   return _internal_state().Get(index);
 }
-inline ::state* ActorActionStateTable::add_state() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::ActorActionStatestate* ActorActionStateTable::add_state() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::state* _add = _internal_mutable_state()->Add();
+  ::ActorActionStatestate* _add = _internal_mutable_state()->Add();
   // @@protoc_insertion_point(field_add:ActorActionStateTable.state)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::state>& ActorActionStateTable::state() const
+inline const ::google::protobuf::RepeatedPtrField<::ActorActionStatestate>& ActorActionStateTable::state() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:ActorActionStateTable.state)
   return _internal_state();
 }
-inline const ::google::protobuf::RepeatedPtrField<::state>&
+inline const ::google::protobuf::RepeatedPtrField<::ActorActionStatestate>&
 ActorActionStateTable::_internal_state() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.state_;
 }
-inline ::google::protobuf::RepeatedPtrField<::state>*
+inline ::google::protobuf::RepeatedPtrField<::ActorActionStatestate>*
 ActorActionStateTable::_internal_mutable_state() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.state_;

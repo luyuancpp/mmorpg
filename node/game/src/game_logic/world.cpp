@@ -56,6 +56,8 @@ void World::Update()
 			MovementSystem::Update(fixedDeltaTime);
 			MovementAccelerationSystem::Update(fixedDeltaTime);
 			BuffSystem::Update(fixedDeltaTime);
+
+			//属性计算必须放到最后
 			ActorAttributeCalculatorSystem::Update(fixedDeltaTime);
 			ActorStateAttributeSyncSystem::Update(fixedDeltaTime);
 

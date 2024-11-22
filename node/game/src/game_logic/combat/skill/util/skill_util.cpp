@@ -45,7 +45,7 @@ void SkillUtil::StartCooldown(entt::entity caster, const SkillTable* skillTable)
 		comp.set_start(TimeUtil::NowMilliseconds());
 		comp.set_cooldown_table_id(skillTable->cooldown_id());
 
-		auto coolDownList = coolDownComp->mutable_cooldown_list();
+		const auto coolDownList = coolDownComp->mutable_cooldown_list();
 		(*coolDownList)[skillTable->cooldown_id()] = comp;
 	}
 }
@@ -54,7 +54,7 @@ void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* r
 	if (request->has_position()) {
 		ViewUtil::LookAtPosition(caster, request->position());
 	} else if (request->target_id() > 0) {
-		entt::entity target{ request->target_id() };
+		const entt::entity target{ request->target_id() };
 		if (const auto transform = tls.registry.try_get<Transform>(target)) {
 			ViewUtil::LookAtPosition(caster, transform->location());
 		}

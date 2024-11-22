@@ -64,15 +64,15 @@ extern TestMultiKeyTable_Tag1Entry_DoNotUseDefaultTypeInternal _TestMultiKeyTabl
 class TestMultiKeyTabledData;
 struct TestMultiKeyTabledDataDefaultTypeInternal;
 extern TestMultiKeyTabledDataDefaultTypeInternal _TestMultiKeyTabledData_default_instance_;
-class immunetag1;
-struct immunetag1DefaultTypeInternal;
-extern immunetag1DefaultTypeInternal _immunetag1_default_instance_;
-class tag1;
-struct tag1DefaultTypeInternal;
-extern tag1DefaultTypeInternal _tag1_default_instance_;
-class testobj1;
-struct testobj1DefaultTypeInternal;
-extern testobj1DefaultTypeInternal _testobj1_default_instance_;
+class TestMultiKeyimmunetag1;
+struct TestMultiKeyimmunetag1DefaultTypeInternal;
+extern TestMultiKeyimmunetag1DefaultTypeInternal _TestMultiKeyimmunetag1_default_instance_;
+class TestMultiKeytag1;
+struct TestMultiKeytag1DefaultTypeInternal;
+extern TestMultiKeytag1DefaultTypeInternal _TestMultiKeytag1_default_instance_;
+class TestMultiKeytestobj1;
+struct TestMultiKeytestobj1DefaultTypeInternal;
+extern TestMultiKeytestobj1DefaultTypeInternal _TestMultiKeytestobj1_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -84,23 +84,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class testobj1 final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:testobj1) */ {
+class TestMultiKeytestobj1 final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:TestMultiKeytestobj1) */ {
  public:
-  inline testobj1() : testobj1(nullptr) {}
-  ~testobj1() override;
+  inline TestMultiKeytestobj1() : TestMultiKeytestobj1(nullptr) {}
+  ~TestMultiKeytestobj1() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR testobj1(
+  explicit PROTOBUF_CONSTEXPR TestMultiKeytestobj1(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline testobj1(const testobj1& from) : testobj1(nullptr, from) {}
-  inline testobj1(testobj1&& from) noexcept
-      : testobj1(nullptr, std::move(from)) {}
-  inline testobj1& operator=(const testobj1& from) {
+  inline TestMultiKeytestobj1(const TestMultiKeytestobj1& from) : TestMultiKeytestobj1(nullptr, from) {}
+  inline TestMultiKeytestobj1(TestMultiKeytestobj1&& from) noexcept
+      : TestMultiKeytestobj1(nullptr, std::move(from)) {}
+  inline TestMultiKeytestobj1& operator=(const TestMultiKeytestobj1& from) {
     CopyFrom(from);
     return *this;
   }
-  inline testobj1& operator=(testobj1&& from) noexcept {
+  inline TestMultiKeytestobj1& operator=(TestMultiKeytestobj1&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -132,16 +132,16 @@ class testobj1 final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const testobj1& default_instance() {
+  static const TestMultiKeytestobj1& default_instance() {
     return *internal_default_instance();
   }
-  static inline const testobj1* internal_default_instance() {
-    return reinterpret_cast<const testobj1*>(
-        &_testobj1_default_instance_);
+  static inline const TestMultiKeytestobj1* internal_default_instance() {
+    return reinterpret_cast<const TestMultiKeytestobj1*>(
+        &_TestMultiKeytestobj1_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(testobj1& a, testobj1& b) { a.Swap(&b); }
-  inline void Swap(testobj1* other) {
+  friend void swap(TestMultiKeytestobj1& a, TestMultiKeytestobj1& b) { a.Swap(&b); }
+  inline void Swap(TestMultiKeytestobj1* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -153,7 +153,7 @@ class testobj1 final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(testobj1* other) {
+  void UnsafeArenaSwap(TestMultiKeytestobj1* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -161,13 +161,13 @@ class testobj1 final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  testobj1* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<testobj1>(arena);
+  TestMultiKeytestobj1* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<TestMultiKeytestobj1>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const testobj1& from);
+  void CopyFrom(const TestMultiKeytestobj1& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const testobj1& from) { testobj1::MergeImpl(*this, from); }
+  void MergeFrom(const TestMultiKeytestobj1& from) { TestMultiKeytestobj1::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -188,16 +188,16 @@ class testobj1 final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(testobj1* other);
+  void InternalSwap(TestMultiKeytestobj1* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "testobj1"; }
+  static ::absl::string_view FullMessageName() { return "TestMultiKeytestobj1"; }
 
  protected:
-  explicit testobj1(::google::protobuf::Arena* arena);
-  testobj1(::google::protobuf::Arena* arena, const testobj1& from);
-  testobj1(::google::protobuf::Arena* arena, testobj1&& from) noexcept
-      : testobj1(arena) {
+  explicit TestMultiKeytestobj1(::google::protobuf::Arena* arena);
+  TestMultiKeytestobj1(::google::protobuf::Arena* arena, const TestMultiKeytestobj1& from);
+  TestMultiKeytestobj1(::google::protobuf::Arena* arena, TestMultiKeytestobj1&& from) noexcept
+      : TestMultiKeytestobj1(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -232,7 +232,7 @@ class testobj1 final : public ::google::protobuf::Message
   void _internal_set_testobj1_value(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:testobj1)
+  // @@protoc_insertion_point(class_scope:TestMultiKeytestobj1)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -263,23 +263,23 @@ class testobj1 final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class tag1 final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:tag1) */ {
+class TestMultiKeytag1 final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:TestMultiKeytag1) */ {
  public:
-  inline tag1() : tag1(nullptr) {}
-  ~tag1() override;
+  inline TestMultiKeytag1() : TestMultiKeytag1(nullptr) {}
+  ~TestMultiKeytag1() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR tag1(
+  explicit PROTOBUF_CONSTEXPR TestMultiKeytag1(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline tag1(const tag1& from) : tag1(nullptr, from) {}
-  inline tag1(tag1&& from) noexcept
-      : tag1(nullptr, std::move(from)) {}
-  inline tag1& operator=(const tag1& from) {
+  inline TestMultiKeytag1(const TestMultiKeytag1& from) : TestMultiKeytag1(nullptr, from) {}
+  inline TestMultiKeytag1(TestMultiKeytag1&& from) noexcept
+      : TestMultiKeytag1(nullptr, std::move(from)) {}
+  inline TestMultiKeytag1& operator=(const TestMultiKeytag1& from) {
     CopyFrom(from);
     return *this;
   }
-  inline tag1& operator=(tag1&& from) noexcept {
+  inline TestMultiKeytag1& operator=(TestMultiKeytag1&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -311,16 +311,16 @@ class tag1 final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const tag1& default_instance() {
+  static const TestMultiKeytag1& default_instance() {
     return *internal_default_instance();
   }
-  static inline const tag1* internal_default_instance() {
-    return reinterpret_cast<const tag1*>(
-        &_tag1_default_instance_);
+  static inline const TestMultiKeytag1* internal_default_instance() {
+    return reinterpret_cast<const TestMultiKeytag1*>(
+        &_TestMultiKeytag1_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(tag1& a, tag1& b) { a.Swap(&b); }
-  inline void Swap(tag1* other) {
+  friend void swap(TestMultiKeytag1& a, TestMultiKeytag1& b) { a.Swap(&b); }
+  inline void Swap(TestMultiKeytag1* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -332,7 +332,7 @@ class tag1 final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(tag1* other) {
+  void UnsafeArenaSwap(TestMultiKeytag1* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -340,13 +340,13 @@ class tag1 final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  tag1* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<tag1>(arena);
+  TestMultiKeytag1* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<TestMultiKeytag1>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const tag1& from);
+  void CopyFrom(const TestMultiKeytag1& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const tag1& from) { tag1::MergeImpl(*this, from); }
+  void MergeFrom(const TestMultiKeytag1& from) { TestMultiKeytag1::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -367,16 +367,16 @@ class tag1 final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(tag1* other);
+  void InternalSwap(TestMultiKeytag1* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "tag1"; }
+  static ::absl::string_view FullMessageName() { return "TestMultiKeytag1"; }
 
  protected:
-  explicit tag1(::google::protobuf::Arena* arena);
-  tag1(::google::protobuf::Arena* arena, const tag1& from);
-  tag1(::google::protobuf::Arena* arena, tag1&& from) noexcept
-      : tag1(arena) {
+  explicit TestMultiKeytag1(::google::protobuf::Arena* arena);
+  TestMultiKeytag1(::google::protobuf::Arena* arena, const TestMultiKeytag1& from);
+  TestMultiKeytag1(::google::protobuf::Arena* arena, TestMultiKeytag1&& from) noexcept
+      : TestMultiKeytag1(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -423,13 +423,13 @@ class tag1 final : public ::google::protobuf::Message
   std::string* _internal_mutable_tag1_value();
 
   public:
-  // @@protoc_insertion_point(class_scope:tag1)
+  // @@protoc_insertion_point(class_scope:TestMultiKeytag1)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       1, 2, 0,
-      31, 2>
+      43, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -454,23 +454,23 @@ class tag1 final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class immunetag1 final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:immunetag1) */ {
+class TestMultiKeyimmunetag1 final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:TestMultiKeyimmunetag1) */ {
  public:
-  inline immunetag1() : immunetag1(nullptr) {}
-  ~immunetag1() override;
+  inline TestMultiKeyimmunetag1() : TestMultiKeyimmunetag1(nullptr) {}
+  ~TestMultiKeyimmunetag1() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR immunetag1(
+  explicit PROTOBUF_CONSTEXPR TestMultiKeyimmunetag1(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline immunetag1(const immunetag1& from) : immunetag1(nullptr, from) {}
-  inline immunetag1(immunetag1&& from) noexcept
-      : immunetag1(nullptr, std::move(from)) {}
-  inline immunetag1& operator=(const immunetag1& from) {
+  inline TestMultiKeyimmunetag1(const TestMultiKeyimmunetag1& from) : TestMultiKeyimmunetag1(nullptr, from) {}
+  inline TestMultiKeyimmunetag1(TestMultiKeyimmunetag1&& from) noexcept
+      : TestMultiKeyimmunetag1(nullptr, std::move(from)) {}
+  inline TestMultiKeyimmunetag1& operator=(const TestMultiKeyimmunetag1& from) {
     CopyFrom(from);
     return *this;
   }
-  inline immunetag1& operator=(immunetag1&& from) noexcept {
+  inline TestMultiKeyimmunetag1& operator=(TestMultiKeyimmunetag1&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -502,16 +502,16 @@ class immunetag1 final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const immunetag1& default_instance() {
+  static const TestMultiKeyimmunetag1& default_instance() {
     return *internal_default_instance();
   }
-  static inline const immunetag1* internal_default_instance() {
-    return reinterpret_cast<const immunetag1*>(
-        &_immunetag1_default_instance_);
+  static inline const TestMultiKeyimmunetag1* internal_default_instance() {
+    return reinterpret_cast<const TestMultiKeyimmunetag1*>(
+        &_TestMultiKeyimmunetag1_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(immunetag1& a, immunetag1& b) { a.Swap(&b); }
-  inline void Swap(immunetag1* other) {
+  friend void swap(TestMultiKeyimmunetag1& a, TestMultiKeyimmunetag1& b) { a.Swap(&b); }
+  inline void Swap(TestMultiKeyimmunetag1* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -523,7 +523,7 @@ class immunetag1 final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(immunetag1* other) {
+  void UnsafeArenaSwap(TestMultiKeyimmunetag1* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -531,13 +531,13 @@ class immunetag1 final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  immunetag1* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<immunetag1>(arena);
+  TestMultiKeyimmunetag1* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<TestMultiKeyimmunetag1>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const immunetag1& from);
+  void CopyFrom(const TestMultiKeyimmunetag1& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const immunetag1& from) { immunetag1::MergeImpl(*this, from); }
+  void MergeFrom(const TestMultiKeyimmunetag1& from) { TestMultiKeyimmunetag1::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -558,16 +558,16 @@ class immunetag1 final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(immunetag1* other);
+  void InternalSwap(TestMultiKeyimmunetag1* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "immunetag1"; }
+  static ::absl::string_view FullMessageName() { return "TestMultiKeyimmunetag1"; }
 
  protected:
-  explicit immunetag1(::google::protobuf::Arena* arena);
-  immunetag1(::google::protobuf::Arena* arena, const immunetag1& from);
-  immunetag1(::google::protobuf::Arena* arena, immunetag1&& from) noexcept
-      : immunetag1(arena) {
+  explicit TestMultiKeyimmunetag1(::google::protobuf::Arena* arena);
+  TestMultiKeyimmunetag1(::google::protobuf::Arena* arena, const TestMultiKeyimmunetag1& from);
+  TestMultiKeyimmunetag1(::google::protobuf::Arena* arena, TestMultiKeyimmunetag1&& from) noexcept
+      : TestMultiKeyimmunetag1(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -614,13 +614,13 @@ class immunetag1 final : public ::google::protobuf::Message
   std::string* _internal_mutable_immunetag1_value();
 
   public:
-  // @@protoc_insertion_point(class_scope:immunetag1)
+  // @@protoc_insertion_point(class_scope:TestMultiKeyimmunetag1)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       1, 2, 0,
-      49, 2>
+      61, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -873,23 +873,23 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
   ::google::protobuf::Map<std::string, std::string>* _internal_mutable_immunetag1();
 
   public:
-  // repeated .testobj1 testobj1 = 5;
+  // repeated .TestMultiKeytestobj1 testobj1 = 5;
   int testobj1_size() const;
   private:
   int _internal_testobj1_size() const;
 
   public:
   void clear_testobj1() ;
-  ::testobj1* mutable_testobj1(int index);
-  ::google::protobuf::RepeatedPtrField<::testobj1>* mutable_testobj1();
+  ::TestMultiKeytestobj1* mutable_testobj1(int index);
+  ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>* mutable_testobj1();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::testobj1>& _internal_testobj1() const;
-  ::google::protobuf::RepeatedPtrField<::testobj1>* _internal_mutable_testobj1();
+  const ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>& _internal_testobj1() const;
+  ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>* _internal_mutable_testobj1();
   public:
-  const ::testobj1& testobj1(int index) const;
-  ::testobj1* add_testobj1();
-  const ::google::protobuf::RepeatedPtrField<::testobj1>& testobj1() const;
+  const ::TestMultiKeytestobj1& testobj1(int index) const;
+  ::TestMultiKeytestobj1* add_testobj1();
+  const ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>& testobj1() const;
   // repeated uint32 effect = 6;
   int effect_size() const;
   private:
@@ -1029,7 +1029,7 @@ class TestMultiKeyTable final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
         immunetag1_;
-    ::google::protobuf::RepeatedPtrField< ::testobj1 > testobj1_;
+    ::google::protobuf::RepeatedPtrField< ::TestMultiKeytestobj1 > testobj1_;
     ::google::protobuf::RepeatedField<::uint32_t> effect_;
     mutable ::google::protobuf::internal::CachedSize _effect_cached_byte_size_;
     ::google::protobuf::internal::ArenaStringPtr stringkey_;
@@ -1235,48 +1235,48 @@ class TestMultiKeyTabledData final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// tag1
+// TestMultiKeytag1
 
 // string tag1_key = 1;
-inline void tag1::clear_tag1_key() {
+inline void TestMultiKeytag1::clear_tag1_key() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.tag1_key_.ClearToEmpty();
 }
-inline const std::string& tag1::tag1_key() const
+inline const std::string& TestMultiKeytag1::tag1_key() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:tag1.tag1_key)
+  // @@protoc_insertion_point(field_get:TestMultiKeytag1.tag1_key)
   return _internal_tag1_key();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void tag1::set_tag1_key(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void TestMultiKeytag1::set_tag1_key(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.tag1_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:tag1.tag1_key)
+  // @@protoc_insertion_point(field_set:TestMultiKeytag1.tag1_key)
 }
-inline std::string* tag1::mutable_tag1_key() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* TestMultiKeytag1::mutable_tag1_key() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_tag1_key();
-  // @@protoc_insertion_point(field_mutable:tag1.tag1_key)
+  // @@protoc_insertion_point(field_mutable:TestMultiKeytag1.tag1_key)
   return _s;
 }
-inline const std::string& tag1::_internal_tag1_key() const {
+inline const std::string& TestMultiKeytag1::_internal_tag1_key() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.tag1_key_.Get();
 }
-inline void tag1::_internal_set_tag1_key(const std::string& value) {
+inline void TestMultiKeytag1::_internal_set_tag1_key(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.tag1_key_.Set(value, GetArena());
 }
-inline std::string* tag1::_internal_mutable_tag1_key() {
+inline std::string* TestMultiKeytag1::_internal_mutable_tag1_key() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.tag1_key_.Mutable( GetArena());
 }
-inline std::string* tag1::release_tag1_key() {
+inline std::string* TestMultiKeytag1::release_tag1_key() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:tag1.tag1_key)
+  // @@protoc_insertion_point(field_release:TestMultiKeytag1.tag1_key)
   return _impl_.tag1_key_.Release();
 }
-inline void tag1::set_allocated_tag1_key(std::string* value) {
+inline void TestMultiKeytag1::set_allocated_tag1_key(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.tag1_key_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -1284,49 +1284,49 @@ inline void tag1::set_allocated_tag1_key(std::string* value) {
           _impl_.tag1_key_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:tag1.tag1_key)
+  // @@protoc_insertion_point(field_set_allocated:TestMultiKeytag1.tag1_key)
 }
 
 // string tag1_value = 2;
-inline void tag1::clear_tag1_value() {
+inline void TestMultiKeytag1::clear_tag1_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.tag1_value_.ClearToEmpty();
 }
-inline const std::string& tag1::tag1_value() const
+inline const std::string& TestMultiKeytag1::tag1_value() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:tag1.tag1_value)
+  // @@protoc_insertion_point(field_get:TestMultiKeytag1.tag1_value)
   return _internal_tag1_value();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void tag1::set_tag1_value(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void TestMultiKeytag1::set_tag1_value(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.tag1_value_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:tag1.tag1_value)
+  // @@protoc_insertion_point(field_set:TestMultiKeytag1.tag1_value)
 }
-inline std::string* tag1::mutable_tag1_value() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* TestMultiKeytag1::mutable_tag1_value() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_tag1_value();
-  // @@protoc_insertion_point(field_mutable:tag1.tag1_value)
+  // @@protoc_insertion_point(field_mutable:TestMultiKeytag1.tag1_value)
   return _s;
 }
-inline const std::string& tag1::_internal_tag1_value() const {
+inline const std::string& TestMultiKeytag1::_internal_tag1_value() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.tag1_value_.Get();
 }
-inline void tag1::_internal_set_tag1_value(const std::string& value) {
+inline void TestMultiKeytag1::_internal_set_tag1_value(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.tag1_value_.Set(value, GetArena());
 }
-inline std::string* tag1::_internal_mutable_tag1_value() {
+inline std::string* TestMultiKeytag1::_internal_mutable_tag1_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.tag1_value_.Mutable( GetArena());
 }
-inline std::string* tag1::release_tag1_value() {
+inline std::string* TestMultiKeytag1::release_tag1_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:tag1.tag1_value)
+  // @@protoc_insertion_point(field_release:TestMultiKeytag1.tag1_value)
   return _impl_.tag1_value_.Release();
 }
-inline void tag1::set_allocated_tag1_value(std::string* value) {
+inline void TestMultiKeytag1::set_allocated_tag1_value(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.tag1_value_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -1334,53 +1334,53 @@ inline void tag1::set_allocated_tag1_value(std::string* value) {
           _impl_.tag1_value_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:tag1.tag1_value)
+  // @@protoc_insertion_point(field_set_allocated:TestMultiKeytag1.tag1_value)
 }
 
 // -------------------------------------------------------------------
 
-// immunetag1
+// TestMultiKeyimmunetag1
 
 // string immunetag1_key = 1;
-inline void immunetag1::clear_immunetag1_key() {
+inline void TestMultiKeyimmunetag1::clear_immunetag1_key() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.immunetag1_key_.ClearToEmpty();
 }
-inline const std::string& immunetag1::immunetag1_key() const
+inline const std::string& TestMultiKeyimmunetag1::immunetag1_key() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:immunetag1.immunetag1_key)
+  // @@protoc_insertion_point(field_get:TestMultiKeyimmunetag1.immunetag1_key)
   return _internal_immunetag1_key();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void immunetag1::set_immunetag1_key(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void TestMultiKeyimmunetag1::set_immunetag1_key(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.immunetag1_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:immunetag1.immunetag1_key)
+  // @@protoc_insertion_point(field_set:TestMultiKeyimmunetag1.immunetag1_key)
 }
-inline std::string* immunetag1::mutable_immunetag1_key() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* TestMultiKeyimmunetag1::mutable_immunetag1_key() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_immunetag1_key();
-  // @@protoc_insertion_point(field_mutable:immunetag1.immunetag1_key)
+  // @@protoc_insertion_point(field_mutable:TestMultiKeyimmunetag1.immunetag1_key)
   return _s;
 }
-inline const std::string& immunetag1::_internal_immunetag1_key() const {
+inline const std::string& TestMultiKeyimmunetag1::_internal_immunetag1_key() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.immunetag1_key_.Get();
 }
-inline void immunetag1::_internal_set_immunetag1_key(const std::string& value) {
+inline void TestMultiKeyimmunetag1::_internal_set_immunetag1_key(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.immunetag1_key_.Set(value, GetArena());
 }
-inline std::string* immunetag1::_internal_mutable_immunetag1_key() {
+inline std::string* TestMultiKeyimmunetag1::_internal_mutable_immunetag1_key() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.immunetag1_key_.Mutable( GetArena());
 }
-inline std::string* immunetag1::release_immunetag1_key() {
+inline std::string* TestMultiKeyimmunetag1::release_immunetag1_key() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:immunetag1.immunetag1_key)
+  // @@protoc_insertion_point(field_release:TestMultiKeyimmunetag1.immunetag1_key)
   return _impl_.immunetag1_key_.Release();
 }
-inline void immunetag1::set_allocated_immunetag1_key(std::string* value) {
+inline void TestMultiKeyimmunetag1::set_allocated_immunetag1_key(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.immunetag1_key_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -1388,49 +1388,49 @@ inline void immunetag1::set_allocated_immunetag1_key(std::string* value) {
           _impl_.immunetag1_key_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:immunetag1.immunetag1_key)
+  // @@protoc_insertion_point(field_set_allocated:TestMultiKeyimmunetag1.immunetag1_key)
 }
 
 // string immunetag1_value = 2;
-inline void immunetag1::clear_immunetag1_value() {
+inline void TestMultiKeyimmunetag1::clear_immunetag1_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.immunetag1_value_.ClearToEmpty();
 }
-inline const std::string& immunetag1::immunetag1_value() const
+inline const std::string& TestMultiKeyimmunetag1::immunetag1_value() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:immunetag1.immunetag1_value)
+  // @@protoc_insertion_point(field_get:TestMultiKeyimmunetag1.immunetag1_value)
   return _internal_immunetag1_value();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void immunetag1::set_immunetag1_value(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void TestMultiKeyimmunetag1::set_immunetag1_value(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.immunetag1_value_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:immunetag1.immunetag1_value)
+  // @@protoc_insertion_point(field_set:TestMultiKeyimmunetag1.immunetag1_value)
 }
-inline std::string* immunetag1::mutable_immunetag1_value() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* TestMultiKeyimmunetag1::mutable_immunetag1_value() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_immunetag1_value();
-  // @@protoc_insertion_point(field_mutable:immunetag1.immunetag1_value)
+  // @@protoc_insertion_point(field_mutable:TestMultiKeyimmunetag1.immunetag1_value)
   return _s;
 }
-inline const std::string& immunetag1::_internal_immunetag1_value() const {
+inline const std::string& TestMultiKeyimmunetag1::_internal_immunetag1_value() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.immunetag1_value_.Get();
 }
-inline void immunetag1::_internal_set_immunetag1_value(const std::string& value) {
+inline void TestMultiKeyimmunetag1::_internal_set_immunetag1_value(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.immunetag1_value_.Set(value, GetArena());
 }
-inline std::string* immunetag1::_internal_mutable_immunetag1_value() {
+inline std::string* TestMultiKeyimmunetag1::_internal_mutable_immunetag1_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.immunetag1_value_.Mutable( GetArena());
 }
-inline std::string* immunetag1::release_immunetag1_value() {
+inline std::string* TestMultiKeyimmunetag1::release_immunetag1_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:immunetag1.immunetag1_value)
+  // @@protoc_insertion_point(field_release:TestMultiKeyimmunetag1.immunetag1_value)
   return _impl_.immunetag1_value_.Release();
 }
-inline void immunetag1::set_allocated_immunetag1_value(std::string* value) {
+inline void TestMultiKeyimmunetag1::set_allocated_immunetag1_value(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.immunetag1_value_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -1438,53 +1438,53 @@ inline void immunetag1::set_allocated_immunetag1_value(std::string* value) {
           _impl_.immunetag1_value_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:immunetag1.immunetag1_value)
+  // @@protoc_insertion_point(field_set_allocated:TestMultiKeyimmunetag1.immunetag1_value)
 }
 
 // -------------------------------------------------------------------
 
-// testobj1
+// TestMultiKeytestobj1
 
 // uint32 testobj1_key = 1;
-inline void testobj1::clear_testobj1_key() {
+inline void TestMultiKeytestobj1::clear_testobj1_key() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.testobj1_key_ = 0u;
 }
-inline ::uint32_t testobj1::testobj1_key() const {
-  // @@protoc_insertion_point(field_get:testobj1.testobj1_key)
+inline ::uint32_t TestMultiKeytestobj1::testobj1_key() const {
+  // @@protoc_insertion_point(field_get:TestMultiKeytestobj1.testobj1_key)
   return _internal_testobj1_key();
 }
-inline void testobj1::set_testobj1_key(::uint32_t value) {
+inline void TestMultiKeytestobj1::set_testobj1_key(::uint32_t value) {
   _internal_set_testobj1_key(value);
-  // @@protoc_insertion_point(field_set:testobj1.testobj1_key)
+  // @@protoc_insertion_point(field_set:TestMultiKeytestobj1.testobj1_key)
 }
-inline ::uint32_t testobj1::_internal_testobj1_key() const {
+inline ::uint32_t TestMultiKeytestobj1::_internal_testobj1_key() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.testobj1_key_;
 }
-inline void testobj1::_internal_set_testobj1_key(::uint32_t value) {
+inline void TestMultiKeytestobj1::_internal_set_testobj1_key(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.testobj1_key_ = value;
 }
 
 // uint32 testobj1_value = 2;
-inline void testobj1::clear_testobj1_value() {
+inline void TestMultiKeytestobj1::clear_testobj1_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.testobj1_value_ = 0u;
 }
-inline ::uint32_t testobj1::testobj1_value() const {
-  // @@protoc_insertion_point(field_get:testobj1.testobj1_value)
+inline ::uint32_t TestMultiKeytestobj1::testobj1_value() const {
+  // @@protoc_insertion_point(field_get:TestMultiKeytestobj1.testobj1_value)
   return _internal_testobj1_value();
 }
-inline void testobj1::set_testobj1_value(::uint32_t value) {
+inline void TestMultiKeytestobj1::set_testobj1_value(::uint32_t value) {
   _internal_set_testobj1_value(value);
-  // @@protoc_insertion_point(field_set:testobj1.testobj1_value)
+  // @@protoc_insertion_point(field_set:TestMultiKeytestobj1.testobj1_value)
 }
-inline ::uint32_t testobj1::_internal_testobj1_value() const {
+inline ::uint32_t TestMultiKeytestobj1::_internal_testobj1_value() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.testobj1_value_;
 }
-inline void testobj1::_internal_set_testobj1_value(::uint32_t value) {
+inline void TestMultiKeytestobj1::_internal_set_testobj1_value(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.testobj1_value_ = value;
 }
@@ -1597,7 +1597,7 @@ inline void TestMultiKeyTable::_internal_set_level(::uint32_t value) {
   _impl_.level_ = value;
 }
 
-// repeated .testobj1 testobj1 = 5;
+// repeated .TestMultiKeytestobj1 testobj1 = 5;
 inline int TestMultiKeyTable::_internal_testobj1_size() const {
   return _internal_testobj1().size();
 }
@@ -1608,39 +1608,39 @@ inline void TestMultiKeyTable::clear_testobj1() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.testobj1_.Clear();
 }
-inline ::testobj1* TestMultiKeyTable::mutable_testobj1(int index)
+inline ::TestMultiKeytestobj1* TestMultiKeyTable::mutable_testobj1(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:TestMultiKeyTable.testobj1)
   return _internal_mutable_testobj1()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::testobj1>* TestMultiKeyTable::mutable_testobj1()
+inline ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>* TestMultiKeyTable::mutable_testobj1()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:TestMultiKeyTable.testobj1)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_testobj1();
 }
-inline const ::testobj1& TestMultiKeyTable::testobj1(int index) const
+inline const ::TestMultiKeytestobj1& TestMultiKeyTable::testobj1(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:TestMultiKeyTable.testobj1)
   return _internal_testobj1().Get(index);
 }
-inline ::testobj1* TestMultiKeyTable::add_testobj1() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::TestMultiKeytestobj1* TestMultiKeyTable::add_testobj1() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::testobj1* _add = _internal_mutable_testobj1()->Add();
+  ::TestMultiKeytestobj1* _add = _internal_mutable_testobj1()->Add();
   // @@protoc_insertion_point(field_add:TestMultiKeyTable.testobj1)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::testobj1>& TestMultiKeyTable::testobj1() const
+inline const ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>& TestMultiKeyTable::testobj1() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:TestMultiKeyTable.testobj1)
   return _internal_testobj1();
 }
-inline const ::google::protobuf::RepeatedPtrField<::testobj1>&
+inline const ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>&
 TestMultiKeyTable::_internal_testobj1() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.testobj1_;
 }
-inline ::google::protobuf::RepeatedPtrField<::testobj1>*
+inline ::google::protobuf::RepeatedPtrField<::TestMultiKeytestobj1>*
 TestMultiKeyTable::_internal_mutable_testobj1() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.testobj1_;

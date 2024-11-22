@@ -150,6 +150,12 @@
     <ClCompile Include="src\actoractionstate_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\actoractioncombatstate_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\actoractioncombatstate_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\all_config.h">
@@ -294,6 +300,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\actoractionstate_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\actoractioncombatstate_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\actoractioncombatstate_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

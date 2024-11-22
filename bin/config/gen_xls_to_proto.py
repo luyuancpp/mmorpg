@@ -47,7 +47,7 @@ def generate_proto_file(data: Dict, sheet_name: str) -> Optional[str]:
         proto_content = create_proto_header()
         column_names = data[gen_common.SHEET_COLUM_NAME_INDEX]
 
-        proto_content += generate_group_messages(data, column_names)
+        proto_content += generate_group_messages(sheet_name, data, column_names)
         proto_content += generate_row_message(sheet_name, data, column_names)
         proto_content += generate_table_message(sheet_name)
 
@@ -63,12 +63,12 @@ def create_proto_header() -> str:
         'option go_package = "pb/game";\n\n'
     )
 
-def generate_group_messages(data: Dict, column_names: List[str]) -> str:
+def generate_group_messages(sheet_name: str, data: Dict, column_names: List[str]) -> str:
     """Generate messages for grouped data."""
     proto_content = ''
     group_data = data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX]
     for k, v in group_data.items():
-        obj_name = gen_common.set_to_string(
+        obj_name = sheet_name + gen_common.set_to_string(
             gen_common.find_common_words(column_names[v[0]], column_names[v[1]], '_')
         )
         proto_content += f'message {obj_name} {{\n'
@@ -85,7 +85,7 @@ def generate_row_message(sheet_name: str, data: Dict, column_names: List[str]) -
 
     for key, _ in data[0].items():
         if not is_excluded_owner(data[gen_common.OWNER_INDEX], key):
-            field_content = format_field(data, key, column_names, field_index)
+            field_content = format_field(sheet_name, data, key, column_names, field_index)
             if field_content:
                 proto_content += field_content
                 field_index += 1
@@ -97,14 +97,14 @@ def is_excluded_owner(owner_data: Dict, key: str) -> bool:
     """Check if the key is excluded based on owner data."""
     return owner_data.get(key, '').strip() in ('client', 'design')
 
-def format_field(data: Dict, key: str, column_names: List[str], field_index: int) -> str:
+def format_field(sheet_name: str, data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a field for the .proto file based on its type."""
     if key in data[gen_common.MAP_TYPE_INDEX]:
         return format_map_field(data, key, column_names, field_index)
     elif key in data[gen_common.SHEET_ARRAY_DATA_INDEX]:
         return f'\trepeated {data[0][key]} {key} = {field_index};\n'
     elif gen_common.is_key_in_group_array(data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX], key, column_names):
-        return format_group_array_field(data, key, column_names, field_index)
+        return format_group_array_field(sheet_name, data, key, column_names, field_index)
     else:
         return f'\t{data[0][key]} {key} = {field_index};\n'
 
@@ -123,14 +123,14 @@ def format_map_field(data: Dict, key: str, column_names: List[str], field_index:
             return f'\tmap <{value_type[key_name]}, {value_type[value_name]}> {obj_name} = {field_index};\n'
     return ''
 
-def format_group_array_field(data: Dict, key: str, column_names: List[str], field_index: int) -> str:
+def format_group_array_field(sheet_name: str, data: Dict, key: str, column_names: List[str], field_index: int) -> str:
     """Format a group array field for the .proto file."""
     if key not in data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX]:
         return ''
     value = data[gen_common.SHEET_GROUP_ARRAY_DATA_INDEX][key]
     key_name = column_names[value[0]]
     obj_name = gen_common.column_name_to_obj_name(key_name, '_')
-    return f'\trepeated {obj_name} {obj_name} = {field_index};\n'
+    return f'\trepeated {sheet_name}{obj_name} {obj_name} = {field_index};\n'
 
 def generate_table_message(sheet_name: str) -> str:
     """Generate the table message for the .proto file."""
