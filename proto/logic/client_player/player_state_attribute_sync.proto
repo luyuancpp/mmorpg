@@ -7,6 +7,7 @@ import "common/comp.proto";
 import "common/empty.proto";
 import "logic/component/skill_comp.proto";
 import "logic/component/actor_comp.proto";
+import "logic/component/actor_attribute_state_comp.proto";
 
 option cc_generic_services = true;
 
