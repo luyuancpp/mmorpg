@@ -7,7 +7,7 @@ class CombatStateRemovedPbEvent;
 class CombatStateUtil
 {
 public:
-    static void InitializeActorComponents(entt::entity entity);
+    static void InitializeCombatStateComponent(entt::entity entity);
 
     static void AddCombatState(const CombatStateAddedPbEvent& event);
     

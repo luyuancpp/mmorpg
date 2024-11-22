@@ -8,12 +8,12 @@ enum eCombatState
 	kSilence = 0;
 }
 
-message CombatStatePbComponent 
+message CombatStateDetailsPbComponent 
 {
     map<uint64, bool> sources = 1;
 }
 
 message CombatStateCollectionPbComponent 
 {
-    map<uint32, CombatStatePbComponent> state_collection = 1;
+    map<uint32, CombatStateDetailsPbComponent> states = 1;
 }

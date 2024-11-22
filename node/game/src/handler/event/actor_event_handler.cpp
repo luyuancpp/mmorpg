@@ -34,7 +34,7 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 	InterestUtil::InitializeActorComponents(actorEntity);
 	ActorAttributeCalculatorUtil::InitializeActorComponents(actorEntity);
 	ActorActionStateUtil::InitializeActorComponents(actorEntity);
-	CombatStateUtil::InitializeActorComponents(actorEntity);
+	CombatStateUtil::InitializeCombatStateComponent(actorEntity);
 	SkillUtil::InitializeActorComponents(actorEntity);
 ///<<< END WRITING YOUR CODE
 }
