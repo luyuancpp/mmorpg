@@ -13,7 +13,7 @@ message CombatStatePbComponent
     map<uint64, bool> sources = 1;
 }
 
-message CombatStateListPbComponent 
+message CombatStateCollectionPbComponent 
 {
     map<uint32, CombatStatePbComponent> state_list = 1;
 }

@@ -10,12 +10,15 @@ import "logic/component/actor_comp.proto";
 
 option cc_generic_services = true;
 
+
+
 // 消息定义，用于同步实体的基础属性增量
 message BaseAttributeDeltaS2C 
 {
   uint64 entity_id = 1;  // 实体的唯一ID
   Transform transform = 2;  // 速度信息
   Velocity velocity = 3;
+  CombatStateFlagsPbComponent combat_state_flags = 4;//战斗状态
 }
 
 // 各种帧率同步消息

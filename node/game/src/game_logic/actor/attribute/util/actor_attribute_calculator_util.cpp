@@ -7,6 +7,7 @@
 #include "game_logic/actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "proto/logic/client_player/player_state_attribute_sync.pb.h"
+#include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include "thread_local/storage.h"
 
 // 初始化属性计算工具，不执行任何操作，但为将来可能的初始化逻辑预留
@@ -38,18 +39,29 @@ void UpdateVelocity(entt::entity entity) {
 }
 
 // 更新生命值属性
-void UpdateHealth(entt::entity entity) {
+void UpdateHealth(entt::entity actorEntityId) {
     // 计算生命值属性的逻辑
 }
 
 // 更新能量值属性
-void UpdateEnergy(entt::entity entity) {
+void UpdateEnergy(entt::entity actorEntityId) {
     // 计算能量值属性的逻辑
 }
 
 // 更新状态效果属性
-void UpdateStatusEffects(entt::entity entity) {
+void UpdateStatusEffects(entt::entity actorEntityId) {
     // 更新实体的状态效果，例如中毒、减速等
+}
+
+void UpdateCombatState(entt::entity actorEntityId) {
+    auto& combatStateCollectionComponent = tls.registry.get<CombatStateCollectionPbComponent>(actorEntityId);
+    
+    auto& baseAttributeDeltaS2C = tls.registry.get<BaseAttributeDeltaS2C>(actorEntityId);
+
+    for (const auto& key : combatStateCollectionComponent.state_list() | std::views::keys)
+    {
+        baseAttributeDeltaS2C.mutable_combat_state_flags()->mutable_state_flags()->emplace(key, false);
+    }
 }
 
 // 定义属性与计算函数的映射表
@@ -57,6 +69,7 @@ std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs
     {kVelocity, UpdateVelocity},
     {kHealth, UpdateHealth},
     {kEnergy, UpdateEnergy},
+    {kCombatState, UpdateCombatState}
     //{kStatusEffects, UpdateStatusEffects}
     // 可以继续添加其他属性和计算函数
 }};
