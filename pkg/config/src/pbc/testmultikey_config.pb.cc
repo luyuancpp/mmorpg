@@ -22,27 +22,27 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr testobj1::Impl_::Impl_(
+inline constexpr TestMultiKeytestobj1::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : testobj1_key_{0u},
         testobj1_value_{0u},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR testobj1::testobj1(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR TestMultiKeytestobj1::TestMultiKeytestobj1(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct testobj1DefaultTypeInternal {
-  PROTOBUF_CONSTEXPR testobj1DefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~testobj1DefaultTypeInternal() {}
+struct TestMultiKeytestobj1DefaultTypeInternal {
+  PROTOBUF_CONSTEXPR TestMultiKeytestobj1DefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~TestMultiKeytestobj1DefaultTypeInternal() {}
   union {
-    testobj1 _instance;
+    TestMultiKeytestobj1 _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 testobj1DefaultTypeInternal _testobj1_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestMultiKeytestobj1DefaultTypeInternal _TestMultiKeytestobj1_default_instance_;
 
-inline constexpr tag1::Impl_::Impl_(
+inline constexpr TestMultiKeytag1::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : tag1_key_(
             &::google::protobuf::internal::fixed_address_empty_string,
@@ -53,20 +53,20 @@ inline constexpr tag1::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR tag1::tag1(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR TestMultiKeytag1::TestMultiKeytag1(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct tag1DefaultTypeInternal {
-  PROTOBUF_CONSTEXPR tag1DefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~tag1DefaultTypeInternal() {}
+struct TestMultiKeytag1DefaultTypeInternal {
+  PROTOBUF_CONSTEXPR TestMultiKeytag1DefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~TestMultiKeytag1DefaultTypeInternal() {}
   union {
-    tag1 _instance;
+    TestMultiKeytag1 _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 tag1DefaultTypeInternal _tag1_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestMultiKeytag1DefaultTypeInternal _TestMultiKeytag1_default_instance_;
 
-inline constexpr immunetag1::Impl_::Impl_(
+inline constexpr TestMultiKeyimmunetag1::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : immunetag1_key_(
             &::google::protobuf::internal::fixed_address_empty_string,
@@ -77,18 +77,18 @@ inline constexpr immunetag1::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR immunetag1::immunetag1(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR TestMultiKeyimmunetag1::TestMultiKeyimmunetag1(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct immunetag1DefaultTypeInternal {
-  PROTOBUF_CONSTEXPR immunetag1DefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~immunetag1DefaultTypeInternal() {}
+struct TestMultiKeyimmunetag1DefaultTypeInternal {
+  PROTOBUF_CONSTEXPR TestMultiKeyimmunetag1DefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~TestMultiKeyimmunetag1DefaultTypeInternal() {}
   union {
-    immunetag1 _instance;
+    TestMultiKeyimmunetag1 _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 immunetag1DefaultTypeInternal _immunetag1_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TestMultiKeyimmunetag1DefaultTypeInternal _TestMultiKeyimmunetag1_default_instance_;
       template <typename>
 PROTOBUF_CONSTEXPR TestMultiKeyTable_Tag1Entry_DoNotUse::TestMultiKeyTable_Tag1Entry_DoNotUse(::_pbi::ConstantInitialized) {}
 struct TestMultiKeyTable_Tag1Entry_DoNotUseDefaultTypeInternal {
@@ -176,35 +176,35 @@ const ::uint32_t
     TableStruct_testmultikey_5fconfig_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::tag1, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeytag1, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::tag1, _impl_.tag1_key_),
-        PROTOBUF_FIELD_OFFSET(::tag1, _impl_.tag1_value_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeytag1, _impl_.tag1_key_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeytag1, _impl_.tag1_value_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::immunetag1, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeyimmunetag1, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::immunetag1, _impl_.immunetag1_key_),
-        PROTOBUF_FIELD_OFFSET(::immunetag1, _impl_.immunetag1_value_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeyimmunetag1, _impl_.immunetag1_key_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeyimmunetag1, _impl_.immunetag1_value_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::testobj1, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeytestobj1, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::testobj1, _impl_.testobj1_key_),
-        PROTOBUF_FIELD_OFFSET(::testobj1, _impl_.testobj1_value_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeytestobj1, _impl_.testobj1_key_),
+        PROTOBUF_FIELD_OFFSET(::TestMultiKeytestobj1, _impl_.testobj1_value_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable_Tag1Entry_DoNotUse, _has_bits_),
         PROTOBUF_FIELD_OFFSET(::TestMultiKeyTable_Tag1Entry_DoNotUse, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -262,18 +262,18 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::tag1)},
-        {10, -1, -1, sizeof(::immunetag1)},
-        {20, -1, -1, sizeof(::testobj1)},
+        {0, -1, -1, sizeof(::TestMultiKeytag1)},
+        {10, -1, -1, sizeof(::TestMultiKeyimmunetag1)},
+        {20, -1, -1, sizeof(::TestMultiKeytestobj1)},
         {30, 40, -1, sizeof(::TestMultiKeyTable_Tag1Entry_DoNotUse)},
         {42, 52, -1, sizeof(::TestMultiKeyTable_Immunetag1Entry_DoNotUse)},
         {54, -1, -1, sizeof(::TestMultiKeyTable)},
         {74, -1, -1, sizeof(::TestMultiKeyTabledData)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_tag1_default_instance_._instance,
-    &::_immunetag1_default_instance_._instance,
-    &::_testobj1_default_instance_._instance,
+    &::_TestMultiKeytag1_default_instance_._instance,
+    &::_TestMultiKeyimmunetag1_default_instance_._instance,
+    &::_TestMultiKeytestobj1_default_instance_._instance,
     &::_TestMultiKeyTable_Tag1Entry_DoNotUse_default_instance_._instance,
     &::_TestMultiKeyTable_Immunetag1Entry_DoNotUse_default_instance_._instance,
     &::_TestMultiKeyTable_default_instance_._instance,
@@ -281,29 +281,31 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_testmultikey_5fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\031testmultikey_config.proto\",\n\004tag1\022\020\n\010t"
-    "ag1_key\030\001 \001(\t\022\022\n\ntag1_value\030\002 \001(\t\">\n\nimm"
-    "unetag1\022\026\n\016immunetag1_key\030\001 \001(\t\022\030\n\020immun"
-    "etag1_value\030\002 \001(\t\"8\n\010testobj1\022\024\n\014testobj"
-    "1_key\030\001 \001(\r\022\026\n\016testobj1_value\030\002 \001(\r\"\220\003\n\021"
-    "TestMultiKeyTable\022\n\n\002id\030\001 \001(\r\022*\n\004tag1\030\002 "
-    "\003(\0132\034.TestMultiKeyTable.Tag1Entry\0226\n\nimm"
-    "unetag1\030\003 \003(\0132\".TestMultiKeyTable.Immune"
-    "tag1Entry\022\r\n\005level\030\004 \001(\r\022\033\n\010testobj1\030\005 \003"
-    "(\0132\t.testobj1\022\016\n\006effect\030\006 \003(\r\022\021\n\tstringk"
-    "ey\030\007 \001(\t\022\021\n\tuint32key\030\010 \001(\r\022\017\n\007in32key\030\t"
-    " \001(\005\022\022\n\nmstringkey\030\n \001(\t\022\022\n\nmuint32key\030\013"
-    " \001(\r\022\020\n\010min32key\030\014 \001(\005\032+\n\tTag1Entry\022\013\n\003k"
-    "ey\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\0321\n\017Immunetag"
-    "1Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\":"
-    "\n\026TestMultiKeyTabledData\022 \n\004data\030\001 \003(\0132\022"
-    ".TestMultiKeyTableB\tZ\007pb/gameb\006proto3"
+    "\n\031testmultikey_config.proto\"8\n\020TestMulti"
+    "Keytag1\022\020\n\010tag1_key\030\001 \001(\t\022\022\n\ntag1_value\030"
+    "\002 \001(\t\"J\n\026TestMultiKeyimmunetag1\022\026\n\016immun"
+    "etag1_key\030\001 \001(\t\022\030\n\020immunetag1_value\030\002 \001("
+    "\t\"D\n\024TestMultiKeytestobj1\022\024\n\014testobj1_ke"
+    "y\030\001 \001(\r\022\026\n\016testobj1_value\030\002 \001(\r\"\234\003\n\021Test"
+    "MultiKeyTable\022\n\n\002id\030\001 \001(\r\022*\n\004tag1\030\002 \003(\0132"
+    "\034.TestMultiKeyTable.Tag1Entry\0226\n\nimmunet"
+    "ag1\030\003 \003(\0132\".TestMultiKeyTable.Immunetag1"
+    "Entry\022\r\n\005level\030\004 \001(\r\022\'\n\010testobj1\030\005 \003(\0132\025"
+    ".TestMultiKeytestobj1\022\016\n\006effect\030\006 \003(\r\022\021\n"
+    "\tstringkey\030\007 \001(\t\022\021\n\tuint32key\030\010 \001(\r\022\017\n\007i"
+    "n32key\030\t \001(\005\022\022\n\nmstringkey\030\n \001(\t\022\022\n\nmuin"
+    "t32key\030\013 \001(\r\022\020\n\010min32key\030\014 \001(\005\032+\n\tTag1En"
+    "try\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\0321\n\017I"
+    "mmunetag1Entry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001"
+    "(\t:\0028\001\":\n\026TestMultiKeyTabledData\022 \n\004data"
+    "\030\001 \003(\0132\022.TestMultiKeyTableB\tZ\007pb/gameb\006p"
+    "roto3"
 };
 static ::absl::once_flag descriptor_table_testmultikey_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_testmultikey_5fconfig_2eproto = {
     false,
     false,
-    677,
+    725,
     descriptor_table_protodef_testmultikey_5fconfig_2eproto,
     "testmultikey_config.proto",
     &descriptor_table_testmultikey_5fconfig_2eproto_once,
@@ -334,50 +336,50 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_testmult
 }
 // ===================================================================
 
-class tag1::_Internal {
+class TestMultiKeytag1::_Internal {
  public:
 };
 
-tag1::tag1(::google::protobuf::Arena* arena)
+TestMultiKeytag1::TestMultiKeytag1(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:tag1)
+  // @@protoc_insertion_point(arena_constructor:TestMultiKeytag1)
 }
-inline PROTOBUF_NDEBUG_INLINE tag1::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE TestMultiKeytag1::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : tag1_key_(arena, from.tag1_key_),
         tag1_value_(arena, from.tag1_value_),
         _cached_size_{0} {}
 
-tag1::tag1(
+TestMultiKeytag1::TestMultiKeytag1(
     ::google::protobuf::Arena* arena,
-    const tag1& from)
+    const TestMultiKeytag1& from)
     : ::google::protobuf::Message(arena) {
-  tag1* const _this = this;
+  TestMultiKeytag1* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
 
-  // @@protoc_insertion_point(copy_constructor:tag1)
+  // @@protoc_insertion_point(copy_constructor:TestMultiKeytag1)
 }
-inline PROTOBUF_NDEBUG_INLINE tag1::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE TestMultiKeytag1::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : tag1_key_(arena),
         tag1_value_(arena),
         _cached_size_{0} {}
 
-inline void tag1::SharedCtor(::_pb::Arena* arena) {
+inline void TestMultiKeytag1::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-tag1::~tag1() {
-  // @@protoc_insertion_point(destructor:tag1)
+TestMultiKeytag1::~TestMultiKeytag1() {
+  // @@protoc_insertion_point(destructor:TestMultiKeytag1)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void tag1::SharedDtor() {
+inline void TestMultiKeytag1::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.tag1_key_.Destroy();
   _impl_.tag1_value_.Destroy();
@@ -385,21 +387,21 @@ inline void tag1::SharedDtor() {
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-tag1::GetClassData() const {
+TestMultiKeytag1::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(tag1, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(TestMultiKeytag1, _impl_._cached_size_),
               false,
           },
-          &tag1::MergeImpl,
-          &tag1::kDescriptorMethods,
+          &TestMultiKeytag1::MergeImpl,
+          &TestMultiKeytag1::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void tag1::Clear() {
-// @@protoc_insertion_point(message_clear_start:tag1)
+PROTOBUF_NOINLINE void TestMultiKeytag1::Clear() {
+// @@protoc_insertion_point(message_clear_start:TestMultiKeytag1)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -410,7 +412,7 @@ PROTOBUF_NOINLINE void tag1::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* tag1::_InternalParse(
+const char* TestMultiKeytag1::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -418,7 +420,7 @@ const char* tag1::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 31, 2> tag1::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 43, 2> TestMultiKeytag1::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -429,41 +431,41 @@ const ::_pbi::TcParseTable<1, 2, 0, 31, 2> tag1::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_tag1_default_instance_._instance,
+    &_TestMultiKeytag1_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::tag1>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::TestMultiKeytag1>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string tag1_value = 2;
     {::_pbi::TcParser::FastUS1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(tag1, _impl_.tag1_value_)}},
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeytag1, _impl_.tag1_value_)}},
     // string tag1_key = 1;
     {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(tag1, _impl_.tag1_key_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeytag1, _impl_.tag1_key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // string tag1_key = 1;
-    {PROTOBUF_FIELD_OFFSET(tag1, _impl_.tag1_key_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeytag1, _impl_.tag1_key_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string tag1_value = 2;
-    {PROTOBUF_FIELD_OFFSET(tag1, _impl_.tag1_value_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeytag1, _impl_.tag1_value_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\4\10\12\0\0\0\0\0"
-    "tag1"
+    "\20\10\12\0\0\0\0\0"
+    "TestMultiKeytag1"
     "tag1_key"
     "tag1_value"
   }},
 };
 
-::uint8_t* tag1::_InternalSerialize(
+::uint8_t* TestMultiKeytag1::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:tag1)
+  // @@protoc_insertion_point(serialize_to_array_start:TestMultiKeytag1)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -471,7 +473,7 @@ const ::_pbi::TcParseTable<1, 2, 0, 31, 2> tag1::_table_ = {
   if (!this->_internal_tag1_key().empty()) {
     const std::string& _s = this->_internal_tag1_key();
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "tag1.tag1_key");
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestMultiKeytag1.tag1_key");
     target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
@@ -479,7 +481,7 @@ const ::_pbi::TcParseTable<1, 2, 0, 31, 2> tag1::_table_ = {
   if (!this->_internal_tag1_value().empty()) {
     const std::string& _s = this->_internal_tag1_value();
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "tag1.tag1_value");
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestMultiKeytag1.tag1_value");
     target = stream->WriteStringMaybeAliased(2, _s, target);
   }
 
@@ -488,12 +490,12 @@ const ::_pbi::TcParseTable<1, 2, 0, 31, 2> tag1::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:tag1)
+  // @@protoc_insertion_point(serialize_to_array_end:TestMultiKeytag1)
   return target;
 }
 
-::size_t tag1::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:tag1)
+::size_t TestMultiKeytag1::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:TestMultiKeytag1)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -516,10 +518,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 31, 2> tag1::_table_ = {
 }
 
 
-void tag1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<tag1*>(&to_msg);
-  auto& from = static_cast<const tag1&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:tag1)
+void TestMultiKeytag1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<TestMultiKeytag1*>(&to_msg);
+  auto& from = static_cast<const TestMultiKeytag1&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:TestMultiKeytag1)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -533,18 +535,18 @@ void tag1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::pr
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void tag1::CopyFrom(const tag1& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:tag1)
+void TestMultiKeytag1::CopyFrom(const TestMultiKeytag1& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:TestMultiKeytag1)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool tag1::IsInitialized() const {
+PROTOBUF_NOINLINE bool TestMultiKeytag1::IsInitialized() const {
   return true;
 }
 
-void tag1::InternalSwap(tag1* PROTOBUF_RESTRICT other) {
+void TestMultiKeytag1::InternalSwap(TestMultiKeytag1* PROTOBUF_RESTRICT other) {
   using std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -553,57 +555,57 @@ void tag1::InternalSwap(tag1* PROTOBUF_RESTRICT other) {
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.tag1_value_, &other->_impl_.tag1_value_, arena);
 }
 
-::google::protobuf::Metadata tag1::GetMetadata() const {
+::google::protobuf::Metadata TestMultiKeytag1::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_testmultikey_5fconfig_2eproto_getter,
                                    &descriptor_table_testmultikey_5fconfig_2eproto_once,
                                    file_level_metadata_testmultikey_5fconfig_2eproto[0]);
 }
 // ===================================================================
 
-class immunetag1::_Internal {
+class TestMultiKeyimmunetag1::_Internal {
  public:
 };
 
-immunetag1::immunetag1(::google::protobuf::Arena* arena)
+TestMultiKeyimmunetag1::TestMultiKeyimmunetag1(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:immunetag1)
+  // @@protoc_insertion_point(arena_constructor:TestMultiKeyimmunetag1)
 }
-inline PROTOBUF_NDEBUG_INLINE immunetag1::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE TestMultiKeyimmunetag1::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : immunetag1_key_(arena, from.immunetag1_key_),
         immunetag1_value_(arena, from.immunetag1_value_),
         _cached_size_{0} {}
 
-immunetag1::immunetag1(
+TestMultiKeyimmunetag1::TestMultiKeyimmunetag1(
     ::google::protobuf::Arena* arena,
-    const immunetag1& from)
+    const TestMultiKeyimmunetag1& from)
     : ::google::protobuf::Message(arena) {
-  immunetag1* const _this = this;
+  TestMultiKeyimmunetag1* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
 
-  // @@protoc_insertion_point(copy_constructor:immunetag1)
+  // @@protoc_insertion_point(copy_constructor:TestMultiKeyimmunetag1)
 }
-inline PROTOBUF_NDEBUG_INLINE immunetag1::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE TestMultiKeyimmunetag1::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : immunetag1_key_(arena),
         immunetag1_value_(arena),
         _cached_size_{0} {}
 
-inline void immunetag1::SharedCtor(::_pb::Arena* arena) {
+inline void TestMultiKeyimmunetag1::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-immunetag1::~immunetag1() {
-  // @@protoc_insertion_point(destructor:immunetag1)
+TestMultiKeyimmunetag1::~TestMultiKeyimmunetag1() {
+  // @@protoc_insertion_point(destructor:TestMultiKeyimmunetag1)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void immunetag1::SharedDtor() {
+inline void TestMultiKeyimmunetag1::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.immunetag1_key_.Destroy();
   _impl_.immunetag1_value_.Destroy();
@@ -611,21 +613,21 @@ inline void immunetag1::SharedDtor() {
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-immunetag1::GetClassData() const {
+TestMultiKeyimmunetag1::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(immunetag1, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(TestMultiKeyimmunetag1, _impl_._cached_size_),
               false,
           },
-          &immunetag1::MergeImpl,
-          &immunetag1::kDescriptorMethods,
+          &TestMultiKeyimmunetag1::MergeImpl,
+          &TestMultiKeyimmunetag1::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void immunetag1::Clear() {
-// @@protoc_insertion_point(message_clear_start:immunetag1)
+PROTOBUF_NOINLINE void TestMultiKeyimmunetag1::Clear() {
+// @@protoc_insertion_point(message_clear_start:TestMultiKeyimmunetag1)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -636,7 +638,7 @@ PROTOBUF_NOINLINE void immunetag1::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* immunetag1::_InternalParse(
+const char* TestMultiKeyimmunetag1::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -644,7 +646,7 @@ const char* immunetag1::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 49, 2> immunetag1::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 61, 2> TestMultiKeyimmunetag1::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -655,41 +657,41 @@ const ::_pbi::TcParseTable<1, 2, 0, 49, 2> immunetag1::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_immunetag1_default_instance_._instance,
+    &_TestMultiKeyimmunetag1_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::immunetag1>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::TestMultiKeyimmunetag1>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string immunetag1_value = 2;
     {::_pbi::TcParser::FastUS1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(immunetag1, _impl_.immunetag1_value_)}},
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyimmunetag1, _impl_.immunetag1_value_)}},
     // string immunetag1_key = 1;
     {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(immunetag1, _impl_.immunetag1_key_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyimmunetag1, _impl_.immunetag1_key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // string immunetag1_key = 1;
-    {PROTOBUF_FIELD_OFFSET(immunetag1, _impl_.immunetag1_key_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeyimmunetag1, _impl_.immunetag1_key_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string immunetag1_value = 2;
-    {PROTOBUF_FIELD_OFFSET(immunetag1, _impl_.immunetag1_value_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeyimmunetag1, _impl_.immunetag1_value_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\12\16\20\0\0\0\0\0"
-    "immunetag1"
+    "\26\16\20\0\0\0\0\0"
+    "TestMultiKeyimmunetag1"
     "immunetag1_key"
     "immunetag1_value"
   }},
 };
 
-::uint8_t* immunetag1::_InternalSerialize(
+::uint8_t* TestMultiKeyimmunetag1::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:immunetag1)
+  // @@protoc_insertion_point(serialize_to_array_start:TestMultiKeyimmunetag1)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -697,7 +699,7 @@ const ::_pbi::TcParseTable<1, 2, 0, 49, 2> immunetag1::_table_ = {
   if (!this->_internal_immunetag1_key().empty()) {
     const std::string& _s = this->_internal_immunetag1_key();
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "immunetag1.immunetag1_key");
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestMultiKeyimmunetag1.immunetag1_key");
     target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
@@ -705,7 +707,7 @@ const ::_pbi::TcParseTable<1, 2, 0, 49, 2> immunetag1::_table_ = {
   if (!this->_internal_immunetag1_value().empty()) {
     const std::string& _s = this->_internal_immunetag1_value();
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "immunetag1.immunetag1_value");
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "TestMultiKeyimmunetag1.immunetag1_value");
     target = stream->WriteStringMaybeAliased(2, _s, target);
   }
 
@@ -714,12 +716,12 @@ const ::_pbi::TcParseTable<1, 2, 0, 49, 2> immunetag1::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:immunetag1)
+  // @@protoc_insertion_point(serialize_to_array_end:TestMultiKeyimmunetag1)
   return target;
 }
 
-::size_t immunetag1::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:immunetag1)
+::size_t TestMultiKeyimmunetag1::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:TestMultiKeyimmunetag1)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -742,10 +744,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 49, 2> immunetag1::_table_ = {
 }
 
 
-void immunetag1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<immunetag1*>(&to_msg);
-  auto& from = static_cast<const immunetag1&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:immunetag1)
+void TestMultiKeyimmunetag1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<TestMultiKeyimmunetag1*>(&to_msg);
+  auto& from = static_cast<const TestMultiKeyimmunetag1&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:TestMultiKeyimmunetag1)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -759,18 +761,18 @@ void immunetag1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void immunetag1::CopyFrom(const immunetag1& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:immunetag1)
+void TestMultiKeyimmunetag1::CopyFrom(const TestMultiKeyimmunetag1& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:TestMultiKeyimmunetag1)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool immunetag1::IsInitialized() const {
+PROTOBUF_NOINLINE bool TestMultiKeyimmunetag1::IsInitialized() const {
   return true;
 }
 
-void immunetag1::InternalSwap(immunetag1* PROTOBUF_RESTRICT other) {
+void TestMultiKeyimmunetag1::InternalSwap(TestMultiKeyimmunetag1* PROTOBUF_RESTRICT other) {
   using std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -779,33 +781,33 @@ void immunetag1::InternalSwap(immunetag1* PROTOBUF_RESTRICT other) {
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.immunetag1_value_, &other->_impl_.immunetag1_value_, arena);
 }
 
-::google::protobuf::Metadata immunetag1::GetMetadata() const {
+::google::protobuf::Metadata TestMultiKeyimmunetag1::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_testmultikey_5fconfig_2eproto_getter,
                                    &descriptor_table_testmultikey_5fconfig_2eproto_once,
                                    file_level_metadata_testmultikey_5fconfig_2eproto[1]);
 }
 // ===================================================================
 
-class testobj1::_Internal {
+class TestMultiKeytestobj1::_Internal {
  public:
 };
 
-testobj1::testobj1(::google::protobuf::Arena* arena)
+TestMultiKeytestobj1::TestMultiKeytestobj1(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:testobj1)
+  // @@protoc_insertion_point(arena_constructor:TestMultiKeytestobj1)
 }
-testobj1::testobj1(
-    ::google::protobuf::Arena* arena, const testobj1& from)
-    : testobj1(arena) {
+TestMultiKeytestobj1::TestMultiKeytestobj1(
+    ::google::protobuf::Arena* arena, const TestMultiKeytestobj1& from)
+    : TestMultiKeytestobj1(arena) {
   MergeFrom(from);
 }
-inline PROTOBUF_NDEBUG_INLINE testobj1::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE TestMultiKeytestobj1::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void testobj1::SharedCtor(::_pb::Arena* arena) {
+inline void TestMultiKeytestobj1::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, testobj1_key_),
@@ -814,32 +816,32 @@ inline void testobj1::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, testobj1_key_) +
                sizeof(Impl_::testobj1_value_));
 }
-testobj1::~testobj1() {
-  // @@protoc_insertion_point(destructor:testobj1)
+TestMultiKeytestobj1::~TestMultiKeytestobj1() {
+  // @@protoc_insertion_point(destructor:TestMultiKeytestobj1)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void testobj1::SharedDtor() {
+inline void TestMultiKeytestobj1::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-testobj1::GetClassData() const {
+TestMultiKeytestobj1::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(testobj1, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(TestMultiKeytestobj1, _impl_._cached_size_),
               false,
           },
-          &testobj1::MergeImpl,
-          &testobj1::kDescriptorMethods,
+          &TestMultiKeytestobj1::MergeImpl,
+          &TestMultiKeytestobj1::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void testobj1::Clear() {
-// @@protoc_insertion_point(message_clear_start:testobj1)
+PROTOBUF_NOINLINE void TestMultiKeytestobj1::Clear() {
+// @@protoc_insertion_point(message_clear_start:TestMultiKeytestobj1)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -851,7 +853,7 @@ PROTOBUF_NOINLINE void testobj1::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* testobj1::_InternalParse(
+const char* TestMultiKeytestobj1::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -859,7 +861,7 @@ const char* testobj1::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> testobj1::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> TestMultiKeytestobj1::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -870,26 +872,26 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> testobj1::_table_ = {
     2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_testobj1_default_instance_._instance,
+    &_TestMultiKeytestobj1_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::testobj1>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::TestMultiKeytestobj1>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint32 testobj1_value = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(testobj1, _impl_.testobj1_value_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(testobj1, _impl_.testobj1_value_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(TestMultiKeytestobj1, _impl_.testobj1_value_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeytestobj1, _impl_.testobj1_value_)}},
     // uint32 testobj1_key = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(testobj1, _impl_.testobj1_key_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(testobj1, _impl_.testobj1_key_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(TestMultiKeytestobj1, _impl_.testobj1_key_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeytestobj1, _impl_.testobj1_key_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 testobj1_key = 1;
-    {PROTOBUF_FIELD_OFFSET(testobj1, _impl_.testobj1_key_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeytestobj1, _impl_.testobj1_key_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 testobj1_value = 2;
-    {PROTOBUF_FIELD_OFFSET(testobj1, _impl_.testobj1_value_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(TestMultiKeytestobj1, _impl_.testobj1_value_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -897,10 +899,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> testobj1::_table_ = {
   }},
 };
 
-::uint8_t* testobj1::_InternalSerialize(
+::uint8_t* TestMultiKeytestobj1::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:testobj1)
+  // @@protoc_insertion_point(serialize_to_array_start:TestMultiKeytestobj1)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -923,12 +925,12 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> testobj1::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:testobj1)
+  // @@protoc_insertion_point(serialize_to_array_end:TestMultiKeytestobj1)
   return target;
 }
 
-::size_t testobj1::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:testobj1)
+::size_t TestMultiKeytestobj1::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:TestMultiKeytestobj1)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -951,10 +953,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> testobj1::_table_ = {
 }
 
 
-void testobj1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<testobj1*>(&to_msg);
-  auto& from = static_cast<const testobj1&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:testobj1)
+void TestMultiKeytestobj1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<TestMultiKeytestobj1*>(&to_msg);
+  auto& from = static_cast<const TestMultiKeytestobj1&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:TestMultiKeytestobj1)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -968,29 +970,29 @@ void testobj1::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void testobj1::CopyFrom(const testobj1& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:testobj1)
+void TestMultiKeytestobj1::CopyFrom(const TestMultiKeytestobj1& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:TestMultiKeytestobj1)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool testobj1::IsInitialized() const {
+PROTOBUF_NOINLINE bool TestMultiKeytestobj1::IsInitialized() const {
   return true;
 }
 
-void testobj1::InternalSwap(testobj1* PROTOBUF_RESTRICT other) {
+void TestMultiKeytestobj1::InternalSwap(TestMultiKeytestobj1* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(testobj1, _impl_.testobj1_value_)
-      + sizeof(testobj1::_impl_.testobj1_value_)
-      - PROTOBUF_FIELD_OFFSET(testobj1, _impl_.testobj1_key_)>(
+      PROTOBUF_FIELD_OFFSET(TestMultiKeytestobj1, _impl_.testobj1_value_)
+      + sizeof(TestMultiKeytestobj1::_impl_.testobj1_value_)
+      - PROTOBUF_FIELD_OFFSET(TestMultiKeytestobj1, _impl_.testobj1_key_)>(
           reinterpret_cast<char*>(&_impl_.testobj1_key_),
           reinterpret_cast<char*>(&other->_impl_.testobj1_key_));
 }
 
-::google::protobuf::Metadata testobj1::GetMetadata() const {
+::google::protobuf::Metadata TestMultiKeytestobj1::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_testmultikey_5fconfig_2eproto_getter,
                                    &descriptor_table_testmultikey_5fconfig_2eproto_once,
                                    file_level_metadata_testmultikey_5fconfig_2eproto[2]);
@@ -1157,7 +1159,7 @@ const ::_pbi::TcParseTable<4, 12, 3, 67, 2> TestMultiKeyTable::_table_ = {
     // uint32 level = 4;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(TestMultiKeyTable, _impl_.level_), 63>(),
      {32, 63, 0, PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.level_)}},
-    // repeated .testobj1 testobj1 = 5;
+    // repeated .TestMultiKeytestobj1 testobj1 = 5;
     {::_pbi::TcParser::FastMtR1,
      {42, 63, 2, PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.testobj1_)}},
     // repeated uint32 effect = 6;
@@ -1199,7 +1201,7 @@ const ::_pbi::TcParseTable<4, 12, 3, 67, 2> TestMultiKeyTable::_table_ = {
     // uint32 level = 4;
     {PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.level_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // repeated .testobj1 testobj1 = 5;
+    // repeated .TestMultiKeytestobj1 testobj1 = 5;
     {PROTOBUF_FIELD_OFFSET(TestMultiKeyTable, _impl_.testobj1_), 0, 2,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
     // repeated uint32 effect = 6;
@@ -1232,7 +1234,7 @@ const ::_pbi::TcParseTable<4, 12, 3, 67, 2> TestMultiKeyTable::_table_ = {
         decltype(TestMultiKeyTable()._impl_.immunetag1_)>(
         1, 0, 0, 9,
         9)},
-    {::_pbi::TcParser::GetTable<::testobj1>()},
+    {::_pbi::TcParser::GetTable<::TestMultiKeytestobj1>()},
   }}, {{
     "\21\0\4\12\0\0\0\11\0\0\12\0\0\0\0\0"
     "TestMultiKeyTable"
@@ -1330,7 +1332,7 @@ const ::_pbi::TcParseTable<4, 12, 3, 67, 2> TestMultiKeyTable::_table_ = {
         4, this->_internal_level(), target);
   }
 
-  // repeated .testobj1 testobj1 = 5;
+  // repeated .TestMultiKeytestobj1 testobj1 = 5;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this->_internal_testobj1_size());
        i < n; i++) {
@@ -1425,7 +1427,7 @@ const ::_pbi::TcParseTable<4, 12, 3, 67, 2> TestMultiKeyTable::_table_ = {
                                    _pbi::WireFormatLite::TYPE_STRING,
                                    _pbi::WireFormatLite::TYPE_STRING>::ByteSizeLong(entry.first, entry.second);
   }
-  // repeated .testobj1 testobj1 = 5;
+  // repeated .TestMultiKeytestobj1 testobj1 = 5;
   total_size += 1UL * this->_internal_testobj1_size();
   for (const auto& msg : this->_internal_testobj1()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);

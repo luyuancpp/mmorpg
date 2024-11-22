@@ -55,15 +55,15 @@ extern SkillTableDefaultTypeInternal _SkillTable_default_instance_;
 class SkillTabledData;
 struct SkillTabledDataDefaultTypeInternal;
 extern SkillTabledDataDefaultTypeInternal _SkillTabledData_default_instance_;
-class requestresource;
-struct requestresourceDefaultTypeInternal;
-extern requestresourceDefaultTypeInternal _requestresource_default_instance_;
-class requireditem;
-struct requireditemDefaultTypeInternal;
-extern requireditemDefaultTypeInternal _requireditem_default_instance_;
-class requiredresource;
-struct requiredresourceDefaultTypeInternal;
-extern requiredresourceDefaultTypeInternal _requiredresource_default_instance_;
+class Skillrequestresource;
+struct SkillrequestresourceDefaultTypeInternal;
+extern SkillrequestresourceDefaultTypeInternal _Skillrequestresource_default_instance_;
+class Skillrequireditem;
+struct SkillrequireditemDefaultTypeInternal;
+extern SkillrequireditemDefaultTypeInternal _Skillrequireditem_default_instance_;
+class Skillrequiredresource;
+struct SkillrequiredresourceDefaultTypeInternal;
+extern SkillrequiredresourceDefaultTypeInternal _Skillrequiredresource_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -75,23 +75,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class requiredresource final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:requiredresource) */ {
+class Skillrequiredresource final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:Skillrequiredresource) */ {
  public:
-  inline requiredresource() : requiredresource(nullptr) {}
-  ~requiredresource() override;
+  inline Skillrequiredresource() : Skillrequiredresource(nullptr) {}
+  ~Skillrequiredresource() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR requiredresource(
+  explicit PROTOBUF_CONSTEXPR Skillrequiredresource(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline requiredresource(const requiredresource& from) : requiredresource(nullptr, from) {}
-  inline requiredresource(requiredresource&& from) noexcept
-      : requiredresource(nullptr, std::move(from)) {}
-  inline requiredresource& operator=(const requiredresource& from) {
+  inline Skillrequiredresource(const Skillrequiredresource& from) : Skillrequiredresource(nullptr, from) {}
+  inline Skillrequiredresource(Skillrequiredresource&& from) noexcept
+      : Skillrequiredresource(nullptr, std::move(from)) {}
+  inline Skillrequiredresource& operator=(const Skillrequiredresource& from) {
     CopyFrom(from);
     return *this;
   }
-  inline requiredresource& operator=(requiredresource&& from) noexcept {
+  inline Skillrequiredresource& operator=(Skillrequiredresource&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -123,16 +123,16 @@ class requiredresource final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const requiredresource& default_instance() {
+  static const Skillrequiredresource& default_instance() {
     return *internal_default_instance();
   }
-  static inline const requiredresource* internal_default_instance() {
-    return reinterpret_cast<const requiredresource*>(
-        &_requiredresource_default_instance_);
+  static inline const Skillrequiredresource* internal_default_instance() {
+    return reinterpret_cast<const Skillrequiredresource*>(
+        &_Skillrequiredresource_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(requiredresource& a, requiredresource& b) { a.Swap(&b); }
-  inline void Swap(requiredresource* other) {
+  friend void swap(Skillrequiredresource& a, Skillrequiredresource& b) { a.Swap(&b); }
+  inline void Swap(Skillrequiredresource* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -144,7 +144,7 @@ class requiredresource final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(requiredresource* other) {
+  void UnsafeArenaSwap(Skillrequiredresource* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -152,13 +152,13 @@ class requiredresource final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  requiredresource* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<requiredresource>(arena);
+  Skillrequiredresource* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<Skillrequiredresource>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const requiredresource& from);
+  void CopyFrom(const Skillrequiredresource& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const requiredresource& from) { requiredresource::MergeImpl(*this, from); }
+  void MergeFrom(const Skillrequiredresource& from) { Skillrequiredresource::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -179,16 +179,16 @@ class requiredresource final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(requiredresource* other);
+  void InternalSwap(Skillrequiredresource* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "requiredresource"; }
+  static ::absl::string_view FullMessageName() { return "Skillrequiredresource"; }
 
  protected:
-  explicit requiredresource(::google::protobuf::Arena* arena);
-  requiredresource(::google::protobuf::Arena* arena, const requiredresource& from);
-  requiredresource(::google::protobuf::Arena* arena, requiredresource&& from) noexcept
-      : requiredresource(arena) {
+  explicit Skillrequiredresource(::google::protobuf::Arena* arena);
+  Skillrequiredresource(::google::protobuf::Arena* arena, const Skillrequiredresource& from);
+  Skillrequiredresource(::google::protobuf::Arena* arena, Skillrequiredresource&& from) noexcept
+      : Skillrequiredresource(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -223,7 +223,7 @@ class requiredresource final : public ::google::protobuf::Message
   void _internal_set_requiredresource_value(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:requiredresource)
+  // @@protoc_insertion_point(class_scope:Skillrequiredresource)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -254,23 +254,23 @@ class requiredresource final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class requireditem final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:requireditem) */ {
+class Skillrequireditem final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:Skillrequireditem) */ {
  public:
-  inline requireditem() : requireditem(nullptr) {}
-  ~requireditem() override;
+  inline Skillrequireditem() : Skillrequireditem(nullptr) {}
+  ~Skillrequireditem() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR requireditem(
+  explicit PROTOBUF_CONSTEXPR Skillrequireditem(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline requireditem(const requireditem& from) : requireditem(nullptr, from) {}
-  inline requireditem(requireditem&& from) noexcept
-      : requireditem(nullptr, std::move(from)) {}
-  inline requireditem& operator=(const requireditem& from) {
+  inline Skillrequireditem(const Skillrequireditem& from) : Skillrequireditem(nullptr, from) {}
+  inline Skillrequireditem(Skillrequireditem&& from) noexcept
+      : Skillrequireditem(nullptr, std::move(from)) {}
+  inline Skillrequireditem& operator=(const Skillrequireditem& from) {
     CopyFrom(from);
     return *this;
   }
-  inline requireditem& operator=(requireditem&& from) noexcept {
+  inline Skillrequireditem& operator=(Skillrequireditem&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -302,16 +302,16 @@ class requireditem final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const requireditem& default_instance() {
+  static const Skillrequireditem& default_instance() {
     return *internal_default_instance();
   }
-  static inline const requireditem* internal_default_instance() {
-    return reinterpret_cast<const requireditem*>(
-        &_requireditem_default_instance_);
+  static inline const Skillrequireditem* internal_default_instance() {
+    return reinterpret_cast<const Skillrequireditem*>(
+        &_Skillrequireditem_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(requireditem& a, requireditem& b) { a.Swap(&b); }
-  inline void Swap(requireditem* other) {
+  friend void swap(Skillrequireditem& a, Skillrequireditem& b) { a.Swap(&b); }
+  inline void Swap(Skillrequireditem* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -323,7 +323,7 @@ class requireditem final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(requireditem* other) {
+  void UnsafeArenaSwap(Skillrequireditem* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -331,13 +331,13 @@ class requireditem final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  requireditem* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<requireditem>(arena);
+  Skillrequireditem* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<Skillrequireditem>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const requireditem& from);
+  void CopyFrom(const Skillrequireditem& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const requireditem& from) { requireditem::MergeImpl(*this, from); }
+  void MergeFrom(const Skillrequireditem& from) { Skillrequireditem::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -358,16 +358,16 @@ class requireditem final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(requireditem* other);
+  void InternalSwap(Skillrequireditem* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "requireditem"; }
+  static ::absl::string_view FullMessageName() { return "Skillrequireditem"; }
 
  protected:
-  explicit requireditem(::google::protobuf::Arena* arena);
-  requireditem(::google::protobuf::Arena* arena, const requireditem& from);
-  requireditem(::google::protobuf::Arena* arena, requireditem&& from) noexcept
-      : requireditem(arena) {
+  explicit Skillrequireditem(::google::protobuf::Arena* arena);
+  Skillrequireditem(::google::protobuf::Arena* arena, const Skillrequireditem& from);
+  Skillrequireditem(::google::protobuf::Arena* arena, Skillrequireditem&& from) noexcept
+      : Skillrequireditem(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -402,7 +402,7 @@ class requireditem final : public ::google::protobuf::Message
   void _internal_set_requireditem_type(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:requireditem)
+  // @@protoc_insertion_point(class_scope:Skillrequireditem)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -433,23 +433,23 @@ class requireditem final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class requestresource final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:requestresource) */ {
+class Skillrequestresource final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:Skillrequestresource) */ {
  public:
-  inline requestresource() : requestresource(nullptr) {}
-  ~requestresource() override;
+  inline Skillrequestresource() : Skillrequestresource(nullptr) {}
+  ~Skillrequestresource() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR requestresource(
+  explicit PROTOBUF_CONSTEXPR Skillrequestresource(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline requestresource(const requestresource& from) : requestresource(nullptr, from) {}
-  inline requestresource(requestresource&& from) noexcept
-      : requestresource(nullptr, std::move(from)) {}
-  inline requestresource& operator=(const requestresource& from) {
+  inline Skillrequestresource(const Skillrequestresource& from) : Skillrequestresource(nullptr, from) {}
+  inline Skillrequestresource(Skillrequestresource&& from) noexcept
+      : Skillrequestresource(nullptr, std::move(from)) {}
+  inline Skillrequestresource& operator=(const Skillrequestresource& from) {
     CopyFrom(from);
     return *this;
   }
-  inline requestresource& operator=(requestresource&& from) noexcept {
+  inline Skillrequestresource& operator=(Skillrequestresource&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -481,16 +481,16 @@ class requestresource final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const requestresource& default_instance() {
+  static const Skillrequestresource& default_instance() {
     return *internal_default_instance();
   }
-  static inline const requestresource* internal_default_instance() {
-    return reinterpret_cast<const requestresource*>(
-        &_requestresource_default_instance_);
+  static inline const Skillrequestresource* internal_default_instance() {
+    return reinterpret_cast<const Skillrequestresource*>(
+        &_Skillrequestresource_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 2;
-  friend void swap(requestresource& a, requestresource& b) { a.Swap(&b); }
-  inline void Swap(requestresource* other) {
+  friend void swap(Skillrequestresource& a, Skillrequestresource& b) { a.Swap(&b); }
+  inline void Swap(Skillrequestresource* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -502,7 +502,7 @@ class requestresource final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(requestresource* other) {
+  void UnsafeArenaSwap(Skillrequestresource* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -510,13 +510,13 @@ class requestresource final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  requestresource* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<requestresource>(arena);
+  Skillrequestresource* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<Skillrequestresource>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const requestresource& from);
+  void CopyFrom(const Skillrequestresource& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const requestresource& from) { requestresource::MergeImpl(*this, from); }
+  void MergeFrom(const Skillrequestresource& from) { Skillrequestresource::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -537,16 +537,16 @@ class requestresource final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(requestresource* other);
+  void InternalSwap(Skillrequestresource* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "requestresource"; }
+  static ::absl::string_view FullMessageName() { return "Skillrequestresource"; }
 
  protected:
-  explicit requestresource(::google::protobuf::Arena* arena);
-  requestresource(::google::protobuf::Arena* arena, const requestresource& from);
-  requestresource(::google::protobuf::Arena* arena, requestresource&& from) noexcept
-      : requestresource(arena) {
+  explicit Skillrequestresource(::google::protobuf::Arena* arena);
+  Skillrequestresource(::google::protobuf::Arena* arena, const Skillrequestresource& from);
+  Skillrequestresource(::google::protobuf::Arena* arena, Skillrequestresource&& from) noexcept
+      : Skillrequestresource(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -581,7 +581,7 @@ class requestresource final : public ::google::protobuf::Message
   void _internal_set_requestresource_cost(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:requestresource)
+  // @@protoc_insertion_point(class_scope:Skillrequestresource)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -797,40 +797,40 @@ class SkillTable final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_target_type();
 
   public:
-  // repeated .requireditem requireditem = 9;
+  // repeated .Skillrequireditem requireditem = 9;
   int requireditem_size() const;
   private:
   int _internal_requireditem_size() const;
 
   public:
   void clear_requireditem() ;
-  ::requireditem* mutable_requireditem(int index);
-  ::google::protobuf::RepeatedPtrField<::requireditem>* mutable_requireditem();
+  ::Skillrequireditem* mutable_requireditem(int index);
+  ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* mutable_requireditem();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::requireditem>& _internal_requireditem() const;
-  ::google::protobuf::RepeatedPtrField<::requireditem>* _internal_mutable_requireditem();
+  const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& _internal_requireditem() const;
+  ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* _internal_mutable_requireditem();
   public:
-  const ::requireditem& requireditem(int index) const;
-  ::requireditem* add_requireditem();
-  const ::google::protobuf::RepeatedPtrField<::requireditem>& requireditem() const;
-  // repeated .requiredresource requiredresource = 10;
+  const ::Skillrequireditem& requireditem(int index) const;
+  ::Skillrequireditem* add_requireditem();
+  const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& requireditem() const;
+  // repeated .Skillrequiredresource requiredresource = 10;
   int requiredresource_size() const;
   private:
   int _internal_requiredresource_size() const;
 
   public:
   void clear_requiredresource() ;
-  ::requiredresource* mutable_requiredresource(int index);
-  ::google::protobuf::RepeatedPtrField<::requiredresource>* mutable_requiredresource();
+  ::Skillrequiredresource* mutable_requiredresource(int index);
+  ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* mutable_requiredresource();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::requiredresource>& _internal_requiredresource() const;
-  ::google::protobuf::RepeatedPtrField<::requiredresource>* _internal_mutable_requiredresource();
+  const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& _internal_requiredresource() const;
+  ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* _internal_mutable_requiredresource();
   public:
-  const ::requiredresource& requiredresource(int index) const;
-  ::requiredresource* add_requiredresource();
-  const ::google::protobuf::RepeatedPtrField<::requiredresource>& requiredresource() const;
+  const ::Skillrequiredresource& requiredresource(int index) const;
+  ::Skillrequiredresource* add_requiredresource();
+  const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& requiredresource() const;
   // repeated uint32 effect = 11;
   int effect_size() const;
   private:
@@ -849,23 +849,23 @@ class SkillTable final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_effect();
 
   public:
-  // repeated .requestresource requestresource = 16;
+  // repeated .Skillrequestresource requestresource = 16;
   int requestresource_size() const;
   private:
   int _internal_requestresource_size() const;
 
   public:
   void clear_requestresource() ;
-  ::requestresource* mutable_requestresource(int index);
-  ::google::protobuf::RepeatedPtrField<::requestresource>* mutable_requestresource();
+  ::Skillrequestresource* mutable_requestresource(int index);
+  ::google::protobuf::RepeatedPtrField<::Skillrequestresource>* mutable_requestresource();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::requestresource>& _internal_requestresource() const;
-  ::google::protobuf::RepeatedPtrField<::requestresource>* _internal_mutable_requestresource();
+  const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>& _internal_requestresource() const;
+  ::google::protobuf::RepeatedPtrField<::Skillrequestresource>* _internal_mutable_requestresource();
   public:
-  const ::requestresource& requestresource(int index) const;
-  ::requestresource* add_requestresource();
-  const ::google::protobuf::RepeatedPtrField<::requestresource>& requestresource() const;
+  const ::Skillrequestresource& requestresource(int index) const;
+  ::Skillrequestresource* add_requestresource();
+  const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>& requestresource() const;
   // string damage = 23;
   void clear_damage() ;
   const std::string& damage() const;
@@ -1067,11 +1067,11 @@ class SkillTable final : public ::google::protobuf::Message
     mutable ::google::protobuf::internal::CachedSize _skill_type_cached_byte_size_;
     ::google::protobuf::RepeatedField<::uint32_t> target_type_;
     mutable ::google::protobuf::internal::CachedSize _target_type_cached_byte_size_;
-    ::google::protobuf::RepeatedPtrField< ::requireditem > requireditem_;
-    ::google::protobuf::RepeatedPtrField< ::requiredresource > requiredresource_;
+    ::google::protobuf::RepeatedPtrField< ::Skillrequireditem > requireditem_;
+    ::google::protobuf::RepeatedPtrField< ::Skillrequiredresource > requiredresource_;
     ::google::protobuf::RepeatedField<::uint32_t> effect_;
     mutable ::google::protobuf::internal::CachedSize _effect_cached_byte_size_;
-    ::google::protobuf::RepeatedPtrField< ::requestresource > requestresource_;
+    ::google::protobuf::RepeatedPtrField< ::Skillrequestresource > requestresource_;
     ::google::protobuf::internal::ArenaStringPtr damage_;
     ::uint32_t id_;
     ::uint32_t rquest_target_;
@@ -1284,144 +1284,144 @@ class SkillTabledData final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// requireditem
+// Skillrequireditem
 
 // uint32 requireditem_type = 1;
-inline void requireditem::clear_requireditem_type() {
+inline void Skillrequireditem::clear_requireditem_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requireditem_type_ = 0u;
 }
-inline ::uint32_t requireditem::requireditem_type() const {
-  // @@protoc_insertion_point(field_get:requireditem.requireditem_type)
+inline ::uint32_t Skillrequireditem::requireditem_type() const {
+  // @@protoc_insertion_point(field_get:Skillrequireditem.requireditem_type)
   return _internal_requireditem_type();
 }
-inline void requireditem::set_requireditem_type(::uint32_t value) {
+inline void Skillrequireditem::set_requireditem_type(::uint32_t value) {
   _internal_set_requireditem_type(value);
-  // @@protoc_insertion_point(field_set:requireditem.requireditem_type)
+  // @@protoc_insertion_point(field_set:Skillrequireditem.requireditem_type)
 }
-inline ::uint32_t requireditem::_internal_requireditem_type() const {
+inline ::uint32_t Skillrequireditem::_internal_requireditem_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requireditem_type_;
 }
-inline void requireditem::_internal_set_requireditem_type(::uint32_t value) {
+inline void Skillrequireditem::_internal_set_requireditem_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requireditem_type_ = value;
 }
 
 // uint64 requireditem_value = 2;
-inline void requireditem::clear_requireditem_value() {
+inline void Skillrequireditem::clear_requireditem_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requireditem_value_ = ::uint64_t{0u};
 }
-inline ::uint64_t requireditem::requireditem_value() const {
-  // @@protoc_insertion_point(field_get:requireditem.requireditem_value)
+inline ::uint64_t Skillrequireditem::requireditem_value() const {
+  // @@protoc_insertion_point(field_get:Skillrequireditem.requireditem_value)
   return _internal_requireditem_value();
 }
-inline void requireditem::set_requireditem_value(::uint64_t value) {
+inline void Skillrequireditem::set_requireditem_value(::uint64_t value) {
   _internal_set_requireditem_value(value);
-  // @@protoc_insertion_point(field_set:requireditem.requireditem_value)
+  // @@protoc_insertion_point(field_set:Skillrequireditem.requireditem_value)
 }
-inline ::uint64_t requireditem::_internal_requireditem_value() const {
+inline ::uint64_t Skillrequireditem::_internal_requireditem_value() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requireditem_value_;
 }
-inline void requireditem::_internal_set_requireditem_value(::uint64_t value) {
+inline void Skillrequireditem::_internal_set_requireditem_value(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requireditem_value_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// requiredresource
+// Skillrequiredresource
 
 // uint32 requiredresource_type = 1;
-inline void requiredresource::clear_requiredresource_type() {
+inline void Skillrequiredresource::clear_requiredresource_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requiredresource_type_ = 0u;
 }
-inline ::uint32_t requiredresource::requiredresource_type() const {
-  // @@protoc_insertion_point(field_get:requiredresource.requiredresource_type)
+inline ::uint32_t Skillrequiredresource::requiredresource_type() const {
+  // @@protoc_insertion_point(field_get:Skillrequiredresource.requiredresource_type)
   return _internal_requiredresource_type();
 }
-inline void requiredresource::set_requiredresource_type(::uint32_t value) {
+inline void Skillrequiredresource::set_requiredresource_type(::uint32_t value) {
   _internal_set_requiredresource_type(value);
-  // @@protoc_insertion_point(field_set:requiredresource.requiredresource_type)
+  // @@protoc_insertion_point(field_set:Skillrequiredresource.requiredresource_type)
 }
-inline ::uint32_t requiredresource::_internal_requiredresource_type() const {
+inline ::uint32_t Skillrequiredresource::_internal_requiredresource_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requiredresource_type_;
 }
-inline void requiredresource::_internal_set_requiredresource_type(::uint32_t value) {
+inline void Skillrequiredresource::_internal_set_requiredresource_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requiredresource_type_ = value;
 }
 
 // uint32 requiredresource_value = 2;
-inline void requiredresource::clear_requiredresource_value() {
+inline void Skillrequiredresource::clear_requiredresource_value() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requiredresource_value_ = 0u;
 }
-inline ::uint32_t requiredresource::requiredresource_value() const {
-  // @@protoc_insertion_point(field_get:requiredresource.requiredresource_value)
+inline ::uint32_t Skillrequiredresource::requiredresource_value() const {
+  // @@protoc_insertion_point(field_get:Skillrequiredresource.requiredresource_value)
   return _internal_requiredresource_value();
 }
-inline void requiredresource::set_requiredresource_value(::uint32_t value) {
+inline void Skillrequiredresource::set_requiredresource_value(::uint32_t value) {
   _internal_set_requiredresource_value(value);
-  // @@protoc_insertion_point(field_set:requiredresource.requiredresource_value)
+  // @@protoc_insertion_point(field_set:Skillrequiredresource.requiredresource_value)
 }
-inline ::uint32_t requiredresource::_internal_requiredresource_value() const {
+inline ::uint32_t Skillrequiredresource::_internal_requiredresource_value() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requiredresource_value_;
 }
-inline void requiredresource::_internal_set_requiredresource_value(::uint32_t value) {
+inline void Skillrequiredresource::_internal_set_requiredresource_value(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requiredresource_value_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// requestresource
+// Skillrequestresource
 
 // uint32 requestresource_id = 1;
-inline void requestresource::clear_requestresource_id() {
+inline void Skillrequestresource::clear_requestresource_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requestresource_id_ = 0u;
 }
-inline ::uint32_t requestresource::requestresource_id() const {
-  // @@protoc_insertion_point(field_get:requestresource.requestresource_id)
+inline ::uint32_t Skillrequestresource::requestresource_id() const {
+  // @@protoc_insertion_point(field_get:Skillrequestresource.requestresource_id)
   return _internal_requestresource_id();
 }
-inline void requestresource::set_requestresource_id(::uint32_t value) {
+inline void Skillrequestresource::set_requestresource_id(::uint32_t value) {
   _internal_set_requestresource_id(value);
-  // @@protoc_insertion_point(field_set:requestresource.requestresource_id)
+  // @@protoc_insertion_point(field_set:Skillrequestresource.requestresource_id)
 }
-inline ::uint32_t requestresource::_internal_requestresource_id() const {
+inline ::uint32_t Skillrequestresource::_internal_requestresource_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requestresource_id_;
 }
-inline void requestresource::_internal_set_requestresource_id(::uint32_t value) {
+inline void Skillrequestresource::_internal_set_requestresource_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requestresource_id_ = value;
 }
 
 // uint32 requestresource_cost = 2;
-inline void requestresource::clear_requestresource_cost() {
+inline void Skillrequestresource::clear_requestresource_cost() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requestresource_cost_ = 0u;
 }
-inline ::uint32_t requestresource::requestresource_cost() const {
-  // @@protoc_insertion_point(field_get:requestresource.requestresource_cost)
+inline ::uint32_t Skillrequestresource::requestresource_cost() const {
+  // @@protoc_insertion_point(field_get:Skillrequestresource.requestresource_cost)
   return _internal_requestresource_cost();
 }
-inline void requestresource::set_requestresource_cost(::uint32_t value) {
+inline void Skillrequestresource::set_requestresource_cost(::uint32_t value) {
   _internal_set_requestresource_cost(value);
-  // @@protoc_insertion_point(field_set:requestresource.requestresource_cost)
+  // @@protoc_insertion_point(field_set:Skillrequestresource.requestresource_cost)
 }
-inline ::uint32_t requestresource::_internal_requestresource_cost() const {
+inline ::uint32_t Skillrequestresource::_internal_requestresource_cost() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requestresource_cost_;
 }
-inline void requestresource::_internal_set_requestresource_cost(::uint32_t value) {
+inline void Skillrequestresource::_internal_set_requestresource_cost(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requestresource_cost_ = value;
 }
@@ -1652,7 +1652,7 @@ inline void SkillTable::_internal_set_immediately(::uint32_t value) {
   _impl_.immediately_ = value;
 }
 
-// repeated .requireditem requireditem = 9;
+// repeated .Skillrequireditem requireditem = 9;
 inline int SkillTable::_internal_requireditem_size() const {
   return _internal_requireditem().size();
 }
@@ -1663,45 +1663,45 @@ inline void SkillTable::clear_requireditem() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requireditem_.Clear();
 }
-inline ::requireditem* SkillTable::mutable_requireditem(int index)
+inline ::Skillrequireditem* SkillTable::mutable_requireditem(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:SkillTable.requireditem)
   return _internal_mutable_requireditem()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::requireditem>* SkillTable::mutable_requireditem()
+inline ::google::protobuf::RepeatedPtrField<::Skillrequireditem>* SkillTable::mutable_requireditem()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:SkillTable.requireditem)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_requireditem();
 }
-inline const ::requireditem& SkillTable::requireditem(int index) const
+inline const ::Skillrequireditem& SkillTable::requireditem(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:SkillTable.requireditem)
   return _internal_requireditem().Get(index);
 }
-inline ::requireditem* SkillTable::add_requireditem() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::Skillrequireditem* SkillTable::add_requireditem() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::requireditem* _add = _internal_mutable_requireditem()->Add();
+  ::Skillrequireditem* _add = _internal_mutable_requireditem()->Add();
   // @@protoc_insertion_point(field_add:SkillTable.requireditem)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::requireditem>& SkillTable::requireditem() const
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>& SkillTable::requireditem() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:SkillTable.requireditem)
   return _internal_requireditem();
 }
-inline const ::google::protobuf::RepeatedPtrField<::requireditem>&
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequireditem>&
 SkillTable::_internal_requireditem() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requireditem_;
 }
-inline ::google::protobuf::RepeatedPtrField<::requireditem>*
+inline ::google::protobuf::RepeatedPtrField<::Skillrequireditem>*
 SkillTable::_internal_mutable_requireditem() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.requireditem_;
 }
 
-// repeated .requiredresource requiredresource = 10;
+// repeated .Skillrequiredresource requiredresource = 10;
 inline int SkillTable::_internal_requiredresource_size() const {
   return _internal_requiredresource().size();
 }
@@ -1712,39 +1712,39 @@ inline void SkillTable::clear_requiredresource() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requiredresource_.Clear();
 }
-inline ::requiredresource* SkillTable::mutable_requiredresource(int index)
+inline ::Skillrequiredresource* SkillTable::mutable_requiredresource(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:SkillTable.requiredresource)
   return _internal_mutable_requiredresource()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::requiredresource>* SkillTable::mutable_requiredresource()
+inline ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>* SkillTable::mutable_requiredresource()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:SkillTable.requiredresource)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_requiredresource();
 }
-inline const ::requiredresource& SkillTable::requiredresource(int index) const
+inline const ::Skillrequiredresource& SkillTable::requiredresource(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:SkillTable.requiredresource)
   return _internal_requiredresource().Get(index);
 }
-inline ::requiredresource* SkillTable::add_requiredresource() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::Skillrequiredresource* SkillTable::add_requiredresource() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::requiredresource* _add = _internal_mutable_requiredresource()->Add();
+  ::Skillrequiredresource* _add = _internal_mutable_requiredresource()->Add();
   // @@protoc_insertion_point(field_add:SkillTable.requiredresource)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::requiredresource>& SkillTable::requiredresource() const
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>& SkillTable::requiredresource() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:SkillTable.requiredresource)
   return _internal_requiredresource();
 }
-inline const ::google::protobuf::RepeatedPtrField<::requiredresource>&
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>&
 SkillTable::_internal_requiredresource() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requiredresource_;
 }
-inline ::google::protobuf::RepeatedPtrField<::requiredresource>*
+inline ::google::protobuf::RepeatedPtrField<::Skillrequiredresource>*
 SkillTable::_internal_mutable_requiredresource() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.requiredresource_;
@@ -1883,7 +1883,7 @@ inline void SkillTable::_internal_set_channeltime(::uint32_t value) {
   _impl_.channeltime_ = value;
 }
 
-// repeated .requestresource requestresource = 16;
+// repeated .Skillrequestresource requestresource = 16;
 inline int SkillTable::_internal_requestresource_size() const {
   return _internal_requestresource().size();
 }
@@ -1894,39 +1894,39 @@ inline void SkillTable::clear_requestresource() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.requestresource_.Clear();
 }
-inline ::requestresource* SkillTable::mutable_requestresource(int index)
+inline ::Skillrequestresource* SkillTable::mutable_requestresource(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:SkillTable.requestresource)
   return _internal_mutable_requestresource()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::requestresource>* SkillTable::mutable_requestresource()
+inline ::google::protobuf::RepeatedPtrField<::Skillrequestresource>* SkillTable::mutable_requestresource()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:SkillTable.requestresource)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_requestresource();
 }
-inline const ::requestresource& SkillTable::requestresource(int index) const
+inline const ::Skillrequestresource& SkillTable::requestresource(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:SkillTable.requestresource)
   return _internal_requestresource().Get(index);
 }
-inline ::requestresource* SkillTable::add_requestresource() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::Skillrequestresource* SkillTable::add_requestresource() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::requestresource* _add = _internal_mutable_requestresource()->Add();
+  ::Skillrequestresource* _add = _internal_mutable_requestresource()->Add();
   // @@protoc_insertion_point(field_add:SkillTable.requestresource)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::requestresource>& SkillTable::requestresource() const
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>& SkillTable::requestresource() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:SkillTable.requestresource)
   return _internal_requestresource();
 }
-inline const ::google::protobuf::RepeatedPtrField<::requestresource>&
+inline const ::google::protobuf::RepeatedPtrField<::Skillrequestresource>&
 SkillTable::_internal_requestresource() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.requestresource_;
 }
-inline ::google::protobuf::RepeatedPtrField<::requestresource>*
+inline ::google::protobuf::RepeatedPtrField<::Skillrequestresource>*
 SkillTable::_internal_mutable_requestresource() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.requestresource_;
