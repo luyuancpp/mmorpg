@@ -3,38 +3,38 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2actor_combat_state_comp()
 {
-tls_lua_state.new_usertype<CombatStatePbComponent>("CombatStatePbComponent",
+tls_lua_state.new_usertype<CombatStateDetailsPbComponent>("CombatStateDetailsPbComponent",
 "count_sources",
-[](CombatStatePbComponent& pb, uint64_t key) ->decltype(auto){ return pb.sources().count(key);},
+[](CombatStateDetailsPbComponent& pb, uint64_t key) ->decltype(auto){ return pb.sources().count(key);},
 "insert_sources",
-[](CombatStatePbComponent& pb, uint64_t key, bool value) ->decltype(auto){ return pb.mutable_sources()->emplace(key, value).second;},
+[](CombatStateDetailsPbComponent& pb, uint64_t key, bool value) ->decltype(auto){ return pb.mutable_sources()->emplace(key, value).second;},
 "sources",
-[](CombatStatePbComponent& pb, uint64_t key) ->decltype(auto){
+[](CombatStateDetailsPbComponent& pb, uint64_t key) ->decltype(auto){
  auto it =  pb.mutable_sources()->find(key);
  if (it == pb.mutable_sources()->end()){ return bool(); }
  return it->second;},
 "sources_size",
-&CombatStatePbComponent::sources_size,
+&CombatStateDetailsPbComponent::sources_size,
 "clear_sources",
-&CombatStatePbComponent::clear_sources,
+&CombatStateDetailsPbComponent::clear_sources,
 "DebugString",
-&CombatStatePbComponent::DebugString,
+&CombatStateDetailsPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<CombatStateCollectionPbComponent>("CombatStateCollectionPbComponent",
-"count_state_collection",
-[](CombatStateCollectionPbComponent& pb, uint32_t key) ->decltype(auto){ return pb.state_collection().count(key);},
-"insert_state_collection",
-[](CombatStateCollectionPbComponent& pb, uint32_t key, CombatStatePbComponent& value) ->decltype(auto){ return pb.mutable_state_collection()->emplace(key, value).second;},
-"state_collection",
+"count_states",
+[](CombatStateCollectionPbComponent& pb, uint32_t key) ->decltype(auto){ return pb.states().count(key);},
+"insert_states",
+[](CombatStateCollectionPbComponent& pb, uint32_t key, CombatStateDetailsPbComponent& value) ->decltype(auto){ return pb.mutable_states()->emplace(key, value).second;},
+"states",
 [](CombatStateCollectionPbComponent& pb, uint32_t key) ->decltype(auto){
- auto it =  pb.mutable_state_collection()->find(key);
- if (it == pb.mutable_state_collection()->end()){ static CombatStatePbComponent instance; return instance; }
+ auto it =  pb.mutable_states()->find(key);
+ if (it == pb.mutable_states()->end()){ static CombatStateDetailsPbComponent instance; return instance; }
  return it->second;},
-"state_collection_size",
-&CombatStateCollectionPbComponent::state_collection_size,
-"clear_state_collection",
-&CombatStateCollectionPbComponent::clear_state_collection,
+"states_size",
+&CombatStateCollectionPbComponent::states_size,
+"clear_states",
+&CombatStateCollectionPbComponent::clear_states,
 "DebugString",
 &CombatStateCollectionPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

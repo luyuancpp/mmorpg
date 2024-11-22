@@ -58,7 +58,7 @@ void UpdateCombatState(entt::entity actorEntityId) {
     
     auto& baseAttributeDeltaS2C = tls.registry.get<BaseAttributeDeltaS2C>(actorEntityId);
 
-    for (const auto& key : combatStateCollectionComponent.state_collection() | std::views::keys)
+    for (const auto& key : combatStateCollectionComponent.states() | std::views::keys)
     {
         baseAttributeDeltaS2C.mutable_combat_state_flags()->mutable_state_flags()->emplace(key, false);
     }
