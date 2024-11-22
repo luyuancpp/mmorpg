@@ -3,6 +3,24 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2player_state_attribute_sync()
 {
+tls_lua_state.new_usertype<CombatStateFlagsPbComponent>("CombatStateFlagsPbComponent",
+"count_state_flags",
+[](CombatStateFlagsPbComponent& pb, uint32_t key) ->decltype(auto){ return pb.state_flags().count(key);},
+"insert_state_flags",
+[](CombatStateFlagsPbComponent& pb, uint32_t key, bool value) ->decltype(auto){ return pb.mutable_state_flags()->emplace(key, value).second;},
+"state_flags",
+[](CombatStateFlagsPbComponent& pb, uint32_t key) ->decltype(auto){
+ auto it =  pb.mutable_state_flags()->find(key);
+ if (it == pb.mutable_state_flags()->end()){ return bool(); }
+ return it->second;},
+"state_flags_size",
+&CombatStateFlagsPbComponent::state_flags_size,
+"clear_state_flags",
+&CombatStateFlagsPbComponent::clear_state_flags,
+"DebugString",
+&CombatStateFlagsPbComponent::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 tls_lua_state.new_usertype<BaseAttributeDeltaS2C>("BaseAttributeDeltaS2C",
 "entity_id",
 sol::property(&BaseAttributeDeltaS2C::entity_id, &BaseAttributeDeltaS2C::set_entity_id),
@@ -14,6 +32,10 @@ sol::property(&BaseAttributeDeltaS2C::entity_id, &BaseAttributeDeltaS2C::set_ent
 [](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.velocity();},
 "mutable_velocity",
 [](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.mutable_velocity();},
+"combat_state_flags",
+[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.combat_state_flags();},
+"mutable_combat_state_flags",
+[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.mutable_combat_state_flags();},
 "DebugString",
 &BaseAttributeDeltaS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

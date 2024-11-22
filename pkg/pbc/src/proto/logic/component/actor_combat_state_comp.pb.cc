@@ -53,36 +53,36 @@ struct CombatStatePbComponentDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStatePbComponentDefaultTypeInternal _CombatStatePbComponent_default_instance_;
       template <typename>
-PROTOBUF_CONSTEXPR CombatStateListPbComponent_StateListEntry_DoNotUse::CombatStateListPbComponent_StateListEntry_DoNotUse(::_pbi::ConstantInitialized) {}
-struct CombatStateListPbComponent_StateListEntry_DoNotUseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CombatStateListPbComponent_StateListEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CombatStateListPbComponent_StateListEntry_DoNotUseDefaultTypeInternal() {}
+PROTOBUF_CONSTEXPR CombatStateCollectionPbComponent_StateListEntry_DoNotUse::CombatStateCollectionPbComponent_StateListEntry_DoNotUse(::_pbi::ConstantInitialized) {}
+struct CombatStateCollectionPbComponent_StateListEntry_DoNotUseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CombatStateCollectionPbComponent_StateListEntry_DoNotUseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CombatStateCollectionPbComponent_StateListEntry_DoNotUseDefaultTypeInternal() {}
   union {
-    CombatStateListPbComponent_StateListEntry_DoNotUse _instance;
+    CombatStateCollectionPbComponent_StateListEntry_DoNotUse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateListPbComponent_StateListEntry_DoNotUseDefaultTypeInternal _CombatStateListPbComponent_StateListEntry_DoNotUse_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateCollectionPbComponent_StateListEntry_DoNotUseDefaultTypeInternal _CombatStateCollectionPbComponent_StateListEntry_DoNotUse_default_instance_;
 
-inline constexpr CombatStateListPbComponent::Impl_::Impl_(
+inline constexpr CombatStateCollectionPbComponent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : state_list_{},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CombatStateListPbComponent::CombatStateListPbComponent(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CombatStateCollectionPbComponent::CombatStateCollectionPbComponent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct CombatStateListPbComponentDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CombatStateListPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CombatStateListPbComponentDefaultTypeInternal() {}
+struct CombatStateCollectionPbComponentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CombatStateCollectionPbComponentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CombatStateCollectionPbComponentDefaultTypeInternal() {}
   union {
-    CombatStateListPbComponent _instance;
+    CombatStateCollectionPbComponent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateListPbComponentDefaultTypeInternal _CombatStateListPbComponent_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CombatStateCollectionPbComponentDefaultTypeInternal _CombatStateCollectionPbComponent_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto[4];
 static const ::_pb::EnumDescriptor* file_level_enum_descriptors_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto[1];
 static constexpr const ::_pb::ServiceDescriptor**
@@ -111,41 +111,41 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::CombatStatePbComponent, _impl_.sources_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateListPbComponent_StateListEntry_DoNotUse, _has_bits_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateListPbComponent_StateListEntry_DoNotUse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateCollectionPbComponent_StateListEntry_DoNotUse, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateCollectionPbComponent_StateListEntry_DoNotUse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::CombatStateListPbComponent_StateListEntry_DoNotUse, key_),
-        PROTOBUF_FIELD_OFFSET(::CombatStateListPbComponent_StateListEntry_DoNotUse, value_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateCollectionPbComponent_StateListEntry_DoNotUse, key_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateCollectionPbComponent_StateListEntry_DoNotUse, value_),
         0,
         1,
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::CombatStateListPbComponent, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateCollectionPbComponent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::CombatStateListPbComponent, _impl_.state_list_),
+        PROTOBUF_FIELD_OFFSET(::CombatStateCollectionPbComponent, _impl_.state_list_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, 10, -1, sizeof(::CombatStatePbComponent_SourcesEntry_DoNotUse)},
         {12, -1, -1, sizeof(::CombatStatePbComponent)},
-        {21, 31, -1, sizeof(::CombatStateListPbComponent_StateListEntry_DoNotUse)},
-        {33, -1, -1, sizeof(::CombatStateListPbComponent)},
+        {21, 31, -1, sizeof(::CombatStateCollectionPbComponent_StateListEntry_DoNotUse)},
+        {33, -1, -1, sizeof(::CombatStateCollectionPbComponent)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_CombatStatePbComponent_SourcesEntry_DoNotUse_default_instance_._instance,
     &::_CombatStatePbComponent_default_instance_._instance,
-    &::_CombatStateListPbComponent_StateListEntry_DoNotUse_default_instance_._instance,
-    &::_CombatStateListPbComponent_default_instance_._instance,
+    &::_CombatStateCollectionPbComponent_StateListEntry_DoNotUse_default_instance_._instance,
+    &::_CombatStateCollectionPbComponent_default_instance_._instance,
 };
 const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -153,13 +153,13 @@ const char descriptor_table_protodef_logic_2fcomponent_2factor_5fcombat_5fstate_
     "p.proto\032\021common/comp.proto\"\177\n\026CombatStat"
     "ePbComponent\0225\n\007sources\030\001 \003(\0132$.CombatSt"
     "atePbComponent.SourcesEntry\032.\n\014SourcesEn"
-    "try\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\010:\0028\001\"\247\001\n\032"
-    "CombatStateListPbComponent\022>\n\nstate_list"
-    "\030\001 \003(\0132*.CombatStateListPbComponent.Stat"
-    "eListEntry\032I\n\016StateListEntry\022\013\n\003key\030\001 \001("
-    "\r\022&\n\005value\030\002 \001(\0132\027.CombatStatePbComponen"
-    "t:\0028\001*\034\n\014eCombatState\022\014\n\010kSilence\020\000B\tZ\007p"
-    "b/gameb\006proto3"
+    "try\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\010:\0028\001\"\263\001\n "
+    "CombatStateCollectionPbComponent\022D\n\nstat"
+    "e_list\030\001 \003(\01320.CombatStateCollectionPbCo"
+    "mponent.StateListEntry\032I\n\016StateListEntry"
+    "\022\013\n\003key\030\001 \001(\r\022&\n\005value\030\002 \001(\0132\027.CombatSta"
+    "tePbComponent:\0028\001*\034\n\014eCombatState\022\014\n\010kSi"
+    "lence\020\000B\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_deps[1] =
     {
@@ -169,7 +169,7 @@ static ::absl::once_flag descriptor_table_logic_2fcomponent_2factor_5fcombat_5fs
 const ::_pbi::DescriptorTable descriptor_table_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto = {
     false,
     false,
-    414,
+    426,
     descriptor_table_protodef_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto,
     "logic/component/actor_combat_state_comp.proto",
     &descriptor_table_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once,
@@ -423,78 +423,78 @@ void CombatStatePbComponent::InternalSwap(CombatStatePbComponent* PROTOBUF_RESTR
 }
 // ===================================================================
 
-CombatStateListPbComponent_StateListEntry_DoNotUse::CombatStateListPbComponent_StateListEntry_DoNotUse() {}
-CombatStateListPbComponent_StateListEntry_DoNotUse::CombatStateListPbComponent_StateListEntry_DoNotUse(::google::protobuf::Arena* arena)
+CombatStateCollectionPbComponent_StateListEntry_DoNotUse::CombatStateCollectionPbComponent_StateListEntry_DoNotUse() {}
+CombatStateCollectionPbComponent_StateListEntry_DoNotUse::CombatStateCollectionPbComponent_StateListEntry_DoNotUse(::google::protobuf::Arena* arena)
     : SuperType(arena) {}
-::google::protobuf::Metadata CombatStateListPbComponent_StateListEntry_DoNotUse::GetMetadata() const {
+::google::protobuf::Metadata CombatStateCollectionPbComponent_StateListEntry_DoNotUse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto[2]);
 }
 // ===================================================================
 
-class CombatStateListPbComponent::_Internal {
+class CombatStateCollectionPbComponent::_Internal {
  public:
 };
 
-CombatStateListPbComponent::CombatStateListPbComponent(::google::protobuf::Arena* arena)
+CombatStateCollectionPbComponent::CombatStateCollectionPbComponent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:CombatStateListPbComponent)
+  // @@protoc_insertion_point(arena_constructor:CombatStateCollectionPbComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE CombatStateListPbComponent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE CombatStateCollectionPbComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : state_list_{visibility, arena, from.state_list_},
         _cached_size_{0} {}
 
-CombatStateListPbComponent::CombatStateListPbComponent(
+CombatStateCollectionPbComponent::CombatStateCollectionPbComponent(
     ::google::protobuf::Arena* arena,
-    const CombatStateListPbComponent& from)
+    const CombatStateCollectionPbComponent& from)
     : ::google::protobuf::Message(arena) {
-  CombatStateListPbComponent* const _this = this;
+  CombatStateCollectionPbComponent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
 
-  // @@protoc_insertion_point(copy_constructor:CombatStateListPbComponent)
+  // @@protoc_insertion_point(copy_constructor:CombatStateCollectionPbComponent)
 }
-inline PROTOBUF_NDEBUG_INLINE CombatStateListPbComponent::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE CombatStateCollectionPbComponent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : state_list_{visibility, arena},
         _cached_size_{0} {}
 
-inline void CombatStateListPbComponent::SharedCtor(::_pb::Arena* arena) {
+inline void CombatStateCollectionPbComponent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-CombatStateListPbComponent::~CombatStateListPbComponent() {
-  // @@protoc_insertion_point(destructor:CombatStateListPbComponent)
+CombatStateCollectionPbComponent::~CombatStateCollectionPbComponent() {
+  // @@protoc_insertion_point(destructor:CombatStateCollectionPbComponent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void CombatStateListPbComponent::SharedDtor() {
+inline void CombatStateCollectionPbComponent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-CombatStateListPbComponent::GetClassData() const {
+CombatStateCollectionPbComponent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(CombatStateListPbComponent, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(CombatStateCollectionPbComponent, _impl_._cached_size_),
               false,
           },
-          &CombatStateListPbComponent::MergeImpl,
-          &CombatStateListPbComponent::kDescriptorMethods,
+          &CombatStateCollectionPbComponent::MergeImpl,
+          &CombatStateCollectionPbComponent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void CombatStateListPbComponent::Clear() {
-// @@protoc_insertion_point(message_clear_start:CombatStateListPbComponent)
+PROTOBUF_NOINLINE void CombatStateCollectionPbComponent::Clear() {
+// @@protoc_insertion_point(message_clear_start:CombatStateCollectionPbComponent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -504,7 +504,7 @@ PROTOBUF_NOINLINE void CombatStateListPbComponent::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* CombatStateListPbComponent::_InternalParse(
+const char* CombatStateCollectionPbComponent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -512,7 +512,7 @@ const char* CombatStateListPbComponent::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 2, 0, 2> CombatStateListPbComponent::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 2, 0, 2> CombatStateCollectionPbComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -523,10 +523,10 @@ const ::_pbi::TcParseTable<0, 1, 2, 0, 2> CombatStateListPbComponent::_table_ = 
     1,  // num_field_entries
     2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    &_CombatStateListPbComponent_default_instance_._instance,
+    &_CombatStateCollectionPbComponent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::CombatStateListPbComponent>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::CombatStateCollectionPbComponent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -534,11 +534,11 @@ const ::_pbi::TcParseTable<0, 1, 2, 0, 2> CombatStateListPbComponent::_table_ = 
     65535, 65535
   }}, {{
     // map<uint32, .CombatStatePbComponent> state_list = 1;
-    {PROTOBUF_FIELD_OFFSET(CombatStateListPbComponent, _impl_.state_list_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CombatStateCollectionPbComponent, _impl_.state_list_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }}, {{
     {::_pbi::TcParser::GetMapAuxInfo<
-        decltype(CombatStateListPbComponent()._impl_.state_list_)>(
+        decltype(CombatStateCollectionPbComponent()._impl_.state_list_)>(
         0, 0, 0, 13,
         11)},
     {::_pbi::TcParser::CreateInArenaStorageCb<::CombatStatePbComponent>},
@@ -546,10 +546,10 @@ const ::_pbi::TcParseTable<0, 1, 2, 0, 2> CombatStateListPbComponent::_table_ = 
   }},
 };
 
-::uint8_t* CombatStateListPbComponent::_InternalSerialize(
+::uint8_t* CombatStateCollectionPbComponent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:CombatStateListPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_start:CombatStateCollectionPbComponent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -579,12 +579,12 @@ const ::_pbi::TcParseTable<0, 1, 2, 0, 2> CombatStateListPbComponent::_table_ = 
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:CombatStateListPbComponent)
+  // @@protoc_insertion_point(serialize_to_array_end:CombatStateCollectionPbComponent)
   return target;
 }
 
-::size_t CombatStateListPbComponent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:CombatStateListPbComponent)
+::size_t CombatStateCollectionPbComponent::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:CombatStateCollectionPbComponent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -602,10 +602,10 @@ const ::_pbi::TcParseTable<0, 1, 2, 0, 2> CombatStateListPbComponent::_table_ = 
 }
 
 
-void CombatStateListPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CombatStateListPbComponent*>(&to_msg);
-  auto& from = static_cast<const CombatStateListPbComponent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateListPbComponent)
+void CombatStateCollectionPbComponent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CombatStateCollectionPbComponent*>(&to_msg);
+  auto& from = static_cast<const CombatStateCollectionPbComponent&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:CombatStateCollectionPbComponent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -614,24 +614,24 @@ void CombatStateListPbComponent::MergeImpl(::google::protobuf::MessageLite& to_m
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CombatStateListPbComponent::CopyFrom(const CombatStateListPbComponent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateListPbComponent)
+void CombatStateCollectionPbComponent::CopyFrom(const CombatStateCollectionPbComponent& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:CombatStateCollectionPbComponent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool CombatStateListPbComponent::IsInitialized() const {
+PROTOBUF_NOINLINE bool CombatStateCollectionPbComponent::IsInitialized() const {
   return true;
 }
 
-void CombatStateListPbComponent::InternalSwap(CombatStateListPbComponent* PROTOBUF_RESTRICT other) {
+void CombatStateCollectionPbComponent::InternalSwap(CombatStateCollectionPbComponent* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.state_list_.InternalSwap(&other->_impl_.state_list_);
 }
 
-::google::protobuf::Metadata CombatStateListPbComponent::GetMetadata() const {
+::google::protobuf::Metadata CombatStateCollectionPbComponent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_getter,
                                    &descriptor_table_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto_once,
                                    file_level_metadata_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto[3]);

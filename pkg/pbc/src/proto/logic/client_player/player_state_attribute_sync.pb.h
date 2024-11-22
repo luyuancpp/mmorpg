@@ -27,6 +27,9 @@
 #include "google/protobuf/message.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
+#include "google/protobuf/map.h"  // IWYU pragma: export
+#include "google/protobuf/map_entry.h"
+#include "google/protobuf/map_field_inl.h"
 #include "google/protobuf/service.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "common/tip.pb.h"
@@ -73,6 +76,12 @@ extern AttributeDelta60FramesS2CDefaultTypeInternal _AttributeDelta60FramesS2C_d
 class BaseAttributeDeltaS2C;
 struct BaseAttributeDeltaS2CDefaultTypeInternal;
 extern BaseAttributeDeltaS2CDefaultTypeInternal _BaseAttributeDeltaS2C_default_instance_;
+class CombatStateFlagsPbComponent;
+struct CombatStateFlagsPbComponentDefaultTypeInternal;
+extern CombatStateFlagsPbComponentDefaultTypeInternal _CombatStateFlagsPbComponent_default_instance_;
+class CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse;
+struct CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal;
+extern CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUseDefaultTypeInternal _CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -82,6 +91,32 @@ namespace protobuf {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse final
+    : public ::google::protobuf::internal::MapEntry<
+          CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, ::uint32_t, bool,
+          ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+          ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
+ public:
+  using SuperType = ::google::protobuf::internal::MapEntry<
+      CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, ::uint32_t, bool,
+      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+      ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
+  CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse();
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse(
+      ::google::protobuf::internal::ConstantInitialized);
+  explicit CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse*>(
+        &_CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse_default_instance_);
+  }
+  static bool ValidateKey(void*) { return true; }
+  static bool ValidateValue(void*) { return true; }
+  ::google::protobuf::Metadata GetMetadata() const final;
+  friend struct ::TableStruct_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto;
+};
 // -------------------------------------------------------------------
 
 class AttributeDelta60FramesS2C final : public ::google::protobuf::Message
@@ -139,7 +174,7 @@ class AttributeDelta60FramesS2C final : public ::google::protobuf::Message
     return reinterpret_cast<const AttributeDelta60FramesS2C*>(
         &_AttributeDelta60FramesS2C_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(AttributeDelta60FramesS2C& a, AttributeDelta60FramesS2C& b) { a.Swap(&b); }
   inline void Swap(AttributeDelta60FramesS2C* other) {
     if (other == this) return;
@@ -306,7 +341,7 @@ class AttributeDelta5FramesS2C final : public ::google::protobuf::Message
     return reinterpret_cast<const AttributeDelta5FramesS2C*>(
         &_AttributeDelta5FramesS2C_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(AttributeDelta5FramesS2C& a, AttributeDelta5FramesS2C& b) { a.Swap(&b); }
   inline void Swap(AttributeDelta5FramesS2C* other) {
     if (other == this) return;
@@ -473,7 +508,7 @@ class AttributeDelta30FramesS2C final : public ::google::protobuf::Message
     return reinterpret_cast<const AttributeDelta30FramesS2C*>(
         &_AttributeDelta30FramesS2C_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(AttributeDelta30FramesS2C& a, AttributeDelta30FramesS2C& b) { a.Swap(&b); }
   inline void Swap(AttributeDelta30FramesS2C* other) {
     if (other == this) return;
@@ -640,7 +675,7 @@ class AttributeDelta2FramesS2C final : public ::google::protobuf::Message
     return reinterpret_cast<const AttributeDelta2FramesS2C*>(
         &_AttributeDelta2FramesS2C_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 1;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(AttributeDelta2FramesS2C& a, AttributeDelta2FramesS2C& b) { a.Swap(&b); }
   inline void Swap(AttributeDelta2FramesS2C* other) {
     if (other == this) return;
@@ -807,7 +842,7 @@ class AttributeDelta10FramesS2C final : public ::google::protobuf::Message
     return reinterpret_cast<const AttributeDelta10FramesS2C*>(
         &_AttributeDelta10FramesS2C_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(AttributeDelta10FramesS2C& a, AttributeDelta10FramesS2C& b) { a.Swap(&b); }
   inline void Swap(AttributeDelta10FramesS2C* other) {
     if (other == this) return;
@@ -919,6 +954,181 @@ class AttributeDelta10FramesS2C final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class CombatStateFlagsPbComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CombatStateFlagsPbComponent) */ {
+ public:
+  inline CombatStateFlagsPbComponent() : CombatStateFlagsPbComponent(nullptr) {}
+  ~CombatStateFlagsPbComponent() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR CombatStateFlagsPbComponent(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline CombatStateFlagsPbComponent(const CombatStateFlagsPbComponent& from) : CombatStateFlagsPbComponent(nullptr, from) {}
+  inline CombatStateFlagsPbComponent(CombatStateFlagsPbComponent&& from) noexcept
+      : CombatStateFlagsPbComponent(nullptr, std::move(from)) {}
+  inline CombatStateFlagsPbComponent& operator=(const CombatStateFlagsPbComponent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline CombatStateFlagsPbComponent& operator=(CombatStateFlagsPbComponent&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const CombatStateFlagsPbComponent& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const CombatStateFlagsPbComponent* internal_default_instance() {
+    return reinterpret_cast<const CombatStateFlagsPbComponent*>(
+        &_CombatStateFlagsPbComponent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(CombatStateFlagsPbComponent& a, CombatStateFlagsPbComponent& b) { a.Swap(&b); }
+  inline void Swap(CombatStateFlagsPbComponent* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(CombatStateFlagsPbComponent* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  CombatStateFlagsPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<CombatStateFlagsPbComponent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const CombatStateFlagsPbComponent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const CombatStateFlagsPbComponent& from) { CombatStateFlagsPbComponent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(CombatStateFlagsPbComponent* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "CombatStateFlagsPbComponent"; }
+
+ protected:
+  explicit CombatStateFlagsPbComponent(::google::protobuf::Arena* arena);
+  CombatStateFlagsPbComponent(::google::protobuf::Arena* arena, const CombatStateFlagsPbComponent& from);
+  CombatStateFlagsPbComponent(::google::protobuf::Arena* arena, CombatStateFlagsPbComponent&& from) noexcept
+      : CombatStateFlagsPbComponent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kStateFlagsFieldNumber = 1,
+  };
+  // map<uint32, bool> state_flags = 1;
+  int state_flags_size() const;
+  private:
+  int _internal_state_flags_size() const;
+
+  public:
+  void clear_state_flags() ;
+  const ::google::protobuf::Map<::uint32_t, bool>& state_flags() const;
+  ::google::protobuf::Map<::uint32_t, bool>* mutable_state_flags();
+
+  private:
+  const ::google::protobuf::Map<::uint32_t, bool>& _internal_state_flags() const;
+  ::google::protobuf::Map<::uint32_t, bool>* _internal_mutable_state_flags();
+
+  public:
+  // @@protoc_insertion_point(class_scope:CombatStateFlagsPbComponent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::MapField<CombatStateFlagsPbComponent_StateFlagsEntry_DoNotUse, ::uint32_t, bool,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
+        state_flags_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto;
+};
+// -------------------------------------------------------------------
+
 class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:BaseAttributeDeltaS2C) */ {
  public:
@@ -974,7 +1184,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
     return reinterpret_cast<const BaseAttributeDeltaS2C*>(
         &_BaseAttributeDeltaS2C_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 0;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(BaseAttributeDeltaS2C& a, BaseAttributeDeltaS2C& b) { a.Swap(&b); }
   inline void Swap(BaseAttributeDeltaS2C* other) {
     if (other == this) return;
@@ -1046,6 +1256,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   enum : int {
     kTransformFieldNumber = 2,
     kVelocityFieldNumber = 3,
+    kCombatStateFlagsFieldNumber = 4,
     kEntityIdFieldNumber = 1,
   };
   // .Transform transform = 2;
@@ -1078,6 +1289,21 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   ::Velocity* _internal_mutable_velocity();
 
   public:
+  // .CombatStateFlagsPbComponent combat_state_flags = 4;
+  bool has_combat_state_flags() const;
+  void clear_combat_state_flags() ;
+  const ::CombatStateFlagsPbComponent& combat_state_flags() const;
+  PROTOBUF_NODISCARD ::CombatStateFlagsPbComponent* release_combat_state_flags();
+  ::CombatStateFlagsPbComponent* mutable_combat_state_flags();
+  void set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* value);
+  void unsafe_arena_set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* value);
+  ::CombatStateFlagsPbComponent* unsafe_arena_release_combat_state_flags();
+
+  private:
+  const ::CombatStateFlagsPbComponent& _internal_combat_state_flags() const;
+  ::CombatStateFlagsPbComponent* _internal_mutable_combat_state_flags();
+
+  public:
   // uint64 entity_id = 1;
   void clear_entity_id() ;
   ::uint64_t entity_id() const;
@@ -1093,7 +1319,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 2,
+      2, 4, 3,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -1113,6 +1339,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::Transform* transform_;
     ::Velocity* velocity_;
+    ::CombatStateFlagsPbComponent* combat_state_flags_;
     ::uint64_t entity_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1234,6 +1461,40 @@ class EntitySyncService_Stub final : public EntitySyncService {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// CombatStateFlagsPbComponent
+
+// map<uint32, bool> state_flags = 1;
+inline int CombatStateFlagsPbComponent::_internal_state_flags_size() const {
+  return _internal_state_flags().size();
+}
+inline int CombatStateFlagsPbComponent::state_flags_size() const {
+  return _internal_state_flags_size();
+}
+inline void CombatStateFlagsPbComponent::clear_state_flags() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.state_flags_.Clear();
+}
+inline const ::google::protobuf::Map<::uint32_t, bool>& CombatStateFlagsPbComponent::_internal_state_flags() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.state_flags_.GetMap();
+}
+inline const ::google::protobuf::Map<::uint32_t, bool>& CombatStateFlagsPbComponent::state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:CombatStateFlagsPbComponent.state_flags)
+  return _internal_state_flags();
+}
+inline ::google::protobuf::Map<::uint32_t, bool>* CombatStateFlagsPbComponent::_internal_mutable_state_flags() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.state_flags_.MutableMap();
+}
+inline ::google::protobuf::Map<::uint32_t, bool>* CombatStateFlagsPbComponent::mutable_state_flags() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:CombatStateFlagsPbComponent.state_flags)
+  return _internal_mutable_state_flags();
+}
+
 // -------------------------------------------------------------------
 
 // BaseAttributeDeltaS2C
@@ -1440,6 +1701,102 @@ inline void BaseAttributeDeltaS2C::set_allocated_velocity(::Velocity* value) {
 
   _impl_.velocity_ = reinterpret_cast<::Velocity*>(value);
   // @@protoc_insertion_point(field_set_allocated:BaseAttributeDeltaS2C.velocity)
+}
+
+// .CombatStateFlagsPbComponent combat_state_flags = 4;
+inline bool BaseAttributeDeltaS2C::has_combat_state_flags() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.combat_state_flags_ != nullptr);
+  return value;
+}
+inline void BaseAttributeDeltaS2C::clear_combat_state_flags() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.combat_state_flags_ != nullptr) _impl_.combat_state_flags_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline const ::CombatStateFlagsPbComponent& BaseAttributeDeltaS2C::_internal_combat_state_flags() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::CombatStateFlagsPbComponent* p = _impl_.combat_state_flags_;
+  return p != nullptr ? *p : reinterpret_cast<const ::CombatStateFlagsPbComponent&>(::_CombatStateFlagsPbComponent_default_instance_);
+}
+inline const ::CombatStateFlagsPbComponent& BaseAttributeDeltaS2C::combat_state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseAttributeDeltaS2C.combat_state_flags)
+  return _internal_combat_state_flags();
+}
+inline void BaseAttributeDeltaS2C::unsafe_arena_set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.combat_state_flags_);
+  }
+  _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsPbComponent*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeDeltaS2C.combat_state_flags)
+}
+inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::release_combat_state_flags() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  ::CombatStateFlagsPbComponent* released = _impl_.combat_state_flags_;
+  _impl_.combat_state_flags_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::unsafe_arena_release_combat_state_flags() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:BaseAttributeDeltaS2C.combat_state_flags)
+
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  ::CombatStateFlagsPbComponent* temp = _impl_.combat_state_flags_;
+  _impl_.combat_state_flags_ = nullptr;
+  return temp;
+}
+inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::_internal_mutable_combat_state_flags() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.combat_state_flags_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::CombatStateFlagsPbComponent>(GetArena());
+    _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsPbComponent*>(p);
+  }
+  return _impl_.combat_state_flags_;
+}
+inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::mutable_combat_state_flags() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000004u;
+  ::CombatStateFlagsPbComponent* _msg = _internal_mutable_combat_state_flags();
+  // @@protoc_insertion_point(field_mutable:BaseAttributeDeltaS2C.combat_state_flags)
+  return _msg;
+}
+inline void BaseAttributeDeltaS2C::set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete (_impl_.combat_state_flags_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+
+  _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsPbComponent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:BaseAttributeDeltaS2C.combat_state_flags)
 }
 
 // -------------------------------------------------------------------

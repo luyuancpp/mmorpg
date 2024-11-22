@@ -9,5 +9,6 @@ enum eAttributeCalculator : uint32_t {
     kEnergy,                  // 能量计算器
     kDamage,                  // 伤害计算器
     kStatusEffect,            // 状态效果计算器
+    kCombatState,             //战斗状态
     kAttributeCalculatorMax   // 最大计算器数量，方便遍历
 };

@@ -3,6 +3,9 @@ syntax = "proto3";
 option go_package = "pb/game";
 import "common/comp.proto";
 
+message CombatStateFlagsPbComponent {
+    map<uint32, bool> state_flags = 1; // 单独的属性同步映射
+}
 
 // 计算属性，服务器端计算
 message CalculatedAttributesPbComponent {

@@ -97,7 +97,7 @@ private:
     }
 
     // Silence Buff 销毁逻辑
-    static bool HandleBuffDestroySilence(const entt::entity parent, uint64_t buffId) {
+    static bool HandleBuffDestroySilence(const entt::entity parent, const uint64_t buffId) {
         CombatStateRemovedPbEvent event;
         event.set_actor_entity(entt::to_integral(parent));
         event.set_source_buff_id(buffId);

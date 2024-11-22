@@ -54,12 +54,12 @@ struct TableStruct_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_logic_2fcomponent_2factor_5fcombat_5fstate_5fcomp_2eproto;
-class CombatStateListPbComponent;
-struct CombatStateListPbComponentDefaultTypeInternal;
-extern CombatStateListPbComponentDefaultTypeInternal _CombatStateListPbComponent_default_instance_;
-class CombatStateListPbComponent_StateListEntry_DoNotUse;
-struct CombatStateListPbComponent_StateListEntry_DoNotUseDefaultTypeInternal;
-extern CombatStateListPbComponent_StateListEntry_DoNotUseDefaultTypeInternal _CombatStateListPbComponent_StateListEntry_DoNotUse_default_instance_;
+class CombatStateCollectionPbComponent;
+struct CombatStateCollectionPbComponentDefaultTypeInternal;
+extern CombatStateCollectionPbComponentDefaultTypeInternal _CombatStateCollectionPbComponent_default_instance_;
+class CombatStateCollectionPbComponent_StateListEntry_DoNotUse;
+struct CombatStateCollectionPbComponent_StateListEntry_DoNotUseDefaultTypeInternal;
+extern CombatStateCollectionPbComponent_StateListEntry_DoNotUseDefaultTypeInternal _CombatStateCollectionPbComponent_StateListEntry_DoNotUse_default_instance_;
 class CombatStatePbComponent;
 struct CombatStatePbComponentDefaultTypeInternal;
 extern CombatStatePbComponentDefaultTypeInternal _CombatStatePbComponent_default_instance_;
@@ -310,24 +310,24 @@ class CombatStatePbComponent final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class CombatStateListPbComponent_StateListEntry_DoNotUse final
+class CombatStateCollectionPbComponent_StateListEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<
-          CombatStateListPbComponent_StateListEntry_DoNotUse, ::uint32_t, ::CombatStatePbComponent,
+          CombatStateCollectionPbComponent_StateListEntry_DoNotUse, ::uint32_t, ::CombatStatePbComponent,
           ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
           ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE> {
  public:
   using SuperType = ::google::protobuf::internal::MapEntry<
-      CombatStateListPbComponent_StateListEntry_DoNotUse, ::uint32_t, ::CombatStatePbComponent,
+      CombatStateCollectionPbComponent_StateListEntry_DoNotUse, ::uint32_t, ::CombatStatePbComponent,
       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
       ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE>;
-  CombatStateListPbComponent_StateListEntry_DoNotUse();
+  CombatStateCollectionPbComponent_StateListEntry_DoNotUse();
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR CombatStateListPbComponent_StateListEntry_DoNotUse(
+  explicit PROTOBUF_CONSTEXPR CombatStateCollectionPbComponent_StateListEntry_DoNotUse(
       ::google::protobuf::internal::ConstantInitialized);
-  explicit CombatStateListPbComponent_StateListEntry_DoNotUse(::google::protobuf::Arena* arena);
-  static const CombatStateListPbComponent_StateListEntry_DoNotUse* internal_default_instance() {
-    return reinterpret_cast<const CombatStateListPbComponent_StateListEntry_DoNotUse*>(
-        &_CombatStateListPbComponent_StateListEntry_DoNotUse_default_instance_);
+  explicit CombatStateCollectionPbComponent_StateListEntry_DoNotUse(::google::protobuf::Arena* arena);
+  static const CombatStateCollectionPbComponent_StateListEntry_DoNotUse* internal_default_instance() {
+    return reinterpret_cast<const CombatStateCollectionPbComponent_StateListEntry_DoNotUse*>(
+        &_CombatStateCollectionPbComponent_StateListEntry_DoNotUse_default_instance_);
   }
   static bool ValidateKey(void*) { return true; }
   static bool ValidateValue(void*) { return true; }
@@ -336,23 +336,23 @@ class CombatStateListPbComponent_StateListEntry_DoNotUse final
 };
 // -------------------------------------------------------------------
 
-class CombatStateListPbComponent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:CombatStateListPbComponent) */ {
+class CombatStateCollectionPbComponent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CombatStateCollectionPbComponent) */ {
  public:
-  inline CombatStateListPbComponent() : CombatStateListPbComponent(nullptr) {}
-  ~CombatStateListPbComponent() override;
+  inline CombatStateCollectionPbComponent() : CombatStateCollectionPbComponent(nullptr) {}
+  ~CombatStateCollectionPbComponent() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR CombatStateListPbComponent(
+  explicit PROTOBUF_CONSTEXPR CombatStateCollectionPbComponent(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline CombatStateListPbComponent(const CombatStateListPbComponent& from) : CombatStateListPbComponent(nullptr, from) {}
-  inline CombatStateListPbComponent(CombatStateListPbComponent&& from) noexcept
-      : CombatStateListPbComponent(nullptr, std::move(from)) {}
-  inline CombatStateListPbComponent& operator=(const CombatStateListPbComponent& from) {
+  inline CombatStateCollectionPbComponent(const CombatStateCollectionPbComponent& from) : CombatStateCollectionPbComponent(nullptr, from) {}
+  inline CombatStateCollectionPbComponent(CombatStateCollectionPbComponent&& from) noexcept
+      : CombatStateCollectionPbComponent(nullptr, std::move(from)) {}
+  inline CombatStateCollectionPbComponent& operator=(const CombatStateCollectionPbComponent& from) {
     CopyFrom(from);
     return *this;
   }
-  inline CombatStateListPbComponent& operator=(CombatStateListPbComponent&& from) noexcept {
+  inline CombatStateCollectionPbComponent& operator=(CombatStateCollectionPbComponent&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -384,16 +384,16 @@ class CombatStateListPbComponent final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const CombatStateListPbComponent& default_instance() {
+  static const CombatStateCollectionPbComponent& default_instance() {
     return *internal_default_instance();
   }
-  static inline const CombatStateListPbComponent* internal_default_instance() {
-    return reinterpret_cast<const CombatStateListPbComponent*>(
-        &_CombatStateListPbComponent_default_instance_);
+  static inline const CombatStateCollectionPbComponent* internal_default_instance() {
+    return reinterpret_cast<const CombatStateCollectionPbComponent*>(
+        &_CombatStateCollectionPbComponent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 3;
-  friend void swap(CombatStateListPbComponent& a, CombatStateListPbComponent& b) { a.Swap(&b); }
-  inline void Swap(CombatStateListPbComponent* other) {
+  friend void swap(CombatStateCollectionPbComponent& a, CombatStateCollectionPbComponent& b) { a.Swap(&b); }
+  inline void Swap(CombatStateCollectionPbComponent* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -405,7 +405,7 @@ class CombatStateListPbComponent final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(CombatStateListPbComponent* other) {
+  void UnsafeArenaSwap(CombatStateCollectionPbComponent* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -413,13 +413,13 @@ class CombatStateListPbComponent final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  CombatStateListPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<CombatStateListPbComponent>(arena);
+  CombatStateCollectionPbComponent* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<CombatStateCollectionPbComponent>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const CombatStateListPbComponent& from);
+  void CopyFrom(const CombatStateCollectionPbComponent& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const CombatStateListPbComponent& from) { CombatStateListPbComponent::MergeImpl(*this, from); }
+  void MergeFrom(const CombatStateCollectionPbComponent& from) { CombatStateCollectionPbComponent::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -440,16 +440,16 @@ class CombatStateListPbComponent final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(CombatStateListPbComponent* other);
+  void InternalSwap(CombatStateCollectionPbComponent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "CombatStateListPbComponent"; }
+  static ::absl::string_view FullMessageName() { return "CombatStateCollectionPbComponent"; }
 
  protected:
-  explicit CombatStateListPbComponent(::google::protobuf::Arena* arena);
-  CombatStateListPbComponent(::google::protobuf::Arena* arena, const CombatStateListPbComponent& from);
-  CombatStateListPbComponent(::google::protobuf::Arena* arena, CombatStateListPbComponent&& from) noexcept
-      : CombatStateListPbComponent(arena) {
+  explicit CombatStateCollectionPbComponent(::google::protobuf::Arena* arena);
+  CombatStateCollectionPbComponent(::google::protobuf::Arena* arena, const CombatStateCollectionPbComponent& from);
+  CombatStateCollectionPbComponent(::google::protobuf::Arena* arena, CombatStateCollectionPbComponent&& from) noexcept
+      : CombatStateCollectionPbComponent(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -478,7 +478,7 @@ class CombatStateListPbComponent final : public ::google::protobuf::Message
   ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>* _internal_mutable_state_list();
 
   public:
-  // @@protoc_insertion_point(class_scope:CombatStateListPbComponent)
+  // @@protoc_insertion_point(class_scope:CombatStateCollectionPbComponent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -499,7 +499,7 @@ class CombatStateListPbComponent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::MapField<CombatStateListPbComponent_StateListEntry_DoNotUse, ::uint32_t, ::CombatStatePbComponent,
+    ::google::protobuf::internal::MapField<CombatStateCollectionPbComponent_StateListEntry_DoNotUse, ::uint32_t, ::CombatStatePbComponent,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE>
         state_list_;
@@ -560,33 +560,33 @@ inline ::google::protobuf::Map<::uint64_t, bool>* CombatStatePbComponent::mutabl
 
 // -------------------------------------------------------------------
 
-// CombatStateListPbComponent
+// CombatStateCollectionPbComponent
 
 // map<uint32, .CombatStatePbComponent> state_list = 1;
-inline int CombatStateListPbComponent::_internal_state_list_size() const {
+inline int CombatStateCollectionPbComponent::_internal_state_list_size() const {
   return _internal_state_list().size();
 }
-inline int CombatStateListPbComponent::state_list_size() const {
+inline int CombatStateCollectionPbComponent::state_list_size() const {
   return _internal_state_list_size();
 }
-inline void CombatStateListPbComponent::clear_state_list() {
+inline void CombatStateCollectionPbComponent::clear_state_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.state_list_.Clear();
 }
-inline const ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>& CombatStateListPbComponent::_internal_state_list() const {
+inline const ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>& CombatStateCollectionPbComponent::_internal_state_list() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.state_list_.GetMap();
 }
-inline const ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>& CombatStateListPbComponent::state_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:CombatStateListPbComponent.state_list)
+inline const ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>& CombatStateCollectionPbComponent::state_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:CombatStateCollectionPbComponent.state_list)
   return _internal_state_list();
 }
-inline ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>* CombatStateListPbComponent::_internal_mutable_state_list() {
+inline ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>* CombatStateCollectionPbComponent::_internal_mutable_state_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.state_list_.MutableMap();
 }
-inline ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>* CombatStateListPbComponent::mutable_state_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:CombatStateListPbComponent.state_list)
+inline ::google::protobuf::Map<::uint32_t, ::CombatStatePbComponent>* CombatStateCollectionPbComponent::mutable_state_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_map:CombatStateCollectionPbComponent.state_list)
   return _internal_mutable_state_list();
 }
 

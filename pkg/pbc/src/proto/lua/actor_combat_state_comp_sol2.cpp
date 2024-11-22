@@ -21,22 +21,22 @@ tls_lua_state.new_usertype<CombatStatePbComponent>("CombatStatePbComponent",
 &CombatStatePbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
-tls_lua_state.new_usertype<CombatStateListPbComponent>("CombatStateListPbComponent",
+tls_lua_state.new_usertype<CombatStateCollectionPbComponent>("CombatStateCollectionPbComponent",
 "count_state_list",
-[](CombatStateListPbComponent& pb, uint32_t key) ->decltype(auto){ return pb.state_list().count(key);},
+[](CombatStateCollectionPbComponent& pb, uint32_t key) ->decltype(auto){ return pb.state_list().count(key);},
 "insert_state_list",
-[](CombatStateListPbComponent& pb, uint32_t key, CombatStatePbComponent& value) ->decltype(auto){ return pb.mutable_state_list()->emplace(key, value).second;},
+[](CombatStateCollectionPbComponent& pb, uint32_t key, CombatStatePbComponent& value) ->decltype(auto){ return pb.mutable_state_list()->emplace(key, value).second;},
 "state_list",
-[](CombatStateListPbComponent& pb, uint32_t key) ->decltype(auto){
+[](CombatStateCollectionPbComponent& pb, uint32_t key) ->decltype(auto){
  auto it =  pb.mutable_state_list()->find(key);
  if (it == pb.mutable_state_list()->end()){ static CombatStatePbComponent instance; return instance; }
  return it->second;},
 "state_list_size",
-&CombatStateListPbComponent::state_list_size,
+&CombatStateCollectionPbComponent::state_list_size,
 "clear_state_list",
-&CombatStateListPbComponent::clear_state_list,
+&CombatStateCollectionPbComponent::clear_state_list,
 "DebugString",
-&CombatStateListPbComponent::DebugString,
+&CombatStateCollectionPbComponent::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 }
