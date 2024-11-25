@@ -35,7 +35,7 @@ void UpdateVelocity(entt::entity entity) {
         velocity.set_z(velocity.z() - buffTable->movement_speed_reduction());
     }
 
-    tls.registry.get<BaseAttributeDeltaS2C>(entity).mutable_velocity()->CopyFrom(velocity);
+    tls.registry.get<BaseAttributeSyncDataS2C>(entity).mutable_velocity()->CopyFrom(velocity);
 }
 
 // 更新生命值属性
@@ -53,14 +53,22 @@ void UpdateStatusEffects(entt::entity actorEntityId) {
     // 更新实体的状态效果，例如中毒、减速等
 }
 
-void UpdateCombatState(entt::entity actorEntityId) {
-    const auto& combatStateCollectionComponent = tls.registry.get<CombatStateCollectionPbComponent>(actorEntityId);
-    
-    auto& baseAttributeDeltaS2C = tls.registry.get<BaseAttributeDeltaS2C>(actorEntityId);
+void ResetCombatStateFlags(entt::entity actorEntity) {
+    // 获取 combatStateCollection 组件（包含所有状态）
+    const auto& combatStates = tls.registry.get<CombatStateCollectionPbComponent>(actorEntity);
 
-    for (const auto& key : combatStateCollectionComponent.states() | std::views::keys)
-    {
-        baseAttributeDeltaS2C.mutable_combat_state_flags()->mutable_state_flags()->emplace(key, false);
+    // 获取基础属性的同步数据
+    auto& syncData = tls.registry.get<BaseAttributeSyncDataS2C>(actorEntity);
+
+    // 获取指向状态标志的指针
+    auto* stateFlags = syncData.mutable_combat_state_flags()->mutable_state_flags();
+
+    // 清空现有状态标志
+    stateFlags->clear();
+
+    // 遍历所有状态键并初始化为 false
+    for (const auto& stateKey : combatStates.states() | std::views::keys) {
+        stateFlags->emplace(stateKey, false);
     }
 }
 
@@ -69,7 +77,7 @@ std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs
     {kVelocity, UpdateVelocity},
     {kHealth, UpdateHealth},
     {kEnergy, UpdateEnergy},
-    {kCombatState, UpdateCombatState}
+    {kCombatState, ResetCombatStateFlags}
     //{kStatusEffects, UpdateStatusEffects}
     // 可以继续添加其他属性和计算函数
 }};

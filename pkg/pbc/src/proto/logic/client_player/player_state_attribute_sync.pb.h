@@ -71,7 +71,7 @@ extern AttributeDelta5FramesS2CDefaultTypeInternal _AttributeDelta5FramesS2C_def
 class AttributeDelta60FramesS2C;
 struct AttributeDelta60FramesS2CDefaultTypeInternal;
 extern AttributeDelta60FramesS2CDefaultTypeInternal _AttributeDelta60FramesS2C_default_instance_;
-class BaseAttributeDeltaS2C;
+class BaseAttributeSyncDataS2C;
 struct BaseAttributeDeltaS2CDefaultTypeInternal;
 extern BaseAttributeDeltaS2CDefaultTypeInternal _BaseAttributeDeltaS2C_default_instance_;
 namespace google {
@@ -920,23 +920,23 @@ class AttributeDelta10FramesS2C final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BaseAttributeDeltaS2C) */ {
+class BaseAttributeSyncDataS2C final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BaseAttributeSyncDataS2C) */ {
  public:
-  inline BaseAttributeDeltaS2C() : BaseAttributeDeltaS2C(nullptr) {}
-  ~BaseAttributeDeltaS2C() override;
+  inline BaseAttributeSyncDataS2C() : BaseAttributeSyncDataS2C(nullptr) {}
+  ~BaseAttributeSyncDataS2C() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BaseAttributeDeltaS2C(
+  explicit PROTOBUF_CONSTEXPR BaseAttributeSyncDataS2C(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline BaseAttributeDeltaS2C(const BaseAttributeDeltaS2C& from) : BaseAttributeDeltaS2C(nullptr, from) {}
-  inline BaseAttributeDeltaS2C(BaseAttributeDeltaS2C&& from) noexcept
-      : BaseAttributeDeltaS2C(nullptr, std::move(from)) {}
-  inline BaseAttributeDeltaS2C& operator=(const BaseAttributeDeltaS2C& from) {
+  inline BaseAttributeSyncDataS2C(const BaseAttributeSyncDataS2C& from) : BaseAttributeSyncDataS2C(nullptr, from) {}
+  inline BaseAttributeSyncDataS2C(BaseAttributeSyncDataS2C&& from) noexcept
+      : BaseAttributeSyncDataS2C(nullptr, std::move(from)) {}
+  inline BaseAttributeSyncDataS2C& operator=(const BaseAttributeSyncDataS2C& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BaseAttributeDeltaS2C& operator=(BaseAttributeDeltaS2C&& from) noexcept {
+  inline BaseAttributeSyncDataS2C& operator=(BaseAttributeSyncDataS2C&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -968,16 +968,16 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BaseAttributeDeltaS2C& default_instance() {
+  static const BaseAttributeSyncDataS2C& default_instance() {
     return *internal_default_instance();
   }
-  static inline const BaseAttributeDeltaS2C* internal_default_instance() {
-    return reinterpret_cast<const BaseAttributeDeltaS2C*>(
+  static inline const BaseAttributeSyncDataS2C* internal_default_instance() {
+    return reinterpret_cast<const BaseAttributeSyncDataS2C*>(
         &_BaseAttributeDeltaS2C_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(BaseAttributeDeltaS2C& a, BaseAttributeDeltaS2C& b) { a.Swap(&b); }
-  inline void Swap(BaseAttributeDeltaS2C* other) {
+  friend void swap(BaseAttributeSyncDataS2C& a, BaseAttributeSyncDataS2C& b) { a.Swap(&b); }
+  inline void Swap(BaseAttributeSyncDataS2C* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -989,7 +989,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BaseAttributeDeltaS2C* other) {
+  void UnsafeArenaSwap(BaseAttributeSyncDataS2C* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -997,13 +997,13 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BaseAttributeDeltaS2C* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<BaseAttributeDeltaS2C>(arena);
+  BaseAttributeSyncDataS2C* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<BaseAttributeSyncDataS2C>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BaseAttributeDeltaS2C& from);
+  void CopyFrom(const BaseAttributeSyncDataS2C& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BaseAttributeDeltaS2C& from) { BaseAttributeDeltaS2C::MergeImpl(*this, from); }
+  void MergeFrom(const BaseAttributeSyncDataS2C& from) { BaseAttributeSyncDataS2C::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -1024,16 +1024,16 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(BaseAttributeDeltaS2C* other);
+  void InternalSwap(BaseAttributeSyncDataS2C* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "BaseAttributeDeltaS2C"; }
+  static ::absl::string_view FullMessageName() { return "BaseAttributeSyncDataS2C"; }
 
  protected:
-  explicit BaseAttributeDeltaS2C(::google::protobuf::Arena* arena);
-  BaseAttributeDeltaS2C(::google::protobuf::Arena* arena, const BaseAttributeDeltaS2C& from);
-  BaseAttributeDeltaS2C(::google::protobuf::Arena* arena, BaseAttributeDeltaS2C&& from) noexcept
-      : BaseAttributeDeltaS2C(arena) {
+  explicit BaseAttributeSyncDataS2C(::google::protobuf::Arena* arena);
+  BaseAttributeSyncDataS2C(::google::protobuf::Arena* arena, const BaseAttributeSyncDataS2C& from);
+  BaseAttributeSyncDataS2C(::google::protobuf::Arena* arena, BaseAttributeSyncDataS2C&& from) noexcept
+      : BaseAttributeSyncDataS2C(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -1105,7 +1105,7 @@ class BaseAttributeDeltaS2C final : public ::google::protobuf::Message
   void _internal_set_entity_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:BaseAttributeDeltaS2C)
+  // @@protoc_insertion_point(class_scope:BaseAttributeSyncDataS2C)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1158,7 +1158,7 @@ class EntitySyncService : public ::google::protobuf::Service {
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
   virtual void SyncBaseAttribute(::google::protobuf::RpcController* controller,
-                        const ::BaseAttributeDeltaS2C* request,
+                        const ::BaseAttributeSyncDataS2C* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
   virtual void SyncAttribute2Frames(::google::protobuf::RpcController* controller,
@@ -1213,7 +1213,7 @@ class EntitySyncService_Stub final : public EntitySyncService {
 
   // implements EntitySyncService ------------------------------------------
   void SyncBaseAttribute(::google::protobuf::RpcController* controller,
-                        const ::BaseAttributeDeltaS2C* request,
+                        const ::BaseAttributeSyncDataS2C* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
   void SyncAttribute2Frames(::google::protobuf::RpcController* controller,
@@ -1254,46 +1254,46 @@ class EntitySyncService_Stub final : public EntitySyncService {
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// BaseAttributeDeltaS2C
+// BaseAttributeSyncDataS2C
 
 // uint64 entity_id = 1;
-inline void BaseAttributeDeltaS2C::clear_entity_id() {
+inline void BaseAttributeSyncDataS2C::clear_entity_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.entity_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t BaseAttributeDeltaS2C::entity_id() const {
-  // @@protoc_insertion_point(field_get:BaseAttributeDeltaS2C.entity_id)
+inline ::uint64_t BaseAttributeSyncDataS2C::entity_id() const {
+  // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.entity_id)
   return _internal_entity_id();
 }
-inline void BaseAttributeDeltaS2C::set_entity_id(::uint64_t value) {
+inline void BaseAttributeSyncDataS2C::set_entity_id(::uint64_t value) {
   _internal_set_entity_id(value);
-  // @@protoc_insertion_point(field_set:BaseAttributeDeltaS2C.entity_id)
+  // @@protoc_insertion_point(field_set:BaseAttributeSyncDataS2C.entity_id)
 }
-inline ::uint64_t BaseAttributeDeltaS2C::_internal_entity_id() const {
+inline ::uint64_t BaseAttributeSyncDataS2C::_internal_entity_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.entity_id_;
 }
-inline void BaseAttributeDeltaS2C::_internal_set_entity_id(::uint64_t value) {
+inline void BaseAttributeSyncDataS2C::_internal_set_entity_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.entity_id_ = value;
 }
 
 // .Transform transform = 2;
-inline bool BaseAttributeDeltaS2C::has_transform() const {
+inline bool BaseAttributeSyncDataS2C::has_transform() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.transform_ != nullptr);
   return value;
 }
-inline const ::Transform& BaseAttributeDeltaS2C::_internal_transform() const {
+inline const ::Transform& BaseAttributeSyncDataS2C::_internal_transform() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::Transform* p = _impl_.transform_;
   return p != nullptr ? *p : reinterpret_cast<const ::Transform&>(::_Transform_default_instance_);
 }
-inline const ::Transform& BaseAttributeDeltaS2C::transform() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BaseAttributeDeltaS2C.transform)
+inline const ::Transform& BaseAttributeSyncDataS2C::transform() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.transform)
   return _internal_transform();
 }
-inline void BaseAttributeDeltaS2C::unsafe_arena_set_allocated_transform(::Transform* value) {
+inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_transform(::Transform* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.transform_);
@@ -1304,9 +1304,9 @@ inline void BaseAttributeDeltaS2C::unsafe_arena_set_allocated_transform(::Transf
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeDeltaS2C.transform)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.transform)
 }
-inline ::Transform* BaseAttributeDeltaS2C::release_transform() {
+inline ::Transform* BaseAttributeSyncDataS2C::release_transform() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -1325,16 +1325,16 @@ inline ::Transform* BaseAttributeDeltaS2C::release_transform() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::Transform* BaseAttributeDeltaS2C::unsafe_arena_release_transform() {
+inline ::Transform* BaseAttributeSyncDataS2C::unsafe_arena_release_transform() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:BaseAttributeDeltaS2C.transform)
+  // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.transform)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::Transform* temp = _impl_.transform_;
   _impl_.transform_ = nullptr;
   return temp;
 }
-inline ::Transform* BaseAttributeDeltaS2C::_internal_mutable_transform() {
+inline ::Transform* BaseAttributeSyncDataS2C::_internal_mutable_transform() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.transform_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::Transform>(GetArena());
@@ -1342,13 +1342,13 @@ inline ::Transform* BaseAttributeDeltaS2C::_internal_mutable_transform() {
   }
   return _impl_.transform_;
 }
-inline ::Transform* BaseAttributeDeltaS2C::mutable_transform() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::Transform* BaseAttributeSyncDataS2C::mutable_transform() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::Transform* _msg = _internal_mutable_transform();
-  // @@protoc_insertion_point(field_mutable:BaseAttributeDeltaS2C.transform)
+  // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.transform)
   return _msg;
 }
-inline void BaseAttributeDeltaS2C::set_allocated_transform(::Transform* value) {
+inline void BaseAttributeSyncDataS2C::set_allocated_transform(::Transform* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -1366,25 +1366,25 @@ inline void BaseAttributeDeltaS2C::set_allocated_transform(::Transform* value) {
   }
 
   _impl_.transform_ = reinterpret_cast<::Transform*>(value);
-  // @@protoc_insertion_point(field_set_allocated:BaseAttributeDeltaS2C.transform)
+  // @@protoc_insertion_point(field_set_allocated:BaseAttributeSyncDataS2C.transform)
 }
 
 // .Velocity velocity = 3;
-inline bool BaseAttributeDeltaS2C::has_velocity() const {
+inline bool BaseAttributeSyncDataS2C::has_velocity() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.velocity_ != nullptr);
   return value;
 }
-inline const ::Velocity& BaseAttributeDeltaS2C::_internal_velocity() const {
+inline const ::Velocity& BaseAttributeSyncDataS2C::_internal_velocity() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::Velocity* p = _impl_.velocity_;
   return p != nullptr ? *p : reinterpret_cast<const ::Velocity&>(::_Velocity_default_instance_);
 }
-inline const ::Velocity& BaseAttributeDeltaS2C::velocity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BaseAttributeDeltaS2C.velocity)
+inline const ::Velocity& BaseAttributeSyncDataS2C::velocity() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.velocity)
   return _internal_velocity();
 }
-inline void BaseAttributeDeltaS2C::unsafe_arena_set_allocated_velocity(::Velocity* value) {
+inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_velocity(::Velocity* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.velocity_);
@@ -1395,9 +1395,9 @@ inline void BaseAttributeDeltaS2C::unsafe_arena_set_allocated_velocity(::Velocit
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeDeltaS2C.velocity)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.velocity)
 }
-inline ::Velocity* BaseAttributeDeltaS2C::release_velocity() {
+inline ::Velocity* BaseAttributeSyncDataS2C::release_velocity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
@@ -1416,16 +1416,16 @@ inline ::Velocity* BaseAttributeDeltaS2C::release_velocity() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::Velocity* BaseAttributeDeltaS2C::unsafe_arena_release_velocity() {
+inline ::Velocity* BaseAttributeSyncDataS2C::unsafe_arena_release_velocity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:BaseAttributeDeltaS2C.velocity)
+  // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.velocity)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::Velocity* temp = _impl_.velocity_;
   _impl_.velocity_ = nullptr;
   return temp;
 }
-inline ::Velocity* BaseAttributeDeltaS2C::_internal_mutable_velocity() {
+inline ::Velocity* BaseAttributeSyncDataS2C::_internal_mutable_velocity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.velocity_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::Velocity>(GetArena());
@@ -1433,13 +1433,13 @@ inline ::Velocity* BaseAttributeDeltaS2C::_internal_mutable_velocity() {
   }
   return _impl_.velocity_;
 }
-inline ::Velocity* BaseAttributeDeltaS2C::mutable_velocity() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::Velocity* BaseAttributeSyncDataS2C::mutable_velocity() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::Velocity* _msg = _internal_mutable_velocity();
-  // @@protoc_insertion_point(field_mutable:BaseAttributeDeltaS2C.velocity)
+  // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.velocity)
   return _msg;
 }
-inline void BaseAttributeDeltaS2C::set_allocated_velocity(::Velocity* value) {
+inline void BaseAttributeSyncDataS2C::set_allocated_velocity(::Velocity* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -1457,25 +1457,25 @@ inline void BaseAttributeDeltaS2C::set_allocated_velocity(::Velocity* value) {
   }
 
   _impl_.velocity_ = reinterpret_cast<::Velocity*>(value);
-  // @@protoc_insertion_point(field_set_allocated:BaseAttributeDeltaS2C.velocity)
+  // @@protoc_insertion_point(field_set_allocated:BaseAttributeSyncDataS2C.velocity)
 }
 
 // .CombatStateFlagsPbComponent combat_state_flags = 4;
-inline bool BaseAttributeDeltaS2C::has_combat_state_flags() const {
+inline bool BaseAttributeSyncDataS2C::has_combat_state_flags() const {
   bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.combat_state_flags_ != nullptr);
   return value;
 }
-inline const ::CombatStateFlagsPbComponent& BaseAttributeDeltaS2C::_internal_combat_state_flags() const {
+inline const ::CombatStateFlagsPbComponent& BaseAttributeSyncDataS2C::_internal_combat_state_flags() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::CombatStateFlagsPbComponent* p = _impl_.combat_state_flags_;
   return p != nullptr ? *p : reinterpret_cast<const ::CombatStateFlagsPbComponent&>(::_CombatStateFlagsPbComponent_default_instance_);
 }
-inline const ::CombatStateFlagsPbComponent& BaseAttributeDeltaS2C::combat_state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:BaseAttributeDeltaS2C.combat_state_flags)
+inline const ::CombatStateFlagsPbComponent& BaseAttributeSyncDataS2C::combat_state_flags() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseAttributeSyncDataS2C.combat_state_flags)
   return _internal_combat_state_flags();
 }
-inline void BaseAttributeDeltaS2C::unsafe_arena_set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* value) {
+inline void BaseAttributeSyncDataS2C::unsafe_arena_set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.combat_state_flags_);
@@ -1486,9 +1486,9 @@ inline void BaseAttributeDeltaS2C::unsafe_arena_set_allocated_combat_state_flags
   } else {
     _impl_._has_bits_[0] &= ~0x00000004u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeDeltaS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BaseAttributeSyncDataS2C.combat_state_flags)
 }
-inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::release_combat_state_flags() {
+inline ::CombatStateFlagsPbComponent* BaseAttributeSyncDataS2C::release_combat_state_flags() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000004u;
@@ -1507,16 +1507,16 @@ inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::release_combat_stat
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::unsafe_arena_release_combat_state_flags() {
+inline ::CombatStateFlagsPbComponent* BaseAttributeSyncDataS2C::unsafe_arena_release_combat_state_flags() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:BaseAttributeDeltaS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_release:BaseAttributeSyncDataS2C.combat_state_flags)
 
   _impl_._has_bits_[0] &= ~0x00000004u;
   ::CombatStateFlagsPbComponent* temp = _impl_.combat_state_flags_;
   _impl_.combat_state_flags_ = nullptr;
   return temp;
 }
-inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::_internal_mutable_combat_state_flags() {
+inline ::CombatStateFlagsPbComponent* BaseAttributeSyncDataS2C::_internal_mutable_combat_state_flags() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.combat_state_flags_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::CombatStateFlagsPbComponent>(GetArena());
@@ -1524,13 +1524,13 @@ inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::_internal_mutable_c
   }
   return _impl_.combat_state_flags_;
 }
-inline ::CombatStateFlagsPbComponent* BaseAttributeDeltaS2C::mutable_combat_state_flags() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::CombatStateFlagsPbComponent* BaseAttributeSyncDataS2C::mutable_combat_state_flags() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000004u;
   ::CombatStateFlagsPbComponent* _msg = _internal_mutable_combat_state_flags();
-  // @@protoc_insertion_point(field_mutable:BaseAttributeDeltaS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_mutable:BaseAttributeSyncDataS2C.combat_state_flags)
   return _msg;
 }
-inline void BaseAttributeDeltaS2C::set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* value) {
+inline void BaseAttributeSyncDataS2C::set_allocated_combat_state_flags(::CombatStateFlagsPbComponent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -1548,7 +1548,7 @@ inline void BaseAttributeDeltaS2C::set_allocated_combat_state_flags(::CombatStat
   }
 
   _impl_.combat_state_flags_ = reinterpret_cast<::CombatStateFlagsPbComponent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:BaseAttributeDeltaS2C.combat_state_flags)
+  // @@protoc_insertion_point(field_set_allocated:BaseAttributeSyncDataS2C.combat_state_flags)
 }
 
 // -------------------------------------------------------------------

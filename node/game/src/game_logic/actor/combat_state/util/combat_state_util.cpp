@@ -77,22 +77,29 @@ void CombatStateUtil::RemoveCombatState(const CombatStateRemovedPbEvent& removeE
     ActorAttributeCalculatorUtil::MarkAttributeForUpdate(entityId, kCombatState);
 }
 
-uint32_t CombatStateUtil::TryUseSkill(const entt::entity entityId, const uint32_t combatAction)
+uint32_t CombatStateUtil::ValidateSkillUsage(const entt::entity entityId, const uint32_t combatAction)
 {
+    // 获取实体的战斗状态集合
     const auto& combatStateCollection = tls.registry.get<CombatStateCollectionPbComponent>(entityId);
-    if (combatStateCollection.states().empty())
-    {
+
+    // 如果没有战斗状态，技能使用成功
+    if (combatStateCollection.states().empty()) {
         return kSuccess;
     }
 
-    FetchAndValidateActorActionCombatStateTable(combatAction)
+    FetchAndValidateActorActionCombatStateTable(combatAction);
 
-    for (const auto& fst : combatStateCollection.states() | std::views::keys){
-        if (auto& state = actorActionCombatStateTable->state(fst);
-            state.state_mode() == kCombatStateMutualExclusion ){
-            return state.state_tip();
+    // 遍历所有战斗状态键，检查是否存在互斥状态
+    for (const auto& stateKey : combatStateCollection.states() | std::views::keys) {
+        // 获取当前状态对象
+        const auto& combatState = actorActionCombatStateTable->state(stateKey);
+
+        // 如果状态是互斥的，返回提示信息
+        if (combatState.state_mode() == kCombatStateMutualExclusion) {
+            return combatState.state_tip();
         }
     }
-    
+
+    // 所有检查通过，技能使用成功
     return kSuccess;
 }

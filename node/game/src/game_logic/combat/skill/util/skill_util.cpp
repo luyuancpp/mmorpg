@@ -167,7 +167,7 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
 	RETURN_ON_ERROR(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
-	RETURN_ON_ERROR(CombatStateUtil::TryUseSkill(casterEntity, kActorActionUseSkill));
+	RETURN_ON_ERROR(CombatStateUtil::ValidateSkillUsage(casterEntity, kActorActionUseSkill));
 	return kSuccess;
 }
 
