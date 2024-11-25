@@ -67,9 +67,9 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 	}
 }
 func handleEntitySyncServiceSyncBaseAttribute(player *gameobject.Player, body []byte) {
-	message := &game.BaseAttributeDeltaS2C{}
+	message := &game.BaseAttributeSyncDataS2C{}
 	if err := proto.Unmarshal(body, message); err != nil {
-		zap.L().Error("Failed to unmarshal BaseAttributeDeltaS2C", zap.Error(err))
+		zap.L().Error("Failed to unmarshal BaseAttributeSyncDataS2C", zap.Error(err))
 		return
 	}
 	EntitySyncServiceSyncBaseAttributeHandler(player, message)

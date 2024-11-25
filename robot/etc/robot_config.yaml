@@ -1,7 +1,7 @@
 server:
   address: "localhost"
   ip: "127.0.0.1"
-  port: 4000
+  port: 8000
 robots:
   count: 2
 loglevel: 1

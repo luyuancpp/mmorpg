@@ -3,23 +3,23 @@
 #include "thread_local/storage_lua.h"
 void Pb2sol2player_state_attribute_sync()
 {
-tls_lua_state.new_usertype<BaseAttributeDeltaS2C>("BaseAttributeDeltaS2C",
+tls_lua_state.new_usertype<BaseAttributeSyncDataS2C>("BaseAttributeSyncDataS2C",
 "entity_id",
-sol::property(&BaseAttributeDeltaS2C::entity_id, &BaseAttributeDeltaS2C::set_entity_id),
+sol::property(&BaseAttributeSyncDataS2C::entity_id, &BaseAttributeSyncDataS2C::set_entity_id),
 "transform",
-[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.transform();},
+[](BaseAttributeSyncDataS2C& pb) ->decltype(auto){ return pb.transform();},
 "mutable_transform",
-[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.mutable_transform();},
+[](BaseAttributeSyncDataS2C& pb) ->decltype(auto){ return pb.mutable_transform();},
 "velocity",
-[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.velocity();},
+[](BaseAttributeSyncDataS2C& pb) ->decltype(auto){ return pb.velocity();},
 "mutable_velocity",
-[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.mutable_velocity();},
+[](BaseAttributeSyncDataS2C& pb) ->decltype(auto){ return pb.mutable_velocity();},
 "combat_state_flags",
-[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.combat_state_flags();},
+[](BaseAttributeSyncDataS2C& pb) ->decltype(auto){ return pb.combat_state_flags();},
 "mutable_combat_state_flags",
-[](BaseAttributeDeltaS2C& pb) ->decltype(auto){ return pb.mutable_combat_state_flags();},
+[](BaseAttributeSyncDataS2C& pb) ->decltype(auto){ return pb.mutable_combat_state_flags();},
 "DebugString",
-&BaseAttributeDeltaS2C::DebugString,
+&BaseAttributeSyncDataS2C::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<AttributeDelta2FramesS2C>("AttributeDelta2FramesS2C",

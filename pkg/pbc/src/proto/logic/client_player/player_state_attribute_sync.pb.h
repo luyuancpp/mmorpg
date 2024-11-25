@@ -72,8 +72,8 @@ class AttributeDelta60FramesS2C;
 struct AttributeDelta60FramesS2CDefaultTypeInternal;
 extern AttributeDelta60FramesS2CDefaultTypeInternal _AttributeDelta60FramesS2C_default_instance_;
 class BaseAttributeSyncDataS2C;
-struct BaseAttributeDeltaS2CDefaultTypeInternal;
-extern BaseAttributeDeltaS2CDefaultTypeInternal _BaseAttributeDeltaS2C_default_instance_;
+struct BaseAttributeSyncDataS2CDefaultTypeInternal;
+extern BaseAttributeSyncDataS2CDefaultTypeInternal _BaseAttributeSyncDataS2C_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -973,7 +973,7 @@ class BaseAttributeSyncDataS2C final : public ::google::protobuf::Message
   }
   static inline const BaseAttributeSyncDataS2C* internal_default_instance() {
     return reinterpret_cast<const BaseAttributeSyncDataS2C*>(
-        &_BaseAttributeDeltaS2C_default_instance_);
+        &_BaseAttributeSyncDataS2C_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
   friend void swap(BaseAttributeSyncDataS2C& a, BaseAttributeSyncDataS2C& b) { a.Swap(&b); }

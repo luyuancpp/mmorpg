@@ -17,10 +17,6 @@ import (
 )
 
 func {{.HandlerName}}(player *gameobject.Player, response *game.{{.ResponseType}}) {
-	{{- range .Cases }}
-	case game.{{.MessageID}}:
-		{{.HandlerFunction}}(player, response.Body)
-	{{- end }}
 }
 `
 
