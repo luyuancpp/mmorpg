@@ -18,9 +18,6 @@ public:
     // 检查是否应该发送NPC进入消息，例如在没有NPC任务或多人副本中不优先关注NPC
     static bool ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant);
 
-    // 检查是否应该更新视图
-    static bool ShouldUpdateView(entt::entity observer, entt::entity entrant);
-
     // 填充Actor创建消息信息
     static void FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& createMessage);
 
@@ -36,6 +33,7 @@ public:
 
     // 检查参与者是否超出视野半径
     static bool IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius);
+    static bool IsWithinViewRadius(entt::entity observer, entt::entity entrant);
 
     static double GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2);
     

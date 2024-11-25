@@ -10,11 +10,6 @@ bool ViewUtil::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity ent
     return true; // Mock behavior
 }
 
-bool ViewUtil::ShouldUpdateView(entt::entity observer, entt::entity entity) {
-    
-    return true; // Mock behavior
-}
-
 void ViewUtil::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage) {
     entitiesToNotifyEntry.emplace(observer, entity);
 }
@@ -25,6 +20,11 @@ void ViewUtil::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leav
 }
 
 bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
+{
+    return true;
+}
+
+bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 {
     return true;
 }

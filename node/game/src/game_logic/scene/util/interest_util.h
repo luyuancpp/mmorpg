@@ -10,6 +10,8 @@ public:
 
     static void RemoveWatcher(const entt::entity watcher, const entt::entity target);
 
+    static bool IsInAoiList(const entt::entity watcher, const entt::entity target);
+    
     static void AddAoiEntity(const entt::entity watcher, const entt::entity target);
 
     static void RemoveAoiEntity(const entt::entity watcher, const entt::entity target);

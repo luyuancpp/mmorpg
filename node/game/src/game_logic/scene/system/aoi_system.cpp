@@ -2,6 +2,7 @@
 
 #include "hexagons_grid.h"
 #include "game_logic/core/network/message_util.h"
+#include "game_logic/entity/util/entity_util.h"
 #include "game_logic/scene/comp/grid_comp.h"
 #include "game_logic/scene/util/grid_util.h"
 #include "game_logic/scene/util/interest_util.h"
@@ -17,6 +18,7 @@
 
 void AoiSystem::Update(double delta) {
 	GridSet neighborGridsToEnter, neighborGridsToLeave;
+	GridSet gridIntersection;
 	EntityUnorderedSet entitiesEnteringCurrentView, observersNotifiedOfMyEntry;
 
 	for (auto&& [currentEntity, transform, sceneComponent] : tls.registry.view<Transform, SceneEntityComp>().each()) {
@@ -26,12 +28,13 @@ void AoiSystem::Update(double delta) {
 			continue;
 		}
 
+		auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent.sceneEntity);
+		
 		neighborGridsToEnter.clear();
 		neighborGridsToLeave.clear();
 		entitiesEnteringCurrentView.clear();
 		observersNotifiedOfMyEntry.clear();
 
-		auto& gridList = tls.sceneRegistry.get<SceneGridListComp>(sceneComponent.sceneEntity);
 		const auto currentHexPosition = GridUtil::CalculateHexPosition(transform);
 		const auto currentGridId = GridUtil::GetGridId(currentHexPosition);
 
@@ -50,11 +53,15 @@ void AoiSystem::Update(double delta) {
 			GridUtil::GetCurrentAndNeighborGridIds(previousHexPosition, neighborGridsToLeave);
 			GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, neighborGridsToEnter);
 
-			for (const auto& grid : neighborGridsToEnter) {
-				neighborGridsToLeave.erase(grid);
-			}
-			for (const auto& grid : neighborGridsToLeave) {
-				neighborGridsToEnter.erase(grid);
+			gridIntersection.clear();
+			// 找到交集
+			std::ranges::set_intersection(neighborGridsToLeave, neighborGridsToEnter,
+			                              std::inserter(gridIntersection, gridIntersection.begin()));
+
+			// 从两个集合中删除交集元素
+			for (const auto& elem : gridIntersection) {
+				neighborGridsToLeave.erase(elem);
+				neighborGridsToEnter.erase(elem);
 			}
 
 			const auto previousGridId = GridUtil::GetGridId(previousHexPosition);
@@ -78,38 +85,46 @@ void AoiSystem::Update(double delta) {
 			// 处理进入当前实体视野的 NPC
 			for (const auto& otherEntity : gridIt->second.entity_list) {
 				if (otherEntity == currentEntity || 
-					!tls.registry.any_of<Npc>(otherEntity) || 
+					EntityUtil::IsNotNpc(otherEntity) || 
 					!ViewUtil::ShouldSendNpcEnterMessage(currentEntity, otherEntity)) {
 					continue;
 				}
 
 				ViewUtil::FillActorCreateMessageInfo(currentEntity, otherEntity, actorCreateMessage);
 				InterestUtil::AddAoiEntity(currentEntity, otherEntity);
-				InterestUtil::AddAoiEntity(otherEntity, currentEntity);
 			}
 
 			// 处理当前实体进入其他实体视野或其他实体进入当前实体视野
 			for (const auto& otherEntity : gridIt->second.entity_list) {
-				if (otherEntity == currentEntity || tls.registry.any_of<Npc>(currentEntity)) {
+				if (otherEntity == currentEntity || EntityUtil::IsNotPlayer(otherEntity)) {
 					continue;
 				}
 
 				// 当前实体进入其他实体的视野
-				if (ViewUtil::ShouldUpdateView(otherEntity, currentEntity)) {
-					ViewUtil::FillActorCreateMessageInfo(otherEntity, currentEntity, actorCreateMessage);
+				if (ViewUtil::IsWithinViewRadius(otherEntity, currentEntity)) {
 					observersNotifiedOfMyEntry.emplace(otherEntity);
-					InterestUtil::AddAoiEntity(otherEntity, currentEntity);
 				}
 
 				// 其他实体进入当前实体的视野
-				if (ViewUtil::ShouldUpdateView(currentEntity, otherEntity)) {
-					ViewUtil::FillActorCreateMessageInfo(currentEntity, otherEntity, *actorListCreateMessage.add_actor_list());
+				if (ViewUtil::IsWithinViewRadius(currentEntity, otherEntity)) {
 					entitiesEnteringCurrentView.emplace(otherEntity);
-					InterestUtil::AddAoiEntity(currentEntity, otherEntity);
 				}
 			}
 		}
 
+		//处理我进入别人的视野，添加感兴趣列表
+		for (auto& otherEntity: observersNotifiedOfMyEntry)
+		{
+			ViewUtil::FillActorCreateMessageInfo(otherEntity, currentEntity, actorCreateMessage);
+			InterestUtil::AddAoiEntity(otherEntity, currentEntity);
+		}
+
+		//处理别人进入我的视野，添加感兴趣列表
+		for (auto& otherEntity : entitiesEnteringCurrentView){
+			ViewUtil::FillActorCreateMessageInfo(currentEntity, otherEntity, *actorListCreateMessage.add_actor_list());
+			InterestUtil::AddAoiEntity(currentEntity, otherEntity);
+		}
+		
 		// 发送消息给进入视野的实体
 		if (!actorListCreateMessage.actor_list().empty()) {
 			SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListCreateMessageId, actorListCreateMessage, currentEntity);
