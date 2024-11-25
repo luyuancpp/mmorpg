@@ -12,4 +12,6 @@ public:
     static void AddCombatState(const CombatStateAddedPbEvent& event);
     
     static void RemoveCombatState(const CombatStateRemovedPbEvent& event);
+
+    static uint32_t TryUseSkill(entt::entity entityId, uint32_t combatAction);
 };

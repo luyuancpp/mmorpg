@@ -1,10 +1,12 @@
 ﻿#include "combat_state_util.h"
 
-#include "event/actor_combat_state_event.pb.h"
+#include "actoractioncombatstate_config.h"
+#include "common_error_tip.pb.h"
 #include "game_logic/actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "game_logic/actor/attribute/util/actor_attribute_calculator_util.h"
 #include "game_logic/actor/combat_state/constants/combat_state_constants.h"
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
+#include "proto/logic/event/actor_combat_state_event.pb.h"
 #include "thread_local/storage.h"
 
 // 初始化实体的战斗状态组件
@@ -73,4 +75,24 @@ void CombatStateUtil::RemoveCombatState(const CombatStateRemovedPbEvent& removeE
 
     // 标记需要更新战斗状态属性
     ActorAttributeCalculatorUtil::MarkAttributeForUpdate(entityId, kCombatState);
+}
+
+uint32_t CombatStateUtil::TryUseSkill(const entt::entity entityId, const uint32_t combatAction)
+{
+    const auto& combatStateCollection = tls.registry.get<CombatStateCollectionPbComponent>(entityId);
+    if (combatStateCollection.states().empty())
+    {
+        return kSuccess;
+    }
+
+    FetchAndValidateActorActionCombatStateTable(combatAction)
+
+    for (const auto& fst : combatStateCollection.states() | std::views::keys){
+        if (auto& state = actorActionCombatStateTable->state(fst);
+            state.state_mode() == kCombatStateMutualExclusion ){
+            return state.state_tip();
+        }
+    }
+    
+    return kSuccess;
 }

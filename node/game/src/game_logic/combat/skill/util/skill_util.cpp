@@ -7,6 +7,7 @@
 #include "skill_config.h"
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"
 #include "game_logic/actor/action_state/util/actor_action_state_util.h"
+#include "game_logic/actor/combat_state/util/combat_state_util.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
@@ -166,7 +167,7 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
 	RETURN_ON_ERROR(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
-	
+	RETURN_ON_ERROR(CombatStateUtil::TryUseSkill(casterEntity, kActorActionUseSkill));
 	return kSuccess;
 }
 
