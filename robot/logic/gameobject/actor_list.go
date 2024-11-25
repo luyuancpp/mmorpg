@@ -1,9 +1,9 @@
 package gameobject
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"sync"
-	"time"
 )
 
 // ActorList 管理游戏中的演员集合
@@ -14,7 +14,6 @@ type ActorList struct {
 
 // NewActorList 创建一个新的 ActorList 实例
 func NewActorList() *ActorList {
-	rand.Seed(time.Now().UnixNano())
 	return &ActorList{
 		actors: make(map[uint64]struct{}),
 	}
@@ -66,8 +65,14 @@ func (al *ActorList) GetRandomActor() (uint64, bool) {
 	for id := range al.actors {
 		actorIDs = append(actorIDs, id)
 	}
-	randomIndex := rand.Intn(len(actorIDs))
-	return actorIDs[randomIndex], true
+
+	actorLen := int64(len(actorIDs))
+	n, err := rand.Int(rand.Reader, big.NewInt(actorLen))
+	if err != nil {
+		panic(err)
+	}
+
+	return actorIDs[n.Int64()], true
 }
 
 // GetActor 根据演员 ID 返回演员
