@@ -225,6 +225,12 @@
     <ClCompile Include="src\handler\event\actor_combat_state_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\actor\combat_state\util\combat_state_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_logic\entity\util\entity_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">
@@ -492,6 +498,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\actor_combat_state_event_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\actor\combat_state\constants\combat_state_constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\entity\util\entity_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

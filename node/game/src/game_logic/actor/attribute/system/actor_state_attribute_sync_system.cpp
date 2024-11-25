@@ -50,7 +50,8 @@ void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& ne
 
     // 根据每个帧同步频率配置进行属性同步
     for (const auto& frequency : distanceSyncConfig.syncFrequencies) {
-        if (currentFrame % frequency == 0) {
+        // 添加检查，确保 frequency 大于 0
+        if (frequency > 0 && currentFrame % frequency == 0) {
             ActorStateAttributeSyncUtil::SyncAttributes(entity, nearbyEntityList, frequency);
         }
     }
@@ -58,6 +59,7 @@ void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& ne
     // 清空实体列表，为下一个距离级别的同步做准备
     nearbyEntityList.clear();
 }
+
 
 // 系统更新函数，遍历每个实体并按距离级别进行属性同步
 void ActorStateAttributeSyncSystem::Update(const double delta)

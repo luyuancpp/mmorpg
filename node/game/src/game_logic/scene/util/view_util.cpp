@@ -55,32 +55,6 @@ bool ViewUtil::ShouldRefreshView()
 	return true;
 }
 
-bool ViewUtil::ShouldUpdateView(entt::entity observer, entt::entity entrant)
-{
-	if (BothAreNpcs(observer, entrant)) {
-		return false;
-	}
-
-	if (EntrantIsNpc(entrant)) {
-		return true;
-	}
-
-	// 如果需要刷新视图，返回false
-	if (!ShouldRefreshView()) {
-		return false;
-	}
-
-	double viewRadius = GetMaxViewRadius(observer);
-
-	if (IsWithinViewRadius(observer, entrant, viewRadius)) {
-		return false;
-	}
-
-	// TODO: Check priority focus list
-
-	return true;
-}
-
 double ViewUtil::GetMaxViewRadius(entt::entity observer)
 {
 	double viewRadius = kMaxViewRadius;
@@ -116,6 +90,13 @@ bool ViewUtil::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity
 
 	// 计算实体间的距离，并检查是否在视野范围内
 	return dtVdist(viewerLocation, targetLocation) <= visionRadius;
+}
+
+bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
+{
+	const double viewRadius = GetMaxViewRadius(observer);
+
+	return IsWithinViewRadius(observer, entrant, viewRadius);
 }
 
 double ViewUtil::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
