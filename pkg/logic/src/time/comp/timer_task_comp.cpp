@@ -30,21 +30,22 @@ void TimerTaskComp::RunAt(const Timestamp& time, const TimerCallback& cb) {
     UpdateEndStamp();
 }
 
-void TimerTaskComp::RunAfter(double delay, const TimerCallback& cb) {
+void TimerTaskComp::RunAfter(const double delay, const TimerCallback& cb) {
     Cancel();
     callback = cb;
     timerId = tlsEventLoop->runAfter(delay, std::bind(&TimerTaskComp::OnTimer, this));
     UpdateEndStamp();
 }
 
-void TimerTaskComp::RunEvery(double interval, const TimerCallback& cb) {
+void TimerTaskComp::RunEvery(const double interval, const TimerCallback& cb) {
     Cancel();
     callback = cb;
     timerId = tlsEventLoop->runEvery(interval, std::bind(&TimerTaskComp::OnTimer, this));
     UpdateEndStamp();
 }
 
-void TimerTaskComp::Run() {
+void TimerTaskComp::Run() const
+{
     if (callback) {
         callback();
     }
@@ -58,11 +59,11 @@ void TimerTaskComp::Cancel() {
 }
 
 bool TimerTaskComp::IsActive() const {
-    return !(endTime.invalid() == endTime);
+    return Timestamp::invalid() != endTime;
 }
 
 uint64_t TimerTaskComp::GetEndTime() {
-    if (endTime < Timestamp(TimeUtil::NowSecondsUTC())) {
+    if (endTime < Timestamp(static_cast<int64_t>(TimeUtil::NowSecondsUTC()))) {
         return 0;
     }
     return timerId.GetTimer()->expiration().secondsSinceEpoch();
@@ -81,7 +82,7 @@ void TimerTaskComp::SetCallBack(const TimerCallback& cb) {
 
 void TimerTaskComp::OnTimer() {
     if (callback) {
-        TimerCallback copycb = callback;
+        const TimerCallback copycb = callback;
         copycb();
         endTime = Timestamp();
     }

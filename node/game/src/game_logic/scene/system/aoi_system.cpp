@@ -103,11 +103,14 @@ void AoiSystem::Update(double delta) {
 				// 当前实体进入其他实体的视野
 				if (ViewUtil::IsWithinViewRadius(otherEntity, currentEntity)) {
 					observersNotifiedOfMyEntry.emplace(otherEntity);
+					InterestUtil::AddAoiEntity(otherEntity, currentEntity);
+
 				}
 
 				// 其他实体进入当前实体的视野
 				if (ViewUtil::IsWithinViewRadius(currentEntity, otherEntity)) {
 					entitiesEnteringCurrentView.emplace(otherEntity);
+					InterestUtil::AddAoiEntity(currentEntity, otherEntity);
 				}
 			}
 		}
@@ -116,13 +119,11 @@ void AoiSystem::Update(double delta) {
 		for (auto& otherEntity: observersNotifiedOfMyEntry)
 		{
 			ViewUtil::FillActorCreateMessageInfo(otherEntity, currentEntity, actorCreateMessage);
-			InterestUtil::AddAoiEntity(otherEntity, currentEntity);
 		}
 
 		//处理别人进入我的视野，添加感兴趣列表
 		for (auto& otherEntity : entitiesEnteringCurrentView){
 			ViewUtil::FillActorCreateMessageInfo(currentEntity, otherEntity, *actorListCreateMessage.add_actor_list());
-			InterestUtil::AddAoiEntity(currentEntity, otherEntity);
 		}
 		
 		// 发送消息给进入视野的实体
