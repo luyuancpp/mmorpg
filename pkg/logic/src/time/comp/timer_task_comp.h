@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "muduo/net/EventLoop.h"
 #include "muduo/net/Callbacks.h"
+#include "muduo/net/EventLoop.h"
 
 using muduo::net::TimerId;
 using muduo::Timestamp;
@@ -24,7 +24,7 @@ public:
 	void RunAt(const Timestamp& time, const TimerCallback& cb);
 	void RunAfter(double delay, const TimerCallback& cb);
 	void RunEvery(double interval, const TimerCallback& cb);
-    void Run();
+    void Run() const;
 
 	void Cancel();
 
