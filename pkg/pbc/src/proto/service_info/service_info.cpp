@@ -89,7 +89,7 @@ g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListCreateMessageId)
 g_message_info[ClientPlayerSceneServiceNotifyActorListDestroyMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorListDestroy","ActorListDestroyS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
 g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListDestroyMessageId);
 
-g_message_info[EntitySyncServiceSyncBaseAttributeMessageId] = RpcService{"EntitySyncService","SyncBaseAttribute","BaseAttributeDeltaS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
+g_message_info[EntitySyncServiceSyncBaseAttributeMessageId] = RpcService{"EntitySyncService","SyncBaseAttribute","BaseAttributeSyncDataS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
 g_c2s_service_id.emplace(EntitySyncServiceSyncBaseAttributeMessageId);
 g_message_info[EntitySyncServiceSyncAttribute2FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute2Frames","AttributeDelta2FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
 g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute2FramesMessageId);

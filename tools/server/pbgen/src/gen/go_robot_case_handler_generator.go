@@ -51,6 +51,7 @@ func {{.HandlerFunction}}(player *gameobject.Player, body []byte) {
 	}
 	{{.FunctionCall}}(player, message)
 }
+
 {{- end }}
 `
 

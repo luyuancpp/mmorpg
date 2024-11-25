@@ -128,16 +128,16 @@ inline constexpr BaseAttributeSyncDataS2C::Impl_::Impl_(
 template <typename>
 PROTOBUF_CONSTEXPR BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct BaseAttributeDeltaS2CDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR BaseAttributeDeltaS2CDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~BaseAttributeDeltaS2CDefaultTypeInternal() {}
+struct BaseAttributeSyncDataS2CDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BaseAttributeSyncDataS2CDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BaseAttributeSyncDataS2CDefaultTypeInternal() {}
   union {
     BaseAttributeSyncDataS2C _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BaseAttributeDeltaS2CDefaultTypeInternal _BaseAttributeDeltaS2C_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BaseAttributeSyncDataS2CDefaultTypeInternal _BaseAttributeSyncDataS2C_default_instance_;
 static ::_pb::Metadata file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[6];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto = nullptr;
@@ -219,7 +219,7 @@ static const ::_pbi::MigrationSchema
         {52, -1, -1, sizeof(::AttributeDelta60FramesS2C)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_BaseAttributeDeltaS2C_default_instance_._instance,
+    &::_BaseAttributeSyncDataS2C_default_instance_._instance,
     &::_AttributeDelta2FramesS2C_default_instance_._instance,
     &::_AttributeDelta5FramesS2C_default_instance_._instance,
     &::_AttributeDelta10FramesS2C_default_instance_._instance,
@@ -233,27 +233,27 @@ const char descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fstate_5f
     "n/comp.proto\032\022common/empty.proto\032 logic/"
     "component/skill_comp.proto\032 logic/compon"
     "ent/actor_comp.proto\0320logic/component/ac"
-    "tor_attribute_state_comp.proto\"\240\001\n\025BaseA"
-    "ttributeDeltaS2C\022\021\n\tentity_id\030\001 \001(\004\022\035\n\tt"
-    "ransform\030\002 \001(\0132\n.Transform\022\033\n\010velocity\030\003"
-    " \001(\0132\t.Velocity\0228\n\022combat_state_flags\030\004 "
-    "\001(\0132\034.CombatStateFlagsPbComponent\"-\n\030Att"
-    "ributeDelta2FramesS2C\022\021\n\tentity_id\030\001 \001(\004"
-    "\"-\n\030AttributeDelta5FramesS2C\022\021\n\tentity_i"
-    "d\030\001 \001(\004\".\n\031AttributeDelta10FramesS2C\022\021\n\t"
-    "entity_id\030\001 \001(\004\".\n\031AttributeDelta30Frame"
-    "sS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031AttributeDelt"
-    "a60FramesS2C\022\021\n\tentity_id\030\001 \001(\0042\365\002\n\021Enti"
-    "tySyncService\0223\n\021SyncBaseAttribute\022\026.Bas"
-    "eAttributeDeltaS2C\032\006.Empty\0229\n\024SyncAttrib"
-    "ute2Frames\022\031.AttributeDelta2FramesS2C\032\006."
-    "Empty\0229\n\024SyncAttribute5Frames\022\031.Attribut"
-    "eDelta5FramesS2C\032\006.Empty\022;\n\025SyncAttribut"
-    "e10Frames\022\032.AttributeDelta10FramesS2C\032\006."
-    "Empty\022;\n\025SyncAttribute30Frames\022\032.Attribu"
-    "teDelta30FramesS2C\032\006.Empty\022;\n\025SyncAttrib"
-    "ute60Frames\022\032.AttributeDelta60FramesS2C\032"
-    "\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "tor_attribute_state_comp.proto\"\243\001\n\030BaseA"
+    "ttributeSyncDataS2C\022\021\n\tentity_id\030\001 \001(\004\022\035"
+    "\n\ttransform\030\002 \001(\0132\n.Transform\022\033\n\010velocit"
+    "y\030\003 \001(\0132\t.Velocity\0228\n\022combat_state_flags"
+    "\030\004 \001(\0132\034.CombatStateFlagsPbComponent\"-\n\030"
+    "AttributeDelta2FramesS2C\022\021\n\tentity_id\030\001 "
+    "\001(\004\"-\n\030AttributeDelta5FramesS2C\022\021\n\tentit"
+    "y_id\030\001 \001(\004\".\n\031AttributeDelta10FramesS2C\022"
+    "\021\n\tentity_id\030\001 \001(\004\".\n\031AttributeDelta30Fr"
+    "amesS2C\022\021\n\tentity_id\030\001 \001(\004\".\n\031AttributeD"
+    "elta60FramesS2C\022\021\n\tentity_id\030\001 \001(\0042\370\002\n\021E"
+    "ntitySyncService\0226\n\021SyncBaseAttribute\022\031."
+    "BaseAttributeSyncDataS2C\032\006.Empty\0229\n\024Sync"
+    "Attribute2Frames\022\031.AttributeDelta2Frames"
+    "S2C\032\006.Empty\0229\n\024SyncAttribute5Frames\022\031.At"
+    "tributeDelta5FramesS2C\032\006.Empty\022;\n\025SyncAt"
+    "tribute10Frames\022\032.AttributeDelta10Frames"
+    "S2C\032\006.Empty\022;\n\025SyncAttribute30Frames\022\032.A"
+    "ttributeDelta30FramesS2C\032\006.Empty\022;\n\025Sync"
+    "Attribute60Frames\022\032.AttributeDelta60Fram"
+    "esS2C\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_deps[6] =
     {
@@ -268,7 +268,7 @@ static ::absl::once_flag descriptor_table_logic_2fclient_5fplayer_2fplayer_5fsta
 const ::_pbi::DescriptorTable descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto = {
     false,
     false,
-    1029,
+    1035,
     descriptor_table_protodef_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto,
     "logic/client_player/player_state_attribute_sync.proto",
     &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
@@ -442,7 +442,7 @@ const ::_pbi::TcParseTable<2, 4, 3, 0, 2> BaseAttributeSyncDataS2C::_table_ = {
     4,  // num_field_entries
     3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    &_BaseAttributeDeltaS2C_default_instance_._instance,
+    &_BaseAttributeSyncDataS2C_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
     ::_pbi::TcParser::GetTable<::BaseAttributeSyncDataS2C>(),  // to_prefetch
