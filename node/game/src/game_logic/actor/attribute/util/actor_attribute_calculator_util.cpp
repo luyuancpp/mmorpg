@@ -54,7 +54,7 @@ void UpdateStatusEffects(entt::entity actorEntityId) {
 }
 
 void UpdateCombatState(entt::entity actorEntityId) {
-    auto& combatStateCollectionComponent = tls.registry.get<CombatStateCollectionPbComponent>(actorEntityId);
+    const auto& combatStateCollectionComponent = tls.registry.get<CombatStateCollectionPbComponent>(actorEntityId);
     
     auto& baseAttributeDeltaS2C = tls.registry.get<BaseAttributeDeltaS2C>(actorEntityId);
 
