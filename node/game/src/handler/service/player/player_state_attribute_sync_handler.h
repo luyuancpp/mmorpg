@@ -7,7 +7,7 @@ class EntitySyncServiceHandler : public ::PlayerService
 public:
 	using PlayerService::PlayerService;
 	static void SyncBaseAttribute(entt::entity player,
-		const ::BaseAttributeDeltaS2C* request,
+		const ::BaseAttributeSyncDataS2C* request,
 		::Empty* response);
 
 	static void SyncAttribute2Frames(entt::entity player,
@@ -39,7 +39,7 @@ public:
 		{
 		case 0:
 			SyncBaseAttribute(player,
-			::google::protobuf::internal::DownCast<const BaseAttributeDeltaS2C*>(request),
+			::google::protobuf::internal::DownCast<const BaseAttributeSyncDataS2C*>(request),
 			::google::protobuf::internal::DownCast<Empty*>(response));
 		break;
 		case 1:

@@ -117,7 +117,7 @@ struct AttributeDelta10FramesS2CDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AttributeDelta10FramesS2CDefaultTypeInternal _AttributeDelta10FramesS2C_default_instance_;
 
-inline constexpr BaseAttributeDeltaS2C::Impl_::Impl_(
+inline constexpr BaseAttributeSyncDataS2C::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         transform_{nullptr},
@@ -126,13 +126,13 @@ inline constexpr BaseAttributeDeltaS2C::Impl_::Impl_(
         entity_id_{::uint64_t{0u}} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR BaseAttributeDeltaS2C::BaseAttributeDeltaS2C(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
 struct BaseAttributeDeltaS2CDefaultTypeInternal {
   PROTOBUF_CONSTEXPR BaseAttributeDeltaS2CDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~BaseAttributeDeltaS2CDefaultTypeInternal() {}
   union {
-    BaseAttributeDeltaS2C _instance;
+    BaseAttributeSyncDataS2C _instance;
   };
 };
 
@@ -146,18 +146,18 @@ static const ::_pb::ServiceDescriptor*
 const ::uint32_t
     TableStruct_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_.entity_id_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_.transform_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_.velocity_),
-        PROTOBUF_FIELD_OFFSET(::BaseAttributeDeltaS2C, _impl_.combat_state_flags_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_.entity_id_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_.transform_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_.velocity_),
+        PROTOBUF_FIELD_OFFSET(::BaseAttributeSyncDataS2C, _impl_.combat_state_flags_),
         ~0u,
         0,
         1,
@@ -211,7 +211,7 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, 12, -1, sizeof(::BaseAttributeDeltaS2C)},
+        {0, 12, -1, sizeof(::BaseAttributeSyncDataS2C)},
         {16, -1, -1, sizeof(::AttributeDelta2FramesS2C)},
         {25, -1, -1, sizeof(::AttributeDelta5FramesS2C)},
         {34, -1, -1, sizeof(::AttributeDelta10FramesS2C)},
@@ -299,44 +299,44 @@ PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_logic_2f
 }
 // ===================================================================
 
-class BaseAttributeDeltaS2C::_Internal {
+class BaseAttributeSyncDataS2C::_Internal {
  public:
-  using HasBits = decltype(std::declval<BaseAttributeDeltaS2C>()._impl_._has_bits_);
+  using HasBits = decltype(std::declval<BaseAttributeSyncDataS2C>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_._has_bits_);
+    8 * PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_._has_bits_);
 };
 
-void BaseAttributeDeltaS2C::clear_transform() {
+void BaseAttributeSyncDataS2C::clear_transform() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.transform_ != nullptr) _impl_.transform_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-void BaseAttributeDeltaS2C::clear_velocity() {
+void BaseAttributeSyncDataS2C::clear_velocity() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.velocity_ != nullptr) _impl_.velocity_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-void BaseAttributeDeltaS2C::clear_combat_state_flags() {
+void BaseAttributeSyncDataS2C::clear_combat_state_flags() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.combat_state_flags_ != nullptr) _impl_.combat_state_flags_->Clear();
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-BaseAttributeDeltaS2C::BaseAttributeDeltaS2C(::google::protobuf::Arena* arena)
+BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:BaseAttributeDeltaS2C)
+  // @@protoc_insertion_point(arena_constructor:BaseAttributeSyncDataS2C)
 }
-inline PROTOBUF_NDEBUG_INLINE BaseAttributeDeltaS2C::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE BaseAttributeSyncDataS2C::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
-BaseAttributeDeltaS2C::BaseAttributeDeltaS2C(
+BaseAttributeSyncDataS2C::BaseAttributeSyncDataS2C(
     ::google::protobuf::Arena* arena,
-    const BaseAttributeDeltaS2C& from)
+    const BaseAttributeSyncDataS2C& from)
     : ::google::protobuf::Message(arena) {
-  BaseAttributeDeltaS2C* const _this = this;
+  BaseAttributeSyncDataS2C* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -353,14 +353,14 @@ BaseAttributeDeltaS2C::BaseAttributeDeltaS2C(
                         : nullptr;
   _impl_.entity_id_ = from._impl_.entity_id_;
 
-  // @@protoc_insertion_point(copy_constructor:BaseAttributeDeltaS2C)
+  // @@protoc_insertion_point(copy_constructor:BaseAttributeSyncDataS2C)
 }
-inline PROTOBUF_NDEBUG_INLINE BaseAttributeDeltaS2C::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE BaseAttributeSyncDataS2C::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0} {}
 
-inline void BaseAttributeDeltaS2C::SharedCtor(::_pb::Arena* arena) {
+inline void BaseAttributeSyncDataS2C::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, transform_),
@@ -369,12 +369,12 @@ inline void BaseAttributeDeltaS2C::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, transform_) +
                sizeof(Impl_::entity_id_));
 }
-BaseAttributeDeltaS2C::~BaseAttributeDeltaS2C() {
-  // @@protoc_insertion_point(destructor:BaseAttributeDeltaS2C)
+BaseAttributeSyncDataS2C::~BaseAttributeSyncDataS2C() {
+  // @@protoc_insertion_point(destructor:BaseAttributeSyncDataS2C)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void BaseAttributeDeltaS2C::SharedDtor() {
+inline void BaseAttributeSyncDataS2C::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   delete _impl_.transform_;
   delete _impl_.velocity_;
@@ -383,21 +383,21 @@ inline void BaseAttributeDeltaS2C::SharedDtor() {
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-BaseAttributeDeltaS2C::GetClassData() const {
+BaseAttributeSyncDataS2C::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_._cached_size_),
               false,
           },
-          &BaseAttributeDeltaS2C::MergeImpl,
-          &BaseAttributeDeltaS2C::kDescriptorMethods,
+          &BaseAttributeSyncDataS2C::MergeImpl,
+          &BaseAttributeSyncDataS2C::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void BaseAttributeDeltaS2C::Clear() {
-// @@protoc_insertion_point(message_clear_start:BaseAttributeDeltaS2C)
+PROTOBUF_NOINLINE void BaseAttributeSyncDataS2C::Clear() {
+// @@protoc_insertion_point(message_clear_start:BaseAttributeSyncDataS2C)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -423,7 +423,7 @@ PROTOBUF_NOINLINE void BaseAttributeDeltaS2C::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* BaseAttributeDeltaS2C::_InternalParse(
+const char* BaseAttributeSyncDataS2C::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -431,9 +431,9 @@ const char* BaseAttributeDeltaS2C::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 3, 0, 2> BaseAttributeDeltaS2C::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 3, 0, 2> BaseAttributeSyncDataS2C::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_._has_bits_),
     0, // no _extensions_
     4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -445,35 +445,35 @@ const ::_pbi::TcParseTable<2, 4, 3, 0, 2> BaseAttributeDeltaS2C::_table_ = {
     &_BaseAttributeDeltaS2C_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::BaseAttributeDeltaS2C>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::BaseAttributeSyncDataS2C>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .CombatStateFlagsPbComponent combat_state_flags = 4;
     {::_pbi::TcParser::FastMtS1,
-     {34, 2, 2, PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.combat_state_flags_)}},
+     {34, 2, 2, PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.combat_state_flags_)}},
     // uint64 entity_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributeDeltaS2C, _impl_.entity_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.entity_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BaseAttributeSyncDataS2C, _impl_.entity_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.entity_id_)}},
     // .Transform transform = 2;
     {::_pbi::TcParser::FastMtS1,
-     {18, 0, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.transform_)}},
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.transform_)}},
     // .Velocity velocity = 3;
     {::_pbi::TcParser::FastMtS1,
-     {26, 1, 1, PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.velocity_)}},
+     {26, 1, 1, PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.velocity_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint64 entity_id = 1;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.entity_id_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.entity_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // .Transform transform = 2;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .Velocity velocity = 3;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.velocity_), _Internal::kHasBitsOffset + 1, 1,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.velocity_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .CombatStateFlagsPbComponent combat_state_flags = 4;
-    {PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.combat_state_flags_), _Internal::kHasBitsOffset + 2, 2,
+    {PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.combat_state_flags_), _Internal::kHasBitsOffset + 2, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::Transform>()},
@@ -483,10 +483,10 @@ const ::_pbi::TcParseTable<2, 4, 3, 0, 2> BaseAttributeDeltaS2C::_table_ = {
   }},
 };
 
-::uint8_t* BaseAttributeDeltaS2C::_InternalSerialize(
+::uint8_t* BaseAttributeSyncDataS2C::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:BaseAttributeDeltaS2C)
+  // @@protoc_insertion_point(serialize_to_array_start:BaseAttributeSyncDataS2C)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -521,12 +521,12 @@ const ::_pbi::TcParseTable<2, 4, 3, 0, 2> BaseAttributeDeltaS2C::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:BaseAttributeDeltaS2C)
+  // @@protoc_insertion_point(serialize_to_array_end:BaseAttributeSyncDataS2C)
   return target;
 }
 
-::size_t BaseAttributeDeltaS2C::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:BaseAttributeDeltaS2C)
+::size_t BaseAttributeSyncDataS2C::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:BaseAttributeSyncDataS2C)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -564,11 +564,11 @@ const ::_pbi::TcParseTable<2, 4, 3, 0, 2> BaseAttributeDeltaS2C::_table_ = {
 }
 
 
-void BaseAttributeDeltaS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<BaseAttributeDeltaS2C*>(&to_msg);
-  auto& from = static_cast<const BaseAttributeDeltaS2C&>(from_msg);
+void BaseAttributeSyncDataS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<BaseAttributeSyncDataS2C*>(&to_msg);
+  auto& from = static_cast<const BaseAttributeSyncDataS2C&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:BaseAttributeDeltaS2C)
+  // @@protoc_insertion_point(class_specific_merge_from_start:BaseAttributeSyncDataS2C)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -610,30 +610,30 @@ void BaseAttributeDeltaS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void BaseAttributeDeltaS2C::CopyFrom(const BaseAttributeDeltaS2C& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:BaseAttributeDeltaS2C)
+void BaseAttributeSyncDataS2C::CopyFrom(const BaseAttributeSyncDataS2C& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:BaseAttributeSyncDataS2C)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool BaseAttributeDeltaS2C::IsInitialized() const {
+PROTOBUF_NOINLINE bool BaseAttributeSyncDataS2C::IsInitialized() const {
   return true;
 }
 
-void BaseAttributeDeltaS2C::InternalSwap(BaseAttributeDeltaS2C* PROTOBUF_RESTRICT other) {
+void BaseAttributeSyncDataS2C::InternalSwap(BaseAttributeSyncDataS2C* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.entity_id_)
-      + sizeof(BaseAttributeDeltaS2C::_impl_.entity_id_)
-      - PROTOBUF_FIELD_OFFSET(BaseAttributeDeltaS2C, _impl_.transform_)>(
+      PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.entity_id_)
+      + sizeof(BaseAttributeSyncDataS2C::_impl_.entity_id_)
+      - PROTOBUF_FIELD_OFFSET(BaseAttributeSyncDataS2C, _impl_.transform_)>(
           reinterpret_cast<char*>(&_impl_.transform_),
           reinterpret_cast<char*>(&other->_impl_.transform_));
 }
 
-::google::protobuf::Metadata BaseAttributeDeltaS2C::GetMetadata() const {
+::google::protobuf::Metadata BaseAttributeSyncDataS2C::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_getter,
                                    &descriptor_table_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto_once,
                                    file_level_metadata_logic_2fclient_5fplayer_2fplayer_5fstate_5fattribute_5fsync_2eproto[0]);
@@ -1535,7 +1535,7 @@ const ::google::protobuf::ServiceDescriptor* EntitySyncService::GetDescriptor() 
 }
 
 void EntitySyncService::SyncBaseAttribute(::google::protobuf::RpcController* controller,
-                         const ::BaseAttributeDeltaS2C*, ::Empty*, ::google::protobuf::Closure* done) {
+                         const ::BaseAttributeSyncDataS2C*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method SyncBaseAttribute() not implemented.");
   done->Run();
 }
@@ -1574,7 +1574,7 @@ void EntitySyncService::CallMethod(
   switch (method->index()) {
     case 0:
       SyncBaseAttribute(controller,
-             ::google::protobuf::internal::DownCast<const ::BaseAttributeDeltaS2C*>(request),
+             ::google::protobuf::internal::DownCast<const ::BaseAttributeSyncDataS2C*>(request),
              ::google::protobuf::internal::DownCast<::Empty*>(response), done);
       break;
     case 1:
@@ -1614,7 +1614,7 @@ const ::google::protobuf::Message& EntitySyncService::GetRequestPrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
-      return ::BaseAttributeDeltaS2C::default_instance();
+      return ::BaseAttributeSyncDataS2C::default_instance();
     case 1:
       return ::AttributeDelta2FramesS2C::default_instance();
     case 2:
@@ -1672,7 +1672,7 @@ EntitySyncService_Stub::~EntitySyncService_Stub() {
 }
 
 void EntitySyncService_Stub::SyncBaseAttribute(::google::protobuf::RpcController* controller,
-                              const ::BaseAttributeDeltaS2C* request,
+                              const ::BaseAttributeSyncDataS2C* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
