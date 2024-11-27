@@ -5,7 +5,7 @@
 class HexagonsGrid
 {
 public:
-    EntityUnorderedSet entity_list;
+    EntityUnorderedSet entityCollection;
 };
 
 using GridKey = absl::uint128;
