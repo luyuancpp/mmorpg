@@ -20,6 +20,7 @@ void AoiSystem::Update(double delta) {
 	GridSet neighborGridsToEnter, neighborGridsToLeave;
 	GridSet gridIntersection;
 	EntityUnorderedSet entitiesEnteringCurrentView, observersNotifiedOfMyEntry;
+	EntityUnorderedSet entitiesLeavingCurrentView, observersNotifiedOfMyLeave;
 
 	for (auto&& [currentEntity, transform, sceneComponent] : tls.registry.view<Transform, SceneEntityComp>().each()) {
 
@@ -34,13 +35,15 @@ void AoiSystem::Update(double delta) {
 		neighborGridsToLeave.clear();
 		entitiesEnteringCurrentView.clear();
 		observersNotifiedOfMyEntry.clear();
+		entitiesLeavingCurrentView.clear();
+		observersNotifiedOfMyLeave.clear();
 
 		const auto currentHexPosition = GridUtil::CalculateHexPosition(transform);
 		const auto currentGridId = GridUtil::GetGridId(currentHexPosition);
 
 		// 如果当前实体没有 Hex 位置，添加它
 		if (!tls.registry.any_of<Hex>(currentEntity)) {
-			gridList[currentGridId].entity_list.emplace(currentEntity);
+			gridList[currentGridId].entityCollection.emplace(currentEntity);
 			tls.registry.emplace<Hex>(currentEntity, currentHexPosition);
 
 			GridUtil::GetCurrentAndNeighborGridIds(currentHexPosition, neighborGridsToEnter);
@@ -65,9 +68,9 @@ void AoiSystem::Update(double delta) {
 			}
 
 			const auto previousGridId = GridUtil::GetGridId(previousHexPosition);
-			gridList[previousGridId].entity_list.erase(currentEntity);
+			gridList[previousGridId].entityCollection.erase(currentEntity);
 
-			gridList[currentGridId].entity_list.emplace(currentEntity);
+			gridList[currentGridId].entityCollection.emplace(currentEntity);
 
 			tls.registry.remove<Hex>(currentEntity);
 			tls.registry.emplace<Hex>(currentEntity, currentHexPosition);
@@ -83,7 +86,7 @@ void AoiSystem::Update(double delta) {
 			}
 
 			// 处理进入当前实体视野的 NPC
-			for (const auto& otherEntity : gridIt->second.entity_list) {
+			for (const auto& otherEntity : gridIt->second.entityCollection) {
 				if (otherEntity == currentEntity || 
 					EntityUtil::IsNotNpc(otherEntity) || 
 					!ViewUtil::ShouldSendNpcEnterMessage(currentEntity, otherEntity)) {
@@ -95,7 +98,7 @@ void AoiSystem::Update(double delta) {
 			}
 
 			// 处理当前实体进入其他实体视野或其他实体进入当前实体视野
-			for (const auto& otherEntity : gridIt->second.entity_list) {
+			for (const auto& otherEntity : gridIt->second.entityCollection) {
 				if (otherEntity == currentEntity || EntityUtil::IsNotPlayer(otherEntity)) {
 					continue;
 				}
@@ -104,13 +107,18 @@ void AoiSystem::Update(double delta) {
 				if (ViewUtil::IsWithinViewRadius(otherEntity, currentEntity)) {
 					observersNotifiedOfMyEntry.emplace(otherEntity);
 					InterestUtil::AddAoiEntity(otherEntity, currentEntity);
-
+				}else{
+					observersNotifiedOfMyLeave.emplace(otherEntity);
+					InterestUtil::RemoveAoiEntity(otherEntity, currentEntity);
 				}
 
 				// 其他实体进入当前实体的视野
 				if (ViewUtil::IsWithinViewRadius(currentEntity, otherEntity)) {
 					entitiesEnteringCurrentView.emplace(otherEntity);
 					InterestUtil::AddAoiEntity(currentEntity, otherEntity);
+				}else{
+					entitiesLeavingCurrentView.emplace(otherEntity);
+					InterestUtil::RemoveAoiEntity(currentEntity, otherEntity);
 				}
 			}
 		}
@@ -121,27 +129,43 @@ void AoiSystem::Update(double delta) {
 			ViewUtil::FillActorCreateMessageInfo(otherEntity, currentEntity, actorCreateMessage);
 		}
 
+		// 通知其他实体当前实体进入了他们的视野
+		if (actorCreateMessage.entity() > 0) {
+			BroadCastToPlayer(ClientPlayerSceneServiceNotifyActorCreateMessageId, actorCreateMessage, observersNotifiedOfMyEntry);
+		}
+		
 		//处理别人进入我的视野，添加感兴趣列表
 		for (auto& otherEntity : entitiesEnteringCurrentView){
 			ViewUtil::FillActorCreateMessageInfo(currentEntity, otherEntity, *actorListCreateMessage.add_actor_list());
 		}
 		
-		// 发送消息给进入视野的实体
+		// 发送消息给我进入我的视野的实体
 		if (!actorListCreateMessage.actor_list().empty()) {
 			SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListCreateMessageId, actorListCreateMessage, currentEntity);
 		}
 
-		// 通知其他实体当前实体进入了他们的视野
-		if (actorCreateMessage.entity() > 0) {
-			BroadCastToPlayer(ClientPlayerSceneServiceNotifyActorCreateMessageId, actorCreateMessage, observersNotifiedOfMyEntry);
+		// 处理离开网格的情况
+		BroadCastToGridActorLeaveMessage(gridList, currentEntity, neighborGridsToLeave);
+
+		//发送消息给我，告诉我离开我视野的人
+		if (!entitiesLeavingCurrentView.empty())
+		{
+			actorListDestroyMessage.Clear();
+			for (auto& entityLeavingCurrentView : entitiesLeavingCurrentView){
+				actorListDestroyMessage.add_entity(entt::to_integral(entityLeavingCurrentView));
+			}
+			SendMessageToPlayer(ClientPlayerSceneServiceNotifyActorListDestroyMessageId, actorListDestroyMessage, currentEntity);
 		}
 
-		// 处理离开网格的情况
-		BroadCastLeaveGridMessage(gridList, currentEntity, neighborGridsToLeave);
+		//发送消息给我离开别人视野的人，告诉别人我离开了他们视野
+		if (!observersNotifiedOfMyLeave.empty())
+		{
+			actorDestroyMessage.Clear();
+			actorDestroyMessage.set_entity(entt::to_integral(currentEntity));
+			BroadCastToPlayer(ClientPlayerSceneServiceNotifyActorDestroyMessageId, actorDestroyMessage, observersNotifiedOfMyLeave);
+		}
 	}
 }
-
-
 
 void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
 	const auto entity = entt::to_entity(message.entity());
@@ -166,7 +190,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
 	GridUtil::GetCurrentAndNeighborGridIds(*hexPosition, gridsToLeave);
 
 	LeaveGrid(*hexPosition, gridList, entity);
-	BroadCastLeaveGridMessage(gridList, entity, gridsToLeave);
+	BroadCastToGridActorLeaveMessage(gridList, entity, gridsToLeave);
 }
 
 
@@ -178,14 +202,14 @@ void AoiSystem::LeaveGrid(const Hex& hex, SceneGridListComp& gridList, entt::ent
 	}
 
 	auto& previousGrid = previousGridIt->second;
-	previousGrid.entity_list.erase(entity);
-	if (previousGrid.entity_list.empty()) {
+	previousGrid.entityCollection.erase(entity);
+	if (previousGrid.entityCollection.empty()) {
 		gridList.erase(previousGridIt);
 	}
 }
 
 
-void AoiSystem::BroadCastLeaveGridMessage(const SceneGridListComp& gridList, entt::entity entity, const GridSet& gridsToLeave) {
+void AoiSystem::BroadCastToGridActorLeaveMessage(const SceneGridListComp& gridList, entt::entity entity, const GridSet& gridsToLeave) {
 	if (gridsToLeave.empty() || gridList.empty()) {
 		return;
 	}
@@ -200,9 +224,9 @@ void AoiSystem::BroadCastLeaveGridMessage(const SceneGridListComp& gridList, ent
 		if (it == gridList.end()) {
 			continue;
 		}
-		for (const auto& viewLeaver : it->second.entity_list) {
+		for (const auto& viewLeaver : it->second.entityCollection) {
 			observersToNotifyExit.emplace(viewLeaver);
-			actorListDestroyMessage.add_entity(entt::to_entity(viewLeaver));
+			actorListDestroyMessage.add_entity(entt::to_integral(viewLeaver));
 
 			ViewUtil::HandlePlayerLeaveMessage(viewLeaver, entity);
 			ViewUtil::HandlePlayerLeaveMessage(entity, viewLeaver);
