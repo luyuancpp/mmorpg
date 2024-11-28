@@ -48,7 +48,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_body()->set_body(message.SerializeAsString());
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*gateNode)->Send(GateServiceSendMessageToPlayerMessageId, request);
+	(*gateNode)->SendRequest(GateServiceSendMessageToPlayerMessageId, request);
 }
 
 void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -89,7 +89,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_body()->set_body(message.SerializeAsString());
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*centreNode)->Send(CentreServicePlayerServiceMessageId, request);
+	(*centreNode)->SendRequest(CentreServicePlayerServiceMessageId, request);
 }
 
 void SendToCentre(const uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
@@ -108,7 +108,7 @@ void SendToCentre(const uint32_t messageId, const google::protobuf::Message& mes
 		return;
 	}
 
-	(*centreNode)->Send(messageId, message);
+	(*centreNode)->SendRequest(messageId, message);
 }
 
 void SendToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
@@ -127,7 +127,7 @@ void SendToGateById(uint32_t messageId, const google::protobuf::Message& message
 		return;
 	}
 
-	(*gateNode)->Send(GateServiceSendMessageToPlayerMessageId, message);
+	(*gateNode)->SendRequest(GateServiceSendMessageToPlayerMessageId, message);
 }
 
 void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& message, const NodeId nodeId)
@@ -203,7 +203,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 			request.mutable_session_list()->Add(sessionId);
 		}
 
-		(*gateNode)->Send(GateServiceBroadcastToPlayersMessageId, request);
+		(*gateNode)->SendRequest(GateServiceBroadcastToPlayersMessageId, request);
 	}
 }
 
@@ -253,6 +253,6 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 			request.mutable_session_list()->Add(sessionId);
 		}
 
-		(*gateNode)->Send(GateServiceBroadcastToPlayersMessageId, request);
+		(*gateNode)->SendRequest(GateServiceBroadcastToPlayersMessageId, request);
 	}
 }

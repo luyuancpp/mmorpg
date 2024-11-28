@@ -28,7 +28,7 @@ void SendToGs(uint32_t messageId, const google::protobuf::Message& message, Node
 		return;
 	}
 
-	(*rpcSession)->Send(messageId, message);
+	(*rpcSession)->SendRequest(messageId, message);
 }
 
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
@@ -64,7 +64,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*rpcSession)->Send(GameServiceSendMessageToPlayerMessageId, request);
+	(*rpcSession)->SendRequest(GameServiceSendMessageToPlayerMessageId, request);
 }
 
 void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -109,7 +109,7 @@ void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& mess
 	request.mutable_body()->mutable_body()->resize(byteSize);
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*rpcSession)->Send(messageId, request);
+	(*rpcSession)->SendRequest(messageId, request);
 }
 
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)
@@ -150,7 +150,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
 	request.mutable_head()->set_session_id(sessionId);
 	request.mutable_body()->set_message_id(messageId);
-	gate->Send(GateServiceSendMessageToPlayerMessageId, request);
+	gate->SendRequest(GateServiceSendMessageToPlayerMessageId, request);
 }
 
 void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)
@@ -174,7 +174,7 @@ void SendToGateById(const uint32_t messageId, const google::protobuf::Message& m
 		return;
 	}
 
-	(*gateNode)->Send(messageId, message);
+	(*gateNode)->SendRequest(messageId, message);
 }
 
 void CallGamePlayerMethod(uint32_t messageId, const google::protobuf::Message& message, entt::entity player)

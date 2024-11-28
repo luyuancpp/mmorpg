@@ -21,25 +21,25 @@ struct RpcSession
 		channel_->CallMethod(message_id, request);
 	}
 
-    void Send(uint32_t message_id, const ::google::protobuf::Message& message) const
+    void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message) const
     {
 		if (!Connected())
 		{
 			return;
 		}
-        channel_->Send(message_id, message);
+        channel_->SendRequest(message_id, message);
     }
 
-    void Route2Node(uint32_t message_id, const ::google::protobuf::Message& message) const
+    void RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& message) const
     {
 		if (!Connected())
 		{
 			return;
 		}
-		channel_->Route2Node(message_id, message);
+		channel_->RouteMessageToNode(message_id, message);
     }
 
-    void SendRouteResponse(uint32_t message_id,
+    void SendRouteMessageResponse(uint32_t message_id,
                            uint64_t id,
                            const std::string& message_bytes) const
     {
@@ -47,7 +47,7 @@ struct RpcSession
         {
             return;
         }
-        channel_->SendRouteResponse(message_id, id, message_bytes);
+        channel_->SendRouteMessageResponse(message_id, id, message_bytes);
     }
 
     muduo::net::TcpConnectionPtr conn_;

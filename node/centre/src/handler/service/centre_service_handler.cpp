@@ -628,7 +628,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
 			return;
 		}
-		(*gate_node)->Route2Node(GateServiceRouteNodeMessageMessageId, *mutable_request);
+		(*gate_node)->RouteMessageToNode(GateServiceRouteNodeMessageMessageId, *mutable_request);
 		break;
 	}
 	case kGameNode:
@@ -645,7 +645,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
 			return;
 		}
-		(*game_node)->Route2Node(GameServiceRouteNodeStringMsgMessageId, *mutable_request);
+		(*game_node)->RouteMessageToNode(GameServiceRouteNodeStringMsgMessageId, *mutable_request);
 		break;
 	}
 	default:
@@ -674,7 +674,7 @@ void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController*
     {
 		UnRegisterGameNodeRequest message;
 		message.set_game_node_id(request->game_node_id());
-        gate_node->Send(GateServiceRegisterGameMessageId, message);
+        gate_node->SendRequest(GateServiceRegisterGameMessageId, message);
     }
 ///<<< END WRITING YOUR CODE
 }

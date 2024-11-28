@@ -76,24 +76,24 @@ public:
 		channel_->CallMethod(message_id, request);
 	}
 
-    void Send(uint32_t message_id, const ::google::protobuf::Message& message)
+    void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message)
     {
         if (!connected_)
         {
             LOG_ERROR << "client disconnect";
             return;
         }
-        channel_->Send(message_id, message);
+        channel_->SendRequest(message_id, message);
     }
 
-    void Route2Node(uint32_t message_id,  const ::google::protobuf::Message& request)
+    void RouteMessageToNode(uint32_t message_id,  const ::google::protobuf::Message& request)
     {
         if (!connected_)
         {
             LOG_ERROR << "client disconnect";
             return;
         }
-        channel_->Route2Node(message_id, request);
+        channel_->RouteMessageToNode(message_id, request);
     }
 
 private:
