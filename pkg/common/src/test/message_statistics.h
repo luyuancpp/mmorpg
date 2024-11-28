@@ -10,7 +10,7 @@
 
 // 功能函数：检查消息统计是否启用
 bool IsMessageStatisticsEnabled() {
-    return g_test_switch_list[kMessageStatistics];
+    return g_test_switch_list[kTestMessageStatistics];
 }
 
 // 功能函数：更新消息统计计数

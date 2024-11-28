@@ -2,9 +2,9 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-enum eTestFlagType
+// 定义一个枚举类型来标识测试标志
+enum eTestFlagType 
 {
-	kMessageStatistics = 0;//开启消息统计
+    kTestMessageStatistics = 0; // 开启消息统计
+    kTestClearEmptyTiles = 1;   // 开启清除视野同步没有人的格子
 };
-
-
