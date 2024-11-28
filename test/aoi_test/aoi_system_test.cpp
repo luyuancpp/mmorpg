@@ -98,13 +98,13 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
 
         auto grid_id = GridUtil::GetGridId(transform.location());
         ++expected_entity_count[grid_id];
-        EXPECT_TRUE(scene_grid_list[grid_id].entityCollection.contains(player_entity));
-        EXPECT_EQ(scene_grid_list[grid_id].entityCollection.size(), expected_entity_count[grid_id]);
+        EXPECT_TRUE(scene_grid_list[grid_id].entities.contains(player_entity));
+        EXPECT_EQ(scene_grid_list[grid_id].entities.size(), expected_entity_count[grid_id]);
     }
 
     for (auto&& [scene, grid_list] : tls.sceneRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [_, entity_list] : grid_list) {
-            EXPECT_FALSE(entity_list.entityCollection.empty());
+            EXPECT_FALSE(entity_list.entities.empty());
         }
     }
 
@@ -130,7 +130,7 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     aoi_system.Update(0.1);
     Hex initial_hex = hex_round(pixel_to_hex(kHexLayout, Point(0, 0)));
     auto initial_grid_id = GridUtil::GetGridId(initial_hex);
-    EXPECT_TRUE(scene_grid_list[initial_grid_id].entityCollection.contains(player_entity));
+    EXPECT_TRUE(scene_grid_list[initial_grid_id].entities.contains(player_entity));
 
     // Move the player to each neighboring hex
     for (int i = 0; i < 6; ++i) {
@@ -143,25 +143,25 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
         aoi_system.Update(0.1);
 
         auto new_grid_id = GridUtil::GetGridId(neighbor_hex);
-        EXPECT_TRUE(scene_grid_list[new_grid_id].entityCollection.contains(player_entity));
-        EXPECT_FALSE(scene_grid_list[initial_grid_id].entityCollection.contains(player_entity));
+        EXPECT_TRUE(scene_grid_list[new_grid_id].entities.contains(player_entity));
+        EXPECT_FALSE(scene_grid_list[initial_grid_id].entities.contains(player_entity));
 
         // Move back to initial hex for next iteration
         transform.mutable_location()->set_x(0);
         transform.mutable_location()->set_y(0);
         aoi_system.Update(0.1);
-        EXPECT_TRUE(scene_grid_list[initial_grid_id].entityCollection.contains(player_entity));
-        EXPECT_FALSE(scene_grid_list[new_grid_id].entityCollection.contains(player_entity));
+        EXPECT_TRUE(scene_grid_list[initial_grid_id].entities.contains(player_entity));
+        EXPECT_FALSE(scene_grid_list[new_grid_id].entities.contains(player_entity));
     }
 
     std::size_t expected_size = 0;
     for (auto&& [scene, grid_list] : tls.sceneRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [_, entity_list] : grid_list) {
-            if (entity_list.entityCollection.empty()) {
+            if (entity_list.entities.empty()) {
                 continue;
             }
-            EXPECT_EQ(entity_list.entityCollection.size(), 1);
-            expected_size += entity_list.entityCollection.size();
+            EXPECT_EQ(entity_list.entities.size(), 1);
+            expected_size += entity_list.entities.size();
         }
     }
 
