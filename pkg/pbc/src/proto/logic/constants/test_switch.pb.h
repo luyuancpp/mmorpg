@@ -54,7 +54,8 @@ namespace protobuf {
 }  // namespace google
 
 enum eTestFlagType : int {
-  kMessageStatistics = 0,
+  kTestMessageStatistics = 0,
+  kTestClearEmptyTiles = 1,
   eTestFlagType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   eTestFlagType_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -64,8 +65,8 @@ enum eTestFlagType : int {
 bool eTestFlagType_IsValid(int value);
 extern const uint32_t eTestFlagType_internal_data_[];
 constexpr eTestFlagType eTestFlagType_MIN = static_cast<eTestFlagType>(0);
-constexpr eTestFlagType eTestFlagType_MAX = static_cast<eTestFlagType>(0);
-constexpr int eTestFlagType_ARRAYSIZE = 0 + 1;
+constexpr eTestFlagType eTestFlagType_MAX = static_cast<eTestFlagType>(1);
+constexpr int eTestFlagType_ARRAYSIZE = 1 + 1;
 const ::google::protobuf::EnumDescriptor*
 eTestFlagType_descriptor();
 template <typename T>
@@ -78,7 +79,7 @@ const std::string& eTestFlagType_Name(T value) {
 template <>
 inline const std::string& eTestFlagType_Name(eTestFlagType value) {
   return ::google::protobuf::internal::NameOfDenseEnum<eTestFlagType_descriptor,
-                                                 0, 0>(
+                                                 0, 1>(
       static_cast<int>(value));
 }
 inline bool eTestFlagType_Parse(absl::string_view name, eTestFlagType* value) {

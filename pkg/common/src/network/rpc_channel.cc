@@ -332,7 +332,7 @@ void RpcChannel::SendRouteMessageResponse(uint32_t message_id, uint64_t id, cons
 
 void RpcChannel::MessageStatistics(const RpcMessage& message)
 {
-	if (!g_test_switch_list[kMessageStatistics])
+	if (!g_test_switch_list[kTestMessageStatistics])
 	{
 		return;
 	}

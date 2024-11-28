@@ -12,6 +12,7 @@
 #include "proto/logic/event/scene_event.pb.h"
 #include "scene/comp/scene_comp.h"
 #include "service_info/player_scene_service_info.h"
+#include "test/test.h"
 #include "thread_local/storage.h"
 #include "type_alias/actor.h"
 
@@ -162,8 +163,12 @@ void AoiSystem::RemoveEntityFromGrid(const Hex& hex, SceneGridListComp& gridList
 
     auto& grid = gridIt->second;
     grid.entities.erase(entity);
-    if (grid.entities.empty()) {
-        gridList.erase(gridIt);
+
+    if (g_test_switch_list[kTestClearEmptyTiles])
+    {
+        if (grid.entities.empty()) {
+            gridList.erase(gridIt);
+        }
     }
 }
 

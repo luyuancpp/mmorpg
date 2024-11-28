@@ -29,15 +29,16 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_logic_2fconstants_2ftest_5fswitch_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n!logic/constants/test_switch.proto*\'\n\re"
-    "TestFlagType\022\026\n\022kMessageStatistics\020\000B\tZ\007"
-    "pb/gameb\006proto3"
+    "\n!logic/constants/test_switch.proto*E\n\re"
+    "TestFlagType\022\032\n\026kTestMessageStatistics\020\000"
+    "\022\030\n\024kTestClearEmptyTiles\020\001B\tZ\007pb/gameb\006p"
+    "roto3"
 };
 static ::absl::once_flag descriptor_table_logic_2fconstants_2ftest_5fswitch_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_logic_2fconstants_2ftest_5fswitch_2eproto = {
     false,
     false,
-    95,
+    125,
     descriptor_table_protodef_logic_2fconstants_2ftest_5fswitch_2eproto,
     "logic/constants/test_switch.proto",
     &descriptor_table_logic_2fconstants_2ftest_5fswitch_2eproto_once,
@@ -71,9 +72,9 @@ const ::google::protobuf::EnumDescriptor* eTestFlagType_descriptor() {
   return file_level_enum_descriptors_logic_2fconstants_2ftest_5fswitch_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t eTestFlagType_internal_data_[] = {
-    65536u, 0u, };
+    131072u, 0u, };
 bool eTestFlagType_IsValid(int value) {
-  return 0 <= value && value <= 0;
+  return 0 <= value && value <= 1;
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
