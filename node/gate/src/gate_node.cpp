@@ -35,7 +35,7 @@ GateNode::GateNode(EventLoop* loop)
     muduo_log_{"logs/gate", kMaxLogFileRollSize, 1},
     dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),
     codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-    client_message_processor_(codec_, dispatcher_)
+    rpcClientHandler(codec_, dispatcher_)
 { }
 
 GateNode::~GateNode()

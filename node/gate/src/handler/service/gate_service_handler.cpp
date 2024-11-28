@@ -94,7 +94,7 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 
 		return;
 	}
-	g_gate_node->Send(sessionIt->second.conn_, request->body());
+	g_gate_node->SendMessageToClient(sessionIt->second.conn_, request->body());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
 }
@@ -144,7 +144,7 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 
 			continue;
 		}
-		g_gate_node->Send(sessionIt->second.conn_, request->body());
+		g_gate_node->SendMessageToClient(sessionIt->second.conn_, request->body());
 		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE

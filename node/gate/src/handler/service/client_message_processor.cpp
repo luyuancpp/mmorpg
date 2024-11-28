@@ -20,17 +20,17 @@
 
 extern std::unordered_set<uint32_t> g_c2s_service_id;
 
-ClientMessageProcessor::ClientMessageProcessor(ProtobufCodec& codec,
+RpcClientHandler::RpcClientHandler(ProtobufCodec& codec,
 	ProtobufDispatcher& dispatcher)
-	: codec_(codec),
-	dispatcher_(dispatcher)
+	: protobufCodec(codec),
+	messageDispatcher(dispatcher)
 {
-	dispatcher_.registerMessageCallback<ClientRequest>(
-		std::bind(&ClientMessageProcessor::HandleRpcClientMessage, this, _1, _2, _3));
+	messageDispatcher.registerMessageCallback<ClientRequest>(
+		std::bind(&RpcClientHandler::ProcessRpcRequest, this, _1, _2, _3));
 }
 
 //todo 考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
-entt::entity ClientMessageProcessor::GetLoginNode(uint64_t sessionId)
+entt::entity RpcClientHandler::GetLoginNode(uint64_t sessionId)
 {
 	const auto sessionIt = tls_gate.sessions().find(sessionId);
 	if (sessionIt == tls_gate.sessions().end())
@@ -58,7 +58,7 @@ entt::entity ClientMessageProcessor::GetLoginNode(uint64_t sessionId)
 	return loginNodeIt->second;
 }
 
-void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& conn)
+void RpcClientHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
 	// todo 改包把消息发给其他玩家怎么办
     // todo 玩家没登录直接发其他消息，乱发消息
@@ -74,11 +74,16 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 	}
 }
 
-void ClientMessageProcessor::HandleRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
+void RpcClientHandler::SendMessageToClient(const muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) const
+{
+	protobufCodec.send(conn, message);
+}
+
+void RpcClientHandler::ProcessRpcRequest(const muduo::net::TcpConnectionPtr& conn,
 	const RpcClientMessagePtr& request,
 	muduo::Timestamp)
 {
-	auto sessionId = SessionId(conn);
+	auto sessionId = GetSessionId(conn);
 	const auto sessionIt = tls_gate.sessions().find(sessionId);
 	if (sessionIt == tls_gate.sessions().end())
 	{
@@ -96,7 +101,7 @@ void ClientMessageProcessor::HandleRpcClientMessage(const muduo::net::TcpConnect
 		if (!tls.gameNodeRegistry.valid(gameNodeId))
 		{
 			LOG_ERROR << "Invalid game node id " << sessionIt->second.game_node_id_ << " for session id: " << sessionId;
-			Tip(conn, kServerCrashed);
+			SendTipToClient(conn, kServerCrashed);
 			return;
 		}
 
@@ -157,7 +162,19 @@ void ClientMessageProcessor::HandleRpcClientMessage(const muduo::net::TcpConnect
 	}
 }
 
-void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tipId)
+Guid RpcClientHandler::GetSessionId(const muduo::net::TcpConnectionPtr& conn)
+{
+    try {
+        return boost::any_cast<Guid>(conn->getContext());
+    }
+    catch (const boost::bad_any_cast& e) {
+        // 处理类型转换失败的情况
+        // 日志记录异常或采取其他措施
+        return kInvalidGuid;  // 返回默认值或特殊值
+    }
+}
+
+void RpcClientHandler::SendTipToClient(const muduo::net::TcpConnectionPtr& conn, uint32_t tipId)
 {
 	TipInfoMessage tipMessage;
 	tipMessage.set_id(tipId);
@@ -169,7 +186,7 @@ void ClientMessageProcessor::Tip(const muduo::net::TcpConnectionPtr& conn, uint3
 	LOG_ERROR << "Sent tip message to session id: " << SessionId(conn) << ", tip id: " << tipId;
 }
 
-void ClientMessageProcessor::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
+void RpcClientHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
 {
 	auto sessionId = tls_gate.session_id_gen().Generate();
 	while (tls_gate.sessions().contains(sessionId))
@@ -184,9 +201,9 @@ void ClientMessageProcessor::HandleConnectionEstablished(const muduo::net::TcpCo
 	LOG_TRACE << "New connection, assigned session id: " << sessionId;
 }
 
-void ClientMessageProcessor::HandleDisconnection(const muduo::net::TcpConnectionPtr& conn)
+void RpcClientHandler::HandleDisconnection(const muduo::net::TcpConnectionPtr& conn)
 {
-	const auto sessionId = entt::to_integral(SessionId(conn));
+	const auto sessionId = entt::to_integral(GetSessionId(conn));
 
 	{
 		// 重要: 此消息一定要发，不能只通过controller 的gw disconnect去发
