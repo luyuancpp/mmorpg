@@ -116,11 +116,11 @@ namespace muduo
             //rpc远程调用，回复rpc 的response
             void CallMethod(uint32_t message_id, const ::google::protobuf::Message& request);
             //发送到对应的服务器不回复
-            void Send(uint32_t message_id, const ::google::protobuf::Message& message);
+            void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message);
             //发送对应的串消息,
-            void Route2Node(uint32_t message_id, const ::google::protobuf::Message& request);
+            void RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& request);
             //返回串消息
-            void SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& message_bytes);
+            void SendRouteMessageResponse(uint32_t message_id, uint64_t id, const std::string& message_bytes);
 
             void onMessage(const TcpConnectionPtr& conn,
                 Buffer* buf,
@@ -131,7 +131,7 @@ namespace muduo
                 Timestamp);
         private:
 
-            void SendRpcError(const RpcMessage& message, ErrorCode error);
+            void SendError(const RpcMessage& message, ErrorCode error);
 
             void onRpcMessage(const TcpConnectionPtr& conn,
                 const RpcMessagePtr& messagePtr,

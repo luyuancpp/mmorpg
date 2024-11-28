@@ -75,7 +75,7 @@ void RpcChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Messa
   SendMessage(message);
 }
 
-void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& request)
+void RpcChannel::SendRequest(uint32_t message_id, const ::google::protobuf::Message& request)
 {
 	if (message_id >= g_message_info.size())
 	{
@@ -159,7 +159,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   }
 }
 
-void RpcChannel::Route2Node(uint32_t message_id, const ::google::protobuf::Message& request)
+void RpcChannel::RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& request)
 {
     RpcMessage message;
     message.set_type(NODE_ROUTE);  
@@ -186,7 +186,7 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
 	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
-		SendRpcError(message, NO_SERVICE);
+		SendError(message, NO_SERVICE);
 		return;
 	}
 	google::protobuf::Service* service = it->second;
@@ -195,14 +195,14 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		SendRpcError(message, NO_METHOD);
+		SendError(message, NO_METHOD);
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size() )))
     {
 		LOG_ERROR << "ParsePartialFromArray error";
-        SendRpcError(message, INVALID_REQUEST);
+        SendError(message, INVALID_REQUEST);
         return;
     }
     std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
@@ -235,7 +235,7 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
-		SendRpcError(message, NO_SERVICE);
+		SendError(message, NO_SERVICE);
 		return;
 	}
 	google::protobuf::Service* service = it->second;
@@ -243,14 +243,14 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		SendRpcError(message, NO_METHOD);
+		SendError(message, NO_METHOD);
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size())))
     {
 		LOG_ERROR << "ParsePartialFromArray error";
-        SendRpcError(message, INVALID_REQUEST);
+        SendError(message, INVALID_REQUEST);
         return;
     }
     service->CallMethod(method, nullptr, get_pointer(request), nullptr, nullptr);
@@ -266,7 +266,7 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
 	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
-		SendRpcError(message, NO_SERVICE);
+		SendError(message, NO_SERVICE);
 		return;
 	}
 	google::protobuf::Service* service = it->second;
@@ -274,14 +274,14 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		SendRpcError(message, NO_METHOD);
+		SendError(message, NO_METHOD);
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size())))
     {
 		LOG_ERROR << "ParsePartialFromArray error";
-        SendRpcError(message, INVALID_REQUEST);
+        SendError(message, INVALID_REQUEST);
         return;
     }
     if (service->GetResponsePrototype(method).GetDescriptor() == Empty::GetDescriptor())
@@ -307,7 +307,7 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
     }
 }
 
-void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
+void RpcChannel::SendError(const RpcMessage& message, ErrorCode error)
 {
     RpcMessage response;
     response.set_type(RESPONSE);
@@ -315,7 +315,7 @@ void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
 	SendMessage(response);
 }
 
-void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& body)
+void RpcChannel::SendRouteMessageResponse(uint32_t message_id, uint64_t id, const std::string& body)
 {
 	if (message_id >= g_message_info.size())
 	{
