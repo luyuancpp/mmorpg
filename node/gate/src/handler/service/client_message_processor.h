@@ -9,14 +9,11 @@
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
-class RpcClientHandler : muduo::noncopyable
+class RpcClientSessionHandler : muduo::noncopyable
 {
 public:
     // 构造函数，初始化 codec 和 dispatcher
-    RpcClientHandler(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
-
-    // 静态函数，用于获取登录节点
-    static entt::entity GetLoginNode(uint64_t session_id);
+    RpcClientSessionHandler(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
     // 返回 codec 引用
     ProtobufCodec& codec() const { return protobufCodec; }
@@ -28,7 +25,7 @@ public:
     void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) const;
 
     // 处理来自客户端的 RPC 消息
-    void ProcessRpcRequest(const muduo::net::TcpConnectionPtr& conn,
+    void HandleRpcRequest(const muduo::net::TcpConnectionPtr& conn,
         const RpcClientMessagePtr& message,
         muduo::Timestamp);
 
@@ -38,9 +35,11 @@ public:
     // 向客户端发送提示
     static void SendTipToClient(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 
+
 private:
+
     // 处理连接断开事件
-    static void HandleDisconnection(const muduo::net::TcpConnectionPtr& conn);
+    static void HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr& conn);
 
     static void HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn);
 
