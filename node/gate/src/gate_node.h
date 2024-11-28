@@ -34,8 +34,8 @@ public:
     inline const NodeInfo& GetNodeInfo()const { return node_info_; }
     inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduo_log_; }
 
-    inline void Send(const muduo::net::TcpConnectionPtr& conn,
-                            const ::google::protobuf::Message& message) const { client_message_processor_.SendToClient(conn, message); }
+    inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
+                            const ::google::protobuf::Message& message) const { rpcClientHandler.SendMessageToClient(conn, message); }
 
     void Init();
     void Exit();
@@ -51,7 +51,7 @@ public:
 private:
     void OnConnection(const TcpConnectionPtr& conn)
     {
-        client_message_processor_.OnConnection(conn);
+        rpcClientHandler.OnConnection(conn);
     }
 
     void Connect2Centre();
@@ -79,7 +79,7 @@ private:
 private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
-    ClientMessageProcessor client_message_processor_;
+    RpcClientHandler rpcClientHandler;
     TcpServerPtr server_;
     nodes_info_data node_net_info_;
     NodeInfo node_info_;

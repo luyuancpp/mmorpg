@@ -9,47 +9,42 @@
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
-class ClientMessageProcessor : muduo::noncopyable
+class RpcClientHandler : muduo::noncopyable
 {
 public:
     // 构造函数，初始化 codec 和 dispatcher
-    ClientMessageProcessor(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
+    RpcClientHandler(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
     // 静态函数，用于获取登录节点
     static entt::entity GetLoginNode(uint64_t session_id);
 
     // 返回 codec 引用
-    ProtobufCodec& codec() const { return codec_; }
+    ProtobufCodec& codec() const { return protobufCodec; }
 
     // 处理连接建立事件
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
     // 向客户端发送消息
-    void SendToClient(const muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) const {
-        codec_.send(conn, message);
-    }
+    void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) const;
 
     // 处理来自客户端的 RPC 消息
-    void HandleRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
+    void ProcessRpcRequest(const muduo::net::TcpConnectionPtr& conn,
         const RpcClientMessagePtr& message,
         muduo::Timestamp);
 
     // 根据连接获取会话 ID
-    static inline Guid SessionId(const muduo::net::TcpConnectionPtr& conn) {
-        return boost::any_cast<Guid>(conn->getContext());
-    }
+    static Guid GetSessionId(const muduo::net::TcpConnectionPtr& conn);
 
     // 向客户端发送提示
-    static void Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
+    static void SendTipToClient(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 
 private:
-    // 连接建立时的处理函数
-    static void HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn);
-
-    // 连接断开时的处理函数
+    // 处理连接断开事件
     static void HandleDisconnection(const muduo::net::TcpConnectionPtr& conn);
 
+    static void HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn);
+
     // codec 和 dispatcher 是核心依赖
-    ProtobufCodec& codec_;
-    ProtobufDispatcher& dispatcher_;
+    ProtobufCodec& protobufCodec;
+    ProtobufDispatcher& messageDispatcher;
 };

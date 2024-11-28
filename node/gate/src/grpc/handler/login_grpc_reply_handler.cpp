@@ -37,7 +37,7 @@ void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
             LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
-        g_gate_node->Send(it->second.conn_, call->reply.client_msg_body());
+        g_gate_node->SendMessageToClient(it->second.conn_, call->reply.client_msg_body());
     }
     else
     {
@@ -74,7 +74,7 @@ void AsyncCompleteCreatePlayerC2L(CompletionQueue& cq)
             LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
-        g_gate_node->Send(it->second.conn_, call->reply.client_msg_body());
+        g_gate_node->SendMessageToClient(it->second.conn_, call->reply.client_msg_body());
     }
     else
     {
@@ -110,7 +110,7 @@ void AsyncCompleteEnterGameC2L(CompletionQueue& cq)
             LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
             return;
         }
-        g_gate_node->Send(it->second.conn_, call->reply.client_msg_body());
+        g_gate_node->SendMessageToClient(it->second.conn_, call->reply.client_msg_body());
     }
     else
     {
