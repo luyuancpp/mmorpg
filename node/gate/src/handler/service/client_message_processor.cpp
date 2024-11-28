@@ -70,7 +70,7 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 	}
 	else
 	{
-		OnDisConneHandleConnectionClosedcted(conn);
+		HandleDisconnection(conn);
 	}
 }
 
@@ -184,7 +184,7 @@ void ClientMessageProcessor::HandleConnectionEstablished(const muduo::net::TcpCo
 	LOG_TRACE << "New connection, assigned session id: " << sessionId;
 }
 
-void ClientMessageProcessor::OnDisConneHandleConnectionClosedcted(const muduo::net::TcpConnectionPtr& conn)
+void ClientMessageProcessor::HandleDisconnection(const muduo::net::TcpConnectionPtr& conn)
 {
 	const auto sessionId = entt::to_integral(SessionId(conn));
 

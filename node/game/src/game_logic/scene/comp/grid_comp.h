@@ -5,9 +5,9 @@
 class HexagonsGrid
 {
 public:
-    EntityUnorderedSet entityCollection;
+    EntityUnorderedSet entities;
 };
 
-using GridKey = absl::uint128;
-using SceneGridListComp = std::unordered_map<GridKey, HexagonsGrid,  absl::Hash<GridKey>>;
-using GridSet = std::unordered_set<absl::uint128,  absl::Hash<GridKey>>;
+using GridId = absl::uint128;
+using SceneGridListComp = std::unordered_map<GridId, HexagonsGrid,  absl::Hash<GridId>>;
+using GridSet = std::unordered_set<absl::uint128,  absl::Hash<GridId>>;

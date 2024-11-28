@@ -74,7 +74,7 @@ void GridUtil::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnordere
         }
 
         // 遍历网格中的所有实体并将其添加到集合中
-        for (const auto& gridEntity : gridIt->second.entityCollection)
+        for (const auto& gridEntity : gridIt->second.entities)
         {
             entites.emplace(gridEntity);
         }
@@ -124,7 +124,7 @@ void GridUtil::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSe
         }
 
         // 遍历网格中的所有实体并将其添加到集合中
-        for (const auto& gridEntity : gridIt->second.entityCollection)
+        for (const auto& gridEntity : gridIt->second.entities)
         {
             if (gridEntity == entity)
             {
@@ -146,7 +146,7 @@ void GridUtil::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSe
 void GridUtil::UpdateLogGridSize(double deltaTime) {
     for (auto&& [sceneEntity, gridList] : tls.sceneRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [gridId, entityList] : gridList) {
-            if (entityList.entityCollection.empty()) {
+            if (entityList.entities.empty()) {
                 LOG_ERROR << "Grid is empty but not removed";
             }
         }
@@ -158,7 +158,7 @@ void GridUtil::ClearEmptyGrids() {
     for (auto&& [_, gridList] : tls.registry.view<SceneGridListComp>().each()) {
         destroyEntities.clear();
         for (auto& it : gridList) {
-            if (it.second.entityCollection.empty()) {
+            if (it.second.entities.empty()) {
                 destroyEntities.emplace_back(it.first);
             }
         }
