@@ -2,4 +2,4 @@
 
 #include "type_define/type_define.h"
 
-extern const int32_t kMaxRouteSize;
+constexpr int32_t kMaxRouteSize = 20;
