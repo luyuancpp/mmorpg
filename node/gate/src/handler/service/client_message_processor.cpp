@@ -37,6 +37,7 @@ entt::entity RpcClientHandler::GetLoginNode(uint64_t sessionId)
 	{
 		return entt::null;
 	}
+
 	auto& session = sessionIt->second;
 	if (!session.HasLoginNodeId())
 	{
@@ -48,6 +49,7 @@ entt::entity RpcClientHandler::GetLoginNode(uint64_t sessionId)
 		}
 		session.login_node_id_ = entt::to_integral(loginNodeIt->second);
 	}
+
 	const auto loginNodeIt = tls_gate.login_consistent_node().get_node_value(session.login_node_id_);
 	if (tls_gate.login_consistent_node().end() == loginNodeIt)
 	{
@@ -170,6 +172,7 @@ Guid RpcClientHandler::GetSessionId(const muduo::net::TcpConnectionPtr& conn)
     catch (const boost::bad_any_cast& e) {
         // 处理类型转换失败的情况
         // 日志记录异常或采取其他措施
+		LOG_ERROR << e.what();
         return kInvalidGuid;  // 返回默认值或特殊值
     }
 }
@@ -183,7 +186,7 @@ void RpcClientHandler::SendTipToClient(const muduo::net::TcpConnectionPtr& conn,
 	message.set_message_id(PlayerClientCommonServiceSendTipToClientMessageId);
 	g_gate_node->Codec().send(conn, message);
 
-	LOG_ERROR << "Sent tip message to session id: " << SessionId(conn) << ", tip id: " << tipId;
+	LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
 
 void RpcClientHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
