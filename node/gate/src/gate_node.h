@@ -35,7 +35,7 @@ public:
     inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduo_log_; }
 
     inline void Send(const muduo::net::TcpConnectionPtr& conn,
-                            const ::google::protobuf::Message& message) const { client_message_processor_.Send2Client(conn, message); }
+                            const ::google::protobuf::Message& message) const { client_message_processor_.SendToClient(conn, message); }
 
     void Init();
     void Exit();

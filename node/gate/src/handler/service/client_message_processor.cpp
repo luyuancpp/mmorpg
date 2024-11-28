@@ -26,7 +26,7 @@ ClientMessageProcessor::ClientMessageProcessor(ProtobufCodec& codec,
 	dispatcher_(dispatcher)
 {
 	dispatcher_.registerMessageCallback<ClientRequest>(
-		std::bind(&ClientMessageProcessor::OnRpcClientMessage, this, _1, _2, _3));
+		std::bind(&ClientMessageProcessor::HandleRpcClientMessage, this, _1, _2, _3));
 }
 
 //todo 考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
@@ -74,7 +74,7 @@ void ClientMessageProcessor::OnConnection(const muduo::net::TcpConnectionPtr& co
 	}
 }
 
-void ClientMessageProcessor::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
+void ClientMessageProcessor::HandleRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
 	const RpcClientMessagePtr& request,
 	muduo::Timestamp)
 {
