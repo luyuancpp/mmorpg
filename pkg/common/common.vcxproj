@@ -35,7 +35,7 @@
     <ClInclude Include="src\network\rpc_channel.h" />
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\network\rpc_connection_event.h" />
-    <ClInclude Include="src\network\rpc_msg_route.h" />
+    <ClInclude Include="src\network\network_constants.h" />
     <ClInclude Include="src\network\rpc_server.h" />
     <ClInclude Include="src\network\rpc_session.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
@@ -69,7 +69,6 @@
     <ClCompile Include="src\network\message_statistics.cpp" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\network\rpc_channel.cc" />
-    <ClCompile Include="src\network\rpc_msg_route.cpp" />
     <ClCompile Include="src\network\rpc_server.cc" />
     <ClCompile Include="src\network\rpc_session.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />

@@ -13,7 +13,7 @@
 #include "muduo/net/InetAddress.h"
 #include "game_logic/node/comp/game_node_comp.h"
 #include "network/gate_session.h"
-#include "network/rpc_msg_route.h"
+#include "network/network_constants.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
 #include "service_info/service_info.h"
