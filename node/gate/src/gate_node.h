@@ -79,7 +79,7 @@ private:
 private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
-    RpcClientHandler rpcClientHandler;
+    RpcClientSessionHandler rpcClientHandler;
     TcpServerPtr server_;
     nodes_info_data node_net_info_;
     NodeInfo node_info_;
