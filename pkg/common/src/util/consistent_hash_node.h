@@ -33,13 +33,13 @@ public:
         nodes_.erase(hash_id);
     }
 
-    decltype(auto) get_node_value(Key id)
+    decltype(auto) GetNodeValue(Key id)
     {
         auto hash_id = std::hash<Key>{}(id);
         return nodes_.find(hash_id);
     }
 
-    decltype(auto) get_by_hash(Key id)
+    decltype(auto) GetByHash(Key id)
     {
         auto hash_id = std::hash<Key>{}(id);
         if (nodes_.empty()) {

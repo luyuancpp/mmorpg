@@ -36,7 +36,7 @@ TEST_F(ConsistentHashNodeTest, RemoveNode) {
 	EXPECT_EQ(node.size(), 1);
 	EXPECT_FALSE(node.empty());
 
-	auto it = node.get_node_value(1);
+	auto it = node.GetNodeValue(1);
 	EXPECT_EQ(it, node.end());
 }
 
@@ -46,11 +46,11 @@ TEST_F(ConsistentHashNodeTest, GetNodeByHash) {
 	node.add(1, "Node1");
 	node.add(2, "Node2");
 
-	auto it = node.get_by_hash(1);
+	auto it = node.GetByHash(1);
 	EXPECT_NE(it, node.end());
 	EXPECT_EQ(it->second, "Node1");
 
-	it = node.get_by_hash(3); // Assuming 3 hashes to a valid key
+	it = node.GetByHash(3); // Assuming 3 hashes to a valid key
 	EXPECT_NE(it, node.end());
 	EXPECT_EQ(it->second, "Node2");
 }
@@ -59,7 +59,7 @@ TEST_F(ConsistentHashNodeTest, GetNodeByHash) {
 TEST_F(ConsistentHashNodeTest, EdgeCases) {
 	ConsistentHashNode<uint64_t, std::string> node;
 
-	auto it = node.get_by_hash(1);
+	auto it = node.GetByHash(1);
 	EXPECT_EQ(it, node.end());
 
 	node.remove(1); // Removing from an empty node should not crash
