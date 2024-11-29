@@ -42,7 +42,7 @@ entt::entity FindLoginNodeForSession(uint64_t sessionId)
     auto& session = sessionIt->second;
     if (!session.HasLoginNodeId())
     {
-        const auto loginNodeIt = tls_gate.login_consistent_node().get_by_hash(sessionId);
+        const auto loginNodeIt = tls_gate.login_consistent_node().GetByHash(sessionId);
         if (tls_gate.login_consistent_node().end() == loginNodeIt)
         {
             LOG_ERROR << "Login server not found for session id: " << sessionId;
@@ -51,7 +51,7 @@ entt::entity FindLoginNodeForSession(uint64_t sessionId)
         session.login_node_id_ = entt::to_integral(loginNodeIt->second);
     }
 
-    const auto loginNodeIt = tls_gate.login_consistent_node().get_node_value(session.login_node_id_);
+    const auto loginNodeIt = tls_gate.login_consistent_node().GetNodeValue(session.login_node_id_);
     if (tls_gate.login_consistent_node().end() == loginNodeIt)
     {
         LOG_ERROR << "Login server crashed for session id: " << sessionId;
