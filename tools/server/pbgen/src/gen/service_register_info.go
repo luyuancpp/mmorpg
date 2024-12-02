@@ -278,7 +278,7 @@ func writeServiceInfoCppFile() {
 	var messageIdHandlerBuilder strings.Builder
 
 	initFuncBuilder.WriteString("std::unordered_set<uint32_t> g_c2s_service_id;\n")
-	initFuncBuilder.WriteString("std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> g_message_info;\n\n")
+	initFuncBuilder.WriteString("std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> gMessageInfo;\n\n")
 	initFuncBuilder.WriteString("void InitMessageInfo()\n{\n")
 
 	// Collect all service list and generate include statements and class handlers
@@ -302,7 +302,7 @@ func writeServiceInfoCppFile() {
 			rpcId := method.KeyName() + config.MessageIdName
 			handlerClassName := serviceName + "Impl"
 			initFuncBuilder.WriteString(fmt.Sprintf(
-				"g_message_info[%s] = RpcService{"+
+				"gMessageInfo[%s] = RpcService{"+
 					"\"%s\","+
 					"\"%s\","+
 					"\"%s\","+
@@ -354,7 +354,7 @@ func writeServiceInfoHeadFile() {
 	data.WriteString("using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n")
 	data.WriteString("void InitMessageInfo();\n\n")
 	data.WriteString(fmt.Sprintf("constexpr uint32_t kMaxMessageLen = %d;\n\n", MessageIdLen()))
-	data.WriteString(fmt.Sprintf("extern std::array<RpcService, kMaxMessageLen> g_message_info;\n\n"))
+	data.WriteString(fmt.Sprintf("extern std::array<RpcService, kMaxMessageLen> gMessageInfo;\n\n"))
 	data.WriteString("extern std::unordered_set<uint32_t> g_c2s_service_id;\n")
 
 	util.WriteMd5Data2File(config.ServiceHeaderFilePath, data.String())

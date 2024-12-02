@@ -1,7 +1,7 @@
 #include "game_service_replied_handler.h"
 #include "network/codec/dispatcher.h"
 
-extern ProtobufDispatcher g_response_dispatcher;
+extern ProtobufDispatcher gResponseDispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -21,17 +21,17 @@ extern ProtobufDispatcher g_response_dispatcher;
 
 void InitGameServicePlayerEnterGameNodeRepliedHandler()
 {
-	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<NodeRouteMessageResponse>(std::bind(&OnGameServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<ClientSendMessageToPlayerResponse>(std::bind(&OnGameServiceClientSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceRegisterGateNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<NodeRouteMessageResponse>(std::bind(&OnGameServiceInvokePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<RouteMsgStringResponse>(std::bind(&OnGameServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<RoutePlayerMsgStringResponse>(std::bind(&OnGameServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceUpdateSessionDetailRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceEnterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<CreateSceneResponse>(std::bind(&OnGameServiceCreateSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServicePlayerEnterGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<NodeRouteMessageResponse>(std::bind(&OnGameServiceSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<ClientSendMessageToPlayerResponse>(std::bind(&OnGameServiceClientSendMessageToPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceRegisterGateNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<NodeRouteMessageResponse>(std::bind(&OnGameServiceInvokePlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<RouteMsgStringResponse>(std::bind(&OnGameServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<RoutePlayerMsgStringResponse>(std::bind(&OnGameServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceUpdateSessionDetailRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceEnterSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<CreateSceneResponse>(std::bind(&OnGameServiceCreateSceneRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnGameServicePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp)
@@ -67,7 +67,7 @@ void OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler(const TcpConnectio
 void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<NodeRouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (replied->body().message_id() >= g_message_info.size())
+	if (replied->body().message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "message_id not found " << replied->body().message_id() ;
 		return;
@@ -79,7 +79,7 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		return;
 	}
 	const auto  player_id    = it->second.player_id();
-	const auto& message_info = g_message_info.at(replied->body().message_id() );
+	const auto& message_info = gMessageInfo.at(replied->body().message_id() );
 	const auto  player = tlsCommonLogic.GetPlayer(player_id);
 	if (tls.registry.valid(player))
 	{
@@ -87,7 +87,7 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 			<< replied->body().message_id();
 		return;
 	}
-	const auto service_it = g_player_service_replied.find(message_info.service);
+	const auto service_it = g_player_service_replied.find(message_info.serviceName);
 	if (service_it == g_player_service_replied.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << player_id << ","
@@ -97,10 +97,10 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 	const auto& service_impl = service_it->second;
 	google::protobuf::Service* service = service_impl->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.methodName);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "PlayerService method not found " << message_info.method;
+		LOG_ERROR << "PlayerService method not found " << message_info.methodName;
 		//todo client error;
 		return;
 	}
@@ -108,7 +108,7 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 	if (!player_response->ParsePartialFromArray(replied->body().body().data(), 
 		static_cast < int32_t > ( replied -> body ( ) . body ( ) . size ( ) )))
 	{
-        LOG_ERROR << "ParsePartialFromArray " << message_info.method;
+        LOG_ERROR << "ParsePartialFromArray " << message_info.methodName;
         return;
 	}
 	service_impl->CallMethod(method, player, nullptr, boost::get_pointer(player_response));

@@ -418,27 +418,27 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	if (request->body().message_id() >= g_message_info.size())
+	if (request->body().message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "Message ID not found: " << request->body().message_id();
 		return;
 	}
 
-	const auto& message_info = g_message_info.at(request->body().message_id());
+	const auto& message_info = gMessageInfo.at(request->body().message_id());
 
-	const auto service_it = g_player_service.find(message_info.service);
+	const auto service_it = g_player_service.find(message_info.serviceName);
 	if (service_it == g_player_service.end())
 	{
-		LOG_ERROR << "Player service not found: " << message_info.service;
+		LOG_ERROR << "Player service not found: " << message_info.serviceName;
 		return;
 	}
 
 	const auto& service_handler = service_it->second;
 	google::protobuf::Service* service = service_handler->service();
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.methodName);
 	if (!method)
 	{
-		LOG_ERROR << "Method not found: " << message_info.method;
+		LOG_ERROR << "Method not found: " << message_info.methodName;
 		// TODO: Handle client error
 		return;
 	}
@@ -543,21 +543,21 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
 
-	if (route_data.message_id() >= g_message_info.size())
+	if (route_data.message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "Message ID not found: " << route_data.message_id();
 		return;
 	}
 
-	const auto& message_info = g_message_info[route_data.message_id()];
+	const auto& message_info = gMessageInfo[route_data.message_id()];
 
-	if (!message_info.service_impl_instance_)
+	if (!message_info.serviceImplInstance)
 	{
 		LOG_ERROR << "Message service implementation not found for message ID: " << route_data.message_id();
 		return;
 	}
 
-	const auto it = g_server_service.find(message_info.service);
+	const auto it = g_server_service.find(message_info.serviceName);
 	if (it == g_server_service.end())
 	{
 		LOG_ERROR << "Server service handler not found for message ID: " << route_data.message_id();
@@ -566,10 +566,10 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	const auto& service = it->second;
 
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.methodName);
 	if (!method)
 	{
-		LOG_ERROR << "Method not found: " << message_info.method;
+		LOG_ERROR << "Method not found: " << message_info.methodName;
 		return;
 	}
 

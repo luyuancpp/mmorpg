@@ -61,7 +61,7 @@ namespace protobuf {
 enum GameMessageType : int {
   REQUEST = 0,
   RESPONSE = 1,
-  S2C_REQUEST = 2,
+  RPC_CLIENT_REQUEST = 2,
   NODE_ROUTE = 3,
   RPC_ERROR = 4,
   GameMessageType_INT_MIN_SENTINEL_DO_NOT_USE_ =
