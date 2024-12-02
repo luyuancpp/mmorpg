@@ -146,14 +146,14 @@ void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& m
 		return;
 	}
 
-	(*centreNode)->CallMethod(messageId, message);
+	(*centreNode)->CallRemoteMethod(messageId, message);
 }
 
 void BroadCastToCentre(uint32_t messageId, const google::protobuf::Message& message)
 {
 	for (auto&& [_, node] : tls.centreNodeRegistry.view<RpcClientPtr>().each())
 	{
-		node->CallMethod(messageId, message);
+		node->CallRemoteMethod(messageId, message);
 	}
 }
 

@@ -126,7 +126,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
                         rq.mutable_rpc_client()->set_ip(centre_node->local_addr().toIp());
                         rq.mutable_rpc_client()->set_port(centre_node->local_addr().port());
                         rq.set_gate_node_id(GetNodeId());
-                        centre_node->CallMethod(CentreServiceRegisterGateNodeMessageId, rq);
+                        centre_node->CallRemoteMethod(CentreServiceRegisterGateNodeMessageId, rq);
                     }
                 );
                 return;
@@ -147,7 +147,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
                     rq.mutable_rpc_client()->set_ip(game_node->local_addr().toIp());
                     rq.mutable_rpc_client()->set_port(game_node->local_addr().port());
                     rq.set_gate_node_id(GetNodeId());
-                    game_node->CallMethod(GameServiceRegisterGateNodeMessageId, rq);
+                    game_node->CallRemoteMethod(GameServiceRegisterGateNodeMessageId, rq);
                 }
             );
         }

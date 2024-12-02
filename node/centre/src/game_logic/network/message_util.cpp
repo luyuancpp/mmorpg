@@ -209,7 +209,7 @@ void CallGamePlayerMethod(uint32_t messageId, const google::protobuf::Message& m
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
-	(*gateNode)->CallMethod(GameServiceInvokePlayerServiceMessageId, request);
+	(*gateNode)->CallRemoteMethod(GameServiceInvokePlayerServiceMessageId, request);
 }
 
 void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
@@ -227,5 +227,5 @@ void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& mes
 		return;
 	}
 
-	(*gameNode)->CallMethod(messageId, message);
+	(*gameNode)->CallRemoteMethod(messageId, message);
 }
