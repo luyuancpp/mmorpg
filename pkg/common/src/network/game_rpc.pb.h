@@ -50,51 +50,51 @@ struct TableStruct_game_5frpc_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_game_5frpc_2eproto;
-class RpcMessage;
-struct RpcMessageDefaultTypeInternal;
-extern RpcMessageDefaultTypeInternal _RpcMessage_default_instance_;
+class GameRpcMessage;
+struct GameRpcMessageDefaultTypeInternal;
+extern GameRpcMessageDefaultTypeInternal _GameRpcMessage_default_instance_;
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
 }  // namespace google
 
-enum MessageType : int {
+enum GameMessageType : int {
   REQUEST = 0,
   RESPONSE = 1,
   S2C_REQUEST = 2,
   NODE_ROUTE = 3,
   RPC_ERROR = 4,
-  MessageType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+  GameMessageType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
-  MessageType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  GameMessageType_INT_MAX_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::max(),
 };
 
-bool MessageType_IsValid(int value);
-extern const uint32_t MessageType_internal_data_[];
-constexpr MessageType MessageType_MIN = static_cast<MessageType>(0);
-constexpr MessageType MessageType_MAX = static_cast<MessageType>(4);
-constexpr int MessageType_ARRAYSIZE = 4 + 1;
+bool GameMessageType_IsValid(int value);
+extern const uint32_t GameMessageType_internal_data_[];
+constexpr GameMessageType GameMessageType_MIN = static_cast<GameMessageType>(0);
+constexpr GameMessageType GameMessageType_MAX = static_cast<GameMessageType>(4);
+constexpr int GameMessageType_ARRAYSIZE = 4 + 1;
 const ::google::protobuf::EnumDescriptor*
-MessageType_descriptor();
+GameMessageType_descriptor();
 template <typename T>
-const std::string& MessageType_Name(T value) {
-  static_assert(std::is_same<T, MessageType>::value ||
+const std::string& GameMessageType_Name(T value) {
+  static_assert(std::is_same<T, GameMessageType>::value ||
                     std::is_integral<T>::value,
-                "Incorrect type passed to MessageType_Name().");
-  return MessageType_Name(static_cast<MessageType>(value));
+                "Incorrect type passed to GameMessageType_Name().");
+  return GameMessageType_Name(static_cast<GameMessageType>(value));
 }
 template <>
-inline const std::string& MessageType_Name(MessageType value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<MessageType_descriptor,
+inline const std::string& GameMessageType_Name(GameMessageType value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<GameMessageType_descriptor,
                                                  0, 4>(
       static_cast<int>(value));
 }
-inline bool MessageType_Parse(absl::string_view name, MessageType* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<MessageType>(
-      MessageType_descriptor(), name, value);
+inline bool GameMessageType_Parse(absl::string_view name, GameMessageType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<GameMessageType>(
+      GameMessageType_descriptor(), name, value);
 }
-enum ErrorCode : int {
+enum GameErrorCode : int {
   RPC_NO_ERROR = 0,
   WRONG_PROTO = 1,
   NO_SERVICE = 2,
@@ -102,35 +102,35 @@ enum ErrorCode : int {
   INVALID_REQUEST = 4,
   INVALID_RESPONSE = 5,
   TIMEOUT = 6,
-  ErrorCode_INT_MIN_SENTINEL_DO_NOT_USE_ =
+  GameErrorCode_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
-  ErrorCode_INT_MAX_SENTINEL_DO_NOT_USE_ =
+  GameErrorCode_INT_MAX_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::max(),
 };
 
-bool ErrorCode_IsValid(int value);
-extern const uint32_t ErrorCode_internal_data_[];
-constexpr ErrorCode ErrorCode_MIN = static_cast<ErrorCode>(0);
-constexpr ErrorCode ErrorCode_MAX = static_cast<ErrorCode>(6);
-constexpr int ErrorCode_ARRAYSIZE = 6 + 1;
+bool GameErrorCode_IsValid(int value);
+extern const uint32_t GameErrorCode_internal_data_[];
+constexpr GameErrorCode GameErrorCode_MIN = static_cast<GameErrorCode>(0);
+constexpr GameErrorCode GameErrorCode_MAX = static_cast<GameErrorCode>(6);
+constexpr int GameErrorCode_ARRAYSIZE = 6 + 1;
 const ::google::protobuf::EnumDescriptor*
-ErrorCode_descriptor();
+GameErrorCode_descriptor();
 template <typename T>
-const std::string& ErrorCode_Name(T value) {
-  static_assert(std::is_same<T, ErrorCode>::value ||
+const std::string& GameErrorCode_Name(T value) {
+  static_assert(std::is_same<T, GameErrorCode>::value ||
                     std::is_integral<T>::value,
-                "Incorrect type passed to ErrorCode_Name().");
-  return ErrorCode_Name(static_cast<ErrorCode>(value));
+                "Incorrect type passed to GameErrorCode_Name().");
+  return GameErrorCode_Name(static_cast<GameErrorCode>(value));
 }
 template <>
-inline const std::string& ErrorCode_Name(ErrorCode value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<ErrorCode_descriptor,
+inline const std::string& GameErrorCode_Name(GameErrorCode value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<GameErrorCode_descriptor,
                                                  0, 6>(
       static_cast<int>(value));
 }
-inline bool ErrorCode_Parse(absl::string_view name, ErrorCode* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<ErrorCode>(
-      ErrorCode_descriptor(), name, value);
+inline bool GameErrorCode_Parse(absl::string_view name, GameErrorCode* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<GameErrorCode>(
+      GameErrorCode_descriptor(), name, value);
 }
 
 // ===================================================================
@@ -138,23 +138,23 @@ inline bool ErrorCode_Parse(absl::string_view name, ErrorCode* value) {
 
 // -------------------------------------------------------------------
 
-class RpcMessage final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:RpcMessage) */ {
+class GameRpcMessage final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:GameRpcMessage) */ {
  public:
-  inline RpcMessage() : RpcMessage(nullptr) {}
-  ~RpcMessage() override;
+  inline GameRpcMessage() : GameRpcMessage(nullptr) {}
+  ~GameRpcMessage() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RpcMessage(
+  explicit PROTOBUF_CONSTEXPR GameRpcMessage(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline RpcMessage(const RpcMessage& from) : RpcMessage(nullptr, from) {}
-  inline RpcMessage(RpcMessage&& from) noexcept
-      : RpcMessage(nullptr, std::move(from)) {}
-  inline RpcMessage& operator=(const RpcMessage& from) {
+  inline GameRpcMessage(const GameRpcMessage& from) : GameRpcMessage(nullptr, from) {}
+  inline GameRpcMessage(GameRpcMessage&& from) noexcept
+      : GameRpcMessage(nullptr, std::move(from)) {}
+  inline GameRpcMessage& operator=(const GameRpcMessage& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RpcMessage& operator=(RpcMessage&& from) noexcept {
+  inline GameRpcMessage& operator=(GameRpcMessage&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -186,16 +186,16 @@ class RpcMessage final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const RpcMessage& default_instance() {
+  static const GameRpcMessage& default_instance() {
     return *internal_default_instance();
   }
-  static inline const RpcMessage* internal_default_instance() {
-    return reinterpret_cast<const RpcMessage*>(
-        &_RpcMessage_default_instance_);
+  static inline const GameRpcMessage* internal_default_instance() {
+    return reinterpret_cast<const GameRpcMessage*>(
+        &_GameRpcMessage_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(RpcMessage& a, RpcMessage& b) { a.Swap(&b); }
-  inline void Swap(RpcMessage* other) {
+  friend void swap(GameRpcMessage& a, GameRpcMessage& b) { a.Swap(&b); }
+  inline void Swap(GameRpcMessage* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -207,7 +207,7 @@ class RpcMessage final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RpcMessage* other) {
+  void UnsafeArenaSwap(GameRpcMessage* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -215,13 +215,13 @@ class RpcMessage final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  RpcMessage* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<RpcMessage>(arena);
+  GameRpcMessage* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<GameRpcMessage>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RpcMessage& from);
+  void CopyFrom(const GameRpcMessage& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RpcMessage& from) { RpcMessage::MergeImpl(*this, from); }
+  void MergeFrom(const GameRpcMessage& from) { GameRpcMessage::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -242,16 +242,16 @@ class RpcMessage final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(RpcMessage* other);
+  void InternalSwap(GameRpcMessage* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "RpcMessage"; }
+  static ::absl::string_view FullMessageName() { return "GameRpcMessage"; }
 
  protected:
-  explicit RpcMessage(::google::protobuf::Arena* arena);
-  RpcMessage(::google::protobuf::Arena* arena, const RpcMessage& from);
-  RpcMessage(::google::protobuf::Arena* arena, RpcMessage&& from) noexcept
-      : RpcMessage(arena) {
+  explicit GameRpcMessage(::google::protobuf::Arena* arena);
+  GameRpcMessage(::google::protobuf::Arena* arena, const GameRpcMessage& from);
+  GameRpcMessage(::google::protobuf::Arena* arena, GameRpcMessage&& from) noexcept
+      : GameRpcMessage(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -301,24 +301,24 @@ class RpcMessage final : public ::google::protobuf::Message
   std::string* _internal_mutable_response();
 
   public:
-  // .MessageType type = 1;
+  // .GameMessageType type = 1;
   void clear_type() ;
-  ::MessageType type() const;
-  void set_type(::MessageType value);
+  ::GameMessageType type() const;
+  void set_type(::GameMessageType value);
 
   private:
-  ::MessageType _internal_type() const;
-  void _internal_set_type(::MessageType value);
+  ::GameMessageType _internal_type() const;
+  void _internal_set_type(::GameMessageType value);
 
   public:
-  // .ErrorCode error = 4;
+  // .GameErrorCode error = 4;
   void clear_error() ;
-  ::ErrorCode error() const;
-  void set_error(::ErrorCode value);
+  ::GameErrorCode error() const;
+  void set_error(::GameErrorCode value);
 
   private:
-  ::ErrorCode _internal_error() const;
-  void _internal_set_error(::ErrorCode value);
+  ::GameErrorCode _internal_error() const;
+  void _internal_set_error(::GameErrorCode value);
 
   public:
   // uint32 message_id = 5;
@@ -331,7 +331,7 @@ class RpcMessage final : public ::google::protobuf::Message
   void _internal_set_message_id(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:RpcMessage)
+  // @@protoc_insertion_point(class_scope:GameRpcMessage)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -378,70 +378,70 @@ class RpcMessage final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// RpcMessage
+// GameRpcMessage
 
-// .MessageType type = 1;
-inline void RpcMessage::clear_type() {
+// .GameMessageType type = 1;
+inline void GameRpcMessage::clear_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.type_ = 0;
 }
-inline ::MessageType RpcMessage::type() const {
-  // @@protoc_insertion_point(field_get:RpcMessage.type)
+inline ::GameMessageType GameRpcMessage::type() const {
+  // @@protoc_insertion_point(field_get:GameRpcMessage.type)
   return _internal_type();
 }
-inline void RpcMessage::set_type(::MessageType value) {
+inline void GameRpcMessage::set_type(::GameMessageType value) {
   _internal_set_type(value);
-  // @@protoc_insertion_point(field_set:RpcMessage.type)
+  // @@protoc_insertion_point(field_set:GameRpcMessage.type)
 }
-inline ::MessageType RpcMessage::_internal_type() const {
+inline ::GameMessageType GameRpcMessage::_internal_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return static_cast<::MessageType>(_impl_.type_);
+  return static_cast<::GameMessageType>(_impl_.type_);
 }
-inline void RpcMessage::_internal_set_type(::MessageType value) {
+inline void GameRpcMessage::_internal_set_type(::GameMessageType value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.type_ = value;
 }
 
 // bytes request = 2;
-inline void RpcMessage::clear_request() {
+inline void GameRpcMessage::clear_request() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.request_.ClearToEmpty();
 }
-inline const std::string& RpcMessage::request() const
+inline const std::string& GameRpcMessage::request() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:RpcMessage.request)
+  // @@protoc_insertion_point(field_get:GameRpcMessage.request)
   return _internal_request();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void RpcMessage::set_request(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void GameRpcMessage::set_request(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.request_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:RpcMessage.request)
+  // @@protoc_insertion_point(field_set:GameRpcMessage.request)
 }
-inline std::string* RpcMessage::mutable_request() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* GameRpcMessage::mutable_request() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_request();
-  // @@protoc_insertion_point(field_mutable:RpcMessage.request)
+  // @@protoc_insertion_point(field_mutable:GameRpcMessage.request)
   return _s;
 }
-inline const std::string& RpcMessage::_internal_request() const {
+inline const std::string& GameRpcMessage::_internal_request() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.request_.Get();
 }
-inline void RpcMessage::_internal_set_request(const std::string& value) {
+inline void GameRpcMessage::_internal_set_request(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.request_.Set(value, GetArena());
 }
-inline std::string* RpcMessage::_internal_mutable_request() {
+inline std::string* GameRpcMessage::_internal_mutable_request() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.request_.Mutable( GetArena());
 }
-inline std::string* RpcMessage::release_request() {
+inline std::string* GameRpcMessage::release_request() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:RpcMessage.request)
+  // @@protoc_insertion_point(field_release:GameRpcMessage.request)
   return _impl_.request_.Release();
 }
-inline void RpcMessage::set_allocated_request(std::string* value) {
+inline void GameRpcMessage::set_allocated_request(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.request_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -449,49 +449,49 @@ inline void RpcMessage::set_allocated_request(std::string* value) {
           _impl_.request_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:RpcMessage.request)
+  // @@protoc_insertion_point(field_set_allocated:GameRpcMessage.request)
 }
 
 // bytes response = 3;
-inline void RpcMessage::clear_response() {
+inline void GameRpcMessage::clear_response() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.response_.ClearToEmpty();
 }
-inline const std::string& RpcMessage::response() const
+inline const std::string& GameRpcMessage::response() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:RpcMessage.response)
+  // @@protoc_insertion_point(field_get:GameRpcMessage.response)
   return _internal_response();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void RpcMessage::set_response(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void GameRpcMessage::set_response(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.response_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:RpcMessage.response)
+  // @@protoc_insertion_point(field_set:GameRpcMessage.response)
 }
-inline std::string* RpcMessage::mutable_response() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* GameRpcMessage::mutable_response() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_response();
-  // @@protoc_insertion_point(field_mutable:RpcMessage.response)
+  // @@protoc_insertion_point(field_mutable:GameRpcMessage.response)
   return _s;
 }
-inline const std::string& RpcMessage::_internal_response() const {
+inline const std::string& GameRpcMessage::_internal_response() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.response_.Get();
 }
-inline void RpcMessage::_internal_set_response(const std::string& value) {
+inline void GameRpcMessage::_internal_set_response(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.response_.Set(value, GetArena());
 }
-inline std::string* RpcMessage::_internal_mutable_response() {
+inline std::string* GameRpcMessage::_internal_mutable_response() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.response_.Mutable( GetArena());
 }
-inline std::string* RpcMessage::release_response() {
+inline std::string* GameRpcMessage::release_response() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:RpcMessage.response)
+  // @@protoc_insertion_point(field_release:GameRpcMessage.response)
   return _impl_.response_.Release();
 }
-inline void RpcMessage::set_allocated_response(std::string* value) {
+inline void GameRpcMessage::set_allocated_response(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.response_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -499,49 +499,49 @@ inline void RpcMessage::set_allocated_response(std::string* value) {
           _impl_.response_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:RpcMessage.response)
+  // @@protoc_insertion_point(field_set_allocated:GameRpcMessage.response)
 }
 
-// .ErrorCode error = 4;
-inline void RpcMessage::clear_error() {
+// .GameErrorCode error = 4;
+inline void GameRpcMessage::clear_error() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.error_ = 0;
 }
-inline ::ErrorCode RpcMessage::error() const {
-  // @@protoc_insertion_point(field_get:RpcMessage.error)
+inline ::GameErrorCode GameRpcMessage::error() const {
+  // @@protoc_insertion_point(field_get:GameRpcMessage.error)
   return _internal_error();
 }
-inline void RpcMessage::set_error(::ErrorCode value) {
+inline void GameRpcMessage::set_error(::GameErrorCode value) {
   _internal_set_error(value);
-  // @@protoc_insertion_point(field_set:RpcMessage.error)
+  // @@protoc_insertion_point(field_set:GameRpcMessage.error)
 }
-inline ::ErrorCode RpcMessage::_internal_error() const {
+inline ::GameErrorCode GameRpcMessage::_internal_error() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return static_cast<::ErrorCode>(_impl_.error_);
+  return static_cast<::GameErrorCode>(_impl_.error_);
 }
-inline void RpcMessage::_internal_set_error(::ErrorCode value) {
+inline void GameRpcMessage::_internal_set_error(::GameErrorCode value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.error_ = value;
 }
 
 // uint32 message_id = 5;
-inline void RpcMessage::clear_message_id() {
+inline void GameRpcMessage::clear_message_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.message_id_ = 0u;
 }
-inline ::uint32_t RpcMessage::message_id() const {
-  // @@protoc_insertion_point(field_get:RpcMessage.message_id)
+inline ::uint32_t GameRpcMessage::message_id() const {
+  // @@protoc_insertion_point(field_get:GameRpcMessage.message_id)
   return _internal_message_id();
 }
-inline void RpcMessage::set_message_id(::uint32_t value) {
+inline void GameRpcMessage::set_message_id(::uint32_t value) {
   _internal_set_message_id(value);
-  // @@protoc_insertion_point(field_set:RpcMessage.message_id)
+  // @@protoc_insertion_point(field_set:GameRpcMessage.message_id)
 }
-inline ::uint32_t RpcMessage::_internal_message_id() const {
+inline ::uint32_t GameRpcMessage::_internal_message_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.message_id_;
 }
-inline void RpcMessage::_internal_set_message_id(::uint32_t value) {
+inline void GameRpcMessage::_internal_set_message_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.message_id_ = value;
 }
@@ -557,16 +557,16 @@ namespace google {
 namespace protobuf {
 
 template <>
-struct is_proto_enum<::MessageType> : std::true_type {};
+struct is_proto_enum<::GameMessageType> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::MessageType>() {
-  return ::MessageType_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::GameMessageType>() {
+  return ::GameMessageType_descriptor();
 }
 template <>
-struct is_proto_enum<::ErrorCode> : std::true_type {};
+struct is_proto_enum<::GameErrorCode> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::ErrorCode>() {
-  return ::ErrorCode_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::GameErrorCode>() {
+  return ::GameErrorCode_descriptor();
 }
 
 }  // namespace protobuf

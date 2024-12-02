@@ -79,8 +79,8 @@ namespace google {
 }  // namespace google
 
 
-class RpcMessage;
-typedef std::shared_ptr<RpcMessage> RpcMessagePtr;
+class GameRpcMessage;
+typedef std::shared_ptr<GameRpcMessage> RpcMessagePtr;
 constexpr char rpctag[] = "RPC0";
 
 // wire format
@@ -93,7 +93,7 @@ constexpr char rpctag[] = "RPC0";
 // checksum  4-byte  adler32 of "RPC0"+payload
 //
 
-typedef muduo::net::ProtobufCodecLiteT<RpcMessage, rpctag> RpcCodec;
+typedef muduo::net::ProtobufCodecLiteT<GameRpcMessage, rpctag> RpcCodec;
 
 using muduo::net::TcpConnectionPtr;
 
@@ -145,27 +145,27 @@ public:
         muduo::Timestamp);
 private:
 
-    void SendError(const RpcMessage& message, ErrorCode error);
+    void SendError(const GameRpcMessage& message, GameErrorCode error);
 
     void onRpcMessage(const TcpConnectionPtr& conn,
         const RpcMessagePtr& messagePtr,
         muduo::Timestamp receiveTime);
 
     void onNormalRequestResponseMessage(const TcpConnectionPtr& conn,
-        const RpcMessage& message,
+        const GameRpcMessage& message,
         muduo::Timestamp receiveTime);
 
     void onRouteNodeMessage(const TcpConnectionPtr& conn,
-        const RpcMessage& message,
+        const GameRpcMessage& message,
         muduo::Timestamp receiveTime);
 
     void onS2CMessage(const TcpConnectionPtr& conn,
-        const RpcMessage& message,
+        const GameRpcMessage& message,
         muduo::Timestamp receiveTime);
 
-    void MessageStatistics(const RpcMessage& message);
+    void MessageStatistics(const GameRpcMessage& message);
 
-    void SendMessage(const RpcMessage& message);
+    void SendMessage(const GameRpcMessage& message);
 
     RpcCodec codec_;
     TcpConnectionPtr conn_;

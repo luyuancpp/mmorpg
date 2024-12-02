@@ -22,7 +22,7 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 
-inline constexpr RpcMessage::Impl_::Impl_(
+inline constexpr GameRpcMessage::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : request_(
             &::google::protobuf::internal::fixed_address_empty_string,
@@ -30,24 +30,24 @@ inline constexpr RpcMessage::Impl_::Impl_(
         response_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        type_{static_cast< ::MessageType >(0)},
-        error_{static_cast< ::ErrorCode >(0)},
+        type_{static_cast< ::GameMessageType >(0)},
+        error_{static_cast< ::GameErrorCode >(0)},
         message_id_{0u},
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR RpcMessage::RpcMessage(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR GameRpcMessage::GameRpcMessage(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct RpcMessageDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RpcMessageDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RpcMessageDefaultTypeInternal() {}
+struct GameRpcMessageDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GameRpcMessageDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GameRpcMessageDefaultTypeInternal() {}
   union {
-    RpcMessage _instance;
+    GameRpcMessage _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RpcMessageDefaultTypeInternal _RpcMessage_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameRpcMessageDefaultTypeInternal _GameRpcMessage_default_instance_;
 static ::_pb::Metadata file_level_metadata_game_5frpc_2eproto[1];
 static const ::_pb::EnumDescriptor* file_level_enum_descriptors_game_5frpc_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor**
@@ -56,45 +56,46 @@ const ::uint32_t
     TableStruct_game_5frpc_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::RpcMessage, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.type_),
-        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.request_),
-        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.response_),
-        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.error_),
-        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.message_id_),
+        PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.type_),
+        PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.request_),
+        PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.response_),
+        PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.error_),
+        PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.message_id_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::RpcMessage)},
+        {0, -1, -1, sizeof(::GameRpcMessage)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::_RpcMessage_default_instance_._instance,
+    &::_GameRpcMessage_default_instance_._instance,
 };
 const char descriptor_table_protodef_game_5frpc_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\016game_rpc.proto\"z\n\nRpcMessage\022\032\n\004type\030\001"
-    " \001(\0162\014.MessageType\022\017\n\007request\030\002 \001(\014\022\020\n\010r"
-    "esponse\030\003 \001(\014\022\031\n\005error\030\004 \001(\0162\n.ErrorCode"
-    "\022\022\n\nmessage_id\030\005 \001(\r*X\n\013MessageType\022\013\n\007R"
-    "EQUEST\020\000\022\014\n\010RESPONSE\020\001\022\017\n\013S2C_REQUEST\020\002\022"
-    "\016\n\nNODE_ROUTE\020\003\022\r\n\tRPC_ERROR\020\004*\205\001\n\tError"
-    "Code\022\020\n\014RPC_NO_ERROR\020\000\022\017\n\013WRONG_PROTO\020\001\022"
-    "\016\n\nNO_SERVICE\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017INVALI"
-    "D_REQUEST\020\004\022\024\n\020INVALID_RESPONSE\020\005\022\013\n\007TIM"
-    "EOUT\020\006B\tZ\007pb/gameb\006proto3"
+    "\n\016game_rpc.proto\"\206\001\n\016GameRpcMessage\022\036\n\004t"
+    "ype\030\001 \001(\0162\020.GameMessageType\022\017\n\007request\030\002"
+    " \001(\014\022\020\n\010response\030\003 \001(\014\022\035\n\005error\030\004 \001(\0162\016."
+    "GameErrorCode\022\022\n\nmessage_id\030\005 \001(\r*\\\n\017Gam"
+    "eMessageType\022\013\n\007REQUEST\020\000\022\014\n\010RESPONSE\020\001\022"
+    "\017\n\013S2C_REQUEST\020\002\022\016\n\nNODE_ROUTE\020\003\022\r\n\tRPC_"
+    "ERROR\020\004*\211\001\n\rGameErrorCode\022\020\n\014RPC_NO_ERRO"
+    "R\020\000\022\017\n\013WRONG_PROTO\020\001\022\016\n\nNO_SERVICE\020\002\022\r\n\t"
+    "NO_METHOD\020\003\022\023\n\017INVALID_REQUEST\020\004\022\024\n\020INVA"
+    "LID_RESPONSE\020\005\022\013\n\007TIMEOUT\020\006B\tZ\007pb/gameb\006"
+    "proto3"
 };
 static ::absl::once_flag descriptor_table_game_5frpc_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_game_5frpc_2eproto = {
     false,
     false,
-    385,
+    406,
     descriptor_table_protodef_game_5frpc_2eproto,
     "game_rpc.proto",
     &descriptor_table_game_5frpc_2eproto_once,
@@ -123,47 +124,47 @@ const ::_pbi::DescriptorTable descriptor_table_game_5frpc_2eproto = {
 PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_game_5frpc_2eproto_getter() {
   return &descriptor_table_game_5frpc_2eproto;
 }
-const ::google::protobuf::EnumDescriptor* MessageType_descriptor() {
+const ::google::protobuf::EnumDescriptor* GameMessageType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_game_5frpc_2eproto);
   return file_level_enum_descriptors_game_5frpc_2eproto[0];
 }
-PROTOBUF_CONSTINIT const uint32_t MessageType_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t GameMessageType_internal_data_[] = {
     327680u, 0u, };
-bool MessageType_IsValid(int value) {
+bool GameMessageType_IsValid(int value) {
   return 0 <= value && value <= 4;
 }
-const ::google::protobuf::EnumDescriptor* ErrorCode_descriptor() {
+const ::google::protobuf::EnumDescriptor* GameErrorCode_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_game_5frpc_2eproto);
   return file_level_enum_descriptors_game_5frpc_2eproto[1];
 }
-PROTOBUF_CONSTINIT const uint32_t ErrorCode_internal_data_[] = {
+PROTOBUF_CONSTINIT const uint32_t GameErrorCode_internal_data_[] = {
     458752u, 0u, };
-bool ErrorCode_IsValid(int value) {
+bool GameErrorCode_IsValid(int value) {
   return 0 <= value && value <= 6;
 }
 // ===================================================================
 
-class RpcMessage::_Internal {
+class GameRpcMessage::_Internal {
  public:
 };
 
-RpcMessage::RpcMessage(::google::protobuf::Arena* arena)
+GameRpcMessage::GameRpcMessage(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:RpcMessage)
+  // @@protoc_insertion_point(arena_constructor:GameRpcMessage)
 }
-inline PROTOBUF_NDEBUG_INLINE RpcMessage::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE GameRpcMessage::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : request_(arena, from.request_),
         response_(arena, from.response_),
         _cached_size_{0} {}
 
-RpcMessage::RpcMessage(
+GameRpcMessage::GameRpcMessage(
     ::google::protobuf::Arena* arena,
-    const RpcMessage& from)
+    const GameRpcMessage& from)
     : ::google::protobuf::Message(arena) {
-  RpcMessage* const _this = this;
+  GameRpcMessage* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -176,16 +177,16 @@ RpcMessage::RpcMessage(
                offsetof(Impl_, type_) +
                sizeof(Impl_::message_id_));
 
-  // @@protoc_insertion_point(copy_constructor:RpcMessage)
+  // @@protoc_insertion_point(copy_constructor:GameRpcMessage)
 }
-inline PROTOBUF_NDEBUG_INLINE RpcMessage::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE GameRpcMessage::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : request_(arena),
         response_(arena),
         _cached_size_{0} {}
 
-inline void RpcMessage::SharedCtor(::_pb::Arena* arena) {
+inline void GameRpcMessage::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, type_),
@@ -194,12 +195,12 @@ inline void RpcMessage::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, type_) +
                sizeof(Impl_::message_id_));
 }
-RpcMessage::~RpcMessage() {
-  // @@protoc_insertion_point(destructor:RpcMessage)
+GameRpcMessage::~GameRpcMessage() {
+  // @@protoc_insertion_point(destructor:GameRpcMessage)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void RpcMessage::SharedDtor() {
+inline void GameRpcMessage::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.request_.Destroy();
   _impl_.response_.Destroy();
@@ -207,21 +208,21 @@ inline void RpcMessage::SharedDtor() {
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-RpcMessage::GetClassData() const {
+GameRpcMessage::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_._cached_size_),
               false,
           },
-          &RpcMessage::MergeImpl,
-          &RpcMessage::kDescriptorMethods,
+          &GameRpcMessage::MergeImpl,
+          &GameRpcMessage::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void RpcMessage::Clear() {
-// @@protoc_insertion_point(message_clear_start:RpcMessage)
+PROTOBUF_NOINLINE void GameRpcMessage::Clear() {
+// @@protoc_insertion_point(message_clear_start:GameRpcMessage)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -235,7 +236,7 @@ PROTOBUF_NOINLINE void RpcMessage::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* RpcMessage::_InternalParse(
+const char* GameRpcMessage::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -243,7 +244,7 @@ const char* RpcMessage::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
+const ::_pbi::TcParseTable<3, 5, 0, 0, 2> GameRpcMessage::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -254,47 +255,47 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
     5,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_RpcMessage_default_instance_._instance,
+    &_GameRpcMessage_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::RpcMessage>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::GameRpcMessage>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // .MessageType type = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RpcMessage, _impl_.type_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.type_)}},
+    // .GameMessageType type = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameRpcMessage, _impl_.type_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.type_)}},
     // bytes request = 2;
     {::_pbi::TcParser::FastBS1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.request_)}},
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.request_)}},
     // bytes response = 3;
     {::_pbi::TcParser::FastBS1,
-     {26, 63, 0, PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.response_)}},
-    // .ErrorCode error = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RpcMessage, _impl_.error_), 63>(),
-     {32, 63, 0, PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.error_)}},
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.response_)}},
+    // .GameErrorCode error = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameRpcMessage, _impl_.error_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.error_)}},
     // uint32 message_id = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RpcMessage, _impl_.message_id_), 63>(),
-     {40, 63, 0, PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.message_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameRpcMessage, _impl_.message_id_), 63>(),
+     {40, 63, 0, PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.message_id_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageType type = 1;
-    {PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.type_), 0, 0,
+    // .GameMessageType type = 1;
+    {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
     // bytes request = 2;
-    {PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.request_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.request_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
     // bytes response = 3;
-    {PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.response_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.response_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
-    // .ErrorCode error = 4;
-    {PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.error_), 0, 0,
+    // .GameErrorCode error = 4;
+    {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.error_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
     // uint32 message_id = 5;
-    {PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.message_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.message_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -302,14 +303,14 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
   }},
 };
 
-::uint8_t* RpcMessage::_InternalSerialize(
+::uint8_t* GameRpcMessage::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:RpcMessage)
+  // @@protoc_insertion_point(serialize_to_array_start:GameRpcMessage)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // .MessageType type = 1;
+  // .GameMessageType type = 1;
   if (this->_internal_type() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -328,7 +329,7 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
     target = stream->WriteBytesMaybeAliased(3, _s, target);
   }
 
-  // .ErrorCode error = 4;
+  // .GameErrorCode error = 4;
   if (this->_internal_error() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -347,12 +348,12 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:RpcMessage)
+  // @@protoc_insertion_point(serialize_to_array_end:GameRpcMessage)
   return target;
 }
 
-::size_t RpcMessage::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:RpcMessage)
+::size_t GameRpcMessage::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:GameRpcMessage)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -371,13 +372,13 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
                                     this->_internal_response());
   }
 
-  // .MessageType type = 1;
+  // .GameMessageType type = 1;
   if (this->_internal_type() != 0) {
     total_size += 1 +
                   ::_pbi::WireFormatLite::EnumSize(this->_internal_type());
   }
 
-  // .ErrorCode error = 4;
+  // .GameErrorCode error = 4;
   if (this->_internal_error() != 0) {
     total_size += 1 +
                   ::_pbi::WireFormatLite::EnumSize(this->_internal_error());
@@ -393,10 +394,10 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
 }
 
 
-void RpcMessage::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<RpcMessage*>(&to_msg);
-  auto& from = static_cast<const RpcMessage&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:RpcMessage)
+void GameRpcMessage::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GameRpcMessage*>(&to_msg);
+  auto& from = static_cast<const GameRpcMessage&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:GameRpcMessage)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -419,18 +420,18 @@ void RpcMessage::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void RpcMessage::CopyFrom(const RpcMessage& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:RpcMessage)
+void GameRpcMessage::CopyFrom(const GameRpcMessage& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:GameRpcMessage)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool RpcMessage::IsInitialized() const {
+PROTOBUF_NOINLINE bool GameRpcMessage::IsInitialized() const {
   return true;
 }
 
-void RpcMessage::InternalSwap(RpcMessage* PROTOBUF_RESTRICT other) {
+void GameRpcMessage::InternalSwap(GameRpcMessage* PROTOBUF_RESTRICT other) {
   using std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -438,14 +439,14 @@ void RpcMessage::InternalSwap(RpcMessage* PROTOBUF_RESTRICT other) {
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_, &other->_impl_.request_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.response_, &other->_impl_.response_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.message_id_)
-      + sizeof(RpcMessage::_impl_.message_id_)
-      - PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.type_)>(
+      PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.message_id_)
+      + sizeof(GameRpcMessage::_impl_.message_id_)
+      - PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.type_)>(
           reinterpret_cast<char*>(&_impl_.type_),
           reinterpret_cast<char*>(&other->_impl_.type_));
 }
 
-::google::protobuf::Metadata RpcMessage::GetMetadata() const {
+::google::protobuf::Metadata GameRpcMessage::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_game_5frpc_2eproto_getter,
                                    &descriptor_table_game_5frpc_2eproto_once,
                                    file_level_metadata_game_5frpc_2eproto[0]);

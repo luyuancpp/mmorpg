@@ -63,7 +63,7 @@ GameChannel::~GameChannel()
   // method->input_type() and method->output_type().
 void GameChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Message& request)
 {
-  RpcMessage message;
+  GameRpcMessage message;
   message.set_type(REQUEST);
   message.set_message_id(message_id);
   auto byte_size = int32_t(request.ByteSizeLong());
@@ -85,7 +85,7 @@ void GameChannel::SendRequest(uint32_t message_id, const ::google::protobuf::Mes
 		return;
 	}
 
-    RpcMessage message;    
+    GameRpcMessage message;    
     message.set_type(S2C_REQUEST);
     message.set_message_id(message_id);  
 	auto byte_size = int32_t(request.ByteSizeLong());
@@ -163,7 +163,7 @@ void GameChannel::onRpcMessage(const TcpConnectionPtr& conn,
 
 void GameChannel::RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& request)
 {
-    RpcMessage message;
+    GameRpcMessage message;
     message.set_type(NODE_ROUTE);  
 	auto byte_size = int32_t(request.ByteSizeLong());
     message.mutable_request()->resize(byte_size);
@@ -177,7 +177,7 @@ void GameChannel::RouteMessageToNode(uint32_t message_id, const ::google::protob
 	SendMessage(message);
 }
 
-void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessage& message, muduo::Timestamp receiveTime)
+void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
 {
 	assert(services_ != NULL);
 	if ( message.message_id() >= g_message_info.size())
@@ -213,7 +213,7 @@ void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMess
     {
         return;
     }
-    RpcMessage rpc_response;
+    GameRpcMessage rpc_response;
     rpc_response.set_type(RESPONSE);
     auto byte_size = int32_t(response->ByteSizeLong());
 	rpc_response.mutable_response()->resize(byte_size);
@@ -227,7 +227,7 @@ void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMess
 	SendMessage(rpc_response);
 }
 
-void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& message, muduo::Timestamp receiveTime)
+void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
 {
 	if ( message.message_id() >= g_message_info.size())
 	{
@@ -258,7 +258,7 @@ void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& m
     service->CallMethod(method, nullptr, boost::get_pointer(request), nullptr, nullptr);
 }
 
-void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const RpcMessage& message, muduo::Timestamp receiveTime)
+void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
 {
 	if ( message.message_id() >= g_message_info.size())
 	{
@@ -294,7 +294,7 @@ void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, c
     {
         std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
         service->CallMethod(method, NULL, boost::get_pointer(request), boost::get_pointer(response), nullptr);
-        RpcMessage rpc_response;
+        GameRpcMessage rpc_response;
         rpc_response.set_type(RESPONSE);
         auto byte_size = int32_t(response->ByteSizeLong());
 		rpc_response.mutable_response()->resize(byte_size);
@@ -309,9 +309,9 @@ void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, c
     }
 }
 
-void GameChannel::SendError(const RpcMessage& message, ErrorCode error)
+void GameChannel::SendError(const GameRpcMessage& message, GameErrorCode error)
 {
-    RpcMessage response;
+    GameRpcMessage response;
     response.set_type(RESPONSE);
     response.set_error(error);
 	SendMessage(response);
@@ -325,14 +325,14 @@ void GameChannel::SendRouteMessageResponse(uint32_t message_id, uint64_t id, con
 		return;
 	}
     //todo check message id error
-    RpcMessage response;
+    GameRpcMessage response;
     response.set_type(RESPONSE);
     response.set_response(body); // FIXME: error check
     response.set_message_id(message_id);
 	SendMessage(response);
 }
 
-void GameChannel::MessageStatistics(const RpcMessage& message)
+void GameChannel::MessageStatistics(const GameRpcMessage& message)
 {
 	if (!g_test_switch_list[kTestMessageStatistics])
 	{
@@ -342,7 +342,7 @@ void GameChannel::MessageStatistics(const RpcMessage& message)
 	statistic.set_count(statistic.count() + 1);
 }
 
-void GameChannel::SendMessage(const RpcMessage& message)
+void GameChannel::SendMessage(const GameRpcMessage& message)
 {
 	codec_.send(conn_, message);
 
