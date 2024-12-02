@@ -47,10 +47,10 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
         << (conn->connected() ? "UP" : "DOWN");
   if (conn->connected())
   {
-    RpcChannelPtr channel(new RpcChannel(conn));
+    RpcChannelPtr channel(new GameChannel(conn));
     channel->setServices(&services_);
     conn->setMessageCallback(
-        std::bind(&RpcChannel::onMessage, get_pointer(channel), _1, _2, _3));
+        std::bind(&GameChannel::onMessage, get_pointer(channel), _1, _2, _3));
     conn->setContext(channel);
   }
   else

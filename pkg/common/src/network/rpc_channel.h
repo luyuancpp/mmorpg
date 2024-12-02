@@ -92,14 +92,14 @@ namespace muduo
         //   RpcChannel* channel = new MyRpcChannel("remotehost.example.com:1234");
         //   MyService* service = new MyService::Stub(channel);
         //   service->MyMethod(request, &response, callback);
-        class RpcChannel 
+        class GameChannel 
         {
         public:
-            RpcChannel();
+            GameChannel();
 
-            explicit RpcChannel(const TcpConnectionPtr& conn);
+            explicit GameChannel(const TcpConnectionPtr& conn);
 
-			~RpcChannel();
+			~GameChannel();
 
             void setConnection(const TcpConnectionPtr& conn)
             {
@@ -159,7 +159,7 @@ namespace muduo
             const std::map<std::string, ::google::protobuf::Service*>* services_;
             ProtobufDispatcher dispatcher_;
         };
-        typedef std::shared_ptr<RpcChannel> RpcChannelPtr;
+        typedef std::shared_ptr<GameChannel> RpcChannelPtr;
 
     }  // namespace net
 }  // namespace muduo
