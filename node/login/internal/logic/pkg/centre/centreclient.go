@@ -12,7 +12,7 @@ type Client struct {
 }
 
 func NewCentreClient(ip string, port int) *Client {
-	client, _ := muduo.NewClient(ip, port, &muduo.RpcCodec{RpcMsgType: &game.RpcMessage{}})
+	client, _ := muduo.NewClient(ip, port, &muduo.RpcCodec{RpcMsgType: &game.GameRpcMessage{}})
 	return &Client{
 		CentreClient: client,
 	}
@@ -24,7 +24,7 @@ func (c *Client) Close() error {
 
 func (c *Client) Send(m proto.Message, messageId uint32) {
 	var err error
-	rpcMsg := &game.RpcMessage{}
+	rpcMsg := &game.GameRpcMessage{}
 	rpcMsg.MessageId = messageId
 	rpcMsg.Request, err = proto.Marshal(m)
 	if err != nil {

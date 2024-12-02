@@ -1,7 +1,7 @@
 syntax = "proto3";
 option go_package = "pb/game";
 
-enum MessageType
+enum GameMessageType
 {
   REQUEST = 0;
   RESPONSE = 1;
@@ -10,7 +10,7 @@ enum MessageType
   RPC_ERROR = 4; // not used
 }
 
-enum ErrorCode
+enum GameErrorCode
 {
   RPC_NO_ERROR = 0;
   WRONG_PROTO = 1;
@@ -21,11 +21,11 @@ enum ErrorCode
   TIMEOUT = 6;
 }
 
-message RpcMessage
+message GameRpcMessage
 {
-  MessageType type = 1;
+  GameMessageType type = 1;
   bytes request = 2;
   bytes response = 3;
-  ErrorCode error = 4;
+  GameErrorCode error = 4;
   uint32 message_id = 5;
 }
