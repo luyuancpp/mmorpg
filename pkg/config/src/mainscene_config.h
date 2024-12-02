@@ -12,7 +12,7 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const MainSceneTable*>;
     static MainSceneConfigurationTable& Instance() { static MainSceneConfigurationTable instance; return instance; }
     const MainSceneTabledData& All() const { return data_; }
-    std::pair<const MainSceneTable*, uint32_t> GetTable(uint32_t keyId);
+    std::pair<const MainSceneTable*, uint32_t> GetTable(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
@@ -25,26 +25,26 @@ private:
 
 inline const MainSceneTabledData& GetMainSceneAllTable() { return MainSceneConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateMainSceneTable(keyId) \
-const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return (fetchResult); }} while (0)
+#define FetchAndValidateMainSceneTable(tableId) \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << tableId;return (fetchResult); }} while (0)
 
-#define FetchAndValidateCustomMainSceneTable(prefix, keyId) \
-const auto [##prefix##MainSceneTable, prefix##fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(##prefix##MainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+#define FetchAndValidateCustomMainSceneTable(prefix, tableId) \
+const auto [##prefix##MainSceneTable, prefix##fetchResult] = MainSceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(##prefix##MainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << tableId;return (prefix##fetchResult); }} while (0)
 
-#define FetchMainSceneTableOrReturnCustom(keyId, customReturnValue) \
-const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return (customReturnValue); }} while (0)
+#define FetchMainSceneTableOrReturnCustom(tableId, customReturnValue) \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << tableId;return (customReturnValue); }} while (0)
 
-#define FetchMainSceneTableOrReturnVoid(keyId) \
-const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return ;}} while (0)
+#define FetchMainSceneTableOrReturnVoid(tableId) \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << tableId;return ;}} while (0)
 
-#define FetchMainSceneTableOrContinue(keyId) \
-const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;continue; }} while (0)
+#define FetchMainSceneTableOrContinue(tableId) \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(tableId); \
+do { if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << tableId;continue; }} while (0)
 
-#define FetchMainSceneTableOrReturnFalse(keyId) \
-const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return false; }} while (0)
+#define FetchMainSceneTableOrReturnFalse(tableId) \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << tableId;return false; }} while (0)

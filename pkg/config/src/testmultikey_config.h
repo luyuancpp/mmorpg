@@ -12,21 +12,21 @@ public:
     using KeyValueDataType = std::unordered_multimap<uint32_t, const TestMultiKeyTable*>;
     static TestMultiKeyConfigurationTable& Instance() { static TestMultiKeyConfigurationTable instance; return instance; }
     const TestMultiKeyTabledData& All() const { return data_; }
-    std::pair<const TestMultiKeyTable*, uint32_t> GetTable(uint32_t keyId);
+    std::pair<const TestMultiKeyTable*, uint32_t> GetTable(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByStringkey(const std::string& keyId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> GetByStringkey(const std::string& tableId) const;
     const std::unordered_map<std::string, const TestMultiKeyTable*>& GetStringkeyData() const { return kv_stringkeydata_; }
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByUint32Key(uint32_t keyId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> GetByUint32Key(uint32_t tableId) const;
     const std::unordered_map<uint32_t, const TestMultiKeyTable*>& GetUint32KeyData() const { return kv_uint32keydata_; }
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByIn32Key(int32_t keyId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> GetByIn32Key(int32_t tableId) const;
     const std::unordered_map<int32_t, const TestMultiKeyTable*>& GetIn32KeyData() const { return kv_in32keydata_; }
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByMstringkey(const std::string& keyId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> GetByMstringkey(const std::string& tableId) const;
     const std::unordered_multimap<std::string, const TestMultiKeyTable*>& GetMstringkeyData() const { return kv_mstringkeydata_; }
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByMuint32Key(uint32_t keyId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> GetByMuint32Key(uint32_t tableId) const;
     const std::unordered_multimap<uint32_t, const TestMultiKeyTable*>& GetMuint32KeyData() const { return kv_muint32keydata_; }
-    std::pair<const TestMultiKeyTable*, uint32_t> GetByMin32Key(int32_t keyId) const;
+    std::pair<const TestMultiKeyTable*, uint32_t> GetByMin32Key(int32_t tableId) const;
     const std::unordered_multimap<int32_t, const TestMultiKeyTable*>& GetMin32KeyData() const { return kv_min32keydata_; }
 
 private:
@@ -43,26 +43,26 @@ private:
 
 inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() { return TestMultiKeyConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateTestMultiKeyTable(keyId) \
-const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return (fetchResult); }} while (0)
+#define FetchAndValidateTestMultiKeyTable(tableId) \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId;return (fetchResult); }} while (0)
 
-#define FetchAndValidateCustomTestMultiKeyTable(prefix, keyId) \
-const auto [##prefix##TestMultiKeyTable, prefix##fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(##prefix##TestMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+#define FetchAndValidateCustomTestMultiKeyTable(prefix, tableId) \
+const auto [##prefix##TestMultiKeyTable, prefix##fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(##prefix##TestMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId;return (prefix##fetchResult); }} while (0)
 
-#define FetchTestMultiKeyTableOrReturnCustom(keyId, customReturnValue) \
-const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return (customReturnValue); }} while (0)
+#define FetchTestMultiKeyTableOrReturnCustom(tableId, customReturnValue) \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId;return (customReturnValue); }} while (0)
 
-#define FetchTestMultiKeyTableOrReturnVoid(keyId) \
-const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return ;}} while (0)
+#define FetchTestMultiKeyTableOrReturnVoid(tableId) \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId;return ;}} while (0)
 
-#define FetchTestMultiKeyTableOrContinue(keyId) \
-const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;continue; }} while (0)
+#define FetchTestMultiKeyTableOrContinue(tableId) \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId;continue; }} while (0)
 
-#define FetchTestMultiKeyTableOrReturnFalse(keyId) \
-const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return false; }} while (0)
+#define FetchTestMultiKeyTableOrReturnFalse(tableId) \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << tableId;return false; }} while (0)

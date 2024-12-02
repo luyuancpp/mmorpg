@@ -20,10 +20,10 @@ void CooldownConfigurationTable::Load() {
 }
 
 
-std::pair<const CooldownTable*, uint32_t> CooldownConfigurationTable::GetTable(const uint32_t keyId) {
-    const auto it = kv_data_.find(keyId);
+std::pair<const CooldownTable*, uint32_t> CooldownConfigurationTable::GetTable(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-       LOG_ERROR << "Cooldown table not found for ID: " << keyId;
+       LOG_ERROR << "Cooldown table not found for ID: " << tableId;
         return { nullptr, kInvalidTableId };
     }
     return { it->second, kSuccess };

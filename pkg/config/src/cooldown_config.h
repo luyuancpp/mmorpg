@@ -12,7 +12,7 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const CooldownTable*>;
     static CooldownConfigurationTable& Instance() { static CooldownConfigurationTable instance; return instance; }
     const CooldownTabledData& All() const { return data_; }
-    std::pair<const CooldownTable*, uint32_t> GetTable(uint32_t keyId);
+    std::pair<const CooldownTable*, uint32_t> GetTable(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
@@ -25,26 +25,26 @@ private:
 
 inline const CooldownTabledData& GetCooldownAllTable() { return CooldownConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateCooldownTable(keyId) \
-const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << keyId;return (fetchResult); }} while (0)
+#define FetchAndValidateCooldownTable(tableId) \
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId;return (fetchResult); }} while (0)
 
-#define FetchAndValidateCustomCooldownTable(prefix, keyId) \
-const auto [##prefix##CooldownTable, prefix##fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(##prefix##CooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+#define FetchAndValidateCustomCooldownTable(prefix, tableId) \
+const auto [##prefix##CooldownTable, prefix##fetchResult] = CooldownConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(##prefix##CooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId;return (prefix##fetchResult); }} while (0)
 
-#define FetchCooldownTableOrReturnCustom(keyId, customReturnValue) \
-const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << keyId;return (customReturnValue); }} while (0)
+#define FetchCooldownTableOrReturnCustom(tableId, customReturnValue) \
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId;return (customReturnValue); }} while (0)
 
-#define FetchCooldownTableOrReturnVoid(keyId) \
-const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << keyId;return ;}} while (0)
+#define FetchCooldownTableOrReturnVoid(tableId) \
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId;return ;}} while (0)
 
-#define FetchCooldownTableOrContinue(keyId) \
-const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << keyId;continue; }} while (0)
+#define FetchCooldownTableOrContinue(tableId) \
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(tableId); \
+do { if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId;continue; }} while (0)
 
-#define FetchCooldownTableOrReturnFalse(keyId) \
-const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << keyId;return false; }} while (0)
+#define FetchCooldownTableOrReturnFalse(tableId) \
+const auto [cooldownTable, fetchResult] = CooldownConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(cooldownTable)) { LOG_ERROR << "Cooldown table not found for ID: " << tableId;return false; }} while (0)

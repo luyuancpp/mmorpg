@@ -74,7 +74,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
     const_table_type = f'const {table_type}'
     table_data_name = f'{sheetname}TabledData'
     get_table_return_type = f'std::pair<{const_table_type}, uint32_t>'
-    not_found_error_log =  f'LOG_ERROR << "{sheetname} table not found for ID: " << keyId;'
+    not_found_error_log =  f'LOG_ERROR << "{sheetname} table not found for ID: " << tableId;'
 
     header_content = [
         "#pragma once",
@@ -89,7 +89,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'    using KeyValueDataType = std::{container_type}<uint32_t, {const_table_type}>;',
         f'    static {sheetname}ConfigurationTable& Instance() {{ static {sheetname}ConfigurationTable instance; return instance; }}',
         f'    const {table_data_name}& All() const {{ return data_; }}',
-        f'    {get_table_return_type} GetTable(uint32_t keyId);',
+        f'    {get_table_return_type} GetTable(uint32_t tableId);',
         f'    const KeyValueDataType& KeyValueData() const {{ return kv_data_; }}',
         '    void Load();\n',
     ]
@@ -101,7 +101,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
             if data[gen_common.COL_OBJ_TABLE_MULTI] == gen_common.MULTI_TABLE_KEY_CELL:
                 column_map_type = "unordered_multimap"
             header_content.extend([
-                f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])} keyId) const;',
+                f'    {get_table_return_type} GetBy{column_name.title()}({get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])} tableId) const;',
                 f'    const std::{column_map_type}<{get_cpp_type_name(data[gen_common.COL_OBJ_COLUMN_TYPE])}, {const_table_type}>& Get{column_name.title()}Data() const {{ return kv_{column_name}data_; }}'
             ])
 
@@ -111,8 +111,8 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
                 f'    void Set{column_name.title()}Param(const std::vector<{type_name}>& paramList){{',
                 f'      expression_{column_name}_.SetParam(paramList); ',
                 f'    }}\n ',
-                f'    {type_name} Get{column_name.title()}(const uint32_t keyId){{',
-                f'      auto [table, ok] = GetTable(keyId);',
+                f'    {type_name} Get{column_name.title()}(const uint32_t tableId){{',
+                f'      auto [table, ok] = GetTable(tableId);',
                 f'      if ( table == nullptr){{return {type_name}(); }}',
                 f'      return expression_{column_name}_.Value(table->{column_name}());',
                 f'     }} ',
@@ -144,44 +144,44 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'\ninline const {table_data_name}& Get{sheetname}AllTable() {{ return {sheetname}ConfigurationTable::Instance().All(); }}')
 
     header_content.append(
-        f'\n#define FetchAndValidate{sheetname}Table(keyId) \\')
+        f'\n#define FetchAndValidate{sheetname}Table(tableId) \\')
     header_content.append(
-        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(tableId); \\')
     header_content.append(
         f'do {{if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ {not_found_error_log}return (fetchResult); }}}} while (0)')
 
     header_content.append(
-        f'\n#define FetchAndValidateCustom{sheetname}Table(prefix, keyId) \\')
+        f'\n#define FetchAndValidateCustom{sheetname}Table(prefix, tableId) \\')
     header_content.append(
-        f'const auto [##prefix##{sheetname}Table, prefix##fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [##prefix##{sheetname}Table, prefix##fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(tableId); \\')
     header_content.append(
         f'do {{if (!(##prefix##{sheetname}Table)) {{ {not_found_error_log}return (prefix##fetchResult); }}}} while (0)')
 
     header_content.append(
-        f'\n#define Fetch{sheetname}TableOrReturnCustom(keyId, customReturnValue) \\')
+        f'\n#define Fetch{sheetname}TableOrReturnCustom(tableId, customReturnValue) \\')
     header_content.append(
-        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(tableId); \\')
     header_content.append(
         f'do {{if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ {not_found_error_log}return (customReturnValue); }}}} while (0)')
 
     header_content.append(
-        f'\n#define Fetch{sheetname}TableOrReturnVoid(keyId) \\')
+        f'\n#define Fetch{sheetname}TableOrReturnVoid(tableId) \\')
     header_content.append(
-        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(tableId); \\')
     header_content.append(
         f'do {{if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ {not_found_error_log}return ;}}}} while (0)')
 
     header_content.append(
-        f'\n#define Fetch{sheetname}TableOrContinue(keyId) \\')
+        f'\n#define Fetch{sheetname}TableOrContinue(tableId) \\')
     header_content.append(
-        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(tableId); \\')
     header_content.append(
         f'do {{ if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ {not_found_error_log}continue; }}}} while (0)')
 
     header_content.append(
-        f'\n#define Fetch{sheetname}TableOrReturnFalse(keyId) \\')
+        f'\n#define Fetch{sheetname}TableOrReturnFalse(tableId) \\')
     header_content.append(
-        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(keyId); \\')
+        f'const auto [{gen_common.lower_first_letter(sheetname)}Table, fetchResult] = {sheetname}ConfigurationTable::Instance().GetTable(tableId); \\')
     header_content.append(
         f'do {{if (!({gen_common.lower_first_letter(sheetname)}Table)) {{ {not_found_error_log}return false; }}}} while (0)')
 
@@ -259,12 +259,12 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         cpp_content.append('     });')  # 结束 StringVector 的定义
         cpp_content.append('    }')  # 结束整个块
 
-    not_found_error_log =  f'LOG_ERROR << "{sheetname} table not found for ID: " << keyId;'
+    not_found_error_log =  f'LOG_ERROR << "{sheetname} table not found for ID: " << tableId;'
 
     cpp_content.extend([
         '}\n\n',
-        f'{get_table_return_type} {sheetname}ConfigurationTable::GetTable(const uint32_t keyId) {{',
-        '    const auto it = kv_data_.find(keyId);',
+        f'{get_table_return_type} {sheetname}ConfigurationTable::GetTable(const uint32_t tableId) {{',
+        '    const auto it = kv_data_.find(tableId);',
         '    if (it == kv_data_.end()) {',
         f'       {not_found_error_log}',
         '        return { nullptr, kInvalidTableId };',
@@ -279,10 +279,10 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
             type_name = get_cpp_type_param_name_with_ref(data[gen_common.COL_OBJ_COLUMN_TYPE])
             cpp_content.extend([
                 f'{get_table_return_type} '
-                f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} keyId) const {{',
-                f'    const auto it = kv_{column_name}data_.find(keyId);',
+                f'{sheetname}ConfigurationTable::GetBy{column_name.title()}({type_name} tableId) const {{',
+                f'    const auto it = kv_{column_name}data_.find(tableId);',
                 f'    if (it == kv_{column_name}data_.end()) {{',
-                f'        LOG_ERROR << "{sheetname} table not found for ID: " << keyId;',
+                f'        LOG_ERROR << "{sheetname} table not found for ID: " << tableId;',
                 '        return { nullptr, kInvalidTableId };',
                 '    }',
                 '    return { it->second, kSuccess };',
