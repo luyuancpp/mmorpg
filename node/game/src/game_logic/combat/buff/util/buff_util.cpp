@@ -25,15 +25,13 @@ uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 }
 
 // 目标免疫判定
-bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTable)
+bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTableParam)
 {
     for (const auto& buff : buffList | std::views::values) {
-        auto [currentBuffTable, fetchResult] = GetBuffTable(buff.buffPb.buff_table_id());
-        if (fetchResult != kSuccess) {
-            return true;
-        }
-        for (const auto& tag : buffTable->tag() | std::views::keys) {
-            if (currentBuffTable->immunetag().contains(tag)) {
+        FetchAndValidateBuffTable(buff.buffPb.buff_table_id());
+        
+        for (const auto& tag : buffTableParam->tag() | std::views::keys) {
+            if (buffTable->immunetag().contains(tag)) {
                 return true;
             }
         }
@@ -64,12 +62,9 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
     const uint32_t buffTableId, 
     const SkillContextPtrComp& abilityContext)
 {
-    auto [buffTable, result] = GetBuffTable(buffTableId);
-    if (!buffTable) {
-        return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
-    }
+    FetchBuffTableOrReturnCustom(buffTableId, (std::make_tuple(fetchResult, UINT64_MAX)));
 
-    result = CanCreateBuff(parent, buffTableId);
+    auto result = CanCreateBuff(parent, buffTableId);
     if(result != kSuccess){
         return std::make_tuple<uint32_t, uint64_t>(std::move(result), UINT64_MAX);
     }
@@ -195,9 +190,11 @@ bool BuffUtil::HandleExistingBuff(const entt::entity parentEntity,
     const uint32_t buffTableId,
     const SkillContextPtrComp& abilityContext)
 {
+    FetchBuffTableOrReturnFalse(buffTableId);
+
     for (auto& buffList = tls.registry.get<BuffListComp>(parentEntity); auto& buffComp : buffList | std::views::values) {
         if (buffComp.buffPb.buff_table_id() == buffTableId && buffComp.buffPb.processed_caster() == abilityContext->caster()) {
-            if (buffComp.buffPb.layer() < GetBuffTable(buffTableId).first->maxlayer()) {
+            if (buffComp.buffPb.layer() < buffTable->maxlayer()) {
                 buffComp.buffPb.set_layer(buffComp.buffPb.layer() + 1);
             }
             OnBuffRefresh(parentEntity, buffTableId, abilityContext, buffComp);
@@ -208,18 +205,15 @@ bool BuffUtil::HandleExistingBuff(const entt::entity parentEntity,
 }
 
 // Buff 觉醒处理
-bool BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId)
+uint32_t BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId)
 {
-    auto [newBuffTable, result] = GetBuffTable(buffTableId);
-    if (!newBuffTable) {
-        return true;
-    }
+    FetchAndValidateCustomBuffTable(add, buffTableId);
 
     UInt64Vector dispelBuffIdList;
     for (auto& buffList = tls.registry.get<BuffListComp>(parent); auto& [buffId, buffPbComp] : buffList){
         FetchBuffTableOrContinue(buffTableId);
 
-        for (const auto& removeTag : newBuffTable->dispeltag() | std::views::keys){
+        for (const auto& removeTag : addBuffTable->dispeltag() | std::views::keys){
             if (buffTable->tag().contains(removeTag)){
                 dispelBuffIdList.emplace_back(buffId);
                 break;
@@ -231,7 +225,11 @@ bool BuffUtil::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId
         BuffUtil::OnBuffExpire(parent, buffId);
     }
     
-    return newBuffTable->bufftype() == kBuffTypeDispel;
+    if (addBuffTable->bufftype() != kBuffTypeDispel) {
+        return kInvalidTableData;
+    }
+
+    return kSuccess;
 }
 
 void BuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable)

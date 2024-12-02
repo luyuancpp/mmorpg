@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "scene_config.pb.h"
 
 
@@ -22,22 +23,28 @@ private:
 
 };
 
-inline std::pair<const SceneTable*, uint32_t> GetSceneTable(const uint32_t keyId) { return SceneConfigurationTable::Instance().GetTable(keyId); }
-
 inline const SceneTabledData& GetSceneAllTable() { return SceneConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateSceneTable(keyId) \
 const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-if (!(sceneTable)) { return (fetchResult); }
+do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomSceneTable(prefix, keyId) \
+const auto [##prefix##SceneTable, prefix##fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##SceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchSceneTableOrReturnCustom(keyId, customReturnValue) \
+const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchSceneTableOrReturnVoid(keyId) \
 const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(sceneTable)) { return ;}} while (0)
+do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchSceneTableOrContinue(keyId) \
 const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(sceneTable)) { continue; }} while (0)
+do { if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchSceneTableOrReturnFalse(keyId) \
 const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(sceneTable)) { return false; }} while (0)
+do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return false; }} while (0)

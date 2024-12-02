@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "testmultikey_config.pb.h"
 
 
@@ -40,22 +41,28 @@ private:
     std::unordered_multimap<int32_t, const TestMultiKeyTable*>  kv_min32keydata_;
 };
 
-inline std::pair<const TestMultiKeyTable*, uint32_t> GetTestMultiKeyTable(const uint32_t keyId) { return TestMultiKeyConfigurationTable::Instance().GetTable(keyId); }
-
 inline const TestMultiKeyTabledData& GetTestMultiKeyAllTable() { return TestMultiKeyConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateTestMultiKeyTable(keyId) \
 const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-if (!(testMultiKeyTable)) { return (fetchResult); }
+do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomTestMultiKeyTable(prefix, keyId) \
+const auto [##prefix##TestMultiKeyTable, prefix##fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##TestMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchTestMultiKeyTableOrReturnCustom(keyId, customReturnValue) \
+const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchTestMultiKeyTableOrReturnVoid(keyId) \
 const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(testMultiKeyTable)) { return ;}} while (0)
+do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchTestMultiKeyTableOrContinue(keyId) \
 const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(testMultiKeyTable)) { continue; }} while (0)
+do { if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchTestMultiKeyTableOrReturnFalse(keyId) \
 const auto [testMultiKeyTable, fetchResult] = TestMultiKeyConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(testMultiKeyTable)) { return false; }} while (0)
+do {if (!(testMultiKeyTable)) { LOG_ERROR << "TestMultiKey table not found for ID: " << keyId;return false; }} while (0)

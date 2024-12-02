@@ -128,15 +128,13 @@ void SetSessionAndParseBody(Message& message, const Request& request, const uint
 
     // 检查请求体是否有效
     const std::string& requestBody = request->body();
-    if (!requestBody.empty()) {
-        if (!message.mutable_client_msg_body()->ParseFromArray(requestBody.data(), requestBody.size())) {
-            LOG_ERROR << "Failed to parse client message body for session id: " << sessionId;
-            return; // 解析失败时，避免发送无效消息
-        }
+    if (requestBody.empty()) {
+        return;
     }
-    else {
-        LOG_ERROR << "Empty request body for session id: " << sessionId;
-        return; // 如果请求体为空，终止处理
+
+    if (!message.mutable_client_msg_body()->ParseFromArray(requestBody.data(), requestBody.size())) {
+        LOG_ERROR << "Failed to parse client message body for session id: " << sessionId;
+        return; // 解析失败时，避免发送无效消息
     }
 }
 

@@ -8,14 +8,14 @@ struct IMissionConfig
     virtual uint32_t GetMissionType(uint32_t id) const  { return 0; }
     virtual uint32_t GetMissionSubType(uint32_t id) const { return 0; }
     virtual uint32_t GetRewardId(uint32_t id)const  { return 0; }
-    virtual bool AutoReward(uint32_t mission_id) const  { return false; }
-    virtual const ::google::protobuf::RepeatedField<uint32_t>& GetConditionIds(uint32_t mission_id) const
+    virtual bool AutoReward(uint32_t missionTableId) const  { return false; }
+    virtual const ::google::protobuf::RepeatedField<uint32_t>& GetConditionIds(uint32_t missionTableId) const
     {
         static ::google::protobuf::RepeatedField<uint32_t> s;
             s.Clear();
             return s;
     }
-    virtual const ::google::protobuf::RepeatedField<uint32_t>& getNextMissionIds(uint32_t mission_id) const
+    virtual const ::google::protobuf::RepeatedField<uint32_t>& GetNextmissionTableIds(uint32_t missionTableId) const
     {
         static ::google::protobuf::RepeatedField<uint32_t> s;
         s.Clear();
@@ -29,70 +29,50 @@ struct MissionConfig : public IMissionConfig
 {
     static MissionConfig& GetSingleton() { static MissionConfig singleton; return singleton; }
 
-    virtual uint32_t GetMissionType(uint32_t id) const override
+    virtual uint32_t GetMissionType(uint32_t missionTableId) const override
     {
-        auto [missionTable, result] = GetMissionTable(id);
-        if (nullptr == missionTable)
-        {
-            return 0;
-        }
+        FetchMissionTableOrReturnCustom(missionTableId, 0);
         return missionTable->mission_type();
     }
 
-    virtual uint32_t GetMissionSubType(uint32_t id) const override
+    virtual uint32_t GetMissionSubType(uint32_t missionTableId) const override
     {
-        auto [missionTable, result] = GetMissionTable(id);
-        if (nullptr == missionTable)
-        {
-            return 0;
-        }
+        FetchMissionTableOrReturnCustom(missionTableId, 0);
         return missionTable->mission_sub_type();
     }
 
-    virtual uint32_t GetRewardId(uint32_t id)const override
+    virtual uint32_t GetRewardId(uint32_t missionTableId)const override
     {
-        auto [missionTable, result] = GetMissionTable(id);
-        if (nullptr == missionTable)
-        {
-            return 0;
-        }
+        FetchMissionTableOrReturnCustom(missionTableId, 0);
         return missionTable->reward_id();
     }
 
-    virtual bool AutoReward(uint32_t mission_id)const override
+    virtual bool AutoReward(uint32_t missionTableId)const override
     {
-        auto [missionTable, result] = GetMissionTable(mission_id);
-        if (nullptr == missionTable)
-        {
-            return false;
-        }
+        FetchMissionTableOrReturnFalse(missionTableId);
         return  missionTable->auto_reward() > 0;
     }
 
-    virtual const ::google::protobuf::RepeatedField<uint32_t>& GetConditionIds(uint32_t mission_id) const override
+    virtual const ::google::protobuf::RepeatedField<uint32_t>& GetConditionIds(uint32_t missionTableId) const override
     {
-        auto [missionTable, result] = GetMissionTable(mission_id);
-        if (nullptr == missionTable)
-        {
-            static ::google::protobuf::RepeatedField<uint32_t> s;
-            s.Clear();
-            return s;
-        }
+        static ::google::protobuf::RepeatedField<uint32_t> s;
+        s.Clear();
+
+        FetchMissionTableOrReturnCustom(missionTableId, s);
+  
         return missionTable->condition_id();
     }
 
-    virtual const ::google::protobuf::RepeatedField<uint32_t>& getNextMissionIds(uint32_t mission_id)const override
+    virtual const ::google::protobuf::RepeatedField<uint32_t>& GetNextmissionTableIds(uint32_t missionTableId)const override
     {
-        auto [missionTable, result] = GetMissionTable(mission_id);
-        if (nullptr == missionTable)
-        {
-            static ::google::protobuf::RepeatedField<uint32_t> s;
-            s.Clear();
-            return s;
-        }
+        static ::google::protobuf::RepeatedField<uint32_t> s;
+        s.Clear();
+
+        FetchMissionTableOrReturnCustom(missionTableId, s);
+
         return missionTable->next_mission_id();
     }
 
     virtual bool CheckTypeRepeated() const override { return true;   }
-    virtual bool HasKey(uint32_t id) const override { return nullptr !=  GetMissionTable(id).first; }
+    virtual bool HasKey(uint32_t missionTableId) const override {  FetchMissionTableOrReturnFalse(missionTableId); return true; }
 };

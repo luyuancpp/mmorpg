@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "skill_config.pb.h"
 
 
@@ -32,22 +33,28 @@ private:
     ExcelExpression<double> expression_damage_;
 };
 
-inline std::pair<const SkillTable*, uint32_t> GetSkillTable(const uint32_t keyId) { return SkillConfigurationTable::Instance().GetTable(keyId); }
-
 inline const SkillTabledData& GetSkillAllTable() { return SkillConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateSkillTable(keyId) \
 const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-if (!(skillTable)) { return (fetchResult); }
+do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomSkillTable(prefix, keyId) \
+const auto [##prefix##SkillTable, prefix##fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##SkillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchSkillTableOrReturnCustom(keyId, customReturnValue) \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchSkillTableOrReturnVoid(keyId) \
 const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillTable)) { return ;}} while (0)
+do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchSkillTableOrContinue(keyId) \
 const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(skillTable)) { continue; }} while (0)
+do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchSkillTableOrReturnFalse(keyId) \
 const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillTable)) { return false; }} while (0)
+do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return false; }} while (0)

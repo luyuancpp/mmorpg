@@ -9,6 +9,9 @@
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/bag_error_tip.pb.h"
 
+decltype(auto) GetItemTable(int32_t itemTableId) {
+    return ItemConfigurationTable::Instance().GetTable(itemTableId);
+}
 
 TEST(BagTest, NullItem)
 {
