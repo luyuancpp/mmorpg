@@ -8,7 +8,7 @@
 
 #include <cstdint>
 
-#include "rpc_channel.h"
+#include "game_channel.h"
 
 #include "muduo/base/Logging.h"
 
