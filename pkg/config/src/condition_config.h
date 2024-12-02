@@ -12,7 +12,7 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const ConditionTable*>;
     static ConditionConfigurationTable& Instance() { static ConditionConfigurationTable instance; return instance; }
     const ConditionTabledData& All() const { return data_; }
-    std::pair<const ConditionTable*, uint32_t> GetTable(uint32_t keyId);
+    std::pair<const ConditionTable*, uint32_t> GetTable(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
@@ -25,26 +25,26 @@ private:
 
 inline const ConditionTabledData& GetConditionAllTable() { return ConditionConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateConditionTable(keyId) \
-const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return (fetchResult); }} while (0)
+#define FetchAndValidateConditionTable(tableId) \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId;return (fetchResult); }} while (0)
 
-#define FetchAndValidateCustomConditionTable(prefix, keyId) \
-const auto [##prefix##ConditionTable, prefix##fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(##prefix##ConditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+#define FetchAndValidateCustomConditionTable(prefix, tableId) \
+const auto [##prefix##ConditionTable, prefix##fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(##prefix##ConditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId;return (prefix##fetchResult); }} while (0)
 
-#define FetchConditionTableOrReturnCustom(keyId, customReturnValue) \
-const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return (customReturnValue); }} while (0)
+#define FetchConditionTableOrReturnCustom(tableId, customReturnValue) \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId;return (customReturnValue); }} while (0)
 
-#define FetchConditionTableOrReturnVoid(keyId) \
-const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return ;}} while (0)
+#define FetchConditionTableOrReturnVoid(tableId) \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId;return ;}} while (0)
 
-#define FetchConditionTableOrContinue(keyId) \
-const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;continue; }} while (0)
+#define FetchConditionTableOrContinue(tableId) \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+do { if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId;continue; }} while (0)
 
-#define FetchConditionTableOrReturnFalse(keyId) \
-const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return false; }} while (0)
+#define FetchConditionTableOrReturnFalse(tableId) \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << tableId;return false; }} while (0)

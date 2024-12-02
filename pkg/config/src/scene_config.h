@@ -12,7 +12,7 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SceneTable*>;
     static SceneConfigurationTable& Instance() { static SceneConfigurationTable instance; return instance; }
     const SceneTabledData& All() const { return data_; }
-    std::pair<const SceneTable*, uint32_t> GetTable(uint32_t keyId);
+    std::pair<const SceneTable*, uint32_t> GetTable(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
@@ -25,26 +25,26 @@ private:
 
 inline const SceneTabledData& GetSceneAllTable() { return SceneConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateSceneTable(keyId) \
-const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return (fetchResult); }} while (0)
+#define FetchAndValidateSceneTable(tableId) \
+const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << tableId;return (fetchResult); }} while (0)
 
-#define FetchAndValidateCustomSceneTable(prefix, keyId) \
-const auto [##prefix##SceneTable, prefix##fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(##prefix##SceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+#define FetchAndValidateCustomSceneTable(prefix, tableId) \
+const auto [##prefix##SceneTable, prefix##fetchResult] = SceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(##prefix##SceneTable)) { LOG_ERROR << "Scene table not found for ID: " << tableId;return (prefix##fetchResult); }} while (0)
 
-#define FetchSceneTableOrReturnCustom(keyId, customReturnValue) \
-const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return (customReturnValue); }} while (0)
+#define FetchSceneTableOrReturnCustom(tableId, customReturnValue) \
+const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << tableId;return (customReturnValue); }} while (0)
 
-#define FetchSceneTableOrReturnVoid(keyId) \
-const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return ;}} while (0)
+#define FetchSceneTableOrReturnVoid(tableId) \
+const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << tableId;return ;}} while (0)
 
-#define FetchSceneTableOrContinue(keyId) \
-const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;continue; }} while (0)
+#define FetchSceneTableOrContinue(tableId) \
+const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(tableId); \
+do { if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << tableId;continue; }} while (0)
 
-#define FetchSceneTableOrReturnFalse(keyId) \
-const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << keyId;return false; }} while (0)
+#define FetchSceneTableOrReturnFalse(tableId) \
+const auto [sceneTable, fetchResult] = SceneConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(sceneTable)) { LOG_ERROR << "Scene table not found for ID: " << tableId;return false; }} while (0)

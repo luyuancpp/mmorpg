@@ -12,7 +12,7 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SkillPermissionTable*>;
     static SkillPermissionConfigurationTable& Instance() { static SkillPermissionConfigurationTable instance; return instance; }
     const SkillPermissionTabledData& All() const { return data_; }
-    std::pair<const SkillPermissionTable*, uint32_t> GetTable(uint32_t keyId);
+    std::pair<const SkillPermissionTable*, uint32_t> GetTable(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
@@ -25,26 +25,26 @@ private:
 
 inline const SkillPermissionTabledData& GetSkillPermissionAllTable() { return SkillPermissionConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateSkillPermissionTable(keyId) \
-const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << keyId;return (fetchResult); }} while (0)
+#define FetchAndValidateSkillPermissionTable(tableId) \
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId;return (fetchResult); }} while (0)
 
-#define FetchAndValidateCustomSkillPermissionTable(prefix, keyId) \
-const auto [##prefix##SkillPermissionTable, prefix##fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(##prefix##SkillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+#define FetchAndValidateCustomSkillPermissionTable(prefix, tableId) \
+const auto [##prefix##SkillPermissionTable, prefix##fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(##prefix##SkillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId;return (prefix##fetchResult); }} while (0)
 
-#define FetchSkillPermissionTableOrReturnCustom(keyId, customReturnValue) \
-const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << keyId;return (customReturnValue); }} while (0)
+#define FetchSkillPermissionTableOrReturnCustom(tableId, customReturnValue) \
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId;return (customReturnValue); }} while (0)
 
-#define FetchSkillPermissionTableOrReturnVoid(keyId) \
-const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << keyId;return ;}} while (0)
+#define FetchSkillPermissionTableOrReturnVoid(tableId) \
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId;return ;}} while (0)
 
-#define FetchSkillPermissionTableOrContinue(keyId) \
-const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << keyId;continue; }} while (0)
+#define FetchSkillPermissionTableOrContinue(tableId) \
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(tableId); \
+do { if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId;continue; }} while (0)
 
-#define FetchSkillPermissionTableOrReturnFalse(keyId) \
-const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << keyId;return false; }} while (0)
+#define FetchSkillPermissionTableOrReturnFalse(tableId) \
+const auto [skillPermissionTable, fetchResult] = SkillPermissionConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(skillPermissionTable)) { LOG_ERROR << "SkillPermission table not found for ID: " << tableId;return false; }} while (0)

@@ -12,7 +12,7 @@ public:
     using KeyValueDataType = std::unordered_map<uint32_t, const SkillTable*>;
     static SkillConfigurationTable& Instance() { static SkillConfigurationTable instance; return instance; }
     const SkillTabledData& All() const { return data_; }
-    std::pair<const SkillTable*, uint32_t> GetTable(uint32_t keyId);
+    std::pair<const SkillTable*, uint32_t> GetTable(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 
@@ -20,8 +20,8 @@ public:
       expression_damage_.SetParam(paramList); 
     }
  
-    double GetDamage(const uint32_t keyId){
-      auto [table, ok] = GetTable(keyId);
+    double GetDamage(const uint32_t tableId){
+      auto [table, ok] = GetTable(tableId);
       if ( table == nullptr){return double(); }
       return expression_damage_.Value(table->damage());
      } 
@@ -35,26 +35,26 @@ private:
 
 inline const SkillTabledData& GetSkillAllTable() { return SkillConfigurationTable::Instance().All(); }
 
-#define FetchAndValidateSkillTable(keyId) \
-const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return (fetchResult); }} while (0)
+#define FetchAndValidateSkillTable(tableId) \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId;return (fetchResult); }} while (0)
 
-#define FetchAndValidateCustomSkillTable(prefix, keyId) \
-const auto [##prefix##SkillTable, prefix##fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(##prefix##SkillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+#define FetchAndValidateCustomSkillTable(prefix, tableId) \
+const auto [##prefix##SkillTable, prefix##fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(##prefix##SkillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId;return (prefix##fetchResult); }} while (0)
 
-#define FetchSkillTableOrReturnCustom(keyId, customReturnValue) \
-const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return (customReturnValue); }} while (0)
+#define FetchSkillTableOrReturnCustom(tableId, customReturnValue) \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId;return (customReturnValue); }} while (0)
 
-#define FetchSkillTableOrReturnVoid(keyId) \
-const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return ;}} while (0)
+#define FetchSkillTableOrReturnVoid(tableId) \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId;return ;}} while (0)
 
-#define FetchSkillTableOrContinue(keyId) \
-const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;continue; }} while (0)
+#define FetchSkillTableOrContinue(tableId) \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+do { if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId;continue; }} while (0)
 
-#define FetchSkillTableOrReturnFalse(keyId) \
-const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << keyId;return false; }} while (0)
+#define FetchSkillTableOrReturnFalse(tableId) \
+const auto [skillTable, fetchResult] = SkillConfigurationTable::Instance().GetTable(tableId); \
+do {if (!(skillTable)) { LOG_ERROR << "Skill table not found for ID: " << tableId;return false; }} while (0)
