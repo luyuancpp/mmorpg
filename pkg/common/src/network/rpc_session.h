@@ -8,7 +8,7 @@ struct RpcSession
 {
     RpcSession(const muduo::net::TcpConnectionPtr& conn)
         : conn_(conn),
-            channel_(boost::any_cast<RpcChannelPtr>(conn->getContext())){}
+            channel_(boost::any_cast<GameChannelPtr>(conn->getContext())){}
 
     bool Connected() const { return conn_->connected(); }
 
@@ -52,7 +52,7 @@ struct RpcSession
 
     muduo::net::TcpConnectionPtr conn_;
 private:
-    RpcChannelPtr channel_;
+    GameChannelPtr channel_;
 };
 
 template<typename ServerInfo>

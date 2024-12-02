@@ -7,10 +7,7 @@
 // Author: Shuo Chen (chenshuo at chenshuo dot com)
 //
 // This is a public header file, it must only include public header files.
-
-#ifndef COMMON_SRC_GAME_RPC_GAME_RPC_CHANEL_H_
-#define COMMON_SRC_GAME_RPC_GAME_RPC_CHANEL_H_
-
+#pragma once
 #include "muduo/base/Atomic.h"
 #include "muduo/base/Mutex.h"
 #include "muduo/net/protobuf/ProtobufCodecLite.h"
@@ -174,8 +171,5 @@ private:
     ProtobufDispatcher dispatcher_;
 };
 
-typedef std::shared_ptr<GameChannel> RpcChannelPtr;
+typedef std::shared_ptr<GameChannel> GameChannelPtr;
 
-
-
-#endif  // COMMON_SRC_GAME_RPC_GAME_RPC_CHANEL_H_

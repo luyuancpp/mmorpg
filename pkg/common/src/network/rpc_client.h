@@ -115,7 +115,7 @@ private:
     bool connected_{ false };
 
     TcpClient client_;
-    RpcChannelPtr channel_;
+    GameChannelPtr channel_;
     std::map<std::string, ::google::protobuf::Service*> services_;
 };
 
