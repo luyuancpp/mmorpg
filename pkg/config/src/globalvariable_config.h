@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "globalvariable_config.pb.h"
 
 
@@ -22,22 +23,28 @@ private:
 
 };
 
-inline std::pair<const GlobalVariableTable*, uint32_t> GetGlobalVariableTable(const uint32_t keyId) { return GlobalVariableConfigurationTable::Instance().GetTable(keyId); }
-
 inline const GlobalVariableTabledData& GetGlobalVariableAllTable() { return GlobalVariableConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateGlobalVariableTable(keyId) \
 const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-if (!(globalVariableTable)) { return (fetchResult); }
+do {if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomGlobalVariableTable(prefix, keyId) \
+const auto [##prefix##GlobalVariableTable, prefix##fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##GlobalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchGlobalVariableTableOrReturnCustom(keyId, customReturnValue) \
+const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchGlobalVariableTableOrReturnVoid(keyId) \
 const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(globalVariableTable)) { return ;}} while (0)
+do {if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchGlobalVariableTableOrContinue(keyId) \
 const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(globalVariableTable)) { continue; }} while (0)
+do { if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchGlobalVariableTableOrReturnFalse(keyId) \
 const auto [globalVariableTable, fetchResult] = GlobalVariableConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(globalVariableTable)) { return false; }} while (0)
+do {if (!(globalVariableTable)) { LOG_ERROR << "GlobalVariable table not found for ID: " << keyId;return false; }} while (0)

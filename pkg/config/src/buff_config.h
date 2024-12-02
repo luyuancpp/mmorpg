@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "buff_config.pb.h"
 
 
@@ -42,22 +43,28 @@ private:
     ExcelExpression<double> expression_bonusdamage_;
 };
 
-inline std::pair<const BuffTable*, uint32_t> GetBuffTable(const uint32_t keyId) { return BuffConfigurationTable::Instance().GetTable(keyId); }
-
 inline const BuffTabledData& GetBuffAllTable() { return BuffConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateBuffTable(keyId) \
 const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
-if (!(buffTable)) { return (fetchResult); }
+do {if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomBuffTable(prefix, keyId) \
+const auto [##prefix##BuffTable, prefix##fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##BuffTable)) { LOG_ERROR << "Buff table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchBuffTableOrReturnCustom(keyId, customReturnValue) \
+const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchBuffTableOrReturnVoid(keyId) \
 const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(buffTable)) { return ;}} while (0)
+do {if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchBuffTableOrContinue(keyId) \
 const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(buffTable)) { continue; }} while (0)
+do { if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchBuffTableOrReturnFalse(keyId) \
 const auto [buffTable, fetchResult] = BuffConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(buffTable)) { return false; }} while (0)
+do {if (!(buffTable)) { LOG_ERROR << "Buff table not found for ID: " << keyId;return false; }} while (0)

@@ -1,6 +1,5 @@
 #include "google/protobuf/util/json_util.h"
 #include "src/util/file2string.h"
-#include "muduo/base/Logging.h"
 #include "common_error_tip.pb.h"
 #include "skill_config.h"
 
@@ -29,7 +28,7 @@ void SkillConfigurationTable::Load() {
 std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTable(const uint32_t keyId) {
     const auto it = kv_data_.find(keyId);
     if (it == kv_data_.end()) {
-        LOG_ERROR << "Skill table not found for ID: " << keyId;
+       LOG_ERROR << "Skill table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
     return { it->second, kSuccess };

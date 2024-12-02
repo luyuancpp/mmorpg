@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "class_config.pb.h"
 
 
@@ -22,22 +23,28 @@ private:
 
 };
 
-inline std::pair<const ClassTable*, uint32_t> GetClassTable(const uint32_t keyId) { return ClassConfigurationTable::Instance().GetTable(keyId); }
-
 inline const ClassTabledData& GetClassAllTable() { return ClassConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateClassTable(keyId) \
 const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
-if (!(classTable)) { return (fetchResult); }
+do {if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomClassTable(prefix, keyId) \
+const auto [##prefix##ClassTable, prefix##fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##ClassTable)) { LOG_ERROR << "Class table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchClassTableOrReturnCustom(keyId, customReturnValue) \
+const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchClassTableOrReturnVoid(keyId) \
 const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(classTable)) { return ;}} while (0)
+do {if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchClassTableOrContinue(keyId) \
 const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(classTable)) { continue; }} while (0)
+do { if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchClassTableOrReturnFalse(keyId) \
 const auto [classTable, fetchResult] = ClassConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(classTable)) { return false; }} while (0)
+do {if (!(classTable)) { LOG_ERROR << "Class table not found for ID: " << keyId;return false; }} while (0)

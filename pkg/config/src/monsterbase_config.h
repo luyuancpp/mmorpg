@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "monsterbase_config.pb.h"
 
 
@@ -22,22 +23,28 @@ private:
 
 };
 
-inline std::pair<const MonsterBaseTable*, uint32_t> GetMonsterBaseTable(const uint32_t keyId) { return MonsterBaseConfigurationTable::Instance().GetTable(keyId); }
-
 inline const MonsterBaseTabledData& GetMonsterBaseAllTable() { return MonsterBaseConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateMonsterBaseTable(keyId) \
 const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-if (!(monsterBaseTable)) { return (fetchResult); }
+do {if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomMonsterBaseTable(prefix, keyId) \
+const auto [##prefix##MonsterBaseTable, prefix##fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##MonsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchMonsterBaseTableOrReturnCustom(keyId, customReturnValue) \
+const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchMonsterBaseTableOrReturnVoid(keyId) \
 const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(monsterBaseTable)) { return ;}} while (0)
+do {if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchMonsterBaseTableOrContinue(keyId) \
 const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(monsterBaseTable)) { continue; }} while (0)
+do { if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchMonsterBaseTableOrReturnFalse(keyId) \
 const auto [monsterBaseTable, fetchResult] = MonsterBaseConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(monsterBaseTable)) { return false; }} while (0)
+do {if (!(monsterBaseTable)) { LOG_ERROR << "MonsterBase table not found for ID: " << keyId;return false; }} while (0)

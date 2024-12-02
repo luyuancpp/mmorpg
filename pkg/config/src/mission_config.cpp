@@ -1,6 +1,5 @@
 #include "google/protobuf/util/json_util.h"
 #include "src/util/file2string.h"
-#include "muduo/base/Logging.h"
 #include "common_error_tip.pb.h"
 #include "mission_config.h"
 
@@ -24,7 +23,7 @@ void MissionConfigurationTable::Load() {
 std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTable(const uint32_t keyId) {
     const auto it = kv_data_.find(keyId);
     if (it == kv_data_.end()) {
-        LOG_ERROR << "Mission table not found for ID: " << keyId;
+       LOG_ERROR << "Mission table not found for ID: " << keyId;
         return { nullptr, kInvalidTableId };
     }
     return { it->second, kSuccess };

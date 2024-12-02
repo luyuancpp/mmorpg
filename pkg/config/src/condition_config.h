@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "condition_config.pb.h"
 
 
@@ -22,22 +23,28 @@ private:
 
 };
 
-inline std::pair<const ConditionTable*, uint32_t> GetConditionTable(const uint32_t keyId) { return ConditionConfigurationTable::Instance().GetTable(keyId); }
-
 inline const ConditionTabledData& GetConditionAllTable() { return ConditionConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateConditionTable(keyId) \
 const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-if (!(conditionTable)) { return (fetchResult); }
+do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomConditionTable(prefix, keyId) \
+const auto [##prefix##ConditionTable, prefix##fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##ConditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchConditionTableOrReturnCustom(keyId, customReturnValue) \
+const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchConditionTableOrReturnVoid(keyId) \
 const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(conditionTable)) { return ;}} while (0)
+do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchConditionTableOrContinue(keyId) \
 const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(conditionTable)) { continue; }} while (0)
+do { if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchConditionTableOrReturnFalse(keyId) \
 const auto [conditionTable, fetchResult] = ConditionConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(conditionTable)) { return false; }} while (0)
+do {if (!(conditionTable)) { LOG_ERROR << "Condition table not found for ID: " << keyId;return false; }} while (0)

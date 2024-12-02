@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "config_expression/config_expression.h"
+#include "muduo/base/Logging.h"
 #include "mainscene_config.pb.h"
 
 
@@ -22,22 +23,28 @@ private:
 
 };
 
-inline std::pair<const MainSceneTable*, uint32_t> GetMainSceneTable(const uint32_t keyId) { return MainSceneConfigurationTable::Instance().GetTable(keyId); }
-
 inline const MainSceneTabledData& GetMainSceneAllTable() { return MainSceneConfigurationTable::Instance().All(); }
 
 #define FetchAndValidateMainSceneTable(keyId) \
 const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-if (!(mainSceneTable)) { return (fetchResult); }
+do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return (fetchResult); }} while (0)
+
+#define FetchAndValidateCustomMainSceneTable(prefix, keyId) \
+const auto [##prefix##MainSceneTable, prefix##fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(##prefix##MainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return (prefix##fetchResult); }} while (0)
+
+#define FetchMainSceneTableOrReturnCustom(keyId, customReturnValue) \
+const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
+do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return (customReturnValue); }} while (0)
 
 #define FetchMainSceneTableOrReturnVoid(keyId) \
 const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(mainSceneTable)) { return ;}} while (0)
+do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return ;}} while (0)
 
 #define FetchMainSceneTableOrContinue(keyId) \
 const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do { if (!(mainSceneTable)) { continue; }} while (0)
+do { if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;continue; }} while (0)
 
 #define FetchMainSceneTableOrReturnFalse(keyId) \
 const auto [mainSceneTable, fetchResult] = MainSceneConfigurationTable::Instance().GetTable(keyId); \
-do {if (!(mainSceneTable)) { return false; }} while (0)
+do {if (!(mainSceneTable)) { LOG_ERROR << "MainScene table not found for ID: " << keyId;return false; }} while (0)

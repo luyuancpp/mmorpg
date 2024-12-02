@@ -48,7 +48,7 @@ public:
     // 如果存在某种Buff的效果是：受到负面效果时，驱散当前所有负面效果，并给自己加一个护盾。
     // 那么这个时候就需要监听BuffAwake事件了，此时会给自己加护盾，
     // 并且把所有负面Buff驱散。这意味着一个Buff可能还未生效之前即销毁了（小心Buff的生命周期）。
-    static bool OnBuffAwake(entt::entity parent, uint32_t buffTableId);
+    static uint32_t OnBuffAwake(entt::entity parent, uint32_t buffTableId);
 
     //当Buff生效时（加入到Buff容器后），我们提供给策划一个抽象接口OnBuffStart，由策划配置具体效果。
     static void OnBuffStart(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable);

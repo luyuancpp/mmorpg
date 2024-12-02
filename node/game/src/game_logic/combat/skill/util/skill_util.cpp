@@ -179,10 +179,7 @@ uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTa
 }
 
 uint32_t SkillUtil::CheckSkillPrerequisites(const entt::entity casterEntity, const ::ReleaseSkillSkillRequest* request) {
-	auto [skillTable, result] = GetSkillTable(request->skill_table_id());
-	if (result != kSuccess) {
-		return result;
-	}
+	FetchAndValidateSkillTable(request->skill_table_id());
 
 	RETURN_ON_ERROR(ValidateTarget(request));
 	RETURN_ON_ERROR(CheckCooldown(casterEntity, skillTable));
