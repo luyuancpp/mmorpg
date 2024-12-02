@@ -43,7 +43,7 @@ class PlayerClientCommonServiceImpl final : public PlayerClientCommonService{};
 class PlayerSkillServiceImpl final : public PlayerSkillService{};
 
 
-std::unordered_set<uint32_t> g_c2s_service_id;
+std::unordered_set<uint32_t> gClientToServerMessageId;
 std::array<RpcService, 76> gMessageInfo;
 
 void InitMessageInfo()
@@ -73,34 +73,34 @@ gMessageInfo[CentreServiceRoutePlayerStringMsgMessageId] = RpcService{"CentreSer
 gMessageInfo[CentreServiceUnRegisterGameNodeMessageId] = RpcService{"CentreService","UnRegisterGameNode","UnRegisterGameNodeRequest","Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
 
 gMessageInfo[ClientPlayerSceneServiceEnterSceneMessageId] = RpcService{"ClientPlayerSceneService","EnterScene","EnterSceneC2SRequest","EnterSceneC2SResponse",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(ClientPlayerSceneServiceEnterSceneMessageId);
+gClientToServerMessageId.emplace(ClientPlayerSceneServiceEnterSceneMessageId);
 gMessageInfo[ClientPlayerSceneServiceNotifyEnterSceneMessageId] = RpcService{"ClientPlayerSceneService","NotifyEnterScene","EnterSceneS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyEnterSceneMessageId);
+gClientToServerMessageId.emplace(ClientPlayerSceneServiceNotifyEnterSceneMessageId);
 gMessageInfo[ClientPlayerSceneServiceSceneInfoC2SMessageId] = RpcService{"ClientPlayerSceneService","SceneInfoC2S","SceneInfoRequest","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(ClientPlayerSceneServiceSceneInfoC2SMessageId);
+gClientToServerMessageId.emplace(ClientPlayerSceneServiceSceneInfoC2SMessageId);
 gMessageInfo[ClientPlayerSceneServiceNotifySceneInfoMessageId] = RpcService{"ClientPlayerSceneService","NotifySceneInfo","SceneInfoS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifySceneInfoMessageId);
+gClientToServerMessageId.emplace(ClientPlayerSceneServiceNotifySceneInfoMessageId);
 gMessageInfo[ClientPlayerSceneServiceNotifyActorCreateMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorCreate","ActorCreateS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorCreateMessageId);
+gClientToServerMessageId.emplace(ClientPlayerSceneServiceNotifyActorCreateMessageId);
 gMessageInfo[ClientPlayerSceneServiceNotifyActorDestroyMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorDestroy","ActorDestroyS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorDestroyMessageId);
+gClientToServerMessageId.emplace(ClientPlayerSceneServiceNotifyActorDestroyMessageId);
 gMessageInfo[ClientPlayerSceneServiceNotifyActorListCreateMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorListCreate","ActorListCreateS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListCreateMessageId);
+gClientToServerMessageId.emplace(ClientPlayerSceneServiceNotifyActorListCreateMessageId);
 gMessageInfo[ClientPlayerSceneServiceNotifyActorListDestroyMessageId] = RpcService{"ClientPlayerSceneService","NotifyActorListDestroy","ActorListDestroyS2C","Empty",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
-g_c2s_service_id.emplace(ClientPlayerSceneServiceNotifyActorListDestroyMessageId);
+gClientToServerMessageId.emplace(ClientPlayerSceneServiceNotifyActorListDestroyMessageId);
 
 gMessageInfo[EntitySyncServiceSyncBaseAttributeMessageId] = RpcService{"EntitySyncService","SyncBaseAttribute","BaseAttributeSyncDataS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
-g_c2s_service_id.emplace(EntitySyncServiceSyncBaseAttributeMessageId);
+gClientToServerMessageId.emplace(EntitySyncServiceSyncBaseAttributeMessageId);
 gMessageInfo[EntitySyncServiceSyncAttribute2FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute2Frames","AttributeDelta2FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
-g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute2FramesMessageId);
+gClientToServerMessageId.emplace(EntitySyncServiceSyncAttribute2FramesMessageId);
 gMessageInfo[EntitySyncServiceSyncAttribute5FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute5Frames","AttributeDelta5FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
-g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute5FramesMessageId);
+gClientToServerMessageId.emplace(EntitySyncServiceSyncAttribute5FramesMessageId);
 gMessageInfo[EntitySyncServiceSyncAttribute10FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute10Frames","AttributeDelta10FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
-g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute10FramesMessageId);
+gClientToServerMessageId.emplace(EntitySyncServiceSyncAttribute10FramesMessageId);
 gMessageInfo[EntitySyncServiceSyncAttribute30FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute30Frames","AttributeDelta30FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
-g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute30FramesMessageId);
+gClientToServerMessageId.emplace(EntitySyncServiceSyncAttribute30FramesMessageId);
 gMessageInfo[EntitySyncServiceSyncAttribute60FramesMessageId] = RpcService{"EntitySyncService","SyncAttribute60Frames","AttributeDelta60FramesS2C","Empty",std::make_unique_for_overwrite<EntitySyncServiceImpl>()};
-g_c2s_service_id.emplace(EntitySyncServiceSyncAttribute60FramesMessageId);
+gClientToServerMessageId.emplace(EntitySyncServiceSyncAttribute60FramesMessageId);
 
 gMessageInfo[GamePlayerSceneServiceEnterSceneMessageId] = RpcService{"GamePlayerSceneService","EnterScene","GsEnterSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};
 gMessageInfo[GamePlayerSceneServiceLeaveSceneMessageId] = RpcService{"GamePlayerSceneService","LeaveScene","GsLeaveSceneRequest","google::protobuf::Empty",std::make_unique_for_overwrite<GamePlayerSceneServiceImpl>()};
@@ -133,17 +133,17 @@ gMessageInfo[GateServiceRoutePlayerMessageMessageId] = RpcService{"GateService",
 gMessageInfo[GateServiceBroadcastToPlayersMessageId] = RpcService{"GateService","BroadcastToPlayers","BroadcastToPlayersRequest","Empty",std::make_unique_for_overwrite<GateServiceImpl>()};
 
 gMessageInfo[PlayerClientCommonServiceSendTipToClientMessageId] = RpcService{"PlayerClientCommonService","SendTipToClient","TipInfoMessage","Empty",std::make_unique_for_overwrite<PlayerClientCommonServiceImpl>()};
-g_c2s_service_id.emplace(PlayerClientCommonServiceSendTipToClientMessageId);
+gClientToServerMessageId.emplace(PlayerClientCommonServiceSendTipToClientMessageId);
 gMessageInfo[PlayerClientCommonServiceKickPlayerMessageId] = RpcService{"PlayerClientCommonService","KickPlayer","TipInfoMessage","Empty",std::make_unique_for_overwrite<PlayerClientCommonServiceImpl>()};
-g_c2s_service_id.emplace(PlayerClientCommonServiceKickPlayerMessageId);
+gClientToServerMessageId.emplace(PlayerClientCommonServiceKickPlayerMessageId);
 
 gMessageInfo[PlayerSkillServiceReleaseSkillMessageId] = RpcService{"PlayerSkillService","ReleaseSkill","ReleaseSkillSkillRequest","ReleaseSkillSkillResponse",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
-g_c2s_service_id.emplace(PlayerSkillServiceReleaseSkillMessageId);
+gClientToServerMessageId.emplace(PlayerSkillServiceReleaseSkillMessageId);
 gMessageInfo[PlayerSkillServiceNotifySkillUsedMessageId] = RpcService{"PlayerSkillService","NotifySkillUsed","SkillUsedS2C","Empty",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
-g_c2s_service_id.emplace(PlayerSkillServiceNotifySkillUsedMessageId);
+gClientToServerMessageId.emplace(PlayerSkillServiceNotifySkillUsedMessageId);
 gMessageInfo[PlayerSkillServiceNotifySkillInterruptedMessageId] = RpcService{"PlayerSkillService","NotifySkillInterrupted","SkillInterruptedS2C","Empty",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
-g_c2s_service_id.emplace(PlayerSkillServiceNotifySkillInterruptedMessageId);
+gClientToServerMessageId.emplace(PlayerSkillServiceNotifySkillInterruptedMessageId);
 gMessageInfo[PlayerSkillServiceGetSkillListMessageId] = RpcService{"PlayerSkillService","GetSkillList","GetSkillListRequest","GetSkillListResponse",std::make_unique_for_overwrite<PlayerSkillServiceImpl>()};
-g_c2s_service_id.emplace(PlayerSkillServiceGetSkillListMessageId);
+gClientToServerMessageId.emplace(PlayerSkillServiceGetSkillListMessageId);
 
 }

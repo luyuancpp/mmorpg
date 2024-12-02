@@ -17,7 +17,7 @@
 #include "util/random.h"
 #include "util/snow_flake.h"
 
-extern std::unordered_set<uint32_t> g_c2s_service_id;
+extern std::unordered_set<uint32_t> gClientToServerMessageId;
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
     ProtobufDispatcher& dispatcher)
@@ -261,7 +261,7 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
     // todo 发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
     // 有没有更好的办法
     // 根据服务 ID 转发消息
-    if (g_c2s_service_id.contains(request->message_id()))
+    if (gClientToServerMessageId.contains(request->message_id()))
     {
         HandleGameNodeMessage(sessionIt->second, request, sessionId, conn);
     }
