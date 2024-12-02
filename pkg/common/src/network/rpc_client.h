@@ -8,7 +8,7 @@
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
 
-#include "network/rpc_channel.h"
+#include "network/game_channel.h"
 #include "thread_local/storage.h"
 #include "rpc_connection_event.h"
 

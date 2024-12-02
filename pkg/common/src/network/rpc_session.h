@@ -2,7 +2,7 @@
 
 #include "muduo/net/TcpConnection.h"
 
-#include "network/rpc_channel.h"
+#include "network/game_channel.h"
 
 struct RpcSession
 {

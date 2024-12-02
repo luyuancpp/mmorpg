@@ -32,7 +32,7 @@
     <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\message_statistics.h" />
     <ClInclude Include="src\network\process_info.h" />
-    <ClInclude Include="src\network\rpc_channel.h" />
+    <ClInclude Include="src\network\game_channel.h" />
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\network\rpc_connection_event.h" />
     <ClInclude Include="src\network\network_constants.h" />
@@ -68,7 +68,7 @@
     <ClCompile Include="src\network\gate_session.cpp" />
     <ClCompile Include="src\network\message_statistics.cpp" />
     <ClCompile Include="src\network\process_info.cpp" />
-    <ClCompile Include="src\network\rpc_channel.cc" />
+    <ClCompile Include="src\network\game_channel.cc" />
     <ClCompile Include="src\network\rpc_server.cc" />
     <ClCompile Include="src\network\rpc_session.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
