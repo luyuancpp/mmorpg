@@ -47,7 +47,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
         << (conn->connected() ? "UP" : "DOWN");
   if (conn->connected())
   {
-    RpcChannelPtr channel(new GameChannel(conn));
+    GameChannelPtr channel(new GameChannel(conn));
     channel->setServices(&services_);
     conn->setMessageCallback(
         std::bind(&GameChannel::onMessage, get_pointer(channel), _1, _2, _3));
@@ -55,7 +55,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
   }
   else
   {
-    conn->setContext(RpcChannelPtr());
+    conn->setContext(GameChannelPtr());
     // FIXME:
   }
   tls.dispatcher.trigger<OnBeConnectedEvent>(conn);
