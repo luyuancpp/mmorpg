@@ -27,7 +27,7 @@ public:
         client_.setConnectionCallback(
             std::bind(&RpcClient::onConnection, this, _1));
         client_.setMessageCallback(
-            std::bind(&GameChannel::onMessage, get_pointer(channel_), _1, _2, _3));
+            std::bind(&GameChannel::HandleIncomingMessage, get_pointer(channel_), _1, _2, _3));
         client_.enableRetry();
     }
 
@@ -62,18 +62,18 @@ public:
 
     void connect()
     {
-        channel_->setServices(&services_);
+        channel_->SetServiceMap(&services_);
         client_.connect();
     }
 
-    void CallMethod(uint32_t message_id, const ::google::protobuf::Message& request)
+    void CallRemoteMethod(uint32_t message_id, const ::google::protobuf::Message& request)
 	{
 		if (!connected_)
 		{
 			LOG_ERROR << "client disconnect";
 			return;
 		}
-		channel_->CallMethod(message_id, request);
+		channel_->CallRemoteMethod(message_id, request);
 	}
 
     void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message)
@@ -102,7 +102,7 @@ private:
         if (conn->connected())
         {
             conn->setTcpNoDelay(true);
-            channel_->setConnection(conn);
+            channel_->SetConnection(conn);
             connected_ = true;
         }
         else

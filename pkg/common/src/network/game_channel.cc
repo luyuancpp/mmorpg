@@ -34,18 +34,18 @@ void OnUnknownMessage(const TcpConnectionPtr&,
 ProtobufDispatcher g_response_dispatcher(std::bind(&OnUnknownMessage,  _1, _2, _3));
 
 GameChannel::GameChannel()
-	: codec_(std::bind(&GameChannel::onRpcMessage, this, _1, _2, _3)),
+	: codec_(std::bind(&GameChannel::OnRpcMessage, this, _1, _2, _3)),
 	services_(NULL),
-	dispatcher_(std::bind(&GameChannel::onUnknownMessage, this, _1, _2, _3))
+	dispatcher_(std::bind(&GameChannel::HandleUnknownMessage, this, _1, _2, _3))
 {
 	LOG_DEBUG << "RpcChannel::ctor - " << this;
 }
 
 GameChannel::GameChannel(const TcpConnectionPtr& conn)
-	: codec_(std::bind(&GameChannel::onRpcMessage, this, _1, _2, _3)),
-	conn_(conn),
+	: codec_(std::bind(&GameChannel::OnRpcMessage, this, _1, _2, _3)),
+	connection_(conn),
 	services_(NULL),
-	dispatcher_(std::bind(&GameChannel::onUnknownMessage, this, _1, _2, _3))
+	dispatcher_(std::bind(&GameChannel::HandleUnknownMessage, this, _1, _2, _3))
 {
 	LOG_DEBUG << "RpcChannel::ctor - " << this;
 }
@@ -61,7 +61,7 @@ GameChannel::~GameChannel()
   // are less strict in one important way:  the request and response objects
   // need not be of any specific class as long as their descriptors are
   // method->input_type() and method->output_type().
-void GameChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Message& request)
+void GameChannel::CallRemoteMethod(uint32_t message_id, const ProtobufMessage& request)
 {
   GameRpcMessage message;
   message.set_type(REQUEST);
@@ -74,10 +74,10 @@ void GameChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Mess
 	  LOG_ERROR << "message error " << this;
 	  return;
   }
-  SendMessage(message);
+  SendProtobufMessage(message);
 }
 
-void GameChannel::SendRequest(uint32_t message_id, const ::google::protobuf::Message& request)
+void GameChannel::SendRequest(uint32_t message_id, const ProtobufMessage& request)
 {
 	if (message_id >= g_message_info.size())
 	{
@@ -96,26 +96,26 @@ void GameChannel::SendRequest(uint32_t message_id, const ::google::protobuf::Mes
         LOG_ERROR << "message error " << this;
         return;
     }
-	SendMessage(message);
+	SendProtobufMessage(message);
 }
 
-void GameChannel::onMessage(const TcpConnectionPtr& conn,
+void GameChannel::HandleIncomingMessage(const TcpConnectionPtr& conn,
 	muduo::net::Buffer* buf,
 	muduo::Timestamp receiveTime)
 {
   codec_.onMessage(conn, buf, receiveTime);
 }
 
-void GameChannel::onUnknownMessage(const TcpConnectionPtr&, const MessagePtr& message, muduo::Timestamp)
+void GameChannel::HandleUnknownMessage(const TcpConnectionPtr&, const MessagePtr& message, muduo::Timestamp)
 {
     LOG_ERROR << "onUnknownMessage: " << message->GetTypeName();
 }
 
-void GameChannel::onRpcMessage(const TcpConnectionPtr& conn,
+void GameChannel::OnRpcMessage(const TcpConnectionPtr& conn,
                               const RpcMessagePtr& messagePtr,
 	muduo::Timestamp receiveTime)
 {
-  assert(conn == conn_);
+  assert(conn == connection_);
 
   const auto & message = *messagePtr;
   if (message.type() == RESPONSE)
@@ -146,22 +146,22 @@ void GameChannel::onRpcMessage(const TcpConnectionPtr& conn,
   }
   else if (message.type() == REQUEST)
   {
-      onNormalRequestResponseMessage(conn, message, receiveTime);
+      OnRequestOrResponse(conn, message, receiveTime);
   }
   else if (message.type() == S2C_REQUEST)
   {
-      onS2CMessage(conn, message, receiveTime);
+	  OnServerToClientMessage(conn, message, receiveTime);
   }
   else if (message.type() == NODE_ROUTE)
   {
-    onRouteNodeMessage(conn, message, receiveTime);
+		OnRouteMessage(conn, message, receiveTime);
   }
   else if (message.type() == RPC_ERROR)
   {
   }
 }
 
-void GameChannel::RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& request)
+void GameChannel::RouteMessageToNode(uint32_t message_id, const ProtobufMessage& request)
 {
     GameRpcMessage message;
     message.set_type(NODE_ROUTE);  
@@ -174,10 +174,10 @@ void GameChannel::RouteMessageToNode(uint32_t message_id, const ::google::protob
         return;
     }
     message.set_message_id(message_id);
-	SendMessage(message);
+	SendProtobufMessage(message);
 }
 
-void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
+void GameChannel::OnRouteMessage(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
 {
 	assert(services_ != NULL);
 	if ( message.message_id() >= g_message_info.size())
@@ -188,7 +188,7 @@ void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const GameRpc
 	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
-		SendError(message, NO_SERVICE);
+		SendErrorResponse(message, NO_SERVICE);
 		return;
 	}
 	google::protobuf::Service* service = it->second;
@@ -197,14 +197,14 @@ void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const GameRpc
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		SendError(message, NO_METHOD);
+		SendErrorResponse(message, NO_METHOD);
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size() )))
     {
 		LOG_ERROR << "ParsePartialFromArray error";
-        SendError(message, INVALID_REQUEST);
+        SendErrorResponse(message, INVALID_REQUEST);
         return;
     }
     std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
@@ -224,10 +224,10 @@ void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const GameRpc
         return;
     }
     rpc_response.set_message_id(message.message_id());
-	SendMessage(rpc_response);
+	SendProtobufMessage(rpc_response);
 }
 
-void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
+void GameChannel::OnServerToClientMessage(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
 {
 	if ( message.message_id() >= g_message_info.size())
 	{
@@ -237,7 +237,7 @@ void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const GameRpcMessag
 	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
-		SendError(message, NO_SERVICE);
+		SendErrorResponse(message, NO_SERVICE);
 		return;
 	}
 	google::protobuf::Service* service = it->second;
@@ -245,20 +245,20 @@ void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const GameRpcMessag
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		SendError(message, NO_METHOD);
+		SendErrorResponse(message, NO_METHOD);
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size())))
     {
 		LOG_ERROR << "ParsePartialFromArray error";
-        SendError(message, INVALID_REQUEST);
+        SendErrorResponse(message, INVALID_REQUEST);
         return;
     }
     service->CallMethod(method, nullptr, boost::get_pointer(request), nullptr, nullptr);
 }
 
-void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
+void GameChannel::OnRequestOrResponse(const TcpConnectionPtr& conn, const GameRpcMessage& message, muduo::Timestamp receiveTime)
 {
 	if ( message.message_id() >= g_message_info.size())
 	{
@@ -268,7 +268,7 @@ void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, c
 	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
-		SendError(message, NO_SERVICE);
+		SendErrorResponse(message, NO_SERVICE);
 		return;
 	}
 	google::protobuf::Service* service = it->second;
@@ -276,14 +276,14 @@ void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, c
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		SendError(message, NO_METHOD);
+		SendErrorResponse(message, NO_METHOD);
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size())))
     {
 		LOG_ERROR << "ParsePartialFromArray error";
-        SendError(message, INVALID_REQUEST);
+        SendErrorResponse(message, INVALID_REQUEST);
         return;
     }
     if (service->GetResponsePrototype(method).GetDescriptor() == Empty::GetDescriptor())
@@ -305,19 +305,19 @@ void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, c
             return;
         }
         rpc_response.set_message_id(message.message_id());
-		SendMessage(rpc_response);
+		SendProtobufMessage(rpc_response);
     }
 }
 
-void GameChannel::SendError(const GameRpcMessage& message, GameErrorCode error)
+void GameChannel::SendErrorResponse(const GameRpcMessage& message, GameErrorCode error)
 {
     GameRpcMessage response;
     response.set_type(RESPONSE);
     response.set_error(error);
-	SendMessage(response);
+	SendProtobufMessage(response);
 }
 
-void GameChannel::SendRouteMessageResponse(uint32_t message_id, uint64_t id, const std::string& body)
+void GameChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& body)
 {
 	if (message_id >= g_message_info.size())
 	{
@@ -329,10 +329,10 @@ void GameChannel::SendRouteMessageResponse(uint32_t message_id, uint64_t id, con
     response.set_type(RESPONSE);
     response.set_response(body); // FIXME: error check
     response.set_message_id(message_id);
-	SendMessage(response);
+	SendProtobufMessage(response);
 }
 
-void GameChannel::MessageStatistics(const GameRpcMessage& message)
+void GameChannel::LogMessageStatistics(const GameRpcMessage& message)
 {
 	if (!g_test_switch_list[kTestMessageStatistics])
 	{
@@ -342,10 +342,10 @@ void GameChannel::MessageStatistics(const GameRpcMessage& message)
 	statistic.set_count(statistic.count() + 1);
 }
 
-void GameChannel::SendMessage(const GameRpcMessage& message)
+void GameChannel::SendProtobufMessage(const GameRpcMessage& message)
 {
-	codec_.send(conn_, message);
+	codec_.send(connection_, message);
 
-	MessageStatistics(message);
+	LogMessageStatistics(message);
 }
 

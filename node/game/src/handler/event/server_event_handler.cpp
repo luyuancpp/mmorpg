@@ -49,7 +49,7 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 	registerGameRequest.set_game_node_id(gGameNode->GetNodeId());
 
 	LOG_INFO << "Sending RegisterGameRequest to centre node: " << entt::to_integral(centreId);
-	(*centreNode)->CallMethod(CentreServiceRegisterGameNodeMessageId, registerGameRequest);
+	(*centreNode)->CallRemoteMethod(CentreServiceRegisterGameNodeMessageId, registerGameRequest);
 
 	GameNodeSceneUtil::RegisterSceneToCentre();
 	

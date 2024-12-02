@@ -123,7 +123,7 @@ void PlayerNodeUtil::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	RegisterGameNodeSessionRequest request;
 	request.mutable_session_info()->set_session_id(playerNodeInfo->gate_session_id());
 	request.set_game_node_id(playerNodeInfo->game_node_id());
-	(*gateNode)->CallMethod(GateServicePlayerEnterGameNodeMessageId, request);
+	(*gateNode)->CallRemoteMethod(GateServicePlayerEnterGameNodeMessageId, request);
 }
 
 void PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)

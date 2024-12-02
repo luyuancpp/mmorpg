@@ -161,7 +161,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     {
         GateSessionDisconnectRequest request;
         request.mutable_session_info()->set_session_id(sessionId);
-        g_gate_node->GetZoneCentreNode()->CallMethod(CentreServiceGateSessionDisconnectMessageId, request);
+        g_gate_node->GetZoneCentreNode()->CallRemoteMethod(CentreServiceGateSessionDisconnectMessageId, request);
     }
 
     // 删除会话
@@ -186,7 +186,7 @@ void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& re
     message.set_session_id(sessionId);
     message.mutable_message_body()->set_id(request->id());
     message.mutable_message_body()->set_message_id(request->message_id());
-    gameNode->CallMethod(GameServiceClientSendMessageToPlayerMessageId, message);
+    gameNode->CallRemoteMethod(GameServiceClientSendMessageToPlayerMessageId, message);
 
     LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }

@@ -48,9 +48,9 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
   if (conn->connected())
   {
     GameChannelPtr channel(new GameChannel(conn));
-    channel->setServices(&services_);
+    channel->SetServiceMap(&services_);
     conn->setMessageCallback(
-        std::bind(&GameChannel::onMessage, get_pointer(channel), _1, _2, _3));
+        std::bind(&GameChannel::HandleIncomingMessage, get_pointer(channel), _1, _2, _3));
     conn->setContext(channel);
   }
   else
