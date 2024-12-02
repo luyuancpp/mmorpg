@@ -464,9 +464,9 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	}
 
 	response->mutable_head()->set_session_id(request->head().session_id());
-	const int32_t byte_size = response->ByteSizeLong();
+	const int32_t byte_size = player_response->ByteSizeLong();
 	response->mutable_body()->mutable_body()->resize(byte_size);
-	if (!response->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
+	if (!player_response->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
 	{
 		LOG_ERROR << "Failed to serialize response for message ID: " << request->body().message_id();
 		// TODO: Handle message serialization error
