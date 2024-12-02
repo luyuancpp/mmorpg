@@ -92,15 +92,15 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 
 	const auto& player = playerIt->second;
 
-	if (request->body().message_id() >= g_message_info.size())
+	if (request->body().message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "Invalid message ID: " << request->body().message_id();
 		return;
 	}
 
-	const auto& messageInfo = g_message_info[request->body().message_id()];
+	const auto& messageInfo = gMessageInfo[request->body().message_id()];
 
-	const auto serviceIt = g_player_service.find(messageInfo.service);
+	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
 	if (serviceIt == g_player_service.end())
 	{
 		LOG_ERROR << "PlayerService not found for message ID: " << request->body().message_id();
@@ -110,10 +110,10 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	const auto& serviceHandler = serviceIt->second;
 	google::protobuf::Service* service = serviceHandler->service();
 
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.method);
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "Method not found in PlayerService: " << messageInfo.method;
+		LOG_ERROR << "Method not found in PlayerService: " << messageInfo.methodName;
 		return;
 	}
 
@@ -142,14 +142,14 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (request->message_body().message_id() >= g_message_info.size())
+	if (request->message_body().message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "message_id not found " << request->message_body().message_id();
 		return;
 	}
 
-	const auto& messageInfo = g_message_info.at(request->message_body().message_id());
-	const auto serviceIt = g_player_service.find(messageInfo.service);
+	const auto& messageInfo = gMessageInfo.at(request->message_body().message_id());
+	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
 	if (serviceIt == g_player_service.end())
 	{
 		LOG_ERROR << "GatePlayerService message id not found " << request->message_body().message_id();
@@ -157,7 +157,7 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	}
 
 	google::protobuf::Service* service = serviceIt->second->service();
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.method);
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
 	if (nullptr == method)
 	{
 		LOG_ERROR << "GatePlayerService message id not found " << request->message_body().message_id();
@@ -262,14 +262,14 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 		return;
 	}
 
-	if (request->body().message_id() >= g_message_info.size())
+	if (request->body().message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "message_id not found " << request->body().message_id();
 		return;
 	}
 
-	const auto& messageInfo = g_message_info[request->body().message_id()];
-	const auto serviceIt = g_player_service.find(messageInfo.service);
+	const auto& messageInfo = gMessageInfo[request->body().message_id()];
+	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
 	if (serviceIt == g_player_service.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << request->head().session_id()
@@ -279,7 +279,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 
 	const auto& serviceHandler = serviceIt->second;
 	google::protobuf::Service* service = serviceHandler->service();
-	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.method);
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
 	if (nullptr == method)
 	{
 		LOG_ERROR << "PlayerService method not found " << request->body().message_id();

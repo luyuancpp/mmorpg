@@ -63,20 +63,20 @@ public:
         muduo::net::Buffer* buffer,
         muduo::Timestamp receiveTime);
 
-    // 未知消息处理
-    void HandleUnknownMessage(const TcpConnectionPtr& connection,
-        const MessagePtr& message,
-        muduo::Timestamp receiveTime);
-
 private:
     // 错误消息发送
     void SendErrorResponse(const GameRpcMessage& message, GameErrorCode errorCode);
 
     // 内部消息处理逻辑
-    void OnRpcMessage(const TcpConnectionPtr& connection, const RpcMessagePtr& message, muduo::Timestamp receiveTime);
-    void OnRequestOrResponse(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
-    void OnRouteMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
-    void OnServerToClientMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
+    void HandleRpcMessage(const TcpConnectionPtr& connection, const RpcMessagePtr& message, muduo::Timestamp receiveTime);
+    void HandleResponseMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
+    void HandleRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
+    void HandleNodeRouteMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
+    void HandleClientRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
+
+    void ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, bool expectResponse, muduo::Timestamp receiveTime);
+
+    bool SerializeMessage(const ProtobufMessage& message, std::string* output);
 
     // 统计消息处理次数
     void LogMessageStatistics(const GameRpcMessage& message);

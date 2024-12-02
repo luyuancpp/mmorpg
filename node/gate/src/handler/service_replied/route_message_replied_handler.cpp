@@ -10,7 +10,7 @@
 
 #include "service_info/gate_service_service_info.h"
 
-extern ProtobufDispatcher g_response_dispatcher;
+extern ProtobufDispatcher gResponseDispatcher;
 
 void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMsgStringResponse>& replied, Timestamp timestamp)
 {
@@ -28,7 +28,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	}
 	
 	auto& route_data = replied->route_data_list(replied->route_data_list_size() - 1);
-	if ( route_data.message_id() >= g_message_info.size())
+	if ( route_data.message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "message_id not found " << route_data.message_id();
 		return;

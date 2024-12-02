@@ -3,13 +3,13 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-extern ProtobufDispatcher g_response_dispatcher;
+extern ProtobufDispatcher gResponseDispatcher;
 
 
 void InitAccountDBServiceLoad2RedisRepliedHandler()
 {
-	g_response_dispatcher.registerMessageCallback<LoadAccountResponse>(std::bind(&OnAccountDBServiceLoad2RedisRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<SaveAccountResponse>(std::bind(&OnAccountDBServiceSave2RedisRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<LoadAccountResponse>(std::bind(&OnAccountDBServiceLoad2RedisRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gResponseDispatcher.registerMessageCallback<SaveAccountResponse>(std::bind(&OnAccountDBServiceSave2RedisRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnAccountDBServiceLoad2RedisRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<LoadAccountResponse>& replied, Timestamp timestamp)

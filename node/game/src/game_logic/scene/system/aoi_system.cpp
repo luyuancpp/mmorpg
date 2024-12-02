@@ -164,7 +164,7 @@ void AoiSystem::RemoveEntityFromGrid(const Hex& hex, SceneGridListComp& gridList
     auto& grid = gridIt->second;
     grid.entities.erase(entity);
 
-    if (g_test_switch_list[kTestClearEmptyTiles])
+    if (gFeatureSwitches[kTestClearEmptyTiles])
     {
         if (grid.entities.empty()) {
             gridList.erase(gridIt);
