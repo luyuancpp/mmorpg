@@ -10,6 +10,8 @@
 
 #include "game_channel.h"
 
+#include <boost/get_pointer.hpp>
+
 #include "muduo/base/Logging.h"
 
 #include <google/protobuf/descriptor.h>
@@ -20,15 +22,15 @@
 
 #include "proto/common/empty.pb.h"
 
-using namespace muduo;
-using namespace muduo::net;
+using namespace std::placeholders;
 
 void OnUnknownMessage(const TcpConnectionPtr&,
     const MessagePtr& message,
-    Timestamp)
+	muduo::Timestamp)
 {
 
 }
+
 ProtobufDispatcher g_response_dispatcher(std::bind(&OnUnknownMessage,  _1, _2, _3));
 
 GameChannel::GameChannel()
@@ -98,24 +100,24 @@ void GameChannel::SendRequest(uint32_t message_id, const ::google::protobuf::Mes
 }
 
 void GameChannel::onMessage(const TcpConnectionPtr& conn,
-                           Buffer* buf,
-                           Timestamp receiveTime)
+	muduo::net::Buffer* buf,
+	muduo::Timestamp receiveTime)
 {
   codec_.onMessage(conn, buf, receiveTime);
 }
 
-void GameChannel::onUnknownMessage(const TcpConnectionPtr&, const MessagePtr& message, Timestamp)
+void GameChannel::onUnknownMessage(const TcpConnectionPtr&, const MessagePtr& message, muduo::Timestamp)
 {
     LOG_ERROR << "onUnknownMessage: " << message->GetTypeName();
 }
 
 void GameChannel::onRpcMessage(const TcpConnectionPtr& conn,
                               const RpcMessagePtr& messagePtr,
-                              Timestamp receiveTime)
+	muduo::Timestamp receiveTime)
 {
   assert(conn == conn_);
 
-  RpcMessage& message = *messagePtr;
+  const auto & message = *messagePtr;
   if (message.type() == RESPONSE)
   {
       if ( message.message_id() >= g_message_info.size())
@@ -175,7 +177,7 @@ void GameChannel::RouteMessageToNode(uint32_t message_id, const ::google::protob
 	SendMessage(message);
 }
 
-void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
+void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessage& message, muduo::Timestamp receiveTime)
 {
 	assert(services_ != NULL);
 	if ( message.message_id() >= g_message_info.size())
@@ -206,7 +208,7 @@ void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMess
         return;
     }
     std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
-    service->CallMethod(method, nullptr, get_pointer(request), get_pointer(response), nullptr);
+    service->CallMethod(method, nullptr, boost::get_pointer(request), boost::get_pointer(response), nullptr);
     if (response->ByteSizeLong() <= 0)
     {
         return;
@@ -225,7 +227,7 @@ void GameChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMess
 	SendMessage(rpc_response);
 }
 
-void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
+void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& message, muduo::Timestamp receiveTime)
 {
 	if ( message.message_id() >= g_message_info.size())
 	{
@@ -253,10 +255,10 @@ void GameChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& m
         SendError(message, INVALID_REQUEST);
         return;
     }
-    service->CallMethod(method, nullptr, get_pointer(request), nullptr, nullptr);
+    service->CallMethod(method, nullptr, boost::get_pointer(request), nullptr, nullptr);
 }
 
-void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
+void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const RpcMessage& message, muduo::Timestamp receiveTime)
 {
 	if ( message.message_id() >= g_message_info.size())
 	{
@@ -286,12 +288,12 @@ void GameChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, c
     }
     if (service->GetResponsePrototype(method).GetDescriptor() == Empty::GetDescriptor())
     {
-        service->CallMethod(method, NULL, get_pointer(request), nullptr, nullptr);
+        service->CallMethod(method, NULL, boost::get_pointer(request), nullptr, nullptr);
     }
     else
     {
         std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
-        service->CallMethod(method, NULL, get_pointer(request), get_pointer(response), nullptr);
+        service->CallMethod(method, NULL, boost::get_pointer(request), boost::get_pointer(response), nullptr);
         RpcMessage rpc_response;
         rpc_response.set_type(RESPONSE);
         auto byte_size = int32_t(response->ByteSizeLong());

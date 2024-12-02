@@ -50,20 +50,14 @@ struct TableStruct_game_5frpc_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_game_5frpc_2eproto;
-namespace muduo {
-namespace net {
 class RpcMessage;
 struct RpcMessageDefaultTypeInternal;
 extern RpcMessageDefaultTypeInternal _RpcMessage_default_instance_;
-}  // namespace net
-}  // namespace muduo
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
 }  // namespace google
 
-namespace muduo {
-namespace net {
 enum MessageType : int {
   REQUEST = 0,
   RESPONSE = 1,
@@ -145,7 +139,7 @@ inline bool ErrorCode_Parse(absl::string_view name, ErrorCode* value) {
 // -------------------------------------------------------------------
 
 class RpcMessage final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:muduo.net.RpcMessage) */ {
+/* @@protoc_insertion_point(class_definition:RpcMessage) */ {
  public:
   inline RpcMessage() : RpcMessage(nullptr) {}
   ~RpcMessage() override;
@@ -251,7 +245,7 @@ class RpcMessage final : public ::google::protobuf::Message
   void InternalSwap(RpcMessage* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "muduo.net.RpcMessage"; }
+  static ::absl::string_view FullMessageName() { return "RpcMessage"; }
 
  protected:
   explicit RpcMessage(::google::protobuf::Arena* arena);
@@ -307,24 +301,24 @@ class RpcMessage final : public ::google::protobuf::Message
   std::string* _internal_mutable_response();
 
   public:
-  // .muduo.net.MessageType type = 1;
+  // .MessageType type = 1;
   void clear_type() ;
-  ::muduo::net::MessageType type() const;
-  void set_type(::muduo::net::MessageType value);
+  ::MessageType type() const;
+  void set_type(::MessageType value);
 
   private:
-  ::muduo::net::MessageType _internal_type() const;
-  void _internal_set_type(::muduo::net::MessageType value);
+  ::MessageType _internal_type() const;
+  void _internal_set_type(::MessageType value);
 
   public:
-  // .muduo.net.ErrorCode error = 4;
+  // .ErrorCode error = 4;
   void clear_error() ;
-  ::muduo::net::ErrorCode error() const;
-  void set_error(::muduo::net::ErrorCode value);
+  ::ErrorCode error() const;
+  void set_error(::ErrorCode value);
 
   private:
-  ::muduo::net::ErrorCode _internal_error() const;
-  void _internal_set_error(::muduo::net::ErrorCode value);
+  ::ErrorCode _internal_error() const;
+  void _internal_set_error(::ErrorCode value);
 
   public:
   // uint32 message_id = 5;
@@ -337,7 +331,7 @@ class RpcMessage final : public ::google::protobuf::Message
   void _internal_set_message_id(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:muduo.net.RpcMessage)
+  // @@protoc_insertion_point(class_scope:RpcMessage)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -386,24 +380,24 @@ class RpcMessage final : public ::google::protobuf::Message
 
 // RpcMessage
 
-// .muduo.net.MessageType type = 1;
+// .MessageType type = 1;
 inline void RpcMessage::clear_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.type_ = 0;
 }
-inline ::muduo::net::MessageType RpcMessage::type() const {
-  // @@protoc_insertion_point(field_get:muduo.net.RpcMessage.type)
+inline ::MessageType RpcMessage::type() const {
+  // @@protoc_insertion_point(field_get:RpcMessage.type)
   return _internal_type();
 }
-inline void RpcMessage::set_type(::muduo::net::MessageType value) {
+inline void RpcMessage::set_type(::MessageType value) {
   _internal_set_type(value);
-  // @@protoc_insertion_point(field_set:muduo.net.RpcMessage.type)
+  // @@protoc_insertion_point(field_set:RpcMessage.type)
 }
-inline ::muduo::net::MessageType RpcMessage::_internal_type() const {
+inline ::MessageType RpcMessage::_internal_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return static_cast<::muduo::net::MessageType>(_impl_.type_);
+  return static_cast<::MessageType>(_impl_.type_);
 }
-inline void RpcMessage::_internal_set_type(::muduo::net::MessageType value) {
+inline void RpcMessage::_internal_set_type(::MessageType value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.type_ = value;
 }
@@ -415,7 +409,7 @@ inline void RpcMessage::clear_request() {
 }
 inline const std::string& RpcMessage::request() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:muduo.net.RpcMessage.request)
+  // @@protoc_insertion_point(field_get:RpcMessage.request)
   return _internal_request();
 }
 template <typename Arg_, typename... Args_>
@@ -423,11 +417,11 @@ inline PROTOBUF_ALWAYS_INLINE void RpcMessage::set_request(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.request_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:muduo.net.RpcMessage.request)
+  // @@protoc_insertion_point(field_set:RpcMessage.request)
 }
 inline std::string* RpcMessage::mutable_request() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_request();
-  // @@protoc_insertion_point(field_mutable:muduo.net.RpcMessage.request)
+  // @@protoc_insertion_point(field_mutable:RpcMessage.request)
   return _s;
 }
 inline const std::string& RpcMessage::_internal_request() const {
@@ -444,7 +438,7 @@ inline std::string* RpcMessage::_internal_mutable_request() {
 }
 inline std::string* RpcMessage::release_request() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:muduo.net.RpcMessage.request)
+  // @@protoc_insertion_point(field_release:RpcMessage.request)
   return _impl_.request_.Release();
 }
 inline void RpcMessage::set_allocated_request(std::string* value) {
@@ -455,7 +449,7 @@ inline void RpcMessage::set_allocated_request(std::string* value) {
           _impl_.request_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:muduo.net.RpcMessage.request)
+  // @@protoc_insertion_point(field_set_allocated:RpcMessage.request)
 }
 
 // bytes response = 3;
@@ -465,7 +459,7 @@ inline void RpcMessage::clear_response() {
 }
 inline const std::string& RpcMessage::response() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:muduo.net.RpcMessage.response)
+  // @@protoc_insertion_point(field_get:RpcMessage.response)
   return _internal_response();
 }
 template <typename Arg_, typename... Args_>
@@ -473,11 +467,11 @@ inline PROTOBUF_ALWAYS_INLINE void RpcMessage::set_response(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.response_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:muduo.net.RpcMessage.response)
+  // @@protoc_insertion_point(field_set:RpcMessage.response)
 }
 inline std::string* RpcMessage::mutable_response() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_response();
-  // @@protoc_insertion_point(field_mutable:muduo.net.RpcMessage.response)
+  // @@protoc_insertion_point(field_mutable:RpcMessage.response)
   return _s;
 }
 inline const std::string& RpcMessage::_internal_response() const {
@@ -494,7 +488,7 @@ inline std::string* RpcMessage::_internal_mutable_response() {
 }
 inline std::string* RpcMessage::release_response() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:muduo.net.RpcMessage.response)
+  // @@protoc_insertion_point(field_release:RpcMessage.response)
   return _impl_.response_.Release();
 }
 inline void RpcMessage::set_allocated_response(std::string* value) {
@@ -505,27 +499,27 @@ inline void RpcMessage::set_allocated_response(std::string* value) {
           _impl_.response_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:muduo.net.RpcMessage.response)
+  // @@protoc_insertion_point(field_set_allocated:RpcMessage.response)
 }
 
-// .muduo.net.ErrorCode error = 4;
+// .ErrorCode error = 4;
 inline void RpcMessage::clear_error() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.error_ = 0;
 }
-inline ::muduo::net::ErrorCode RpcMessage::error() const {
-  // @@protoc_insertion_point(field_get:muduo.net.RpcMessage.error)
+inline ::ErrorCode RpcMessage::error() const {
+  // @@protoc_insertion_point(field_get:RpcMessage.error)
   return _internal_error();
 }
-inline void RpcMessage::set_error(::muduo::net::ErrorCode value) {
+inline void RpcMessage::set_error(::ErrorCode value) {
   _internal_set_error(value);
-  // @@protoc_insertion_point(field_set:muduo.net.RpcMessage.error)
+  // @@protoc_insertion_point(field_set:RpcMessage.error)
 }
-inline ::muduo::net::ErrorCode RpcMessage::_internal_error() const {
+inline ::ErrorCode RpcMessage::_internal_error() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return static_cast<::muduo::net::ErrorCode>(_impl_.error_);
+  return static_cast<::ErrorCode>(_impl_.error_);
 }
-inline void RpcMessage::_internal_set_error(::muduo::net::ErrorCode value) {
+inline void RpcMessage::_internal_set_error(::ErrorCode value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.error_ = value;
 }
@@ -536,12 +530,12 @@ inline void RpcMessage::clear_message_id() {
   _impl_.message_id_ = 0u;
 }
 inline ::uint32_t RpcMessage::message_id() const {
-  // @@protoc_insertion_point(field_get:muduo.net.RpcMessage.message_id)
+  // @@protoc_insertion_point(field_get:RpcMessage.message_id)
   return _internal_message_id();
 }
 inline void RpcMessage::set_message_id(::uint32_t value) {
   _internal_set_message_id(value);
-  // @@protoc_insertion_point(field_set:muduo.net.RpcMessage.message_id)
+  // @@protoc_insertion_point(field_set:RpcMessage.message_id)
 }
 inline ::uint32_t RpcMessage::_internal_message_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
@@ -557,24 +551,22 @@ inline void RpcMessage::_internal_set_message_id(::uint32_t value) {
 #endif  // __GNUC__
 
 // @@protoc_insertion_point(namespace_scope)
-}  // namespace net
-}  // namespace muduo
 
 
 namespace google {
 namespace protobuf {
 
 template <>
-struct is_proto_enum<::muduo::net::MessageType> : std::true_type {};
+struct is_proto_enum<::MessageType> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::muduo::net::MessageType>() {
-  return ::muduo::net::MessageType_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::MessageType>() {
+  return ::MessageType_descriptor();
 }
 template <>
-struct is_proto_enum<::muduo::net::ErrorCode> : std::true_type {};
+struct is_proto_enum<::ErrorCode> : std::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor<::muduo::net::ErrorCode>() {
-  return ::muduo::net::ErrorCode_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor<::ErrorCode>() {
+  return ::ErrorCode_descriptor();
 }
 
 }  // namespace protobuf
