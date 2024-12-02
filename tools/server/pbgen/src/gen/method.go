@@ -262,7 +262,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 	data.WriteString("#include \"network/codec/dispatcher.h\"\n\n")
 
 	// External declaration for the dispatcher
-	data.WriteString("extern ProtobufDispatcher g_response_dispatcher;\n\n")
+	data.WriteString("extern ProtobufDispatcher gResponseDispatcher;\n\n")
 
 	var declarationData, implData strings.Builder
 
@@ -280,7 +280,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RPCMethods) string {
 
 			// Register message callback in declaration data
 			declarationData.WriteString(fmt.Sprintf("%s%s", config.Tab,
-				"g_response_dispatcher.registerMessageCallback<"+methodInfo.Response+
+				"gResponseDispatcher.registerMessageCallback<"+methodInfo.Response+
 					">(std::bind(&"+funcName+", std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));\n"))
 
 			// Implementation of the handler function

@@ -22,4 +22,4 @@ constexpr uint32_t kMaxMessageLen = 76;
 
 extern std::array<RpcService, kMaxMessageLen> gMessageInfo;
 
-extern std::unordered_set<uint32_t> g_c2s_service_id;
+extern std::unordered_set<uint32_t> gClientToServerMessageId;

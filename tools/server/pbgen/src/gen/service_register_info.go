@@ -277,7 +277,7 @@ func writeServiceInfoCppFile() {
 	var initFuncBuilder strings.Builder
 	var messageIdHandlerBuilder strings.Builder
 
-	initFuncBuilder.WriteString("std::unordered_set<uint32_t> g_c2s_service_id;\n")
+	initFuncBuilder.WriteString("std::unordered_set<uint32_t> gClientToServerMessageId;\n")
 	initFuncBuilder.WriteString("std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> gMessageInfo;\n\n")
 	initFuncBuilder.WriteString("void InitMessageInfo()\n{\n")
 
@@ -316,7 +316,7 @@ func writeServiceInfoCppFile() {
 				handlerClassName,
 			))
 			if strings.Contains(method.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) {
-				initFuncBuilder.WriteString("g_c2s_service_id.emplace(" + rpcId + ");\n")
+				initFuncBuilder.WriteString("gClientToServerMessageId.emplace(" + rpcId + ");\n")
 			}
 		}
 		initFuncBuilder.WriteString("\n")
@@ -346,16 +346,16 @@ func writeServiceInfoHeadFile() {
 	data.WriteString("#include <google/protobuf/message.h>\n")
 	data.WriteString("#include <google/protobuf/service.h>\n\n")
 	data.WriteString("struct RpcService\n{\n")
-	data.WriteString(config.Tab + "const char* service{nullptr};\n")
-	data.WriteString(config.Tab + "const char* method{nullptr};\n")
+	data.WriteString(config.Tab + "const char* serviceName{nullptr};\n")
+	data.WriteString(config.Tab + "const char* methodName{nullptr};\n")
 	data.WriteString(config.Tab + "const char* request{nullptr};\n")
 	data.WriteString(config.Tab + "const char* response{nullptr};\n")
-	data.WriteString(config.Tab + "std::unique_ptr<::google::protobuf::Service> service_impl_instance_;\n};\n\n")
+	data.WriteString(config.Tab + "std::unique_ptr<::google::protobuf::Service> serviceImplInstance;\n};\n\n")
 	data.WriteString("using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n")
 	data.WriteString("void InitMessageInfo();\n\n")
 	data.WriteString(fmt.Sprintf("constexpr uint32_t kMaxMessageLen = %d;\n\n", MessageIdLen()))
 	data.WriteString(fmt.Sprintf("extern std::array<RpcService, kMaxMessageLen> gMessageInfo;\n\n"))
-	data.WriteString("extern std::unordered_set<uint32_t> g_c2s_service_id;\n")
+	data.WriteString("extern std::unordered_set<uint32_t> gClientToServerMessageId;\n")
 
 	util.WriteMd5Data2File(config.ServiceHeaderFilePath, data.String())
 }
