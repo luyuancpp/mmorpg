@@ -21,8 +21,6 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
-namespace muduo {
-namespace net {
 
 inline constexpr RpcMessage::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -32,8 +30,8 @@ inline constexpr RpcMessage::Impl_::Impl_(
         response_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        type_{static_cast< ::muduo::net::MessageType >(0)},
-        error_{static_cast< ::muduo::net::ErrorCode >(0)},
+        type_{static_cast< ::MessageType >(0)},
+        error_{static_cast< ::ErrorCode >(0)},
         message_id_{0u},
         _cached_size_{0} {}
 
@@ -50,8 +48,6 @@ struct RpcMessageDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RpcMessageDefaultTypeInternal _RpcMessage_default_instance_;
-}  // namespace net
-}  // namespace muduo
 static ::_pb::Metadata file_level_metadata_game_5frpc_2eproto[1];
 static const ::_pb::EnumDescriptor* file_level_enum_descriptors_game_5frpc_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor**
@@ -60,46 +56,45 @@ const ::uint32_t
     TableStruct_game_5frpc_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::muduo::net::RpcMessage, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::RpcMessage, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::muduo::net::RpcMessage, _impl_.type_),
-        PROTOBUF_FIELD_OFFSET(::muduo::net::RpcMessage, _impl_.request_),
-        PROTOBUF_FIELD_OFFSET(::muduo::net::RpcMessage, _impl_.response_),
-        PROTOBUF_FIELD_OFFSET(::muduo::net::RpcMessage, _impl_.error_),
-        PROTOBUF_FIELD_OFFSET(::muduo::net::RpcMessage, _impl_.message_id_),
+        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.type_),
+        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.request_),
+        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.response_),
+        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.error_),
+        PROTOBUF_FIELD_OFFSET(::RpcMessage, _impl_.message_id_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::muduo::net::RpcMessage)},
+        {0, -1, -1, sizeof(::RpcMessage)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::muduo::net::_RpcMessage_default_instance_._instance,
+    &::_RpcMessage_default_instance_._instance,
 };
 const char descriptor_table_protodef_game_5frpc_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\016game_rpc.proto\022\tmuduo.net\"\216\001\n\nRpcMessa"
-    "ge\022$\n\004type\030\001 \001(\0162\026.muduo.net.MessageType"
-    "\022\017\n\007request\030\002 \001(\014\022\020\n\010response\030\003 \001(\014\022#\n\005e"
-    "rror\030\004 \001(\0162\024.muduo.net.ErrorCode\022\022\n\nmess"
-    "age_id\030\005 \001(\r*X\n\013MessageType\022\013\n\007REQUEST\020\000"
-    "\022\014\n\010RESPONSE\020\001\022\017\n\013S2C_REQUEST\020\002\022\016\n\nNODE_"
-    "ROUTE\020\003\022\r\n\tRPC_ERROR\020\004*\205\001\n\tErrorCode\022\020\n\014"
-    "RPC_NO_ERROR\020\000\022\017\n\013WRONG_PROTO\020\001\022\016\n\nNO_SE"
-    "RVICE\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017INVALID_REQUES"
-    "T\020\004\022\024\n\020INVALID_RESPONSE\020\005\022\013\n\007TIMEOUT\020\006B\t"
-    "Z\007pb/gameb\006proto3"
+    "\n\016game_rpc.proto\"z\n\nRpcMessage\022\032\n\004type\030\001"
+    " \001(\0162\014.MessageType\022\017\n\007request\030\002 \001(\014\022\020\n\010r"
+    "esponse\030\003 \001(\014\022\031\n\005error\030\004 \001(\0162\n.ErrorCode"
+    "\022\022\n\nmessage_id\030\005 \001(\r*X\n\013MessageType\022\013\n\007R"
+    "EQUEST\020\000\022\014\n\010RESPONSE\020\001\022\017\n\013S2C_REQUEST\020\002\022"
+    "\016\n\nNODE_ROUTE\020\003\022\r\n\tRPC_ERROR\020\004*\205\001\n\tError"
+    "Code\022\020\n\014RPC_NO_ERROR\020\000\022\017\n\013WRONG_PROTO\020\001\022"
+    "\016\n\nNO_SERVICE\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017INVALI"
+    "D_REQUEST\020\004\022\024\n\020INVALID_RESPONSE\020\005\022\013\n\007TIM"
+    "EOUT\020\006B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_game_5frpc_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_game_5frpc_2eproto = {
     false,
     false,
-    417,
+    385,
     descriptor_table_protodef_game_5frpc_2eproto,
     "game_rpc.proto",
     &descriptor_table_game_5frpc_2eproto_once,
@@ -128,8 +123,6 @@ const ::_pbi::DescriptorTable descriptor_table_game_5frpc_2eproto = {
 PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_game_5frpc_2eproto_getter() {
   return &descriptor_table_game_5frpc_2eproto;
 }
-namespace muduo {
-namespace net {
 const ::google::protobuf::EnumDescriptor* MessageType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_game_5frpc_2eproto);
   return file_level_enum_descriptors_game_5frpc_2eproto[0];
@@ -157,7 +150,7 @@ class RpcMessage::_Internal {
 RpcMessage::RpcMessage(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:muduo.net.RpcMessage)
+  // @@protoc_insertion_point(arena_constructor:RpcMessage)
 }
 inline PROTOBUF_NDEBUG_INLINE RpcMessage::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
@@ -183,7 +176,7 @@ RpcMessage::RpcMessage(
                offsetof(Impl_, type_) +
                sizeof(Impl_::message_id_));
 
-  // @@protoc_insertion_point(copy_constructor:muduo.net.RpcMessage)
+  // @@protoc_insertion_point(copy_constructor:RpcMessage)
 }
 inline PROTOBUF_NDEBUG_INLINE RpcMessage::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -202,7 +195,7 @@ inline void RpcMessage::SharedCtor(::_pb::Arena* arena) {
                sizeof(Impl_::message_id_));
 }
 RpcMessage::~RpcMessage() {
-  // @@protoc_insertion_point(destructor:muduo.net.RpcMessage)
+  // @@protoc_insertion_point(destructor:RpcMessage)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
@@ -228,7 +221,7 @@ RpcMessage::GetClassData() const {
   return &_data_;
 }
 PROTOBUF_NOINLINE void RpcMessage::Clear() {
-// @@protoc_insertion_point(message_clear_start:muduo.net.RpcMessage)
+// @@protoc_insertion_point(message_clear_start:RpcMessage)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -264,11 +257,11 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
     &_RpcMessage_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::muduo::net::RpcMessage>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::RpcMessage>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // .muduo.net.MessageType type = 1;
+    // .MessageType type = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RpcMessage, _impl_.type_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.type_)}},
     // bytes request = 2;
@@ -277,7 +270,7 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
     // bytes response = 3;
     {::_pbi::TcParser::FastBS1,
      {26, 63, 0, PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.response_)}},
-    // .muduo.net.ErrorCode error = 4;
+    // .ErrorCode error = 4;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RpcMessage, _impl_.error_), 63>(),
      {32, 63, 0, PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.error_)}},
     // uint32 message_id = 5;
@@ -288,7 +281,7 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // .muduo.net.MessageType type = 1;
+    // .MessageType type = 1;
     {PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
     // bytes request = 2;
@@ -297,7 +290,7 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
     // bytes response = 3;
     {PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.response_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
-    // .muduo.net.ErrorCode error = 4;
+    // .ErrorCode error = 4;
     {PROTOBUF_FIELD_OFFSET(RpcMessage, _impl_.error_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
     // uint32 message_id = 5;
@@ -312,11 +305,11 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
 ::uint8_t* RpcMessage::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:muduo.net.RpcMessage)
+  // @@protoc_insertion_point(serialize_to_array_start:RpcMessage)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // .muduo.net.MessageType type = 1;
+  // .MessageType type = 1;
   if (this->_internal_type() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -335,7 +328,7 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
     target = stream->WriteBytesMaybeAliased(3, _s, target);
   }
 
-  // .muduo.net.ErrorCode error = 4;
+  // .ErrorCode error = 4;
   if (this->_internal_error() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -354,12 +347,12 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:muduo.net.RpcMessage)
+  // @@protoc_insertion_point(serialize_to_array_end:RpcMessage)
   return target;
 }
 
 ::size_t RpcMessage::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:muduo.net.RpcMessage)
+// @@protoc_insertion_point(message_byte_size_start:RpcMessage)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -378,13 +371,13 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
                                     this->_internal_response());
   }
 
-  // .muduo.net.MessageType type = 1;
+  // .MessageType type = 1;
   if (this->_internal_type() != 0) {
     total_size += 1 +
                   ::_pbi::WireFormatLite::EnumSize(this->_internal_type());
   }
 
-  // .muduo.net.ErrorCode error = 4;
+  // .ErrorCode error = 4;
   if (this->_internal_error() != 0) {
     total_size += 1 +
                   ::_pbi::WireFormatLite::EnumSize(this->_internal_error());
@@ -403,7 +396,7 @@ const ::_pbi::TcParseTable<3, 5, 0, 0, 2> RpcMessage::_table_ = {
 void RpcMessage::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<RpcMessage*>(&to_msg);
   auto& from = static_cast<const RpcMessage&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:muduo.net.RpcMessage)
+  // @@protoc_insertion_point(class_specific_merge_from_start:RpcMessage)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -427,7 +420,7 @@ void RpcMessage::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
 }
 
 void RpcMessage::CopyFrom(const RpcMessage& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:muduo.net.RpcMessage)
+// @@protoc_insertion_point(class_specific_copy_from_start:RpcMessage)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -458,8 +451,6 @@ void RpcMessage::InternalSwap(RpcMessage* PROTOBUF_RESTRICT other) {
                                    file_level_metadata_game_5frpc_2eproto[0]);
 }
 // @@protoc_insertion_point(namespace_scope)
-}  // namespace net
-}  // namespace muduo
 namespace google {
 namespace protobuf {
 }  // namespace protobuf

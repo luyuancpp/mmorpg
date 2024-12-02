@@ -13,7 +13,7 @@
 
 #include "muduo/base/Atomic.h"
 #include "muduo/base/Mutex.h"
-#include "muduo/net/protorpc/RpcCodec.h"
+#include "muduo/net/protobuf/ProtobufCodecLite.h"
 
 #include "network/codec/dispatcher.h"
 
@@ -60,6 +60,7 @@
 //  Based on original Protocol Buffers design by
 //  Sanjay Ghemawat, Jeff Dean, and others.
 
+
 namespace google {
     namespace protobuf {
 
@@ -78,10 +79,23 @@ namespace google {
 }  // namespace google
 
 
-namespace muduo
-{
-    namespace net
-    {
+class RpcMessage;
+typedef std::shared_ptr<RpcMessage> RpcMessagePtr;
+constexpr char rpctag[] = "RPC0";
+
+// wire format
+//
+// Field     Length  Content
+//
+// size      4-byte  N+8
+// "RPC0"    4-byte
+// payload   N-byte
+// checksum  4-byte  adler32 of "RPC0"+payload
+//
+
+typedef muduo::net::ProtobufCodecLiteT<RpcMessage, rpctag> RpcCodec;
+
+using muduo::net::TcpConnectionPtr;
 
         // Abstract interface for an RPC channel.  An RpcChannel represents a
         // communication line to a Service which can be used to call that Service's
@@ -92,76 +106,76 @@ namespace muduo
         //   RpcChannel* channel = new MyRpcChannel("remotehost.example.com:1234");
         //   MyService* service = new MyService::Stub(channel);
         //   service->MyMethod(request, &response, callback);
-        class GameChannel 
-        {
-        public:
-            GameChannel();
+class GameChannel
+{
+public:
+    GameChannel();
 
-            explicit GameChannel(const TcpConnectionPtr& conn);
+    explicit GameChannel(const TcpConnectionPtr& conn);
 
-			~GameChannel();
+    ~GameChannel();
 
-            void setConnection(const TcpConnectionPtr& conn)
-            {
-                conn_ = conn;
-            }
+    void setConnection(const TcpConnectionPtr& conn)
+    {
+        conn_ = conn;
+    }
 
-            void setServices(const std::map<std::string, ::google::protobuf::Service*>* services)
-            {
-                services_ = services;
-            }
+    void setServices(const std::map<std::string, ::google::protobuf::Service*>* services)
+    {
+        services_ = services;
+    }
 
-            ProtobufDispatcher& protobufdispatcher() { return dispatcher_; }
+    ProtobufDispatcher& protobufdispatcher() { return dispatcher_; }
 
-            //rpc远程调用，回复rpc 的response
-            void CallMethod(uint32_t message_id, const ::google::protobuf::Message& request);
-            //发送到对应的服务器不回复
-            void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message);
-            //发送对应的串消息,
-            void RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& request);
-            //返回串消息
-            void SendRouteMessageResponse(uint32_t message_id, uint64_t id, const std::string& message_bytes);
+    //rpc远程调用，回复rpc 的response
+    void CallMethod(uint32_t message_id, const ::google::protobuf::Message& request);
+    //发送到对应的服务器不回复
+    void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message);
+    //发送对应的串消息,
+    void RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& request);
+    //返回串消息
+    void SendRouteMessageResponse(uint32_t message_id, uint64_t id, const std::string& message_bytes);
 
-            void onMessage(const TcpConnectionPtr& conn,
-                Buffer* buf,
-                Timestamp receiveTime);
+    void onMessage(const TcpConnectionPtr& conn,
+        muduo::net::Buffer* buf,
+        muduo::Timestamp receiveTime);
 
-            void onUnknownMessage(const TcpConnectionPtr&,
-                const MessagePtr& message,
-                Timestamp);
-        private:
+    void onUnknownMessage(const TcpConnectionPtr&,
+        const MessagePtr& message,
+        muduo::Timestamp);
+private:
 
-            void SendError(const RpcMessage& message, ErrorCode error);
+    void SendError(const RpcMessage& message, ErrorCode error);
 
-            void onRpcMessage(const TcpConnectionPtr& conn,
-                const RpcMessagePtr& messagePtr,
-                Timestamp receiveTime);
+    void onRpcMessage(const TcpConnectionPtr& conn,
+        const RpcMessagePtr& messagePtr,
+        muduo::Timestamp receiveTime);
 
-            void onNormalRequestResponseMessage(const TcpConnectionPtr& conn,
-                const RpcMessage& message,
-                Timestamp receiveTime);
+    void onNormalRequestResponseMessage(const TcpConnectionPtr& conn,
+        const RpcMessage& message,
+        muduo::Timestamp receiveTime);
 
-            void onRouteNodeMessage(const TcpConnectionPtr& conn,
-                const RpcMessage& message,
-                Timestamp receiveTime);
+    void onRouteNodeMessage(const TcpConnectionPtr& conn,
+        const RpcMessage& message,
+        muduo::Timestamp receiveTime);
 
-            void onS2CMessage(const TcpConnectionPtr& conn,
-                const RpcMessage& message,
-                Timestamp receiveTime);
+    void onS2CMessage(const TcpConnectionPtr& conn,
+        const RpcMessage& message,
+        muduo::Timestamp receiveTime);
 
-            void MessageStatistics(const RpcMessage& message);
+    void MessageStatistics(const RpcMessage& message);
 
-            void SendMessage(const RpcMessage& message);
+    void SendMessage(const RpcMessage& message);
 
-            RpcCodec codec_;
-            TcpConnectionPtr conn_;
+    RpcCodec codec_;
+    TcpConnectionPtr conn_;
 
-            const std::map<std::string, ::google::protobuf::Service*>* services_;
-            ProtobufDispatcher dispatcher_;
-        };
-        typedef std::shared_ptr<GameChannel> RpcChannelPtr;
+    const std::map<std::string, ::google::protobuf::Service*>* services_;
+    ProtobufDispatcher dispatcher_;
+};
 
-    }  // namespace net
-}  // namespace muduo
+typedef std::shared_ptr<GameChannel> RpcChannelPtr;
+
+
 
 #endif  // COMMON_SRC_GAME_RPC_GAME_RPC_CHANEL_H_
