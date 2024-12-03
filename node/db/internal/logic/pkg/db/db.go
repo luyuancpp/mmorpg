@@ -98,13 +98,19 @@ func InitDB(conf config.DBConf) {
 	initDBConsume()
 }
 
-func createDBTable() {
-	tables := []proto.Message{
+// 返回一个包含多个 Protobuf 消息实例的切片
+func getTables() []proto.Message {
+	// 创建并返回 Protobuf 消息的切片
+	return []proto.Message{
 		&game.UserAccounts{},
 		&game.AccountShareDatabase{},
 		&game.PlayerCentreDatabase{},
 		&game.PlayerDatabase{},
 	}
+}
+
+func createDBTable() {
+	tables := getTables()
 
 	for _, table := range tables {
 		DB.PBDB.AddMysqlTable(table)
@@ -118,12 +124,7 @@ func createDBTable() {
 }
 
 func alterDBTable() {
-	tables := []proto.Message{
-		&game.UserAccounts{},
-		&game.AccountShareDatabase{},
-		&game.PlayerCentreDatabase{},
-		&game.PlayerDatabase{},
-	}
+	tables := getTables()
 
 	for _, table := range tables {
 		DB.PBDB.UpdateTableField(table)
