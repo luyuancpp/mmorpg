@@ -229,7 +229,7 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
     }
 
     MessagePtr request(service->GetRequestPrototype(method).New());
-    if (!request->ParsePartialFromArray(rpcMessage.request().data(), static_cast<int32_t>(rpcMessage.response().size()))) {
+    if (!request->ParsePartialFromArray(rpcMessage.request().data(), static_cast<int32_t>(rpcMessage.request().size()))) {
         LOG_ERROR << "Failed to parse request for message ID: " << rpcMessage.message_id();
         SendErrorResponse(rpcMessage, GameErrorCode::INVALID_REQUEST);
         return;
