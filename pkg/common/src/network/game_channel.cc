@@ -1,8 +1,6 @@
 ﻿#include "game_channel.h"
-
 #include <boost/get_pointer.hpp>
 #include <google/protobuf/descriptor.h>
-
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
 #include "network/message_statistics.h"
@@ -12,15 +10,17 @@
 
 using namespace std::placeholders;
 
-void HandleUnknownProtobufMessage(const TcpConnectionPtr&,
-    const MessagePtr& message,
-    muduo::Timestamp){
-    LOG_ERROR << "onUnknownMessage: " << message->GetTypeName();
+// ====================== 全局变量 ======================
+
+// 处理未知的 Protobuf 消息
+void HandleUnknownProtobufMessage(const TcpConnectionPtr&, const MessagePtr& message, muduo::Timestamp) {
+    LOG_ERROR << "Unknown Protobuf message received: " << message->GetTypeName();
 }
 
-// Global dispatcher for unknown protobuf messages
-ProtobufDispatcher gResponseDispatcher(
-    std::bind(&HandleUnknownProtobufMessage, _1, _2, _3));
+// 全局响应分发器
+ProtobufDispatcher gResponseDispatcher(std::bind(&HandleUnknownProtobufMessage, _1, _2, _3));
+
+// ====================== GameChannel 类实现 ======================
 
 GameChannel::GameChannel()
     : codec_(std::bind(&GameChannel::HandleRpcMessage, this, _1, _2, _3)),
@@ -41,28 +41,75 @@ GameChannel::~GameChannel() {
     LOG_DEBUG << "GameChannel destroyed: " << this;
 }
 
-bool GameChannel::IsValidMessageId(const uint32_t messageId) {
+// ====================== 私有方法 ======================
+
+// 验证消息 ID 的合法性
+bool GameChannel::IsValidMessageId(uint32_t messageId) const {
     if (messageId >= gMessageInfo.size()) {
-        LOG_ERROR << "Invalid message ID: " << messageId
-            << " (out of range, valid range: 0 to " << gMessageInfo.size() - 1 << ")";
+        LOG_ERROR << "Invalid message ID: " << messageId << " (valid range: 0 to " << gMessageInfo.size() - 1 << ")";
         return false;
     }
-
     const auto& [serviceName, methodName, request, response, serviceImplInstance] = gMessageInfo[messageId];
-    if (nullptr == serviceImplInstance) {
-        LOG_ERROR << "Service implementation instance is null for message ID: " << messageId;
+    if (!serviceImplInstance) {
+        LOG_ERROR << "No service instance for message ID: " << messageId;
         return false;
     }
-
-    auto& service = serviceImplInstance;
-    const auto desc = service->GetDescriptor();
-    if (const auto method = desc->FindMethodByName(methodName); nullptr == method) {
+    if (!serviceImplInstance->GetDescriptor()->FindMethodByName(methodName)) {
         LOG_ERROR << "Method '" << methodName << "' not found for message ID: " << messageId;
         return false;
     }
-
     return true;
 }
+
+// 序列化消息
+bool GameChannel::SerializeMessage(const ProtobufMessage& message, std::string* output) const {
+    output->resize(message.ByteSizeLong());
+    return message.SerializePartialToArray(output->data(), static_cast<int32_t>(output->size()));
+}
+
+// 构造并发送消息
+void GameChannel::SendRpcRequestMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content) {
+    if (!IsValidMessageId(messageId)) return;
+
+    GameRpcMessage rpcMessage;
+    rpcMessage.set_type(type);
+    rpcMessage.set_message_id(messageId);
+
+    if (content && !SerializeMessage(*content, rpcMessage.mutable_request())) {
+        LOG_ERROR << "Failed to serialize message for ID: " << messageId;
+        return;
+    }
+
+    codec_.send(connection_, rpcMessage);
+    LogMessageStatistics(rpcMessage);
+}
+
+void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content)
+{
+    if (!IsValidMessageId(messageId)) return;
+
+    GameRpcMessage rpcMessage;
+    rpcMessage.set_type(type);
+    rpcMessage.set_message_id(messageId);
+
+    if (content && !SerializeMessage(*content, rpcMessage.mutable_response())) {
+        LOG_ERROR << "Failed to serialize message for ID: " << messageId;
+        return;
+    }
+
+    codec_.send(connection_, rpcMessage);
+    LogMessageStatistics(rpcMessage);
+}
+
+// 记录消息统计信息
+void GameChannel::LogMessageStatistics(const GameRpcMessage& message) const {
+    if (gFeatureSwitches[kTestMessageStatistics]) {
+        auto& statistic = g_message_statistics[message.message_id()];
+        statistic.set_count(statistic.count() + 1);
+    }
+}
+
+// ====================== 公共方法 ======================
 
 void GameChannel::CallRemoteMethod(const uint32_t messageId, const ProtobufMessage& request) {
     if (!IsValidMessageId(messageId)) {
@@ -80,64 +127,36 @@ void GameChannel::CallRemoteMethod(const uint32_t messageId, const ProtobufMessa
     }
 
     LOG_DEBUG << "Sending remote method call, message ID: " << messageId;
-    SendProtobufMessage(rpcMessage);
+    SendGameRpcMessage(rpcMessage);
 }
 
-void GameChannel::SendRequest(const uint32_t messageId, const ProtobufMessage& request) {
-    if (!IsValidMessageId(messageId)) {
-        LOG_ERROR << "Invalid message ID for request: " << messageId;
-        return;
-    }
-
-    GameRpcMessage rpcMessage;
-    rpcMessage.set_type(GameMessageType::REQUEST);
-    rpcMessage.set_message_id(messageId);
-
-    if (!SerializeMessage(request, rpcMessage.mutable_request())) {
-        LOG_ERROR << "Failed to serialize request for message ID: " << messageId;
-        return;
-    }
-
-    LOG_DEBUG << "Sending request, message ID: " << messageId;
-    SendProtobufMessage(rpcMessage);
+// 发送请求消息
+void GameChannel::SendRequest(uint32_t messageId, const ProtobufMessage& request) {
+    SendRpcRequestMessage(GameMessageType::REQUEST, messageId, &request);
 }
 
+// 路由消息到节点
 void GameChannel::RouteMessageToNode(uint32_t messageId, const ProtobufMessage& request) {
-    if (!IsValidMessageId(messageId)) {
-        LOG_ERROR << "Invalid message ID for node routing: " << messageId;
-        return;
-    }
-
-    GameRpcMessage rpcMessage;
-    rpcMessage.set_type(GameMessageType::NODE_ROUTE);
-    rpcMessage.set_message_id(messageId);
-
-    if (!SerializeMessage(request, rpcMessage.mutable_request())) {
-        LOG_ERROR << "Failed to serialize request for node routing, message ID: " << messageId;
-        return;
-    }
-
-    LOG_DEBUG << "Routing message to node, message ID: " << messageId;
-    SendProtobufMessage(rpcMessage);
+    SendRpcRequestMessage(GameMessageType::NODE_ROUTE, messageId, &request);
 }
 
+// 处理接收的消息
 void GameChannel::HandleIncomingMessage(const TcpConnectionPtr& connection, muduo::net::Buffer* buffer, muduo::Timestamp receiveTime) {
-    LOG_DEBUG << "Handling incoming message from connection: " << connection->getTcpInfoString();
+    LOG_DEBUG << "Incoming message from connection: " << connection->getTcpInfoString();
     codec_.onMessage(connection, buffer, receiveTime);
 }
 
+// 处理 RPC 消息
 void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessagePtr& messagePtr, muduo::Timestamp receiveTime) {
     assert(conn == connection_);
-
     const auto& rpcMessage = *messagePtr;
 
-    LOG_DEBUG << "Handling RPC message, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
+    LOG_DEBUG << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
 
     switch (rpcMessage.type()) {
     case GameMessageType::RESPONSE:
         HandleResponseMessage(conn, rpcMessage, receiveTime);
         break;
-
     case GameMessageType::REQUEST:
         HandleRequestMessage(conn, rpcMessage, receiveTime);
         break;
@@ -145,49 +164,32 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessag
     case GameMessageType::RPC_CLIENT_REQUEST:
         HandleClientRequestMessage(conn, rpcMessage, receiveTime);
         break;
-
     case GameMessageType::NODE_ROUTE:
         HandleNodeRouteMessage(conn, rpcMessage, receiveTime);
         break;
-
     case GameMessageType::RPC_ERROR:
-        LOG_WARN << "Received RPC error, message ID: " << rpcMessage.message_id();
+        LOG_WARN << "RPC error received, message ID: " << rpcMessage.message_id();
         break;
-
     default:
-        LOG_ERROR << "Unknown RPC message type received, message ID: " << rpcMessage.message_id();
+        LOG_ERROR << "Unknown RPC message type, message ID: " << rpcMessage.message_id();
         break;
     }
 }
 
+// 处理响应消息
 void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
-    if (!IsValidMessageId(rpcMessage.message_id())) {
-        LOG_ERROR << "Invalid response message ID: " << rpcMessage.message_id();
-        return;
-    }
+    if (!IsValidMessageId(rpcMessage.message_id())) return;
 
     const auto& messageInfo = gMessageInfo[rpcMessage.message_id()];
-    const auto& service = messageInfo.serviceImplInstance;
-    if (!service) {
-        LOG_ERROR << "Service instance not found for message ID: " << rpcMessage.message_id();
-        return;
-    }
+    MessagePtr response(messageInfo.serviceImplInstance->GetResponsePrototype(
+        messageInfo.serviceImplInstance->GetDescriptor()->FindMethodByName(messageInfo.methodName)).New());
 
-    const auto* descriptor = service->GetDescriptor();
-    const auto* method = descriptor->FindMethodByName(messageInfo.methodName);
-
-    if (!method) {
-        LOG_ERROR << "Method '" << messageInfo.methodName << "' not found for message ID: " << rpcMessage.message_id();
-        return;
-    }
-
-    const MessagePtr response(service->GetResponsePrototype(method).New());
     if (!response->ParsePartialFromArray(rpcMessage.response().data(), static_cast<int32_t>(rpcMessage.response().size()))) {
         LOG_ERROR << "Failed to parse response for message ID: " << rpcMessage.message_id();
         return;
     }
 
-    LOG_DEBUG << "Dispatched response for message ID: " << rpcMessage.message_id();
+    LOG_DEBUG << "Dispatching response for message ID: " << rpcMessage.message_id();
     gResponseDispatcher.onProtobufMessage(conn, response, receiveTime);
 }
 
@@ -205,32 +207,26 @@ void GameChannel::HandleNodeRouteMessage(const TcpConnectionPtr& conn, const Gam
 
 void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
     if (!IsValidMessageId(rpcMessage.message_id())) {
-        LOG_ERROR << "Invalid message ID for processing: " << rpcMessage.message_id();
+        SendErrorResponse(rpcMessage, GameErrorCode::INVALID_REQUEST);
         return;
     }
 
     const auto& messageInfo = gMessageInfo[rpcMessage.message_id()];
     auto it = services_->find(messageInfo.serviceName);
-
     if (it == services_->end()) {
-        LOG_ERROR << "Service not found for message ID: " << rpcMessage.message_id();
         SendErrorResponse(rpcMessage, GameErrorCode::NO_SERVICE);
         return;
     }
 
     auto* service = it->second;
-    const auto* descriptor = service->GetDescriptor();
-    const auto* method = descriptor->FindMethodByName(messageInfo.methodName);
-
+    const auto* method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
     if (!method) {
-        LOG_ERROR << "Method '" << messageInfo.methodName << "' not found for message ID: " << rpcMessage.message_id();
         SendErrorResponse(rpcMessage, GameErrorCode::NO_METHOD);
         return;
     }
 
     MessagePtr request(service->GetRequestPrototype(method).New());
     if (!request->ParsePartialFromArray(rpcMessage.request().data(), static_cast<int32_t>(rpcMessage.request().size()))) {
-        LOG_ERROR << "Failed to parse request for message ID: " << rpcMessage.message_id();
         SendErrorResponse(rpcMessage, GameErrorCode::INVALID_REQUEST);
         return;
     }
@@ -241,38 +237,19 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
     if (Empty::GetDescriptor() == response->GetDescriptor()) {
         return;
     }
-
     if (response->ByteSizeLong() > 0) {
-        GameRpcMessage rpcResponse;
-        rpcResponse.set_type(GameMessageType::RESPONSE);
-        rpcResponse.set_message_id(rpcMessage.message_id());
-
-        if (SerializeMessage(*response, rpcResponse.mutable_response())) {
-            LOG_DEBUG << "Sending response for message ID: " << rpcMessage.message_id();
-            SendProtobufMessage(rpcResponse);
-        }
-        else {
-            LOG_ERROR << "Failed to serialize response for message ID: " << rpcMessage.message_id();
-        }
+        SendRpcResponseMessage(GameMessageType::RESPONSE, rpcMessage.message_id(), response.get());
     }
 }
 
-bool GameChannel::SerializeMessage(const ProtobufMessage& message, std::string* output) {
-    output->resize(message.ByteSizeLong());
-    return message.SerializePartialToArray(output->data(), static_cast<int32_t>(output->size()));
-}
-
-void GameChannel::SendErrorResponse(const GameRpcMessage& message, const GameErrorCode errorCode) {
+// 发送错误响应
+void GameChannel::SendErrorResponse(const GameRpcMessage& message, GameErrorCode errorCode) {
     GameRpcMessage errorResponse;
     errorResponse.set_type(GameMessageType::RPC_ERROR);
     errorResponse.set_error(errorCode);
     errorResponse.set_message_id(message.message_id());
-
-    LOG_ERROR << "Sending error response for message ID: " << message.message_id()
-        << ", error code: " << errorCode;
-    SendProtobufMessage(errorResponse);
+    SendGameRpcMessage(errorResponse);
 }
-
 
 void GameChannel::SendRouteResponse(uint32_t messageId, uint64_t id, const std::string& body) {
     // 检查 messageId 的合法性
@@ -288,9 +265,10 @@ void GameChannel::SendRouteResponse(uint32_t messageId, uint64_t id, const std::
     response.set_response(body);               // 设置响应内容
 
     // 发送响应消息
-    SendProtobufMessage(response);
+    SendGameRpcMessage(response);
 }
-void GameChannel::SendProtobufMessage(const GameRpcMessage& message) {
+
+void GameChannel::SendGameRpcMessage(const GameRpcMessage& message) {
     // 使用 codec_ 发送消息
     codec_.send(connection_, message);
 
@@ -298,9 +276,3 @@ void GameChannel::SendProtobufMessage(const GameRpcMessage& message) {
     LogMessageStatistics(message);
 }
 
-void GameChannel::LogMessageStatistics(const GameRpcMessage& message) {
-    if (gFeatureSwitches[kTestMessageStatistics]) {
-        auto& statistic = g_message_statistics[message.message_id()];
-        statistic.set_count(statistic.count() + 1);
-    }
-}
