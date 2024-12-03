@@ -29,9 +29,9 @@ GameChannel::GameChannel()
     LOG_DEBUG << "GameChannel created: " << this;
 }
 
-GameChannel::GameChannel(const TcpConnectionPtr& conn)
+GameChannel::GameChannel(const TcpConnectionPtr& connection)
     : codec_(std::bind(&GameChannel::HandleRpcMessage, this, _1, _2, _3)),
-    connection_(conn),
+    connection_(connection),
     services_(nullptr),
     dispatcher_(std::bind(&HandleUnknownProtobufMessage, _1, _2, _3)) {
     LOG_DEBUG << "GameChannel created with connection: " << this;
@@ -41,31 +41,30 @@ GameChannel::~GameChannel() {
     LOG_DEBUG << "GameChannel destroyed: " << this;
 }
 
-bool GameChannel::IsValidMessageId(uint32_t messageId) {
+bool GameChannel::IsValidMessageId(const uint32_t messageId) {
     if (messageId >= gMessageInfo.size()) {
         LOG_ERROR << "Invalid message ID: " << messageId
             << " (out of range, valid range: 0 to " << gMessageInfo.size() - 1 << ")";
         return false;
     }
 
-    auto& message_info = gMessageInfo[messageId];
-    if (nullptr == message_info.serviceImplInstance) {
+    const auto& [serviceName, methodName, request, response, serviceImplInstance] = gMessageInfo[messageId];
+    if (nullptr == serviceImplInstance) {
         LOG_ERROR << "Service implementation instance is null for message ID: " << messageId;
         return false;
     }
 
-    auto& service = message_info.serviceImplInstance;
-    const auto& desc = service->GetDescriptor();
-    const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.methodName);
-    if (nullptr == method) {
-        LOG_ERROR << "Method '" << message_info.methodName << "' not found for message ID: " << messageId;
+    auto& service = serviceImplInstance;
+    const auto desc = service->GetDescriptor();
+    if (const auto method = desc->FindMethodByName(methodName); nullptr == method) {
+        LOG_ERROR << "Method '" << methodName << "' not found for message ID: " << messageId;
         return false;
     }
 
     return true;
 }
 
-void GameChannel::CallRemoteMethod(uint32_t messageId, const ProtobufMessage& request) {
+void GameChannel::CallRemoteMethod(const uint32_t messageId, const ProtobufMessage& request) {
     if (!IsValidMessageId(messageId)) {
         LOG_ERROR << "Failed to validate message ID for remote method call: " << messageId;
         return;
@@ -84,7 +83,7 @@ void GameChannel::CallRemoteMethod(uint32_t messageId, const ProtobufMessage& re
     SendProtobufMessage(rpcMessage);
 }
 
-void GameChannel::SendRequest(uint32_t messageId, const ProtobufMessage& request) {
+void GameChannel::SendRequest(const uint32_t messageId, const ProtobufMessage& request) {
     if (!IsValidMessageId(messageId)) {
         LOG_ERROR << "Invalid message ID for request: " << messageId;
         return;
@@ -183,7 +182,7 @@ void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const Game
     }
 
     const MessagePtr response(service->GetResponsePrototype(method).New());
-    if (!response->ParsePartialFromArray(rpcMessage.response().data(), rpcMessage.response().size())) {
+    if (!response->ParsePartialFromArray(rpcMessage.response().data(), static_cast<int32_t>(rpcMessage.response().size()))) {
         LOG_ERROR << "Failed to parse response for message ID: " << rpcMessage.message_id();
         return;
     }
@@ -192,12 +191,12 @@ void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const Game
     gResponseDispatcher.onProtobufMessage(conn, response, receiveTime);
 }
 
-void GameChannel::HandleRequestMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
-    ProcessMessage(conn, rpcMessage, receiveTime);
+void GameChannel::HandleRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
+    ProcessMessage(connection, rpcMessage, receiveTime);
 }
 
-void GameChannel::HandleClientRequestMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
-    ProcessMessage(conn, rpcMessage, receiveTime);
+void GameChannel::HandleClientRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
+    ProcessMessage(connection, rpcMessage, receiveTime);
 }
 
 void GameChannel::HandleNodeRouteMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
@@ -230,7 +229,7 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
     }
 
     MessagePtr request(service->GetRequestPrototype(method).New());
-    if (!request->ParsePartialFromArray(rpcMessage.request().data(), rpcMessage.request().size())) {
+    if (!request->ParsePartialFromArray(rpcMessage.request().data(), static_cast<int32_t>(rpcMessage.response().size()))) {
         LOG_ERROR << "Failed to parse request for message ID: " << rpcMessage.message_id();
         SendErrorResponse(rpcMessage, GameErrorCode::INVALID_REQUEST);
         return;
@@ -260,16 +259,16 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
 
 bool GameChannel::SerializeMessage(const ProtobufMessage& message, std::string* output) {
     output->resize(message.ByteSizeLong());
-    return message.SerializePartialToArray(output->data(), output->size());
+    return message.SerializePartialToArray(output->data(), static_cast<int32_t>(output->size()));
 }
 
-void GameChannel::SendErrorResponse(const GameRpcMessage& rpcMessage, GameErrorCode errorCode) {
+void GameChannel::SendErrorResponse(const GameRpcMessage& message, const GameErrorCode errorCode) {
     GameRpcMessage errorResponse;
     errorResponse.set_type(GameMessageType::RPC_ERROR);
     errorResponse.set_error(errorCode);
-    errorResponse.set_message_id(rpcMessage.message_id());
+    errorResponse.set_message_id(message.message_id());
 
-    LOG_ERROR << "Sending error response for message ID: " << rpcMessage.message_id()
+    LOG_ERROR << "Sending error response for message ID: " << message.message_id()
         << ", error code: " << errorCode;
     SendProtobufMessage(errorResponse);
 }
