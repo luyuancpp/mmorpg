@@ -463,6 +463,8 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
+	//todo empty 
+
 	response->mutable_head()->set_session_id(request->head().session_id());
 	const int32_t byte_size = player_response->ByteSizeLong();
 	response->mutable_body()->mutable_body()->resize(byte_size);
