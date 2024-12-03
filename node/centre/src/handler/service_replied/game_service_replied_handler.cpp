@@ -81,7 +81,7 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 	const auto  player_id    = it->second.player_id();
 	const auto& message_info = gMessageInfo.at(replied->body().message_id() );
 	const auto  player = tlsCommonLogic.GetPlayer(player_id);
-	if (tls.registry.valid(player))
+	if (!tls.registry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
 			<< replied->body().message_id();
