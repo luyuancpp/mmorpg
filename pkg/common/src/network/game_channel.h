@@ -43,7 +43,7 @@ public:
     // 设置服务
     void SetServiceMap(const std::map<std::string, ProtobufService*>* services) { services_ = services; }
 
-    bool IsValidMessageId(uint32_t messageId);
+    static bool IsValidMessageId(uint32_t messageId);
 
     // 获取 Protobuf 分发器
     ProtobufDispatcher& GetDispatcher() { return dispatcher_; }
@@ -78,10 +78,10 @@ private:
 
     void ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime);
 
-    bool SerializeMessage(const ProtobufMessage& message, std::string* output);
+    static bool SerializeMessage(const ProtobufMessage& message, std::string* output);
 
     // 统计消息处理次数
-    void LogMessageStatistics(const GameRpcMessage& message);
+    static void LogMessageStatistics(const GameRpcMessage& message);
 
     // 发送 Protobuf 消息
     void SendProtobufMessage(const GameRpcMessage& message);
