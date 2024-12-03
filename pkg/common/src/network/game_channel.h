@@ -43,6 +43,8 @@ public:
     // 设置服务
     void SetServiceMap(const std::map<std::string, ProtobufService*>* services) { services_ = services; }
 
+    bool IsValidMessageId(uint32_t messageId);
+
     // 获取 Protobuf 分发器
     ProtobufDispatcher& GetDispatcher() { return dispatcher_; }
 
