@@ -228,6 +228,10 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
         MessagePtr response(service->GetResponsePrototype(method).New());
         service->CallMethod(method, nullptr, boost::get_pointer(request), boost::get_pointer(response), nullptr);
 
+        if (Empty::GetDescriptor() == response->GetDescriptor()) {
+            return;
+        }
+
         if (response->ByteSizeLong() > 0) {
             GameRpcMessage rpcResponse;
             rpcResponse.set_type(GameMessageType::RESPONSE);
