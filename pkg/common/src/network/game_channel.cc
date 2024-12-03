@@ -183,18 +183,18 @@ void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const Game
 }
 
 void GameChannel::HandleRequestMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
-    ProcessMessage(conn, rpcMessage, true, receiveTime);
+    ProcessMessage(conn, rpcMessage, receiveTime);
 }
 
 void GameChannel::HandleClientRequestMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
-    ProcessMessage(conn, rpcMessage, false, receiveTime);
+    ProcessMessage(conn, rpcMessage, receiveTime);
 }
 
 void GameChannel::HandleNodeRouteMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
     // Add routing logic here
 }
 
-void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, bool expectResponse, muduo::Timestamp receiveTime) {
+void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {
     if (!IsValidMessageId(rpcMessage.message_id())) {
         LOG_ERROR << "Invalid message ID: " << rpcMessage.message_id();
         return;
@@ -224,30 +224,26 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMess
         return;
     }
 
-    if (expectResponse) {
-        MessagePtr response(service->GetResponsePrototype(method).New());
-        service->CallMethod(method, nullptr, boost::get_pointer(request), boost::get_pointer(response), nullptr);
+    MessagePtr response(service->GetResponsePrototype(method).New());
+    service->CallMethod(method, nullptr, boost::get_pointer(request), boost::get_pointer(response), nullptr);
 
-        if (Empty::GetDescriptor() == response->GetDescriptor()) {
-            return;
+    if (Empty::GetDescriptor() == response->GetDescriptor()) {
+        return;
+    }
+
+    if (response->ByteSizeLong() > 0) {
+        GameRpcMessage rpcResponse;
+        rpcResponse.set_type(GameMessageType::RESPONSE);
+        rpcResponse.set_message_id(rpcMessage.message_id());
+
+        if (SerializeMessage(*response, rpcResponse.mutable_response())) {
+            SendProtobufMessage(rpcResponse);
         }
-
-        if (response->ByteSizeLong() > 0) {
-            GameRpcMessage rpcResponse;
-            rpcResponse.set_type(GameMessageType::RESPONSE);
-            rpcResponse.set_message_id(rpcMessage.message_id());
-
-            if (SerializeMessage(*response, rpcResponse.mutable_response())) {
-                SendProtobufMessage(rpcResponse);
-            }
-            else {
-                LOG_ERROR << "Failed to serialize response.";
-            }
+        else {
+            LOG_ERROR << "Failed to serialize response.";
         }
     }
-    else {
-        service->CallMethod(method, nullptr, boost::get_pointer(request), nullptr, nullptr);
-    }
+
 }
 
 bool GameChannel::SerializeMessage(const ProtobufMessage& message, std::string* output) {

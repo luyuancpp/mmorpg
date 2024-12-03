@@ -74,7 +74,7 @@ private:
     void HandleNodeRouteMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
     void HandleClientRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
 
-    void ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, bool expectResponse, muduo::Timestamp receiveTime);
+    void ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime);
 
     bool SerializeMessage(const ProtobufMessage& message, std::string* output);
 
