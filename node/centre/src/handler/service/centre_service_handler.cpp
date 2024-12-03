@@ -452,10 +452,10 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	const MessagePtr player_response(service->GetResponsePrototype(method).New());
+	const MessagePtr playerResponse(service->GetResponsePrototype(method).New());
 
 	// Call method on player service handler
-	service_handler->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
+	service_handler->CallMethod(method, player, get_pointer(player_request), get_pointer(playerResponse));
 
 	// If response is nullptr, no need to send a reply
 	if (!response)
@@ -463,14 +463,14 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	if (Empty::GetDescriptor() == player_response->GetDescriptor()) {
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
 		return;
 	}
 
 	response->mutable_head()->set_session_id(request->head().session_id());
-	const int32_t byte_size = player_response->ByteSizeLong();
+	const int32_t byte_size = playerResponse->ByteSizeLong();
 	response->mutable_body()->mutable_body()->resize(byte_size);
-	if (!player_response->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
+	if (!playerResponse->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
 	{
 		LOG_ERROR << "Failed to serialize response for message ID: " << request->body().message_id();
 		// TODO: Handle message serialization error
