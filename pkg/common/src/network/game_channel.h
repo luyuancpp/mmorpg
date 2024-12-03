@@ -43,7 +43,7 @@ public:
     // 设置服务
     void SetServiceMap(const std::map<std::string, ProtobufService*>* services) { services_ = services; }
 
-    static bool IsValidMessageId(uint32_t messageId);
+    bool IsValidMessageId(uint32_t messageId) const;
 
     // 获取 Protobuf 分发器
     ProtobufDispatcher& GetDispatcher() { return dispatcher_; }
@@ -76,15 +76,18 @@ private:
     void HandleNodeRouteMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
     void HandleClientRequestMessage(const TcpConnectionPtr& connection, const GameRpcMessage& message, muduo::Timestamp receiveTime);
 
+    void SendRpcRequestMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content);
+    void SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content);
+
     void ProcessMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime);
 
-    static bool SerializeMessage(const ProtobufMessage& message, std::string* output);
+    bool SerializeMessage(const ProtobufMessage& message, std::string* output) const;
 
     // 统计消息处理次数
-    static void LogMessageStatistics(const GameRpcMessage& message);
+    void LogMessageStatistics(const GameRpcMessage& message) const;
 
     // 发送 Protobuf 消息
-    void SendProtobufMessage(const GameRpcMessage& message);
+    void SendGameRpcMessage(const GameRpcMessage& message);
 
     // 成员变量
     RpcCodec codec_;  // 消息编解码器
