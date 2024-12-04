@@ -184,7 +184,7 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
         auto& current_addr = conn->peerAddress();
         for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
         {
-            if (session.conn_->peerAddress().toIpPort() != current_addr.toIpPort())
+            if (session.connection->peerAddress().toIpPort() != current_addr.toIpPort())
             {
                 continue;
             }
@@ -192,7 +192,7 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
             for (const auto& [gate_e, gate_node] : tls.gateNodeRegistry.view<RpcSessionPtr>().each())
             {
                 if (nullptr != gate_node &&
-                    gate_node->conn_->peerAddress().toIpPort() == current_addr.toIpPort())
+                    gate_node->connection->peerAddress().toIpPort() == current_addr.toIpPort())
                 {
                     Destroy(tls.gateNodeRegistry, gate_e);
                     break;
