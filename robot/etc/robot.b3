@@ -373,7 +373,7 @@
             "title": "SleepNode(<Duration>)",
             "description": "",
             "properties": {
-              "Duration": 3000
+              "Duration": 1000
             },
             "display": {
               "x": 348,
@@ -645,5 +645,5 @@
     ],
     "custom_folders": []
   },
-  "path": "D:\\game\\luyuan\\turn-based-game\\robot\\etc\\robot.b3"
+  "path": "F:\\work\\turn-based-game\\robot\\etc\\robot.b3"
 }
