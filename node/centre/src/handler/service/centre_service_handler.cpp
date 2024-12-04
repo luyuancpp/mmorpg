@@ -88,7 +88,7 @@ void CentreServiceHandler::RegisterGameNode(::google::protobuf::RpcController* c
 	bool clientFound = false;
 	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
 	{
-		if (session.conn_->peerAddress().toIpPort() == clientAddr.toIpPort())
+		if (session.connection->peerAddress().toIpPort() == clientAddr.toIpPort())
 		{
 			LOG_INFO << "Found matching client connection for registration.";
 			clientFound = true;
@@ -101,7 +101,7 @@ void CentreServiceHandler::RegisterGameNode(::google::protobuf::RpcController* c
 			}
 
 			// Create game node pointer and add components
-			auto gameNodePtr = std::make_shared<RpcSessionPtr::element_type>(session.conn_);
+			auto gameNodePtr = std::make_shared<RpcSessionPtr::element_type>(session.connection);
 			AddMainSceneNodeComponent(tls.gameNodeRegistry, newGameNode);
 			tls.gameNodeRegistry.emplace<RpcSessionPtr>(newGameNode, gameNodePtr);
 			tls.gameNodeRegistry.emplace<InetAddress>(newGameNode, serverAddr);
@@ -161,7 +161,7 @@ void CentreServiceHandler::RegisterGateNode(::google::protobuf::RpcController* c
 	bool foundMatchingClient = false;
 	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
 	{
-		if (session.conn_->peerAddress().toIpPort() == clientAddress.toIpPort())
+		if (session.connection->peerAddress().toIpPort() == clientAddress.toIpPort())
 		{
 			// Found matching client connection, create gate node
 			const auto createdGateId = tls.gateNodeRegistry.create(gateId);
@@ -173,7 +173,7 @@ void CentreServiceHandler::RegisterGateNode(::google::protobuf::RpcController* c
 
 			// Register gate node and associate with client session
 			tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateId,
-				std::make_shared<RpcSessionPtr::element_type>(session.conn_));
+				std::make_shared<RpcSessionPtr::element_type>(session.connection));
 			LOG_INFO << "Gate registered: " << MessageToJsonString(request);
 			foundMatchingClient = true;
 			break;

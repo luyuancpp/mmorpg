@@ -6,53 +6,53 @@
 
 struct RpcSession
 {
-    RpcSession(const muduo::net::TcpConnectionPtr& conn)
-        : conn_(conn),
-            channel_(boost::any_cast<GameChannelPtr>(conn->getContext())){}
+	explicit RpcSession(const muduo::net::TcpConnectionPtr& conn)
+        : connection(conn),
+            channel(boost::any_cast<GameChannelPtr>(conn->getContext())){}
 
-    bool Connected() const { return conn_->connected(); }
+    auto Connected() const -> bool;
 
-	void CallRemoteMethod(uint32_t message_id, const ::google::protobuf::Message& request) const
+    void CallRemoteMethod(const uint32_t message_id, const ::google::protobuf::Message& request) const
 	{
 		if (!Connected())
 		{
 			return;
 		}
-		channel_->CallRemoteMethod(message_id, request);
+		channel->CallRemoteMethod(message_id, request);
 	}
 
-    void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message) const
+    void SendRequest(const uint32_t message_id, const ::google::protobuf::Message& message) const
     {
 		if (!Connected())
 		{
 			return;
 		}
-        channel_->SendRequest(message_id, message);
+        channel->SendRequest(message_id, message);
     }
 
-    void RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& message) const
+    void RouteMessageToNode(const uint32_t message_id, const ::google::protobuf::Message& message) const
     {
 		if (!Connected())
 		{
 			return;
 		}
-		channel_->RouteMessageToNode(message_id, message);
+		channel->RouteMessageToNode(message_id, message);
     }
 
-    void SendRouteResponse(uint32_t message_id,
-                           uint64_t id,
+    void SendRouteResponse(const uint32_t message_id,
+                           const uint64_t id,
                            const std::string& message_bytes) const
     {
         if (!Connected())
         {
             return;
         }
-        channel_->SendRouteResponse(message_id, id, message_bytes);
+        channel->SendRouteResponse(message_id, id, message_bytes);
     }
 
-    muduo::net::TcpConnectionPtr conn_;
+    muduo::net::TcpConnectionPtr connection;
 private:
-    GameChannelPtr channel_;
+    GameChannelPtr channel;
 };
 
 template<typename ServerInfo>
