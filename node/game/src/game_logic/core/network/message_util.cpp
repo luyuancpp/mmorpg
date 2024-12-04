@@ -111,7 +111,7 @@ void SendToCentre(const uint32_t messageId, const google::protobuf::Message& mes
 	(*centreNode)->SendRequest(messageId, message);
 }
 
-void SendToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
+void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {
 	entt::entity gateNodeId{ GetGateNodeId(nodeId) };
 	if (!tls.gateNodeRegistry.valid(gateNodeId))

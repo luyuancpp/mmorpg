@@ -22,7 +22,7 @@ void SendToCentre(const uint32_t messageId, const google::protobuf::Message& mes
 {
 }
 
-void SendToGateById(uint32_t messageId, const google::protobuf::Message& messag, NodeId node_id)
+void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& messag, NodeId node_id)
 {
 }
 

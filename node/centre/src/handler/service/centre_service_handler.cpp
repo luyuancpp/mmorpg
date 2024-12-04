@@ -350,7 +350,7 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 			KickSessionRequest message;
 			message.set_session_id(sessionId);
-			SendToGateById(GateServiceKickSessionByCentreMessageId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
+			SendMessageToGateById(GateServiceKickSessionByCentreMessageId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
 
 			playerNodeInfo->set_gate_session_id(sessionId);
 		}

@@ -11,7 +11,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid player_id);
 void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 void SendToCentre(uint32_t messageId,  const google::protobuf::Message& messag, NodeId centre_node_id);
-void SendToGateById(uint32_t messageId, const google::protobuf::Message& messag, NodeId gate_node_id);
+void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& messag, NodeId gate_node_id);
 
 void CallCentreNodeMethod(uint32_t messageId, const google::protobuf::Message& message, NodeId node_id);
 
