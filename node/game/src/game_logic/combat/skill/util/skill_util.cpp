@@ -21,6 +21,7 @@
 #include "proto/logic/component/npc_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "service_info/player_skill_service_info.h"
+#include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "time/comp/timer_task_comp.h"
@@ -144,21 +145,20 @@ uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 	return  skillPermissionTable->skilltype(skillTypeIndex);
 }
 
-uint32_t GetEntityState(const entt::entity casterEntity){
-	return 0;
-}
 
 uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
-	// Retrieve the current state of the caster entity
-	const auto currentState = GetEntityState(casterEntity);  // Replace with actual state retrieval logic
 
-	// Check each skill in the skill table
-	for (const auto& skillType : skillTable->skill_type()) {
-		const auto skill = static_cast<eSkillType>(skillType);  
-		const auto result = canUseSkillInCurrentState(currentState, skill);
-		if (result != kSuccess) {
-			return result;  // Return error code if any skill can't be used
-		}
+	auto& combatStateCollection = tls.registry.get<CombatStateCollectionPbComponent>(casterEntity);
+
+	for (auto& [currentState, buffList] : combatStateCollection.states())
+	{
+        for (const auto& skillType : skillTable->skill_type()) {
+            const auto skill = static_cast<eSkillType>(skillType);
+            const auto result = canUseSkillInCurrentState(currentState, skill);
+            if (result != kSuccess) {
+                return result;  // Return error code if any skill can't be used
+            }
+        }
 	}
 
 	return kSuccess;  // All skills can be used in the current state
