@@ -2,6 +2,7 @@
 #include <cstdint>
 
 enum eActorCombatState : uint32_t {
+    kActorCombatStateNone,
     kActorCombatStateSilence,
     kActorMaxCombatStateType,
 };
