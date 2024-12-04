@@ -2,13 +2,14 @@
 
 #include <chrono>
 #include "cooldown_config.h"
+#include "time_util.h"
 #include "logic/component/time_comp.pb.h"
 
 class CoolDownTimeMillisecondUtil {
 public:
 	// 返回剩余时间（毫秒）
 	inline static  uint64_t Remaining(const CooldownTimeComp& cooldownTimeComp) {
-		uint64_t currentMilliseconds = GetCurrentTimeInMilliseconds();
+		uint64_t currentMilliseconds = NowMilliseconds();
 		uint64_t elapsed = (currentMilliseconds > cooldownTimeComp.start())
 			? currentMilliseconds - cooldownTimeComp.start()
 			: 0;
@@ -28,7 +29,7 @@ public:
 
 	// 检查当前时间是否在开始时间之前
 	inline static  bool IsBeforeStart(const CooldownTimeComp& cooldownTimeComp) {
-		return GetCurrentTimeInMilliseconds() < cooldownTimeComp.start();
+		return NowMilliseconds() < cooldownTimeComp.start();
 	}
 
 	// 检查冷却时间是否未开始（即是否在开始时间之前）
@@ -38,7 +39,7 @@ public:
 
 	// 重置冷却时间
 	inline static  void Reset(CooldownTimeComp& cooldownTimeComp) {
-		cooldownTimeComp.set_start(GetCurrentTimeInMilliseconds());
+		cooldownTimeComp.set_start(NowMilliseconds());
 	}
 
 	// 获取冷却时间的持续时间（毫秒）
@@ -59,10 +60,8 @@ public:
 	}
 
 	// 获取当前时间（以毫秒为单位）
-	inline static uint64_t GetCurrentTimeInMilliseconds() {
-		return std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::high_resolution_clock::now().time_since_epoch()
-		).count();
+	inline static uint64_t NowMilliseconds() {
+		return TimeUtil::NowMilliseconds();
 	}
 
 	inline static bool IsCooldownComplete(const CooldownTimeComp& cooldownTimeComp) {
@@ -74,7 +73,7 @@ public:
 	}
 
 	inline static void ResetCooldown(CooldownTimeComp& cooldownTimeComp) {
-		SetStartTime(cooldownTimeComp, GetCurrentTimeInMilliseconds());
+		SetStartTime(cooldownTimeComp, NowMilliseconds());
 	}
 };
 
