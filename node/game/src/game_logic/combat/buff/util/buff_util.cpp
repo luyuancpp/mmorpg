@@ -88,6 +88,7 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
 
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
     newBuff.buffPb.set_buff_id(newBuffId);
+    newBuff.buffPb.set_buff_table_id(buffTableId);
     newBuff.skillContext = abilityContext;
     newBuff.dataPbPtr = CreateBuffDataPtr(buffTable);
 
