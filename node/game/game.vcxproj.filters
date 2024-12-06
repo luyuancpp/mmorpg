@@ -506,5 +506,8 @@
     <ClInclude Include="src\game_logic\entity\util\entity_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\game_logic\actor\combat_state\util\combat_state_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -166,7 +166,7 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
-	RETURN_ON_ERROR(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
+	RETURN_ON_ERROR(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill, kActorStateCombat));
 	RETURN_ON_ERROR(CombatStateUtil::ValidateSkillUsage(casterEntity, kActorActionUseSkill));
 	return kSuccess;
 }
@@ -301,7 +301,7 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	FetchAndValidateSkillTable(request->skill_table_id());
 
 	// 检查目标ID的有效性
-	if (!skillTable->target_type().empty() && request->target_id() <= 0) {
+	if (!skillTable->targeting_mode().empty() && request->target_id() <= 0) {
 		LOG_ERROR << "Invalid target ID: " << request->target_id()
 			<< " provided for skill ID: " << request->skill_table_id()
 			<< ". Target ID must be positive if target type is specified.";
@@ -312,7 +312,7 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	uint32_t err = kSuccess;
 
 	// 遍历技能目标类型
-	for (auto& tabSkillType : skillTable->target_type()) {
+	for (auto& tabSkillType : skillTable->targeting_mode()) {
 		// 检查不需要目标的情况
 		if ((1 << tabSkillType) == kNoTargetRequired) {
 			return kSuccess;  // 无需进一步检查
