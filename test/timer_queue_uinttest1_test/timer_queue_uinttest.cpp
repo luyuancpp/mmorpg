@@ -1,8 +1,3 @@
-
-
-
-
-
 #include <gtest/gtest.h>
 
 #include <iostream>
@@ -11,8 +6,7 @@
 #include <muduo/net/EventLoop.h>
 #include <muduo/net/EventLoopThread.h>
 
-#include "../testdef.h"
-#include "GameTimer.h"
+#include "time/comp/timer_task_comp.h"
 
 
 #include <stdio.h>
@@ -57,17 +51,17 @@ public:
 
 	void RunAfter()
 	{
-		m_Timer.runAfter(0.1, std::bind(&GameTimerTest::AfterCallBack, this));
+		m_Timer.RunAfter(0.1, std::bind(&GameTimerTest::AfterCallBack, this));
 	}
 
 	void RunEvery()
 	{
-		m_Timer.runEvery(0.1, std::bind(&GameTimerTest::RunEveryCallBack, this));
+		m_Timer.RunEvery(0.1, std::bind(&GameTimerTest::RunEveryCallBack, this));
 	}
 
     void RunAt(const Timestamp& time)
     {
-        m_Timer.runAt(time, std::bind(&GameTimerTest::RunAtCallBack, this));
+        m_Timer.RunAt(time, std::bind(&GameTimerTest::RunAtCallBack, this));
     }
 
 
@@ -92,8 +86,8 @@ private:
         
     }
 private:
-	BaseModule::GameTimer m_Timer;
-    BaseModule::GameTimer m_Timer1;
+	TimerTaskComp m_Timer;
+    TimerTaskComp m_Timer1;
 };
 
 class RecursionTimerTest
@@ -102,7 +96,7 @@ public:
 
     void RunAt(const Timestamp& time)
     {
-        m_Timer.runAt(time, std::bind(&RecursionTimerTest::RunAtCallBack, this));
+        m_Timer.RunAt(time, std::bind(&RecursionTimerTest::RunAtCallBack, this));
     }
 
 private:
@@ -113,7 +107,7 @@ private:
         RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
     }
 private:
-    BaseModule::GameTimer m_Timer;
+    TimerTaskComp m_Timer;
 };
 
 typedef std::shared_ptr<GameTimerTest> t_p;
@@ -127,9 +121,9 @@ public:
 
     void Init()
     {
-        m_PrepareEndTimer.runAfter(1, std::bind(&DungeonTimerTest::PrePare, this));
-        m_ConclusionTimer.runAfter(1, std::bind(&DungeonTimerTest::DungeonFinish, this));
-        m_DurationTimer.runAfter(3, std::bind(&DungeonTimerTest::ForceRetreatScene, this));
+        m_PrepareEndTimer.RunAfter(1, std::bind(&DungeonTimerTest::PrePare, this));
+        m_ConclusionTimer.RunAfter(1, std::bind(&DungeonTimerTest::DungeonFinish, this));
+        m_DurationTimer.RunAfter(3, std::bind(&DungeonTimerTest::ForceRetreatScene, this));
 
         std::cout << "init" << &m_PrepareEndTimer << " "
             << &m_ConclusionTimer << " "
@@ -143,7 +137,7 @@ public:
 
     void DungeonFinish()
     {
-        m_DurationTimer.runAfter(1, std::bind(&DungeonTimerTest::ForceRetreatScene, this));
+        m_DurationTimer.RunAfter(1, std::bind(&DungeonTimerTest::ForceRetreatScene, this));
     }
 
     void ForceRetreatScene()
@@ -151,9 +145,9 @@ public:
         std::cout << "ForceRetreatScene" << this << std::endl;
     }
 
-    BaseModule::GameTimer m_PrepareEndTimer;
-    BaseModule::GameTimer m_ConclusionTimer;
-    BaseModule::GameTimer m_DurationTimer;
+    TimerTaskComp m_PrepareEndTimer;
+    TimerTaskComp m_ConclusionTimer;
+    TimerTaskComp m_DurationTimer;
    
 };
 
@@ -162,7 +156,6 @@ TEST(main, TimerQueueUnitTest)
 	printTid();
     EventLoop loop;
     g_loop = &loop;
-    BaseModule::SetThreadLocalStorageLoop(&loop);
     while (true)
     {
         {

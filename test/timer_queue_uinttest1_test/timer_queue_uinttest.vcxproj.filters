@@ -21,30 +21,6 @@
     <ClCompile Include="timer_queue_uinttest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\servers\Common\muduo\base\CrossPlatformAdapterFunction.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\servers\Common\muduo\base\CurrentThread.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\servers\Common\muduo\base\Timestamp.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\servers\Common\muduo\net\EventLoop.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\servers\Common\muduo\net\EventLoopThread.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\servers\Common\muduo\net\Timer.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\servers\Common\muduo\net\TimerQueue.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\servers\Common\Game\GameTimer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\Atomic.h">
@@ -76,9 +52,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\CrossPlatformAdapterFunction.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\servers\Common\Game\GameTimer.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
