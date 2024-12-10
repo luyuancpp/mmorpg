@@ -18,8 +18,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="timer_destroy_test.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C2A2823F-AF91-4D56-961F-C3A1ED827897}</ProjectGuid>
+    <ProjectGuid>{C4F55277-1E23-4614-B88D-FDBF09CB86FD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>timer_queue_uinttest</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
@@ -89,7 +92,9 @@
       <AdditionalIncludeDirectories>../../pkg/common/src/;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../;../../pkg/pbc/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/logic/src/;../../pkg/pbc/src/;../../node/centre/src/;../../pkg/config/src/;../../pkg/config/src/pbc/;../../pkg/pbc/src/proto/;../../third_party/muduo/contrib/windows/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile />
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,7 +114,9 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,24 +161,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="timer_queue_uinttest.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\Atomic.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\copyable.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\CrossPlatformAdapterFunction.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\CurrentThread.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\Timestamp.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\Callbacks.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\EventLoop.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\Timer.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\TimerId.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\TimerQueue.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
