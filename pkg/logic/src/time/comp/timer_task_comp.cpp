@@ -5,6 +5,10 @@
 
 #define tlsEventLoop EventLoop::getEventLoopOfCurrentThread()
 
+TimerTaskComp::TimerTaskComp() {
+    Cancel();
+}
+
 TimerTaskComp::~TimerTaskComp() {
     Cancel();
 }
