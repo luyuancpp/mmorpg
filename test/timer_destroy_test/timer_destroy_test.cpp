@@ -21,10 +21,10 @@ using namespace muduo;
 using namespace muduo::net;
 
 
-//本次时间到了会取出时间到了的队列，队员1在队员3(timer唯一id3)前面，在队员1执行回调过程中，设置了队员3的新的时间回调（timer 唯一id6 ）,
-// 但是到了队员3执行回调的时候把他自己的新的id 重置（timer 唯一id无效 ），
-// 所以之后如果队员3的生命周期比timer唯一id6的生命周期短，队员3销毁了，
-// 但是被队员1设置timer（ 唯一id6)未取消，因为他被队员3时间到的时候被置换成无效了，所以再去调用队员3造成野引用
+//对象1执行timer回调， 对象1设置对象2的timer的新的时间回调,
+//对象2执行回调时候把自己的timer再重置(或者取消),
+//对象2销毁,
+//对象1设置的对象2的回调未取消
 
 //队员1执行回调， 设置队员3的新的时间回调,
 //队员3执行回调时候把自己的timer再重置(或者取消),
@@ -126,6 +126,58 @@ typedef std::shared_ptr<GameTimerTest> t_p;
 typedef std::unordered_map<int32_t, t_p> t_list;
 
 
+class TestCoreDump {
+public:
+
+    ~TestCoreDump() {
+        std::cout << "TestCoreDump destroy ." << std::endl;
+    }
+
+    void TestTimer() {
+        timer.RunAfter(0.1, [this]() {
+            Add();
+            });
+    }
+
+    void Add() {
+        std::cout << "TestCoreDump : new callback executed." << std::endl;
+        data_.push_back(1);
+    }
+
+    std::vector<int32_t> data_;
+
+    TimerTaskComp timer;
+};
+
+void TestScenario() {
+    TimerTaskComp obj1 ;
+    TimerTaskComp obj2;
+    TimerTaskComp obj3;
+
+    {
+        {
+            obj1.RunEvery(1.0, [&obj2]() {
+
+                TestCoreDump obj3;
+
+                // 对象1设置对象2的定时器
+                obj2.RunEvery(1.0, [&obj3]() {
+                    {
+                        std::cout << "Callback from obj2 executed." << std::endl;
+                        obj3.timer.RunEvery(0.1, [&obj3]() {
+                            obj3.TestTimer();
+                            });
+                    }
+                    });
+
+                });
+        }
+    }
+  
+    g_loop->loop();
+
+}
+
 class DungeonTimerTest
 {
 public:
@@ -173,6 +225,10 @@ TEST(main, TimerQueueUnitTest)
     g_loop = &loop;
     while (true)
     {
+        TestScenario();
+
+        continue;
+
         {
             std::cout << " DungeonTimerTest " << std::endl;
             DungeonTimerTest t;
