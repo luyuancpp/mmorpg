@@ -41,7 +41,7 @@ void AsyncCompleteGrpcLoginC2L(CompletionQueue& cq)
     }
     else
     {
-        LOG_ERROR << "RPC failed";
+        LOG_ERROR << call->status.error_message();
     }
 }
 
