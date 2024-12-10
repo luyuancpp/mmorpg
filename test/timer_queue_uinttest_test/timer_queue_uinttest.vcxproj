@@ -162,18 +162,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\Atomic.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\copyable.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\CrossPlatformAdapterFunction.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\CurrentThread.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\Timestamp.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\Callbacks.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\EventLoop.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\Timer.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\TimerId.h" />
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\TimerQueue.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="timer_queue_uinttest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

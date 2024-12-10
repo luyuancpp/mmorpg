@@ -18,38 +18,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\Atomic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\Callbacks.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\copyable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\CurrentThread.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\EventLoop.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\Timer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\TimerId.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\net\TimerQueue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\Timestamp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\game\ice_server\trunk\servers\Common\muduo\base\CrossPlatformAdapterFunction.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="timer_queue_uinttest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
