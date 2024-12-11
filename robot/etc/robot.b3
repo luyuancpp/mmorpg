@@ -123,8 +123,21 @@
             },
             "children": [
               "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe",
-              "bcd2c3f9-74f7-4574-87bf-e930b92563eb"
+              "bcd2c3f9-74f7-4574-87bf-e930b92563eb",
+              "518c9bb6-17d2-4f0e-8c9b-6abe76be9b2e"
             ]
+          },
+          "518c9bb6-17d2-4f0e-8c9b-6abe76be9b2e": {
+            "id": "518c9bb6-17d2-4f0e-8c9b-6abe76be9b2e",
+            "name": "ResetTestCount",
+            "category": "action",
+            "title": "ResetTestCount()",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 108,
+              "y": 0
+            }
           }
         },
         "display": {
@@ -198,7 +211,7 @@
             "title": "CheckTestCount(<count>)",
             "description": "",
             "properties": {
-              "count": 0
+              "count": 2
             },
             "display": {
               "x": 324,
@@ -224,7 +237,7 @@
             "title": "CheckTestCount(<count>)",
             "description": "",
             "properties": {
-              "count": 0
+              "count": 2
             },
             "display": {
               "x": 432,
@@ -287,7 +300,7 @@
         "id": "3961d49d-3426-410b-bc92-6fe8f3b1dee2",
         "title": "Battle",
         "description": "",
-        "root": "0a1fe30a-3fc1-43f2-8e26-fce15fae767c",
+        "root": "35a1d9cd-bcef-4663-88ad-444b129c8d4b",
         "properties": {},
         "nodes": {
           "0a1fe30a-3fc1-43f2-8e26-fce15fae767c": {
@@ -303,11 +316,11 @@
             },
             "children": [
               "2035daba-5c13-44d6-8a43-6a656e64e55e",
+              "c12c15a0-cf36-4989-89c5-22bf4ce4a48c",
               "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
               "b0a180ad-cf77-4557-a901-8dd32c8d00b2",
               "c9f9df90-9850-488c-8849-4a34d4ed8259",
-              "7d65533d-959b-4e43-b195-7ce3ae4cfbcc",
-              "0a77f22e-efd3-45ca-8f47-43c7b2e06f95"
+              "7d65533d-959b-4e43-b195-7ce3ae4cfbcc"
             ]
           },
           "2035daba-5c13-44d6-8a43-6a656e64e55e": {
@@ -317,23 +330,11 @@
             "title": "CheckTestCount(<count>)",
             "description": "",
             "properties": {
-              "count": 100000000
+              "count": 2
             },
             "display": {
-              "x": 384,
+              "x": 372,
               "y": -180
-            }
-          },
-          "0a77f22e-efd3-45ca-8f47-43c7b2e06f95": {
-            "id": "0a77f22e-efd3-45ca-8f47-43c7b2e06f95",
-            "name": "IncrementTestCount",
-            "category": "action",
-            "title": "IncrementTestCount()",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 360,
-              "y": 228
             }
           },
           "b8a8446b-0d0d-433b-ba87-26ae75d4b12b": {
@@ -346,8 +347,8 @@
               "TargetIDBoard": "HatredTarget"
             },
             "display": {
-              "x": 396,
-              "y": -84
+              "x": 456,
+              "y": -48
             }
           },
           "b0a180ad-cf77-4557-a901-8dd32c8d00b2": {
@@ -363,7 +364,7 @@
             },
             "display": {
               "x": 384,
-              "y": -12
+              "y": 36
             }
           },
           "7d65533d-959b-4e43-b195-7ce3ae4cfbcc": {
@@ -376,8 +377,8 @@
               "Duration": 2000
             },
             "display": {
-              "x": 348,
-              "y": 144
+              "x": 396,
+              "y": 180
             }
           },
           "c9f9df90-9850-488c-8849-4a34d4ed8259": {
@@ -390,8 +391,119 @@
               "SkillIDBoard": "SkillID"
             },
             "display": {
-              "x": 360,
-              "y": 60
+              "x": 384,
+              "y": 120
+            }
+          },
+          "f690190b-c589-454c-84fe-28e85f66705d": {
+            "id": "f690190b-c589-454c-84fe-28e85f66705d",
+            "name": "SetSubTree",
+            "category": "action",
+            "title": "SetSubTree(<treeTitle>)",
+            "description": "",
+            "properties": {
+              "treeTitle": "Scene"
+            },
+            "display": {
+              "x": 396,
+              "y": 372
+            }
+          },
+          "35a1d9cd-bcef-4663-88ad-444b129c8d4b": {
+            "id": "35a1d9cd-bcef-4663-88ad-444b129c8d4b",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -60,
+              "y": 72
+            },
+            "children": [
+              "0a1fe30a-3fc1-43f2-8e26-fce15fae767c",
+              "7c9b8ccf-31c9-49ff-809f-d12c92880242"
+            ]
+          },
+          "d2045f1d-a8f6-42e5-bfde-1f7b20f75995": {
+            "id": "d2045f1d-a8f6-42e5-bfde-1f7b20f75995",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -588,
+              "y": 12
+            },
+            "children": []
+          },
+          "7c9b8ccf-31c9-49ff-809f-d12c92880242": {
+            "id": "7c9b8ccf-31c9-49ff-809f-d12c92880242",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 132,
+              "y": 300
+            },
+            "children": [
+              "f4f132c8-6e1b-48a9-b002-c99f58b47d64",
+              "f690190b-c589-454c-84fe-28e85f66705d",
+              "b0625124-7263-4e4e-9350-79a714fe9ded"
+            ]
+          },
+          "b0625124-7263-4e4e-9350-79a714fe9ded": {
+            "id": "b0625124-7263-4e4e-9350-79a714fe9ded",
+            "name": "ResetTestCount",
+            "category": "action",
+            "title": "ResetTestCount()",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 396,
+              "y": 456
+            }
+          },
+          "ece9a4c6-82cb-465c-8c79-55c323a7c7ef": {
+            "id": "ece9a4c6-82cb-465c-8c79-55c323a7c7ef",
+            "name": "CheckTestCount",
+            "category": "condition",
+            "title": "CheckTestCount(<count>)",
+            "description": "",
+            "properties": {
+              "count": 2
+            },
+            "display": {
+              "x": 540,
+              "y": 276
+            }
+          },
+          "f4f132c8-6e1b-48a9-b002-c99f58b47d64": {
+            "id": "f4f132c8-6e1b-48a9-b002-c99f58b47d64",
+            "name": "Inverter",
+            "category": "decorator",
+            "title": "Inverter",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 312,
+              "y": 276
+            },
+            "child": "ece9a4c6-82cb-465c-8c79-55c323a7c7ef"
+          },
+          "c12c15a0-cf36-4989-89c5-22bf4ce4a48c": {
+            "id": "c12c15a0-cf36-4989-89c5-22bf4ce4a48c",
+            "name": "IncrementTestCount",
+            "category": "action",
+            "title": "IncrementTestCount()",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 432,
+              "y": -108
             }
           }
         },
@@ -399,8 +511,8 @@
           "camera_x": 739,
           "camera_y": 381,
           "camera_z": 1,
-          "x": 0,
-          "y": 0
+          "x": -168,
+          "y": 12
         }
       }
     ],
@@ -640,6 +752,16 @@
         "properties": {
           "SkillIDBoard": "SkillID"
         },
+        "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "ResetTestCount",
+        "category": "action",
+        "title": "ResetTestCount()",
+        "description": null,
+        "properties": {},
         "parent": null
       }
     ],

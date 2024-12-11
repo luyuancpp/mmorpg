@@ -53,6 +53,5 @@ func (s *GetTargetDistance) Initialize(setting *BTNodeCfg) {
 }
 
 func (s *GetTargetDistance) OnTick(tick *Tick) b3.Status {
-
 	return b3.SUCCESS
 }

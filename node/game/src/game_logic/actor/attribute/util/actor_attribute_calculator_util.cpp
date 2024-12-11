@@ -20,6 +20,7 @@ void ActorAttributeCalculatorUtil::InitializeActorComponents(entt::entity entity
 
 // 更新速度属性
 void UpdateVelocity(entt::entity entity) {
+    return;
     auto& velocity =  tls.registry.get<Velocity>(entity);
     velocity.Clear();
     
