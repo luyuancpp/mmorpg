@@ -179,16 +179,12 @@ void TestScenario() {
     auto fn = [ &entity]() {
         std::cout << "TestCoreDump : new callback executed." << std::endl;
 
-        //tls.registry.destroy(entity);
+        tls.registry.emplace_or_replace<CastingTimerCompTest>(entity);
 
-        //entity = tls.registry.create();
-
-        auto& t = tls.registry.emplace_or_replace<CastingTimerCompTest>(entity);
+        tls.registry.destroy(entity);
     };
 
     t.timer.RunEvery(0.1, fn);
-
-    //tls.registry.destroy(entity);
 
     g_loop->loop();
 

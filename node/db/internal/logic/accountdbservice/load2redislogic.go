@@ -8,6 +8,7 @@ import (
 	"db/pb/game"
 	"google.golang.org/protobuf/proto"
 	"hash/fnv"
+	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -63,6 +64,6 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAcc
 		return nil, err
 	}
 
-	l.svcCtx.Redis.Set(l.ctx, key, data, 0)
+	l.svcCtx.Redis.Set(l.ctx, key, data, time.Duration(12*time.Hour))
 	return resp, nil
 }
