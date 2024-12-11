@@ -210,6 +210,11 @@ void SkillUtil::HandleSkillInitialize() {
 }
 
 void SkillUtil::HandleGeneralSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
+    if (!tls.registry.valid(casterEntity))
+    {
+        return;
+    }
+
 	HandleSkillSpell(casterEntity, skillId);
 
 	LOG_INFO << "Handling general skill spell. Caster: " << entt::to_integral(casterEntity)
@@ -237,7 +242,10 @@ void SkillUtil::HandleSkillRecovery(const entt::entity casterEntity, uint64_t sk
 }
 
 void SkillUtil::HandleSkillFinish(const entt::entity casterEntity, uint64_t skillId) {
-	// Implementation here
+    if (!tls.registry.valid(casterEntity))
+    {
+        return;
+    }
 
 	// todo player off line 
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(casterEntity);
@@ -253,6 +261,11 @@ void SkillUtil::HandleSkillFinish(const entt::entity casterEntity, uint64_t skil
 }
 
 void SkillUtil::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t skillId) {
+    if (!tls.registry.valid(casterEntity))
+    {
+        return;
+    }
+
 	FetchSkillTableOrReturnVoid(skillId);
 
 	LOG_INFO << "Handling channel skill spell. Caster: " << entt::to_integral(casterEntity)
@@ -277,6 +290,11 @@ void SkillUtil::HandleChannelThink(entt::entity casterEntity, uint64_t skillId) 
 }
 
 void SkillUtil::HandleChannelFinish(const entt::entity casterEntity, const uint64_t skillId) {
+    if (!tls.registry.valid(casterEntity))
+    {
+        return;
+    }
+
 	tls.registry.remove<ChannelIntervalTimerComp>(casterEntity);
 	HandleSkillRecovery(casterEntity, skillId);
 }
@@ -555,6 +573,11 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
 
     // 获取目标的 BaseAttributesPbComponent 用于判断是否死亡
     auto targetEntity = entt::to_entity(damageEvent.target());
+
+	if (!tls.registry.valid(targetEntity))
+	{
+		return;
+	}
 
     // 如果目标已经死亡，停止进一步处理
     if (IsTargetDead(targetEntity)) {
