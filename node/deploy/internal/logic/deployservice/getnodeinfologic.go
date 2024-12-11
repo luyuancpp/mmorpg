@@ -57,8 +57,6 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 		setKeyName = constants.LoginNodeSetKeyName
 	} else if game.ENodeType(in.GetNodeType()) == game.ENodeType_kGateNode {
 		setKeyName = constants.GateNodeSetKeyName
-		response.NodeId = 1
-		return response, nil
 	}
 	if setKeyName != "" {
 		count, _ := l.svcCtx.Redis.ZCard(l.ctx, setKeyName).Result()
@@ -70,9 +68,9 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 			return response, err
 		}
 		response.NodeId = nodeId
+
+		return response, nil
 	}
-	if response.NodeId > 2 {
-		response.NodeId = 2
-	}
+
 	return response, nil
 }

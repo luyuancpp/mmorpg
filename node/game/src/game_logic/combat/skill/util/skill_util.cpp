@@ -691,6 +691,11 @@ void SkillUtil::HandleSkillSpell(const entt::entity casterEntity, const uint64_t
 	const auto& skillContext = skillContextIt->second;
 
 	const entt::entity targetEntity = entt::to_entity(skillContext->target());
+
+	if (!tls.registry.valid(targetEntity))
+	{
+		return;
+	}
     
 	DamageEventPbComponent damageEvent;
 	damageEvent.set_skill_id(skillId);
