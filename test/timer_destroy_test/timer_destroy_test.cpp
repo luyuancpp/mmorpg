@@ -7,7 +7,7 @@
 #include <muduo/net/EventLoopThread.h>
 
 #include "time/comp/timer_task_comp.h"
-
+#include "thread_local/storage.h"
 
 #include <stdio.h>
 #include <thread>
@@ -129,8 +129,10 @@ typedef std::unordered_map<int32_t, t_p> t_list;
 class TestCoreDump {
 public:
 
+    TestCoreDump() { id = i++;  std::cout << "TestCoreCrate" << id << std::endl; }
+
     ~TestCoreDump() {
-        std::cout << "TestCoreDump destroy ." << std::endl;
+        std::cout << "TestCoreDump destroy ." << id << std::endl;
     }
 
     void TestTimer() {
@@ -147,10 +149,53 @@ public:
     std::vector<int32_t> data_;
 
     TimerTaskComp timer;
+    int32_t id{ 0 };
+
+    static int32_t i;
 };
 
+int32_t TestCoreDump::i = 0;
+
+
+struct CastingTimerCompTest
+{
+    TimerTaskComp timer;
+
+    void Add() {
+        std::cout << "TestCoreDump : new callback executed." << std::endl;
+        data_.push_back(1);
+    }
+
+    std::vector<int32_t> data_;
+};
+
+
 void TestScenario() {
-    TimerTaskComp obj1 ;
+    
+    auto entity = tls.registry.create();
+
+    auto& t = tls.registry.emplace<CastingTimerCompTest>(entity);
+
+    auto fn = [ &entity]() {
+        std::cout << "TestCoreDump : new callback executed." << std::endl;
+
+        //tls.registry.destroy(entity);
+
+        //entity = tls.registry.create();
+
+        auto& t = tls.registry.emplace_or_replace<CastingTimerCompTest>(entity);
+    };
+
+    t.timer.RunEvery(0.1, fn);
+
+    //tls.registry.destroy(entity);
+
+    g_loop->loop();
+
+}
+
+void TestScenario1() {
+    TimerTaskComp obj1;
     TimerTaskComp obj2;
     TimerTaskComp obj3;
 
@@ -160,10 +205,11 @@ void TestScenario() {
 
                 TestCoreDump obj3;
 
+
                 // 对象1设置对象2的定时器
                 obj2.RunEvery(1.0, [&obj3]() {
                     {
-                        std::cout << "Callback from obj2 executed." << std::endl;
+                        std::cout << "Callback from obj2 executed." << obj3.id << std::endl;
                         obj3.timer.RunEvery(0.1, [&obj3]() {
                             obj3.TestTimer();
                             });
@@ -173,7 +219,7 @@ void TestScenario() {
                 });
         }
     }
-  
+
     g_loop->loop();
 
 }
