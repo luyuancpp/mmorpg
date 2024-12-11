@@ -154,7 +154,7 @@
         "id": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
         "title": "Scene",
         "description": "",
-        "root": "e2809542-d25c-4213-bdf9-022ea5d4e5e7",
+        "root": "9d8f4d0c-ae86-4909-a731-00301eb17b16",
         "properties": {},
         "nodes": {
           "9d8f4d0c-ae86-4909-a731-00301eb17b16": {
@@ -169,25 +169,8 @@
               "y": -132
             },
             "children": [
-              "5ecfb339-b7b9-466c-88a5-edd121cd0030",
               "cde68fdc-daae-4ccc-ba87-749f3947eda3",
-              "5d069eed-bceb-4403-8cba-6d866d0c31cb"
-            ]
-          },
-          "e2809542-d25c-4213-bdf9-022ea5d4e5e7": {
-            "id": "e2809542-d25c-4213-bdf9-022ea5d4e5e7",
-            "name": "Priority",
-            "category": "composite",
-            "title": "Priority",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": -96,
-              "y": -84
-            },
-            "children": [
-              "9d8f4d0c-ae86-4909-a731-00301eb17b16",
-              "af2e99b2-220b-4a34-88ef-d116c2d9e15c"
+              "d9837df3-b98b-4c0f-8109-4cb51db7b057"
             ]
           },
           "d9837df3-b98b-4c0f-8109-4cb51db7b057": {
@@ -203,75 +186,6 @@
               "x": 336,
               "y": 72
             }
-          },
-          "5ecfb339-b7b9-466c-88a5-edd121cd0030": {
-            "id": "5ecfb339-b7b9-466c-88a5-edd121cd0030",
-            "name": "CheckTestCount",
-            "category": "condition",
-            "title": "CheckTestCount(<count>)",
-            "description": "",
-            "properties": {
-              "count": 2
-            },
-            "display": {
-              "x": 324,
-              "y": -300
-            }
-          },
-          "5d069eed-bceb-4403-8cba-6d866d0c31cb": {
-            "id": "5d069eed-bceb-4403-8cba-6d866d0c31cb",
-            "name": "IncrementTestCount",
-            "category": "action",
-            "title": "IncrementTestCount()",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 324,
-              "y": -108
-            }
-          },
-          "d46976a5-3d40-4ece-8ce7-dd97d0a8c343": {
-            "id": "d46976a5-3d40-4ece-8ce7-dd97d0a8c343",
-            "name": "CheckTestCount",
-            "category": "condition",
-            "title": "CheckTestCount(<count>)",
-            "description": "",
-            "properties": {
-              "count": 2
-            },
-            "display": {
-              "x": 432,
-              "y": -36
-            }
-          },
-          "af2e99b2-220b-4a34-88ef-d116c2d9e15c": {
-            "id": "af2e99b2-220b-4a34-88ef-d116c2d9e15c",
-            "name": "Sequence",
-            "category": "composite",
-            "title": "Sequence",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 60,
-              "y": -36
-            },
-            "children": [
-              "b4715eb9-0856-481e-8759-d93d4303cfa9",
-              "d9837df3-b98b-4c0f-8109-4cb51db7b057"
-            ]
-          },
-          "b4715eb9-0856-481e-8759-d93d4303cfa9": {
-            "id": "b4715eb9-0856-481e-8759-d93d4303cfa9",
-            "name": "Inverter",
-            "category": "decorator",
-            "title": "Inverter",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 192,
-              "y": -48
-            },
-            "child": "d46976a5-3d40-4ece-8ce7-dd97d0a8c343"
           },
           "cde68fdc-daae-4ccc-ba87-749f3947eda3": {
             "id": "cde68fdc-daae-4ccc-ba87-749f3947eda3",
@@ -300,7 +214,7 @@
         "id": "3961d49d-3426-410b-bc92-6fe8f3b1dee2",
         "title": "Battle",
         "description": "",
-        "root": "35a1d9cd-bcef-4663-88ad-444b129c8d4b",
+        "root": "50b6b3a1-bb2e-4d6c-8d72-7bd87c3c2479",
         "properties": {},
         "nodes": {
           "0a1fe30a-3fc1-43f2-8e26-fce15fae767c": {
@@ -315,27 +229,11 @@
               "y": 0
             },
             "children": [
-              "2035daba-5c13-44d6-8a43-6a656e64e55e",
-              "c12c15a0-cf36-4989-89c5-22bf4ce4a48c",
               "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
               "b0a180ad-cf77-4557-a901-8dd32c8d00b2",
               "c9f9df90-9850-488c-8849-4a34d4ed8259",
               "7d65533d-959b-4e43-b195-7ce3ae4cfbcc"
             ]
-          },
-          "2035daba-5c13-44d6-8a43-6a656e64e55e": {
-            "id": "2035daba-5c13-44d6-8a43-6a656e64e55e",
-            "name": "CheckTestCount",
-            "category": "condition",
-            "title": "CheckTestCount(<count>)",
-            "description": "",
-            "properties": {
-              "count": 2
-            },
-            "display": {
-              "x": 372,
-              "y": -180
-            }
           },
           "b8a8446b-0d0d-433b-ba87-26ae75d4b12b": {
             "id": "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
@@ -347,8 +245,8 @@
               "TargetIDBoard": "HatredTarget"
             },
             "display": {
-              "x": 456,
-              "y": -48
+              "x": 420,
+              "y": -108
             }
           },
           "b0a180ad-cf77-4557-a901-8dd32c8d00b2": {
@@ -363,8 +261,8 @@
               "SkillIDBoard": "SkillID"
             },
             "display": {
-              "x": 384,
-              "y": 36
+              "x": 408,
+              "y": -48
             }
           },
           "7d65533d-959b-4e43-b195-7ce3ae4cfbcc": {
@@ -377,8 +275,8 @@
               "Duration": 2000
             },
             "display": {
-              "x": 396,
-              "y": 180
+              "x": 372,
+              "y": 72
             }
           },
           "c9f9df90-9850-488c-8849-4a34d4ed8259": {
@@ -391,8 +289,8 @@
               "SkillIDBoard": "SkillID"
             },
             "display": {
-              "x": 384,
-              "y": 120
+              "x": 372,
+              "y": 12
             }
           },
           "f690190b-c589-454c-84fe-28e85f66705d": {
@@ -405,25 +303,9 @@
               "treeTitle": "Scene"
             },
             "display": {
-              "x": 396,
-              "y": 372
+              "x": 408,
+              "y": 216
             }
-          },
-          "35a1d9cd-bcef-4663-88ad-444b129c8d4b": {
-            "id": "35a1d9cd-bcef-4663-88ad-444b129c8d4b",
-            "name": "Priority",
-            "category": "composite",
-            "title": "Priority",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": -60,
-              "y": 72
-            },
-            "children": [
-              "0a1fe30a-3fc1-43f2-8e26-fce15fae767c",
-              "7c9b8ccf-31c9-49ff-809f-d12c92880242"
-            ]
           },
           "d2045f1d-a8f6-42e5-bfde-1f7b20f75995": {
             "id": "d2045f1d-a8f6-42e5-bfde-1f7b20f75995",
@@ -438,73 +320,21 @@
             },
             "children": []
           },
-          "7c9b8ccf-31c9-49ff-809f-d12c92880242": {
-            "id": "7c9b8ccf-31c9-49ff-809f-d12c92880242",
+          "50b6b3a1-bb2e-4d6c-8d72-7bd87c3c2479": {
+            "id": "50b6b3a1-bb2e-4d6c-8d72-7bd87c3c2479",
             "name": "Sequence",
             "category": "composite",
             "title": "Sequence",
             "description": "",
             "properties": {},
             "display": {
-              "x": 132,
-              "y": 300
+              "x": -48,
+              "y": 48
             },
             "children": [
-              "f4f132c8-6e1b-48a9-b002-c99f58b47d64",
-              "f690190b-c589-454c-84fe-28e85f66705d",
-              "b0625124-7263-4e4e-9350-79a714fe9ded"
+              "0a1fe30a-3fc1-43f2-8e26-fce15fae767c",
+              "f690190b-c589-454c-84fe-28e85f66705d"
             ]
-          },
-          "b0625124-7263-4e4e-9350-79a714fe9ded": {
-            "id": "b0625124-7263-4e4e-9350-79a714fe9ded",
-            "name": "ResetTestCount",
-            "category": "action",
-            "title": "ResetTestCount()",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 396,
-              "y": 456
-            }
-          },
-          "ece9a4c6-82cb-465c-8c79-55c323a7c7ef": {
-            "id": "ece9a4c6-82cb-465c-8c79-55c323a7c7ef",
-            "name": "CheckTestCount",
-            "category": "condition",
-            "title": "CheckTestCount(<count>)",
-            "description": "",
-            "properties": {
-              "count": 2
-            },
-            "display": {
-              "x": 540,
-              "y": 276
-            }
-          },
-          "f4f132c8-6e1b-48a9-b002-c99f58b47d64": {
-            "id": "f4f132c8-6e1b-48a9-b002-c99f58b47d64",
-            "name": "Inverter",
-            "category": "decorator",
-            "title": "Inverter",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 312,
-              "y": 276
-            },
-            "child": "ece9a4c6-82cb-465c-8c79-55c323a7c7ef"
-          },
-          "c12c15a0-cf36-4989-89c5-22bf4ce4a48c": {
-            "id": "c12c15a0-cf36-4989-89c5-22bf4ce4a48c",
-            "name": "IncrementTestCount",
-            "category": "action",
-            "title": "IncrementTestCount()",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 432,
-              "y": -108
-            }
           }
         },
         "display": {
