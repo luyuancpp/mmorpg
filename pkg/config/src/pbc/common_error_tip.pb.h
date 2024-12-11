@@ -62,6 +62,7 @@ enum common_error : int {
   kEntityIsNull = 4,
   kInvalidParameter = 5,
   kServerCrashed = 6,
+  kThisEntityIsInvalid = 7,
   common_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   common_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -71,8 +72,8 @@ enum common_error : int {
 bool common_error_IsValid(int value);
 extern const uint32_t common_error_internal_data_[];
 constexpr common_error common_error_MIN = static_cast<common_error>(0);
-constexpr common_error common_error_MAX = static_cast<common_error>(6);
-constexpr int common_error_ARRAYSIZE = 6 + 1;
+constexpr common_error common_error_MAX = static_cast<common_error>(7);
+constexpr int common_error_ARRAYSIZE = 7 + 1;
 const ::google::protobuf::EnumDescriptor*
 common_error_descriptor();
 template <typename T>
@@ -85,7 +86,7 @@ const std::string& common_error_Name(T value) {
 template <>
 inline const std::string& common_error_Name(common_error value) {
   return ::google::protobuf::internal::NameOfDenseEnum<common_error_descriptor,
-                                                 0, 6>(
+                                                 0, 7>(
       static_cast<int>(value));
 }
 inline bool common_error_Parse(absl::string_view name, common_error* value) {

@@ -55,21 +55,21 @@ namespace protobuf {
 
 enum bag_error : int {
   kBag_errorOK = 0,
-  kBagDeleteItemFindGuid = 74,
-  kBagDeleteItemAlreadyHasGuid = 75,
-  kBagAddItemHasNotBaseComponent = 76,
-  kBagAddItemInvalidGuid = 77,
-  kBagAddItemInvalidParam = 78,
-  kBagAddItemBagFull = 79,
-  kBagItemNotStacked = 80,
-  kBagInsufficientItems = 81,
-  kBagDelItemPos = 82,
-  kBagDelItemConfig = 83,
-  kBagDelItemGuid = 84,
-  kBagDelItemFindItem = 85,
-  kBagDelItemSize = 86,
-  kBagItemDeletionSizeMismatch = 87,
-  kBagInsufficientBagSpace = 88,
+  kBagDeleteItemFindGuid = 75,
+  kBagDeleteItemAlreadyHasGuid = 76,
+  kBagAddItemHasNotBaseComponent = 77,
+  kBagAddItemInvalidGuid = 78,
+  kBagAddItemInvalidParam = 79,
+  kBagAddItemBagFull = 80,
+  kBagItemNotStacked = 81,
+  kBagInsufficientItems = 82,
+  kBagDelItemPos = 83,
+  kBagDelItemConfig = 84,
+  kBagDelItemGuid = 85,
+  kBagDelItemFindItem = 86,
+  kBagDelItemSize = 87,
+  kBagItemDeletionSizeMismatch = 88,
+  kBagInsufficientBagSpace = 89,
   bag_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   bag_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -79,8 +79,8 @@ enum bag_error : int {
 bool bag_error_IsValid(int value);
 extern const uint32_t bag_error_internal_data_[];
 constexpr bag_error bag_error_MIN = static_cast<bag_error>(0);
-constexpr bag_error bag_error_MAX = static_cast<bag_error>(88);
-constexpr int bag_error_ARRAYSIZE = 88 + 1;
+constexpr bag_error bag_error_MAX = static_cast<bag_error>(89);
+constexpr int bag_error_ARRAYSIZE = 89 + 1;
 const ::google::protobuf::EnumDescriptor*
 bag_error_descriptor();
 template <typename T>

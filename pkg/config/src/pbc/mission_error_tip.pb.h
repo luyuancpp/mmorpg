@@ -55,13 +55,13 @@ namespace protobuf {
 
 enum mission_error : int {
   kMission_errorOK = 0,
-  kMissionTypeAlreadyExists = 67,
-  kMissionAlreadyCompleted = 68,
-  kMissionIdNotInRewardList = 69,
-  kPlayerMissionComponentNotFound = 70,
-  kMissionIdRepeated = 71,
-  kConditionIdOutOfRange = 72,
-  kMissionNotInProgress = 73,
+  kMissionTypeAlreadyExists = 68,
+  kMissionAlreadyCompleted = 69,
+  kMissionIdNotInRewardList = 70,
+  kPlayerMissionComponentNotFound = 71,
+  kMissionIdRepeated = 72,
+  kConditionIdOutOfRange = 73,
+  kMissionNotInProgress = 74,
   mission_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   mission_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -71,8 +71,8 @@ enum mission_error : int {
 bool mission_error_IsValid(int value);
 extern const uint32_t mission_error_internal_data_[];
 constexpr mission_error mission_error_MIN = static_cast<mission_error>(0);
-constexpr mission_error mission_error_MAX = static_cast<mission_error>(73);
-constexpr int mission_error_ARRAYSIZE = 73 + 1;
+constexpr mission_error mission_error_MAX = static_cast<mission_error>(74);
+constexpr int mission_error_ARRAYSIZE = 74 + 1;
 const ::google::protobuf::EnumDescriptor*
 mission_error_descriptor();
 template <typename T>
