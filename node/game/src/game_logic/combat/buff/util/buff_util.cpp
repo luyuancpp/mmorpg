@@ -62,6 +62,11 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
     const uint32_t buffTableId, 
     const SkillContextPtrComp& abilityContext)
 {
+    if (!tls.registry.valid(parent))
+    {
+        return std::make_tuple(kThisEntityIsInvalid, UINT64_MAX);
+    }
+
     FetchBuffTableOrReturnCustom(buffTableId, (std::make_tuple(fetchResult, UINT64_MAX)));
 
     auto result = CanCreateBuff(parent, buffTableId);
