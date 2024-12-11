@@ -272,7 +272,7 @@
             "title": "SleepNode(<Duration>)",
             "description": "",
             "properties": {
-              "Duration": 2000
+              "Duration": 5000
             },
             "display": {
               "x": 372,
