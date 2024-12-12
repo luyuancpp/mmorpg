@@ -49,15 +49,6 @@ bool GameChannel::IsValidMessageId(uint32_t messageId) const {
         LOG_ERROR << "Invalid message ID: " << messageId << " (valid range: 0 to " << gMessageInfo.size() - 1 << ")";
         return false;
     }
-    const auto& [serviceName, methodName, request, response, serviceImplInstance] = gMessageInfo[messageId];
-    if (!serviceImplInstance) {
-        LOG_ERROR << "No service instance for message ID: " << messageId;
-        return false;
-    }
-    if (!serviceImplInstance->GetDescriptor()->FindMethodByName(methodName)) {
-        LOG_ERROR << "Method '" << methodName << "' not found for message ID: " << messageId;
-        return false;
-    }
     return true;
 }
 
@@ -84,8 +75,7 @@ void GameChannel::SendRpcRequestMessage(GameMessageType type, uint32_t messageId
     LogMessageStatistics(rpcMessage);
 }
 
-void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content)
-{
+void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content){
     if (!IsValidMessageId(messageId)) return;
 
     GameRpcMessage rpcMessage;
