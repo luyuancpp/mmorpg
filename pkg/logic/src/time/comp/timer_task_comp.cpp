@@ -7,28 +7,26 @@
 
 TimerTaskComp::TimerTaskComp() {
     Cancel();
-    callback = TimerCallback();
 }
 
 TimerTaskComp::~TimerTaskComp() {
     Cancel();
-    callback = TimerCallback();
 }
 
 TimerTaskComp::TimerTaskComp(const TimerTaskComp& param) {
     const_cast<TimerTaskComp&>(param).Cancel();
-    callback = TimerCallback();
+    Cancel();
 }
 
 TimerTaskComp::TimerTaskComp(TimerTaskComp&& param) noexcept {
     param.Cancel();
-    callback = TimerCallback();
+    Cancel();
 }
 
 TimerTaskComp& TimerTaskComp::operator=(TimerTaskComp&& param) noexcept
 {
     param.Cancel();
-    callback = TimerCallback();
+    Cancel();
     return *this;
 }
 
@@ -64,6 +62,7 @@ void TimerTaskComp::Cancel() {
     tlsEventLoop->cancel(timerId);
     timerId = TimerId();
     endTime = Timestamp();
+    callback = TimerCallback();
     assert(nullptr == timerId.GetTimer());
 }
 
