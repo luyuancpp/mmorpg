@@ -36,39 +36,24 @@ EventLoop* g_loop;
 
 void printTid()
 {
-	//printf("pid = %d, tid = %d\n", getpid(), CurrentThread::tid());
-	printf("now %s\n", Timestamp::now().toString().c_str());
-}
-
-void print(const char* msg)
-{
-	printf("msg %s %s\n", Timestamp::now().toString().c_str(), msg);
-	if (++cnt == 20)
-	{
-		//g_loop->quit();
-	}
-}
-
-void cancel(TimerId timer)
-{
-	g_loop->cancel(timer);
-	printf("cancelled at %s\n", Timestamp::now().toString().c_str());
+    //printf("pid = %d, tid = %d\n", getpid(), CurrentThread::tid());
+    printf("now %s\n", Timestamp::now().toString().c_str());
 }
 
 
-class GameTimerTest 
+class GameTimerTest
 {
 public:
 
-	void RunAfter()
-	{
-		m_Timer.RunAfter(0.1, std::bind(&GameTimerTest::AfterCallBack, this));
-	}
+    void RunAfter()
+    {
+        m_Timer.RunAfter(0.1, std::bind(&GameTimerTest::AfterCallBack, this));
+    }
 
-	void RunEvery()
-	{
-		m_Timer.RunEvery(0.1, std::bind(&GameTimerTest::RunEveryCallBack, this));
-	}
+    void RunEvery()
+    {
+        m_Timer.RunEvery(0.1, std::bind(&GameTimerTest::RunEveryCallBack, this));
+    }
 
     void RunAt(const Timestamp& time)
     {
@@ -79,25 +64,25 @@ public:
 
 private:
 
-	void AfterCallBack()
-	{
-		std::cout << "AfterCallBack" << this << std::endl;
+    void AfterCallBack()
+    {
+        std::cout << "AfterCallBack" << this << std::endl;
         RunAfter();
-	}
+    }
 
-	void RunEveryCallBack()
-	{
-		std::cout << "runEveryCallBack" << this  << std::endl;
+    void RunEveryCallBack()
+    {
+        std::cout << "runEveryCallBack" << this << std::endl;
         RunEvery();
-	}
+    }
 
     void RunAtCallBack()
     {
         std::cout << "RunAtCallBack" << this << std::endl;
-        
+
     }
 private:
-	TimerTaskComp m_Timer;
+    TimerTaskComp m_Timer;
     TimerTaskComp m_Timer1;
 };
 
@@ -171,18 +156,18 @@ struct CastingTimerCompTest
 
 
 void TestScenario() {
-    
+
     auto entity = tls.registry.create();
 
     auto& t = tls.registry.emplace<CastingTimerCompTest>(entity);
 
-    auto fn = [ &entity]() {
+    auto fn = [&entity]() {
         std::cout << "TestCoreDump : new callback executed." << std::endl;
 
         tls.registry.emplace_or_replace<CastingTimerCompTest>(entity);
 
         tls.registry.destroy(entity);
-    };
+        };
 
     t.timer.RunEvery(0.1, fn);
 
@@ -190,31 +175,36 @@ void TestScenario() {
 
 }
 
+
 void TestScenario1() {
+    TimerTaskComp testObj;
+
+    using DestroyObjType = std::shared_ptr<TestCoreDump>;
+
+
+    DestroyObjType obj2 = std::make_shared<DestroyObjType::element_type>();
     TimerTaskComp obj1;
-    TimerTaskComp obj2;
-    TimerTaskComp obj3;
 
-    {
-        {
-            obj1.RunEvery(1.0, [&obj2]() {
+    obj1.RunAfter(1.0, [&obj1, &obj2]() {
+        std::cout << "Callback from obj2 executed." << obj2->id << std::endl;
 
-                TestCoreDump obj3;
+        //对象1执行timer回调， 对象1设置对象2的timer的新的时间回调,
+        obj2->timer.RunAfter(0.2, [&obj1, &obj2]() {
 
+            //对象2执行回调时候把自己的timer再重置(或者取消),
+            obj2->TestTimer();
+             
+            });
 
-                // 对象1设置对象2的定时器
-                obj2.RunEvery(1.0, [&obj3]() {
-                    {
-                        std::cout << "Callback from obj2 executed." << obj3.id << std::endl;
-                        obj3.timer.RunEvery(0.1, [&obj3]() {
-                            obj3.TestTimer();
-                            });
-                    }
-                    });
+        //对象2销毁,
+        obj1.RunAfter(0.15, [&obj2]() {
+            obj2.reset();
+            });
 
-                });
-        }
-    }
+        //对象1设置的对象2的回调未取消
+
+        });
+
 
     g_loop->loop();
 
@@ -257,17 +247,17 @@ public:
     TimerTaskComp m_PrepareEndTimer;
     TimerTaskComp m_ConclusionTimer;
     TimerTaskComp m_DurationTimer;
-   
+
 };
 
 TEST(main, TimerQueueUnitTest)
 {
-	printTid();
+    printTid();
     EventLoop loop;
     g_loop = &loop;
     while (true)
     {
-        TestScenario();
+        TestScenario1();
 
         continue;
 
@@ -277,26 +267,20 @@ TEST(main, TimerQueueUnitTest)
             t.Init();
             loop.loop();
         }
-        
+
         GameTimerTest a1;
         loop.loop();
 
-		GameTimerTest a;
-		a.RunAfter();
+        GameTimerTest a;
+        a.RunAfter();
 
-		GameTimerTest g;
-		g.RunEvery();
+        GameTimerTest g;
+        g.RunEvery();
 
-		GameTimerTest c;
-		c.RunEvery();
+        GameTimerTest c;
+        c.RunEvery();
 
 
-
-		{
-			GameTimerTest t;
-			t.RunAfter();
-            loop.loop();
-		}
 
         {
             GameTimerTest t;
@@ -304,11 +288,17 @@ TEST(main, TimerQueueUnitTest)
             loop.loop();
         }
 
-		{
-			GameTimerTest t;
-			t.RunEvery();
+        {
+            GameTimerTest t;
+            t.RunAfter();
             loop.loop();
-		}
+        }
+
+        {
+            GameTimerTest t;
+            t.RunEvery();
+            loop.loop();
+        }
 
         {
             GameTimerTest t;
@@ -321,7 +311,7 @@ TEST(main, TimerQueueUnitTest)
         RecursionTimerTest r;
         r.RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
         t_list v;
-	
+
         {
             t_p p(new GameTimerTest);
             p->RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
@@ -329,17 +319,17 @@ TEST(main, TimerQueueUnitTest)
         std::chrono::seconds s2(10);
         std::this_thread::sleep_for(s2);
         loop.loop();
-	}
-	
+    }
+
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-	testing::InitGoogleTest(&argc, argv);
-	int32_t nRet =  RUN_ALL_TESTS();
-	while (true)
-	{
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
-	return nRet;
+    testing::InitGoogleTest(&argc, argv);
+    int32_t nRet = RUN_ALL_TESTS();
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    return nRet;
 }

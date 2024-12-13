@@ -1,7 +1,39 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
 *.swp
 bazel-*
 compile_commands.json
-*.exe
 *.ilk
 *.pdb
 *.obj
@@ -11,7 +43,6 @@ compile_commands.json
 *.stamp
 *.suo
 *.db*
-*.zip
 *.lib
 *.exp
 *.pyc
