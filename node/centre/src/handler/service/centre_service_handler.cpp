@@ -41,7 +41,7 @@ Guid GetPlayerIDBySessionId(const uint64_t session_id)
 	const auto session_it = tlsSessions.find(session_id);
 	if (session_it == tlsSessions.end())
 	{
-		LOG_ERROR << "Cannot find session ID " << session_id << GetStackTraceAsString();
+		LOG_DEBUG << "Cannot find session ID " << session_id << GetStackTraceAsString();
 		return kInvalidGuid;
 	}
 	return session_it->second.player_id();
@@ -221,7 +221,6 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 	defer(tlsSessions.erase(request->session_info().session_id()));
 
 	auto session_id = request->session_info().session_id();
-
 
 	auto player_id = GetPlayerIDBySessionId(session_id);
 
