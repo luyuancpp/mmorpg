@@ -34,12 +34,6 @@ using namespace muduo::net;
 int cnt = 0;
 EventLoop* g_loop;
 
-void printTid()
-{
-    //printf("pid = %d, tid = %d\n", getpid(), CurrentThread::tid());
-    printf("now %s\n", Timestamp::now().toString().c_str());
-}
-
 
 class GameTimerTest
 {
@@ -114,20 +108,22 @@ typedef std::unordered_map<int32_t, t_p> t_list;
 class TestCoreDump {
 public:
 
-    TestCoreDump() { id = i++;  std::cout << "TestCoreCrate" << id << std::endl; }
+    TestCoreDump() { id = i++;  std::cout << "TestCoreCreate" << id << std::endl; }
 
     ~TestCoreDump() {
         std::cout << "TestCoreDump destroy ." << id << std::endl;
     }
 
     void TestTimer() {
+        std::cout << "TestCoreDump : TestTimer." << &timer << std::endl;
+
         timer.RunAfter(0.1, [this]() {
             Add();
             });
     }
 
     void Add() {
-        std::cout << "TestCoreDump : new callback executed." << std::endl;
+        std::cout << "TestCoreDump : new callback executed." << &timer << std::endl;
         data_.push_back(1);
     }
 
@@ -177,20 +173,18 @@ void TestScenario() {
 
 
 void TestScenario1() {
-    TimerTaskComp testObj;
 
     using DestroyObjType = std::shared_ptr<TestCoreDump>;
 
-
-    DestroyObjType obj2 = std::make_shared<DestroyObjType::element_type>();
     TimerTaskComp obj1;
+    DestroyObjType obj2 = std::make_shared<DestroyObjType::element_type>();
 
     obj1.RunAfter(1.0, [&obj1, &obj2]() {
         std::cout << "Callback from obj2 executed." << obj2->id << std::endl;
 
         //对象1执行timer回调， 对象1设置对象2的timer的新的时间回调,
         obj2->timer.RunAfter(0.2, [&obj1, &obj2]() {
-
+            std::cout << "obj2->timer.RunAfter" << &obj2->timer << std::endl;
             //对象2执行回调时候把自己的timer再重置(或者取消),
             obj2->TestTimer();
              
@@ -198,6 +192,7 @@ void TestScenario1() {
 
         //对象2销毁,
         obj1.RunAfter(0.15, [&obj2]() {
+            std::cout << "reset ." << &obj2->timer << std::endl;
             obj2.reset();
             });
 
@@ -252,7 +247,6 @@ public:
 
 TEST(main, TimerQueueUnitTest)
 {
-    printTid();
     EventLoop loop;
     g_loop = &loop;
     while (true)
