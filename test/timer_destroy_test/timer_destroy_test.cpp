@@ -157,17 +157,18 @@ void TestScenario() {
 
     auto& t = tls.registry.emplace<CastingTimerCompTest>(entity);
 
-    auto fn = [&entity]() {
+    auto fn = [entity]() {
         std::cout << "TestCoreDump : new callback executed." << std::endl;
 
-        tls.registry.emplace_or_replace<CastingTimerCompTest>(entity);
-
         tls.registry.destroy(entity);
+
+        auto entity = tls.registry.create();
+        auto& t = tls.registry.emplace_or_replace<CastingTimerCompTest>(entity);
+
         };
 
     t.timer.RunEvery(0.1, fn);
 
-    g_loop->loop();
 
 }
 
@@ -251,15 +252,12 @@ TEST(main, TimerQueueUnitTest)
     g_loop = &loop;
     while (true)
     {
-        TestScenario1();
-
-        continue;
+        TestScenario();
 
         {
             std::cout << " DungeonTimerTest " << std::endl;
             DungeonTimerTest t;
             t.Init();
-            loop.loop();
         }
 
         GameTimerTest a1;
@@ -279,25 +277,21 @@ TEST(main, TimerQueueUnitTest)
         {
             GameTimerTest t;
             t.RunAfter();
-            loop.loop();
         }
 
         {
             GameTimerTest t;
             t.RunAfter();
-            loop.loop();
         }
 
         {
             GameTimerTest t;
             t.RunEvery();
-            loop.loop();
         }
 
         {
             GameTimerTest t;
             t.RunEvery();
-            loop.loop();
         }
 
 
@@ -312,7 +306,8 @@ TEST(main, TimerQueueUnitTest)
         }
         std::chrono::seconds s2(10);
         std::this_thread::sleep_for(s2);
-        loop.loop();
+
+        TestScenario1();
     }
 
 }
