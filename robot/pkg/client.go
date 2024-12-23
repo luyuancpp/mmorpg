@@ -68,6 +68,7 @@ func registerNodes(maps *b3.RegisterStructMaps) {
 	maps.Register("RandomEnterScene", new(behaviortree.RandomEnterScene))
 	maps.Register("CheckTestCount", new(behaviortree.CheckTestCount))
 	maps.Register("IncrementTestCount", new(behaviortree.IncrementTestCount))
+	maps.Register("ResetTestCount", new(behaviortree.ResetTestCount))
 	maps.Register("SetSubTree", new(behaviortree.SetSubTree))
 	maps.Register("InitTree", new(behaviortree.InitTree))
 	maps.Register("BoardEqualConst", new(behaviortree.BoardEqualConst))

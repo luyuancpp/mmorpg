@@ -31,17 +31,17 @@ const char descriptor_table_protodef_team_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE
     protodesc_cold) = {
     "\n\024team_error_tip.proto*\327\003\n\nteam_error\022\021\n"
     "\rkTeam_errorOK\020\000\022\030\n\024kTeamNotInApplicants"
-    "\0201\022\021\n\rkTeamPlayerId\0202\022\024\n\020kTeamMembersFul"
-    "l\0203\022\025\n\021kTeamMemberInTeam\0204\022\030\n\024kTeamMembe"
-    "rNotInTeam\0205\022\021\n\rkTeamKickSelf\0206\022\026\n\022kTeam"
-    "KickNotLeader\0207\022\024\n\020kTeamAppointSelf\0208\022\037\n"
-    "\033kTeamAppointLeaderNotLeader\0209\022\r\n\tkTeamF"
-    "ull\020:\022\030\n\024kTeamInApplicantList\020;\022\033\n\027kTeam"
-    "NotInApplicantList\020<\022\024\n\020kTeamListMaxSize"
-    "\020=\022\025\n\021kTeamHasNotTeamId\020>\022\031\n\025kTeamDismis"
-    "sNotLeader\020\?\022\027\n\023kTeamMemberListFull\020@\022 \n"
-    "\034kTeamCreateTeamMaxMemberSize\020A\022\027\n\023kTeam"
-    "PlayerNotFound\020BB\tZ\007pb/gameb\006proto3"
+    "\0202\022\021\n\rkTeamPlayerId\0203\022\024\n\020kTeamMembersFul"
+    "l\0204\022\025\n\021kTeamMemberInTeam\0205\022\030\n\024kTeamMembe"
+    "rNotInTeam\0206\022\021\n\rkTeamKickSelf\0207\022\026\n\022kTeam"
+    "KickNotLeader\0208\022\024\n\020kTeamAppointSelf\0209\022\037\n"
+    "\033kTeamAppointLeaderNotLeader\020:\022\r\n\tkTeamF"
+    "ull\020;\022\030\n\024kTeamInApplicantList\020<\022\033\n\027kTeam"
+    "NotInApplicantList\020=\022\024\n\020kTeamListMaxSize"
+    "\020>\022\025\n\021kTeamHasNotTeamId\020\?\022\031\n\025kTeamDismis"
+    "sNotLeader\020@\022\027\n\023kTeamMemberListFull\020A\022 \n"
+    "\034kTeamCreateTeamMaxMemberSize\020B\022\027\n\023kTeam"
+    "PlayerNotFound\020CB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_team_5ferror_5ftip_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_team_5ferror_5ftip_2eproto = {
@@ -81,7 +81,7 @@ const ::google::protobuf::EnumDescriptor* team_error_descriptor() {
   return file_level_enum_descriptors_team_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t team_error_internal_data_[] = {
-    65536u, 96u, 0u, 4294901760u, 3u, };
+    65536u, 96u, 0u, 4294836224u, 7u, };
 bool team_error_IsValid(int value) {
   return ::_pbi::ValidateEnum(value, team_error_internal_data_);
 }

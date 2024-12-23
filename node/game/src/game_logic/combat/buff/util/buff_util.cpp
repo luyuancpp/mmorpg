@@ -62,6 +62,11 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
     const uint32_t buffTableId, 
     const SkillContextPtrComp& abilityContext)
 {
+    if (!tls.registry.valid(parent))
+    {
+        return std::make_tuple(kThisEntityIsInvalid, UINT64_MAX);
+    }
+
     FetchBuffTableOrReturnCustom(buffTableId, (std::make_tuple(fetchResult, UINT64_MAX)));
 
     auto result = CanCreateBuff(parent, buffTableId);
@@ -88,6 +93,7 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
 
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
     newBuff.buffPb.set_buff_id(newBuffId);
+    newBuff.buffPb.set_buff_table_id(buffTableId);
     newBuff.skillContext = abilityContext;
     newBuff.dataPbPtr = CreateBuffDataPtr(buffTable);
 
@@ -96,6 +102,12 @@ std::tuple<uint32_t, uint64_t> BuffUtil::AddOrUpdateBuff(
 
     if (buffTable->duration() > 0) {
         fst->second.expireTimerTaskComp.RunAfter(buffTable->duration(), [parent, newBuffId] {
+
+            if (!tls.registry.valid(parent))
+            {
+                return;
+            }
+
             OnBuffExpire(parent, newBuffId);
         });
     } else if (IsZero(buffTable->duration())) {

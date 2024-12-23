@@ -86,8 +86,8 @@ inline constexpr SkillTable::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : skill_type_{},
         _skill_type_cached_byte_size_{0},
-        target_type_{},
-        _target_type_cached_byte_size_{0},
+        targeting_mode_{},
+        _targeting_mode_cached_byte_size_{0},
         requireditem_{},
         requiredresource_{},
         effect_{},
@@ -194,7 +194,7 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.skill_type_),
-        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.target_type_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.targeting_mode_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.rquest_target_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.target_status_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.castpoint_),
@@ -249,29 +249,29 @@ const char descriptor_table_protodef_skill_5fconfig_2eproto[] ABSL_ATTRIBUTE_SEC
     "e\022\035\n\025requiredresource_type\030\001 \001(\r\022\036\n\026requ"
     "iredresource_value\030\002 \001(\r\"P\n\024Skillrequest"
     "resource\022\032\n\022requestresource_id\030\001 \001(\r\022\034\n\024"
-    "requestresource_cost\030\002 \001(\r\"\252\004\n\nSkillTabl"
-    "e\022\n\n\002id\030\001 \001(\r\022\022\n\nskill_type\030\002 \003(\r\022\023\n\013tar"
-    "get_type\030\003 \003(\r\022\025\n\rrquest_target\030\004 \001(\r\022\025\n"
-    "\rtarget_status\030\005 \001(\r\022\021\n\tcastpoint\030\006 \001(\001\022"
-    "\024\n\014recoverytime\030\007 \001(\001\022\023\n\013immediately\030\010 \001"
-    "(\r\022(\n\014requireditem\030\t \003(\0132\022.Skillrequired"
-    "item\0220\n\020requiredresource\030\n \003(\0132\026.Skillre"
-    "quiredresource\022\016\n\006effect\030\013 \003(\r\022\024\n\014channe"
-    "lthink\030\014 \001(\r\022\025\n\rchannelfinish\030\r \001(\r\022\025\n\rt"
-    "hinkinterval\030\016 \001(\r\022\023\n\013channeltime\030\017 \001(\r\022"
-    ".\n\017requestresource\030\020 \003(\0132\025.Skillrequestr"
-    "esource\022\r\n\005range\030\021 \001(\001\022\021\n\tmax_range\030\022 \001("
-    "\001\022\021\n\tmin_range\030\023 \001(\001\022\023\n\013self_status\030\024 \001("
-    "\r\022\027\n\017required_status\030\025 \001(\r\022\023\n\013cooldown_i"
-    "d\030\026 \001(\r\022\016\n\006damage\030\027 \001(\t\",\n\017SkillTabledDa"
-    "ta\022\031\n\004data\030\001 \003(\0132\013.SkillTableB\tZ\007pb/game"
-    "b\006proto3"
+    "requestresource_cost\030\002 \001(\r\"\255\004\n\nSkillTabl"
+    "e\022\n\n\002id\030\001 \001(\r\022\022\n\nskill_type\030\002 \003(\r\022\026\n\016tar"
+    "geting_mode\030\003 \003(\r\022\025\n\rrquest_target\030\004 \001(\r"
+    "\022\025\n\rtarget_status\030\005 \001(\r\022\021\n\tcastpoint\030\006 \001"
+    "(\001\022\024\n\014recoverytime\030\007 \001(\001\022\023\n\013immediately\030"
+    "\010 \001(\r\022(\n\014requireditem\030\t \003(\0132\022.Skillrequi"
+    "reditem\0220\n\020requiredresource\030\n \003(\0132\026.Skil"
+    "lrequiredresource\022\016\n\006effect\030\013 \003(\r\022\024\n\014cha"
+    "nnelthink\030\014 \001(\r\022\025\n\rchannelfinish\030\r \001(\r\022\025"
+    "\n\rthinkinterval\030\016 \001(\r\022\023\n\013channeltime\030\017 \001"
+    "(\r\022.\n\017requestresource\030\020 \003(\0132\025.Skillreque"
+    "stresource\022\r\n\005range\030\021 \001(\001\022\021\n\tmax_range\030\022"
+    " \001(\001\022\021\n\tmin_range\030\023 \001(\001\022\023\n\013self_status\030\024"
+    " \001(\r\022\027\n\017required_status\030\025 \001(\r\022\023\n\013cooldow"
+    "n_id\030\026 \001(\r\022\016\n\006damage\030\027 \001(\t\",\n\017SkillTable"
+    "dData\022\031\n\004data\030\001 \003(\0132\013.SkillTableB\tZ\007pb/g"
+    "ameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_skill_5fconfig_2eproto = {
     false,
     false,
-    888,
+    891,
     descriptor_table_protodef_skill_5fconfig_2eproto,
     "skill_config.proto",
     &descriptor_table_skill_5fconfig_2eproto_once,
@@ -949,8 +949,8 @@ inline PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
     const Impl_& from)
       : skill_type_{visibility, arena, from.skill_type_},
         _skill_type_cached_byte_size_{0},
-        target_type_{visibility, arena, from.target_type_},
-        _target_type_cached_byte_size_{0},
+        targeting_mode_{visibility, arena, from.targeting_mode_},
+        _targeting_mode_cached_byte_size_{0},
         requireditem_{visibility, arena, from.requireditem_},
         requiredresource_{visibility, arena, from.requiredresource_},
         effect_{visibility, arena, from.effect_},
@@ -983,8 +983,8 @@ inline PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
     ::google::protobuf::Arena* arena)
       : skill_type_{visibility, arena},
         _skill_type_cached_byte_size_{0},
-        target_type_{visibility, arena},
-        _target_type_cached_byte_size_{0},
+        targeting_mode_{visibility, arena},
+        _targeting_mode_cached_byte_size_{0},
         requireditem_{visibility, arena},
         requiredresource_{visibility, arena},
         effect_{visibility, arena},
@@ -1035,7 +1035,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   (void) cached_has_bits;
 
   _impl_.skill_type_.Clear();
-  _impl_.target_type_.Clear();
+  _impl_.targeting_mode_.Clear();
   _impl_.requireditem_.Clear();
   _impl_.requiredresource_.Clear();
   _impl_.effect_.Clear();
@@ -1079,9 +1079,9 @@ const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
     // repeated uint32 skill_type = 2;
     {::_pbi::TcParser::FastV32P1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.skill_type_)}},
-    // repeated uint32 target_type = 3;
+    // repeated uint32 targeting_mode = 3;
     {::_pbi::TcParser::FastV32P1,
-     {26, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.target_type_)}},
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.targeting_mode_)}},
     // uint32 rquest_target = 4;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.rquest_target_), 63>(),
      {32, 63, 0, PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.rquest_target_)}},
@@ -1159,8 +1159,8 @@ const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
     // repeated uint32 skill_type = 2;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.skill_type_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
-    // repeated uint32 target_type = 3;
-    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.target_type_), 0, 0,
+    // repeated uint32 targeting_mode = 3;
+    {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.targeting_mode_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
     // uint32 rquest_target = 4;
     {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.rquest_target_), 0, 0,
@@ -1256,12 +1256,12 @@ const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
     }
   }
 
-  // repeated uint32 target_type = 3;
+  // repeated uint32 targeting_mode = 3;
   {
-    int byte_size = _impl_._target_type_cached_byte_size_.Get();
+    int byte_size = _impl_._targeting_mode_cached_byte_size_.Get();
     if (byte_size > 0) {
       target = stream->WriteUInt32Packed(
-          3, _internal_target_type(), byte_size, target);
+          3, _internal_targeting_mode(), byte_size, target);
     }
   }
 
@@ -1475,12 +1475,12 @@ const ::_pbi::TcParseTable<5, 23, 3, 41, 2> SkillTable::_table_ = {
     ;
     total_size += tag_size + data_size;
   }
-  // repeated uint32 target_type = 3;
+  // repeated uint32 targeting_mode = 3;
   {
     std::size_t data_size = ::_pbi::WireFormatLite::UInt32Size(
-        this->_internal_target_type())
+        this->_internal_targeting_mode())
     ;
-    _impl_._target_type_cached_byte_size_.Set(::_pbi::ToCachedSize(data_size));
+    _impl_._targeting_mode_cached_byte_size_.Set(::_pbi::ToCachedSize(data_size));
     std::size_t tag_size = data_size == 0
         ? 0
         : 1 + ::_pbi::WireFormatLite::Int32Size(
@@ -1651,7 +1651,7 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   (void) cached_has_bits;
 
   _this->_internal_mutable_skill_type()->MergeFrom(from._internal_skill_type());
-  _this->_internal_mutable_target_type()->MergeFrom(from._internal_target_type());
+  _this->_internal_mutable_targeting_mode()->MergeFrom(from._internal_targeting_mode());
   _this->_internal_mutable_requireditem()->MergeFrom(
       from._internal_requireditem());
   _this->_internal_mutable_requiredresource()->MergeFrom(
@@ -1755,7 +1755,7 @@ void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT other) {
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.skill_type_.InternalSwap(&other->_impl_.skill_type_);
-  _impl_.target_type_.InternalSwap(&other->_impl_.target_type_);
+  _impl_.targeting_mode_.InternalSwap(&other->_impl_.targeting_mode_);
   _impl_.requireditem_.InternalSwap(&other->_impl_.requireditem_);
   _impl_.requiredresource_.InternalSwap(&other->_impl_.requiredresource_);
   _impl_.effect_.InternalSwap(&other->_impl_.effect_);

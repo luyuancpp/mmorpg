@@ -8,7 +8,7 @@
 
 inline uint32_t MountUtil::MountActor(const entt::entity actorEntity)
 {
-    RETURN_FALSE_ON_ERROR(ActorActionStateUtil::TryPerformAction(actorEntity, kActorActionMountActor));
+    RETURN_FALSE_ON_ERROR(ActorActionStateUtil::TryPerformAction(actorEntity, kActorActionMountActor, kActorStateMounted));
     // 执行上坐骑逻辑
     
     return kSuccess;

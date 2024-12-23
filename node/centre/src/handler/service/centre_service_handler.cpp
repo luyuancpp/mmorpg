@@ -41,7 +41,7 @@ Guid GetPlayerIDBySessionId(const uint64_t session_id)
 	const auto session_it = tlsSessions.find(session_id);
 	if (session_it == tlsSessions.end())
 	{
-		LOG_ERROR << "Cannot find session ID " << session_id << GetStackTraceAsString();
+		LOG_DEBUG << "Cannot find session ID " << session_id << GetStackTraceAsString();
 		return kInvalidGuid;
 	}
 	return session_it->second.player_id();
@@ -88,7 +88,7 @@ void CentreServiceHandler::RegisterGameNode(::google::protobuf::RpcController* c
 	bool clientFound = false;
 	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
 	{
-		if (session.conn_->peerAddress().toIpPort() == clientAddr.toIpPort())
+		if (session.connection->peerAddress().toIpPort() == clientAddr.toIpPort())
 		{
 			LOG_INFO << "Found matching client connection for registration.";
 			clientFound = true;
@@ -101,7 +101,7 @@ void CentreServiceHandler::RegisterGameNode(::google::protobuf::RpcController* c
 			}
 
 			// Create game node pointer and add components
-			auto gameNodePtr = std::make_shared<RpcSessionPtr::element_type>(session.conn_);
+			auto gameNodePtr = std::make_shared<RpcSessionPtr::element_type>(session.connection);
 			AddMainSceneNodeComponent(tls.gameNodeRegistry, newGameNode);
 			tls.gameNodeRegistry.emplace<RpcSessionPtr>(newGameNode, gameNodePtr);
 			tls.gameNodeRegistry.emplace<InetAddress>(newGameNode, serverAddr);
@@ -161,7 +161,7 @@ void CentreServiceHandler::RegisterGateNode(::google::protobuf::RpcController* c
 	bool foundMatchingClient = false;
 	for (const auto& [entity, session] : tls.networkRegistry.view<RpcSession>().each())
 	{
-		if (session.conn_->peerAddress().toIpPort() == clientAddress.toIpPort())
+		if (session.connection->peerAddress().toIpPort() == clientAddress.toIpPort())
 		{
 			// Found matching client connection, create gate node
 			const auto createdGateId = tls.gateNodeRegistry.create(gateId);
@@ -173,7 +173,7 @@ void CentreServiceHandler::RegisterGateNode(::google::protobuf::RpcController* c
 
 			// Register gate node and associate with client session
 			tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateId,
-				std::make_shared<RpcSessionPtr::element_type>(session.conn_));
+				std::make_shared<RpcSessionPtr::element_type>(session.connection));
 			LOG_INFO << "Gate registered: " << MessageToJsonString(request);
 			foundMatchingClient = true;
 			break;
@@ -221,7 +221,6 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 	defer(tlsSessions.erase(request->session_info().session_id()));
 
 	auto session_id = request->session_info().session_id();
-
 
 	auto player_id = GetPlayerIDBySessionId(session_id);
 
@@ -350,7 +349,7 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 			KickSessionRequest message;
 			message.set_session_id(sessionId);
-			SendToGateById(GateServiceKickSessionByCentreMessageId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
+			SendMessageToGateById(GateServiceKickSessionByCentreMessageId, message, GetGateNodeId(playerNodeInfo->gate_session_id()));
 
 			playerNodeInfo->set_gate_session_id(sessionId);
 		}
@@ -452,10 +451,10 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	const MessagePtr player_response(service->GetResponsePrototype(method).New());
+	const MessagePtr playerResponse(service->GetResponsePrototype(method).New());
 
 	// Call method on player service handler
-	service_handler->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
+	service_handler->CallMethod(method, player, get_pointer(player_request), get_pointer(playerResponse));
 
 	// If response is nullptr, no need to send a reply
 	if (!response)
@@ -463,10 +462,14 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
+		return;
+	}
+
 	response->mutable_head()->set_session_id(request->head().session_id());
-	const int32_t byte_size = player_response->ByteSizeLong();
+	const int32_t byte_size = playerResponse->ByteSizeLong();
 	response->mutable_body()->mutable_body()->resize(byte_size);
-	if (!player_response->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
+	if (!playerResponse->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
 	{
 		LOG_ERROR << "Failed to serialize response for message ID: " << request->body().message_id();
 		// TODO: Handle message serialization error

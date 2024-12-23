@@ -31,16 +31,16 @@ const char descriptor_table_protodef_bag_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_
     protodesc_cold) = {
     "\n\023bag_error_tip.proto*\261\003\n\tbag_error\022\020\n\014k"
     "Bag_errorOK\020\000\022\032\n\026kBagDeleteItemFindGuid\020"
-    "J\022 \n\034kBagDeleteItemAlreadyHasGuid\020K\022\"\n\036k"
-    "BagAddItemHasNotBaseComponent\020L\022\032\n\026kBagA"
-    "ddItemInvalidGuid\020M\022\033\n\027kBagAddItemInvali"
-    "dParam\020N\022\026\n\022kBagAddItemBagFull\020O\022\026\n\022kBag"
-    "ItemNotStacked\020P\022\031\n\025kBagInsufficientItem"
-    "s\020Q\022\022\n\016kBagDelItemPos\020R\022\025\n\021kBagDelItemCo"
-    "nfig\020S\022\023\n\017kBagDelItemGuid\020T\022\027\n\023kBagDelIt"
-    "emFindItem\020U\022\023\n\017kBagDelItemSize\020V\022 \n\034kBa"
-    "gItemDeletionSizeMismatch\020W\022\034\n\030kBagInsuf"
-    "ficientBagSpace\020XB\tZ\007pb/gameb\006proto3"
+    "K\022 \n\034kBagDeleteItemAlreadyHasGuid\020L\022\"\n\036k"
+    "BagAddItemHasNotBaseComponent\020M\022\032\n\026kBagA"
+    "ddItemInvalidGuid\020N\022\033\n\027kBagAddItemInvali"
+    "dParam\020O\022\026\n\022kBagAddItemBagFull\020P\022\026\n\022kBag"
+    "ItemNotStacked\020Q\022\031\n\025kBagInsufficientItem"
+    "s\020R\022\022\n\016kBagDelItemPos\020S\022\025\n\021kBagDelItemCo"
+    "nfig\020T\022\023\n\017kBagDelItemGuid\020U\022\027\n\023kBagDelIt"
+    "emFindItem\020V\022\023\n\017kBagDelItemSize\020W\022 \n\034kBa"
+    "gItemDeletionSizeMismatch\020X\022\034\n\030kBagInsuf"
+    "ficientBagSpace\020YB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_bag_5ferror_5ftip_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_bag_5ferror_5ftip_2eproto = {
@@ -80,7 +80,7 @@ const ::google::protobuf::EnumDescriptor* bag_error_descriptor() {
   return file_level_enum_descriptors_bag_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t bag_error_internal_data_[] = {
-    65536u, 96u, 0u, 0u, 16776704u, };
+    65536u, 96u, 0u, 0u, 33553408u, };
 bool bag_error_IsValid(int value) {
   return ::_pbi::ValidateEnum(value, bag_error_internal_data_);
 }

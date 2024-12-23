@@ -50,18 +50,10 @@ void ActorActionStateUtil::InitializeActorComponents(entt::entity entity) {
     tls.registry.emplace<ActorStatePbComponent>(entity);
 }
 
-uint32_t ActorActionStateUtil::AddStateForAction(entt::entity actorEntity, uint32_t actorState) {
-    // 调用 AddState 来添加状态
-    RETURN_ON_ERROR(AddState(actorEntity, actorState));
-
-    // 你可以在这里添加其他逻辑，例如日志记录等
-    return kSuccess;
-}
-
-uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32_t actorAction) {
+uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
     // 获取该动作对应的状态表
     FetchAndValidateActorActionStateTable(actorAction);
-    
+
     // 遍历角色的所有状态，检查是否可以执行该动作
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
@@ -77,11 +69,12 @@ uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32
     }
 
     // 如果所有检查通过，可以添加状态并执行动作
-    RETURN_ON_ERROR(AddStateForAction(actorEntity, actorAction));
+    RETURN_ON_ERROR(AddState(actorEntity, successState));
 
     // 执行动作成功
     return kSuccess;
 }
+
 
 uint32_t ActorActionStateUtil::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
     FetchAndValidateActorActionStateTable(actorAction);
@@ -119,9 +112,13 @@ uint32_t ActorActionStateUtil::GetStateTip(const uint32_t actorAction, const uin
 
 uint32_t ActorActionStateUtil::AddState(const entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
-    if (actorState >= kActorStateActorStateMax ||
-        actorStatePbComponent.state_list().contains(actorState)) {
+    if (actorState >= kActorStateActorStateMax){
         return kInvalidParameter; 
+    }
+
+    if (actorStatePbComponent.state_list().contains(actorState)){
+        return kSuccess;
+
     }
 
     // 添加新的状态

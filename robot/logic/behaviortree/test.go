@@ -38,3 +38,16 @@ func (ic *IncrementTestCount) OnTick(tick *Tick) b3.Status {
 	tick.Blackboard.Set(TestCountBoardKey, count+1, "", "")
 	return b3.SUCCESS
 }
+
+type ResetTestCount struct {
+	Action
+}
+
+func (ic *ResetTestCount) Initialize(setting *BTNodeCfg) {
+	ic.Action.Initialize(setting)
+}
+
+func (ic *ResetTestCount) OnTick(tick *Tick) b3.Status {
+	tick.Blackboard.Set(TestCountBoardKey, int32(0), "", "")
+	return b3.SUCCESS
+}

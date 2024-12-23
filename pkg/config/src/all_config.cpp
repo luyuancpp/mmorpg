@@ -14,8 +14,8 @@
 #include "globalvariable_config.h"
 #include "mainscene_config.h"
 #include "skillpermission_config.h"
-#include "scene_config.h"
 #include "class_config.h"
+#include "scene_config.h"
 #include "monsterbase_config.h"
 #include "cooldown_config.h"
 void LoadAllConfig()
@@ -31,8 +31,8 @@ void LoadAllConfig()
     GlobalVariableConfigurationTable::Instance().Load();
     MainSceneConfigurationTable::Instance().Load();
     SkillPermissionConfigurationTable::Instance().Load();
-    SceneConfigurationTable::Instance().Load();
     ClassConfigurationTable::Instance().Load();
+    SceneConfigurationTable::Instance().Load();
     MonsterBaseConfigurationTable::Instance().Load();
     CooldownConfigurationTable::Instance().Load();
 }
@@ -166,7 +166,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    SceneConfigurationTable::Instance().Load();
+    ClassConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
@@ -177,7 +177,7 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
-    ClassConfigurationTable::Instance().Load();
+    SceneConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();

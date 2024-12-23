@@ -13,7 +13,7 @@ protected:
 	}
 
 	uint64_t current_time_in_milliseconds() {
-		return CoolDownTimeMillisecondUtil::GetCurrentTimeInMilliseconds();
+		return CoolDownTimeMillisecondUtil::NowMilliseconds();
 	}
 };
 

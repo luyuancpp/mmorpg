@@ -128,12 +128,16 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 
 	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-	if (nullptr != response)
+    response->mutable_head()->set_session_id(request->head().session_id());
+    response->mutable_body()->set_message_id(request->body().message_id());
+
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
 	{
-		response->mutable_body()->set_body(playerResponse->SerializeAsString());
-		response->mutable_head()->set_session_id(request->head().session_id());
-		response->mutable_body()->set_message_id(request->body().message_id());
+		return;
 	}
+
+	response->mutable_body()->set_body(playerResponse->SerializeAsString());
+
     ///<<< END WRITING YOUR CODE
 }
 
@@ -186,10 +190,16 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
 	serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-	response->mutable_message_body()->set_body(playerResponse->SerializeAsString());
+	
 	response->mutable_message_body()->set_message_id(request->message_body().message_id());
 	response->mutable_message_body()->set_id(request->message_body().id());
 	response->set_session_id(request->session_id());
+
+	if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
+		return;
+	}
+
+	response->mutable_message_body()->set_body(playerResponse->SerializeAsString());
 ///<<< END WRITING YOUR CODE
 }
 
@@ -202,13 +212,13 @@ void GameServiceHandler::RegisterGateNode(::google::protobuf::RpcController* con
 
 	for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
 	{
-		if (session.conn_->peerAddress().toIpPort() != sessionAddr.toIpPort())
+		if (session.connection->peerAddress().toIpPort() != sessionAddr.toIpPort())
 		{
 			continue;
 		}
 
 		const auto gateNodeId = tls.gateNodeRegistry.create(entt::entity{ request->gate_node_id() });
-		tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateNodeId, std::make_shared<RpcSessionPtr::element_type>(session.conn_));
+		tls.gateNodeRegistry.emplace<RpcSessionPtr>(gateNodeId, std::make_shared<RpcSessionPtr::element_type>(session.connection));
 		assert(gateNodeId == entt::entity{ request->gate_node_id() });
 
 		LOG_INFO << "Registered gate node: " << MessageToJsonString(request);
@@ -296,12 +306,16 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
 	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-	if (nullptr != response)
-	{
-		response->mutable_body()->set_body(playerResponse->SerializeAsString());
-		response->mutable_head()->set_session_id(request->head().session_id());
-		response->mutable_body()->set_message_id(request->body().message_id());
-	}
+
+    response->mutable_head()->set_session_id(request->head().session_id());
+    response->mutable_body()->set_message_id(request->body().message_id());
+
+    if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
+        return;
+    }
+
+	response->mutable_body()->set_body(playerResponse->SerializeAsString());
+        
 ///<<< END WRITING YOUR CODE
 }
 

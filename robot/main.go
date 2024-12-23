@@ -35,6 +35,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	for i := 0; i < config.AppConfig.Robots.Count; i++ {
+		time.Sleep(1 * time.Second)
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
