@@ -6,14 +6,10 @@
 	path = third_party/sol2
 	url = https://github.com/ThePhD/sol2.git
 	branch = main
-[submodule "third_party/googletest"]
-	path = third_party/googletest
-	url = https://github.com/google/googletest.git
-	branch = v1.15.x
 [submodule "third_party/redis"]
 	path = third_party/redis
 	url = https://github.com/redis/redis.git
-	branch = 7.4
+	branch = 8.0
 [submodule "third_party/muduo-linux"]
 	path = third_party/muduo-linux
 	url = https://github.com/chenshuo/muduo.git
@@ -33,11 +29,7 @@
 [submodule "third_party/grpc"]
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
-	branch = v1.65.x
-[submodule "third_party/protobuf"]
-	path = third_party/protobuf
-	url = https://github.com/protocolbuffers/protobuf.git
-	branch = 26.x
+	branch = v1.69.x
 [submodule "pkg/muduo_windows/src"]
 	path = pkg/muduo_windows/src
 	url = https://github.com/luyuancpp/muduo-cross-platform.git
