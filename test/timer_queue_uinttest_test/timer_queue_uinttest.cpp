@@ -1,25 +1,12 @@
-
-
-
-
-
 #include <gtest/gtest.h>
 
-#include <iostream>
-#include <unordered_map>
+#include "muduo/net/EventLoopThread.h"
+#include <boost/date_time/posix_time/posix_time.hpp>
 
-#include <muduo/net/EventLoop.h>
-#include <muduo/net/EventLoopThread.h>
-
-#include "../testdef.h"
-#include "GameTimer.h"
-
+#include "time/comp/timer_task_comp.h"
 
 #include <stdio.h>
 
-#ifdef __linux__
-#include <unistd.h>
-#endif // __linux__
 
 using namespace muduo;
 using namespace muduo::net;
@@ -55,24 +42,24 @@ public:
 
 	void RunAfter()
 	{
-		m_Timer.runAfter(5, std::bind(&GameTimerTest::AfterCallBack, this));
+		m_Timer.RunAfter(0.001, std::bind(&GameTimerTest::AfterCallBack, this));
 	}
 
 	
 
 	void RunEvery()
 	{
-		m_Timer.runEvery(5, std::bind(&GameTimerTest::RunEveryCallBack, this));
+		m_Timer.RunEvery(0.001, std::bind(&GameTimerTest::RunEveryCallBack, this));
 	}
 
     void RunAt(const Timestamp& time)
     {
-        m_Timer.runAt(time, std::bind(&GameTimerTest::RunAtCallBack, this));
+        m_Timer.RunAt(time, std::bind(&GameTimerTest::RunAtCallBack, this));
     }
 
 	void Cancel()
 	{
-		m_Timer.cancel();
+		m_Timer.Cancel();
 	}
 
 private:
@@ -92,7 +79,7 @@ private:
         std::cout << "RunAtCallBack" << this << std::endl;
     }
 private:
-	BaseModule::GameTimer m_Timer;
+	TimerTaskComp m_Timer;
 };
 
 class RecursionTimerTest
@@ -101,7 +88,7 @@ public:
 
     void RunAt(const Timestamp& time)
     {
-        m_Timer.runAt(time, std::bind(&RecursionTimerTest::RunAtCallBack, this));
+        m_Timer.RunAt(time, std::bind(&RecursionTimerTest::RunAtCallBack, this));
     }
 
 private:
@@ -112,7 +99,7 @@ private:
         RunAt(Timestamp::fromUnixTime(time(NULL) + 5));
     }
 private:
-    BaseModule::GameTimer m_Timer;
+    TimerTaskComp m_Timer;
 };
 
 typedef std::shared_ptr<GameTimerTest> t_p;
@@ -127,7 +114,6 @@ TEST(main, TimerQueueUnitTest)
 	{
 		EventLoop loop;
 		g_loop = &loop;
-        BaseModule::SetThreadLocalStorageLoop(&loop);
 
 		GameTimerTest a;
 		a.RunAfter();

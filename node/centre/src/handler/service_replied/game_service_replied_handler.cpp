@@ -81,7 +81,7 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 	const auto  player_id    = it->second.player_id();
 	const auto& message_info = gMessageInfo.at(replied->body().message_id() );
 	const auto  player = tlsCommonLogic.GetPlayer(player_id);
-	if (tls.registry.valid(player))
+	if (!tls.registry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
 			<< replied->body().message_id();
@@ -94,8 +94,10 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		<< replied->body().message_id();
 		return;
 	}
-	const auto& service_impl = service_it->second;
-	google::protobuf::Service* service = service_impl->service();
+
+
+	const auto& serviceImpl = service_it->second;
+	google::protobuf::Service* service = serviceImpl->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.methodName);
 	if (nullptr == method)
@@ -104,14 +106,16 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		//todo client error;
 		return;
 	}
-	const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
-	if (!player_response->ParsePartialFromArray(replied->body().body().data(), 
+
+	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
+	if (!playerResponse->ParsePartialFromArray(replied->body().body().data(), 
 		static_cast < int32_t > ( replied -> body ( ) . body ( ) . size ( ) )))
 	{
         LOG_ERROR << "ParsePartialFromArray " << message_info.methodName;
         return;
 	}
-	service_impl->CallMethod(method, player, nullptr, boost::get_pointer(player_response));
+
+	serviceImpl->CallMethod(method, player, nullptr, boost::get_pointer(playerResponse));
 ///<<< END WRITING YOUR CODE
 }
 

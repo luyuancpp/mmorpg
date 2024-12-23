@@ -738,7 +738,7 @@ class SkillTable final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kSkillTypeFieldNumber = 2,
-    kTargetTypeFieldNumber = 3,
+    kTargetingModeFieldNumber = 3,
     kRequireditemFieldNumber = 9,
     kRequiredresourceFieldNumber = 10,
     kEffectFieldNumber = 11,
@@ -779,22 +779,22 @@ class SkillTable final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_skill_type();
 
   public:
-  // repeated uint32 target_type = 3;
-  int target_type_size() const;
+  // repeated uint32 targeting_mode = 3;
+  int targeting_mode_size() const;
   private:
-  int _internal_target_type_size() const;
+  int _internal_targeting_mode_size() const;
 
   public:
-  void clear_target_type() ;
-  ::uint32_t target_type(int index) const;
-  void set_target_type(int index, ::uint32_t value);
-  void add_target_type(::uint32_t value);
-  const ::google::protobuf::RepeatedField<::uint32_t>& target_type() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* mutable_target_type();
+  void clear_targeting_mode() ;
+  ::uint32_t targeting_mode(int index) const;
+  void set_targeting_mode(int index, ::uint32_t value);
+  void add_targeting_mode(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& targeting_mode() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* mutable_targeting_mode();
 
   private:
-  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_target_type() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_target_type();
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_targeting_mode() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* _internal_mutable_targeting_mode();
 
   public:
   // repeated .Skillrequireditem requireditem = 9;
@@ -1065,8 +1065,8 @@ class SkillTable final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::RepeatedField<::uint32_t> skill_type_;
     mutable ::google::protobuf::internal::CachedSize _skill_type_cached_byte_size_;
-    ::google::protobuf::RepeatedField<::uint32_t> target_type_;
-    mutable ::google::protobuf::internal::CachedSize _target_type_cached_byte_size_;
+    ::google::protobuf::RepeatedField<::uint32_t> targeting_mode_;
+    mutable ::google::protobuf::internal::CachedSize _targeting_mode_cached_byte_size_;
     ::google::protobuf::RepeatedPtrField< ::Skillrequireditem > requireditem_;
     ::google::protobuf::RepeatedPtrField< ::Skillrequiredresource > requiredresource_;
     ::google::protobuf::RepeatedField<::uint32_t> effect_;
@@ -1497,49 +1497,49 @@ inline ::google::protobuf::RepeatedField<::uint32_t>* SkillTable::_internal_muta
   return &_impl_.skill_type_;
 }
 
-// repeated uint32 target_type = 3;
-inline int SkillTable::_internal_target_type_size() const {
-  return _internal_target_type().size();
+// repeated uint32 targeting_mode = 3;
+inline int SkillTable::_internal_targeting_mode_size() const {
+  return _internal_targeting_mode().size();
 }
-inline int SkillTable::target_type_size() const {
-  return _internal_target_type_size();
+inline int SkillTable::targeting_mode_size() const {
+  return _internal_targeting_mode_size();
 }
-inline void SkillTable::clear_target_type() {
+inline void SkillTable::clear_targeting_mode() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.target_type_.Clear();
+  _impl_.targeting_mode_.Clear();
 }
-inline ::uint32_t SkillTable::target_type(int index) const {
-  // @@protoc_insertion_point(field_get:SkillTable.target_type)
-  return _internal_target_type().Get(index);
+inline ::uint32_t SkillTable::targeting_mode(int index) const {
+  // @@protoc_insertion_point(field_get:SkillTable.targeting_mode)
+  return _internal_targeting_mode().Get(index);
 }
-inline void SkillTable::set_target_type(int index, ::uint32_t value) {
-  _internal_mutable_target_type()->Set(index, value);
-  // @@protoc_insertion_point(field_set:SkillTable.target_type)
+inline void SkillTable::set_targeting_mode(int index, ::uint32_t value) {
+  _internal_mutable_targeting_mode()->Set(index, value);
+  // @@protoc_insertion_point(field_set:SkillTable.targeting_mode)
 }
-inline void SkillTable::add_target_type(::uint32_t value) {
+inline void SkillTable::add_targeting_mode(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _internal_mutable_target_type()->Add(value);
-  // @@protoc_insertion_point(field_add:SkillTable.target_type)
+  _internal_mutable_targeting_mode()->Add(value);
+  // @@protoc_insertion_point(field_add:SkillTable.targeting_mode)
 }
-inline const ::google::protobuf::RepeatedField<::uint32_t>& SkillTable::target_type() const
+inline const ::google::protobuf::RepeatedField<::uint32_t>& SkillTable::targeting_mode() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:SkillTable.target_type)
-  return _internal_target_type();
+  // @@protoc_insertion_point(field_list:SkillTable.targeting_mode)
+  return _internal_targeting_mode();
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* SkillTable::mutable_target_type()
+inline ::google::protobuf::RepeatedField<::uint32_t>* SkillTable::mutable_targeting_mode()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:SkillTable.target_type)
+  // @@protoc_insertion_point(field_mutable_list:SkillTable.targeting_mode)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _internal_mutable_target_type();
+  return _internal_mutable_targeting_mode();
 }
 inline const ::google::protobuf::RepeatedField<::uint32_t>&
-SkillTable::_internal_target_type() const {
+SkillTable::_internal_targeting_mode() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.target_type_;
+  return _impl_.targeting_mode_;
 }
-inline ::google::protobuf::RepeatedField<::uint32_t>* SkillTable::_internal_mutable_target_type() {
+inline ::google::protobuf::RepeatedField<::uint32_t>* SkillTable::_internal_mutable_targeting_mode() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return &_impl_.target_type_;
+  return &_impl_.targeting_mode_;
 }
 
 // uint32 rquest_target = 4;

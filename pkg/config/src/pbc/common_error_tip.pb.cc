@@ -29,18 +29,19 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_common_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\026common_error_tip.proto*\270\001\n\014common_erro"
+    "\n\026common_error_tip.proto*\322\001\n\014common_erro"
     "r\022\023\n\017kCommon_errorOK\020\000\022\014\n\010kSuccess\020\000\022\023\n\017"
     "kInvalidTableId\020\001\022\025\n\021kInvalidTableData\020\002"
     "\022\027\n\023kServiceUnavailable\020\003\022\021\n\rkEntityIsNu"
     "ll\020\004\022\025\n\021kInvalidParameter\020\005\022\022\n\016kServerCr"
-    "ashed\020\006\032\002\020\001B\tZ\007pb/gameb\006proto3"
+    "ashed\020\006\022\030\n\024kThisEntityIsInvalid\020\007\032\002\020\001B\tZ"
+    "\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_common_5ferror_5ftip_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_common_5ferror_5ftip_2eproto = {
     false,
     false,
-    230,
+    256,
     descriptor_table_protodef_common_5ferror_5ftip_2eproto,
     "common_error_tip.proto",
     &descriptor_table_common_5ferror_5ftip_2eproto_once,
@@ -74,9 +75,9 @@ const ::google::protobuf::EnumDescriptor* common_error_descriptor() {
   return file_level_enum_descriptors_common_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t common_error_internal_data_[] = {
-    458752u, 0u, };
+    524288u, 0u, };
 bool common_error_IsValid(int value) {
-  return 0 <= value && value <= 6;
+  return 0 <= value && value <= 7;
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

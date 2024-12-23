@@ -7,7 +7,7 @@ import logging
 import concurrent.futures
 from os import listdir
 from os.path import isfile, join
-from typing import Any
+from typing import Any, Union
 
 import openpyxl
 import gen_common  # Assuming gen_common contains the necessary functions
@@ -35,18 +35,38 @@ def get_column_names(sheet: openpyxl.worksheet.worksheet.Worksheet) -> list[str]
     ]
 
 
-def process_cell_value(cell: openpyxl.cell.cell.Cell, field_type) -> float | int | Any:
+def process_cell_value(cell: openpyxl.cell.cell.Cell, field_type: str) -> Union[float, int, str, Any]:
     """
-    Process cell value to ensure correct type.
+    Process cell value to ensure the correct type based on the provided field_type.
+
+    Args:
+        cell (openpyxl.cell.cell.Cell): The Excel cell whose value needs processing.
+        field_type (str): The type to which the cell value should be converted. Can be "float", "int", "string".
+
+    Returns:
+        Union[float, int, str, Any]: The processed cell value in the desired type.
     """
     cell_value = cell.value
 
-    if field_type == "float" or field_type == "double":
-        return float(cell_value)
-    elif field_type == "string" :
+    if field_type == "string":
+        # 如果 field_type 是 "string"，并且 cell_value 为空（None 或 空字符串），返回 None
+        if cell_value is None or cell_value == "":
+            return None
         return str(cell_value)
-    elif cell_value is not None and cell_value.is_integer():
-        return int(cell_value)
+
+    if field_type == "float" or field_type == "double":
+        try:
+            return float(cell_value)
+        except ValueError:
+            return None  # 如果无法转换为 float，返回 None 或进行适当的处理
+
+    if isinstance(cell_value, float) and cell_value.is_integer():
+        return int(cell_value)  # 如果值是浮动且是整数，转换为整数
+
+    if isinstance(cell_value, int):
+        return cell_value  # 如果值是整数，直接返回
+
+    # 如果没有特定转换，返回原始的 cell_value
     return cell_value
 
 
@@ -119,6 +139,8 @@ def process_row(sheet, row, column_names):
             continue
 
         cell_value = process_cell_value(cell, field_type_data[col_name])
+        if cell_value is None:
+            continue
         if col_name in map_field_data or gen_common.is_key_in_map(group_data, col_name, map_field_data, column_names):
             handle_map_field_data(cell, row_data, col_name, cell_value, map_field_data, column_names, prev_cell)
         elif col_name in array_data:

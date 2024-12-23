@@ -181,7 +181,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 		for (const auto& [e, gameNode] : tls.gameNodeRegistry.view<RpcSessionPtr>().each())
 		{
 			// 如果是游戏逻辑服则删除
-			if (gameNode->conn_->peerAddress().toIpPort() == currentAddr.toIpPort())
+			if (gameNode->connection->peerAddress().toIpPort() == currentAddr.toIpPort())
 			{
 				Destroy(tls.gameNodeRegistry, e);
 				break;
@@ -192,7 +192,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 		{
 			// 如果是游戏逻辑服则删除
 			if (nullptr != gateNode &&
-				gateNode->conn_->peerAddress().toIpPort() == currentAddr.toIpPort())
+				gateNode->connection->peerAddress().toIpPort() == currentAddr.toIpPort())
 			{
 				// remove AfterChangeGsEnterScene
 				// todo 
@@ -203,7 +203,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 
 		for (const auto& [e, session] : tls.networkRegistry.view<RpcSession>().each())
 		{
-			if (session.conn_->peerAddress().toIpPort() != currentAddr.toIpPort())
+			if (session.connection->peerAddress().toIpPort() != currentAddr.toIpPort())
 			{
 				continue;
 			}

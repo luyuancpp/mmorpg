@@ -12,7 +12,7 @@ using muduo::net::EventLoop;
 class TimerTaskComp
 {
 public:
-    TimerTaskComp() {}
+    TimerTaskComp();
 	~TimerTaskComp();
 
     TimerTaskComp(const TimerTaskComp&);

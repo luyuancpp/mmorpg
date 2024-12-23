@@ -45,7 +45,7 @@ class RpcServer
  private:
   void onConnection(const TcpConnectionPtr& conn);
 
-  // void onMessage(const TcpConnectionPtr& conn,
+  // void onMessage(const TcpConnectionPtr& connection,
   //                Buffer* buf,
   //                Timestamp time);
 

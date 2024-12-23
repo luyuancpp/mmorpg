@@ -123,8 +123,21 @@
             },
             "children": [
               "4eb3d6e8-1e06-478b-9a13-8f588b47cbfe",
-              "bcd2c3f9-74f7-4574-87bf-e930b92563eb"
+              "bcd2c3f9-74f7-4574-87bf-e930b92563eb",
+              "518c9bb6-17d2-4f0e-8c9b-6abe76be9b2e"
             ]
+          },
+          "518c9bb6-17d2-4f0e-8c9b-6abe76be9b2e": {
+            "id": "518c9bb6-17d2-4f0e-8c9b-6abe76be9b2e",
+            "name": "ResetTestCount",
+            "category": "action",
+            "title": "ResetTestCount()",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": 108,
+              "y": 0
+            }
           }
         },
         "display": {
@@ -141,7 +154,7 @@
         "id": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
         "title": "Scene",
         "description": "",
-        "root": "e2809542-d25c-4213-bdf9-022ea5d4e5e7",
+        "root": "9d8f4d0c-ae86-4909-a731-00301eb17b16",
         "properties": {},
         "nodes": {
           "9d8f4d0c-ae86-4909-a731-00301eb17b16": {
@@ -156,25 +169,8 @@
               "y": -132
             },
             "children": [
-              "5ecfb339-b7b9-466c-88a5-edd121cd0030",
               "cde68fdc-daae-4ccc-ba87-749f3947eda3",
-              "5d069eed-bceb-4403-8cba-6d866d0c31cb"
-            ]
-          },
-          "e2809542-d25c-4213-bdf9-022ea5d4e5e7": {
-            "id": "e2809542-d25c-4213-bdf9-022ea5d4e5e7",
-            "name": "Priority",
-            "category": "composite",
-            "title": "Priority",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": -96,
-              "y": -84
-            },
-            "children": [
-              "9d8f4d0c-ae86-4909-a731-00301eb17b16",
-              "af2e99b2-220b-4a34-88ef-d116c2d9e15c"
+              "d9837df3-b98b-4c0f-8109-4cb51db7b057"
             ]
           },
           "d9837df3-b98b-4c0f-8109-4cb51db7b057": {
@@ -190,75 +186,6 @@
               "x": 336,
               "y": 72
             }
-          },
-          "5ecfb339-b7b9-466c-88a5-edd121cd0030": {
-            "id": "5ecfb339-b7b9-466c-88a5-edd121cd0030",
-            "name": "CheckTestCount",
-            "category": "condition",
-            "title": "CheckTestCount(<count>)",
-            "description": "",
-            "properties": {
-              "count": 0
-            },
-            "display": {
-              "x": 324,
-              "y": -300
-            }
-          },
-          "5d069eed-bceb-4403-8cba-6d866d0c31cb": {
-            "id": "5d069eed-bceb-4403-8cba-6d866d0c31cb",
-            "name": "IncrementTestCount",
-            "category": "action",
-            "title": "IncrementTestCount()",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 324,
-              "y": -108
-            }
-          },
-          "d46976a5-3d40-4ece-8ce7-dd97d0a8c343": {
-            "id": "d46976a5-3d40-4ece-8ce7-dd97d0a8c343",
-            "name": "CheckTestCount",
-            "category": "condition",
-            "title": "CheckTestCount(<count>)",
-            "description": "",
-            "properties": {
-              "count": 0
-            },
-            "display": {
-              "x": 432,
-              "y": -36
-            }
-          },
-          "af2e99b2-220b-4a34-88ef-d116c2d9e15c": {
-            "id": "af2e99b2-220b-4a34-88ef-d116c2d9e15c",
-            "name": "Sequence",
-            "category": "composite",
-            "title": "Sequence",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 60,
-              "y": -36
-            },
-            "children": [
-              "b4715eb9-0856-481e-8759-d93d4303cfa9",
-              "d9837df3-b98b-4c0f-8109-4cb51db7b057"
-            ]
-          },
-          "b4715eb9-0856-481e-8759-d93d4303cfa9": {
-            "id": "b4715eb9-0856-481e-8759-d93d4303cfa9",
-            "name": "Inverter",
-            "category": "decorator",
-            "title": "Inverter",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 192,
-              "y": -48
-            },
-            "child": "d46976a5-3d40-4ece-8ce7-dd97d0a8c343"
           },
           "cde68fdc-daae-4ccc-ba87-749f3947eda3": {
             "id": "cde68fdc-daae-4ccc-ba87-749f3947eda3",
@@ -287,7 +214,7 @@
         "id": "3961d49d-3426-410b-bc92-6fe8f3b1dee2",
         "title": "Battle",
         "description": "",
-        "root": "0a1fe30a-3fc1-43f2-8e26-fce15fae767c",
+        "root": "50b6b3a1-bb2e-4d6c-8d72-7bd87c3c2479",
         "properties": {},
         "nodes": {
           "0a1fe30a-3fc1-43f2-8e26-fce15fae767c": {
@@ -302,39 +229,11 @@
               "y": 0
             },
             "children": [
-              "2035daba-5c13-44d6-8a43-6a656e64e55e",
               "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
               "b0a180ad-cf77-4557-a901-8dd32c8d00b2",
               "c9f9df90-9850-488c-8849-4a34d4ed8259",
-              "7d65533d-959b-4e43-b195-7ce3ae4cfbcc",
-              "0a77f22e-efd3-45ca-8f47-43c7b2e06f95"
+              "7d65533d-959b-4e43-b195-7ce3ae4cfbcc"
             ]
-          },
-          "2035daba-5c13-44d6-8a43-6a656e64e55e": {
-            "id": "2035daba-5c13-44d6-8a43-6a656e64e55e",
-            "name": "CheckTestCount",
-            "category": "condition",
-            "title": "CheckTestCount(<count>)",
-            "description": "",
-            "properties": {
-              "count": 100000000
-            },
-            "display": {
-              "x": 384,
-              "y": -180
-            }
-          },
-          "0a77f22e-efd3-45ca-8f47-43c7b2e06f95": {
-            "id": "0a77f22e-efd3-45ca-8f47-43c7b2e06f95",
-            "name": "IncrementTestCount",
-            "category": "action",
-            "title": "IncrementTestCount()",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 360,
-              "y": 228
-            }
           },
           "b8a8446b-0d0d-433b-ba87-26ae75d4b12b": {
             "id": "b8a8446b-0d0d-433b-ba87-26ae75d4b12b",
@@ -346,8 +245,8 @@
               "TargetIDBoard": "HatredTarget"
             },
             "display": {
-              "x": 396,
-              "y": -84
+              "x": 420,
+              "y": -108
             }
           },
           "b0a180ad-cf77-4557-a901-8dd32c8d00b2": {
@@ -362,8 +261,8 @@
               "SkillIDBoard": "SkillID"
             },
             "display": {
-              "x": 384,
-              "y": -12
+              "x": 408,
+              "y": -48
             }
           },
           "7d65533d-959b-4e43-b195-7ce3ae4cfbcc": {
@@ -373,11 +272,11 @@
             "title": "SleepNode(<Duration>)",
             "description": "",
             "properties": {
-              "Duration": 3000
+              "Duration": 5000
             },
             "display": {
-              "x": 348,
-              "y": 144
+              "x": 372,
+              "y": 72
             }
           },
           "c9f9df90-9850-488c-8849-4a34d4ed8259": {
@@ -390,17 +289,60 @@
               "SkillIDBoard": "SkillID"
             },
             "display": {
-              "x": 360,
-              "y": 60
+              "x": 372,
+              "y": 12
             }
+          },
+          "f690190b-c589-454c-84fe-28e85f66705d": {
+            "id": "f690190b-c589-454c-84fe-28e85f66705d",
+            "name": "SetSubTree",
+            "category": "action",
+            "title": "SetSubTree(<treeTitle>)",
+            "description": "",
+            "properties": {
+              "treeTitle": "Scene"
+            },
+            "display": {
+              "x": 408,
+              "y": 216
+            }
+          },
+          "d2045f1d-a8f6-42e5-bfde-1f7b20f75995": {
+            "id": "d2045f1d-a8f6-42e5-bfde-1f7b20f75995",
+            "name": "Priority",
+            "category": "composite",
+            "title": "Priority",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -588,
+              "y": 12
+            },
+            "children": []
+          },
+          "50b6b3a1-bb2e-4d6c-8d72-7bd87c3c2479": {
+            "id": "50b6b3a1-bb2e-4d6c-8d72-7bd87c3c2479",
+            "name": "Sequence",
+            "category": "composite",
+            "title": "Sequence",
+            "description": "",
+            "properties": {},
+            "display": {
+              "x": -48,
+              "y": 48
+            },
+            "children": [
+              "0a1fe30a-3fc1-43f2-8e26-fce15fae767c",
+              "f690190b-c589-454c-84fe-28e85f66705d"
+            ]
           }
         },
         "display": {
           "camera_x": 739,
           "camera_y": 381,
           "camera_z": 1,
-          "x": 0,
-          "y": 0
+          "x": -168,
+          "y": 12
         }
       }
     ],
@@ -641,9 +583,19 @@
           "SkillIDBoard": "SkillID"
         },
         "parent": null
+      },
+      {
+        "version": "0.3.0",
+        "scope": "node",
+        "name": "ResetTestCount",
+        "category": "action",
+        "title": "ResetTestCount()",
+        "description": null,
+        "properties": {},
+        "parent": null
       }
     ],
     "custom_folders": []
   },
-  "path": "D:\\game\\luyuan\\turn-based-game\\robot\\etc\\robot.b3"
+  "path": "F:\\work\\turn-based-game\\robot\\etc\\robot.b3"
 }

@@ -62,7 +62,7 @@ TEST_F(SkillUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     request.set_target_id(entt::to_integral(target)); // Valid target ID
 
     SkillTable tableSkill;
-    tableSkill.mutable_target_type()->Add(1); // Add target type to simulate need for target
+    tableSkill.mutable_targeting_mode()->Add(1); // Add target type to simulate need for target
 
     EXPECT_CALL(*mockSkillTable, GetSkillTable(request.skill_table_id()))
         .WillRepeatedly(Return(&tableSkill));

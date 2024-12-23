@@ -5,21 +5,28 @@
 
 #define tlsEventLoop EventLoop::getEventLoopOfCurrentThread()
 
+TimerTaskComp::TimerTaskComp() {
+    Cancel();
+}
+
 TimerTaskComp::~TimerTaskComp() {
     Cancel();
 }
 
 TimerTaskComp::TimerTaskComp(const TimerTaskComp& param) {
     const_cast<TimerTaskComp&>(param).Cancel();
+    Cancel();
 }
 
 TimerTaskComp::TimerTaskComp(TimerTaskComp&& param) noexcept {
     param.Cancel();
+    Cancel();
 }
 
 TimerTaskComp& TimerTaskComp::operator=(TimerTaskComp&& param) noexcept
 {
     param.Cancel();
+    Cancel();
     return *this;
 }
 
@@ -55,6 +62,7 @@ void TimerTaskComp::Cancel() {
     tlsEventLoop->cancel(timerId);
     timerId = TimerId();
     endTime = Timestamp();
+    callback = TimerCallback();
     assert(nullptr == timerId.GetTimer());
 }
 

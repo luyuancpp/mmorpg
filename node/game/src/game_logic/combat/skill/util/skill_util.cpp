@@ -21,6 +21,7 @@
 #include "proto/logic/component/npc_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "service_info/player_skill_service_info.h"
+#include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "time/comp/timer_task_comp.h"
@@ -144,21 +145,20 @@ uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 	return  skillPermissionTable->skilltype(skillTypeIndex);
 }
 
-uint32_t GetEntityState(const entt::entity casterEntity){
-	return 0;
-}
 
 uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
-	// Retrieve the current state of the caster entity
-	const auto currentState = GetEntityState(casterEntity);  // Replace with actual state retrieval logic
 
-	// Check each skill in the skill table
-	for (const auto& skillType : skillTable->skill_type()) {
-		const auto skill = static_cast<eSkillType>(skillType);  
-		const auto result = canUseSkillInCurrentState(currentState, skill);
-		if (result != kSuccess) {
-			return result;  // Return error code if any skill can't be used
-		}
+	auto& combatStateCollection = tls.registry.get<CombatStateCollectionPbComponent>(casterEntity);
+
+	for (auto& [currentState, buffList] : combatStateCollection.states())
+	{
+        for (const auto& skillType : skillTable->skill_type()) {
+            const auto skill = static_cast<eSkillType>(skillType);
+            const auto result = canUseSkillInCurrentState(currentState, skill);
+            if (result != kSuccess) {
+                return result;  // Return error code if any skill can't be used
+            }
+        }
 	}
 
 	return kSuccess;  // All skills can be used in the current state
@@ -166,7 +166,7 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
-	RETURN_ON_ERROR(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill));
+	RETURN_ON_ERROR(ActorActionStateUtil::TryPerformAction(casterEntity, kActorActionUseSkill, kActorStateCombat));
 	RETURN_ON_ERROR(CombatStateUtil::ValidateSkillUsage(casterEntity, kActorActionUseSkill));
 	return kSuccess;
 }
@@ -210,6 +210,11 @@ void SkillUtil::HandleSkillInitialize() {
 }
 
 void SkillUtil::HandleGeneralSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
+    if (!tls.registry.valid(casterEntity))
+    {
+        return;
+    }
+
 	HandleSkillSpell(casterEntity, skillId);
 
 	LOG_INFO << "Handling general skill spell. Caster: " << entt::to_integral(casterEntity)
@@ -237,7 +242,10 @@ void SkillUtil::HandleSkillRecovery(const entt::entity casterEntity, uint64_t sk
 }
 
 void SkillUtil::HandleSkillFinish(const entt::entity casterEntity, uint64_t skillId) {
-	// Implementation here
+    if (!tls.registry.valid(casterEntity))
+    {
+        return;
+    }
 
 	// todo player off line 
 	auto& casterSkillContextMap = tls.registry.get<SkillContextCompMap>(casterEntity);
@@ -253,6 +261,11 @@ void SkillUtil::HandleSkillFinish(const entt::entity casterEntity, uint64_t skil
 }
 
 void SkillUtil::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t skillId) {
+    if (!tls.registry.valid(casterEntity))
+    {
+        return;
+    }
+
 	FetchSkillTableOrReturnVoid(skillId);
 
 	LOG_INFO << "Handling channel skill spell. Caster: " << entt::to_integral(casterEntity)
@@ -277,6 +290,11 @@ void SkillUtil::HandleChannelThink(entt::entity casterEntity, uint64_t skillId) 
 }
 
 void SkillUtil::HandleChannelFinish(const entt::entity casterEntity, const uint64_t skillId) {
+    if (!tls.registry.valid(casterEntity))
+    {
+        return;
+    }
+
 	tls.registry.remove<ChannelIntervalTimerComp>(casterEntity);
 	HandleSkillRecovery(casterEntity, skillId);
 }
@@ -301,7 +319,7 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	FetchAndValidateSkillTable(request->skill_table_id());
 
 	// 检查目标ID的有效性
-	if (!skillTable->target_type().empty() && request->target_id() <= 0) {
+	if (!skillTable->targeting_mode().empty() && request->target_id() <= 0) {
 		LOG_ERROR << "Invalid target ID: " << request->target_id()
 			<< " provided for skill ID: " << request->skill_table_id()
 			<< ". Target ID must be positive if target type is specified.";
@@ -312,7 +330,7 @@ uint32_t SkillUtil::ValidateTarget(const ::ReleaseSkillSkillRequest* request) {
 	uint32_t err = kSuccess;
 
 	// 遍历技能目标类型
-	for (auto& tabSkillType : skillTable->target_type()) {
+	for (auto& tabSkillType : skillTable->targeting_mode()) {
 		// 检查不需要目标的情况
 		if ((1 << tabSkillType) == kNoTargetRequired) {
 			return kSuccess;  // 无需进一步检查
@@ -556,6 +574,11 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
     // 获取目标的 BaseAttributesPbComponent 用于判断是否死亡
     auto targetEntity = entt::to_entity(damageEvent.target());
 
+	if (!tls.registry.valid(targetEntity))
+	{
+		return;
+	}
+
     // 如果目标已经死亡，停止进一步处理
     if (IsTargetDead(targetEntity)) {
         LOG_INFO << "Target is already dead, skipping damage calculation.";
@@ -668,6 +691,11 @@ void SkillUtil::HandleSkillSpell(const entt::entity casterEntity, const uint64_t
 	const auto& skillContext = skillContextIt->second;
 
 	const entt::entity targetEntity = entt::to_entity(skillContext->target());
+
+	if (!tls.registry.valid(targetEntity))
+	{
+		return;
+	}
     
 	DamageEventPbComponent damageEvent;
 	damageEvent.set_skill_id(skillId);

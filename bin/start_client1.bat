@@ -1,1 +1,0 @@
-for /l %%i in (0, 1, 1000) do   client.exe 800 3 

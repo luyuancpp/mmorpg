@@ -55,25 +55,25 @@ namespace protobuf {
 
 enum login_error : int {
   kLogin_errorOK = 0,
-  kLoginAccountNotFound = 7,
-  kLoginAccountPlayerFull = 8,
-  kLoginCreatePlayerUnLoadAccount = 9,
-  kLoginCreatePlayerConnectionHasNotAccount = 10,
-  kLoginUnLogin = 11,
-  kLoginInProgress = 12,
-  kLoginPlayerGuidError = 13,
-  kLoginEnteringGame = 14,
-  kLoginPlaying = 15,
-  kLoginCreatingPlayer = 16,
-  kLoginWaitingEnterGame = 17,
-  kLoginEnterGameGuid = 18,
-  kLoginAccountNameEmpty = 19,
-  kLoginCreateConnectionAccountEmpty = 20,
-  kLoginEnterGameConnectionAccountEmpty = 21,
-  kLoginUnknownError = 22,
-  kLoginSessionDisconnect = 23,
-  kLoginBeKickByAnOtherAccount = 24,
-  kLoginSessionIdNotFound = 25,
+  kLoginAccountNotFound = 8,
+  kLoginAccountPlayerFull = 9,
+  kLoginCreatePlayerUnLoadAccount = 10,
+  kLoginCreatePlayerConnectionHasNotAccount = 11,
+  kLoginUnLogin = 12,
+  kLoginInProgress = 13,
+  kLoginPlayerGuidError = 14,
+  kLoginEnteringGame = 15,
+  kLoginPlaying = 16,
+  kLoginCreatingPlayer = 17,
+  kLoginWaitingEnterGame = 18,
+  kLoginEnterGameGuid = 19,
+  kLoginAccountNameEmpty = 20,
+  kLoginCreateConnectionAccountEmpty = 21,
+  kLoginEnterGameConnectionAccountEmpty = 22,
+  kLoginUnknownError = 23,
+  kLoginSessionDisconnect = 24,
+  kLoginBeKickByAnOtherAccount = 25,
+  kLoginSessionIdNotFound = 26,
   login_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   login_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -83,8 +83,8 @@ enum login_error : int {
 bool login_error_IsValid(int value);
 extern const uint32_t login_error_internal_data_[];
 constexpr login_error login_error_MIN = static_cast<login_error>(0);
-constexpr login_error login_error_MAX = static_cast<login_error>(25);
-constexpr int login_error_ARRAYSIZE = 25 + 1;
+constexpr login_error login_error_MAX = static_cast<login_error>(26);
+constexpr int login_error_ARRAYSIZE = 26 + 1;
 const ::google::protobuf::EnumDescriptor*
 login_error_descriptor();
 template <typename T>
@@ -97,7 +97,7 @@ const std::string& login_error_Name(T value) {
 template <>
 inline const std::string& login_error_Name(login_error value) {
   return ::google::protobuf::internal::NameOfDenseEnum<login_error_descriptor,
-                                                 0, 25>(
+                                                 0, 26>(
       static_cast<int>(value));
 }
 inline bool login_error_Parse(absl::string_view name, login_error* value) {
