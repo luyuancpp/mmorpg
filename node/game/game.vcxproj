@@ -137,7 +137,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\game_logic\actor\action_state\util\actor_action_state_util.cpp" />
+    <ClCompile Include="src\game_logic\actor\action_state\system\actor_action_state_system.cpp" />
     <ClCompile Include="src\game_logic\actor\attribute\comp\actor_atrribute_comp.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -757,7 +757,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
   <ItemGroup>
     <ClInclude Include="src\game_logic\actor\action_state\constants\actor_effect_state_constants.h" />
     <ClInclude Include="src\game_logic\actor\action_state\constants\actor_state_constants.h" />
-    <ClInclude Include="src\game_logic\actor\action_state\util\actor_action_state_util.h" />
+    <ClInclude Include="src\game_logic\actor\action_state\system\actor_action_state_system.h" />
     <ClInclude Include="src\game_logic\actor\attribute\comp\actor_atrribute_comp.h" />
     <ClInclude Include="src\game_logic\actor\attribute\constants\actor_state_attribute_calculator_constants.h" />
     <ClInclude Include="src\game_logic\actor\attribute\constants\actor_state_attribute_constants.h" />

@@ -186,7 +186,7 @@
     <ClCompile Include="src\game_logic\scene\util\interest_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\actor\action_state\util\actor_action_state_util.cpp">
+    <ClCompile Include="src\game_logic\actor\action_state\system\actor_action_state_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\actor\attribute\comp\actor_atrribute_comp.cpp">
@@ -437,7 +437,7 @@
     <ClInclude Include="src\game_logic\actor\action_state\constants\actor_state_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\actor\action_state\util\actor_action_state_util.h">
+    <ClInclude Include="src\game_logic\actor\action_state\system\actor_action_state_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\actor\attribute\comp\actor_atrribute_comp.h">
