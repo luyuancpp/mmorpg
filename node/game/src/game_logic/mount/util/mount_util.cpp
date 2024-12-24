@@ -3,12 +3,12 @@
 #include "common_error_tip.pb.h"
 #include "mount_error_tip.pb.h"
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"
-#include "game_logic/actor/action_state/util/actor_action_state_util.h"
+#include "game_logic/actor/action_state/system/actor_action_state_system.h"
 #include "macros/return_define.h"
 
 inline uint32_t MountUtil::MountActor(const entt::entity actorEntity)
 {
-    RETURN_FALSE_ON_ERROR(ActorActionStateUtil::TryPerformAction(actorEntity, kActorActionMountActor, kActorStateMounted));
+    RETURN_FALSE_ON_ERROR(ActorActionStateSystem::TryPerformAction(actorEntity, kActorActionMountActor, kActorStateMounted));
     // 执行上坐骑逻辑
     
     return kSuccess;
@@ -16,7 +16,7 @@ inline uint32_t MountUtil::MountActor(const entt::entity actorEntity)
 
 uint32_t MountUtil::UnmountActor(const entt::entity actorEntity)
 {
-    if (!ActorActionStateUtil::HasState(actorEntity, kActorStateMounted)) {
+    if (!ActorActionStateSystem::HasState(actorEntity, kActorStateMounted)) {
         return kMountNotMounted;
     }
     // 执行下坐骑逻辑
@@ -30,7 +30,7 @@ uint32_t MountUtil::ForceUnmountActor(entt::entity actorEntity)
 
 uint32_t MountUtil::InterruptAndUnmountActor(const entt::entity actorEntity)
 {
-    RETURN_FALSE_ON_ERROR(ActorActionStateUtil::RemoveState(actorEntity, kActorStateMounted));
+    RETURN_FALSE_ON_ERROR(ActorActionStateSystem::RemoveState(actorEntity, kActorStateMounted));
     
     return kSuccess;
 }

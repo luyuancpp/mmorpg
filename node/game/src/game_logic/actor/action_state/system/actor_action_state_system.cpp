@@ -1,4 +1,4 @@
-﻿#include "actor_action_state_util.h"
+﻿#include "actor_action_state_system.h"
 #include "actoractionstate_config.h"
 #include "common_error_tip.pb.h"
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"
@@ -36,7 +36,7 @@ namespace {
             tls.dispatcher.trigger(interruptEvent);
 
             // 中断当前状态并执行该动作
-            RETURN_FALSE_ON_ERROR(ActorActionStateUtil::RemoveState(actorEntity, actorState));
+            RETURN_FALSE_ON_ERROR(ActorActionStateSystem::RemoveState(actorEntity, actorState));
             
             return true;  // 成功中断并执行动作
         }
@@ -45,12 +45,12 @@ namespace {
     }
 }
 
-void ActorActionStateUtil::InitializeActorComponents(entt::entity entity) {
+void ActorActionStateSystem::InitializeActorComponents(entt::entity entity) {
     // 初始化实体的状态组件
     tls.registry.emplace<ActorStatePbComponent>(entity);
 }
 
-uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
+uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
     // 获取该动作对应的状态表
     FetchAndValidateActorActionStateTable(actorAction);
 
@@ -76,7 +76,7 @@ uint32_t ActorActionStateUtil::TryPerformAction(entt::entity actorEntity, uint32
 }
 
 
-uint32_t ActorActionStateUtil::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
+uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
     FetchAndValidateActorActionStateTable(actorAction);
     
     // 获取角色状态组件并检查是否允许执行动作
@@ -90,7 +90,7 @@ uint32_t ActorActionStateUtil::CanExecuteActionWithoutStateChange(entt::entity a
     return kSuccess;
 }
 
-bool ActorActionStateUtil::HasState(const entt::entity actorEntity, const uint32_t state) {
+bool ActorActionStateSystem::HasState(const entt::entity actorEntity, const uint32_t state) {
     const auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     if (state >= kActorStateActorStateMax) {
         return false;  // 无效状态
@@ -99,7 +99,7 @@ bool ActorActionStateUtil::HasState(const entt::entity actorEntity, const uint32
     return actorStatePbComponent.state_list().contains(state);  // 检查是否包含指定状态
 }
 
-uint32_t ActorActionStateUtil::GetStateTip(const uint32_t actorAction, const uint32_t actorState) {
+uint32_t ActorActionStateSystem::GetStateTip(const uint32_t actorAction, const uint32_t actorState) {
     FetchAndValidateActorActionStateTable(actorAction);
 
     if (actorState >= static_cast<uint32_t>(actorActionStateTable->state_size())) {
@@ -110,7 +110,7 @@ uint32_t ActorActionStateUtil::GetStateTip(const uint32_t actorAction, const uin
     return state.state_tip();  // 返回状态提示
 }
 
-uint32_t ActorActionStateUtil::AddState(const entt::entity actorEntity, uint32_t actorState) {
+uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     if (actorState >= kActorStateActorStateMax){
         return kInvalidParameter; 
@@ -126,7 +126,7 @@ uint32_t ActorActionStateUtil::AddState(const entt::entity actorEntity, uint32_t
     return kSuccess;
 }
 
-uint32_t ActorActionStateUtil::RemoveState(entt::entity actorEntity, uint32_t actorState) {
+uint32_t ActorActionStateSystem::RemoveState(entt::entity actorEntity, uint32_t actorState) {
     auto& actorStatePbComponent = tls.registry.get<ActorStatePbComponent>(actorEntity);
     if (actorState >= kActorStateActorStateMax ||
         !actorStatePbComponent.state_list().contains(actorState)) {

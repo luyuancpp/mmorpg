@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <entt/src/entt/entity/entity.hpp>
 
-class ActorActionStateUtil
+class ActorActionStateSystem
 {
 public:
     static void InitializeActorComponents(entt::entity entity);

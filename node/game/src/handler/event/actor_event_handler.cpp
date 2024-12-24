@@ -3,7 +3,7 @@
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"
-#include "game_logic/actor/action_state/util/actor_action_state_util.h"
+#include "game_logic/actor/action_state/system/actor_action_state_system.h"
 #include "game_logic/actor/attribute/system/actor_attribute_calculator_system.h"
 #include "game_logic/actor/attribute/util/actor_state_attribute_sync_util.h"
 #include "game_logic/actor/combat_state/util/combat_state_util.h"
@@ -33,7 +33,7 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 	BuffUtil::InitializeActorComponents(actorEntity);
 	InterestUtil::InitializeActorComponents(actorEntity);
 	ActorAttributeCalculatorSystem::InitializeActorComponents(actorEntity);
-	ActorActionStateUtil::InitializeActorComponents(actorEntity);
+	ActorActionStateSystem::InitializeActorComponents(actorEntity);
 	CombatStateUtil::InitializeCombatStateComponent(actorEntity);
 	SkillUtil::InitializeActorComponents(actorEntity);
 ///<<< END WRITING YOUR CODE
