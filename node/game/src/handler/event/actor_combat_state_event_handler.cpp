@@ -2,7 +2,7 @@
 #include "logic/event/actor_combat_state_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "game_logic/actor/combat_state/util/combat_state_util.h"
+#include "game_logic/actor/combat_state/util/combat_state_system.h"
 ///<<< END WRITING YOUR CODE
 void ActorCombatStateEventHandler::Register()
 {
@@ -19,14 +19,14 @@ void ActorCombatStateEventHandler::UnRegister()
 void ActorCombatStateEventHandler::CombatStateAddedPbEventHandler(const CombatStateAddedPbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CombatStateUtil::AddCombatState(event);
+	CombatStateSystem::AddCombatState(event);
 ///<<< END WRITING YOUR CODE
 }
 
 void ActorCombatStateEventHandler::CombatStateRemovedPbEventHandler(const CombatStateRemovedPbEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CombatStateUtil::RemoveCombatState(event);
+	CombatStateSystem::RemoveCombatState(event);
 ///<<< END WRITING YOUR CODE
 }
 
