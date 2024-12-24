@@ -7,7 +7,7 @@
 #include "skill_config.h"
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"
 #include "game_logic/actor/action_state/system/actor_action_state_system.h"
-#include "game_logic/actor/combat_state/util/combat_state_system.h"
+#include "game_logic/actor/combat_state/system/combat_state_system.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
