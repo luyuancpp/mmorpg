@@ -454,7 +454,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
       <EnableModules>true</EnableModules>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="src\game_logic\actor\combat_state\util\combat_state_util.cpp" />
+    <ClCompile Include="src\game_logic\actor\combat_state\util\combat_state_system.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
@@ -765,7 +765,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\actor\attribute\system\actor_state_attribute_sync_system.h" />
     <ClInclude Include="src\game_logic\actor\attribute\util\actor_state_attribute_sync_util.h" />
     <ClInclude Include="src\game_logic\actor\combat_state\constants\combat_state_constants.h" />
-    <ClInclude Include="src\game_logic\actor\combat_state\util\combat_state_util.h" />
+    <ClInclude Include="src\game_logic\actor\combat_state\util\combat_state_system.h" />
     <ClInclude Include="src\game_logic\combat\buff\util\buff_impl_util.h" />
     <ClInclude Include="src\game_logic\combat\buff\util\modifier_buff_impl_util.h" />
     <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_impl_util.h" />

@@ -1,4 +1,4 @@
-﻿#include "combat_state_util.h"
+﻿#include "combat_state_system.h"
 
 #include "actoractioncombatstate_config.h"
 #include "common_error_tip.pb.h"
@@ -10,12 +10,12 @@
 #include "thread_local/storage.h"
 
 // 初始化实体的战斗状态组件
-void CombatStateUtil::InitializeCombatStateComponent(entt::entity entity) {
+void CombatStateSystem::InitializeCombatStateComponent(entt::entity entity) {
     tls.registry.emplace<CombatStateCollectionPbComponent>(entity); // 添加战斗状态集合组件
 }
 
 // 添加战斗状态
-void CombatStateUtil::AddCombatState(const CombatStateAddedPbEvent& addEvent) {
+void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) {
     // 获取实体 ID
     const auto entityId = entt::to_entity(addEvent.actor_entity());
 
@@ -47,7 +47,7 @@ void CombatStateUtil::AddCombatState(const CombatStateAddedPbEvent& addEvent) {
 }
 
 // 移除战斗状态
-void CombatStateUtil::RemoveCombatState(const CombatStateRemovedPbEvent& removeEvent) {
+void CombatStateSystem::RemoveCombatState(const CombatStateRemovedPbEvent& removeEvent) {
     // 获取实体 ID
     const auto entityId = entt::to_entity(removeEvent.actor_entity());
 
@@ -77,7 +77,7 @@ void CombatStateUtil::RemoveCombatState(const CombatStateRemovedPbEvent& removeE
     ActorAttributeCalculatorSystem::MarkAttributeForUpdate(entityId, kCombatState);
 }
 
-uint32_t CombatStateUtil::ValidateSkillUsage(const entt::entity entityId, const uint32_t combatAction)
+uint32_t CombatStateSystem::ValidateSkillUsage(const entt::entity entityId, const uint32_t combatAction)
 {
     // 获取实体的战斗状态集合
     const auto& combatStateCollection = tls.registry.get<CombatStateCollectionPbComponent>(entityId);
