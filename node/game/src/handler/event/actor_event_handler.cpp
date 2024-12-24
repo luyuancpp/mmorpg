@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"
 #include "game_logic/actor/action_state/util/actor_action_state_util.h"
-#include "game_logic/actor/attribute/util/actor_attribute_calculator_util.h"
+#include "game_logic/actor/attribute/system/actor_attribute_calculator_system.h"
 #include "game_logic/actor/attribute/util/actor_state_attribute_sync_util.h"
 #include "game_logic/actor/combat_state/util/combat_state_util.h"
 #include "game_logic/combat/buff/util/buff_util.h"
@@ -32,7 +32,7 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 	ActorStateAttributeSyncUtil::InitializeActorComponents(actorEntity);
 	BuffUtil::InitializeActorComponents(actorEntity);
 	InterestUtil::InitializeActorComponents(actorEntity);
-	ActorAttributeCalculatorUtil::InitializeActorComponents(actorEntity);
+	ActorAttributeCalculatorSystem::InitializeActorComponents(actorEntity);
 	ActorActionStateUtil::InitializeActorComponents(actorEntity);
 	CombatStateUtil::InitializeCombatStateComponent(actorEntity);
 	SkillUtil::InitializeActorComponents(actorEntity);
