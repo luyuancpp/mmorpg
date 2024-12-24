@@ -3,7 +3,7 @@
 #include "actoractioncombatstate_config.h"
 #include "common_error_tip.pb.h"
 #include "game_logic/actor/attribute/constants/actor_state_attribute_calculator_constants.h"
-#include "game_logic/actor/attribute/util/actor_attribute_calculator_util.h"
+#include "game_logic/actor/attribute/system/actor_attribute_calculator_system.h"
 #include "game_logic/actor/combat_state/constants/combat_state_constants.h"
 #include "proto/logic/component/actor_combat_state_comp.pb.h"
 #include "proto/logic/event/actor_combat_state_event.pb.h"
@@ -43,7 +43,7 @@ void CombatStateUtil::AddCombatState(const CombatStateAddedPbEvent& addEvent) {
     stateIterator->second.mutable_sources()->emplace(addEvent.source_buff_id(), false);
 
     // 标记需要更新战斗状态属性
-    ActorAttributeCalculatorUtil::MarkAttributeForUpdate(entityId, kCombatState);
+    ActorAttributeCalculatorSystem::MarkAttributeForUpdate(entityId, kCombatState);
 }
 
 // 移除战斗状态
@@ -74,7 +74,7 @@ void CombatStateUtil::RemoveCombatState(const CombatStateRemovedPbEvent& removeE
     }
 
     // 标记需要更新战斗状态属性
-    ActorAttributeCalculatorUtil::MarkAttributeForUpdate(entityId, kCombatState);
+    ActorAttributeCalculatorSystem::MarkAttributeForUpdate(entityId, kCombatState);
 }
 
 uint32_t CombatStateUtil::ValidateSkillUsage(const entt::entity entityId, const uint32_t combatAction)

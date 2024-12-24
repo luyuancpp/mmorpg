@@ -2,7 +2,7 @@
 #include "buff_config.pb.h"
 #include "modifier_buff_impl_util.h"
 #include "game_logic/actor/attribute/constants/actor_state_attribute_calculator_constants.h"
-#include "game_logic/actor/attribute/util/actor_attribute_calculator_util.h"
+#include "game_logic/actor/attribute/system/actor_attribute_calculator_system.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "thread_local/storage.h"
@@ -14,7 +14,7 @@ bool ModifierBuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const Bu
 
     if(IsMovementSpeedBuff(buffTable))
     {
-        ActorAttributeCalculatorUtil::MarkAttributeForUpdate(parent, kVelocity);
+        ActorAttributeCalculatorSystem::MarkAttributeForUpdate(parent, kVelocity);
         return  true;
     }
 
@@ -33,7 +33,7 @@ bool ModifierBuffUtil::OnBuffRemove(const entt::entity parent, BuffComp& buff, c
 
     if(IsMovementSpeedBuff(buffTable))
     {
-        ActorAttributeCalculatorUtil::MarkAttributeForUpdate(parent, kVelocity);
+        ActorAttributeCalculatorSystem::MarkAttributeForUpdate(parent, kVelocity);
         return  true;
     }
 
