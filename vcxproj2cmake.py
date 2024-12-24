@@ -118,6 +118,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += "add_definitions(-DGOOGLE_LOG=ABSL_DLOG)\n"
     fileLines += "add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)\n"
     fileLines += "add_definitions(-DENTT_ID_TYPE=uint64_t)\n\n"
+    fileLines += "add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)\n\n"
 
     
     # include directory
