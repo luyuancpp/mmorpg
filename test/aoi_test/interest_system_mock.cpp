@@ -1,4 +1,4 @@
-#include "game_logic/scene/util/interest_system.h"
+#include "game_logic/scene/system/interest_system.h"
 
 
 void InterestSystem::InitializeActorComponents(const entt::entity entity)
