@@ -8,7 +8,7 @@
 
 #include "DetourCrowd/DetourCrowd.h"
 #include "game_node.h"
-#include "game_logic/core/network/message_util.h"
+#include "game_logic/core/network/message_system.h"
 #include "service_info/centre_scene_service_info.h"
 #include "game_logic/scene/util/recast_util.h"
 #include "scene/util/scene_util.h"

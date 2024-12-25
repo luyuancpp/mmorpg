@@ -52,7 +52,7 @@ void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centr
 	// Set flag for first login
 	tls.registry.emplace<EnterGameNodeInfoPBComponent>(playerEntity).set_enter_gs_type(LOGIN_FIRST);
 
-	PlayerSceneUtil::HandleLoginEnterScene(playerEntity);
+	PlayerSceneSystem::HandleLoginEnterScene(playerEntity);
 	// On database loaded
 }
 

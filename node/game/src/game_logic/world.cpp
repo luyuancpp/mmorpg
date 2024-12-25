@@ -5,7 +5,7 @@
 #include "actor/attribute/system/actor_state_attribute_sync_system.h"
 #include "combat/buff/system/buff_system.h"
 #include "game_logic/core/constants/fps_constants.h"
-#include "game_logic/player/util/player_session_util.h"
+#include "game_logic/player/util/player_session_system.h"
 #include "game_logic/scene/system/aoi_system.h"
 #include "game_logic/scene/system/movement_acceleration_system.h"
 #include "game_logic/scene/system/movement_system.h"
@@ -28,7 +28,7 @@ void World::InitializeSystemBeforeConnect()
     tlsGame.frameTime.set_target_fps(kTargetFPS);
     tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
 
-	PlayerSessionUtil::Initialize();
+	PlayerSessionSystem::Initialize();
 	ViewUtil::Initialize();
 }
 

@@ -81,13 +81,13 @@
     <ClCompile Include="src\game_logic\scene\util\game_node_scene_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_scene_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_session_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_session_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_tip_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_tip_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\scene\util\recast_util.cpp">
@@ -99,7 +99,7 @@
     <ClCompile Include="src\game_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_node_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_node_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\scene\system\aoi_system.cpp">
@@ -153,7 +153,7 @@
     <ClCompile Include="src\handler\service_replied\gate_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_skill_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_skill_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\player\util\player_player_database_1_util.cpp">
@@ -201,7 +201,7 @@
     <ClCompile Include="src\game_logic\core\config\config_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\core\network\message_util.cpp">
+    <ClCompile Include="src\game_logic\core\network\message_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\core\utils\redis_util.cpp">
@@ -287,13 +287,13 @@
     <ClInclude Include="src\game_logic\scene\util\game_node_scene_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_scene_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_session_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_session_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_tip_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_tip_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\util\recast_util.h">
@@ -311,7 +311,7 @@
     <ClInclude Include="src\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_node_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_node_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\system\aoi_system.h">
@@ -398,7 +398,7 @@
     <ClInclude Include="src\handler\service_replied\gate_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_skill_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_skill_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\player_event_handler.h">
@@ -467,7 +467,7 @@
     <ClInclude Include="src\game_logic\core\constants\fps_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\core\network\message_util.h">
+    <ClInclude Include="src\game_logic\core\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_util.h">

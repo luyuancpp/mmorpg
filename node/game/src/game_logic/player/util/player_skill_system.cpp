@@ -1,15 +1,15 @@
-#include "player_skill_util.h"
+#include "player_skill_system.h"
 
 #include "class_config.h"
 #include "proto/logic/component/player_skill_comp.pb.h"
 #include "thread_local/storage.h"
 
-void PlayerSkillUtil::InitializePlayerComponentsHandler(entt::entity player)
+void PlayerSkillSystem::InitializePlayerComponentsHandler(entt::entity player)
 {
 
 }
 
-void PlayerSkillUtil::RegisterPlayer(entt::entity player)
+void PlayerSkillSystem::RegisterPlayer(entt::entity player)
 {
 	for (const auto& tableClass : GetClassAllTable().data())
 	{

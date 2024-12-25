@@ -1,8 +1,8 @@
-#include "player_scene_util.h"
+#include "player_scene_system.h"
 
 #include "muduo/base/Logging.h"
 
-#include "game_logic/core/network/message_util.h"
+#include "game_logic/core/network/message_system.h"
 
 #include "scene/util/scene_util.h"
 #include "thread_local/storage_common_logic.h"
@@ -10,7 +10,7 @@
 #include "service_info/player_scene_service_info.h"
 
 
-void PlayerSceneUtil::HandleEnterScene(entt::entity player, entt::entity scene)
+void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene)
 {
 	const auto sceneInfo = tls.sceneRegistry.try_get<SceneInfoPBComponent>(scene);
 	if (sceneInfo == nullptr)
@@ -24,7 +24,7 @@ void PlayerSceneUtil::HandleEnterScene(entt::entity player, entt::entity scene)
 	SendMessageToPlayer(ClientPlayerSceneServiceNotifyEnterSceneMessageId, message, player);
 }
 
-void PlayerSceneUtil::HandleLeaveScene(entt::entity player)
+void PlayerSceneSystem::HandleLeaveScene(entt::entity player)
 {
 
 }

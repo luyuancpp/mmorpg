@@ -1,6 +1,6 @@
 #pragma once
 
-class PlayerSessionUtil
+class PlayerSessionSystem
 {
 public:
     static void Initialize();

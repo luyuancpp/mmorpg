@@ -4,9 +4,9 @@
 #include "muduo/net/InetAddress.h"
 
 #include "game_node.h"
-#include "game_logic/core/network/message_util.h"
-#include "game_logic/player/util/player_node_util.h"
-#include "game_logic/player/util/player_scene_util.h"
+#include "game_logic/core/network/message_system.h"
+#include "game_logic/player/util/player_node_system.h"
+#include "game_logic/player/util/player_scene_system.h"
 #include "game_logic/scene/util/game_node_scene_util.h"
 #include "handler/service/player/player_service.h"
 #include "network/gate_session.h"
@@ -391,7 +391,7 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 	entt::entity sceneEntity{ request->scene_id() };
 	SceneUtil::EnterScene({ .scene = sceneEntity, .enter = player });
 	
-	PlayerSceneUtil::HandleEnterScene(player, sceneEntity);
+	PlayerSceneSystem::HandleEnterScene(player, sceneEntity);
 
 ///<<< END WRITING YOUR CODE
 }

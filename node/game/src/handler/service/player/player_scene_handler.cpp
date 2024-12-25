@@ -2,7 +2,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "game_node.h"
-#include "game_logic/core/network/message_util.h"
+#include "game_logic/core/network/message_system.h"
 #include "pbc/scene_error_tip.pb.h"
 #include "proto/logic/server_player/centre_player_scene.pb.h"
 #include "scene/comp/scene_comp.h"

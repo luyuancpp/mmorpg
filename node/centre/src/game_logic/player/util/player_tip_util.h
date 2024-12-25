@@ -4,7 +4,7 @@
 
 #include "type_define/type_define.h"
 
-class PlayerTipUtil
+class PlayerTipSystem
 {
 public:
     static void SendToPlayer(entt::entity player, uint32_t tip_id, const StringVector& str_param);

@@ -1,8 +1,8 @@
 #include "game_player_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "game_logic/player/util/player_node_util.h"
-#include "game_logic/player/util/player_scene_util.h"
+#include "game_logic/player/util/player_node_system.h"
+#include "game_logic/player/util/player_scene_system.h"
 #include "muduo/base/Logging.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "scene/util/scene_util.h"
@@ -26,7 +26,7 @@ void GamePlayerServiceHandler::ExitGame(entt::entity player,const ::GameNodeExit
 	     google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	PlayerSceneUtil::HandleLeaveScene(player);
+	PlayerSceneSystem::HandleLeaveScene(player);
 	SceneUtil::LeaveScene({ .leaver = player });
 
 	PlayerNodeSystem::HandleExitGameNode(player);
