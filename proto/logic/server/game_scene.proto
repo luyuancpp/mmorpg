@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common/empty.proto";
+import "proto/common/empty.proto";
 option cc_generic_services = true;
 
 message GameSceneTest

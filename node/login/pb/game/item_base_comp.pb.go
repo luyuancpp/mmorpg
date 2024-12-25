@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.34.2
 // 	protoc        v5.26.1
-// source: logic/component/item_base_comp.proto
+// source: proto/logic/component/item_base_comp.proto
 
 package game
 
@@ -33,7 +33,7 @@ type ItemPBComponent struct {
 func (x *ItemPBComponent) Reset() {
 	*x = ItemPBComponent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_logic_component_item_base_comp_proto_msgTypes[0]
+		mi := &file_proto_logic_component_item_base_comp_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -46,7 +46,7 @@ func (x *ItemPBComponent) String() string {
 func (*ItemPBComponent) ProtoMessage() {}
 
 func (x *ItemPBComponent) ProtoReflect() protoreflect.Message {
-	mi := &file_logic_component_item_base_comp_proto_msgTypes[0]
+	mi := &file_proto_logic_component_item_base_comp_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *ItemPBComponent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ItemPBComponent.ProtoReflect.Descriptor instead.
 func (*ItemPBComponent) Descriptor() ([]byte, []int) {
-	return file_logic_component_item_base_comp_proto_rawDescGZIP(), []int{0}
+	return file_proto_logic_component_item_base_comp_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ItemPBComponent) GetItemId() uint64 {
@@ -83,38 +83,38 @@ func (x *ItemPBComponent) GetSize() uint32 {
 	return 0
 }
 
-var File_logic_component_item_base_comp_proto protoreflect.FileDescriptor
+var File_proto_logic_component_item_base_comp_proto protoreflect.FileDescriptor
 
-var file_logic_component_item_base_comp_proto_rawDesc = []byte{
-	0x0a, 0x24, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e,
-	0x74, 0x2f, 0x69, 0x74, 0x65, 0x6d, 0x5f, 0x62, 0x61, 0x73, 0x65, 0x5f, 0x63, 0x6f, 0x6d, 0x70,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x5b, 0x0a, 0x0f, 0x49, 0x74, 0x65, 0x6d, 0x50, 0x42,
-	0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x69, 0x74, 0x65,
-	0x6d, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x69, 0x74, 0x65, 0x6d,
-	0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x69, 0x64, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x49, 0x64, 0x12,
-	0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x73,
-	0x69, 0x7a, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+var file_proto_logic_component_item_base_comp_proto_rawDesc = []byte{
+	0x0a, 0x2a, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x63, 0x6f,
+	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x2f, 0x69, 0x74, 0x65, 0x6d, 0x5f, 0x62, 0x61, 0x73,
+	0x65, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x5b, 0x0a, 0x0f,
+	0x49, 0x74, 0x65, 0x6d, 0x50, 0x42, 0x43, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x12,
+	0x17, 0x0a, 0x07, 0x69, 0x74, 0x65, 0x6d, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x06, 0x69, 0x74, 0x65, 0x6d, 0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x66,
+	0x69, 0x67, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x63, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f,
+	0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_logic_component_item_base_comp_proto_rawDescOnce sync.Once
-	file_logic_component_item_base_comp_proto_rawDescData = file_logic_component_item_base_comp_proto_rawDesc
+	file_proto_logic_component_item_base_comp_proto_rawDescOnce sync.Once
+	file_proto_logic_component_item_base_comp_proto_rawDescData = file_proto_logic_component_item_base_comp_proto_rawDesc
 )
 
-func file_logic_component_item_base_comp_proto_rawDescGZIP() []byte {
-	file_logic_component_item_base_comp_proto_rawDescOnce.Do(func() {
-		file_logic_component_item_base_comp_proto_rawDescData = protoimpl.X.CompressGZIP(file_logic_component_item_base_comp_proto_rawDescData)
+func file_proto_logic_component_item_base_comp_proto_rawDescGZIP() []byte {
+	file_proto_logic_component_item_base_comp_proto_rawDescOnce.Do(func() {
+		file_proto_logic_component_item_base_comp_proto_rawDescData = protoimpl.X.CompressGZIP(file_proto_logic_component_item_base_comp_proto_rawDescData)
 	})
-	return file_logic_component_item_base_comp_proto_rawDescData
+	return file_proto_logic_component_item_base_comp_proto_rawDescData
 }
 
-var file_logic_component_item_base_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_logic_component_item_base_comp_proto_goTypes = []any{
+var file_proto_logic_component_item_base_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_logic_component_item_base_comp_proto_goTypes = []any{
 	(*ItemPBComponent)(nil), // 0: ItemPBComponent
 }
-var file_logic_component_item_base_comp_proto_depIdxs = []int32{
+var file_proto_logic_component_item_base_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -122,13 +122,13 @@ var file_logic_component_item_base_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_logic_component_item_base_comp_proto_init() }
-func file_logic_component_item_base_comp_proto_init() {
-	if File_logic_component_item_base_comp_proto != nil {
+func init() { file_proto_logic_component_item_base_comp_proto_init() }
+func file_proto_logic_component_item_base_comp_proto_init() {
+	if File_proto_logic_component_item_base_comp_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_logic_component_item_base_comp_proto_msgTypes[0].Exporter = func(v any, i int) any {
+		file_proto_logic_component_item_base_comp_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*ItemPBComponent); i {
 			case 0:
 				return &v.state
@@ -145,18 +145,18 @@ func file_logic_component_item_base_comp_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_logic_component_item_base_comp_proto_rawDesc,
+			RawDescriptor: file_proto_logic_component_item_base_comp_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_logic_component_item_base_comp_proto_goTypes,
-		DependencyIndexes: file_logic_component_item_base_comp_proto_depIdxs,
-		MessageInfos:      file_logic_component_item_base_comp_proto_msgTypes,
+		GoTypes:           file_proto_logic_component_item_base_comp_proto_goTypes,
+		DependencyIndexes: file_proto_logic_component_item_base_comp_proto_depIdxs,
+		MessageInfos:      file_proto_logic_component_item_base_comp_proto_msgTypes,
 	}.Build()
-	File_logic_component_item_base_comp_proto = out.File
-	file_logic_component_item_base_comp_proto_rawDesc = nil
-	file_logic_component_item_base_comp_proto_goTypes = nil
-	file_logic_component_item_base_comp_proto_depIdxs = nil
+	File_proto_logic_component_item_base_comp_proto = out.File
+	file_proto_logic_component_item_base_comp_proto_rawDesc = nil
+	file_proto_logic_component_item_base_comp_proto_goTypes = nil
+	file_proto_logic_component_item_base_comp_proto_depIdxs = nil
 }

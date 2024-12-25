@@ -2,8 +2,8 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common/common.proto";
-import "common/session.proto";
+import "proto/common/common.proto";
+import "proto/common/session.proto";
 
 message RouteNodeInfo
 {

@@ -2,10 +2,10 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common/empty.proto";
-import "common/c2gate.proto";
-import "common/mysql_database_table.proto";
-import "common/session.proto";
+import "proto/common/empty.proto";
+import "proto/common/c2gate.proto";
+import "proto/common/mysql_database_table.proto";
+import "proto/common/session.proto";
 
 message LoginC2LRequest
 {

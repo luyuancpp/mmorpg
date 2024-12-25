@@ -2,8 +2,8 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common/empty.proto";
-import "logic/component/scene_comp.proto";
+import "proto/common/empty.proto";
+import "proto/common/common.proto";
 
 option cc_generic_services = true;
 

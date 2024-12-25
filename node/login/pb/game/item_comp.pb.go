@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.34.2
 // 	protoc        v5.26.1
-// source: logic/component/item_comp.proto
+// source: proto/logic/component/item_comp.proto
 
 package game
 
@@ -19,17 +19,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-var File_logic_component_item_comp_proto protoreflect.FileDescriptor
+var File_proto_logic_component_item_comp_proto protoreflect.FileDescriptor
 
-var file_logic_component_item_comp_proto_rawDesc = []byte{
-	0x0a, 0x1f, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x63, 0x6f, 0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e,
-	0x74, 0x2f, 0x69, 0x74, 0x65, 0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+var file_proto_logic_component_item_comp_proto_rawDesc = []byte{
+	0x0a, 0x25, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x6f, 0x67, 0x69, 0x63, 0x2f, 0x63, 0x6f,
+	0x6d, 0x70, 0x6f, 0x6e, 0x65, 0x6e, 0x74, 0x2f, 0x69, 0x74, 0x65, 0x6d, 0x5f, 0x63, 0x6f, 0x6d,
+	0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61,
+	0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
-var file_logic_component_item_comp_proto_goTypes = []any{}
-var file_logic_component_item_comp_proto_depIdxs = []int32{
+var file_proto_logic_component_item_comp_proto_goTypes = []any{}
+var file_proto_logic_component_item_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -37,26 +37,26 @@ var file_logic_component_item_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_logic_component_item_comp_proto_init() }
-func file_logic_component_item_comp_proto_init() {
-	if File_logic_component_item_comp_proto != nil {
+func init() { file_proto_logic_component_item_comp_proto_init() }
+func file_proto_logic_component_item_comp_proto_init() {
+	if File_proto_logic_component_item_comp_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_logic_component_item_comp_proto_rawDesc,
+			RawDescriptor: file_proto_logic_component_item_comp_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_logic_component_item_comp_proto_goTypes,
-		DependencyIndexes: file_logic_component_item_comp_proto_depIdxs,
+		GoTypes:           file_proto_logic_component_item_comp_proto_goTypes,
+		DependencyIndexes: file_proto_logic_component_item_comp_proto_depIdxs,
 	}.Build()
-	File_logic_component_item_comp_proto = out.File
-	file_logic_component_item_comp_proto_rawDesc = nil
-	file_logic_component_item_comp_proto_goTypes = nil
-	file_logic_component_item_comp_proto_depIdxs = nil
+	File_proto_logic_component_item_comp_proto = out.File
+	file_proto_logic_component_item_comp_proto_rawDesc = nil
+	file_proto_logic_component_item_comp_proto_goTypes = nil
+	file_proto_logic_component_item_comp_proto_depIdxs = nil
 }
