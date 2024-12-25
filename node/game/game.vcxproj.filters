@@ -449,9 +449,6 @@
     <ClInclude Include="src\game_logic\combat\buff\system\buff_impl_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\buff\system\modifier_buff_impl_system.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\game_logic\core\config\config_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>

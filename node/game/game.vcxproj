@@ -686,7 +686,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\actor\combat_state\constants\combat_state_constants.h" />
     <ClInclude Include="src\game_logic\actor\combat_state\system\combat_state_system.h" />
     <ClInclude Include="src\game_logic\combat\buff\system\buff_impl_system.h" />
-    <ClInclude Include="src\game_logic\combat\buff\system\modifier_buff_impl_system.h" />
     <ClInclude Include="src\game_logic\combat\skill\comp\skill_comp.h" />
     <ClInclude Include="src\game_logic\combat\buff\comp\buff_comp.h" />
     <ClInclude Include="src\game_logic\combat\buff\constants\buff_constants.h" />
