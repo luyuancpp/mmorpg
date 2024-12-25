@@ -379,7 +379,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
-    <ClCompile Include="src\game_logic\core\config\config_util.cpp">
+    <ClCompile Include="src\game_logic\core\config\config_system.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
@@ -695,7 +695,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\combat\buff\util\buff_util.h" />
     <ClInclude Include="src\game_logic\combat\buff\util\modifier_buff_util.h" />
     <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_util.h" />
-    <ClInclude Include="src\game_logic\core\config\config_util.h" />
+    <ClInclude Include="src\game_logic\core\config\config_system.h" />
     <ClInclude Include="src\game_logic\core\constants\fps_constants.h" />
     <ClInclude Include="src\game_logic\core\network\message_system.h" />
     <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_util.h" />

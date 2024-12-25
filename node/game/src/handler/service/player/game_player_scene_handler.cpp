@@ -5,7 +5,7 @@
 #include "game_logic/player/util/player_scene_system.h"
 #include "proto/logic/client_player/player_scene.pb.h"
 #include "scene/comp/scene_comp.h"
-#include "scene/util/scene_util.h"
+#include "scene/util/scene_system.h"
 #include "service_info/player_scene_service_info.h"
 ///<<< END WRITING YOUR CODE
 void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,const ::GsEnterSceneRequest* request,

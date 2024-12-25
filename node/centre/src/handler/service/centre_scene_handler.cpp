@@ -1,7 +1,7 @@
 #include "centre_scene_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "scene/util/scene_util.h"
+#include "scene/util/scene_system.h"
 ///<<< END WRITING YOUR CODE
 void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController* controller,const ::RegisterSceneRequest* request,
 	     RegisterSceneResponse* response,

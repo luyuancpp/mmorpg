@@ -14,7 +14,7 @@
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
-#include "scene/util/scene_util.h"
+#include "scene/util/scene_system.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"

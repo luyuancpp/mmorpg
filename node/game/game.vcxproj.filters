@@ -198,7 +198,7 @@
     <ClCompile Include="src\game_logic\actor\attribute\system\actor_state_attribute_sync_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\core\config\config_util.cpp">
+    <ClCompile Include="src\game_logic\core\config\config_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\core\network\message_system.cpp">
@@ -461,7 +461,7 @@
     <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_impl_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\core\config\config_util.h">
+    <ClInclude Include="src\game_logic\core\config\config_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\core\constants\fps_constants.h">
