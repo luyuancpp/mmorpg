@@ -1,4 +1,4 @@
-#include "game_node_scene_util.h"
+#include "game_node_scene_system.h"
 
 #include "game_node.h"
 #include "mainscene_config.h"

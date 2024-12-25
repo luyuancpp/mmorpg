@@ -5,7 +5,7 @@
 #include "game_node.h"
 #include "network/rpc_client.h"
 #include "service_info/centre_service_service_info.h"
-#include "game_logic/scene/util/game_node_scene_util.h"
+#include "game_logic/scene/util/game_node_scene_system.h"
 #include "scene/util/scene_util.h"
 ///<<< END WRITING YOUR CODE
 void ServerEventHandler::Register()

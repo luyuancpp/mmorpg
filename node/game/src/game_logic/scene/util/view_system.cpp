@@ -1,6 +1,6 @@
-﻿#include "view_util.h"
+﻿#include "view_system.h"
 
-#include "grid_util.h"
+#include "grid_system.h"
 #include "common/comp.pb.h"
 #include "Detour/DetourCommon.h"
 #include "game_logic/core/network/message_system.h"
