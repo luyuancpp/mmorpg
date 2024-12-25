@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "logic/server_player/centre_player.pb.h"
+#include "proto/logic/server_player/centre_player.pb.h"
 
 constexpr uint32_t CentrePlayerServiceTestMessageId = 6;
 constexpr uint32_t CentrePlayerServiceTestIndex = 0;

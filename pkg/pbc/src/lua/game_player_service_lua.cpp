@@ -1,7 +1,7 @@
 #include <cstdint>
 
 #include "thread_local/storage_lua.h"
-#include "logic/server_player/game_player.pb.h"
+#include "proto/logic/server_player/game_player.pb.h"
 
 
 void InitGamePlayerServiceLua()

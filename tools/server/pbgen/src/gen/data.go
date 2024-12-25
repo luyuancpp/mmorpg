@@ -101,7 +101,7 @@ func (info *RPCMethod) PbcHeadName() string {
 
 // IncludeName 返回包含头文件名
 func (info *RPCMethod) IncludeName() string {
-	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
+	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
 }
 
 func (info *RPCMethod) ServiceInfoIncludeName() string {

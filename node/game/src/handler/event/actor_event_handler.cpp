@@ -1,5 +1,5 @@
 #include "actor_event_handler.h"
-#include "logic/event/actor_event.pb.h"
+#include "proto/logic/event/actor_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"

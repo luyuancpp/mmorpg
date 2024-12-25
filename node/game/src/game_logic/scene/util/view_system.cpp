@@ -1,7 +1,7 @@
 ﻿#include "view_system.h"
 
 #include "grid_system.h"
-#include "common/comp.pb.h"
+#include "proto/common/comp.pb.h"
 #include "Detour/DetourCommon.h"
 #include "game_logic/core/network/message_system.h"
 #include "game_logic/scene/constants/view_constants.h"

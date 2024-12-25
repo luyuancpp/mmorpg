@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "common/game_service.pb.h"
+#include "proto/common/game_service.pb.h"
 
 constexpr uint32_t GameServicePlayerEnterGameNodeMessageId = 7;
 constexpr uint32_t GameServicePlayerEnterGameNodeIndex = 0;

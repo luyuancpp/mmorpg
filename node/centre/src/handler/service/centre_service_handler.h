@@ -1,5 +1,5 @@
 #pragma once
-#include "common/centre_service.pb.h"
+#include "proto/common/centre_service.pb.h"
 class CentreServiceHandler : public ::CentreService
 {
 public:

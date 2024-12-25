@@ -4,7 +4,7 @@
 
 #include <boost/circular_buffer.hpp>
 
-#include "proto/logic/component//scene_comp.pb.h"
+#include "proto/logic/component/scene_comp.pb.h"
 
 static const uint8_t  kMaxChangeSceneQueue = 3;
 

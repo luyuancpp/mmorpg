@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "common/db_service.pb.h"
+#include "proto/common/db_service.pb.h"
 
 constexpr uint32_t AccountDBServiceLoad2RedisMessageId = 22;
 constexpr uint32_t AccountDBServiceLoad2RedisIndex = 0;

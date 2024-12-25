@@ -1,5 +1,5 @@
 #include "server_event_handler.h"
-#include "logic/event/server_event.pb.h"
+#include "proto/logic/event/server_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "game_node.h"

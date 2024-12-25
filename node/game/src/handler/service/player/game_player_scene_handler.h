@@ -1,5 +1,5 @@
 #pragma once
-#include "logic/server_player/game_player_scene.pb.h"
+#include "proto/logic/server_player/game_player_scene.pb.h"
 #include "player_service.h"
 #include "macros/return_define.h"
 class GamePlayerSceneServiceHandler : public ::PlayerService

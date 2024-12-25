@@ -100,7 +100,7 @@ func writeEventHandlerCpp(fd os.DirEntry, dstDir string) {
 	util.WriteMd5Data2File(headerFileName, dataHead)
 
 	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
-		config.IncludeBegin + config.ProtoDirectoryNames[config.EventProtoDirIndex] +
+		config.IncludeBegin + config.ProtoDirName + config.ProtoDirectoryNames[config.EventProtoDirIndex] +
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine +
 		"#include \"thread_local/storage.h\"\n"
 

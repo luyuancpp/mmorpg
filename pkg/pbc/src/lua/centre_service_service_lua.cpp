@@ -1,7 +1,7 @@
 #include <cstdint>
 
 #include "thread_local/storage_lua.h"
-#include "common/centre_service.pb.h"
+#include "proto/common/centre_service.pb.h"
 
 
 void InitCentreServiceLua()

@@ -2,6 +2,8 @@
 
 #include "scene/comp/player_scene.h"
 
+class SceneInfoPBComponent;
+
 // PlayerChangeSceneSystem 类定义
 class PlayerChangeSceneUtil {
 public:
