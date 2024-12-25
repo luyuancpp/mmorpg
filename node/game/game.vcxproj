@@ -375,85 +375,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
       <EnableModules>true</EnableModules>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="src\game_logic\actor\attribute\util\actor_state_attribute_sync_util.cpp">
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <Optimization>Disabled</Optimization>
-      <SupportJustMyCode>true</SupportJustMyCode>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>../../bin/vsout/game/</AssemblerListingLocation>
-      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-      <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>../../bin/vsout/game/</BrowseInformationFile>
-      <CompileAs>Default</CompileAs>
-      <ConformanceMode>true</ConformanceMode>
-      <DiagnosticsFormat>Column</DiagnosticsFormat>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <ErrorReporting>Prompt</ErrorReporting>
-      <ExpandAttributedSource>false</ExpandAttributedSource>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableASAN>false</EnableASAN>
-      <EnableFuzzer>false</EnableFuzzer>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-      <GenerateModuleDependencies>false</GenerateModuleDependencies>
-      <GenerateSourceDependencies>false</GenerateSourceDependencies>
-      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <LanguageStandard_C>stdclatest</LanguageStandard_C>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>../../bin/vsout/game/</ModuleDependenciesFile>
-      <ModuleOutputFile>../../bin/vsout/game/</ModuleOutputFile>
-      <OmitDefaultLibName>false</OmitDefaultLibName>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>../../bin/vsout/game/%(RelativeDir)</ObjectFileName>
-      <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>../../bin/vsout/game/vc143.pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>../../bin/vsout/game/game.pch</PrecompiledHeaderOutputFile>
-      <PreprocessToFile>false</PreprocessToFile>
-      <PreprocessKeepComments>false</PreprocessKeepComments>
-      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-      <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>../../bin/vsout/game/</SourceDependenciesFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <SpectreMitigation>false</SpectreMitigation>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>../../bin/vsout/game/game.tlog\</TrackerLogDirectory>
-      <TranslateIncludes>false</TranslateIncludes>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <UseFullPaths>true</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>../../bin/vsout/game/</XMLDocumentationFileName>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <IntelJCCErratum>false</IntelJCCErratum>
-      <BuildStlModules>true</BuildStlModules>
-      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_TCHAR_DEFINED;UNICODE;NOMINMAX;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../third_party/;../../third_party/boost/;./src/;../../third_party/protobuf/src/;../../third_party/zlib/;../../pkg/common/src;../../third_party/redis/;../../third_party/muduo/;../../third_party/muduo/contrib/windows/include/;../../third_party/redis/deps/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/;../../pkg/config/src/;../../pkg/config/src/pbc/;../../third_party/ue5navmesh/Public;../../third_party/rocketmq-clients/cpp/include/;../../pkg/logic/src/;../../third_party/grpc/include/;../../third_party/spdlog/include/;../../pkg/pbc/src/proto/;../../third_party/hexagons_grids/;../../pkg/pbc/src/proto/logic/;</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DisableSpecificWarnings>4200;4819;4146;4244;4267;4018;</DisableSpecificWarnings>
-      <AdditionalOptions>/utf-8 /bigobj </AdditionalOptions>
-      <SDLCheck>true</SDLCheck>
-      <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
-      <EnableModules>true</EnableModules>
-      <LinkCompiled>true</LinkCompiled>
-    </ClCompile>
     <ClCompile Include="src\game_logic\actor\combat_state\system\combat_state_system.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="src\game_logic\combat\buff\util\modifier_buff_util.cpp" />
@@ -763,7 +684,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\actor\attribute\constants\actor_state_attribute_constants.h" />
     <ClInclude Include="src\game_logic\actor\attribute\system\actor_attribute_calculator_system.h" />
     <ClInclude Include="src\game_logic\actor\attribute\system\actor_state_attribute_sync_system.h" />
-    <ClInclude Include="src\game_logic\actor\attribute\util\actor_state_attribute_sync_util.h" />
     <ClInclude Include="src\game_logic\actor\combat_state\constants\combat_state_constants.h" />
     <ClInclude Include="src\game_logic\actor\combat_state\system\combat_state_system.h" />
     <ClInclude Include="src\game_logic\combat\buff\util\buff_impl_util.h" />
