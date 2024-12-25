@@ -1,4 +1,4 @@
-#include "buff_system.h"
+﻿#include "buff_system.h"
 #include <ranges>
 #include "buff_config.h"
 #include "game_logic/combat/buff/system/buff_impl_system.h"
@@ -12,8 +12,8 @@
 #include "buff_error_tip.pb.h"
 #include "buff_impl_system.h"
 #include "common_error_tip.pb.h"
-#include "modifier_buff_system.h"
-#include "motion_modifier_system.h"
+#include "modifier_buff_impl_system.h"
+#include "motion_modifier_impl_system.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "proto/logic/event/skill_event.pb.h"
@@ -258,10 +258,10 @@ void BuffSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTabl
         return;
     }
 
-    if (ModifierBuffSystem::OnBuffStart(parent, buff, buffTable)) {
+    if (ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
     }
-    else if (MotionModifierBuffSystem::OnBuffStart(parent, buff, buffTable)) {
+    else if (MotionModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
     }
 }
@@ -270,10 +270,10 @@ void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const 
 
 void BuffSystem::OnBuffRemove(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
-    if (ModifierBuffSystem::OnBuffRemove(parent, buffComp, buffTable)) {
+    if (ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
         return;
     }
-    else if (ModifierBuffSystem::OnBuffRemove(parent, buffComp, buffTable)) {
+    else if (ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
         return;
     }
 }
@@ -302,10 +302,10 @@ void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
     if (BuffImplSystem::OnIntervalThink(parent, buffIt->second, buffTable)) {
         return;
     }
-    else if (ModifierBuffSystem::OnIntervalThink(parent, buffIt->second, buffTable)) {
+    else if (ModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffTable)) {
         return;
     }
-    else if (MotionModifierBuffSystem::OnIntervalThink(parent, buffIt->second, buffTable)) {
+    else if (MotionModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffTable)) {
         return;
     }
 }
@@ -387,8 +387,8 @@ void BuffSystem::OnKill(entt::entity parent)
 
 void BuffSystem::OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity) {
     BuffImplSystem::OnSkillHit(casterEntity, targetEntity);
-    ModifierBuffSystem::OnSkillHit(casterEntity, targetEntity);
-    MotionModifierBuffSystem::OnSkillHit(casterEntity, targetEntity);
+    ModifierBuffImplSystem::OnSkillHit(casterEntity, targetEntity);
+    MotionModifierBuffImplSystem::OnSkillHit(casterEntity, targetEntity);
 }
 
 bool BuffSystem::AddSubBuffs(entt::entity parent,
