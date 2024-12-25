@@ -1,14 +1,14 @@
-﻿#include "team_system.h"
+﻿#include "game_team_system.h"
 
 #include "common_error_tip.pb.h"
 #include "game_logic/actor/action_state/system/actor_action_state_system.h"
 
-uint32_t TeamSystem::TryCreateTeam(entt::entity actorEntity)
+uint32_t GameTeamSystem::TryCreateTeam(entt::entity actorEntity)
 {
     return kSuccess;
 }
 
-uint32_t TeamSystem::InitTeamInfo(entt::entity actorEntity)
+uint32_t GameTeamSystem::InitTeamInfo(entt::entity actorEntity)
 {
     return kSuccess;
 }

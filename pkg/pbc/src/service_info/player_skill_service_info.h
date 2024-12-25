@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "logic/client_player/player_skill.pb.h"
+#include "proto/logic/client_player/player_skill.pb.h"
 
 constexpr uint32_t PlayerSkillServiceReleaseSkillMessageId = 18;
 constexpr uint32_t PlayerSkillServiceReleaseSkillIndex = 0;

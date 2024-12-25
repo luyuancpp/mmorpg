@@ -1,7 +1,7 @@
 #include <cstdint>
 
 #include "thread_local/storage_lua.h"
-#include "common/db_service.pb.h"
+#include "proto/common/db_service.pb.h"
 
 
 void InitAccountDBServiceLua()

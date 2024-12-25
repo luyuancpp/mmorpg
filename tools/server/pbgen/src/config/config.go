@@ -20,6 +20,7 @@ const (
 	DBGoMd5Ex                 = "db_go"
 	DBDescDirectory           = "../bin/proto_desc/"
 	ProtoDescExtension        = ".desc"
+	ProtoDirName              = "proto/"
 )
 
 // 常量：文件扩展名

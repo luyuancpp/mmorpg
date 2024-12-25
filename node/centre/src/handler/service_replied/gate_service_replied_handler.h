@@ -1,5 +1,5 @@
 #pragma once
-#include "common/gate_service.pb.h"
+#include "proto/common/gate_service.pb.h"
 #include "muduo/net/TcpConnection.h"
 
 using namespace muduo;

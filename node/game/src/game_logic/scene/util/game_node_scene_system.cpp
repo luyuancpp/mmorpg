@@ -5,7 +5,7 @@
 #include "game_logic/core/network/message_system.h"
 #include "game_logic/player/util/player_scene_system.h"
 #include "game_logic/scene/comp/grid_comp.h"
-#include "logic/event/scene_event.pb.h"
+#include "proto/logic/event/scene_event.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "scene/comp/scene_comp.h"
 #include "scene/util/scene_system.h"

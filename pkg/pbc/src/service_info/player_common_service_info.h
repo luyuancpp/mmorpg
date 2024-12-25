@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "logic/client_player/player_common.pb.h"
+#include "proto/logic/client_player/player_common.pb.h"
 
 constexpr uint32_t PlayerClientCommonServiceSendTipToClientMessageId = 0;
 constexpr uint32_t PlayerClientCommonServiceSendTipToClientIndex = 0;

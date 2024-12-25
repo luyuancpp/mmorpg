@@ -1,7 +1,7 @@
 #include "player_node_system.h"
 
 #include "game_node.h"
-#include "event/actor_event.pb.h"
+#include "proto/logic/event/actor_event.pb.h"
 #include "game_logic/core/network/message_system.h"
 #include "proto/common/centre_service.pb.h"
 #include "proto/logic/component/player_async_comp.pb.h"

@@ -13,7 +13,7 @@
 #include "game_logic/scene/util/recast_system.h"
 #include "scene/util/scene_system.h"
 #include "thread_local/storage_game.h"
-#include "logic/event/scene_event.pb.h"
+#include "proto/logic/event/scene_event.pb.h"
 #include "game_logic/scene/constants/nav_constants.h"
 
 void NavigationSystem::LoadMainSceneNavBins() {

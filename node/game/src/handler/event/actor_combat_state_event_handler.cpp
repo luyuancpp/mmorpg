@@ -1,5 +1,5 @@
 #include "actor_combat_state_event_handler.h"
-#include "logic/event/actor_combat_state_event.pb.h"
+#include "proto/logic/event/actor_combat_state_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "game_logic/actor/combat_state/system/combat_state_system.h"

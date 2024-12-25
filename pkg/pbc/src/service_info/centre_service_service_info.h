@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "common/centre_service.pb.h"
+#include "proto/common/centre_service.pb.h"
 
 constexpr uint32_t CentreServiceRegisterGameNodeMessageId = 54;
 constexpr uint32_t CentreServiceRegisterGameNodeIndex = 0;

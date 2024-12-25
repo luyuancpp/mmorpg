@@ -1,7 +1,7 @@
 #include <cstdint>
 
 #include "thread_local/storage_lua.h"
-#include "logic/client_player/player_state_attribute_sync.pb.h"
+#include "proto/logic/client_player/player_state_attribute_sync.pb.h"
 
 
 void InitEntitySyncServiceLua()
