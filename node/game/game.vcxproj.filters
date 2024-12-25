@@ -210,7 +210,7 @@
     <ClCompile Include="src\game_logic\mount\system\mount_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\team\util\team_util.cpp">
+    <ClCompile Include="src\game_logic\team\util\team_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\event\actor_event_handler.cpp">
@@ -479,7 +479,7 @@
     <ClInclude Include="src\game_logic\mount\system\mount_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\team\util\team_util.h">
+    <ClInclude Include="src\game_logic\team\util\team_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\actor_event_handler.h">
