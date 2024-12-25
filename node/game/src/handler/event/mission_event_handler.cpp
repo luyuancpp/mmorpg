@@ -3,7 +3,7 @@
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "mission/comp/mission_comp.h"
-#include "mission/util/mission_util.h"
+#include "mission/util/mission_system.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventHandler::Register()
 {
@@ -24,14 +24,14 @@ void MissionEventHandler::UnRegister()
 void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	MissionUtil::AcceptMission(event);
+	MissionSystem::AcceptMission(event);
 ///<<< END WRITING YOUR CODE
 }
 
 void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    MissionUtil::HandleMissionConditionEvent(event);
+    MissionSystem::HandleMissionConditionEvent(event);
 ///<<< END WRITING YOUR CODE
 }
 

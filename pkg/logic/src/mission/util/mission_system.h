@@ -40,7 +40,7 @@ class MissionConditionEvent;
 class MissionsComponent;
 class ConditionTable;
 
-class MissionUtil {
+class MissionSystem {
 public:
 	using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
 

@@ -15,7 +15,7 @@
 #include "service_info/game_service_service_info.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_gate.h"
-#include "time/util/time_util.h"
+#include "time/util/time_system.h"
 
 GateNode* g_gate_node = nullptr; 
 

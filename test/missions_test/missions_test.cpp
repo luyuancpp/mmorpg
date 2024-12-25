@@ -4,7 +4,7 @@
 #include "mission_config.h"
 #include "mission/constants/mission_constants.h"
 #include "mission/comp/mission_comp.h"
-#include "mission/util/mission_util.h"
+#include "mission/util/mission_system.h"
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/mission_error_tip.pb.h"
 #include "handler/event/mission_event_handler.h"
@@ -40,7 +40,7 @@ TEST(MissionsComponent, AcceptMission)
 	for (int32_t i = 0; i < missionConfigData.data_size(); ++i)
 	{
 		acceptMissionEvent.set_mission_id(missionConfigData.data(i).id());
-		auto acceptResult = MissionUtil::AcceptMission(acceptMissionEvent);
+		auto acceptResult = MissionSystem::AcceptMission(acceptMissionEvent);
 		++acceptedMissionCount;
 	}
 
@@ -48,7 +48,7 @@ TEST(MissionsComponent, AcceptMission)
 	EXPECT_EQ(0, missionsComponent.CompleteSize());
 
 	// Complete all accepted missions
-	MissionUtil::CompleteAllMissions(playerEntity, 0);
+	MissionSystem::CompleteAllMissions(playerEntity, 0);
 	EXPECT_EQ(0, missionsComponent.MissionSize());
 	EXPECT_EQ(acceptedMissionCount, missionsComponent.CompleteSize());
 }
@@ -66,10 +66,10 @@ TEST(MissionsComponent, RepeatedMissionId)
 		acceptMissionEvent.set_mission_id(missionId1);
 
 		// First accept should succeed
-		EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+		EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 		// Second accept should fail due to mission_id being repeated
-		EXPECT_EQ(kMissionIdRepeated, MissionUtil::AcceptMission(acceptMissionEvent));
+		EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(acceptMissionEvent));
 	}
 }
 
@@ -89,13 +89,13 @@ TEST(MissionsComponent, RepeatedMissionType)
 		acceptMissionEvent2.set_mission_id(2);
 
 		// First accept for mission_id = 3 should succeed
-		EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent1));
+		EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent1));
 
 		// First accept for mission_id = 2 should succeed
-		EXPECT_EQ(kMissionTypeAlreadyExists, MissionUtil::AcceptMission(acceptMissionEvent2));
+		EXPECT_EQ(kMissionTypeAlreadyExists, MissionSystem::AcceptMission(acceptMissionEvent2));
 
 		// Second accept for mission_id = 3 (same type as mission_id = 1) should fail
-		EXPECT_EQ(kMissionIdRepeated, MissionUtil::AcceptMission(acceptMissionEvent1));
+		EXPECT_EQ(kMissionIdRepeated, MissionSystem::AcceptMission(acceptMissionEvent1));
 	}
 }
 
@@ -111,7 +111,7 @@ TEST(MissionsComponent, TriggerMissionCondition)
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 
 	// Accept mission with mission_id = 1
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	// Ensure there is 1 type of mission accepted
 	EXPECT_EQ(1, missionsComponent.TypeSetSize());
@@ -123,7 +123,7 @@ TEST(MissionsComponent, TriggerMissionCondition)
 	conditionEvent.set_amount(1);
 
 	// Handle condition event for mission
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling condition 1, expect 1 mission in progress and 0 completed missions
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -131,7 +131,7 @@ TEST(MissionsComponent, TriggerMissionCondition)
 
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(2); // Condition id 2
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling condition 2, expect 1 mission still in progress and 0 completed missions
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -139,7 +139,7 @@ TEST(MissionsComponent, TriggerMissionCondition)
 
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(3); // Condition id 3
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling condition 3, expect 1 mission still in progress and 0 completed missions
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -147,7 +147,7 @@ TEST(MissionsComponent, TriggerMissionCondition)
 
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(4); // Condition id 4
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling condition 4, expect 0 missions in progress and 1 completed mission
 	EXPECT_EQ(0, missionsComponent.MissionSize());
@@ -171,7 +171,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	AcceptMissionEvent acceptMissionEvent;
 	acceptMissionEvent.set_mission_id(mission_id);
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	// Ensure mission_id 6 is accepted but not completed
 	EXPECT_TRUE(missionsComponent.IsAccepted(mission_id));
@@ -191,7 +191,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	conditionEvent.add_condtion_ids(1);
 	conditionEvent.set_amount(1);
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling kConditionKillMonster, expect 1 mission in progress and 0 completed missions
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -199,7 +199,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 
 	// Handle condition: kConditionTalkWithNpc, condition_ids = {1}, amount = 1
 	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionTalkWithNpc));
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling kConditionTalkWithNpc, expect 1 mission still in progress and 0 completed missions
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -207,7 +207,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 
 	// Handle condition: kConditionCompleteCondition, condition_ids = {1}, amount = 1
 	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteCondition));
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling kConditionCompleteCondition, expect 1 mission still in progress and 0 completed missions
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -218,7 +218,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(1);
 	conditionEvent.add_condtion_ids(2);
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling kConditionUseItem, expect 1 mission still in progress and 0 completed missions
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -228,7 +228,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionLevelUp));
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(10);
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// After handling kConditionLevelUp, expect 1 mission still in progress and 0 completed missions
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -239,7 +239,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	conditionEvent.clear_condtion_ids();
 	conditionEvent.add_condtion_ids(1);
 	conditionEvent.add_condtion_ids(2);
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// Trigger update to handle any pending mission condition events
 	tls.dispatcher.update<MissionConditionEvent>();
@@ -281,7 +281,7 @@ TEST(MissionsComponent, CompleteAcceptMission)
 	acceptMissionEvent.set_mission_id(missionId);
 
 	// Verify if accepting the mission is successful
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	// Verify the size of the mission type set
 	EXPECT_EQ(1, missionsComponent.TypeSetSize());
@@ -294,14 +294,14 @@ TEST(MissionsComponent, CompleteAcceptMission)
 	missionConditionEvent.set_amount(1);
 
 	// Handle mission condition event to mark mission as complete
-	MissionUtil::HandleMissionConditionEvent(missionConditionEvent);
+	MissionSystem::HandleMissionConditionEvent(missionConditionEvent);
 
 	// Verify the mission is no longer in accepted state, but complete
 	EXPECT_FALSE(missionsComponent.IsAccepted(missionId));
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId));
 
 	// Attempt to accept the already completed mission again, expect kMissionAlreadyCompleted
-	EXPECT_EQ(kMissionAlreadyCompleted, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kMissionAlreadyCompleted, MissionSystem::AcceptMission(acceptMissionEvent));
 }
 
 TEST(MissionsComponent, EventTriggerMutableMission)
@@ -316,14 +316,14 @@ TEST(MissionsComponent, EventTriggerMutableMission)
 	acceptMissionEvent1.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent1.set_mission_id(missionId1);
 
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent1));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent1));
 
 	constexpr uint32_t missionId2 = 2;
 	AcceptMissionEvent acceptMissionEvent2;
 	acceptMissionEvent2.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent2.set_mission_id(missionId2);
 
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent2));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent2));
 
 	// Prepare mission condition event
 	MissionConditionEvent missionConditionEvent;
@@ -336,7 +336,7 @@ TEST(MissionsComponent, EventTriggerMutableMission)
 	{
 		missionConditionEvent.clear_condtion_ids();
 		missionConditionEvent.add_condtion_ids(i);
-		MissionUtil::HandleMissionConditionEvent(missionConditionEvent);
+		MissionSystem::HandleMissionConditionEvent(missionConditionEvent);
 	}
 
 	// Verify missions with ID 1 and 2 are complete
@@ -355,7 +355,7 @@ TEST(MissionsComponent, OnCompleteMission)
 	AcceptMissionEvent acceptMissionEvent;
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent.set_mission_id(missionId);
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 	EXPECT_EQ(1, missionsComponent.TypeSetSize());
 
 	// Set mission condition event
@@ -364,7 +364,7 @@ TEST(MissionsComponent, OnCompleteMission)
 	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	conditionEvent.add_condtion_ids(1);
 	conditionEvent.set_amount(1);
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// Update mission status and verify completion
 	tls.dispatcher.update<AcceptMissionEvent>();
@@ -381,7 +381,7 @@ TEST(MissionsComponent, OnCompleteMission)
 	{
 		conditionEvent.clear_condtion_ids();
 		conditionEvent.add_condtion_ids(i);
-		MissionUtil::HandleMissionConditionEvent(conditionEvent);
+		MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 		EXPECT_FALSE(missionsComponent.IsAccepted(missionId));
 		EXPECT_TRUE(missionsComponent.IsComplete(missionId));
@@ -405,7 +405,7 @@ TEST(MissionsComponent, AcceptNextMirroMission)
 	AcceptMissionEvent acceptMissionEvent;
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent.set_mission_id(missionId);
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 	EXPECT_EQ(1, missionsComponent.TypeSetSize());
 
 	// Set mission condition event
@@ -414,7 +414,7 @@ TEST(MissionsComponent, AcceptNextMirroMission)
 	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	conditionEvent.add_condtion_ids(1);
 	conditionEvent.set_amount(1);
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// Update mission status and verify completion
 	tls.dispatcher.update<AcceptMissionEvent>();
@@ -443,13 +443,13 @@ TEST(MissionsComponent, MissionCondition)
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 
 	acceptMissionEvent.set_mission_id(missionId);
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	acceptMissionEvent.set_mission_id(missionId1);
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	acceptMissionEvent.set_mission_id(missionId2);
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	// Verify all three missions are accepted but not complete
 	EXPECT_TRUE(missionsComponent.IsAccepted(missionId));
@@ -465,7 +465,7 @@ TEST(MissionsComponent, MissionCondition)
 	conditionEvent.set_condition_type(static_cast<uint32_t>(eCondtionType::kConditionKillMonster));
 	conditionEvent.add_condtion_ids(1);
 	conditionEvent.set_amount(1);
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 
 	// Update mission status and verify completion
 	tls.dispatcher.update<AcceptMissionEvent>();
@@ -491,7 +491,7 @@ TEST(MissionsComponent, ConditionAmount)
 	AcceptMissionEvent acceptMissionEvent;
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent.set_mission_id(missionId);
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	// Verify mission is accepted but not complete
 	EXPECT_TRUE(missionsComponent.IsAccepted(missionId));
@@ -505,12 +505,12 @@ TEST(MissionsComponent, ConditionAmount)
 	conditionEvent.set_amount(1);
 
 	// Handle mission condition event, should continue accepting mission the first time
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 	EXPECT_TRUE(missionsComponent.IsAccepted(missionId));
 	EXPECT_FALSE(missionsComponent.IsComplete(missionId));
 
 	// Handle mission condition event, complete mission the second time
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 	EXPECT_FALSE(missionsComponent.IsAccepted(missionId));
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId));
 }
@@ -527,7 +527,7 @@ TEST(MissionsComponent, MissionRewardList)
 	AcceptMissionEvent acceptMissionEvent;
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent.set_mission_id(missionId);
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	// Set reward parameters
 	GetRewardParam param;
@@ -535,7 +535,7 @@ TEST(MissionsComponent, MissionRewardList)
 	param.playerId = playerEntity;
 
 	// Verify mission is not in reward list
-	EXPECT_EQ(kMissionIdNotInRewardList, MissionUtil::GetMissionReward(param));
+	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
 	EXPECT_TRUE(missionsComponent.IsAccepted(missionId));
 	EXPECT_FALSE(missionsComponent.IsComplete(missionId));
 
@@ -547,13 +547,13 @@ TEST(MissionsComponent, MissionRewardList)
 	conditionEvent.set_amount(1);
 
 	// Handle mission condition event, complete mission
-	MissionUtil::HandleMissionConditionEvent(conditionEvent);
+	MissionSystem::HandleMissionConditionEvent(conditionEvent);
 	EXPECT_FALSE(missionsComponent.IsAccepted(missionId));
 	EXPECT_TRUE(missionsComponent.IsComplete(missionId));
 
 	// Verify successfully getting mission reward and cannot repeat
-	EXPECT_EQ(kSuccess, MissionUtil::GetMissionReward(param));
-	EXPECT_EQ(kMissionIdNotInRewardList, MissionUtil::GetMissionReward(param));
+	EXPECT_EQ(kSuccess, MissionSystem::GetMissionReward(param));
+	EXPECT_EQ(kMissionIdNotInRewardList, MissionSystem::GetMissionReward(param));
 
 	// Verify mission reward list size is 0 after mission completion
 	EXPECT_EQ(0, missionsComponent.CanGetRewardSize());
@@ -570,7 +570,7 @@ TEST(MissionsComponent, AbandonMission)
 	AcceptMissionEvent acceptMissionEvent;
 	acceptMissionEvent.set_entity(entt::to_integral(playerEntity));
 	acceptMissionEvent.set_mission_id(missionId);
-	EXPECT_EQ(kSuccess, MissionUtil::AcceptMission(acceptMissionEvent));
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptMissionEvent));
 
 	// Verify state after accepting mission
 	EXPECT_EQ(1, missionsComponent.MissionSize());
@@ -589,7 +589,7 @@ TEST(MissionsComponent, AbandonMission)
 	abandonParam.playerId = playerEntity;
 
 	// Perform abandon mission operation
-	MissionUtil::AbandonMission(abandonParam);
+	MissionSystem::AbandonMission(abandonParam);
 
 	// Verify state after abandoning mission
 	EXPECT_EQ(0, missionsComponent.MissionSize());

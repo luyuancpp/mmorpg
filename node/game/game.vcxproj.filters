@@ -141,7 +141,7 @@
     <ClCompile Include="src\game_logic\combat\buff\util\buff_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_util.cpp">
+    <ClCompile Include="src\game_logic\combat\buff\util\motion_modifier_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\event\buff_event_handler.cpp">
@@ -386,7 +386,7 @@
     <ClInclude Include="src\game_logic\combat\buff\comp\buff_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_util.h">
+    <ClInclude Include="src\game_logic\combat\buff\util\motion_modifier_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\buff_event_handler.h">
