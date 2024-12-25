@@ -24,7 +24,7 @@
 #include "service_info/service_info.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
-#include "time/util/time_util.h"
+#include "time/util/time_system.h"
 #include "util/game_registry.h"
 
 GameNode* gGameNode = nullptr;

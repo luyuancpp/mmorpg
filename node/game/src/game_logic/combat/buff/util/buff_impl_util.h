@@ -8,7 +8,7 @@
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "proto/logic/event/actor_combat_state_event.pb.h"
 #include "thread_local/storage.h"
-#include "time/util/time_util.h"
+#include "time/util/time_system.h"
 #include "util/defer.h"
 
 // BuffImplUtil: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑

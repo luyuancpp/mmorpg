@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <chrono>
-#include "time_util.h"
+#include "time_system.h"
 #include "logic/component/time_comp.pb.h"
 
 class TimeMeterSecondSystem {

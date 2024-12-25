@@ -2,7 +2,7 @@
 
 #include <chrono>
 #include "cooldown_config.h"
-#include "time_util.h"
+#include "time_system.h"
 #include "logic/component/time_comp.pb.h"
 
 class CoolDownTimeMillisecondSystem {

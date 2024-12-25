@@ -6,7 +6,7 @@
 #include "buff_impl_util.h"
 #include "common_error_tip.pb.h"
 #include "modifier_buff_util.h"
-#include "motion_modifier_util.h"
+#include "motion_modifier_system.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "proto/logic/event/skill_event.pb.h"
@@ -252,7 +252,7 @@ void BuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable*
     
     if (ModifierBuffUtil::OnBuffStart(parent, buff, buffTable)) {
         return;
-    } else if (MotionModifierBuffUtil::OnBuffStart(parent, buff, buffTable)) {
+    } else if (MotionModifierBuffSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
     }
 }
@@ -293,7 +293,7 @@ void BuffUtil::OnIntervalThink(entt::entity parent, uint64_t buffId)
         return;
     }else if (ModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
         return;
-    }else if (MotionModifierBuffUtil::OnIntervalThink(parent, buffIt->second, buffTable)){
+    }else if (MotionModifierBuffSystem::OnIntervalThink(parent, buffIt->second, buffTable)){
         return;
     }
 }
@@ -376,7 +376,7 @@ void BuffUtil::OnKill(entt::entity parent)
 void BuffUtil::OnSkillHit(const entt::entity casterEntity, const entt::entity targetEntity){
     BuffImplUtil::OnSkillHit(casterEntity, targetEntity);
     ModifierBuffUtil::OnSkillHit(casterEntity, targetEntity);
-    MotionModifierBuffUtil::OnSkillHit(casterEntity, targetEntity);
+    MotionModifierBuffSystem::OnSkillHit(casterEntity, targetEntity);
 }
 
 bool BuffUtil::AddSubBuffs(entt::entity parent,

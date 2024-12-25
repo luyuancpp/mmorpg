@@ -1,7 +1,7 @@
 #include "timer_duration.h"
 
 #include "duration_funtion.h"
-#include "time/util/time_util.h"
+#include "time/util/time_system.h"
 
 TimerDuration::TimerDuration(uint64_t nBeginTime, uint64_t nEndTime)
     : TimerDuration(nBeginTime, nEndTime, kEmptyCallBack, kEmptyCallBack)

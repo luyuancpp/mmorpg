@@ -26,7 +26,7 @@
 #include "thread_local/storage_game.h"
 #include "time/comp/timer_task_comp.h"
 #include "time/util/cooldown_time_system.h"
-#include "time/util/time_util.h"
+#include "time/util/time_system.h"
 
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
 	uint64_t newSkillId;
