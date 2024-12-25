@@ -33,7 +33,7 @@
     <ClCompile Include="mock_interest_util.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\node\game\src\game_logic\entity\util\entity_util.cpp">
+    <ClCompile Include="..\..\node\game\src\game_logic\entity\util\entity_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
