@@ -78,19 +78,19 @@
     <ClCompile Include="src\handler\service_replied\register_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\util\player_change_scene_util.cpp">
+    <ClCompile Include="src\game_logic\scene\util\player_change_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\scene\util\player_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_session_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_session_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_tip_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_tip_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\redis\util\redis_util.cpp">
+    <ClCompile Include="src\game_logic\redis\util\redis_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thread_local\storage_centre.cpp">
@@ -102,7 +102,7 @@
     <ClCompile Include="src\grpc\request\deploy_grpc_requst.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_node_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_node_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\network\message_util.cpp">
@@ -194,19 +194,19 @@
     <ClInclude Include="src\handler\service_replied\player\player_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\util\player_change_scene_util.h">
+    <ClInclude Include="src\game_logic\scene\util\player_change_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\util\player_scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_session_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_session_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_tip_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_tip_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\redis\util\redis_util.h">
+    <ClInclude Include="src\game_logic\redis\util\redis_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\storage_centre.h">
@@ -224,7 +224,7 @@
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\player\util\player_node_util.h">
+    <ClInclude Include="src\game_logic\player\util\player_node_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\network\message_util.h">

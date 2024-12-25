@@ -1,8 +1,8 @@
-#include "redis_util.h"
+#include "redis_system.h"
 
 #include "muduo/net/EventLoop.h"
 
-#include "game_logic/player/util/player_node_util.h"
+#include "game_logic/player/util/player_node_system.h"
 #include "thread_local/storage.h"
 #include "type_alias/player_loading.h"
 #include "type_alias/player_redis.h"
@@ -10,7 +10,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-void RedisUtil::Initialize(muduo::net::InetAddress& server_addr)
+void RedisSystem::Initialize(muduo::net::InetAddress& server_addr)
 {
     hiredis = std::make_unique<HiredisPtr::element_type>(EventLoop::getEventLoopOfCurrentThread(), server_addr);
     hiredis->connect();

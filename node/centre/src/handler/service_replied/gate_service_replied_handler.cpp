@@ -7,9 +7,9 @@ extern ProtobufDispatcher gResponseDispatcher;
 #include "muduo/base/Logging.h"
 #include "type_define/type_define.h"
 #include "thread_local/storage.h"
-#include "game_logic/scene/util/player_change_scene_util.h"
+#include "game_logic/scene/util/player_change_scene_system.h"
 #include "util/game_registry.h"
-#include "game_logic/player/util/player_node_util.h"
+#include "game_logic/player/util/player_node_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 

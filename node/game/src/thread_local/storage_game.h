@@ -14,7 +14,7 @@ using NodeIdGenerator32BitId = NodeIdGenerator<uint64_t, 32>;
 class ThreadLocalStorageGame
 {
 public:
-	RedisUtil redis;
+	RedisSystem redis;
 	PlayerRedis playerRedis;
 	std::unordered_map<Guid, PlayerGameNodeEnteryInfoPBComponent> playerNodeEntryInfoList;
 	SceneNavMapComp sceneNav;
