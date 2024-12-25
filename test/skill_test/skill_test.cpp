@@ -6,7 +6,7 @@
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
 #include "time/comp/timer_task_comp.h"
-#include "time/util/cooldown_time_util.h"
+#include "time/util/cooldown_time_system.h"
 #include "pbc/skill_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
 
@@ -85,7 +85,7 @@ TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {
 
     auto & cooldownList = tls.registry.emplace<CooldownTimeListComp>(caster);
     cooldownTimeComp.set_cooldown_table_id(1);
-    CoolDownTimeMillisecondUtil::Reset(cooldownTimeComp);
+    CoolDownTimeMillisecondSystem::Reset(cooldownTimeComp);
     cooldownList.mutable_cooldown_list()->emplace(1, cooldownTimeComp);
 
     uint32_t result = skillUtil->CheckCooldown(caster, tableSkill.get());

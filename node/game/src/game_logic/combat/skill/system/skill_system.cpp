@@ -25,7 +25,7 @@
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "time/comp/timer_task_comp.h"
-#include "time/util/cooldown_time_util.h"
+#include "time/util/cooldown_time_system.h"
 #include "time/util/time_util.h"
 
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
@@ -372,11 +372,11 @@ uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const Skill
 	if (const auto* coolDownTimeListComp = tls.registry.try_get<CooldownTimeListComp>(casterEntity)) {
 		if (const auto it = coolDownTimeListComp->cooldown_list().find(skillTable->cooldown_id());
 			it != coolDownTimeListComp->cooldown_list().end() &&
-			CoolDownTimeMillisecondUtil::IsInCooldown(it->second)) {
+			CoolDownTimeMillisecondSystem::IsInCooldown(it->second)) {
 			LOG_ERROR << "Skill ID: " << skillTable->id()
 				<< " is in cooldown for player: " << entt::to_integral(casterEntity)
 				<< ". Cooldown ID: " << skillTable->cooldown_id()
-				<< ". Time remaining: " << CoolDownTimeMillisecondUtil::Remaining(it->second) << "ms";
+				<< ". Time remaining: " << CoolDownTimeMillisecondSystem::Remaining(it->second) << "ms";
 			return kSkillCooldownNotReady;
 		}
 	}
