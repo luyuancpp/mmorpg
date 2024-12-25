@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "game_logic/combat/skill/util/skill_util.h"
+#include "game_logic/combat/skill/system/skill_system.h"
 #include "thread_local/storage.h"
 #include "skill_config.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
@@ -29,7 +29,7 @@ public:
 class SkillUtilTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        skillUtil = std::make_unique<SkillUtil>();
+        skillUtil = std::make_unique<SkillSystem>();
         // Setup the mocks if necessary
     }
 
@@ -37,7 +37,7 @@ protected:
         tls.registry.clear(); // Clean up the thread-local storage after each test
     }
 
-    std::unique_ptr<SkillUtil> skillUtil;
+    std::unique_ptr<SkillSystem> skillUtil;
     std::unique_ptr<MockSkillTable> mockSkillTable = std::make_unique<MockSkillTable>();
     std::unique_ptr<MockCooldownTimeUtil> mockCooldownTimeUtil = std::make_unique<MockCooldownTimeUtil>();
 };
@@ -186,7 +186,7 @@ TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
 TEST_F(SkillUtilTest, HandleSkillSpell_TriggersEffect) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializeActorComponents(caster);
+    SkillSystem::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -200,7 +200,7 @@ TEST_F(SkillUtilTest, HandleSkillSpell_TriggersEffect) {
 TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializeActorComponents(caster);
+    SkillSystem::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_recoverytime(1000); // Set recovery time to 1000ms
@@ -214,7 +214,7 @@ TEST_F(SkillUtilTest, HandleSkillRecovery_SetsRecoveryTimer) {
 TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializeActorComponents(caster);
+    SkillSystem::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -228,7 +228,7 @@ TEST_F(SkillUtilTest, HandleSkillToggleOn_TriggersEffect) {
 TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
     entt::entity caster = tls.registry.create();
     
-    SkillUtil::InitializeActorComponents(caster);
+    SkillSystem::InitializeActorComponents(caster);
     
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -242,7 +242,7 @@ TEST_F(SkillUtilTest, HandleSkillToggleOff_RemovesEffect) {
 TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializeActorComponents(caster);
+    SkillSystem::InitializeActorComponents(caster);
 
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);
@@ -256,7 +256,7 @@ TEST_F(SkillUtilTest, HandleSkillActivate_TriggersEffect) {
 TEST_F(SkillUtilTest, HandleSkillDeactivate_RemovesEffect) {
     entt::entity caster = tls.registry.create();
 
-    SkillUtil::InitializeActorComponents(caster);
+    SkillSystem::InitializeActorComponents(caster);
     
     auto tableSkill = std::make_shared<SkillTable>();
     tableSkill->set_id(1);

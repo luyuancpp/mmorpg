@@ -8,7 +8,7 @@
 
 class SkillTable;
 
-class SkillUtil
+class SkillSystem
 {
 public:
 	static void InitializeActorComponents(entt::entity entity);

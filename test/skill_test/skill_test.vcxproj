@@ -159,7 +159,7 @@
     <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\util\buff_util.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\util\modifier_buff_util.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\util\motion_modifier_util.cpp" />
-    <ClCompile Include="..\..\node\game\src\game_logic\combat\skill\util\skill_util.cpp" />
+    <ClCompile Include="..\..\node\game\src\game_logic\combat\skill\system\skill_system.cpp" />
     <ClCompile Include="..\..\node\game\src\thread_local\storage_game.cpp" />
     <ClCompile Include="..\test_adapters\message_system_test.cpp" />
     <ClCompile Include="skill_test.cpp" />

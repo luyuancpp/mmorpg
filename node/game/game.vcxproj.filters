@@ -120,7 +120,7 @@
     <ClCompile Include="src\game_logic\scene\util\view_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\combat\skill\util\skill_util.cpp">
+    <ClCompile Include="src\game_logic\combat\skill\system\skill_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\combat\buff\system\buff_system.cpp">
@@ -350,7 +350,7 @@
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\skill\util\skill_util.h">
+    <ClInclude Include="src\game_logic\combat\skill\system\skill_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\combat\buff\system\buff_system.h">
