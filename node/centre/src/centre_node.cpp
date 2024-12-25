@@ -19,7 +19,7 @@
 #include "service_info/gate_service_service_info.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_centre.h"
-#include "log/util/console_log_util.h"
+#include "log/util/console_log_system.h"
 #include "grpc/request/deploy_grpc_requst.h"
 #include "game_logic/player/util/player_session_system.h"
 #include "time/util/time_util.h"

@@ -12,7 +12,7 @@
     <ClCompile Include="src\time\comp\duration_manager.cpp" />
     <ClCompile Include="src\time\comp\timer_duration.cpp" />
     <ClCompile Include="src\time\comp\timer_task_comp.cpp" />
-    <ClCompile Include="src\log\util\console_log_util.cpp" />
+    <ClCompile Include="src\log\util\console_log_system.cpp" />
     <ClCompile Include="src\time\comp\time_ measurement.cpp" />
     <ClCompile Include="src\time\util\time_util.cpp" />
   </ItemGroup>
@@ -40,7 +40,7 @@
     <ClInclude Include="src\time\comp\timer_task_comp.h" />
     <ClInclude Include="src\log\constants\log_constants.h" />
     <ClInclude Include="src\log\constants\log_color_constants.h" />
-    <ClInclude Include="src\log\util\console_log_util.h" />
+    <ClInclude Include="src\log\util\console_log_system.h" />
     <ClInclude Include="src\time\comp\time_ measurement.h" />
     <ClInclude Include="src\game_common_logic\comp\session_comp.h" />
     <ClInclude Include="src\time\comp\timer_list.h" />
