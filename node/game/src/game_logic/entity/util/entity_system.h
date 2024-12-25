@@ -1,7 +1,7 @@
 #pragma once
 #include <entt/src/entt/entity/entity.hpp>
 
-class EntityUtil {
+class EntitySystem {
 public:
     static bool IsPlayer(const entt::entity entityId);
     

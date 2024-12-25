@@ -616,7 +616,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
       <EnableModules>true</EnableModules>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="src\game_logic\entity\util\entity_util.cpp" />
+    <ClCompile Include="src\game_logic\entity\util\entity_system.cpp" />
     <ClCompile Include="src\game_logic\mount\system\mount_system.cpp" />
     <ClCompile Include="src\game_logic\npc\system\npc_system.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_player_database_1_util.cpp" />
@@ -700,7 +700,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\core\network\message_util.h" />
     <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_util.h" />
     <ClInclude Include="src\game_logic\core\utils\redis_util.h" />
-    <ClInclude Include="src\game_logic\entity\util\entity_util.h" />
+    <ClInclude Include="src\game_logic\entity\util\entity_system.h" />
     <ClInclude Include="src\game_logic\mount\system\mount_system.h" />
     <ClInclude Include="src\game_logic\npc\system\npc_system.h" />
     <ClInclude Include="src\game_logic\player\util\player_skill_util.h" />
