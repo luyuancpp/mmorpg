@@ -617,7 +617,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="src\game_logic\entity\util\entity_util.cpp" />
-    <ClCompile Include="src\game_logic\mount\util\mount_util.cpp" />
+    <ClCompile Include="src\game_logic\mount\system\mount_system.cpp" />
     <ClCompile Include="src\game_logic\npc\util\npc_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_player_database_1_util.cpp" />
     <ClCompile Include="src\game_logic\player\util\player_player_database_util.cpp" />
@@ -701,7 +701,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_util.h" />
     <ClInclude Include="src\game_logic\core\utils\redis_util.h" />
     <ClInclude Include="src\game_logic\entity\util\entity_util.h" />
-    <ClInclude Include="src\game_logic\mount\util\mount_util.h" />
+    <ClInclude Include="src\game_logic\mount\system\mount_system.h" />
     <ClInclude Include="src\game_logic\npc\util\npc_util.h" />
     <ClInclude Include="src\game_logic\player\util\player_skill_util.h" />
     <ClInclude Include="src\game_logic\scene\comp\dt_crowd_comp.h" />

@@ -207,7 +207,7 @@
     <ClCompile Include="src\game_logic\core\utils\redis_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\mount\util\mount_util.cpp">
+    <ClCompile Include="src\game_logic\mount\system\mount_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\team\util\team_util.cpp">
@@ -476,7 +476,7 @@
     <ClInclude Include="src\game_logic\core\utils\redis_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\mount\util\mount_util.h">
+    <ClInclude Include="src\game_logic\mount\system\mount_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\team\util\team_util.h">

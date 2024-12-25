@@ -9,7 +9,7 @@
 #include "game_logic/actor/combat_state/system/combat_state_system.h"
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/system/skill_system.h"
-#include "game_logic/mount/util/mount_util.h"
+#include "game_logic/mount/system/mount_system.h"
 #include "game_logic/scene/util/interest_util.h"
 ///<<< END WRITING YOUR CODE
 void ActorEventHandler::Register()
@@ -45,7 +45,7 @@ void ActorEventHandler::InterruptCurrentStatePbEventHandler(const InterruptCurre
 	const entt::entity actorEntity = entt::to_entity(event.actor_entity());
 	if (event.actor_state() == kActorStateMounted)
 	{
-		MountUtil::InterruptAndUnmountActor(actorEntity);
+		MountSystem::InterruptAndUnmountActor(actorEntity);
 	}
 ///<<< END WRITING YOUR CODE
 }
