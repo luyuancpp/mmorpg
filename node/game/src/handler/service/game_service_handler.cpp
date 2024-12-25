@@ -35,7 +35,7 @@ void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 		<< ", centre_node_id: " << request->centre_node_id();
 
 	// 1 清除玩家会话，处理连续顶号进入情况
-	PlayerNodeUtil::RemovePlayerSessionSilently(request->player_id());
+	PlayerNodeSystem::RemovePlayerSessionSilently(request->player_id());
 
 	const auto& playerList = tlsCommonLogic.GetPlayerList();
 	auto playerIt = playerList.find(request->player_id());
@@ -45,7 +45,7 @@ void GameServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 	{
 		PlayerGameNodeEnteryInfoPBComponent enterInfo;
 		enterInfo.set_centre_node_id(request->centre_node_id());
-		PlayerNodeUtil::EnterGs(playerIt->second, enterInfo);
+		PlayerNodeSystem::EnterGs(playerIt->second, enterInfo);
 		return;
 	}
 
@@ -340,7 +340,7 @@ void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* 
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	PlayerNodeUtil::RemovePlayerSession(request->player_id());
+	PlayerNodeSystem::RemovePlayerSession(request->player_id());
 
 	if (const entt::entity gateNodeId{ GetGateNodeId(request->session_id()) };
 		!tls.gateNodeRegistry.valid(gateNodeId))
@@ -369,7 +369,7 @@ void GameServiceHandler::UpdateSessionDetail(::google::protobuf::RpcController* 
 		playerNodeInfo->set_gate_session_id(request->session_id());
 	}
 
-	PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(player);
+	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
 ///<<< END WRITING YOUR CODE
 }
 

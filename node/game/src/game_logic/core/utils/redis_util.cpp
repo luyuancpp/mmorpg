@@ -14,6 +14,6 @@ void RedisUtil::Initialize(muduo::net::InetAddress& serverAddr)
     hiredis->connect();
 
     tlsGame.playerRedis = std::make_unique<PlayerRedis::element_type>(*hiredis);
-    tlsGame.playerRedis->SetLoadCallback(PlayerNodeUtil::HandlePlayerAsyncLoaded);
-    tlsGame.playerRedis->SetSaveCallback(PlayerNodeUtil::HandlePlayerAsyncSaved);
+    tlsGame.playerRedis->SetLoadCallback(PlayerNodeSystem::HandlePlayerAsyncLoaded);
+    tlsGame.playerRedis->SetSaveCallback(PlayerNodeSystem::HandlePlayerAsyncSaved);
 }

@@ -18,7 +18,7 @@ void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,const ::Centre
 		return;
 	}
 
-	PlayerNodeUtil::OnPlayerLogin(player, request->enter_gs_type());
+	PlayerNodeSystem::OnPlayerLogin(player, request->enter_gs_type());
 	///<<< END WRITING YOUR CODE
 }
 
@@ -29,7 +29,7 @@ void GamePlayerServiceHandler::ExitGame(entt::entity player,const ::GameNodeExit
 	PlayerSceneUtil::HandleLeaveScene(player);
 	SceneUtil::LeaveScene({ .leaver = player });
 
-	PlayerNodeUtil::HandleExitGameNode(player);
+	PlayerNodeSystem::HandleExitGameNode(player);
 
 	LOG_INFO << "Player " << tls.registry.get<Guid>(player) << " session cleared after exit game.";
 

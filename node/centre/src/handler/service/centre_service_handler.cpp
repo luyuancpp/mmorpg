@@ -269,7 +269,7 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 
 	LOG_INFO << "Handling disconnect for player: " << playerId;
 
-	PlayerNodeUtil::HandleNormalExit(playerId);
+	PlayerNodeSystem::HandleNormalExit(playerId);
 
 ///<<< END WRITING YOUR CODE
 }
@@ -365,9 +365,9 @@ void CentreServiceHandler::LoginNodeEnterGame(::google::protobuf::RpcController*
 
 		// Register player to gate node
 		tls.registry.emplace_or_replace<EnterGameNodeInfoPBComponent>(player).set_enter_gs_type(LOGIN_REPLACE);
-		PlayerNodeUtil::AddGameNodePlayerToGateNode(player);
+		PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 
-		PlayerNodeUtil::ProcessPlayerSessionState(player);
+		PlayerNodeSystem::ProcessPlayerSessionState(player);
 	}
 
 
@@ -380,7 +380,7 @@ void CentreServiceHandler::LoginNodeLeaveGame(::google::protobuf::RpcController*
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//todo error
-	PlayerNodeUtil::HandleNormalExit(GetPlayerIDBySessionId(tlsCommonLogic.session_id()));
+	PlayerNodeSystem::HandleNormalExit(GetPlayerIDBySessionId(tlsCommonLogic.session_id()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -393,7 +393,7 @@ void CentreServiceHandler::LoginNodeSessionDisconnect(::google::protobuf::RpcCon
 	
 	defer(tlsSessions.erase(request->session_info().session_id()));
 	const auto player_id = GetPlayerIDBySessionId(request->session_info().session_id());
-	PlayerNodeUtil::HandleNormalExit(player_id);
+	PlayerNodeSystem::HandleNormalExit(player_id);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -508,7 +508,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 
 	playerNodeInfo->set_game_node_id(request->game_node_id());
 
-	PlayerNodeUtil::AddGameNodePlayerToGateNode(player);
+	PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 
 	PlayerChangeSceneUtil::SetChangeGsStatus(player, ChangeSceneInfoPBComponent::eEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);

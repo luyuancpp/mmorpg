@@ -2,7 +2,7 @@
 
 #include "hexagons_grid.h"
 #include "game_logic/core/network/message_util.h"
-#include "game_logic/entity/util/entity_system.h"
+#include "game_logic/entity/system/entity_system.h"
 #include "game_logic/scene/comp/grid_comp.h"
 #include "game_logic/scene/util/grid_util.h"
 #include "game_logic/scene/util/interest_util.h"
