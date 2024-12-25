@@ -5,7 +5,7 @@
 #include "time_util.h"
 #include "logic/component/time_comp.pb.h"
 
-class CoolDownTimeMillisecondUtil {
+class CoolDownTimeMillisecondSystem {
 public:
 	// 返回剩余时间（毫秒）
 	inline static  uint64_t Remaining(const CooldownTimeComp& cooldownTimeComp) {
