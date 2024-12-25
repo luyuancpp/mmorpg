@@ -144,7 +144,7 @@
     <ClCompile Include="..\..\node\game\src\game_logic\scene\util\grid_system.cpp" />
     <ClCompile Include="..\test_adapters\message_system_test.cpp" />
     <ClCompile Include="aoi_system_test.cpp" />
-    <ClCompile Include="mock_interest_util.cpp" />
+    <ClCompile Include="interest_system_mock.cpp" />
     <ClCompile Include="mock_view.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

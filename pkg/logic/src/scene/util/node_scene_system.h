@@ -27,7 +27,7 @@ struct CompelChangeSceneParam
 	uint32_t sceneConfId{ 0 };
 };
 
-class NodeSceneUtil
+class NodeSceneSystem
 {
 public:
 	// Find a scene with the minimum player count among servers, less efficient

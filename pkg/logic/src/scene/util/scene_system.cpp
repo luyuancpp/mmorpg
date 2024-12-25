@@ -290,7 +290,7 @@ void SceneUtil::EnterDefaultScene(const EnterDefaultSceneParam& param) {
 	}
 
 	// Get a scene that is not full from the NodeSceneSystem
-	auto defaultScene = NodeSceneUtil::FindNotFullScene({});
+	auto defaultScene = NodeSceneSystem::FindNotFullScene({});
 
 	// Enter the player into the retrieved default scene
 	EnterScene({ defaultScene, param.enter });

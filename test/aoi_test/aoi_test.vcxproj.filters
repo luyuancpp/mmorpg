@@ -30,7 +30,7 @@
     <ClCompile Include="..\..\node\game\src\game_logic\scene\util\grid_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="mock_interest_util.cpp">
+    <ClCompile Include="interest_system_mock.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\node\game\src\game_logic\entity\system\entity_system.cpp">

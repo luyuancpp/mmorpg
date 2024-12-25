@@ -1,7 +1,7 @@
 #pragma once
 
 #include "scene/comp/node_scene_comp.h"
-#include "scene/util/node_scene_util.h"
+#include "scene/util/node_scene_system.h"
 #include "util/node_id_generator.h"
 #include "proto/logic/component/scene_comp.pb.h"
 
