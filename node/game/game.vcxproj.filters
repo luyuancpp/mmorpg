@@ -204,7 +204,7 @@
     <ClCompile Include="src\game_logic\core\network\message_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\core\utils\redis_util.cpp">
+    <ClCompile Include="src\game_logic\core\utils\redis_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\mount\system\mount_system.cpp">
@@ -470,10 +470,10 @@
     <ClInclude Include="src\game_logic\core\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_util.h">
+    <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\core\utils\redis_util.h">
+    <ClInclude Include="src\game_logic\core\utils\redis_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\mount\system\mount_system.h">

@@ -6,7 +6,7 @@
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/scene_error_tip.pb.h"
 #include "game_logic/node/comp/game_node_comp.h"
-#include "game_logic/network/message_util.h"
+#include "game_logic/network/message_system.h"
 #include "service_info/game_player_scene_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "game_logic/scene/util/player_change_scene_system.h"

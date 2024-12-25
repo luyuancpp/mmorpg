@@ -105,7 +105,7 @@
     <ClCompile Include="src\game_logic\player\util\player_node_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\network\message_util.cpp">
+    <ClCompile Include="src\game_logic\network\message_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\player\centre_player_handler.cpp">
@@ -227,7 +227,7 @@
     <ClInclude Include="src\game_logic\player\util\player_node_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\network\message_util.h">
+    <ClInclude Include="src\game_logic\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\player\centre_player_handler.h">

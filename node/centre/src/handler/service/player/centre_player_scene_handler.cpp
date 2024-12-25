@@ -9,7 +9,7 @@
 #include "game_logic/scene/util/player_scene_system.h"
 #include "game_logic/player/util/player_tip_system.h"
 #include "game_logic/scene/util/player_change_scene_system.h"
-#include "game_logic/network/message_util.h"
+#include "game_logic/network/message_system.h"
 #include "service_info/player_scene_service_info.h"
 
 #include "proto/logic/component/player_network_comp.pb.h"

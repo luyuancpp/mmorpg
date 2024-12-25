@@ -19,7 +19,7 @@
 #include "service_info/service_info.h"
 #include "game_logic/scene/util/player_change_scene_system.h"
 #include "game_logic/player/util/player_node_system.h"
-#include "game_logic/network/message_util.h"
+#include "game_logic/network/message_system.h"
 #include "scene/util/scene_system.h"
 #include "thread_local/storage_common_logic.h"
 #include "type_alias/player_loading.h"
@@ -29,7 +29,7 @@
 #include "network/rpc_session.h"
 #include "util/defer.h"
 #include "util/pb.h"
-#include "util/stacktrace_util.h"
+#include "util/stacktrace_system.h"
 
 using namespace muduo;
 using namespace muduo::net;

@@ -4,7 +4,7 @@
 #include "time_util.h"
 #include "logic/component/time_comp.pb.h"
 
-class TimeMeterSecondUtil {
+class TimeMeterSecondSystem {
 public:
     // 返回剩余时间（秒）
     static uint64_t Remaining(const TimeMeterComp& timeMeterComp) {
