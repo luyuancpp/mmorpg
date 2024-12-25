@@ -52,10 +52,10 @@ TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
     Vector3 location;
     location.set_x(10);
     location.set_y(20);
-    auto grid_id = GridUtil::GetGridId(location);
+    auto grid_id = GridSystem::GetGridId(location);
 
     // Expected value should be calculated based on your logic
-    absl::uint128 expected_grid_id = GridUtil::GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(10, 20))));
+    absl::uint128 expected_grid_id = GridSystem::GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(10, 20))));
     EXPECT_EQ(grid_id, expected_grid_id);
 }
 
@@ -63,14 +63,14 @@ TEST_F(AoiSystemTest, TestGetGridIdForLocation) {
 TEST_F(AoiSystemTest, TestScanNeighborGridIds) {
     Hex hex{ 0, 0, 0 };
     GridSet neighbor_grid_set;
-    GridUtil::GetNeighborGridIds(hex, neighbor_grid_set);
+    GridSystem::GetNeighborGridIds(hex, neighbor_grid_set);
 
     // Check the number of neighbors
     EXPECT_EQ(neighbor_grid_set.size(), 6);
 
     // Check if specific neighbors are present
     for (int i = 0; i < 6; ++i) {
-        EXPECT_NE(neighbor_grid_set.find(GridUtil::GetGridId(hex_neighbor(hex, i))), neighbor_grid_set.end());
+        EXPECT_NE(neighbor_grid_set.find(GridSystem::GetGridId(hex_neighbor(hex, i))), neighbor_grid_set.end());
     }
 }
 
@@ -96,7 +96,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         // Invoke Update method
         aoi_system.Update(0.1);
 
-        auto grid_id = GridUtil::GetGridId(transform.location());
+        auto grid_id = GridSystem::GetGridId(transform.location());
         ++expected_entity_count[grid_id];
         EXPECT_TRUE(scene_grid_list[grid_id].entities.contains(player_entity));
         EXPECT_EQ(scene_grid_list[grid_id].entities.size(), expected_entity_count[grid_id]);
@@ -108,7 +108,7 @@ TEST_F(AoiSystemTest, TestUpdatePlayerMovement) {
         }
     }
 
-    GridUtil::UpdateLogGridSize(0.1);
+    GridSystem::UpdateLogGridSize(0.1);
 }
 
 // Test player movement across six neighboring hexes
@@ -129,7 +129,7 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
     // Initial position
     aoi_system.Update(0.1);
     Hex initial_hex = hex_round(pixel_to_hex(kHexLayout, Point(0, 0)));
-    auto initial_grid_id = GridUtil::GetGridId(initial_hex);
+    auto initial_grid_id = GridSystem::GetGridId(initial_hex);
     EXPECT_TRUE(scene_grid_list[initial_grid_id].entities.contains(player_entity));
 
     // Move the player to each neighboring hex
@@ -142,7 +142,7 @@ TEST_F(AoiSystemTest, TestPlayerMovementAcrossSixHexes) {
         // Update the system
         aoi_system.Update(0.1);
 
-        auto new_grid_id = GridUtil::GetGridId(neighbor_hex);
+        auto new_grid_id = GridSystem::GetGridId(neighbor_hex);
         EXPECT_TRUE(scene_grid_list[new_grid_id].entities.contains(player_entity));
         EXPECT_FALSE(scene_grid_list[initial_grid_id].entities.contains(player_entity));
 

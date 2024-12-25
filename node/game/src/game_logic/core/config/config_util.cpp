@@ -4,6 +4,6 @@
 
 void ConfigUtil::OnConfigLoadSuccessful()
 {
-	NavigationUtil::LoadMainSceneNavBins();
+	NavigationSystem::LoadMainSceneNavBins();
 }
 

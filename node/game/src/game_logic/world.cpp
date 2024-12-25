@@ -29,7 +29,7 @@ void World::InitializeSystemBeforeConnect()
     tlsGame.frameTime.set_delta_time(1.0 / tlsGame.frameTime.target_fps());
 
 	PlayerSessionSystem::Initialize();
-	ViewUtil::Initialize();
+	ViewSystem::Initialize();
 }
 
 void World::InitSystemAfterConnect()

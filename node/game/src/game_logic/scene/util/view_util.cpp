@@ -11,13 +11,13 @@
 #include "thread_local/storage.h"
 #include "type_define/type_define.h"
 
-void ViewUtil::Initialize()
+void ViewSystem::Initialize()
 {
 	// Initialize actor creation and destruction messages in the global registry
 	InitializeActorMessages();
 }
 
-void ViewUtil::InitializeActorMessages()
+void ViewSystem::InitializeActorMessages()
 {
 	tls.globalRegistry.emplace<ActorCreateS2C>(GlobalEntity());
 	tls.globalRegistry.emplace<ActorDestroyS2C>(GlobalEntity());
@@ -25,7 +25,7 @@ void ViewUtil::InitializeActorMessages()
 	tls.globalRegistry.emplace<ActorListDestroyS2C>(GlobalEntity());
 }
 
-bool ViewUtil::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
+bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
 {
 	if (BothAreNpcs(observer, entrant)) {
 		return false;
@@ -39,23 +39,23 @@ bool ViewUtil::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity ent
 	return ShouldRefreshView();
 }
 
-bool ViewUtil::BothAreNpcs(entt::entity observer, entt::entity entrant)
+bool ViewSystem::BothAreNpcs(entt::entity observer, entt::entity entrant)
 {
 	return tls.registry.any_of<Npc>(observer) && tls.registry.any_of<Npc>(entrant);
 }
 
-bool ViewUtil::EntrantIsNpc(entt::entity entrant)
+bool ViewSystem::EntrantIsNpc(entt::entity entrant)
 {
 	return tls.registry.any_of<Npc>(entrant);
 }
 
-bool ViewUtil::ShouldRefreshView()
+bool ViewSystem::ShouldRefreshView()
 {
 	// TODO: Implement logic for when view needs refreshing
 	return true;
 }
 
-double ViewUtil::GetMaxViewRadius(entt::entity observer)
+double ViewSystem::GetMaxViewRadius(entt::entity observer)
 {
 	double viewRadius = kMaxViewRadius;
 
@@ -66,7 +66,7 @@ double ViewUtil::GetMaxViewRadius(entt::entity observer)
 	return viewRadius;
 }
 
-bool ViewUtil::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
+bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
 {
 	const auto viewerTransform = tls.registry.try_get<Transform>(viewer);
 	const auto targetTransform = tls.registry.try_get<Transform>(targetEntity);
@@ -92,14 +92,14 @@ bool ViewUtil::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity
 	return dtVdist(viewerLocation, targetLocation) <= visionRadius;
 }
 
-bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
+bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 {
 	const double viewRadius = GetMaxViewRadius(observer);
 
 	return IsWithinViewRadius(observer, entrant, viewRadius);
 }
 
-double ViewUtil::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
+double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
 {
 	const auto transform1 = tls.registry.try_get<Transform>(entity1);
 	const auto transform2 = tls.registry.try_get<Transform>(entity2);
@@ -125,7 +125,7 @@ double ViewUtil::GetDistanceBetweenEntities(entt::entity entity1, entt::entity e
 	return dtVdist(location1, location2);
 }
 
-void ViewUtil::FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& createMessage)
+void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C& createMessage)
 {
 	createMessage.set_entity(entt::to_integral(entrant));
 
@@ -138,29 +138,29 @@ void ViewUtil::FillActorCreateMessageInfo(entt::entity observer, entt::entity en
 	}
 }
 
-void ViewUtil::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
+void ViewSystem::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
 {
 	// Placeholder for handling player leave message
 	// Specific logic can be added based on requirements
 }
 
-void ViewUtil::BroadcastToNearbyEntities(entt::entity entity, const uint32_t message_id,
+void ViewSystem::BroadcastToNearbyEntities(entt::entity entity, const uint32_t message_id,
 const google::protobuf::Message& message, bool excludingSel)
 {
 	EntityUnorderedSet entites;
-	GridUtil::GetEntitiesInGridAndNeighbors(entity, entites, excludingSel);
+	GridSystem::GetEntitiesInGridAndNeighbors(entity, entites, excludingSel);
 	BroadCastToPlayer(message_id, message, entites);
 }
 
-void ViewUtil::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
+void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
 	const google::protobuf::Message& message)
 {
 	EntityUnorderedSet entites;
-	GridUtil::GetEntitiesInViewAndNearby(entity, entites);
+	GridSystem::GetEntitiesInViewAndNearby(entity, entites);
 	BroadCastToPlayer(message_id, message, entites);
 }
 
-void ViewUtil::LookAtPosition(entt::entity entity, const Vector3& pos) {
+void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
     auto transform = tls.registry.try_get<Transform>(entity);
 	if (nullptr == transform)
 	{

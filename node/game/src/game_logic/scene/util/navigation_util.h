@@ -1,6 +1,6 @@
 #pragma once
 
-class NavigationUtil {
+class NavigationSystem {
 public:
 	static void LoadMainSceneNavBins();
 };

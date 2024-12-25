@@ -16,7 +16,7 @@
 #include "logic/event/scene_event.pb.h"
 #include "game_logic/scene/constants/nav_constants.h"
 
-void NavigationUtil::LoadMainSceneNavBins() {
+void NavigationSystem::LoadMainSceneNavBins() {
 	auto& configAll = GetMainSceneAllTable();
 	for (auto& item : configAll.data()) {
 		auto navIt = tlsGame.sceneNav.emplace(item.id(), NavComp{});
@@ -25,7 +25,7 @@ void NavigationUtil::LoadMainSceneNavBins() {
 			continue;
 		}
 		auto& nav = navIt.first->second;
-		RecastUtil::LoadNavMesh(item.nav_bin_file().c_str(), &nav.navMesh);
+		RecastSystem::LoadNavMesh(item.nav_bin_file().c_str(), &nav.navMesh);
 		nav.navQuery.init(&nav.navMesh, kMaxMeshQueryNodes);
 	}
 }

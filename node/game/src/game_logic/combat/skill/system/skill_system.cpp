@@ -54,11 +54,11 @@ void SkillSystem::StartCooldown(entt::entity caster, const SkillTable* skillTabl
 
 void LookAtTargetPosition(entt::entity caster, const ReleaseSkillSkillRequest* request) {
 	if (request->has_position()) {
-		ViewUtil::LookAtPosition(caster, request->position());
+		ViewSystem::LookAtPosition(caster, request->position());
 	} else if (request->target_id() > 0) {
 		const entt::entity target{ request->target_id() };
 		if (const auto transform = tls.registry.try_get<Transform>(target)) {
-			ViewUtil::LookAtPosition(caster, transform->location());
+			ViewSystem::LookAtPosition(caster, transform->location());
 		}
 	}
 }
@@ -457,7 +457,7 @@ void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, con
 	skillUsedS2C.set_skill_table_id(request->skill_table_id());
 	skillUsedS2C.mutable_position()->CopyFrom(request->position());
 
-	ViewUtil::BroadcastMessageToVisiblePlayers(
+	ViewSystem::BroadcastMessageToVisiblePlayers(
 		casterEntity,
 		PlayerSkillServiceNotifySkillUsedMessageId,
 		skillUsedS2C
@@ -484,7 +484,7 @@ void SkillSystem::SendSkillInterruptedMessage(const entt::entity casterEntity, c
 	skillInterruptedS2C.set_skill_table_id(skillTableId);
 	//skillInterruptedS2C.set_skill_id(skillTableID);
 
-	ViewUtil::BroadcastMessageToVisiblePlayers(
+	ViewSystem::BroadcastMessageToVisiblePlayers(
 		casterEntity,
 		PlayerSkillServiceNotifySkillInterruptedMessageId,
 		skillInterruptedS2C

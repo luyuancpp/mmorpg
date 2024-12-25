@@ -32,7 +32,7 @@ void SceneEventHandler::UnRegister()
 void SceneEventHandler::OnSceneCreateHandler(const OnSceneCreate& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	GameNodeSceneUtil::HandleSceneCreation(event);
+	GameNodeSceneSystem::HandleSceneCreation(event);
 ///<<< END WRITING YOUR CODE
 }
 

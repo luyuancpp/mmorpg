@@ -111,9 +111,9 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity e
 
     for (const auto& nearbyEntity : aoiList) {
         constexpr double viewRadiusFactor = 0.333;
-        const double viewRadius = ViewUtil::GetMaxViewRadius(nearbyEntity) * viewRadiusFactor;
+        const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity) * viewRadiusFactor;
 
-        if (!ViewUtil::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
+        if (!ViewSystem::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
             continue;
         }
 
@@ -127,9 +127,9 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity e
 
     for (const auto& nearbyEntity : aoiList) {
         constexpr double viewRadiusFactor = 0.666;
-        const double viewRadius = ViewUtil::GetMaxViewRadius(nearbyEntity) * viewRadiusFactor;
+        const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity) * viewRadiusFactor;
 
-        if (!ViewUtil::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
+        if (!ViewSystem::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
             continue;
         }
 
@@ -142,9 +142,9 @@ void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity e
     const auto& aoiList = tls.registry.get<AoiListComp>(entity).aoiList;
 
     for (const auto& nearbyEntity : aoiList) {
-        const double viewRadius = ViewUtil::GetMaxViewRadius(nearbyEntity);
+        const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity);
 
-        if (!ViewUtil::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
+        if (!ViewSystem::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
             continue;
         }
 
