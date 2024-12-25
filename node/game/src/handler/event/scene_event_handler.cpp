@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "game_logic/scene/system/aoi_system.h"
-#include "game_logic/scene/util/game_node_scene_util.h"
+#include "game_logic/scene/util/game_node_scene_system.h"
 #include "game_logic/scene/system/scene_crowd_system.h"
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register()

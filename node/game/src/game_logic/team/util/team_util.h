@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <entt/src/entt/entity/entity.hpp>
 
-class TeamUtil
+class TeamSystem
 {
 public:
     static uint32_t TryCreateTeam(entt::entity actorEntity);

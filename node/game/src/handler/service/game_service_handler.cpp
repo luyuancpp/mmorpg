@@ -7,7 +7,7 @@
 #include "game_logic/core/network/message_system.h"
 #include "game_logic/player/util/player_node_system.h"
 #include "game_logic/player/util/player_scene_system.h"
-#include "game_logic/scene/util/game_node_scene_util.h"
+#include "game_logic/scene/util/game_node_scene_system.h"
 #include "handler/service/player/player_service.h"
 #include "network/gate_session.h"
 #include "network/rpc_session.h"

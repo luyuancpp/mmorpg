@@ -78,7 +78,7 @@
     <ClCompile Include="src\handler\service_replied\register_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\util\game_node_scene_util.cpp">
+    <ClCompile Include="src\game_logic\scene\util\game_node_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\player\util\player_scene_system.cpp">
@@ -90,7 +90,7 @@
     <ClCompile Include="src\game_logic\player\util\player_tip_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\util\recast_util.cpp">
+    <ClCompile Include="src\game_logic\scene\util\recast_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thread_local\storage_game.cpp">
@@ -117,7 +117,7 @@
     <ClCompile Include="src\game_logic\scene\system\scene_crowd_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\util\view_util.cpp">
+    <ClCompile Include="src\game_logic\scene\util\view_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\combat\skill\system\skill_system.cpp">
@@ -129,10 +129,10 @@
     <ClCompile Include="src\game_logic\combat\projectile\system\projectile_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\util\navigation_util.cpp">
+    <ClCompile Include="src\game_logic\scene\util\navigation_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\util\grid_util.cpp">
+    <ClCompile Include="src\game_logic\scene\util\grid_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\player\player_common_handler.cpp">
@@ -156,10 +156,10 @@
     <ClCompile Include="src\game_logic\player\util\player_skill_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_player_database_1_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_player_database_1_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\player\util\player_player_database_util.cpp">
+    <ClCompile Include="src\game_logic\player\util\player_player_database_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\event\player_event_handler.cpp">
@@ -183,7 +183,7 @@
     <ClCompile Include="src\handler\service\player\player_state_attribute_sync_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\scene\util\interest_util.cpp">
+    <ClCompile Include="src\game_logic\scene\util\interest_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\actor\action_state\system\actor_action_state_system.cpp">
@@ -284,7 +284,7 @@
     <ClInclude Include="src\handler\service_replied\player\player_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\util\game_node_scene_util.h">
+    <ClInclude Include="src\game_logic\scene\util\game_node_scene_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\player\util\player_scene_system.h">
@@ -296,7 +296,7 @@
     <ClInclude Include="src\game_logic\player\util\player_tip_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\util\recast_util.h">
+    <ClInclude Include="src\game_logic\scene\util\recast_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\storage_game.h">
@@ -341,7 +341,7 @@
     <ClInclude Include="src\game_logic\scene\constants\view_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\util\view_util.h">
+    <ClInclude Include="src\game_logic\scene\util\view_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\type_alias\actor.h">
@@ -365,13 +365,13 @@
     <ClInclude Include="src\game_logic\scene\constants\nav_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\util\navigation_util.h">
+    <ClInclude Include="src\game_logic\scene\util\navigation_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\combat\skill\comp\skill_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\util\grid_util.h">
+    <ClInclude Include="src\game_logic\scene\util\grid_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\player\player_common_handler.h">
@@ -422,7 +422,7 @@
     <ClInclude Include="src\handler\service\player\player_state_attribute_sync_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\scene\util\interest_util.h">
+    <ClInclude Include="src\game_logic\scene\util\interest_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\scene\comp\scene_comp.h">

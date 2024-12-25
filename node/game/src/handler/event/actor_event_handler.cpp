@@ -10,7 +10,7 @@
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/system/skill_system.h"
 #include "game_logic/mount/system/mount_system.h"
-#include "game_logic/scene/util/interest_util.h"
+#include "game_logic/scene/util/interest_system.h"
 ///<<< END WRITING YOUR CODE
 void ActorEventHandler::Register()
 {

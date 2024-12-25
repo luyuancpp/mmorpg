@@ -5,7 +5,7 @@
 #include "hexagons_grid.h"
 #include "game_logic/core/network/message_system.h"
 #include "game_logic/scene/comp/grid_comp.h"
-#include "game_logic/scene/util/grid_util.h"
+#include "game_logic/scene/util/grid_system.h"
 #include "proto/logic/component/actor_comp.pb.h"
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"

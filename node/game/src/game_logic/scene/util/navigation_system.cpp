@@ -1,4 +1,4 @@
-#include "navigation_util.h"
+#include "navigation_system.h"
 
 
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
@@ -10,7 +10,7 @@
 #include "game_node.h"
 #include "game_logic/core/network/message_system.h"
 #include "service_info/centre_scene_service_info.h"
-#include "game_logic/scene/util/recast_util.h"
+#include "game_logic/scene/util/recast_system.h"
 #include "scene/util/scene_util.h"
 #include "thread_local/storage_game.h"
 #include "logic/event/scene_event.pb.h"

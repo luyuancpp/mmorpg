@@ -9,7 +9,7 @@
 #include "game_logic/scene/system/aoi_system.h"
 #include "game_logic/scene/system/movement_acceleration_system.h"
 #include "game_logic/scene/system/movement_system.h"
-#include "game_logic/scene/util/view_util.h"
+#include "game_logic/scene/util/view_system.h"
 #include "Recast/Recast.h"
 #include "thread_local/storage_game.h"
 

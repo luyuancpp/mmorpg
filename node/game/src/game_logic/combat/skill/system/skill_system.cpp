@@ -11,7 +11,7 @@
 #include "game_logic/combat/buff/util/buff_util.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
-#include "game_logic/scene/util/view_util.h"
+#include "game_logic/scene/util/view_system.h"
 #include "logic/event/combat_event.pb.h"
 #include "logic/event/skill_event.pb.h"
 #include "macros/return_define.h"
