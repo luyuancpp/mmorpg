@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <entt/src/entt/entity/entity.hpp>
 
-class MountUtil
+class MountSystem
 {
 public:
     static uint32_t MountActor(entt::entity actorEntity);        // 让角色上坐骑
