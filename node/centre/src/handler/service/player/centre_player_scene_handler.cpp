@@ -7,8 +7,8 @@
 #include "pbc/common_error_tip.pb.h"
 #include "centre_node.h"
 #include "game_logic/scene/util/player_scene.h"
-#include "game_logic/player/util/player_tip_util.h"
-#include "game_logic/scene/util/player_change_scene_util.h"
+#include "game_logic/player/util/player_tip_system.h"
+#include "game_logic/scene/util/player_change_scene_system.h"
 #include "game_logic/network/message_util.h"
 #include "service_info/player_scene_service_info.h"
 
