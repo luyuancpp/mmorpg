@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "muduo/base/Logging.h"
-#include "scene/util/scene_system.h"
+#include "scene/system/scene_system.h"
 #include "scene/comp/scene_comp.h"
 #include "thread_local/storage.h"
 #include "pbc/scene_error_tip.pb.h"

@@ -5,11 +5,11 @@
 #include "actor/attribute/system/actor_state_attribute_sync_system.h"
 #include "combat/buff/system/buff_system.h"
 #include "game_logic/core/constants/fps_constants.h"
-#include "game_logic/player/util/player_session_system.h"
+#include "game_logic/player/system/player_session_system.h"
 #include "game_logic/scene/system/aoi_system.h"
 #include "game_logic/scene/system/movement_acceleration_system.h"
 #include "game_logic/scene/system/movement_system.h"
-#include "game_logic/scene/util/view_system.h"
+#include "game_logic/scene/system/view_system.h"
 #include "Recast/Recast.h"
 #include "thread_local/storage_game.h"
 
