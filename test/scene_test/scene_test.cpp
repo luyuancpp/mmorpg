@@ -256,7 +256,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 {
 	tls.gameNodeRegistry.clear();
 	SceneUtil sm;
-	NodeSceneUtil nodeSystem;
+	NodeSceneSystem nodeSystem;
 	EntityUnorderedSet serverEntities;
 	const uint32_t serverSize = 2;
 	const uint32_t perServerScene = 2;
@@ -298,7 +298,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 			sm.EnterScene(enterParam1);
 		}
 	}
-	NodeSceneUtil::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
+	NodeSceneSystem::SetNodeState(*serverEntities.begin(), NodeState::kMaintain);
 
 	GetSceneParams weightRoundRobinScene;
 	weightRoundRobinScene.sceneConfigurationId = 0;
@@ -373,7 +373,7 @@ TEST(GS, CompelToChangeScene)
 TEST(GS, CrashWeightRoundRobinMainScene)
 {
 	SceneUtil sm;
-	NodeSceneUtil nsSys;
+	NodeSceneSystem nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 2;
@@ -435,7 +435,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 TEST(GS, CrashMovePlayer2NewServer)
 {
 	SceneUtil sm;
-	NodeSceneUtil nsSys;
+	NodeSceneSystem nsSys;
 	EntityUnorderedSet nodeList;
 	EntityUnorderedSet sceneList;
 	uint32_t nodeSize = 2;
@@ -498,7 +498,7 @@ TEST(GS, WeightRoundRobinMainScene)
 {
 	tls.gameNodeRegistry.clear();
 	SceneUtil sm;
-	NodeSceneUtil nssys;
+	NodeSceneSystem nssys;
 	EntityUnorderedSet node_list;
 	uint32_t server_size = 10;
 	uint32_t per_server_scene = 10;
@@ -621,7 +621,7 @@ TEST(GS, ServerEnterLeavePressure)
 {
 	tls.gameNodeRegistry.clear();
 	SceneUtil sm;
-	NodeSceneUtil nsSys;
+	NodeSceneSystem nsSys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 2;
 	uint32_t perServerScene = 10;
@@ -723,7 +723,7 @@ TEST(GS, GetNotFullMainSceneWhenSceneFull)
 {
 	tls.gameNodeRegistry.clear();
 	SceneUtil sm;
-	NodeSceneUtil nssys;
+	NodeSceneSystem nssys;
 	EntityUnorderedSet serverEntities;
 	uint32_t serverSize = 10;
 	uint32_t perServerScene = 10;

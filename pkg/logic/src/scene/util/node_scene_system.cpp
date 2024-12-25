@@ -1,4 +1,4 @@
-﻿#include "node_scene_util.h"
+﻿#include "node_scene_system.h"
 #include <ranges>
 #include "scene/comp/node_scene_comp.h"
 #include "thread_local/storage.h"
@@ -101,7 +101,7 @@ entt::entity FindNotFullSceneTemplate(const GetSceneParams& param, const GetScen
 	return bestScene;
 }
 
-entt::entity NodeSceneUtil::FindSceneWithMinPlayerCount(const GetSceneParams& param) {
+entt::entity NodeSceneSystem::FindSceneWithMinPlayerCount(const GetSceneParams& param) {
 	constexpr GetSceneFilterParam filterParam;
 
 	auto bestScene = FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
@@ -114,7 +114,7 @@ entt::entity NodeSceneUtil::FindSceneWithMinPlayerCount(const GetSceneParams& pa
 	return FindSceneWithMinPlayerCountTemplate<MainSceneNode>(param, filterParam);
 }
 
-entt::entity NodeSceneUtil::FindNotFullScene(const GetSceneParams& param) {
+entt::entity NodeSceneSystem::FindNotFullScene(const GetSceneParams& param) {
 	GetSceneFilterParam filterParam;
 
 	auto bestScene = FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
@@ -128,7 +128,7 @@ entt::entity NodeSceneUtil::FindNotFullScene(const GetSceneParams& param) {
 	return FindNotFullSceneTemplate<MainSceneNode>(param, filterParam);
 }
 
-void NodeSceneUtil::SetNodePressure(entt::entity node) {
+void NodeSceneSystem::SetNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == nodeSceneComp) {
@@ -140,7 +140,7 @@ void NodeSceneUtil::SetNodePressure(entt::entity node) {
 	LOG_INFO << "Node entered pressure state, Node ID: " << entt::to_integral(node);
 }
 
-void NodeSceneUtil::ClearNodePressure(entt::entity node) {
+void NodeSceneSystem::ClearNodePressure(entt::entity node) {
 	auto* const nodeSceneComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == nodeSceneComp) {
@@ -152,7 +152,7 @@ void NodeSceneUtil::ClearNodePressure(entt::entity node) {
 	LOG_INFO << "Node exited pressure state, Node ID: " << entt::to_integral(node);
 }
 
-void NodeSceneUtil::SetNodeState(entt::entity node, NodeState state) {
+void NodeSceneSystem::SetNodeState(entt::entity node, NodeState state) {
 	auto* const tryServerComp = tls.gameNodeRegistry.try_get<NodeSceneComp>(node);
 
 	if (nullptr == tryServerComp) {

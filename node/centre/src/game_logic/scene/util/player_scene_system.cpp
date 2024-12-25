@@ -53,10 +53,10 @@ void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
     {
         if (playerSceneInfo->scene_info().scene_confid() > 0)
         {
-            currentSceneId = NodeSceneUtil::FindNotFullScene({ playerSceneInfo->scene_info().scene_confid() });
+            currentSceneId = NodeSceneSystem::FindNotFullScene({ playerSceneInfo->scene_info().scene_confid() });
             if (currentSceneId == entt::null)
             {
-                currentSceneId = NodeSceneUtil::FindNotFullScene({ playerSceneInfo->scene_info().scene_confid() });
+                currentSceneId = NodeSceneSystem::FindNotFullScene({ playerSceneInfo->scene_info().scene_confid() });
             }
         }
     }
@@ -64,7 +64,7 @@ void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
     // If still no valid scene found, fallback to default scene
     if (currentSceneId == entt::null)
     {
-        currentSceneId = NodeSceneUtil::FindNotFullScene({ GetDefaultSceneConfigurationId() });
+        currentSceneId = NodeSceneSystem::FindNotFullScene({ GetDefaultSceneConfigurationId() });
     }
 
     if (currentSceneId == entt::null)
@@ -174,7 +174,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 	{
 		GetSceneParams getSceneParams;
 		getSceneParams.sceneConfigurationId = changeSceneInfo.scene_confid();
-		toScene = NodeSceneUtil::FindNotFullScene(getSceneParams);
+		toScene = NodeSceneSystem::FindNotFullScene(getSceneParams);
 		if (toScene == entt::null)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;

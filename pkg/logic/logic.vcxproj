@@ -163,7 +163,7 @@
     <ClCompile Include="src\bag\bag_system.cpp" />
     <ClCompile Include="src\bag\item_system.cpp" />
     <ClCompile Include="src\mission\util\mission_util.cpp" />
-    <ClCompile Include="src\scene\util\node_scene_util.cpp" />
+    <ClCompile Include="src\scene\util\node_scene_system.cpp" />
     <ClCompile Include="src\scene\util\scene_system.cpp" />
     <ClCompile Include="src\time\comp\duration_funtion.cpp" />
     <ClCompile Include="src\time\comp\duration_manager.cpp" />
@@ -193,7 +193,7 @@
     <ClInclude Include="src\bag\item_system.h" />
     <ClInclude Include="src\mission\comp\missions_config_comp.h" />
     <ClInclude Include="src\mission\util\mission_util.h" />
-    <ClInclude Include="src\scene\util\node_scene_util.h" />
+    <ClInclude Include="src\scene\util\node_scene_system.h" />
     <ClInclude Include="src\scene\util\scene_system.h" />
     <ClInclude Include="src\teams\team_system.h" />
     <ClInclude Include="src\time\comp\duration_funtion.h" />
