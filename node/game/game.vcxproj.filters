@@ -198,9 +198,6 @@
     <ClCompile Include="src\game_logic\actor\attribute\system\actor_state_attribute_sync_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\actor\attribute\util\actor_state_attribute_sync_util.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\game_logic\core\config\config_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -453,9 +450,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\actor\attribute\system\actor_state_attribute_sync_system.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\game_logic\actor\attribute\util\actor_state_attribute_sync_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\combat\buff\util\buff_impl_util.h">
