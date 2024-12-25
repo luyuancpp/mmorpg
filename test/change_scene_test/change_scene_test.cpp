@@ -5,8 +5,8 @@
 #include "thread_local/storage.h"
 #include "pbc/scene_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
-#include "game_logic/scene/util/player_change_scene_system.h"
-#include "scene/util/scene_system.h"
+#include "game_logic/scene/system/player_change_scene_system.h"
+#include "scene/system/scene_system.h"
 
 EntityVector globalSceneList;
 

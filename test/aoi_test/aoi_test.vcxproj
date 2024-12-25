@@ -141,7 +141,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\node\game\src\game_logic\entity\system\entity_system.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\scene\system\aoi_system.cpp" />
-    <ClCompile Include="..\..\node\game\src\game_logic\scene\util\grid_system.cpp" />
+    <ClCompile Include="..\..\node\game\src\game_logic\scene\system\grid_system.cpp" />
     <ClCompile Include="..\test_adapters\message_system_test.cpp" />
     <ClCompile Include="aoi_system_test.cpp" />
     <ClCompile Include="interest_system_mock.cpp" />
