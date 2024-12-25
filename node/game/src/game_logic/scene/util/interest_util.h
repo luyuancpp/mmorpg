@@ -2,7 +2,7 @@
 
 #include <entt/src/entt/entity/entity.hpp>
 
-class InterestUtil {
+class InterestSystem {
 public:
     static void InitializeActorComponents(entt::entity entity);
     

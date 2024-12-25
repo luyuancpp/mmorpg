@@ -10,7 +10,7 @@ class OnSceneCreate;
 class AfterEnterScene;
 class BeforeLeaveScene;
 
-class GameNodeSceneUtil
+class GameNodeSceneSystem
 {
 public:
     static void InitializeNodeScenes();

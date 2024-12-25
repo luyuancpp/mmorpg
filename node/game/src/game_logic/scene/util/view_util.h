@@ -9,7 +9,7 @@ namespace google::protobuf
 class ActorCreateS2C;
 class Vector3;
 
-class ViewUtil
+class ViewSystem
 {
 public:
     // 初始化函数

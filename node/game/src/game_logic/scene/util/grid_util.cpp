@@ -12,31 +12,31 @@ const Point kDefaultSize(20.0, 20.0);
 const Point kOrigin(0.0, 0.0);
 const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
-absl::uint128 GridUtil::GetGridId(const Vector3& pos) {
+absl::uint128 GridSystem::GetGridId(const Vector3& pos) {
     return GetGridId(hex_round(pixel_to_hex(kHexLayout, Point(pos.x(), pos.y()))));
 }
 
-absl::uint128 GridUtil::GetGridId(const Hex& hex) {
+absl::uint128 GridSystem::GetGridId(const Hex& hex) {
     return static_cast<absl::uint128>(hex.q) << 64 | static_cast<uint64_t>(hex.r);
 }
 
-Hex GridUtil::CalculateHexPosition(const Transform& transform) {
+Hex GridSystem::CalculateHexPosition(const Transform& transform) {
     return hex_round(pixel_to_hex(kHexLayout, Point(transform.location().x(), transform.location().y())));
 }
 
-void GridUtil::GetNeighborGridIds(const Hex& hex, GridSet& gridSet) {
+void GridSystem::GetNeighborGridIds(const Hex& hex, GridSet& gridSet) {
     for (int i = 0; i < 6; ++i) {
-        gridSet.emplace(GridUtil::GetGridId(hex_neighbor(hex, i)));
+        gridSet.emplace(GridSystem::GetGridId(hex_neighbor(hex, i)));
     }
 }
 
-void GridUtil::GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet) {
-    auto currentGridId = GridUtil::GetGridId(hex);
+void GridSystem::GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet) {
+    auto currentGridId = GridSystem::GetGridId(hex);
     gridSet.emplace(currentGridId);
     GetNeighborGridIds(hex, gridSet);
 }
 
-void GridUtil::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSel)
+void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entites, bool excludingSel)
 {
     // 检查实体是否有效
     if (!tls.registry.valid(entity)) {
@@ -86,7 +86,7 @@ void GridUtil::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnordere
     }
 }
 
-void GridUtil::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites)
+void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSet& entites)
 {
     // 检查实体是否有效
     if (!tls.registry.valid(entity)) {
@@ -131,9 +131,9 @@ void GridUtil::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSe
                 continue;
             }
 
-            double viewRadius = ViewUtil::GetMaxViewRadius(gridEntity);
+            double viewRadius = ViewSystem::GetMaxViewRadius(gridEntity);
             
-            if (!ViewUtil::IsWithinViewRadius(gridEntity, entity, viewRadius))
+            if (!ViewSystem::IsWithinViewRadius(gridEntity, entity, viewRadius))
             {
                 continue;
             }
@@ -143,7 +143,7 @@ void GridUtil::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnorderedSe
     }
 }
 
-void GridUtil::UpdateLogGridSize(double deltaTime) {
+void GridSystem::UpdateLogGridSize(double deltaTime) {
     for (auto&& [sceneEntity, gridList] : tls.sceneRegistry.view<SceneGridListComp>().each()) {
         for (const auto& [gridId, entityList] : gridList) {
             if (entityList.entities.empty()) {
@@ -153,7 +153,7 @@ void GridUtil::UpdateLogGridSize(double deltaTime) {
     }
 }
 
-void GridUtil::ClearEmptyGrids() {
+void GridSystem::ClearEmptyGrids() {
     std::vector<absl::uint128> destroyEntities;
     for (auto&& [_, gridList] : tls.registry.view<SceneGridListComp>().each()) {
         destroyEntities.clear();

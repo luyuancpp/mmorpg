@@ -31,7 +31,7 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 
 	ActorStateAttributeSyncSystem::InitializeActorComponents(actorEntity);
 	BuffUtil::InitializeActorComponents(actorEntity);
-	InterestUtil::InitializeActorComponents(actorEntity);
+	InterestSystem::InitializeActorComponents(actorEntity);
 	ActorAttributeCalculatorSystem::InitializeActorComponents(actorEntity);
 	ActorActionStateSystem::InitializeActorComponents(actorEntity);
 	CombatStateSystem::InitializeCombatStateComponent(actorEntity);

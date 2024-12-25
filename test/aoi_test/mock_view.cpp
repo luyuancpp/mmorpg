@@ -6,35 +6,35 @@
 extern EntityUnorderedMap entitiesToNotifyEntry;
 extern EntityUnorderedMap entitiesToNotifyExit;
 
-bool ViewUtil::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
+bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
     return true; // Mock behavior
 }
 
-void ViewUtil::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage) {
+void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage) {
     entitiesToNotifyEntry.emplace(observer, entity);
 }
 
-void ViewUtil::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
+void ViewSystem::HandlePlayerLeaveMessage(entt::entity observer, entt::entity leaver)
 {
     entitiesToNotifyExit.emplace(observer, leaver);
 }
 
-bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
+bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius)
 {
     return true;
 }
 
-bool ViewUtil::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
+bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 {
     return true;
 }
 
-double ViewUtil::GetMaxViewRadius(entt::entity observer)
+double ViewSystem::GetMaxViewRadius(entt::entity observer)
 {
     return 0;
 }
 
-void ViewUtil::LookAtPosition(entt::entity entity, const Vector3& pos) {
+void ViewSystem::LookAtPosition(entt::entity entity, const Vector3& pos) {
 
 }
 

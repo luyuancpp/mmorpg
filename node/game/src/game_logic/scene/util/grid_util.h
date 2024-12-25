@@ -9,7 +9,7 @@ class Transform;
 struct Hex;
 class Vector3;
 
-class GridUtil
+class GridSystem
 {
 public:
     static absl::uint128 GetGridId(const Vector3& pos);
