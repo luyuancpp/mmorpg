@@ -1,6 +1,6 @@
 ﻿#include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "game_logic/combat/buff/util/buff_util.h"
+#include "game_logic/combat/buff/system/buff_system.h"
 #include "buff_config.h"
 #include "buff_error_tip.pb.h"
 #include "thread_local/storage.h"
@@ -44,7 +44,7 @@ TEST_F(BuffUtilTest, AddOrUpdateBuffSuccess) {
 	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the AddOrUpdateBuff method
-	auto [result, newBuffId] = BuffUtil::AddOrUpdateBuff(parent, buffTableId, abilityContext);
+	auto [result, newBuffId] = BuffSystem::AddOrUpdateBuff(parent, buffTableId, abilityContext);
 
 	// Verify the result
 	EXPECT_EQ(result, kSuccess);
@@ -70,7 +70,7 @@ TEST_F(BuffUtilTest, CanCreateBuffSuccess) {
 	buffListComp.clear(); // Ensure it's empty for this test
 
 	// Call the CanCreateBuff method
-	uint32_t result = BuffUtil::CanCreateBuff(parent, buffTableId);
+	uint32_t result = BuffSystem::CanCreateBuff(parent, buffTableId);
 
 	// Verify the result
 	EXPECT_EQ(result, kSuccess);

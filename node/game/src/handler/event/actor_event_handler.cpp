@@ -7,7 +7,7 @@
 #include "game_logic/actor/attribute/system/actor_attribute_calculator_system.h"
 #include "game_logic/actor/attribute/system/actor_state_attribute_sync_system.h"
 #include "game_logic/actor/combat_state/system/combat_state_system.h"
-#include "game_logic/combat/buff/util/buff_util.h"
+#include "game_logic/combat/buff/system/buff_system.h"
 #include "game_logic/combat/skill/system/skill_system.h"
 #include "game_logic/mount/system/mount_system.h"
 #include "game_logic/scene/util/interest_system.h"
@@ -30,7 +30,7 @@ void ActorEventHandler::InitializeActorComponentsEventHandler(const InitializeAc
 	const entt::entity actorEntity = entt::to_entity(event.actor_entity());
 
 	ActorStateAttributeSyncSystem::InitializeActorComponents(actorEntity);
-	BuffUtil::InitializeActorComponents(actorEntity);
+	BuffSystem::InitializeActorComponents(actorEntity);
 	InterestSystem::InitializeActorComponents(actorEntity);
 	ActorAttributeCalculatorSystem::InitializeActorComponents(actorEntity);
 	ActorActionStateSystem::InitializeActorComponents(actorEntity);

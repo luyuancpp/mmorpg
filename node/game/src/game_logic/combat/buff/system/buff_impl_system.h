@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "buff_config.h"
-#include "buff_util.h"
+#include "game_logic/combat/buff/system/buff_system.h"
 #include "common_error_tip.pb.h"
 #include "game_logic/actor/combat_state/constants/combat_state_constants.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
@@ -11,8 +11,8 @@
 #include "time/util/time_system.h"
 #include "util/defer.h"
 
-// BuffImplUtil: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑
-class BuffImplUtil {
+// BuffImplSystem: Buff逻辑工具类，用于处理各种Buff生命周期相关的逻辑
+class BuffImplSystem {
 public:
     // 定期调用逻辑 (每帧或定时触发)
     static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable) {
@@ -67,7 +67,7 @@ public:
     static void UpdateLastDamageOrSkillHitTime(const entt::entity casterEntity, const entt::entity targetEntity) {
         UInt64Set buffsToRemoveTarget;
 
-        defer(BuffUtil::RemoveBuff(targetEntity, buffsToRemoveTarget));
+        defer(BuffSystem::RemoveBuff(targetEntity, buffsToRemoveTarget));
         
         for (auto& buffList = tls.registry.get<BuffListComp>(targetEntity);
             auto& buffComp : buffList | std::views::values) {
@@ -78,7 +78,7 @@ public:
                     dataPtr->set_last_time(TimeUtil::NowMilliseconds());
                 }
 
-                BuffUtil::RemoveSubBuff(buffComp, buffsToRemoveTarget);
+                BuffSystem::RemoveSubBuff(buffComp, buffsToRemoveTarget);
             }
         }
     }
@@ -123,7 +123,7 @@ private:
             return true; // 条件满足
         }
 
-        BuffUtil::AddSubBuffs(parent, buffTable, buffComp);
+        BuffSystem::AddSubBuffs(parent, buffTable, buffComp);
         return false;
     }
 
@@ -135,7 +135,7 @@ private:
     ) {
         UInt64Set buffsToRemoveCaster;
         
-        defer(BuffUtil::RemoveBuff(casterEntity, buffsToRemoveCaster));
+        defer(BuffSystem::RemoveBuff(casterEntity, buffsToRemoveCaster));
 
         for (auto& buffList = tls.registry.get<BuffListComp>(casterEntity);
             auto& buffComp : buffList | std::views::values) {
@@ -166,8 +166,8 @@ private:
 
         buffsToRemoveCaster.emplace(buffComp.buffPb.buff_id());
 
-        BuffUtil::AddSubBuffs(casterEntity, buffTable, buffComp);
-        BuffUtil::AddTargetSubBuffs(targetEntity, buffTable, buffComp.skillContext);
+        BuffSystem::AddSubBuffs(casterEntity, buffTable, buffComp);
+        BuffSystem::AddTargetSubBuffs(targetEntity, buffTable, buffComp.skillContext);
     }
 
 

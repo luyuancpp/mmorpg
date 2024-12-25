@@ -6,7 +6,7 @@
 struct BuffComp;
 class BuffTable;
 
-class ModifierBuffUtil {
+class ModifierBuffSystem {
 public:
 	// Buff 启动时的处理
 	static bool OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable);
