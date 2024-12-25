@@ -23,7 +23,7 @@
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
-void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
+void PlayerNodeSystem::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_database& playerData)
 {
 	auto& loadingList = tls.globalRegistry.get<PlayerLoadingInfoList>(GlobalEntity());
 	defer(loadingList.erase(playerId));
@@ -56,29 +56,29 @@ void PlayerNodeUtil::HandlePlayerAsyncLoaded(Guid playerId, const player_centre_
 	// On database loaded
 }
 
-void PlayerNodeUtil::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
+void PlayerNodeSystem::HandlePlayerAsyncSaved(Guid playerId, player_centre_database& playerData)
 {
 	// Placeholder for handling saved player data asynchronously
 }
 
-void PlayerNodeUtil::ProcessPlayerSessionState(entt::entity player)
+void PlayerNodeSystem::ProcessPlayerSessionState(entt::entity player)
 {
 	if (const auto* const enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComponent>(player))
 	{
 		if (enterGameFlag->enter_gs_type() != LOGIN_NONE && enterGameFlag->enter_gs_type() != LOGIN_RECONNECT)
 		{
-			PlayerNodeUtil::HandlePlayerLogin(player);
+			PlayerNodeSystem::HandlePlayerLogin(player);
 		}
 		else
 		{
-			PlayerNodeUtil::HandlePlayerReconnection(player);
+			PlayerNodeSystem::HandlePlayerReconnection(player);
 		}
 
 		tls.registry.remove<EnterGameNodeInfoPBComponent>(player);
 	}
 }
 
-void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
+void PlayerNodeSystem::HandlePlayerLogin(entt::entity playerEntity)
 {
 	const auto enterGameFlag = tls.registry.try_get<EnterGameNodeInfoPBComponent>(playerEntity);
 	if (!enterGameFlag)
@@ -92,12 +92,12 @@ void PlayerNodeUtil::HandlePlayerLogin(entt::entity playerEntity)
 	SendToGsPlayer(GamePlayerServiceCentre2GsLoginMessageId, message, playerEntity);
 }
 
-void PlayerNodeUtil::HandlePlayerReconnection(entt::entity player)
+void PlayerNodeSystem::HandlePlayerReconnection(entt::entity player)
 {
 
 }
 
-void PlayerNodeUtil::AddGameNodePlayerToGateNode(entt::entity playerEntity)
+void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 {
 	auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
@@ -126,7 +126,7 @@ void PlayerNodeUtil::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 	(*gateNode)->CallRemoteMethod(GateServicePlayerEnterGameNodeMessageId, request);
 }
 
-void PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
+void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playerEntity)
 {
 	const auto* const playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
 	if (!playerNodeInfo)
@@ -150,12 +150,12 @@ void PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(entt::entity playe
 	
 }
 
-void PlayerNodeUtil::HandleNormalExit(Guid playerID)
+void PlayerNodeSystem::HandleNormalExit(Guid playerID)
 {
 	Logout(playerID);
 }
 
-void PlayerNodeUtil::HandleAbnormalExit(Guid playerID)
+void PlayerNodeSystem::HandleAbnormalExit(Guid playerID)
 {
 	const auto playerEntity = tlsCommonLogic.GetPlayer(playerID);
 	if (!tls.registry.valid(playerEntity))
@@ -169,7 +169,7 @@ void PlayerNodeUtil::HandleAbnormalExit(Guid playerID)
 	tls.registry.emplace_or_replace<AbnormalExitTimer>(playerEntity).timer.RunAfter(globalVariableTable->todouble(), [playerID]() {Logout(playerID); });
 }
 
-void PlayerNodeUtil::Logout(Guid playerID)
+void PlayerNodeSystem::Logout(Guid playerID)
 {
 	// TODO: Handle leave during login
 	// TODO: Immediate logout on disconnect will be revisited later

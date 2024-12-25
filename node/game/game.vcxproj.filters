@@ -222,7 +222,7 @@
     <ClCompile Include="src\game_logic\actor\combat_state\system\combat_state_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\entity\util\entity_system.cpp">
+    <ClCompile Include="src\game_logic\entity\system\entity_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -491,7 +491,7 @@
     <ClInclude Include="src\game_logic\actor\combat_state\constants\combat_state_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\entity\util\entity_system.h">
+    <ClInclude Include="src\game_logic\entity\system\entity_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\actor\combat_state\system\combat_state_system.h">

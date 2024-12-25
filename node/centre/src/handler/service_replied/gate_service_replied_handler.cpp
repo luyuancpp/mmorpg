@@ -50,9 +50,9 @@ void OnGateServicePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn
 		return;
 	}
 	
-	PlayerNodeUtil::HandleGameNodePlayerRegisteredAtGateNode(player);
+	PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(player);
 
-	PlayerNodeUtil::ProcessPlayerSessionState(player);
+	PlayerNodeSystem::ProcessPlayerSessionState(player);
 
 	PlayerChangeSceneUtil::SetChangeGsStatus(player, ChangeSceneInfoPBComponent::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
