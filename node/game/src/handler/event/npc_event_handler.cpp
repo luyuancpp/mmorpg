@@ -2,7 +2,7 @@
 #include "logic/event/npc_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "game_logic/npc/util/npc_util.h"
+#include "game_logic/npc/system/npc_system.h"
 ///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
 {
@@ -25,7 +25,7 @@ void NpcEventHandler::InitializeNpcComponentsEventHandler(const InitializeNpcCom
         return;
     }
     
-    NpcUtil::InitializeNpcComponents(npc);
+    NpcSystem::InitializeNpcComponents(npc);
     
 ///<<< END WRITING YOUR CODE
 }
