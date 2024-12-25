@@ -2,7 +2,7 @@
 
 #include "util/game_registry.h"
 
-class  NpcUtil
+class  NpcSystem
 {
 public:
     static void InitializeNpcComponents(entt::entity npc);
