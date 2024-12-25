@@ -2,7 +2,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "common_error_tip.pb.h"
 #include "common/tip.pb.h"
-#include "game_logic/combat/skill/util/skill_util.h"
+#include "game_logic/combat/skill/system/skill_system.h"
 #include "macros/return_define.h"
 #include "proto/logic/component/player_skill_comp.pb.h"
 #include "thread_local/storage.h"
@@ -11,7 +11,7 @@ void PlayerSkillServiceHandler::ReleaseSkill(entt::entity player,const ::Release
 	     ReleaseSkillSkillResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CHECK_PLAYER_REQUEST(request, SkillUtil::ReleaseSkill);
+	CHECK_PLAYER_REQUEST(request, SkillSystem::ReleaseSkill);
 ///<<< END WRITING YOUR CODE
 }
 
