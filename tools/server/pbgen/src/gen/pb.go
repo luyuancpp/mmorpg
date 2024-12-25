@@ -37,7 +37,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
-			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcOutputDirectory, 1)
+			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcProtoOutputDirectory, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
@@ -47,7 +47,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			}
 
 			// Generate C++ files
-			if err := generateCppFiles(fileName, config.PbcOutputDirectory); err != nil {
+			if err := generateCppFiles(fileName, config.PbcProtoOutputDirectory); err != nil {
 				log.Fatal(err)
 			}
 
