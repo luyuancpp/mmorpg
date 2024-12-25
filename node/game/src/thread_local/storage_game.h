@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game_logic/core/utils/redis_util.h"
+#include "game_logic/core/utils/redis_system.h"
 #include "game_logic/scene/comp/nav_comp.h"
 #include "proto/common/mysql_database_table.pb.h"
 #include "proto/logic/component/frame_comp.pb.h"

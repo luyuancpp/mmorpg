@@ -1,4 +1,4 @@
-#include "item_util.h"
+#include "item_system.h"
 
 void InitItem(InitItemParam& param)
 {

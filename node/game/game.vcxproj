@@ -537,7 +537,7 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
       <EnableModules>true</EnableModules>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="src\game_logic\core\utils\redis_util.cpp">
+    <ClCompile Include="src\game_logic\core\utils\redis_system.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
@@ -698,8 +698,8 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\game_logic\core\config\config_system.h" />
     <ClInclude Include="src\game_logic\core\constants\fps_constants.h" />
     <ClInclude Include="src\game_logic\core\network\message_system.h" />
-    <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_util.h" />
-    <ClInclude Include="src\game_logic\core\utils\redis_util.h" />
+    <ClInclude Include="src\game_logic\core\utils\node_sequence_generator_system.h" />
+    <ClInclude Include="src\game_logic\core\utils\redis_system.h" />
     <ClInclude Include="src\game_logic\entity\system\entity_system.h" />
     <ClInclude Include="src\game_logic\mount\system\mount_system.h" />
     <ClInclude Include="src\game_logic\npc\system\npc_system.h" />
