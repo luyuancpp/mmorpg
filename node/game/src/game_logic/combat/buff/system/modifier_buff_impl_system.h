@@ -1,11 +1,11 @@
 ﻿#pragma once
 #include <entt/src/entt/entity/entity.hpp>
 
-#include "buff_impl_util.h"
+#include "buff_impl_system.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "proto/logic/component/actor_attribute_state_comp.pb.h"
 
-class ModifierBuffUtilImplUtil{
+class ModifierBuffUtilImplSystem{
 public:
     static bool OnIntervalThink(const entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
     {

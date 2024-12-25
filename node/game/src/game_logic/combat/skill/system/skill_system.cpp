@@ -8,7 +8,7 @@
 #include "game_logic/actor/action_state/constants/actor_state_constants.h"
 #include "game_logic/actor/action_state/system/actor_action_state_system.h"
 #include "game_logic/actor/combat_state/system/combat_state_system.h"
-#include "game_logic/combat/buff/util/buff_util.h"
+#include "game_logic/combat/buff/system/buff_system.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
 #include "game_logic/scene/util/view_system.h"
@@ -102,7 +102,7 @@ void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t 
 	if (!tls.registry.valid(targetEntity)) {
 		return;
 	}
-	BuffUtil::OnSkillHit(casterEntity, targetEntity);
+	BuffSystem::OnSkillHit(casterEntity, targetEntity);
 }
 
 uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const ReleaseSkillSkillRequest* request) {
@@ -506,7 +506,7 @@ void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint
 	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(casterEntity) << ", Skill ID: " << skillId;
 
 	for (const auto& effect : skillTable->effect()) {
-		BuffUtil::AddOrUpdateBuff(entt::to_entity(skillContext->target()), effect, skillContext);
+		BuffSystem::AddOrUpdateBuff(entt::to_entity(skillContext->target()), effect, skillContext);
 	}
 }
 
@@ -605,8 +605,8 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventPbComponen
 
 // 触发伤害前的事件
 void TriggerBeforeDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
-    BuffUtil::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
-    BuffUtil::OnBeforeTakeDamage(casterEntity, targetEntity, damageEvent);
+    BuffSystem::OnBeforeGiveDamage(casterEntity, targetEntity, damageEvent);
+    BuffSystem::OnBeforeTakeDamage(casterEntity, targetEntity, damageEvent);
 }
 
 // 处理目标生命值的减少
@@ -632,21 +632,21 @@ void TriggerBeKillEvent(const entt::entity casterEntity, const entt::entity targ
 
 // 触发伤害后的事件
 void TriggerAfterDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventPbComponent& damageEvent) {
-	BuffUtil::OnAfterGiveDamage(casterEntity, targetEntity, damageEvent);
-	BuffUtil::OnAfterTakeDamage(casterEntity, targetEntity, damageEvent);
+	BuffSystem::OnAfterGiveDamage(casterEntity, targetEntity, damageEvent);
+	BuffSystem::OnAfterTakeDamage(casterEntity, targetEntity, damageEvent);
 }
 
 // 处理目标死亡逻辑
 void HandleTargetDeath(const entt::entity casterEntity, const entt::entity target, const DamageEventPbComponent& damageEvent) {
     // 触发死亡前的事件
-    BuffUtil::OnBeforeDead(target); 
+    BuffSystem::OnBeforeDead(target); 
 
     // 触发死亡后的事件
-    BuffUtil::OnAfterDead(target);
+    BuffSystem::OnAfterDead(target);
 
     // 如果不是自杀，触发击杀事件
     if (casterEntity != target) {
-        BuffUtil::OnKill(casterEntity);
+        BuffSystem::OnKill(casterEntity);
     }
 
     // 生成并触发被击杀事件
@@ -707,6 +707,6 @@ void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64
 	SkillExecutedEvent skillExecutedEvent;
 	skillExecutedEvent.set_caster(entt::to_integral(casterEntity));
 	skillExecutedEvent.set_target(skillContext->target());
-	BuffUtil::OnSkillExecuted(skillExecutedEvent);
+	BuffSystem::OnSkillExecuted(skillExecutedEvent);
 }
 

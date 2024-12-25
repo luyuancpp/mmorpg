@@ -1,13 +1,13 @@
-﻿#include "modifier_buff_util.h"
+﻿#include "modifier_buff_system.h"
 #include "buff_config.pb.h"
-#include "modifier_buff_impl_util.h"
+#include "modifier_buff_impl_system.h"
 #include "game_logic/actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "game_logic/actor/attribute/system/actor_attribute_calculator_system.h"
 #include "game_logic/combat/buff/comp/buff_comp.h"
 #include "game_logic/combat/buff/constants/buff_constants.h"
 #include "thread_local/storage.h"
 
-bool ModifierBuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
+bool ModifierBuffSystem::OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {
         return false;
     }
@@ -21,12 +21,12 @@ bool ModifierBuffUtil::OnBuffStart(entt::entity parent, BuffComp& buff, const Bu
     return  false;
 }
 
-void ModifierBuffUtil::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,
+void ModifierBuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,
     const SkillContextPtrComp& abilityContext, BuffComp& buffComp) {
     // 当前未实现，可以添加逻辑来刷新 buff
 }
 
-bool ModifierBuffUtil::OnBuffRemove(const entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
+bool ModifierBuffSystem::OnBuffRemove(const entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {
         return false;
     }
@@ -40,7 +40,7 @@ bool ModifierBuffUtil::OnBuffRemove(const entt::entity parent, BuffComp& buff, c
     return  false;
 }
 
-bool ModifierBuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
+bool ModifierBuffSystem::OnBuffDestroy(entt::entity parent, BuffComp& buff, const BuffTable* buffTable) {
     // 当前未实现，可以添加销毁 buff 的逻辑
 
     if (buffTable == nullptr) {
@@ -51,17 +51,17 @@ bool ModifierBuffUtil::OnBuffDestroy(entt::entity parent, BuffComp& buff, const 
     return false;
 }
 
-bool ModifierBuffUtil::OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
+bool ModifierBuffSystem::OnIntervalThink(entt::entity parent, BuffComp& buffComp, const BuffTable* buffTable)
 {
-    return ModifierBuffUtilImplUtil::OnIntervalThink(parent, buffComp, buffTable);
+    return ModifierBuffUtilImplSystem::OnIntervalThink(parent, buffComp, buffTable);
 }
 
-void ModifierBuffUtil::OnSkillHit(entt::entity caster, entt::entity target)
+void ModifierBuffSystem::OnSkillHit(entt::entity caster, entt::entity target)
 {
-    ModifierBuffUtilImplUtil::OnSkillHit(caster, target);
+    ModifierBuffUtilImplSystem::OnSkillHit(caster, target);
 }
 
-bool ModifierBuffUtil::IsMovementSpeedBuff(const BuffTable* buffTable) {
+bool ModifierBuffSystem::IsMovementSpeedBuff(const BuffTable* buffTable) {
     return buffTable->bufftype() == kBuffTypeMovementSpeedReduction || 
            buffTable->bufftype() == kBuffTypeMovementSpeedBoost;
 }

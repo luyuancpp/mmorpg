@@ -11,7 +11,7 @@
 #include "grpc/async_client_call.h"
 #include "service_info/player_state_attribute_sync_service_info.h"
 #include "thread_local/storage.h"
-#include "game_logic/actor/attribute/util/actor_state_attribute_sync_system.h"
+#include "game_logic/actor/attribute/system/actor_state_attribute_sync_system.h"
 #include "thread_local/storage_game.h"
 
 // 定义帧同步频率的配置数组大小
