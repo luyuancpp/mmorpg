@@ -3,8 +3,8 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "google/protobuf/empty.proto";
-import "logic/component/scene_comp.proto";
-import "logic/client_player/player_scene.proto";
+import "proto/common/common.proto";
+import "proto/logic/client_player/player_scene.proto";
 option cc_generic_services = true;
 
 message CentreEnterSceneRequest

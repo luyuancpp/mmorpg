@@ -2,11 +2,11 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common/common.proto";
-import "common/empty.proto";
-import "common/session.proto";
-import "common/c2gate.proto";
-import "common/common_message.proto";
+import "proto/common/common.proto";
+import "proto/common/empty.proto";
+import "proto/common/session.proto";
+import "proto/common/c2gate.proto";
+import "proto/common/common_message.proto";
 
 option cc_generic_services = true;
 

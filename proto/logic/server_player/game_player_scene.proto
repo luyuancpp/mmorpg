@@ -2,9 +2,9 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common/tip.proto";
+import "proto/common/tip.proto";
 import "google/protobuf/empty.proto";
-import "logic/component/scene_comp.proto";
+import "proto/logic/component/scene_comp.proto";
 option cc_generic_services = true;
 
 

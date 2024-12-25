@@ -2,13 +2,14 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common/db_base.proto";
-import "common/user_accounts.proto";
-import "common/comp.proto";
-import "logic/component/player_scene_comp.proto";
-import "logic/component/actor_comp.proto";
-import "logic/component/player_comp.proto";
-import "logic/component/player_skill_comp.proto";
+import "proto/common/db_base.proto";
+import "proto/common/user_accounts.proto";
+import "proto/common/comp.proto";
+import "proto/common/common.proto";
+import "proto/logic/component/player_scene_comp.proto";
+import "proto/logic/component/actor_comp.proto";
+import "proto/logic/component/player_comp.proto";
+import "proto/logic/component/player_skill_comp.proto";
 
 /////////////         game
 message user_accounts

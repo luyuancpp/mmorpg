@@ -4,6 +4,7 @@ package config
 const (
 	ProjectDir                = "../../../../"
 	ProtoDir                  = "../../../../proto/"
+	ProtoParentIncludePathDir = "../../../../"
 	BinDirectory              = "../bin/"
 	Md5Ex                     = ".md5"
 	Md5Dir                    = "../bin/md5/"
@@ -33,7 +34,7 @@ const (
 	CppSol2Extension              = "_sol2.cpp"
 	MessageIdName                 = "MessageId"
 	MethodIndexName               = "Index"
-	CppUtilExtension              = "_util.cpp"
+	CppSystemExtension            = "_system.cpp"
 )
 
 // 常量：目录路径
@@ -42,7 +43,7 @@ const (
 	CentreNodeDirectory           = "node/centre/"
 	GateNodeDirectory             = "node/gate/"
 	RobotDirectory                = "robot/"
-	PbcProtoDirectory             = "pkg/pbc/src/proto/"
+	PbcProtoDirectory             = "pkg/pbc/src/"
 	ServiceIdFilePath             = ProtoDir + "serviceid.txt"
 	HandlerSourceDirectory        = "src/handler/service/"
 	RepliedHandlerSourceDirectory = "src/handler/service_replied/"
@@ -88,7 +89,7 @@ const (
 	ClientLuaServiceFilePath         = ProjectDir + "client/src/handler/service_lua.cpp"
 	ClientServiceInstanceFilePath    = ProjectDir + "client/src/handler/player_service.cpp"
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
-	PlayerStorageUtilDirectory       = ProjectDir + GameNodeDirectory + "src/game_logic/player/util/"
+	PlayerStorageSystemDirectory     = ProjectDir + GameNodeDirectory + "src/game_logic/player/system/"
 )
 
 // 常量：文件名

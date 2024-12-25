@@ -77,7 +77,7 @@ func CppPlayerDataLoadGenerator() {
 
 			handleName := util.CapitalizeWords(*messageDesc.Name)
 
-			md5FilePath := config.PlayerStorageMd5Directory + "player_" + messageDescName + config.CppUtilExtension
+			md5FilePath := config.PlayerStorageMd5Directory + "player_" + messageDescName + config.CppSystemExtension
 
 			filedList := generateDatabaseFiles(messageDesc)
 
@@ -91,7 +91,7 @@ func CppPlayerDataLoadGenerator() {
 				return
 			}
 
-			destFilePath := config.PlayerStorageUtilDirectory + "player_" + messageDescName + config.CppUtilExtension
+			destFilePath := config.PlayerStorageSystemDirectory + "player_" + messageDescName + config.CppSystemExtension
 
 			_, err = util.CopyFileByMd5(destFilePath, md5FilePath)
 			if err != nil {
