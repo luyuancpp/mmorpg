@@ -6,7 +6,7 @@
 
 //可以丢弃时间的派发器，比如提示,服务器压力大的时候可以把提示扔了
 
-class PlayerSceneUtil
+class PlayerSceneSystem
 {
 public:
 	static void HandleEnterScene(entt::entity player, entt::entity scene);

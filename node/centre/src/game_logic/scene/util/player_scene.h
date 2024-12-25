@@ -4,7 +4,7 @@
 
 #include "type_define/type_define.h"
 
-class PlayerSceneUtil
+class PlayerSceneSystem
 {
 public:
     static void HandleLoginEnterScene(entt::entity player);

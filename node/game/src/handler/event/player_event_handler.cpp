@@ -2,7 +2,7 @@
 #include "logic/event/player_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "game_logic/player/util/player_skill_util.h"
+#include "game_logic/player/util/player_skill_system.h"
 ///<<< END WRITING YOUR CODE
 void PlayerEventHandler::Register()
 {
@@ -29,7 +29,7 @@ void PlayerEventHandler::RegisterPlayerEventHandler(const RegisterPlayerEvent& e
 		return;
 	}
 
-	PlayerSkillUtil::RegisterPlayer(player);
+	PlayerSkillSystem::RegisterPlayer(player);
 ///<<< END WRITING YOUR CODE
 }
 

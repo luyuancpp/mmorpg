@@ -3,7 +3,7 @@
 #include "game_logic/scene/system/aoi_system.h"
 #include <gtest/gtest.h>
 #include "hexagons_grid.h"
-#include "game_logic/core/network/message_util.h"
+#include "game_logic/core/network/message_system.h"
 #include "game_logic/scene/comp/grid_comp.h"
 #include "game_logic/scene/util/grid_util.h"
 #include "proto/logic/component/actor_comp.pb.h"

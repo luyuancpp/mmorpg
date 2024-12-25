@@ -14,7 +14,7 @@
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
 
-void PlayerSceneUtil::HandleLoginEnterScene(entt::entity playerEntity)
+void PlayerSceneSystem::HandleLoginEnterScene(entt::entity playerEntity)
 {
     if (!tls.registry.valid(playerEntity))
     {
@@ -84,7 +84,7 @@ void PlayerSceneUtil::HandleLoginEnterScene(entt::entity playerEntity)
     PlayerChangeSceneUtil::PushChangeSceneInfo(playerEntity, changeSceneInfo);
 }
 
-void PlayerSceneUtil::SendToGameNodeEnterScene(entt::entity playerEntity)
+void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
 {
     if (playerEntity == entt::null)
     {
@@ -122,7 +122,7 @@ void PlayerSceneUtil::SendToGameNodeEnterScene(entt::entity playerEntity)
     LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->game_node_id();
 }
 
-void PlayerSceneUtil::ProcessPlayerEnterGameServer(entt::entity playerEntity, NodeId nodeId)
+void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity playerEntity, NodeId nodeId)
 {
     const auto* playerNodeInfo = tls.registry.try_get<PlayerNodeInfoPBComponent>(playerEntity);
     if (!playerNodeInfo)
@@ -138,7 +138,7 @@ void PlayerSceneUtil::ProcessPlayerEnterGameServer(entt::entity playerEntity, No
     CallGameNodeMethod(GameServicePlayerEnterGameNodeMessageId, request, nodeId);
 }
 
-void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
+void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 {
     auto playerId = tls.registry.get<Guid>(playerEntity);
 
@@ -155,7 +155,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	if (!fromSceneEntity)
 	{
 		LOG_ERROR << "From scene entity not found for player: " << playerId;
-		PlayerTipUtil::SendToPlayer(playerEntity, kEnterSceneYourSceneIsNull, {});
+		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneYourSceneIsNull, {});
 		return;
 	}
 
@@ -178,7 +178,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		if (toScene == entt::null)
 		{
 			LOG_WARN << "No available scene found for player: " << playerId;
-			PlayerTipUtil::SendToPlayer(playerEntity, kEnterSceneSceneFull, {});
+			PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneSceneFull, {});
 			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
@@ -190,7 +190,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		if (toScene == entt::null)
 		{
 			LOG_ERROR << "Target scene not found for player: " << playerId;
-			PlayerTipUtil::SendToPlayer(playerEntity, kEnterSceneSceneNotFound, {});
+			PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneSceneNotFound, {});
 			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
@@ -216,7 +216,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	if (toSceneGuid == fromSceneInfo->guid())
 	{
 		LOG_WARN << "Player is already in the current scene: " << playerId;
-		PlayerTipUtil::SendToPlayer(playerEntity, kEnterSceneYouInCurrentScene, {});
+		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneYouInCurrentScene, {});
 		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 		return;
 	}
@@ -226,7 +226,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 		if (const auto ret = SceneUtil::CheckScenePlayerSize(toScene); ret != kSuccess)
 		{
 			LOG_WARN << "Scene player size check failed for player: " << playerId << ", ret: " << ret;
-			PlayerTipUtil::SendToPlayer(playerEntity, ret, {});
+			PlayerTipSystem::SendToPlayer(playerEntity, ret, {});
 			PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);
 			return;
 		}
@@ -245,7 +245,7 @@ void PlayerSceneUtil::AttemptEnterNextScene(entt::entity playerEntity)
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(playerEntity);
 }
 
-uint32_t PlayerSceneUtil::GetDefaultSceneConfigurationId()
+uint32_t PlayerSceneSystem::GetDefaultSceneConfigurationId()
 {
     return 1;
 }
