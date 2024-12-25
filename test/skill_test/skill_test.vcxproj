@@ -156,6 +156,10 @@
     <ClCompile Include="..\..\node\game\src\game_logic\actor\action_state\system\actor_action_state_system.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\actor\attribute\system\actor_attribute_calculator_system.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\actor\combat_state\system\combat_state_system.cpp" />
+    <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\system\buff_impl_system.cpp" />
+    <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\system\buff_system.cpp" />
+    <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\system\modifier_buff_impl_system.cpp" />
+    <ClCompile Include="..\..\node\game\src\game_logic\combat\buff\system\motion_modifier_impl_system.cpp" />
     <ClCompile Include="..\..\node\game\src\game_logic\combat\skill\system\skill_system.cpp" />
     <ClCompile Include="..\..\node\game\src\thread_local\storage_game.cpp" />
     <ClCompile Include="..\test_adapters\message_system_test.cpp" />

@@ -138,7 +138,7 @@
     <ClCompile Include="src\handler\service\player\player_common_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\combat\buff\system\motion_modifier_system.cpp">
+    <ClCompile Include="src\game_logic\combat\buff\system\motion_modifier_impl_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\event\buff_event_handler.cpp">
@@ -174,7 +174,7 @@
     <ClCompile Include="src\handler\event\skill_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\combat\buff\system\modifier_buff_system.cpp">
+    <ClCompile Include="src\game_logic\combat\buff\system\modifier_buff_impl_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\player\player_state_attribute_sync_handler.cpp">
@@ -220,6 +220,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\game_logic\entity\system\entity_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_logic\combat\buff\system\buff_impl_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -380,7 +383,7 @@
     <ClInclude Include="src\game_logic\combat\buff\comp\buff_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\buff\system\motion_modifier_system.h">
+    <ClInclude Include="src\game_logic\combat\buff\system\motion_modifier_impl_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\buff_event_handler.h">
@@ -410,7 +413,7 @@
     <ClInclude Include="src\handler\event\skill_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\combat\buff\system\modifier_buff_system.h">
+    <ClInclude Include="src\game_logic\combat\buff\system\modifier_buff_impl_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\player\player_state_attribute_sync_handler.h">

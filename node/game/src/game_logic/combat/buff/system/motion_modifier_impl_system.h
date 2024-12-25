@@ -6,7 +6,7 @@
 struct BuffComp;
 class BuffTable;
 
-class MotionModifierBuffSystem{
+class MotionModifierBuffImplSystem{
 public:
     static bool OnBuffStart(entt::entity parent, BuffComp& buff, const BuffTable* buffTable);
 
