@@ -11,7 +11,7 @@
 #include "game_logic/combat/buff/system/buff_system.h"
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
-#include "game_logic/scene/util/view_system.h"
+#include "game_logic/scene/system/view_system.h"
 #include "proto/logic/event/combat_event.pb.h"
 #include "proto/logic/event/skill_event.pb.h"
 #include "macros/return_define.h"
@@ -25,8 +25,8 @@
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"
 #include "time/comp/timer_task_comp.h"
-#include "time/util/cooldown_time_system.h"
-#include "time/util/time_system.h"
+#include "time/system/cooldown_time_system.h"
+#include "time/system/time_system.h"
 
 uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterBuffList, const SkillContextCompMap& targetBuffList) {
 	uint64_t newSkillId;

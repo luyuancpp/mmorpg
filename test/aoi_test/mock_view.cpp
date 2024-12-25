@@ -1,4 +1,4 @@
-#include "game_logic/scene/util/view_system.h"
+#include "game_logic/scene/system/view_system.h"
 #include "logic/component/actor_comp.pb.h"
 #include "thread_local/storage.h"
 #include "type_define/type_define.h"

@@ -7,7 +7,7 @@
 #include "game_logic/actor/attribute/constants/actor_state_attribute_constants.h"
 #include "game_logic/core/network/message_system.h"
 #include "game_logic/scene/comp/scene_comp.h"
-#include "game_logic/scene/util/view_system.h"
+#include "game_logic/scene/system/view_system.h"
 #include "grpc/async_client_call.h"
 #include "service_info/player_state_attribute_sync_service_info.h"
 #include "thread_local/storage.h"

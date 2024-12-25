@@ -6,7 +6,7 @@
 #include "game_logic/combat/skill/comp/skill_comp.h"
 #include "game_logic/combat/skill/constants/skill_constants.h"
 #include "time/comp/timer_task_comp.h"
-#include "time/util/cooldown_time_system.h"
+#include "time/system/cooldown_time_system.h"
 #include "pbc/skill_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
 
