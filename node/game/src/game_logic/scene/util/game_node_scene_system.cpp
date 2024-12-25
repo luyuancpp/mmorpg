@@ -8,7 +8,7 @@
 #include "logic/event/scene_event.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "scene/comp/scene_comp.h"
-#include "scene/util/scene_util.h"
+#include "scene/util/scene_system.h"
 #include "service_info/centre_scene_service_info.h"
 #include "thread_local/storage.h"
 #include "thread_local/storage_game.h"

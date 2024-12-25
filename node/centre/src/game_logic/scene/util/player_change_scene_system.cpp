@@ -2,7 +2,7 @@
 
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/scene_error_tip.pb.h"
-#include "scene/util/scene_util.h"
+#include "scene/util/scene_system.h"
 #include "thread_local/storage.h"
 #include "muduo/base/Logging.h"
 #include "proto/logic/event/scene_event.pb.h"

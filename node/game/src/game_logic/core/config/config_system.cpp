@@ -1,8 +1,8 @@
-#include "config_util.h"
+#include "config_system.h"
 
 #include "game_logic/scene/util/navigation_system.h"
 
-void ConfigUtil::OnConfigLoadSuccessful()
+void ConfigSystem::OnConfigLoadSuccessful()
 {
 	NavigationSystem::LoadMainSceneNavBins();
 }
