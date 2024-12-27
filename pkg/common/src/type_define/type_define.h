@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include <set>
@@ -11,6 +11,7 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
+// 类型别名
 using Guid = uint64_t;
 using NodeId = uint32_t;
 using SessionId = uint64_t;
@@ -41,7 +42,7 @@ using GuidUint64Map = std::unordered_map<Guid, uint64_t>;
 using PlayerPairList = std::unordered_set<absl::uint128, absl::Hash<absl::uint128>>;
 using UInt128Set = std::unordered_set<absl::uint128, absl::Hash<absl::uint128>>;
 
-static constexpr Guid kInvalidGuid{UINT64_MAX};
-static constexpr uint64_t kInvalidSessionId{UINT64_MAX};
-static constexpr uint32_t kInvalidU32Id{UINT32_MAX};
-static constexpr NodeId kInvalidNodeId{UINT32_MAX};
+constexpr Guid kInvalidGuid{UINT64_MAX};
+constexpr uint64_t kInvalidSessionId{UINT64_MAX};
+constexpr uint32_t kInvalidU32Id{UINT32_MAX};
+constexpr NodeId kInvalidNodeId{UINT32_MAX};
