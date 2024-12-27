@@ -99,32 +99,32 @@ void GameChannel::LogMessageStatistics(const GameRpcMessage& message) const {
 
     // 获取消息 ID
     uint32_t message_id = message.message_id();
-    uint32_t message_size = message.ByteSizeLong(); // 获取消息大小（字节数）
+    uint64_t message_size = message.ByteSizeLong(); // 获取消息大小（字节数）
 
     // 当前时间
     auto now = std::chrono::steady_clock::now();
     // 获取或初始化统计对象
-    auto& statistic = g_message_statistics[message_id];
+    auto& statistic = gMessageStatistics[message_id];
 
     // 如果是第一次记录，初始化起始时间
-    if (g_start_times[message_id].time_since_epoch().count() <= 0) {
-        g_start_times[message_id] = now;
+    if (gStartTimes[message_id].time_since_epoch().count() <= 0) {
+        gStartTimes[message_id] = now;
     }
 
     // 更新消息计数
     statistic.set_count(statistic.count() + 1);
 
     // 更新总流量
-    uint32_t new_total_flow = statistic.flow_rate_total() + message_size;
+    uint64_t new_total_flow = statistic.flow_rate_total() + message_size;
     statistic.set_flow_rate_total(new_total_flow);
 
     // 更新所有消息的总流量
-    g_total_flow += message_size;
+    gTotalFlow += message_size;
 
     // 计算流量速率
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - g_start_times[message_id]).count();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - gStartTimes[message_id]).count();
     if (duration > 0) {
-        uint32_t flow_rate_per_second = new_total_flow / duration;
+        uint64_t flow_rate_per_second = new_total_flow / duration;
         statistic.set_flow_rate_second(flow_rate_per_second);
     }
 
@@ -142,9 +142,9 @@ void GameChannel::StartMessageStatistics(){
     gFeatureSwitches[kTestMessageStatistics] = true;
 
     // 清理旧数据
-    g_message_statistics.fill(MessageStatistics{});
-    g_start_times.fill(std::chrono::steady_clock::time_point{});
-    g_total_flow = 0; // 重置总流量
+    gMessageStatistics.fill(MessageStatistics{});
+    gStartTimes.fill(std::chrono::steady_clock::time_point{});
+    gTotalFlow = 0; // 重置总流量
 
     LOG_INFO << "Message statistics started.";
 }
@@ -158,7 +158,7 @@ void GameChannel::StopMessageStatistics(){
 
     uint32_t message_id = 0;
 
-    for (const auto& stats : g_message_statistics) {
+    for (const auto& stats : gMessageStatistics) {
         LOG_INFO << "Message ID: " << message_id++
             << ", Count: " << stats.count()
             << ", Total Flow: " << stats.flow_rate_total()
@@ -167,11 +167,11 @@ void GameChannel::StopMessageStatistics(){
     }
 
     // 打印总流量
-    LOG_INFO << "Total Flow of All Messages: " << g_total_flow << " bytes";
+    LOG_INFO << "Total Flow of All Messages: " << gTotalFlow << " bytes";
 
     // 清理统计数据
-    g_message_statistics.fill(MessageStatistics{});
-    g_start_times.fill(std::chrono::steady_clock::time_point{});
+    gMessageStatistics.fill(MessageStatistics{});
+    gStartTimes.fill(std::chrono::steady_clock::time_point{});
 
     LOG_INFO << "Message statistics stopped.";
 }

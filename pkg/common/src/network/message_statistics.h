@@ -6,8 +6,8 @@
 
 #include "proto/common/statistics.pb.h"
 
-extern std::array<MessageStatistics, kMaxMessageLen> g_message_statistics;
+extern std::array<MessageStatistics, kMaxMessageLen> gMessageStatistics;
 
-extern std::array<std::chrono::steady_clock::time_point, kMaxMessageLen> g_start_times;
+extern std::array<std::chrono::steady_clock::time_point, kMaxMessageLen> gStartTimes;
 
-extern uint64_t g_total_flow; // 所有消息的总流量
+extern uint64_t gTotalFlow; // 所有消息的总流量

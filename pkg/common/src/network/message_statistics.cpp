@@ -1,7 +1,7 @@
 ﻿#include "message_statistics.h"
 
-std::array<MessageStatistics, kMaxMessageLen> g_message_statistics;
+std::array<MessageStatistics, kMaxMessageLen> gMessageStatistics;
 
-std::array<std::chrono::steady_clock::time_point, kMaxMessageLen> g_start_times;
+std::array<std::chrono::steady_clock::time_point, kMaxMessageLen> gStartTimes;
 
-uint64_t g_total_flow = 0; // 所有消息的总流量
+uint64_t gTotalFlow = 0; // 所有消息的总流量
