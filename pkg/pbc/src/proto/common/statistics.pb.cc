@@ -26,7 +26,7 @@ inline constexpr MessageStatistics::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : count_{0u},
         flow_rate_second_{0u},
-        flow_rate_total_{0u},
+        flow_rate_total_{::uint64_t{0u}},
         second_{0u},
         _cached_size_{0} {}
 
@@ -76,7 +76,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fstatistics_2eproto[] ABSL_
     protodesc_cold) = {
     "\n\035proto/common/statistics.proto\"e\n\021Messa"
     "geStatistics\022\r\n\005count\030\001 \001(\r\022\030\n\020flow_rate"
-    "_second\030\002 \001(\r\022\027\n\017flow_rate_total\030\003 \001(\r\022\016"
+    "_second\030\002 \001(\r\022\027\n\017flow_rate_total\030\003 \001(\004\022\016"
     "\n\006second\030\004 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fstatistics_2eproto_once;
@@ -213,8 +213,8 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> MessageStatistics::_table_ = {
     // uint32 flow_rate_second = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageStatistics, _impl_.flow_rate_second_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(MessageStatistics, _impl_.flow_rate_second_)}},
-    // uint32 flow_rate_total = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageStatistics, _impl_.flow_rate_total_), 63>(),
+    // uint64 flow_rate_total = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MessageStatistics, _impl_.flow_rate_total_), 63>(),
      {24, 63, 0, PROTOBUF_FIELD_OFFSET(MessageStatistics, _impl_.flow_rate_total_)}},
   }}, {{
     65535, 65535
@@ -225,9 +225,9 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> MessageStatistics::_table_ = {
     // uint32 flow_rate_second = 2;
     {PROTOBUF_FIELD_OFFSET(MessageStatistics, _impl_.flow_rate_second_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 flow_rate_total = 3;
+    // uint64 flow_rate_total = 3;
     {PROTOBUF_FIELD_OFFSET(MessageStatistics, _impl_.flow_rate_total_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // uint32 second = 4;
     {PROTOBUF_FIELD_OFFSET(MessageStatistics, _impl_.second_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
@@ -258,10 +258,10 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> MessageStatistics::_table_ = {
         2, this->_internal_flow_rate_second(), target);
   }
 
-  // uint32 flow_rate_total = 3;
+  // uint64 flow_rate_total = 3;
   if (this->_internal_flow_rate_total() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
         3, this->_internal_flow_rate_total(), target);
   }
 
@@ -301,9 +301,9 @@ const ::_pbi::TcParseTable<2, 4, 0, 0, 2> MessageStatistics::_table_ = {
         this->_internal_flow_rate_second());
   }
 
-  // uint32 flow_rate_total = 3;
+  // uint64 flow_rate_total = 3;
   if (this->_internal_flow_rate_total() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
         this->_internal_flow_rate_total());
   }
 
