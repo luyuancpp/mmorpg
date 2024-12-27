@@ -9,5 +9,6 @@ entt::entity ThreadLocalStorageCommonLogic::GetPlayer(Guid player_uid)
     {
         return entt::null;
     }
+
     return playerIt->second;
 }
