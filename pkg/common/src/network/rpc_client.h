@@ -38,6 +38,7 @@ public:
             static InetAddress s;
             return s;
 		}
+
         return client_.connection()->localAddress(); 
     }
 
@@ -48,6 +49,7 @@ public:
 			static InetAddress s;
 			return s;
 		}
+
         return client_.connection()->peerAddress(); 
     }
 
@@ -73,6 +75,7 @@ public:
 			LOG_ERROR << "client disconnect";
 			return;
 		}
+
 		channel_->CallRemoteMethod(message_id, request);
 	}
 
@@ -83,6 +86,7 @@ public:
             LOG_ERROR << "client disconnect";
             return;
         }
+
         channel_->SendRequest(message_id, message);
     }
 
@@ -93,6 +97,7 @@ public:
             LOG_ERROR << "client disconnect";
             return;
         }
+
         channel_->RouteMessageToNode(message_id, request);
     }
 

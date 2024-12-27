@@ -14,11 +14,11 @@ extern ProtobufDispatcher gResponseDispatcher;
 void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMsgStringResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	defer(tlsCommonLogic.set_next_route_node_type(UINT32_MAX));
-	defer(tlsCommonLogic.set_next_route_node_id(UINT32_MAX));
-	defer(tlsCommonLogic.set_current_session_id(kInvalidSessionId));
+	defer(tlsCommonLogic.SetNextRouteNodeType(UINT32_MAX));
+	defer(tlsCommonLogic.SeNextRouteNodeId(UINT32_MAX));
+	defer(tlsCommonLogic.SetCurrentSessionId(kInvalidSessionId));
 
-    tlsCommonLogic.set_current_session_id(replied->session_id());
+    tlsCommonLogic.SetCurrentSessionId(replied->session_id());
 
 	if (replied->route_data_list_size() <= 0)
 	{

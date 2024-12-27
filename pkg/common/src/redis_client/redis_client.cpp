@@ -13,6 +13,7 @@ void MessageSyncRedisClient::Connect(const std::string& redis_server_addr, int32
 {
     timeval timeout = { sec, usec };
     context_.reset(redisConnectWithTimeout(redis_server_addr.c_str(), port, timeout));
+
     if (nullptr == context_)
     {
         LOG_FATAL << "Connect Redis " << redis_server_addr << ":" << port;
@@ -32,11 +33,13 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message)
 void MessageSyncRedisClient::Save(const google::protobuf::Message& message, Guid guid)
 {
     const auto* desc = message.GetDescriptor();
+
     if (kInvalidGuid == guid)
     {
         LOG_ERROR << "Message Save To Redis Game Guid Key Empty : " << desc->full_name();
         return;
     }
+
     std::string key = desc->full_name() + std::to_string(guid);
     Save(message, key);
 }
@@ -49,6 +52,7 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, cons
         LOG_ERROR << "Message Save To Redis Key Empty : " << desc->full_name();
         return;
     }
+
     size_t key_len = key.length();
     MessageCachedArray message_cached_array(message.ByteSizeLong());
     message.SerializeWithCachedSizesToArray(message_cached_array.data());
@@ -82,6 +86,7 @@ void MessageSyncRedisClient::Load(google::protobuf::Message& message, const std:
         LOG_ERROR << "Message Load From Redis Key Empty : " << desc->full_name();
         return;
     }
+
     std::string format = std::string("GET ") + key;
     redisReply* reply = static_cast<redisReply*>(redisCommand(context_.get(),
                                                               format.c_str()));
@@ -90,6 +95,7 @@ void MessageSyncRedisClient::Load(google::protobuf::Message& message, const std:
     {
         return;
     }
+
     message.ParsePartialFromArray(reply->str, static_cast<int32_t>(reply->len));
 }
 

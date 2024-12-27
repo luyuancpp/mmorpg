@@ -380,7 +380,7 @@ void CentreServiceHandler::LoginNodeLeaveGame(::google::protobuf::RpcController*
 {
 ///<<< BEGIN WRITING YOUR CODE
 	//todo error
-	PlayerNodeSystem::HandleNormalExit(GetPlayerIDBySessionId(tlsCommonLogic.session_id()));
+	PlayerNodeSystem::HandleNormalExit(GetPlayerIDBySessionId(tlsCommonLogic.GetSessionId()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -525,12 +525,12 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	///<<< BEGIN WRITING YOUR CODE
 
 	// Clean up previous routing information
-	defer(tlsCommonLogic.set_next_route_node_type(UINT32_MAX));
-	defer(tlsCommonLogic.set_next_route_node_id(UINT32_MAX));
-	defer(tlsCommonLogic.set_current_session_id(kInvalidSessionId));
+	defer(tlsCommonLogic.SetNextRouteNodeType(UINT32_MAX));
+	defer(tlsCommonLogic.SeNextRouteNodeId(UINT32_MAX));
+	defer(tlsCommonLogic.SetCurrentSessionId(kInvalidSessionId));
 
 	// Set current session ID
-	tlsCommonLogic.set_current_session_id(request->session_id());
+	tlsCommonLogic.SetCurrentSessionId(request->session_id());
 
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
@@ -591,7 +591,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	auto* mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 
-	if (tlsCommonLogic.next_route_node_type() == UINT32_MAX)
+	if (tlsCommonLogic.GetNextRouteNodeType() == UINT32_MAX)
 	{
 		const auto byte_size = static_cast<int32_t>(current_node_response->ByteSizeLong());
 		response->mutable_body()->resize(byte_size);
@@ -603,32 +603,32 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 			*response->add_route_data_list() = request_data_it;
 		}
 
-		response->set_session_id(tlsCommonLogic.session_id());
+		response->set_session_id(tlsCommonLogic.GetSessionId());
 		response->set_id(request->id());
 		return;
 	}
 
 	// Need to route to the next node
 	auto* next_route_data = mutable_request->add_route_data_list();
-	next_route_data->CopyFrom(tlsCommonLogic.route_data());
+	next_route_data->CopyFrom(tlsCommonLogic.RouteData());
 	next_route_data->mutable_node_info()->CopyFrom(gCentreNode->GetNodeInfo());
-	mutable_request->set_body(tlsCommonLogic.route_msg_body());
+	mutable_request->set_body(tlsCommonLogic.RouteMsgBody());
 	mutable_request->set_id(request->id());
 
-	switch (tlsCommonLogic.next_route_node_type())
+	switch (tlsCommonLogic.GetNextRouteNodeType())
 	{
 	case kGateNode:
 	{
-		entt::entity gate_node_id{ tlsCommonLogic.next_route_node_id() };
+		entt::entity gate_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
 		if (!tls.gateNodeRegistry.valid(gate_node_id))
 		{
-			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
+			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.GetNextRouteNodeId();
 			return;
 		}
 		const auto gate_node = tls.gateNodeRegistry.try_get<RpcSessionPtr>(gate_node_id);
 		if (!gate_node)
 		{
-			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.next_route_node_id();
+			LOG_ERROR << "Gate node not found: " << tlsCommonLogic.GetNextRouteNodeId();
 			return;
 		}
 		(*gate_node)->RouteMessageToNode(GateServiceRouteNodeMessageMessageId, *mutable_request);
@@ -636,16 +636,16 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	}
 	case kGameNode:
 	{
-		entt::entity game_node_id{ tlsCommonLogic.next_route_node_id() };
+		entt::entity game_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
 		if (!tls.gameNodeRegistry.valid(game_node_id))
 		{
-			LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
+			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
 		const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
 		if (!game_node)
 		{
-			LOG_ERROR << "Game node not found: " << tlsCommonLogic.next_route_node_id() << ", " << request->DebugString();
+			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
 		(*game_node)->RouteMessageToNode(GameServiceRouteNodeStringMsgMessageId, *mutable_request);
@@ -653,7 +653,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	}
 	default:
 	{
-		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tlsCommonLogic.next_route_node_type();
+		LOG_ERROR << "Invalid next route node type: " << request->DebugString() << ", " << tlsCommonLogic.GetNextRouteNodeType();
 		break;
 	}
 	}

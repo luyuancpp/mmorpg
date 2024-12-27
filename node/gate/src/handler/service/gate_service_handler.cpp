@@ -3,7 +3,6 @@
 #include "muduo/base/Logging.h"
 
 #include "gate_node.h"
-#include "network/gate_session.h"
 #include "network/network_constants.h"
 #include "thread_local/storage_gate.h"
 #include "util/pb.h"
