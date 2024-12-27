@@ -1,12 +1,11 @@
 #include "muduo/base/Logging.h"
 
-#include "thread_local/storage_common_logic.h"
 #include "gate_node.h"
 #include "network/codec/dispatcher.h"
+#include "service_info/service_info.h"
+#include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_gate.h"
 #include "util/defer.h"
-#include "service_info/service_info.h"
-#include "network/gate_session.h"
 
 #include "service_info/gate_service_service_info.h"
 

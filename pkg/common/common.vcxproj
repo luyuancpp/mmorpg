@@ -23,13 +23,11 @@
     <ClInclude Include="src\game_config\deploy_json.h" />
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\grpc\deploy\deploy_client.h" />
-    <ClInclude Include="src\jsoncpp\json.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
     <ClInclude Include="src\network\codec\dispatcher_lite.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
-    <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\message_statistics.h" />
     <ClInclude Include="src\network\process_info.h" />
     <ClInclude Include="src\network\game_channel.h" />
@@ -62,10 +60,8 @@
     <ClCompile Include="src\game_config\deploy_json.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
     <ClCompile Include="src\grpc\deploy\deploy_client.cpp" />
-    <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
-    <ClCompile Include="src\network\gate_session.cpp" />
     <ClCompile Include="src\network\message_statistics.cpp" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\network\game_channel.cc" />

@@ -4,12 +4,12 @@
 #include "muduo/net/InetAddress.h"
 
 #include "game_node.h"
+#include "game_common_logic/system/session_system.h"
 #include "game_logic/core/network/message_system.h"
 #include "game_logic/player/system/player_node_system.h"
 #include "game_logic/player/system/player_scene_system.h"
 #include "game_logic/scene/system/game_node_scene_system.h"
 #include "handler/service/player/player_service.h"
-#include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
