@@ -50,7 +50,7 @@ void GateNode::Init()
     InitLog();
     InitNodeConfig();
     muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
-        ZoneConfig::GetSingleton().config_info().loglevel()));
+        ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
     InitNodeByReqInfo();
 
     node_info_.set_launch_time(TimeUtil::NowSecondsUTC());
@@ -71,7 +71,7 @@ void GateNode::Exit()
 
 void GateNode::InitNodeByReqInfo()
 {
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+    const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
     const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
     const auto channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
     extern std::unique_ptr<DeployService::Stub> gDeployStub;
@@ -81,7 +81,7 @@ void GateNode::InitNodeByReqInfo()
     {
         NodeInfoRequest rq;
         rq.set_node_type(kGateNode);
-        rq.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
+        rq.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
         void SendGetNodeInfo(const NodeInfoRequest& rq);
         SendGetNodeInfo(rq);
     }
@@ -183,7 +183,7 @@ void GateNode::Connect2Centre()
         centre_node->registerService(&service_handler_);
         centre_node->connect();
         if (centre_node_info.zone_id() == 
-            ZoneConfig::GetSingleton().config_info().zone_id())
+            ZoneConfig::GetSingleton().ConfigInfo().zone_id())
         {
             zone_centre_node_ = centre_node;
         }

@@ -63,7 +63,7 @@ void GameNode::Init()
     InitLog();
     InitNodeConfig();
     muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
-        ZoneConfig::GetSingleton().config_info().loglevel()));
+        ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
     InitGameConfig();	
     
     InitMessageInfo();
@@ -122,7 +122,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
     tlsGame.redis.Initialize(redis_addr);
 
-    nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
+    nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().ConfigInfo().server_type());
     nodeInfo.set_node_type(eNodeType::kGameNode);
     nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
 
@@ -213,8 +213,8 @@ const game_node_db& GameNode::GetNodeConf() const
 
 void GameNode::InitNodeByReqInfo()
 {
-    auto& zone = ZoneConfig::GetSingleton().config_info();
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+    auto& zone = ZoneConfig::GetSingleton().ConfigInfo();
+    const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
     const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
     extern std::unique_ptr<DeployService::Stub> gDeployStub;
     gDeployStub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
@@ -223,7 +223,7 @@ void GameNode::InitNodeByReqInfo()
     {
         NodeInfoRequest rq;
         rq.set_node_type(kGameNode);
-        rq.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
+        rq.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
         void SendGetNodeInfo(const NodeInfoRequest& request);
         SendGetNodeInfo(rq);
     }
@@ -246,7 +246,7 @@ void GameNode::Connect2Centre()
         centre_node->registerService(&gameService);
         centre_node->connect();
         if (centre_node_info.zone_id() ==
-            ZoneConfig::GetSingleton().config_info().zone_id())
+            ZoneConfig::GetSingleton().ConfigInfo().zone_id())
         {
             myZoneCentreNode = centre_node;
         }
