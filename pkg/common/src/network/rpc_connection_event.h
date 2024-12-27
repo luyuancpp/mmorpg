@@ -10,6 +10,7 @@ struct OnConnected2ServerEvent
         : conn_(conn)
     {   
     }
+
     muduo::net::TcpConnectionPtr conn_;
 };
 
@@ -19,6 +20,7 @@ struct OnBeConnectedEvent//服务器被连接
         : conn_(conn)
     {
     }
+
     muduo::net::TcpConnectionPtr conn_;
 };
 

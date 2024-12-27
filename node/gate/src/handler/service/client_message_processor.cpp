@@ -7,7 +7,6 @@
 
 #include "gate_node.h"
 #include "grpc/request/login_grpc_request.h"
-#include "network/gate_session.h"
 #include "service_info/centre_service_service_info.h"
 #include "service_info/player_common_service_info.h"
 #include "service_info/game_service_service_info.h"

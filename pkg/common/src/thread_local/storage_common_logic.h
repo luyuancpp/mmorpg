@@ -8,14 +8,14 @@ class ThreadLocalStorageCommonLogic
 public:
     using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 
-    RouteNodeInfo& route_data() { return route_data_; }
-    std::string& route_msg_body() { return route_msg_body_; }
-    void set_next_route_node_type(const uint32_t node_type) { next_route_node_type_ = node_type; }
-    uint32_t next_route_node_type() const { return next_route_node_type_; }
-    void set_next_route_node_id(const uint32_t next_node_id) { next_route_node_id_ = next_node_id; }
-    uint32_t next_route_node_id() const { return next_route_node_id_; }
-    void set_current_session_id(const uint64_t current_session_id) { current_session_id_ = current_session_id; }
-    uint64_t session_id() const { return current_session_id_; }
+    RouteNodeInfo& RouteData() { return route_data_; }
+    std::string& RouteMsgBody() { return route_msg_body_; }
+    void SetNextRouteNodeType(const uint32_t node_type) { next_route_node_type_ = node_type; }
+    uint32_t GetNextRouteNodeType() const { return next_route_node_type_; }
+    void SeNextRouteNodeId(const uint32_t next_node_id) { next_route_node_id_ = next_node_id; }
+    uint32_t GetNextRouteNodeId() const { return next_route_node_id_; }
+    void SetCurrentSessionId(const uint64_t current_session_id) { current_session_id_ = current_session_id; }
+    uint64_t GetSessionId() const { return current_session_id_; }
 
     entt::entity GetPlayer(Guid player_uid);
     inline PlayerListMap& GetPlayerList() { return playerList; }

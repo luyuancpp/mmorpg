@@ -1,5 +1,5 @@
 #pragma once
 
-#include "type_define/type_define.h"
+#include <cstdint>
 
 constexpr int32_t kMaxRouteSize = 20;
