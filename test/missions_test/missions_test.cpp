@@ -180,7 +180,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	// Validate that each condition type has one mission tracked for testing purposes
 	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionCustom); ++i)
 	{
-		EXPECT_EQ(1, missionsComponent.classify_for_unittest().find(i)->second.size());
+		EXPECT_EQ(1, missionsComponent.GetEventMissionsClassifyForUnitTest().find(i)->second.size());
 	}
 
 	// Handle various mission condition events
@@ -258,7 +258,7 @@ TEST(MissionsComponent, ConditionTypeSize)
 	// Validate that no mission types are tracked after completion
 	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionCustom); ++i)
 	{
-		EXPECT_EQ(0, missionsComponent.classify_for_unittest().find(i)->second.size());
+		EXPECT_EQ(0, missionsComponent.GetEventMissionsClassifyForUnitTest().find(i)->second.size());
 	}
 }
 
@@ -577,7 +577,7 @@ TEST(MissionsComponent, AbandonMission)
 	EXPECT_EQ(0, missionsComponent.CanGetRewardSize());
 	EXPECT_EQ(1, missionsComponent.TypeSetSize());
 
-	auto& typeMissions = missionsComponent.classify_for_unittest();
+	auto& typeMissions = missionsComponent.GetEventMissionsClassifyForUnitTest();
 	EXPECT_EQ(1, typeMissions.find(static_cast<uint32_t>(eCondtionType::kConditionKillMonster))->second.size());
 
 	// Set mission as rewardable

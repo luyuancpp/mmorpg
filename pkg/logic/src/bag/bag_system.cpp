@@ -60,7 +60,7 @@ uint32_t Bag::GetItemPos(Guid guid) {
 }
 
 uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
-    auto empty_size = empty_grid_size();
+    auto emptySize = empty_grid_size();
     U32U32UnorderedMap need_stack_sizes;
     bool has_stack_item = false;
 
@@ -74,10 +74,10 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
 
         if (itemTable->max_statck_size() == 1) {
             std::size_t need_grid_size = static_cast<std::size_t>(itemTable->max_statck_size() * try_item.second);
-            if (empty_size <= 0 || empty_size < need_grid_size) {
+            if (emptySize <= 0 || emptySize < need_grid_size) {
                 return kBagItemNotStacked;
             }
-            empty_size -= need_grid_size;
+            emptySize -= need_grid_size;
         }
         else {
             need_stack_sizes.emplace(try_item.first, try_item.second);
@@ -113,10 +113,10 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
     for (const auto& it : need_stack_sizes) {
 		FetchItemTableOrContinue(it.first);
         auto need_grid_size = CalculateStackGridSize(it.second, itemTable->max_statck_size());
-        if (empty_size <= 0 || empty_size < need_grid_size) {
+        if (emptySize <= 0 || emptySize < need_grid_size) {
             return kBagItemNotStacked;
         }
-        empty_size -= need_grid_size;
+        emptySize -= need_grid_size;
     }
 
     return kSuccess;
