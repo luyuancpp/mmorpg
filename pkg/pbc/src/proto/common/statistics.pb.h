@@ -213,14 +213,14 @@ class MessageStatistics final : public ::google::protobuf::Message
   void _internal_set_flow_rate_second(::uint32_t value);
 
   public:
-  // uint32 flow_rate_total = 3;
+  // uint64 flow_rate_total = 3;
   void clear_flow_rate_total() ;
-  ::uint32_t flow_rate_total() const;
-  void set_flow_rate_total(::uint32_t value);
+  ::uint64_t flow_rate_total() const;
+  void set_flow_rate_total(::uint64_t value);
 
   private:
-  ::uint32_t _internal_flow_rate_total() const;
-  void _internal_set_flow_rate_total(::uint32_t value);
+  ::uint64_t _internal_flow_rate_total() const;
+  void _internal_set_flow_rate_total(::uint64_t value);
 
   public:
   // uint32 second = 4;
@@ -256,7 +256,7 @@ class MessageStatistics final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::uint32_t count_;
     ::uint32_t flow_rate_second_;
-    ::uint32_t flow_rate_total_;
+    ::uint64_t flow_rate_total_;
     ::uint32_t second_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -325,24 +325,24 @@ inline void MessageStatistics::_internal_set_flow_rate_second(::uint32_t value) 
   _impl_.flow_rate_second_ = value;
 }
 
-// uint32 flow_rate_total = 3;
+// uint64 flow_rate_total = 3;
 inline void MessageStatistics::clear_flow_rate_total() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.flow_rate_total_ = 0u;
+  _impl_.flow_rate_total_ = ::uint64_t{0u};
 }
-inline ::uint32_t MessageStatistics::flow_rate_total() const {
+inline ::uint64_t MessageStatistics::flow_rate_total() const {
   // @@protoc_insertion_point(field_get:MessageStatistics.flow_rate_total)
   return _internal_flow_rate_total();
 }
-inline void MessageStatistics::set_flow_rate_total(::uint32_t value) {
+inline void MessageStatistics::set_flow_rate_total(::uint64_t value) {
   _internal_set_flow_rate_total(value);
   // @@protoc_insertion_point(field_set:MessageStatistics.flow_rate_total)
 }
-inline ::uint32_t MessageStatistics::_internal_flow_rate_total() const {
+inline ::uint64_t MessageStatistics::_internal_flow_rate_total() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.flow_rate_total_;
 }
-inline void MessageStatistics::_internal_set_flow_rate_total(::uint32_t value) {
+inline void MessageStatistics::_internal_set_flow_rate_total(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.flow_rate_total_ = value;
 }

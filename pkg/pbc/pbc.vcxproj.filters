@@ -78,7 +78,22 @@
     <ClCompile Include="src\proto\common\user_accounts.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\client_player\player_common.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\proto\logic\client_player\player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\client_player\player_skill.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\client_player\player_state_attribute_sync.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\component\actor_attribute_state_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\component\actor_combat_state_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\actor_comp.pb.cc">
@@ -94,6 +109,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\item_base_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\component\item_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\component\mission_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\component\npc_comp.pb.cc">
@@ -114,6 +135,9 @@
     <ClCompile Include="src\proto\logic\component\player_scene_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\component\player_skill_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\proto\logic\component\scene_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -129,19 +153,43 @@
     <ClCompile Include="src\proto\logic\constants\function_switch.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\constants\node.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\proto\logic\constants\scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\constants\test_switch.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\event\actor_combat_state_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\event\actor_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\event\buff_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\proto\logic\event\combat_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\proto\logic\event\mission_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\event\npc_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\event\player_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\event\scene_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\event\server_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\proto\logic\event\skill_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\proto\logic\server\centre_scene.pb.cc">
@@ -165,55 +213,7 @@
     <ClCompile Include="src\proto\logic\server_player\game_player_scene.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\proto\service_info\service_info.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\constants\node.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\constants\test_switch.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\component\item_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\component\mission_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\player_common.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\player_skill.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\component\player_skill_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\event\player_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\event\npc_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\event\combat_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\event\skill_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\client_player\player_state_attribute_sync.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\event\actor_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\event\actor_combat_state_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\component\actor_combat_state_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\proto\logic\component\actor_attribute_state_comp.pb.cc">
+    <ClCompile Include="src\service_info\service_info.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -281,7 +281,22 @@
     <ClInclude Include="src\proto\common\user_accounts.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\player_common.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\proto\logic\client_player\player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\player_skill.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\client_player\player_state_attribute_sync.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\component\actor_attribute_state_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\component\actor_combat_state_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\actor_comp.pb.h">
@@ -297,6 +312,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\item_base_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\component\item_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\component\mission_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\component\npc_comp.pb.h">
@@ -317,6 +338,9 @@
     <ClInclude Include="src\proto\logic\component\player_scene_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\proto\logic\component\player_skill_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\proto\logic\component\scene_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -332,19 +356,43 @@
     <ClInclude Include="src\proto\logic\constants\function_switch.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\proto\logic\constants\node.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\proto\logic\constants\scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\constants\test_switch.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\event\actor_combat_state_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\event\actor_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\event\buff_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\proto\logic\event\combat_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\proto\logic\event\mission_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\event\npc_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\event\player_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\event\scene_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\event\server_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\proto\logic\event\skill_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\proto\logic\server\centre_scene.pb.h">
@@ -368,103 +416,55 @@
     <ClInclude Include="src\proto\logic\server_player\game_player_scene.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\centre_player_scene_service_info.h">
+    <ClInclude Include="src\service_info\centre_player_scene_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\centre_player_service_info.h">
+    <ClInclude Include="src\service_info\centre_player_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\centre_scene_service_info.h">
+    <ClInclude Include="src\service_info\centre_scene_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\centre_service_service_info.h">
+    <ClInclude Include="src\service_info\centre_service_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\db_service_service_info.h">
+    <ClInclude Include="src\service_info\db_service_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\deploy_service_service_info.h">
+    <ClInclude Include="src\service_info\deploy_service_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\game_player_scene_service_info.h">
+    <ClInclude Include="src\service_info\game_player_scene_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\game_player_service_info.h">
+    <ClInclude Include="src\service_info\game_player_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\game_scene_service_info.h">
+    <ClInclude Include="src\service_info\game_scene_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\game_service_service_info.h">
+    <ClInclude Include="src\service_info\game_service_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\gate_service_service_info.h">
+    <ClInclude Include="src\service_info\gate_service_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\login_service_service_info.h">
+    <ClInclude Include="src\service_info\login_service_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\player_common_service_info.h">
+    <ClInclude Include="src\service_info\player_common_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\player_scene_service_info.h">
+    <ClInclude Include="src\service_info\player_scene_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\player_skill_service_info.h">
+    <ClInclude Include="src\service_info\player_skill_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\service_info\service_info.h">
+    <ClInclude Include="src\service_info\player_state_attribute_sync_service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\proto\logic\constants\node.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\constants\test_switch.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\component\item_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\component\mission_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\player_common.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\player_skill.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\component\player_skill_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\event\player_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\event\npc_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\event\combat_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\event\skill_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\service_info\player_state_attribute_sync_service_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\client_player\player_state_attribute_sync.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\event\actor_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\event\actor_combat_state_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\component\actor_combat_state_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\proto\logic\component\actor_attribute_state_comp.pb.h">
+    <ClInclude Include="src\service_info\service_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
