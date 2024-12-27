@@ -4,7 +4,6 @@
 #include "gate_node.h"
 #include "grpc/client/login_async_client_call.h"
 #include "grpc/request/login_grpc_request.h"
-#include "network/gate_session.h"
 #include "thread_local/storage_gate.h"
 
 using GrpcLoginStubPtr = std::unique_ptr<LoginService::Stub>;

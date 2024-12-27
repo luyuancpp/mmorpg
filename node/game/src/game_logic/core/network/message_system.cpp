@@ -1,6 +1,5 @@
 #include "message_system.h"
 #include "muduo/base/Logging.h"
-#include "network/gate_session.h"
 #include "network/rpc_client.h"
 #include "network/rpc_session.h"
 #include "service_info/centre_service_service_info.h"
@@ -8,6 +7,7 @@
 #include "thread_local/storage.h"
 #include "thread_local/storage_common_logic.h"
 #include "game_common_logic/comp/session_comp.h"
+#include "game_common_logic/system/session_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 
 void SendMessageToPlayerById(uint32_t messageId, const google::protobuf::Message& message, Guid playerId)

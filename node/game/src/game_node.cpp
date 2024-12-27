@@ -16,7 +16,6 @@
 #include "muduo/base/Logging.h"
 #include "muduo/base/TimeZone.h"
 #include "muduo/net/InetAddress.h"
-#include "network/gate_session.h"
 #include "network/rpc_session.h"
 #include "proto/common/deploy_service.grpc.pb.h"
 #include "proto/logic/constants/node.pb.h"
