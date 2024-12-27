@@ -4,4 +4,4 @@
 
 #include <bitset>
 
-constexpr std::bitset<eTestFlagType_ARRAYSIZE> gFeatureSwitches;
+extern std::bitset<eTestFlagType_ARRAYSIZE> gFeatureSwitches;

@@ -86,6 +86,12 @@ private:
     // 统计消息处理次数
     void LogMessageStatistics(const GameRpcMessage& message) const;
 
+    // 开启消息统计
+    void StartMessageStatistics();
+
+    // 关闭消息统计
+    void StopMessageStatistics();
+
     // 发送 Protobuf 消息
     void SendGameRpcMessage(const GameRpcMessage& message);
 

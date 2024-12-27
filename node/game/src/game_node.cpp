@@ -125,15 +125,18 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().config_info().server_type());
     nodeInfo.set_node_type(eNodeType::kGameNode);
     nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
+
     InetAddress service_addr(GetNodeConf().ip(), GetNodeConf().port());
     rpcServer = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&GameNode::Receive2>(*this);
+
     rpcServer->registerService(&gameService);
     for ( auto & val : g_server_service | std::views::values )
     {
         rpcServer->registerService(val.get());
     }
+
     rpcServer->start();
 
     Connect2Centre();
@@ -142,7 +145,6 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     deployRpcTimer.Cancel();
 
     tls.dispatcher.trigger<OnServerStart>();
-
     
     worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
     LOG_INFO << "game node  start " << GetNodeConf().DebugString();
