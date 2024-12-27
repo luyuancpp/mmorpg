@@ -23,13 +23,11 @@
     <ClInclude Include="src\type_define\type_define.h" />
     <ClInclude Include="src\util\consistent_hash_node.h" />
     <ClInclude Include="src\util\defer.h" />
-    <ClInclude Include="src\util\expected.h" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\util\game_registry.h" />
     <ClInclude Include="src\util\pb.h" />
     <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\util\snow_flake.h" />
-    <ClInclude Include="src\util\type_traits.h" />
     <ClInclude Include="src\util\utility.h" />
     <ClInclude Include="src\global_data\async_log_file.h" />
     <ClInclude Include="src\network\message_statistics.h" />
@@ -50,7 +48,6 @@
     <ClCompile Include="src\thread_local\storage.cpp" />
     <ClCompile Include="src\thread_local\storage_common_logic.cpp" />
     <ClCompile Include="src\thread_local\storage_lua.cpp" />
-    <ClCompile Include="src\util\consistent_hash_node.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\util\pb.cpp" />
