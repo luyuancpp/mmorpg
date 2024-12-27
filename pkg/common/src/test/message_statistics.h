@@ -16,7 +16,7 @@ bool IsMessageStatisticsEnabled() {
 // 功能函数：更新消息统计计数
 void IncrementMessageCount(int32_t message_id) {
     // 通过 message_id 查找对应的消息统计数据，如果不存在则创建新条目
-    auto& statistic = g_message_statistics[message_id];
+    auto& statistic = gMessageStatistics[message_id];
     statistic.set_count(statistic.count() + 1);
 }
 
