@@ -93,10 +93,87 @@ void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageI
 
 // 记录消息统计信息
 void GameChannel::LogMessageStatistics(const GameRpcMessage& message) const {
-    if (gFeatureSwitches[kTestMessageStatistics]) {
-        auto& statistic = g_message_statistics[message.message_id()];
-        statistic.set_count(statistic.count() + 1);
+    if (!gFeatureSwitches[kTestMessageStatistics]) {
+        return;
     }
+
+    // 获取消息 ID
+    uint32_t message_id = message.message_id();
+    uint32_t message_size = message.ByteSizeLong(); // 获取消息大小（字节数）
+
+    // 当前时间
+    auto now = std::chrono::steady_clock::now();
+    // 获取或初始化统计对象
+    auto& statistic = g_message_statistics[message_id];
+
+    // 如果是第一次记录，初始化起始时间
+    if (g_start_times[message_id].time_since_epoch().count() <= 0) {
+        g_start_times[message_id] = now;
+    }
+
+    // 更新消息计数
+    statistic.set_count(statistic.count() + 1);
+
+    // 更新总流量
+    uint32_t new_total_flow = statistic.flow_rate_total() + message_size;
+    statistic.set_flow_rate_total(new_total_flow);
+
+    // 更新所有消息的总流量
+    g_total_flow += message_size;
+
+    // 计算流量速率
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - g_start_times[message_id]).count();
+    if (duration > 0) {
+        uint32_t flow_rate_per_second = new_total_flow / duration;
+        statistic.set_flow_rate_second(flow_rate_per_second);
+    }
+
+    // 打印调试信息（可选）
+    LOG_INFO << "Message ID: " << message_id
+        << ", Count: " << statistic.count()
+        << ", Total Flow: " << new_total_flow
+        << " bytes, Flow Rate: " << statistic.flow_rate_second()
+        << " bytes/sec, Duration: " << duration << " sec";
+}
+
+
+void GameChannel::StartMessageStatistics(){
+    // 开启功能开关
+    gFeatureSwitches[kTestMessageStatistics] = true;
+
+    // 清理旧数据
+    g_message_statistics.fill(MessageStatistics{});
+    g_start_times.fill(std::chrono::steady_clock::time_point{});
+    g_total_flow = 0; // 重置总流量
+
+    LOG_INFO << "Message statistics started.";
+}
+
+void GameChannel::StopMessageStatistics(){
+    // 关闭功能开关
+    gFeatureSwitches[kTestMessageStatistics] = false;
+
+    // 可选：在关闭时打印统计结果
+    std::cout << "Final statistics:" << std::endl;
+
+    uint32_t message_id = 0;
+
+    for (const auto& stats : g_message_statistics) {
+        LOG_INFO << "Message ID: " << message_id++
+            << ", Count: " << stats.count()
+            << ", Total Flow: " << stats.flow_rate_total()
+            << " bytes, Flow Rate: " << stats.flow_rate_second()
+            << " bytes/sec";
+    }
+
+    // 打印总流量
+    LOG_INFO << "Total Flow of All Messages: " << g_total_flow << " bytes";
+
+    // 清理统计数据
+    g_message_statistics.fill(MessageStatistics{});
+    g_start_times.fill(std::chrono::steady_clock::time_point{});
+
+    LOG_INFO << "Message statistics stopped.";
 }
 
 // ====================== 公共方法 ======================
