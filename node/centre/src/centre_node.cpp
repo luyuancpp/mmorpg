@@ -65,7 +65,7 @@ void CentreNode::Init()
 	nodeInfo.set_node_type(kCentreNode);
 	nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
 	muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
-		ZoneConfig::GetSingleton().config_info().loglevel()));
+		ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
 	InitGameConfig();
 
 	InitPlayerService();
@@ -107,7 +107,7 @@ void CentreNode::InitTimeZone()
 
 void CentreNode::InitNodeByReqInfo()
 {
-	const auto& deployInfo = DeployConfig::GetSingleton().deploy_info();
+	const auto& deployInfo = DeployConfig::GetSingleton().DeployInfo();
 	const std::string targetStr = deployInfo.ip() + ":" + std::to_string(deployInfo.port());
 	extern std::unique_ptr<DeployService::Stub> gDeployStub;
 	gDeployStub = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
@@ -117,7 +117,7 @@ void CentreNode::InitNodeByReqInfo()
 
 	{
 		NodeInfoRequest request;
-		request.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
+		request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
 		SendGetNodeInfo(request);
 	}
 }
