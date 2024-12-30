@@ -15,6 +15,7 @@
     <ClCompile Include="src\log\system\console_log_system.cpp" />
     <ClCompile Include="src\time\comp\time_ measurement.cpp" />
     <ClCompile Include="src\time\system\time_system.cpp" />
+    <ClCompile Include="src\reward\system\reward_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\mission\comp\mission_comp.h" />
@@ -49,5 +50,7 @@
     <ClInclude Include="src\time\system\time_meter_system.h" />
     <ClInclude Include="src\time\system\cooldown_time_system.h" />
     <ClInclude Include="src\time\system\time_system.h" />
+    <ClInclude Include="src\reward\system\reward_system.h" />
+    <ClInclude Include="src\reward\comp\reward_comp.h" />
   </ItemGroup>
 </Project>

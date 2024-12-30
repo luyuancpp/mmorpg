@@ -34,6 +34,17 @@ std::size_t MissionsComponent::CanGetRewardSize() const
 	return static_cast<std::size_t>(missionReward->can_reward_mission_id_size()); // Return the number of missions eligible for reward
 }
 
+
+void MissionsComponent::AbandonMission(const uint32_t missionId)
+{
+    if (!MissionBitMap.contains(missionId))
+    {
+        return;
+    }
+
+    completedMissions.set(MissionBitMap.at(missionId), false);
+}
+
 uint32_t MissionsComponent::IsMissionUnaccepted(const uint32_t missionId) const
 {
 	// Check if the mission has been accepted
@@ -46,8 +57,7 @@ uint32_t MissionsComponent::IsMissionUnaccepted(const uint32_t missionId) const
 
 uint32_t MissionsComponent::IsMissionUncompleted(const uint32_t missionId) const
 {
-	// Check if the mission is completed
-	if (completedMissions.test(missionId))
+	if (IsComplete(missionId))
 	{
 		return kMissionAlreadyCompleted; // Return kMissionAlreadyCompleted if mission is already completed
 	}

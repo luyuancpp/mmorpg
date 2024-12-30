@@ -16,6 +16,7 @@
 #include "skillpermission_config.h"
 #include "class_config.h"
 #include "scene_config.h"
+#include "reward_config.h"
 #include "monsterbase_config.h"
 #include "cooldown_config.h"
 void LoadAllConfig()
@@ -33,13 +34,14 @@ void LoadAllConfig()
     SkillPermissionConfigurationTable::Instance().Load();
     ClassConfigurationTable::Instance().Load();
     SceneConfigurationTable::Instance().Load();
+    RewardConfigurationTable::Instance().Load();
     MonsterBaseConfigurationTable::Instance().Load();
     CooldownConfigurationTable::Instance().Load();
 }
 
 void LoadAllConfigAsyncWhenServerLaunch()
 {
-    static muduo::CountDownLatch latch_(15);
+    static muduo::CountDownLatch latch_(16);
 
     /// Begin
     {
@@ -178,6 +180,17 @@ void LoadAllConfigAsyncWhenServerLaunch()
         std::thread t([&]() {
 
     SceneConfigurationTable::Instance().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    /// End
+
+    /// Begin
+    {
+        std::thread t([&]() {
+
+    RewardConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();

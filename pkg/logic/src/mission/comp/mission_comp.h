@@ -12,7 +12,7 @@
 class AcceptMissionEvent;
 class MissionConditionEvent;
 
-using MissionsBits = std::bitset<kMaxBitIndex>;
+using MissionsBits = std::bitset<kMissionMaxBitIndex>;
 
 class MissionsComponent : public EventOwner
 {
@@ -66,18 +66,24 @@ public:
         missionTypeNotRepeated = mission_type_not_repeated;
     }
 
-    [[nodiscard]] bool IsAccepted(const uint32_t mission_id) const
+    [[nodiscard]] bool IsAccepted(const uint32_t missionId) const
     {
-        return missionsComp.missions().count(mission_id) > 0;
+        return missionsComp.missions().count(missionId) > 0;
     }
 
-    [[nodiscard]] bool IsComplete(const uint32_t mission_id) const
+    [[nodiscard]] bool IsComplete(const uint32_t missionId) const
     {
-        return completedMissions.test(mission_id);
+        if (!MissionBitMap.contains(missionId))
+        {
+            return false;
+        }
+        return completedMissions.test(MissionBitMap.at(missionId));
     }
 
-    [[nodiscard]] uint32_t IsMissionUnaccepted(uint32_t mission_id) const;
-    [[nodiscard]] uint32_t IsMissionUncompleted(uint32_t mission_id) const;
+    void AbandonMission(const uint32_t missionId);
+
+    [[nodiscard]] uint32_t IsMissionUnaccepted(uint32_t missionId) const;
+    [[nodiscard]] uint32_t IsMissionUncompleted(uint32_t missionId) const;
 
 
 private:
