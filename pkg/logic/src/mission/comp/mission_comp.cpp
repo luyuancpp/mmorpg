@@ -29,7 +29,7 @@ std::size_t MissionsComponent::CanGetRewardSize() const
 	const auto* const missionReward = tls.registry.try_get<RewardListPBComponent>(EventOwner());
 	if (nullptr == missionReward)
 	{
-		return 0; // Return 0 if reward component is not found
+		return 0; 
 	}
 	return static_cast<std::size_t>(missionReward->can_reward_mission_id_size()); // Return the number of missions eligible for reward
 }

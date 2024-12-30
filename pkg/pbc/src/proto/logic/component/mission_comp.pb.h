@@ -570,9 +570,9 @@ class RewardListPBComponent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kCanRewardMissionIdFieldNumber = 2,
+    kCanRewardMissionIdFieldNumber = 1,
   };
-  // map<uint32, bool> can_reward_mission_id = 2;
+  // map<uint32, bool> can_reward_mission_id = 1;
   int can_reward_mission_id_size() const;
   private:
   int _internal_can_reward_mission_id_size() const;
@@ -1188,7 +1188,7 @@ inline void MissionListPBComponent::_internal_set_type(::uint32_t value) {
 
 // RewardListPBComponent
 
-// map<uint32, bool> can_reward_mission_id = 2;
+// map<uint32, bool> can_reward_mission_id = 1;
 inline int RewardListPBComponent::_internal_can_reward_mission_id_size() const {
   return _internal_can_reward_mission_id().size();
 }

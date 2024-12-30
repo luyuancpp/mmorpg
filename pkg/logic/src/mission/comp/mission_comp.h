@@ -12,7 +12,7 @@
 class AcceptMissionEvent;
 class MissionConditionEvent;
 
-using CompleteMissions = std::bitset<kMaxBitIndex>;
+using MissionsBits = std::bitset<kMaxBitIndex>;
 
 class MissionsComponent : public EventOwner
 {
@@ -27,8 +27,7 @@ public:
     [[nodiscard]] std::size_t CompleteSize() const { return completedMissions.count(); }
     [[nodiscard]] std::size_t TypeSetSize() const { return typeFilter.size(); }
     [[nodiscard]] std::size_t CanGetRewardSize() const;
-    CompleteMissions& GetCompleteMissions() { return completedMissions; }
-
+    MissionsBits& GetCompleteMissions() { return completedMissions; }
 
     [[nodiscard]] const IMissionConfig* GetMissionConfig() const
     {
@@ -87,7 +86,7 @@ private:
     EventMissionClassifyMap eventMissionsClassify; // key: classify mission by event type, value: mission list
     UInt32PairSet typeFilter;
     bool missionTypeNotRepeated{ true }; //任务类型不能重复
-    CompleteMissions completedMissions;
+    MissionsBits completedMissions;
 };
 
 using PlayerMissionList = std::array<MissionsComponent, MissionListPBComponent::kPlayerMissionSize>;
