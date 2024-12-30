@@ -24,9 +24,11 @@ public:
     [[nodiscard]] const auto& GetEventMissionsClassifyForUnitTest() const { return eventMissionsClassify; }
     [[nodiscard]] const MissionListPBComponent& getMissionsComp() const { return missionsComp; }
     [[nodiscard]] std::size_t MissionSize() const { return missionsComp.missions().size(); }
-    [[nodiscard]] std::size_t CompleteSize() const { return static_cast<std::size_t>(missionsComp.complete_missions_size()); }
+    [[nodiscard]] std::size_t CompleteSize() const { return completedMissions.count(); }
     [[nodiscard]] std::size_t TypeSetSize() const { return typeFilter.size(); }
     [[nodiscard]] std::size_t CanGetRewardSize() const;
+    CompleteMissions& GetCompleteMissions() { return completedMissions; }
+
 
     [[nodiscard]] const IMissionConfig* GetMissionConfig() const
     {
@@ -72,11 +74,12 @@ public:
 
     [[nodiscard]] bool IsComplete(const uint32_t mission_id) const
     {
-        return missionsComp.complete_missions().count(mission_id) > 0;
+        return completedMissions.test(mission_id);
     }
 
     [[nodiscard]] uint32_t IsMissionUnaccepted(uint32_t mission_id) const;
     [[nodiscard]] uint32_t IsMissionUncompleted(uint32_t mission_id) const;
+
 
 private:
     const IMissionConfig* missionConfig{ nullptr };

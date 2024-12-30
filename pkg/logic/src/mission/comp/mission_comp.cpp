@@ -47,7 +47,7 @@ uint32_t MissionsComponent::IsMissionUnaccepted(const uint32_t missionId) const
 uint32_t MissionsComponent::IsMissionUncompleted(const uint32_t missionId) const
 {
 	// Check if the mission is completed
-	if (missionsComp.complete_missions().count(missionId) > 0)
+	if (completedMissions.test(missionId))
 	{
 		return kMissionAlreadyCompleted; // Return kMissionAlreadyCompleted if mission is already completed
 	}

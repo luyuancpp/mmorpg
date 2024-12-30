@@ -79,12 +79,17 @@ class ExcelToCppConverter:
 
     def generate_cpp_constants(self) -> str:
         """Generate C++ constants from the Excel data."""
-        cpp_constants = "#pragma once\n\n"
-        cpp_constants += '#include <cstdint>\n\n'
+        cpp_constants = "#pragma once\n"
+        cpp_constants += '#include <cstdint>\n'
+        cpp_constants += '#include <unordered_map>\n\n'
+
         id_to_index = self._load_existing_mapping()
         unused_indexes = self._find_unused_indexes(id_to_index)
         current_index = max(id_to_index.values(), default=-1) + 1
 
+        cpp_constants += f'const std::unordered_map<uint64_t, uint32_t> {self.sheet}BitMap{{\n'
+
+        # Iterate through rows to assign ID to index
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
             id_value = row[0]
             if id_value is None:
@@ -98,25 +103,30 @@ class ExcelToCppConverter:
                     current_index += 1
                 id_to_index[id_value] = index
 
+        # Add constants to the C++ string
         for row in self.worksheet.iter_rows(min_row=20, values_only=True):
             id_value = row[0]
             if id_value is None:
                 continue  # Skip rows with no ID
 
             constant_name = self._generate_constant_name(row, id_to_index[id_value])
-            cpp_constant = f"constexpr uint32_t k{constant_name} = {id_to_index[id_value]};\n"
+            cpp_constant = f"{{{constant_name}, {id_to_index[id_value]}}},\n"
             cpp_constants += cpp_constant
 
+        cpp_constants += f'}};\n\n'
+
+        # Add max bit index constant
         max_bit_index = self._find_max_bit_index()
         cpp_constants += f"constexpr uint32_t kMaxBitIndex = {max_bit_index};\n"
 
+        # Save the mapping
         self._save_mapping(id_to_index)
         return cpp_constants
 
     def _generate_constant_name(self, row: tuple, index: int) -> str:
         """Generate the constant name based on the 'bit_index' or ID value."""
         if self.bit_index_col is not None and row[self.bit_index_col]:
-            return f'k{self.sheet}_{row[self.bit_index_col]}'
+            return f'{row[self.bit_index_col]}'
         return f"k{self.sheet}_{index}"
 
     def save_cpp_constants_to_file(self, cpp_constants: str) -> None:

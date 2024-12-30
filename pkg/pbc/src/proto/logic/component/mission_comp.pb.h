@@ -56,9 +56,6 @@ extern const ::google::protobuf::internal::DescriptorTable
 class MissionListPBComponent;
 struct MissionListPBComponentDefaultTypeInternal;
 extern MissionListPBComponentDefaultTypeInternal _MissionListPBComponent_default_instance_;
-class MissionListPBComponent_CompleteMissionsEntry_DoNotUse;
-struct MissionListPBComponent_CompleteMissionsEntry_DoNotUseDefaultTypeInternal;
-extern MissionListPBComponent_CompleteMissionsEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_CompleteMissionsEntry_DoNotUse_default_instance_;
 class MissionListPBComponent_MissionBeginTimeEntry_DoNotUse;
 struct MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal;
 extern MissionListPBComponent_MissionBeginTimeEntry_DoNotUseDefaultTypeInternal _MissionListPBComponent_MissionBeginTimeEntry_DoNotUse_default_instance_;
@@ -448,32 +445,6 @@ class MissionListPBComponent_MissionBeginTimeEntry_DoNotUse final
 };
 // -------------------------------------------------------------------
 
-class MissionListPBComponent_CompleteMissionsEntry_DoNotUse final
-    : public ::google::protobuf::internal::MapEntry<
-          MissionListPBComponent_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
-          ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
-          ::google::protobuf::internal::WireFormatLite::TYPE_BOOL> {
- public:
-  using SuperType = ::google::protobuf::internal::MapEntry<
-      MissionListPBComponent_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
-      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
-      ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>;
-  MissionListPBComponent_CompleteMissionsEntry_DoNotUse();
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MissionListPBComponent_CompleteMissionsEntry_DoNotUse(
-      ::google::protobuf::internal::ConstantInitialized);
-  explicit MissionListPBComponent_CompleteMissionsEntry_DoNotUse(::google::protobuf::Arena* arena);
-  static const MissionListPBComponent_CompleteMissionsEntry_DoNotUse* internal_default_instance() {
-    return reinterpret_cast<const MissionListPBComponent_CompleteMissionsEntry_DoNotUse*>(
-        &_MissionListPBComponent_CompleteMissionsEntry_DoNotUse_default_instance_);
-  }
-  static bool ValidateKey(void*) { return true; }
-  static bool ValidateValue(void*) { return true; }
-  ::google::protobuf::Metadata GetMetadata() const final;
-  friend struct ::TableStruct_proto_2flogic_2fcomponent_2fmission_5fcomp_2eproto;
-};
-// -------------------------------------------------------------------
-
 class RewardListPBComponent final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:RewardListPBComponent) */ {
  public:
@@ -529,7 +500,7 @@ class RewardListPBComponent final : public ::google::protobuf::Message
     return reinterpret_cast<const RewardListPBComponent*>(
         &_RewardListPBComponent_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(RewardListPBComponent& a, RewardListPBComponent& b) { a.Swap(&b); }
   inline void Swap(RewardListPBComponent* other) {
     if (other == this) return;
@@ -730,7 +701,7 @@ class MissionListPBComponent final : public ::google::protobuf::Message
     return reinterpret_cast<const MissionListPBComponent*>(
         &_MissionListPBComponent_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(MissionListPBComponent& a, MissionListPBComponent& b) { a.Swap(&b); }
   inline void Swap(MissionListPBComponent* other) {
     if (other == this) return;
@@ -822,8 +793,8 @@ class MissionListPBComponent final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kMissionsFieldNumber = 1,
-    kCompleteMissionsFieldNumber = 2,
     kMissionBeginTimeFieldNumber = 3,
+    kCompleteMissionsFieldNumber = 2,
     kTypeFieldNumber = 4,
   };
   // map<uint32, .MissionPBComponent> missions = 1;
@@ -841,21 +812,6 @@ class MissionListPBComponent final : public ::google::protobuf::Message
   ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>* _internal_mutable_missions();
 
   public:
-  // map<uint32, bool> complete_missions = 2;
-  int complete_missions_size() const;
-  private:
-  int _internal_complete_missions_size() const;
-
-  public:
-  void clear_complete_missions() ;
-  const ::google::protobuf::Map<::uint32_t, bool>& complete_missions() const;
-  ::google::protobuf::Map<::uint32_t, bool>* mutable_complete_missions();
-
-  private:
-  const ::google::protobuf::Map<::uint32_t, bool>& _internal_complete_missions() const;
-  ::google::protobuf::Map<::uint32_t, bool>* _internal_mutable_complete_missions();
-
-  public:
   // map<uint32, uint64> mission_begin_time = 3;
   int mission_begin_time_size() const;
   private:
@@ -869,6 +825,22 @@ class MissionListPBComponent final : public ::google::protobuf::Message
   private:
   const ::google::protobuf::Map<::uint32_t, ::uint64_t>& _internal_mission_begin_time() const;
   ::google::protobuf::Map<::uint32_t, ::uint64_t>* _internal_mutable_mission_begin_time();
+
+  public:
+  // bytes complete_missions = 2;
+  void clear_complete_missions() ;
+  const std::string& complete_missions() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_complete_missions(Arg_&& arg, Args_... args);
+  std::string* mutable_complete_missions();
+  PROTOBUF_NODISCARD std::string* release_complete_missions();
+  void set_allocated_complete_missions(std::string* value);
+
+  private:
+  const std::string& _internal_complete_missions() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_complete_missions(
+      const std::string& value);
+  std::string* _internal_mutable_complete_missions();
 
   public:
   // uint32 type = 4;
@@ -886,7 +858,7 @@ class MissionListPBComponent final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 4, 4,
+      2, 4, 3,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -906,14 +878,11 @@ class MissionListPBComponent final : public ::google::protobuf::Message
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE>
         missions_;
-    ::google::protobuf::internal::MapField<MissionListPBComponent_CompleteMissionsEntry_DoNotUse, ::uint32_t, bool,
-                      ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
-                      ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>
-        complete_missions_;
     ::google::protobuf::internal::MapField<MissionListPBComponent_MissionBeginTimeEntry_DoNotUse, ::uint32_t, ::uint64_t,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>
         mission_begin_time_;
+    ::google::protobuf::internal::ArenaStringPtr complete_missions_;
     ::uint32_t type_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1083,8 +1052,6 @@ inline void MissionPBComponent::set_allocated_data(std::string* value) {
 
 // -------------------------------------------------------------------
 
-// -------------------------------------------------------------------
-
 // MissionListPBComponent
 
 // map<uint32, .MissionPBComponent> missions = 1;
@@ -1115,32 +1082,54 @@ inline ::google::protobuf::Map<::uint32_t, ::MissionPBComponent>* MissionListPBC
   return _internal_mutable_missions();
 }
 
-// map<uint32, bool> complete_missions = 2;
-inline int MissionListPBComponent::_internal_complete_missions_size() const {
-  return _internal_complete_missions().size();
-}
-inline int MissionListPBComponent::complete_missions_size() const {
-  return _internal_complete_missions_size();
-}
+// bytes complete_missions = 2;
 inline void MissionListPBComponent::clear_complete_missions() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.complete_missions_.Clear();
+  _impl_.complete_missions_.ClearToEmpty();
 }
-inline const ::google::protobuf::Map<::uint32_t, bool>& MissionListPBComponent::_internal_complete_missions() const {
-  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.complete_missions_.GetMap();
-}
-inline const ::google::protobuf::Map<::uint32_t, bool>& MissionListPBComponent::complete_missions() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:MissionListPBComponent.complete_missions)
+inline const std::string& MissionListPBComponent::complete_missions() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:MissionListPBComponent.complete_missions)
   return _internal_complete_missions();
 }
-inline ::google::protobuf::Map<::uint32_t, bool>* MissionListPBComponent::_internal_mutable_complete_missions() {
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void MissionListPBComponent::set_complete_missions(Arg_&& arg,
+                                                     Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _impl_.complete_missions_.MutableMap();
+  _impl_.complete_missions_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:MissionListPBComponent.complete_missions)
 }
-inline ::google::protobuf::Map<::uint32_t, bool>* MissionListPBComponent::mutable_complete_missions() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:MissionListPBComponent.complete_missions)
-  return _internal_mutable_complete_missions();
+inline std::string* MissionListPBComponent::mutable_complete_missions() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_complete_missions();
+  // @@protoc_insertion_point(field_mutable:MissionListPBComponent.complete_missions)
+  return _s;
+}
+inline const std::string& MissionListPBComponent::_internal_complete_missions() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.complete_missions_.Get();
+}
+inline void MissionListPBComponent::_internal_set_complete_missions(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.complete_missions_.Set(value, GetArena());
+}
+inline std::string* MissionListPBComponent::_internal_mutable_complete_missions() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _impl_.complete_missions_.Mutable( GetArena());
+}
+inline std::string* MissionListPBComponent::release_complete_missions() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:MissionListPBComponent.complete_missions)
+  return _impl_.complete_missions_.Release();
+}
+inline void MissionListPBComponent::set_allocated_complete_missions(std::string* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.complete_missions_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.complete_missions_.IsDefault()) {
+          _impl_.complete_missions_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:MissionListPBComponent.complete_missions)
 }
 
 // map<uint32, uint64> mission_begin_time = 3;
