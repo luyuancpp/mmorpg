@@ -240,7 +240,7 @@ const char descriptor_table_protodef_proto_2flogic_2fcomponent_2fmission_5fcomp_
     "nType\022\022\n\016kPlayerMission\020\000\022\025\n\021kPlayerAchi"
     "evment\020\001\022\030\n\024kPlayerDailyActivity\020\002\022\026\n\022kP"
     "layerMissionSize\020\003\"\241\001\n\025RewardListPBCompo"
-    "nent\022M\n\025can_reward_mission_id\030\002 \003(\0132..Re"
+    "nent\022M\n\025can_reward_mission_id\030\001 \003(\0132..Re"
     "wardListPBComponent.CanRewardMissionIdEn"
     "try\0329\n\027CanRewardMissionIdEntry\022\013\n\003key\030\001 "
     "\001(\r\022\r\n\005value\030\002 \001(\010:\0028\001B\tZ\007pb/gameb\006proto"
@@ -1032,9 +1032,9 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComponent::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    2, 0,  // max_field_number, fast_idx_mask
+    1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967293,  // skipmap
+    4294967294,  // skipmap
     offsetof(decltype(_table_), field_entries),
     1,  // num_field_entries
     1,  // num_aux_entries
@@ -1049,7 +1049,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComponent::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // map<uint32, bool> can_reward_mission_id = 2;
+    // map<uint32, bool> can_reward_mission_id = 1;
     {PROTOBUF_FIELD_OFFSET(RewardListPBComponent, _impl_.can_reward_mission_id_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
   }}, {{
@@ -1068,7 +1068,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComponent::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // map<uint32, bool> can_reward_mission_id = 2;
+  // map<uint32, bool> can_reward_mission_id = 1;
   if (!_internal_can_reward_mission_id().empty()) {
     using MapType = ::google::protobuf::Map<::uint32_t, bool>;
     using WireHelper = _pbi::MapEntryFuncs<::uint32_t, bool,
@@ -1079,12 +1079,12 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComponent::_table_ = {
     if (stream->IsSerializationDeterministic() && field.size() > 1) {
       for (const auto& entry : ::google::protobuf::internal::MapSorterFlat<MapType>(field)) {
         target = WireHelper::InternalSerialize(
-            2, entry.first, entry.second, target, stream);
+            1, entry.first, entry.second, target, stream);
       }
     } else {
       for (const auto& entry : field) {
         target = WireHelper::InternalSerialize(
-            2, entry.first, entry.second, target, stream);
+            1, entry.first, entry.second, target, stream);
       }
     }
   }
@@ -1106,7 +1106,7 @@ const ::_pbi::TcParseTable<0, 1, 1, 0, 2> RewardListPBComponent::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // map<uint32, bool> can_reward_mission_id = 2;
+  // map<uint32, bool> can_reward_mission_id = 1;
   total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_can_reward_mission_id_size());
   for (const auto& entry : _internal_can_reward_mission_id()) {
     total_size += _pbi::MapEntryFuncs<::uint32_t, bool,

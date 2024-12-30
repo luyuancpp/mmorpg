@@ -47,7 +47,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			}
 
 			// Generate C++ files
-			if err := generateCppFiles(fileName, config.PbcProtoOutputDirectory); err != nil {
+			if err := generateCppFiles(fileName, config.PbcOutputDirectory); err != nil {
 				log.Fatal(err)
 			}
 
