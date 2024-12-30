@@ -1,22 +1,25 @@
 #pragma once
-
 #include <cstdint>
+#include <unordered_map>
 
-constexpr uint32_t kkMission_1 = 0;
-constexpr uint32_t kkMission_2 = 1;
-constexpr uint32_t kkMission_3 = 2;
-constexpr uint32_t kkMission_4 = 3;
-constexpr uint32_t kkMission_5 = 4;
-constexpr uint32_t kkMission_6 = 5;
-constexpr uint32_t kkMission_7 = 6;
-constexpr uint32_t kkMission_8 = 7;
-constexpr uint32_t kkMission_9 = 8;
-constexpr uint32_t kkMission_10 = 9;
-constexpr uint32_t kkMission_11 = 10;
-constexpr uint32_t kkMission_12 = 11;
-constexpr uint32_t kkMission_13 = 12;
-constexpr uint32_t kkMission_14 = 13;
-constexpr uint32_t kkMission_15 = 14;
-constexpr uint32_t kkMission_16 = 15;
-constexpr uint32_t kkMission_17 = 16;
+const std::unordered_map<uint64_t, uint32_t> MissionBitMap{
+{1, 0},
+{2, 1},
+{3, 2},
+{4, 3},
+{5, 4},
+{6, 5},
+{7, 6},
+{8, 7},
+{9, 8},
+{10, 9},
+{11, 10},
+{12, 11},
+{13, 12},
+{14, 13},
+{15, 14},
+{16, 15},
+{17, 16},
+};
+
 constexpr uint32_t kMaxBitIndex = 17;

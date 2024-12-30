@@ -69,9 +69,10 @@ const (
 
 // 常量：输出目录
 const (
-	PbcProtoOutputDirectory          = ProjectDir + PbcProtoDirectory
+	PbcProtoOutputDirectory          = ProjectDir + PbcProtoDirectory + ProtoDirName
 	PbcOutputDirectory               = ProjectDir + PbcProtoDirectory
 	GrpcOutputDirectory              = ProjectDir + PbcProtoDirectory
+	GrpcProtoOutputDirectory         = ProjectDir + PbcProtoDirectory + ProtoDirName
 	RobotGoOutputDirectory           = ProjectDir + RobotDirectory
 	GoPbGameDirectory                = "pb/game/"
 	RobotGoGamePbDirectory           = RobotGoOutputDirectory + GoPbGameDirectory

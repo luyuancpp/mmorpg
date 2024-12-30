@@ -179,7 +179,10 @@ void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t oper
 
 	// Mark all missions as complete
 	for (const auto& missionId : missionComp->GetMissionsComp().missions() | std::views::keys) {
-		missionComp->GetMissionsComp().mutable_complete_missions()->insert({ missionId, false });
+		if (!MissionBitMap.contains(missionId)){
+			continue;
+		}
+		missionComp->GetCompleteMissions().set(MissionBitMap.at(missionId), true);
 	}
 
 	// Clear all missions
@@ -435,7 +438,12 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 		// Process mission completion rewards and events
 		for (const auto& missionId : completedMissionsThisTime) {
 			// Mark mission as complete
-			missionComp->GetMissionsComp().mutable_complete_missions()->insert({ missionId, true });
+
+			if (!MissionBitMap.contains(missionId)){
+				continue;
+			}
+			
+			missionComp->GetCompleteMissions().set(MissionBitMap.at(missionId), true);
 
 			// Check if mission has rewards and should be automatically rewarded
 			if (missionComp->GetMissionConfig()->GetRewardId(missionId) > 0 && missionComp->GetMissionConfig()->AutoReward(missionId)) {

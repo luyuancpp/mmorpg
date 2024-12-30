@@ -28,7 +28,7 @@ message MissionListPBComponent
 		kPlayerMissionSize = 3;//最大值
 	}
 	map<uint32, MissionPBComponent> missions = 1;
-	map<uint32, bool> complete_missions = 2;
+	bytes complete_missions = 2;
 	map<uint32, uint64> mission_begin_time = 3;
 	uint32 type = 4;
 }

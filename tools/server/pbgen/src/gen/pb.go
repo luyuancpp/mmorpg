@@ -126,7 +126,7 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.GrpcEx + config.Md5Ex
-			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcOutputDirectory, 1)
+			dstFileName := strings.Replace(fileName, config.ProtoDir, config.GrpcProtoOutputDirectory, 1)
 			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.GrpcPbcEx, 1)
 
 			// Check if files with same MD5 and destinations exist
