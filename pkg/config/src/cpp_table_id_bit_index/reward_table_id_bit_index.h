@@ -8,7 +8,8 @@ const std::unordered_map<uint64_t, uint32_t> RewardBitMap{
 {3, 2},
 {4, 3},
 {5, 4},
+{6, 5},
+{7, 6},
 };
 
-constexpr uint32_t kRewardMaxBitIndex = 5;
-    
+constexpr uint32_t kRewardMaxBitIndex = 7;

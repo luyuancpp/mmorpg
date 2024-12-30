@@ -32,7 +32,7 @@ TEST(RewardSystemTest, ClaimRewardTest) {
 
     RewardSystem rewardSystem;
 
-    rewardSystem.ClaimReward(playerEntity, 5);  // 领取奖励 5
+    rewardSystem.ClaimRewardByIndex(playerEntity, 5);  // 领取奖励 5
 
     // 检查奖励 5 是否已领取
     EXPECT_TRUE(rewardSystem.IsRewardClaimed(playerEntity, 5));
@@ -51,8 +51,8 @@ TEST(RewardSystemTest, ClaimAlreadyClaimedRewardTest) {
 
     RewardSystem rewardSystem;
 
-    rewardSystem.ClaimReward(playerEntity, 3);  // 领取奖励 3
-    rewardSystem.ClaimReward(playerEntity, 3);  // 再次领取奖励 3
+    rewardSystem.ClaimRewardByIndex(playerEntity, 3);  // 领取奖励 3
+    rewardSystem.ClaimRewardByIndex(playerEntity, 3);  // 再次领取奖励 3
 
     // 检查奖励 3 是否已领取
     EXPECT_TRUE(rewardSystem.IsRewardClaimed(playerEntity, 3));
@@ -65,8 +65,8 @@ TEST(RewardSystemTest, InvalidRewardIndexTest) {
     RewardSystem rewardSystem;
 
     // 传入无效奖励编号
-    rewardSystem.ClaimReward(playerEntity, -1);  // 无效编号
-    rewardSystem.ClaimReward(playerEntity, kRewardMaxBitIndex);  // 超过最大编号
+    rewardSystem.ClaimRewardByIndex(playerEntity, -1);  // 无效编号
+    rewardSystem.ClaimRewardByIndex(playerEntity, kRewardMaxBitIndex);  // 超过最大编号
 }
 
 // 测试：显示奖励状态
@@ -75,8 +75,8 @@ TEST(RewardSystemTest, ShowRewardStatusTest) {
 
     RewardSystem rewardSystem;
 
-    rewardSystem.ClaimReward(playerEntity, 0);  // 领取奖励 0
-    rewardSystem.ClaimReward(playerEntity, 4);  // 领取奖励 4
+    rewardSystem.ClaimRewardByIndex(playerEntity, 0);  // 领取奖励 0
+    rewardSystem.ClaimRewardByIndex(playerEntity, 4);  // 领取奖励 4
 
     // 测试状态
     EXPECT_TRUE(rewardSystem.IsRewardClaimed(playerEntity, 0));
