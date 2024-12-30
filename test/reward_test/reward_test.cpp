@@ -22,7 +22,7 @@ TEST(RewardSystemTest, InitializationTest) {
 
     // 检查所有奖励都未领取
     for (int i = 0; i < kRewardMaxBitIndex; ++i) {
-        EXPECT_FALSE(rewardSystem.IsRewardClaimed(playerEntity, i));
+        EXPECT_FALSE(rewardSystem.IsRewardClaimedByIndex(playerEntity, i));
     }
 }
 
@@ -35,12 +35,12 @@ TEST(RewardSystemTest, ClaimRewardTest) {
     rewardSystem.ClaimRewardByIndex(playerEntity, 5);  // 领取奖励 5
 
     // 检查奖励 5 是否已领取
-    EXPECT_TRUE(rewardSystem.IsRewardClaimed(playerEntity, 5));
+    EXPECT_TRUE(rewardSystem.IsRewardClaimedByIndex(playerEntity, 5));
 
     // 检查其他奖励仍未领取
     for (int i = 0; i < kRewardMaxBitIndex; ++i) {
         if (i != 5) {
-            EXPECT_FALSE(rewardSystem.IsRewardClaimed(playerEntity, i));
+            EXPECT_FALSE(rewardSystem.IsRewardClaimedByIndex(playerEntity, i));
         }
     }
 }
@@ -55,7 +55,7 @@ TEST(RewardSystemTest, ClaimAlreadyClaimedRewardTest) {
     rewardSystem.ClaimRewardByIndex(playerEntity, 3);  // 再次领取奖励 3
 
     // 检查奖励 3 是否已领取
-    EXPECT_TRUE(rewardSystem.IsRewardClaimed(playerEntity, 3));
+    EXPECT_TRUE(rewardSystem.IsRewardClaimedByIndex(playerEntity, 3));
 }
 
 // 测试：无效奖励编号
@@ -79,7 +79,7 @@ TEST(RewardSystemTest, ShowRewardStatusTest) {
     rewardSystem.ClaimRewardByIndex(playerEntity, 4);  // 领取奖励 4
 
     // 测试状态
-    EXPECT_TRUE(rewardSystem.IsRewardClaimed(playerEntity, 0));
-    EXPECT_TRUE(rewardSystem.IsRewardClaimed(playerEntity, 4));
-    EXPECT_FALSE(rewardSystem.IsRewardClaimed(playerEntity, 1));
+    EXPECT_TRUE(rewardSystem.IsRewardClaimedByIndex(playerEntity, 0));
+    EXPECT_TRUE(rewardSystem.IsRewardClaimedByIndex(playerEntity, 4));
+    EXPECT_FALSE(rewardSystem.IsRewardClaimedByIndex(playerEntity, 1));
 }
