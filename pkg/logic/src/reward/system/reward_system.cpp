@@ -3,34 +3,44 @@
 #include "muduo/base/Logging.h"
 #include "reward/comp/reward_comp.h"
 #include "thread_local/storage.h"
+#include "pbc/common_error_tip.pb.h"
+#include "pbc/reward_error_tip.pb.h"
 
 void RewardSystem::InitializeActorComponents(entt::entity entityId)
 {
     tls.registry.emplace<RewardComp>(entityId);
 }
 
+uint32_t RewardSystem::ClaimRewardByRewardId(entt::entity entityId, uint32_t rewardId)
+{
+    if (!RewardBitMap.contains(rewardId))
+    {
+        return kInvalidTableId;
+    }
+    
+    return ClaimRewardByIndex(entityId, RewardBitMap.at(rewardId));
+}
+
 // 领取奖励
-void RewardSystem::ClaimReward(entt::entity entityId, uint32_t rewardIndex) {
+uint32_t RewardSystem::ClaimRewardByIndex(entt::entity entityId, uint32_t rewardIndex) {
     if (rewardIndex < 0 || rewardIndex >= kRewardMaxBitIndex) {
-        LOG_ERROR << "奖励编号无效！";
-        return;
+        return kIndexOutOfRange;
     }
 
     auto& rewards = tls.registry.get<RewardComp>(entityId).rewards;
 
     if (rewards[rewardIndex]) {
-        LOG_ERROR << "奖励 " << rewardIndex << " 已经领取过了！";
+        return kRewardAlreadyClaimed;
     }
-    else {
-        rewards.set(rewardIndex);  // 设置该奖励为已领取
-        LOG_INFO << "恭喜你领取了奖励 " << rewardIndex << "！";
-    }
+    
+    rewards.set(rewardIndex);  // 设置该奖励为已领取
+
+    return kSuccess;
 }
 
 // 检查某个奖励是否已经领取
 bool RewardSystem::IsRewardClaimed(entt::entity entityId, uint32_t rewardIndex) {
     if (rewardIndex < 0 || rewardIndex >= kRewardMaxBitIndex) {
-        LOG_ERROR << "奖励编号无效！";
         return false;
     }
 

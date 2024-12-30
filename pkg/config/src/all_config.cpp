@@ -13,10 +13,10 @@
 #include "actoractionstate_config.h"
 #include "globalvariable_config.h"
 #include "mainscene_config.h"
+#include "reward_config.h"
 #include "skillpermission_config.h"
 #include "class_config.h"
 #include "scene_config.h"
-#include "reward_config.h"
 #include "monsterbase_config.h"
 #include "cooldown_config.h"
 void LoadAllConfig()
@@ -31,10 +31,10 @@ void LoadAllConfig()
     ActorActionStateConfigurationTable::Instance().Load();
     GlobalVariableConfigurationTable::Instance().Load();
     MainSceneConfigurationTable::Instance().Load();
+    RewardConfigurationTable::Instance().Load();
     SkillPermissionConfigurationTable::Instance().Load();
     ClassConfigurationTable::Instance().Load();
     SceneConfigurationTable::Instance().Load();
-    RewardConfigurationTable::Instance().Load();
     MonsterBaseConfigurationTable::Instance().Load();
     CooldownConfigurationTable::Instance().Load();
 }
@@ -157,6 +157,17 @@ void LoadAllConfigAsyncWhenServerLaunch()
     {
         std::thread t([&]() {
 
+    RewardConfigurationTable::Instance().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    /// End
+
+    /// Begin
+    {
+        std::thread t([&]() {
+
     SkillPermissionConfigurationTable::Instance().Load();
             latch_.countDown();
         });
@@ -180,17 +191,6 @@ void LoadAllConfigAsyncWhenServerLaunch()
         std::thread t([&]() {
 
     SceneConfigurationTable::Instance().Load();
-            latch_.countDown();
-        });
-        t.detach();
-    }
-    /// End
-
-    /// Begin
-    {
-        std::thread t([&]() {
-
-    RewardConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();
