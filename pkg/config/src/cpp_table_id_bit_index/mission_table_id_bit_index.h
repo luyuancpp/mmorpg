@@ -22,4 +22,4 @@ const std::unordered_map<uint64_t, uint32_t> MissionBitMap{
 {17, 16},
 };
 
-constexpr uint32_t kMaxBitIndex = 17;
+constexpr uint32_t kMissionMaxBitIndex = 17;

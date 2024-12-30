@@ -117,7 +117,7 @@ class ExcelToCppConverter:
 
         # Add max bit index constant
         max_bit_index = self._find_max_bit_index()
-        cpp_constants += f"constexpr uint32_t kMaxBitIndex = {max_bit_index};\n"
+        cpp_constants += f"constexpr uint32_t k{self.sheet}MaxBitIndex = {max_bit_index};\n"
 
         # Save the mapping
         self._save_mapping(id_to_index)

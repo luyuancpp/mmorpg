@@ -160,7 +160,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam& param) {
 
 	// Remove mission from missions component
 	missionComp->GetMissionsComp().mutable_missions()->erase(param.missionId);
-	missionComp->GetMissionsComp().mutable_complete_missions()->erase(param.missionId);
+	missionComp->AbandonMission(param.missionId);
 	missionComp->GetMissionsComp().mutable_mission_begin_time()->erase(param.missionId);
 
 	// Delete mission classification

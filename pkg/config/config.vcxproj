@@ -52,6 +52,7 @@
     <ClCompile Include="src\pbc\mission_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\monsterbase_config.pb.cc" />
     <ClCompile Include="src\pbc\mount_error_tip.pb.cc" />
+    <ClCompile Include="src\pbc\reward_config.pb.cc" />
     <ClCompile Include="src\pbc\scene_config.pb.cc" />
     <ClCompile Include="src\pbc\scene_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\scene_operator.pb.cc" />
@@ -61,6 +62,7 @@
     <ClCompile Include="src\pbc\team_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\testmultikey_config.pb.cc" />
     <ClCompile Include="src\pbc\test_config.pb.cc" />
+    <ClCompile Include="src\reward_config.cpp" />
     <ClCompile Include="src\scene_config.cpp" />
     <ClCompile Include="src\skillpermission_config.cpp" />
     <ClCompile Include="src\skill_config.cpp" />
@@ -76,6 +78,7 @@
     <ClInclude Include="src\condition_config.h" />
     <ClInclude Include="src\cooldown_config.h" />
     <ClInclude Include="src\cpp_table_id_bit_index\mission_table_id_bit_index.h" />
+    <ClInclude Include="src\cpp_table_id_bit_index\reward_table_id_bit_index.h" />
     <ClInclude Include="src\cpp_table_id_constants_name\actoractionstate_table_id_constants.h" />
     <ClInclude Include="src\cpp_table_id_constants_name\globalvariable_table_id_constants.h" />
     <ClInclude Include="src\globalvariable_config.h" />
@@ -104,6 +107,7 @@
     <ClInclude Include="src\pbc\mission_error_tip.pb.h" />
     <ClInclude Include="src\pbc\monsterbase_config.pb.h" />
     <ClInclude Include="src\pbc\mount_error_tip.pb.h" />
+    <ClInclude Include="src\pbc\reward_config.pb.h" />
     <ClInclude Include="src\pbc\scene_config.pb.h" />
     <ClInclude Include="src\pbc\scene_error_tip.pb.h" />
     <ClInclude Include="src\pbc\scene_operator.pb.h" />
@@ -113,6 +117,7 @@
     <ClInclude Include="src\pbc\team_error_tip.pb.h" />
     <ClInclude Include="src\pbc\testmultikey_config.pb.h" />
     <ClInclude Include="src\pbc\test_config.pb.h" />
+    <ClInclude Include="src\reward_config.h" />
     <ClInclude Include="src\scene_config.h" />
     <ClInclude Include="src\skillpermission_config.h" />
     <ClInclude Include="src\skill_config.h" />
