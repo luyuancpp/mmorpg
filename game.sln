@@ -228,6 +228,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "timer_destroy_test", "test\
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "reward_test", "test\reward_test\reward.vcxproj", "{C24F0BAB-770D-4D64-97DB-F627E685E216}"
+	ProjectSection(ProjectDependencies) = postProject
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1} = {03F2DF47-F5B9-41E9-933B-903D317FEEB1}
+		{7D732139-58FD-4E6F-A12A-F6B3F8B13577} = {7D732139-58FD-4E6F-A12A-F6B3F8B13577}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
