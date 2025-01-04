@@ -18,8 +18,8 @@ uint32_t RewardSystem::ClaimRewardByRewardId(entt::entity entityId, uint32_t rew
         return kInvalidTableId;
     }
 
-    auto rewardIndex = RewardBitMap.at(rewardId);
-    auto result = ClaimRewardByIndex(entityId, rewardIndex);
+    const auto rewardIndex = RewardBitMap.at(rewardId);
+    const auto result = ClaimRewardByIndex(entityId, rewardIndex);
 
     if (result == kSuccess) {
         LOG_INFO << "ClaimRewardByRewardId succeeded. Entity ID: " << tls.registry.get<Guid>(entityId)

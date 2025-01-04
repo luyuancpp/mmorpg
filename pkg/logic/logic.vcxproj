@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\message_limiter\message_limiter.cpp" />
     <ClCompile Include="src\reward\system\reward_system.cpp" />
     <ClCompile Include="src\mission\comp\mission_comp.cpp" />
     <ClCompile Include="src\bag\bag_system.cpp" />
@@ -176,6 +177,7 @@
     <ClCompile Include="src\time\system\time_system.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\message_limiter\message_limiter.h" />
     <ClInclude Include="src\reward\comp\reward_comp.h" />
     <ClInclude Include="src\reward\system\reward_system.h" />
     <ClInclude Include="src\log\macros\game_log.h" />
