@@ -7,14 +7,13 @@
 
 #include "gate_node.h"
 #include "grpc/request/login_grpc_request.h"
+#include "pbc/common_error_tip.pb.h"
 #include "service_info/centre_service_service_info.h"
-#include "service_info/player_common_service_info.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/login_service_service_info.h"
+#include "service_info/player_common_service_info.h"
 #include "thread_local/storage_gate.h"
-#include "pbc/common_error_tip.pb.h"
 #include "util/random.h"
-#include "util/snow_flake.h"
 
 extern std::unordered_set<uint32_t> gClientToServerMessageId;
 
@@ -47,14 +46,14 @@ entt::entity FindLoginNodeForSession(uint64_t sessionId)
             LOG_ERROR << "Login server not found for session id: " << sessionId;
             return entt::null;
         }
-        session.login_node_id_ = entt::to_integral(loginNodeIt->second);
+        session.loginNodeId = entt::to_integral(loginNodeIt->second);
     }
 
-    const auto loginNodeIt = tls_gate.login_consistent_node().GetNodeValue(session.login_node_id_);
+    const auto loginNodeIt = tls_gate.login_consistent_node().GetNodeValue(session.loginNodeId);
     if (tls_gate.login_consistent_node().end() == loginNodeIt)
     {
         LOG_ERROR << "Login server crashed for session id: " << sessionId;
-        session.login_node_id_ = kInvalidNodeId;
+        session.loginNodeId = kInvalidNodeId;
         return entt::null;
     }
     return loginNodeIt->second;
@@ -79,8 +78,6 @@ void RpcClientSessionHandler::SendMessageToClient(const muduo::net::TcpConnectio
 {
     protobufCodec.send(conn, message);
 }
-
-
 
 Guid RpcClientSessionHandler::GetSessionId(const muduo::net::TcpConnectionPtr& conn)
 {
@@ -114,7 +111,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
     }
     conn->setContext(sessionId);
     Session session;
-    session.conn_ = conn;
+    session.conn = conn;
     tls_gate.sessions().emplace(sessionId, std::move(session));
 
     LOG_TRACE << "New connection, assigned session id: " << sessionId;
@@ -171,10 +168,10 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 
 void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
-    const entt::entity gameNodeId{ session.game_node_id_ };
+    const entt::entity gameNodeId{ session.gameNodeId };
     if (!tls.gameNodeRegistry.valid(gameNodeId))
     {
-        LOG_ERROR << "Invalid game node id " << session.game_node_id_ << " for session id: " << sessionId;
+        LOG_ERROR << "Invalid game node id " << session.gameNodeId << " for session id: " << sessionId;
         RpcClientSessionHandler::SendTipToClient(conn, kServerCrashed);
         return;
     }
@@ -218,7 +215,6 @@ void SendEnterGameRequestToLoginNode(entt::entity loginNode, Guid sessionId, con
     LOG_TRACE << "Sent EnterGameC2LRequest, session id: " << sessionId;
 }
 
-
 void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, const muduo::net::TcpConnectionPtr& conn)
 {
     auto loginNode = FindLoginNodeForSession(sessionId);
@@ -257,12 +253,19 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
         LOG_ERROR << "Session not found for session id: " << sessionId << " in RPC request.";
         return;
     }
+
+    auto& session = sessionIt->second;
+
     // todo 发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
     // 有没有更好的办法
     // 根据服务 ID 转发消息
     if (gClientToServerMessageId.contains(request->message_id()))
     {
-        HandleGameNodeMessage(sessionIt->second, request, sessionId, conn);
+        if (!session.messageLimiter.CanSend(request->message_id())){
+            
+        }
+        
+        HandleGameNodeMessage(session, request, sessionId, conn);
     }
     else
     {

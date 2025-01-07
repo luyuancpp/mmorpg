@@ -15,6 +15,7 @@
 #include "mainscene_config.h"
 #include "reward_config.h"
 #include "skillpermission_config.h"
+#include "messagelimiter_config.h"
 #include "class_config.h"
 #include "scene_config.h"
 #include "monsterbase_config.h"
@@ -33,6 +34,7 @@ void LoadAllConfig()
     MainSceneConfigurationTable::Instance().Load();
     RewardConfigurationTable::Instance().Load();
     SkillPermissionConfigurationTable::Instance().Load();
+    MessageLimiterConfigurationTable::Instance().Load();
     ClassConfigurationTable::Instance().Load();
     SceneConfigurationTable::Instance().Load();
     MonsterBaseConfigurationTable::Instance().Load();
@@ -41,7 +43,7 @@ void LoadAllConfig()
 
 void LoadAllConfigAsyncWhenServerLaunch()
 {
-    static muduo::CountDownLatch latch_(16);
+    static muduo::CountDownLatch latch_(17);
 
     /// Begin
     {
@@ -169,6 +171,17 @@ void LoadAllConfigAsyncWhenServerLaunch()
         std::thread t([&]() {
 
     SkillPermissionConfigurationTable::Instance().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    /// End
+
+    /// Begin
+    {
+        std::thread t([&]() {
+
+    MessageLimiterConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();

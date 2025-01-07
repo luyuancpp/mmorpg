@@ -31,20 +31,20 @@ const char descriptor_table_protodef_login_5ferror_5ftip_2eproto[] ABSL_ATTRIBUT
     protodesc_cold) = {
     "\n\025login_error_tip.proto*\316\004\n\013login_error\022"
     "\022\n\016kLogin_errorOK\020\000\022\031\n\025kLoginAccountNotF"
-    "ound\020\t\022\033\n\027kLoginAccountPlayerFull\020\n\022#\n\037k"
-    "LoginCreatePlayerUnLoadAccount\020\013\022-\n)kLog"
-    "inCreatePlayerConnectionHasNotAccount\020\014\022"
-    "\021\n\rkLoginUnLogin\020\r\022\024\n\020kLoginInProgress\020\016"
-    "\022\031\n\025kLoginPlayerGuidError\020\017\022\026\n\022kLoginEnt"
-    "eringGame\020\020\022\021\n\rkLoginPlaying\020\021\022\030\n\024kLogin"
-    "CreatingPlayer\020\022\022\032\n\026kLoginWaitingEnterGa"
-    "me\020\023\022\027\n\023kLoginEnterGameGuid\020\024\022\032\n\026kLoginA"
-    "ccountNameEmpty\020\025\022&\n\"kLoginCreateConnect"
-    "ionAccountEmpty\020\026\022)\n%kLoginEnterGameConn"
-    "ectionAccountEmpty\020\027\022\026\n\022kLoginUnknownErr"
-    "or\020\030\022\033\n\027kLoginSessionDisconnect\020\031\022 \n\034kLo"
-    "ginBeKickByAnOtherAccount\020\032\022\033\n\027kLoginSes"
-    "sionIdNotFound\020\033B\tZ\007pb/gameb\006proto3"
+    "ound\020\n\022\033\n\027kLoginAccountPlayerFull\020\013\022#\n\037k"
+    "LoginCreatePlayerUnLoadAccount\020\014\022-\n)kLog"
+    "inCreatePlayerConnectionHasNotAccount\020\r\022"
+    "\021\n\rkLoginUnLogin\020\016\022\024\n\020kLoginInProgress\020\017"
+    "\022\031\n\025kLoginPlayerGuidError\020\020\022\026\n\022kLoginEnt"
+    "eringGame\020\021\022\021\n\rkLoginPlaying\020\022\022\030\n\024kLogin"
+    "CreatingPlayer\020\023\022\032\n\026kLoginWaitingEnterGa"
+    "me\020\024\022\027\n\023kLoginEnterGameGuid\020\025\022\032\n\026kLoginA"
+    "ccountNameEmpty\020\026\022&\n\"kLoginCreateConnect"
+    "ionAccountEmpty\020\027\022)\n%kLoginEnterGameConn"
+    "ectionAccountEmpty\020\030\022\026\n\022kLoginUnknownErr"
+    "or\020\031\022\033\n\027kLoginSessionDisconnect\020\032\022 \n\034kLo"
+    "ginBeKickByAnOtherAccount\020\033\022\033\n\027kLoginSes"
+    "sionIdNotFound\020\034B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_login_5ferror_5ftip_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_login_5ferror_5ftip_2eproto = {
@@ -84,9 +84,9 @@ const ::google::protobuf::EnumDescriptor* login_error_descriptor() {
   return file_level_enum_descriptors_login_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t login_error_internal_data_[] = {
-    65536u, 32u, 134217472u, };
+    65536u, 32u, 268434944u, };
 bool login_error_IsValid(int value) {
-  return 0 <= value && value <= 27 && ((268434945u >> value) & 1) != 0;
+  return 0 <= value && value <= 28 && ((536869889u >> value) & 1) != 0;
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

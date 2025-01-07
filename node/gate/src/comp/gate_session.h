@@ -1,17 +1,19 @@
 #pragma once
 
+#include "message_limiter/message_limiter.h"
 #include "muduo/net/TcpConnection.h"
 
 #include "type_define/type_define.h"
 
 struct Session
 {
-	bool HasLoginNodeId() const { return login_node_id_ != kInvalidNodeId; }
-	NodeId game_node_id_{kInvalidNodeId};
-	NodeId login_node_id_{kInvalidNodeId};
-	NodeId centre_node_id_{kInvalidNodeId};
-	Guid player_guild_{ kInvalidGuid };
-	muduo::net::TcpConnectionPtr conn_;
+	[[nodiscard]] bool HasLoginNodeId() const { return loginNodeId != kInvalidNodeId; }
+	NodeId gameNodeId{kInvalidNodeId};
+	NodeId loginNodeId{kInvalidNodeId};
+	NodeId centreNodeId{kInvalidNodeId};
+	Guid playerGuild{ kInvalidGuid };
+	muduo::net::TcpConnectionPtr conn;
+	MessageLimiter messageLimiter;
 };
 
 

@@ -66,4 +66,4 @@ for command in commands:
         if e.output:
             logger.error(f"Error output: {e.output.decode()}")
         if e.stderr:
-            logger.error(f"Standard error: {e.stderr.decode()}")
+            logger.error(f"Standard error: {e.stderr}")

@@ -162,6 +162,15 @@
     <ClCompile Include="src\pbc\reward_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\messagelimiter_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\messagelimiter_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pbc\reward_error_tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\all_config.h">
@@ -321,6 +330,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pbc\reward_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\messagelimiter_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\messagelimiter_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pbc\reward_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

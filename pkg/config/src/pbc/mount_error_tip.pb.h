@@ -55,7 +55,7 @@ namespace protobuf {
 
 enum mount_error : int {
   kMount_errorOK = 0,
-  kMountNotMounted = 102,
+  kMountNotMounted = 103,
   mount_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   mount_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -65,8 +65,8 @@ enum mount_error : int {
 bool mount_error_IsValid(int value);
 extern const uint32_t mount_error_internal_data_[];
 constexpr mount_error mount_error_MIN = static_cast<mount_error>(0);
-constexpr mount_error mount_error_MAX = static_cast<mount_error>(102);
-constexpr int mount_error_ARRAYSIZE = 102 + 1;
+constexpr mount_error mount_error_MAX = static_cast<mount_error>(103);
+constexpr int mount_error_ARRAYSIZE = 103 + 1;
 const ::google::protobuf::EnumDescriptor*
 mount_error_descriptor();
 template <typename T>

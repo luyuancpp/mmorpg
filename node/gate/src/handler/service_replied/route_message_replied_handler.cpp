@@ -42,7 +42,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	MessageBody message;
 	message.set_body(replied->body());
 	message.set_message_id(route_data.message_id());;
-	g_gate_node->SendMessageToClient(it->second.conn_, message);
+	g_gate_node->SendMessageToClient(it->second.conn, message);
 	///<<< END WRITING YOUR CODE
 }
 
