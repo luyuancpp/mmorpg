@@ -64,7 +64,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 		return &ch
 	}
 
-	channelPlayer := put(msgPlayer)
+	channelScenePlayer := put(msgPlayer)
 
 	channelCentrePlayer := put(msgCentrePlayer)
 
@@ -75,7 +75,7 @@ func (l *Load2RedisLogic) Load2Redis(in *game.LoadPlayerRequest) (*game.LoadPlay
 		return resp, nil
 	}
 
-	<-channelPlayer.Chan
+	<-channelScenePlayer.Chan
 	<-channelCentrePlayer.Chan
 
 	save2Redis := func(message proto.Message, key string) error {
