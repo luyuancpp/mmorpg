@@ -86,14 +86,14 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	auto sessionIt = tls_gate.sessions().find(request->header().session_id());
 	if (sessionIt == tls_gate.sessions().end())
 	{
-		if (shouldLogProtocolErrorForDisconnectedPlayer(request->body().message_id()))
+		if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
 		{
-			LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->body().message_id();
+			LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->message_content().message_id();
 		}
 
 		return;
 	}
-	g_gate_node->SendMessageToClient(sessionIt->second.conn, request->body());
+	g_gate_node->SendMessageToClient(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
 }
@@ -136,14 +136,14 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 		auto sessionIt = tls_gate.sessions().find(sessionId);
 		if (sessionIt == tls_gate.sessions().end())
 		{
-			if (shouldLogProtocolErrorForDisconnectedPlayer(request->body().message_id()))
+			if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
 			{
-				LOG_ERROR << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->body().message_id();
+				LOG_ERROR << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
 			}
 
 			continue;
 		}
-		g_gate_node->SendMessageToClient(sessionIt->second.conn, request->body());
+		g_gate_node->SendMessageToClient(sessionIt->second.conn, request->message_content());
 		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE

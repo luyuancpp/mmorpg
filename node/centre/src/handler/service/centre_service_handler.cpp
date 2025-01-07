@@ -405,7 +405,7 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	const auto it = tlsSessions.find(request->header().session_id());
 	if (it == tlsSessions.end())
 	{
-		LOG_ERROR << "Session not found: " << request->header().session_id() << " message id :" << request->body().message_id();
+		LOG_ERROR << "Session not found: " << request->header().session_id() << " message id :" << request->message_content().message_id();
 		return;
 	}
 
@@ -417,13 +417,13 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	if (request->body().message_id() >= gMessageInfo.size())
+	if (request->message_content().message_id() >= gMessageInfo.size())
 	{
-		LOG_ERROR << "Message ID not found: " << request->body().message_id();
+		LOG_ERROR << "Message ID not found: " << request->message_content().message_id();
 		return;
 	}
 
-	const auto& message_info = gMessageInfo.at(request->body().message_id());
+	const auto& message_info = gMessageInfo.at(request->message_content().message_id());
 
 	const auto service_it = g_player_service.find(message_info.serviceName);
 	if (service_it == g_player_service.end())
@@ -443,10 +443,10 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	}
 
 	const MessagePtr player_request(service->GetRequestPrototype(method).New());
-	if (!player_request->ParsePartialFromArray(request->body().body().data(),
-		request->body().body().size()))
+	if (!player_request->ParsePartialFromArray(request->message_content().body().data(),
+		request->message_content().body().size()))
 	{
-		LOG_ERROR << "Failed to parse request for message ID: " << request->body().message_id();
+		LOG_ERROR << "Failed to parse request for message ID: " << request->message_content().message_id();
 		// TODO: Handle client error
 		return;
 	}
@@ -468,24 +468,24 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 
 	response->mutable_header()->set_session_id(request->header().session_id());
 	const int32_t byte_size = playerResponse->ByteSizeLong();
-	response->mutable_body()->mutable_body()->resize(byte_size);
-	if (!playerResponse->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
+	response->mutable_message_content()->mutable_body()->resize(byte_size);
+	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_body()->data(), byte_size))
 	{
-		LOG_ERROR << "Failed to serialize response for message ID: " << request->body().message_id();
+		LOG_ERROR << "Failed to serialize response for message ID: " << request->message_content().message_id();
 		// TODO: Handle message serialization error
 		return;
 	}
 
-	response->mutable_body()->set_message_id(request->body().message_id());
+	response->mutable_message_content()->set_message_id(request->message_content().message_id());
 	
 	if (const auto tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
 		nullptr != tipInfoMessage)
 	{
-		response->mutable_body()->mutable_error_message()->CopyFrom(*tipInfoMessage);
+		response->mutable_message_content()->mutable_error_message()->CopyFrom(*tipInfoMessage);
 		tipInfoMessage->Clear();
 	}
 
-	LOG_TRACE << "Successfully processed message ID: " << request->body().message_id()
+	LOG_TRACE << "Successfully processed message ID: " << request->message_content().message_id()
 		<< " for player ID: " << playerId;
 
 	///<<< END WRITING YOUR CODE
