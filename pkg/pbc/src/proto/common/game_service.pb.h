@@ -1457,22 +1457,22 @@ class ClientSendMessageToPlayerResponse final : public ::google::protobuf::Messa
 
   // accessors -------------------------------------------------------
   enum : int {
-    kMessageBodyFieldNumber = 1,
+    kMessageContentFieldNumber = 1,
     kSessionIdFieldNumber = 2,
   };
-  // .MessageContent message_body = 1;
-  bool has_message_body() const;
-  void clear_message_body() ;
-  const ::MessageContent& message_body() const;
-  PROTOBUF_NODISCARD ::MessageContent* release_message_body();
-  ::MessageContent* mutable_message_body();
-  void set_allocated_message_body(::MessageContent* value);
-  void unsafe_arena_set_allocated_message_body(::MessageContent* value);
-  ::MessageContent* unsafe_arena_release_message_body();
+  // .MessageContent message_content = 1;
+  bool has_message_content() const;
+  void clear_message_content() ;
+  const ::MessageContent& message_content() const;
+  PROTOBUF_NODISCARD ::MessageContent* release_message_content();
+  ::MessageContent* mutable_message_content();
+  void set_allocated_message_content(::MessageContent* value);
+  void unsafe_arena_set_allocated_message_content(::MessageContent* value);
+  ::MessageContent* unsafe_arena_release_message_content();
 
   private:
-  const ::MessageContent& _internal_message_body() const;
-  ::MessageContent* _internal_mutable_message_body();
+  const ::MessageContent& _internal_message_content() const;
+  ::MessageContent* _internal_mutable_message_content();
 
   public:
   // uint64 session_id = 2;
@@ -1508,7 +1508,7 @@ class ClientSendMessageToPlayerResponse final : public ::google::protobuf::Messa
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::MessageContent* message_body_;
+    ::MessageContent* message_content_;
     ::uint64_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1642,22 +1642,22 @@ class ClientSendMessageToPlayerRequest final : public ::google::protobuf::Messag
 
   // accessors -------------------------------------------------------
   enum : int {
-    kMessageBodyFieldNumber = 1,
+    kMessageContentFieldNumber = 1,
     kSessionIdFieldNumber = 2,
   };
-  // .MessageContent message_body = 1;
-  bool has_message_body() const;
-  void clear_message_body() ;
-  const ::MessageContent& message_body() const;
-  PROTOBUF_NODISCARD ::MessageContent* release_message_body();
-  ::MessageContent* mutable_message_body();
-  void set_allocated_message_body(::MessageContent* value);
-  void unsafe_arena_set_allocated_message_body(::MessageContent* value);
-  ::MessageContent* unsafe_arena_release_message_body();
+  // .MessageContent message_content = 1;
+  bool has_message_content() const;
+  void clear_message_content() ;
+  const ::MessageContent& message_content() const;
+  PROTOBUF_NODISCARD ::MessageContent* release_message_content();
+  ::MessageContent* mutable_message_content();
+  void set_allocated_message_content(::MessageContent* value);
+  void unsafe_arena_set_allocated_message_content(::MessageContent* value);
+  ::MessageContent* unsafe_arena_release_message_content();
 
   private:
-  const ::MessageContent& _internal_message_body() const;
-  ::MessageContent* _internal_mutable_message_body();
+  const ::MessageContent& _internal_message_content() const;
+  ::MessageContent* _internal_mutable_message_content();
 
   public:
   // uint64 session_id = 2;
@@ -1693,7 +1693,7 @@ class ClientSendMessageToPlayerRequest final : public ::google::protobuf::Messag
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::MessageContent* message_body_;
+    ::MessageContent* message_content_;
     ::uint64_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1929,40 +1929,40 @@ inline void PlayerEnterGameNodeRequest::_internal_set_centre_node_id(::uint32_t 
 
 // ClientSendMessageToPlayerRequest
 
-// .MessageContent message_body = 1;
-inline bool ClientSendMessageToPlayerRequest::has_message_body() const {
+// .MessageContent message_content = 1;
+inline bool ClientSendMessageToPlayerRequest::has_message_content() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.message_body_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.message_content_ != nullptr);
   return value;
 }
-inline const ::MessageContent& ClientSendMessageToPlayerRequest::_internal_message_body() const {
+inline const ::MessageContent& ClientSendMessageToPlayerRequest::_internal_message_content() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::MessageContent* p = _impl_.message_body_;
+  const ::MessageContent* p = _impl_.message_content_;
   return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
-inline const ::MessageContent& ClientSendMessageToPlayerRequest::message_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.message_body)
-  return _internal_message_body();
+inline const ::MessageContent& ClientSendMessageToPlayerRequest::message_content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.message_content)
+  return _internal_message_content();
 }
-inline void ClientSendMessageToPlayerRequest::unsafe_arena_set_allocated_message_body(::MessageContent* value) {
+inline void ClientSendMessageToPlayerRequest::unsafe_arena_set_allocated_message_content(::MessageContent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_body_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_content_);
   }
-  _impl_.message_body_ = reinterpret_cast<::MessageContent*>(value);
+  _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ClientSendMessageToPlayerRequest.message_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ClientSendMessageToPlayerRequest.message_content)
 }
-inline ::MessageContent* ClientSendMessageToPlayerRequest::release_message_body() {
+inline ::MessageContent* ClientSendMessageToPlayerRequest::release_message_content() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageContent* released = _impl_.message_body_;
-  _impl_.message_body_ = nullptr;
+  ::MessageContent* released = _impl_.message_content_;
+  _impl_.message_content_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
   released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -1976,34 +1976,34 @@ inline ::MessageContent* ClientSendMessageToPlayerRequest::release_message_body(
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::MessageContent* ClientSendMessageToPlayerRequest::unsafe_arena_release_message_body() {
+inline ::MessageContent* ClientSendMessageToPlayerRequest::unsafe_arena_release_message_content() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerRequest.message_body)
+  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerRequest.message_content)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageContent* temp = _impl_.message_body_;
-  _impl_.message_body_ = nullptr;
+  ::MessageContent* temp = _impl_.message_content_;
+  _impl_.message_content_ = nullptr;
   return temp;
 }
-inline ::MessageContent* ClientSendMessageToPlayerRequest::_internal_mutable_message_body() {
+inline ::MessageContent* ClientSendMessageToPlayerRequest::_internal_mutable_message_content() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.message_body_ == nullptr) {
+  if (_impl_.message_content_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageContent>(GetArena());
-    _impl_.message_body_ = reinterpret_cast<::MessageContent*>(p);
+    _impl_.message_content_ = reinterpret_cast<::MessageContent*>(p);
   }
-  return _impl_.message_body_;
+  return _impl_.message_content_;
 }
-inline ::MessageContent* ClientSendMessageToPlayerRequest::mutable_message_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::MessageContent* ClientSendMessageToPlayerRequest::mutable_message_content() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::MessageContent* _msg = _internal_mutable_message_body();
-  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerRequest.message_body)
+  ::MessageContent* _msg = _internal_mutable_message_content();
+  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerRequest.message_content)
   return _msg;
 }
-inline void ClientSendMessageToPlayerRequest::set_allocated_message_body(::MessageContent* value) {
+inline void ClientSendMessageToPlayerRequest::set_allocated_message_content(::MessageContent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_body_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_content_);
   }
 
   if (value != nullptr) {
@@ -2016,8 +2016,8 @@ inline void ClientSendMessageToPlayerRequest::set_allocated_message_body(::Messa
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.message_body_ = reinterpret_cast<::MessageContent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerRequest.message_body)
+  _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerRequest.message_content)
 }
 
 // uint64 session_id = 2;
@@ -2046,40 +2046,40 @@ inline void ClientSendMessageToPlayerRequest::_internal_set_session_id(::uint64_
 
 // ClientSendMessageToPlayerResponse
 
-// .MessageContent message_body = 1;
-inline bool ClientSendMessageToPlayerResponse::has_message_body() const {
+// .MessageContent message_content = 1;
+inline bool ClientSendMessageToPlayerResponse::has_message_content() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.message_body_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.message_content_ != nullptr);
   return value;
 }
-inline const ::MessageContent& ClientSendMessageToPlayerResponse::_internal_message_body() const {
+inline const ::MessageContent& ClientSendMessageToPlayerResponse::_internal_message_content() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::MessageContent* p = _impl_.message_body_;
+  const ::MessageContent* p = _impl_.message_content_;
   return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
-inline const ::MessageContent& ClientSendMessageToPlayerResponse::message_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.message_body)
-  return _internal_message_body();
+inline const ::MessageContent& ClientSendMessageToPlayerResponse::message_content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.message_content)
+  return _internal_message_content();
 }
-inline void ClientSendMessageToPlayerResponse::unsafe_arena_set_allocated_message_body(::MessageContent* value) {
+inline void ClientSendMessageToPlayerResponse::unsafe_arena_set_allocated_message_content(::MessageContent* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_body_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_content_);
   }
-  _impl_.message_body_ = reinterpret_cast<::MessageContent*>(value);
+  _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ClientSendMessageToPlayerResponse.message_body)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ClientSendMessageToPlayerResponse.message_content)
 }
-inline ::MessageContent* ClientSendMessageToPlayerResponse::release_message_body() {
+inline ::MessageContent* ClientSendMessageToPlayerResponse::release_message_content() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageContent* released = _impl_.message_body_;
-  _impl_.message_body_ = nullptr;
+  ::MessageContent* released = _impl_.message_content_;
+  _impl_.message_content_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
   released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -2093,34 +2093,34 @@ inline ::MessageContent* ClientSendMessageToPlayerResponse::release_message_body
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::MessageContent* ClientSendMessageToPlayerResponse::unsafe_arena_release_message_body() {
+inline ::MessageContent* ClientSendMessageToPlayerResponse::unsafe_arena_release_message_content() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerResponse.message_body)
+  // @@protoc_insertion_point(field_release:ClientSendMessageToPlayerResponse.message_content)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageContent* temp = _impl_.message_body_;
-  _impl_.message_body_ = nullptr;
+  ::MessageContent* temp = _impl_.message_content_;
+  _impl_.message_content_ = nullptr;
   return temp;
 }
-inline ::MessageContent* ClientSendMessageToPlayerResponse::_internal_mutable_message_body() {
+inline ::MessageContent* ClientSendMessageToPlayerResponse::_internal_mutable_message_content() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.message_body_ == nullptr) {
+  if (_impl_.message_content_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageContent>(GetArena());
-    _impl_.message_body_ = reinterpret_cast<::MessageContent*>(p);
+    _impl_.message_content_ = reinterpret_cast<::MessageContent*>(p);
   }
-  return _impl_.message_body_;
+  return _impl_.message_content_;
 }
-inline ::MessageContent* ClientSendMessageToPlayerResponse::mutable_message_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::MessageContent* ClientSendMessageToPlayerResponse::mutable_message_content() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::MessageContent* _msg = _internal_mutable_message_body();
-  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerResponse.message_body)
+  ::MessageContent* _msg = _internal_mutable_message_content();
+  // @@protoc_insertion_point(field_mutable:ClientSendMessageToPlayerResponse.message_content)
   return _msg;
 }
-inline void ClientSendMessageToPlayerResponse::set_allocated_message_body(::MessageContent* value) {
+inline void ClientSendMessageToPlayerResponse::set_allocated_message_content(::MessageContent* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_body_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_content_);
   }
 
   if (value != nullptr) {
@@ -2133,8 +2133,8 @@ inline void ClientSendMessageToPlayerResponse::set_allocated_message_body(::Mess
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.message_body_ = reinterpret_cast<::MessageContent*>(value);
-  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerResponse.message_body)
+  _impl_.message_content_ = reinterpret_cast<::MessageContent*>(value);
+  // @@protoc_insertion_point(field_set_allocated:ClientSendMessageToPlayerResponse.message_content)
 }
 
 // uint64 session_id = 2;

@@ -15,10 +15,10 @@ sol::property(&PlayerEnterGameNodeRequest::centre_node_id, &PlayerEnterGameNodeR
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<ClientSendMessageToPlayerRequest>("ClientSendMessageToPlayerRequest",
-"message_body",
-[](ClientSendMessageToPlayerRequest& pb) ->decltype(auto){ return pb.message_body();},
-"mutable_message_body",
-[](ClientSendMessageToPlayerRequest& pb) ->decltype(auto){ return pb.mutable_message_body();},
+"message_content",
+[](ClientSendMessageToPlayerRequest& pb) ->decltype(auto){ return pb.message_content();},
+"mutable_message_content",
+[](ClientSendMessageToPlayerRequest& pb) ->decltype(auto){ return pb.mutable_message_content();},
 "session_id",
 sol::property(&ClientSendMessageToPlayerRequest::session_id, &ClientSendMessageToPlayerRequest::set_session_id),
 "DebugString",
@@ -26,10 +26,10 @@ sol::property(&ClientSendMessageToPlayerRequest::session_id, &ClientSendMessageT
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<ClientSendMessageToPlayerResponse>("ClientSendMessageToPlayerResponse",
-"message_body",
-[](ClientSendMessageToPlayerResponse& pb) ->decltype(auto){ return pb.message_body();},
-"mutable_message_body",
-[](ClientSendMessageToPlayerResponse& pb) ->decltype(auto){ return pb.mutable_message_body();},
+"message_content",
+[](ClientSendMessageToPlayerResponse& pb) ->decltype(auto){ return pb.message_content();},
+"mutable_message_content",
+[](ClientSendMessageToPlayerResponse& pb) ->decltype(auto){ return pb.mutable_message_content();},
 "session_id",
 sol::property(&ClientSendMessageToPlayerResponse::session_id, &ClientSendMessageToPlayerResponse::set_session_id),
 "DebugString",

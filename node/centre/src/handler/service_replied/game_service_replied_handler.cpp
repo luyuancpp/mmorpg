@@ -67,9 +67,9 @@ void OnGameServiceCentreSendToPlayerViaGameNodeRepliedHandler(const TcpConnectio
 void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<NodeRouteMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (replied->body().message_id() >= gMessageInfo.size())
+	if (replied->message_content().message_id() >= gMessageInfo.size())
 	{
-		LOG_ERROR << "message_id not found " << replied->body().message_id() ;
+		LOG_ERROR << "message_id not found " << replied->message_content().message_id() ;
 		return;
 	}
 	const auto it = tlsSessions.find(replied->header().session_id());
@@ -79,19 +79,19 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		return;
 	}
 	const auto  player_id    = it->second.player_id();
-	const auto& message_info = gMessageInfo.at(replied->body().message_id() );
+	const auto& message_info = gMessageInfo.at(replied->message_content().message_id() );
 	const auto  player = tlsCommonLogic.GetPlayer(player_id);
 	if (!tls.registry.valid(player))
 	{
 		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
-			<< replied->body().message_id();
+			<< replied->message_content().message_id();
 		return;
 	}
 	const auto service_it = g_player_service_replied.find(message_info.serviceName);
 	if (service_it == g_player_service_replied.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << player_id << ","
-		<< replied->body().message_id();
+		<< replied->message_content().message_id();
 		return;
 	}
 
@@ -107,8 +107,8 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 	}
 
 	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-	if (!playerResponse->ParsePartialFromArray(replied->body().body().data(), 
-		static_cast < int32_t > ( replied -> body ( ) . body ( ) . size ( ) )))
+	if (!playerResponse->ParsePartialFromArray(replied->message_content().body().data(),
+		static_cast < int32_t > ( replied ->message_content( ).body( ). size ( ) )))
 	{
         LOG_ERROR << "ParsePartialFromArray " << message_info.methodName;
         return;

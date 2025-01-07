@@ -400,7 +400,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr PlayerNodeServiceRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        body_{nullptr},
+        message_content_{nullptr},
         header_{nullptr} {}
 
 template <typename>
@@ -420,7 +420,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr PlayerMessageResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        body_{nullptr},
+        message_content_{nullptr},
         header_{nullptr} {}
 
 template <typename>
@@ -440,7 +440,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr NodeRouteMessageResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        body_{nullptr},
+        message_content_{nullptr},
         header_{nullptr} {}
 
 template <typename>
@@ -460,7 +460,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr NodeRouteMessageRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        body_{nullptr},
+        message_content_{nullptr},
         header_{nullptr} {}
 
 template <typename>
@@ -530,7 +530,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::NodeRouteMessageRequest, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::NodeRouteMessageRequest, _impl_.message_content_),
         PROTOBUF_FIELD_OFFSET(::NodeRouteMessageRequest, _impl_.header_),
         0,
         1,
@@ -542,7 +542,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::NodeRouteMessageResponse, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::NodeRouteMessageResponse, _impl_.message_content_),
         PROTOBUF_FIELD_OFFSET(::NodeRouteMessageResponse, _impl_.header_),
         0,
         1,
@@ -563,7 +563,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::PlayerNodeServiceRequest, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::PlayerNodeServiceRequest, _impl_.message_content_),
         PROTOBUF_FIELD_OFFSET(::PlayerNodeServiceRequest, _impl_.header_),
         0,
         1,
@@ -575,7 +575,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::PlayerMessageResponse, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::PlayerMessageResponse, _impl_.message_content_),
         PROTOBUF_FIELD_OFFSET(::PlayerMessageResponse, _impl_.header_),
         0,
         1,
@@ -805,51 +805,52 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     "t\022\014\n\004body\030\001 \001(\014\022\022\n\nmessage_id\030\002 \001(\r\022\n\n\002i"
     "d\030\003 \001(\004\022&\n\rerror_message\030\004 \001(\0132\017.TipInfo"
     "Message\"8\n\021NodeMessageHeader\022\017\n\007node_id\030"
-    "\001 \001(\r\022\022\n\nsession_id\030\002 \001(\004\"\\\n\027NodeRouteMe"
-    "ssageRequest\022\035\n\004body\030\001 \001(\0132\017.MessageCont"
-    "ent\022\"\n\006header\030\002 \001(\0132\022.NodeMessageHeader\""
-    "]\n\030NodeRouteMessageResponse\022\035\n\004body\030\001 \001("
-    "\0132\017.MessageContent\022\"\n\006header\030\002 \001(\0132\022.Nod"
-    "eMessageHeader\"\'\n\022PlayerInfoExternal\022\021\n\t"
-    "player_id\030\001 \001(\004\"^\n\030PlayerNodeServiceRequ"
-    "est\022\035\n\004body\030\001 \001(\0132\017.MessageContent\022#\n\006he"
-    "ader\030\002 \001(\0132\023.PlayerInfoExternal\"[\n\025Playe"
-    "rMessageResponse\022\035\n\004body\030\001 \001(\0132\017.Message"
-    "Content\022#\n\006header\030\002 \001(\0132\023.PlayerInfoExte"
-    "rnal\"6\n\026NodeRoutingMessageBody\022\034\n\tnode_i"
-    "nfo\030\002 \001(\0132\t.NodeInfo\"]\n\036RegisterGameNode"
-    "SessionRequest\022%\n\014session_info\030\001 \001(\0132\017.S"
-    "essionDetails\022\024\n\014game_node_id\030\002 \001(\r\"H\n\037R"
-    "egisterGameNodeSessionResponse\022%\n\014sessio"
-    "n_info\030\001 \001(\0132\017.SessionDetails\"H\n\037Registe"
-    "rGateNodeSessionResponse\022%\n\014session_info"
-    "\030\001 \001(\0132\017.SessionDetails\"a\n RegisterCentr"
-    "eSessionNodeRequest\022%\n\014session_info\030\001 \001("
-    "\0132\017.SessionDetails\022\026\n\016centre_node_id\030\002 \001"
-    "(\r\"J\n!RegisterSessionCentreNodeResponse\022"
-    "%\n\014session_info\030\001 \001(\0132\017.SessionDetails\"E"
-    "\n\034GateSessionDisconnectRequest\022%\n\014sessio"
-    "n_info\030\001 \001(\0132\017.SessionDetails\"}\n\023RouteMe"
-    "ssageRequest\022\014\n\004body\030\001 \001(\014\022%\n\013route_node"
-    "s\030\002 \003(\0132\020.RoutingNodeInfo\022\022\n\nsession_id\030"
-    "\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_client\030\005 \001(\010\"~\n\024"
-    "RouteMessageResponse\022\014\n\004body\030\001 \001(\014\022%\n\013ro"
-    "ute_nodes\030\002 \003(\0132\020.RoutingNodeInfo\022\022\n\nses"
-    "sion_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_client\030\005"
-    " \001(\010\"q\n\031RoutePlayerMessageRequest\022\014\n\004bod"
+    "\001 \001(\r\022\022\n\nsession_id\030\002 \001(\004\"g\n\027NodeRouteMe"
+    "ssageRequest\022(\n\017message_content\030\001 \001(\0132\017."
+    "MessageContent\022\"\n\006header\030\002 \001(\0132\022.NodeMes"
+    "sageHeader\"h\n\030NodeRouteMessageResponse\022("
+    "\n\017message_content\030\001 \001(\0132\017.MessageContent"
+    "\022\"\n\006header\030\002 \001(\0132\022.NodeMessageHeader\"\'\n\022"
+    "PlayerInfoExternal\022\021\n\tplayer_id\030\001 \001(\004\"i\n"
+    "\030PlayerNodeServiceRequest\022(\n\017message_con"
+    "tent\030\001 \001(\0132\017.MessageContent\022#\n\006header\030\002 "
+    "\001(\0132\023.PlayerInfoExternal\"f\n\025PlayerMessag"
+    "eResponse\022(\n\017message_content\030\001 \001(\0132\017.Mes"
+    "sageContent\022#\n\006header\030\002 \001(\0132\023.PlayerInfo"
+    "External\"6\n\026NodeRoutingMessageBody\022\034\n\tno"
+    "de_info\030\002 \001(\0132\t.NodeInfo\"]\n\036RegisterGame"
+    "NodeSessionRequest\022%\n\014session_info\030\001 \001(\013"
+    "2\017.SessionDetails\022\024\n\014game_node_id\030\002 \001(\r\""
+    "H\n\037RegisterGameNodeSessionResponse\022%\n\014se"
+    "ssion_info\030\001 \001(\0132\017.SessionDetails\"H\n\037Reg"
+    "isterGateNodeSessionResponse\022%\n\014session_"
+    "info\030\001 \001(\0132\017.SessionDetails\"a\n RegisterC"
+    "entreSessionNodeRequest\022%\n\014session_info\030"
+    "\001 \001(\0132\017.SessionDetails\022\026\n\016centre_node_id"
+    "\030\002 \001(\r\"J\n!RegisterSessionCentreNodeRespo"
+    "nse\022%\n\014session_info\030\001 \001(\0132\017.SessionDetai"
+    "ls\"E\n\034GateSessionDisconnectRequest\022%\n\014se"
+    "ssion_info\030\001 \001(\0132\017.SessionDetails\"}\n\023Rou"
+    "teMessageRequest\022\014\n\004body\030\001 \001(\014\022%\n\013route_"
+    "nodes\030\002 \003(\0132\020.RoutingNodeInfo\022\022\n\nsession"
+    "_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_client\030\005 \001(\010"
+    "\"~\n\024RouteMessageResponse\022\014\n\004body\030\001 \001(\014\022%"
+    "\n\013route_nodes\030\002 \003(\0132\020.RoutingNodeInfo\022\022\n"
+    "\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_clie"
+    "nt\030\005 \001(\010\"q\n\031RoutePlayerMessageRequest\022\014\n"
+    "\004body\030\001 \001(\014\022\034\n\tnode_list\030\002 \003(\0132\t.NodeInf"
+    "o\022(\n\013player_info\030\003 \001(\0132\023.PlayerInfoExter"
+    "nal\"r\n\032RoutePlayerMessageResponse\022\014\n\004bod"
     "y\030\001 \001(\014\022\034\n\tnode_list\030\002 \003(\0132\t.NodeInfo\022(\n"
     "\013player_info\030\003 \001(\0132\023.PlayerInfoExternal\""
-    "r\n\032RoutePlayerMessageResponse\022\014\n\004body\030\001 "
-    "\001(\014\022\034\n\tnode_list\030\002 \003(\0132\t.NodeInfo\022(\n\013pla"
-    "yer_info\030\003 \001(\0132\023.PlayerInfoExternal\"\216\001\n\027"
-    "RegisterGameNodeRequest\022#\n\nrpc_client\030\001 "
-    "\001(\0132\017.NetworkAddress\022#\n\nrpc_server\030\002 \001(\013"
-    "2\017.NetworkAddress\022\024\n\014game_node_id\030\003 \001(\r\022"
-    "\023\n\013server_type\030\004 \001(\r\"T\n\027RegisterGateNode"
-    "Request\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAdd"
-    "ress\022\024\n\014gate_node_id\030\002 \001(\r\"1\n\031Unregister"
-    "GameNodeRequest\022\024\n\014game_node_id\030\001 \001(\rB\tZ"
-    "\007pb/gameb\006proto3"
+    "\216\001\n\027RegisterGameNodeRequest\022#\n\nrpc_clien"
+    "t\030\001 \001(\0132\017.NetworkAddress\022#\n\nrpc_server\030\002"
+    " \001(\0132\017.NetworkAddress\022\024\n\014game_node_id\030\003 "
+    "\001(\r\022\023\n\013server_type\030\004 \001(\r\"T\n\027RegisterGate"
+    "NodeRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Networ"
+    "kAddress\022\024\n\014gate_node_id\030\002 \001(\r\"1\n\031Unregi"
+    "sterGameNodeRequest\022\024\n\014game_node_id\030\001 \001("
+    "\rB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[3] =
     {
@@ -861,7 +862,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_5fmessage_2epr
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto = {
     false,
     false,
-    2096,
+    2140,
     descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto,
     "proto/common/common_message.proto",
     &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
@@ -1695,8 +1696,8 @@ NodeRouteMessageRequest::NodeRouteMessageRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
-                              arena, *from._impl_.body_)
+  _impl_.message_content_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
+                              arena, *from._impl_.message_content_)
                         : nullptr;
   _impl_.header_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::NodeMessageHeader>(
                               arena, *from._impl_.header_)
@@ -1712,10 +1713,10 @@ inline PROTOBUF_NDEBUG_INLINE NodeRouteMessageRequest::Impl_::Impl_(
 inline void NodeRouteMessageRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, body_),
+               offsetof(Impl_, message_content_),
            0,
            offsetof(Impl_, header_) -
-               offsetof(Impl_, body_) +
+               offsetof(Impl_, message_content_) +
                sizeof(Impl_::header_));
 }
 NodeRouteMessageRequest::~NodeRouteMessageRequest() {
@@ -1725,7 +1726,7 @@ NodeRouteMessageRequest::~NodeRouteMessageRequest() {
 }
 inline void NodeRouteMessageRequest::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.body_;
+  delete _impl_.message_content_;
   delete _impl_.header_;
   _impl_.~Impl_();
 }
@@ -1754,8 +1755,8 @@ PROTOBUF_NOINLINE void NodeRouteMessageRequest::Clear() {
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(_impl_.body_ != nullptr);
-      _impl_.body_->Clear();
+      ABSL_DCHECK(_impl_.message_content_ != nullptr);
+      _impl_.message_content_->Clear();
     }
     if (cached_has_bits & 0x00000002u) {
       ABSL_DCHECK(_impl_.header_ != nullptr);
@@ -1794,14 +1795,14 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageRequest::_table_ = {
     // .NodeMessageHeader header = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.header_)}},
-    // .MessageContent body = 1;
+    // .MessageContent message_content = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.body_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.message_content_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageContent body = 1;
-    {PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
+    // .MessageContent message_content = 1;
+    {PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .NodeMessageHeader header = 2;
     {PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.header_), _Internal::kHasBitsOffset + 1, 1,
@@ -1821,10 +1822,10 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageRequest::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageContent body = 1;
+  // .MessageContent message_content = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
+        1, *_impl_.message_content_, _impl_.message_content_->GetCachedSize(), target, stream);
   }
 
   // .NodeMessageHeader header = 2;
@@ -1852,10 +1853,10 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageRequest::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .MessageContent body = 1;
+    // .MessageContent message_content = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.body_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.message_content_);
     }
 
     // .NodeMessageHeader header = 2;
@@ -1881,12 +1882,12 @@ void NodeRouteMessageRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(from._impl_.body_ != nullptr);
-      if (_this->_impl_.body_ == nullptr) {
-        _this->_impl_.body_ =
-            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
+      ABSL_DCHECK(from._impl_.message_content_ != nullptr);
+      if (_this->_impl_.message_content_ == nullptr) {
+        _this->_impl_.message_content_ =
+            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.message_content_);
       } else {
-        _this->_impl_.body_->MergeFrom(*from._impl_.body_);
+        _this->_impl_.message_content_->MergeFrom(*from._impl_.message_content_);
       }
     }
     if (cached_has_bits & 0x00000002u) {
@@ -1921,9 +1922,9 @@ void NodeRouteMessageRequest::InternalSwap(NodeRouteMessageRequest* PROTOBUF_RES
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.header_)
       + sizeof(NodeRouteMessageRequest::_impl_.header_)
-      - PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.body_)>(
-          reinterpret_cast<char*>(&_impl_.body_),
-          reinterpret_cast<char*>(&other->_impl_.body_));
+      - PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.message_content_)>(
+          reinterpret_cast<char*>(&_impl_.message_content_),
+          reinterpret_cast<char*>(&other->_impl_.message_content_));
 }
 
 ::google::protobuf::Metadata NodeRouteMessageRequest::GetMetadata() const {
@@ -1961,8 +1962,8 @@ NodeRouteMessageResponse::NodeRouteMessageResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
-                              arena, *from._impl_.body_)
+  _impl_.message_content_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
+                              arena, *from._impl_.message_content_)
                         : nullptr;
   _impl_.header_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::NodeMessageHeader>(
                               arena, *from._impl_.header_)
@@ -1978,10 +1979,10 @@ inline PROTOBUF_NDEBUG_INLINE NodeRouteMessageResponse::Impl_::Impl_(
 inline void NodeRouteMessageResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, body_),
+               offsetof(Impl_, message_content_),
            0,
            offsetof(Impl_, header_) -
-               offsetof(Impl_, body_) +
+               offsetof(Impl_, message_content_) +
                sizeof(Impl_::header_));
 }
 NodeRouteMessageResponse::~NodeRouteMessageResponse() {
@@ -1991,7 +1992,7 @@ NodeRouteMessageResponse::~NodeRouteMessageResponse() {
 }
 inline void NodeRouteMessageResponse::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.body_;
+  delete _impl_.message_content_;
   delete _impl_.header_;
   _impl_.~Impl_();
 }
@@ -2020,8 +2021,8 @@ PROTOBUF_NOINLINE void NodeRouteMessageResponse::Clear() {
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(_impl_.body_ != nullptr);
-      _impl_.body_->Clear();
+      ABSL_DCHECK(_impl_.message_content_ != nullptr);
+      _impl_.message_content_->Clear();
     }
     if (cached_has_bits & 0x00000002u) {
       ABSL_DCHECK(_impl_.header_ != nullptr);
@@ -2060,14 +2061,14 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageResponse::_table_ = {
     // .NodeMessageHeader header = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.header_)}},
-    // .MessageContent body = 1;
+    // .MessageContent message_content = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.body_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.message_content_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageContent body = 1;
-    {PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
+    // .MessageContent message_content = 1;
+    {PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .NodeMessageHeader header = 2;
     {PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.header_), _Internal::kHasBitsOffset + 1, 1,
@@ -2087,10 +2088,10 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageResponse::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageContent body = 1;
+  // .MessageContent message_content = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
+        1, *_impl_.message_content_, _impl_.message_content_->GetCachedSize(), target, stream);
   }
 
   // .NodeMessageHeader header = 2;
@@ -2118,10 +2119,10 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageResponse::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .MessageContent body = 1;
+    // .MessageContent message_content = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.body_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.message_content_);
     }
 
     // .NodeMessageHeader header = 2;
@@ -2147,12 +2148,12 @@ void NodeRouteMessageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(from._impl_.body_ != nullptr);
-      if (_this->_impl_.body_ == nullptr) {
-        _this->_impl_.body_ =
-            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
+      ABSL_DCHECK(from._impl_.message_content_ != nullptr);
+      if (_this->_impl_.message_content_ == nullptr) {
+        _this->_impl_.message_content_ =
+            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.message_content_);
       } else {
-        _this->_impl_.body_->MergeFrom(*from._impl_.body_);
+        _this->_impl_.message_content_->MergeFrom(*from._impl_.message_content_);
       }
     }
     if (cached_has_bits & 0x00000002u) {
@@ -2187,9 +2188,9 @@ void NodeRouteMessageResponse::InternalSwap(NodeRouteMessageResponse* PROTOBUF_R
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.header_)
       + sizeof(NodeRouteMessageResponse::_impl_.header_)
-      - PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.body_)>(
-          reinterpret_cast<char*>(&_impl_.body_),
-          reinterpret_cast<char*>(&other->_impl_.body_));
+      - PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.message_content_)>(
+          reinterpret_cast<char*>(&_impl_.message_content_),
+          reinterpret_cast<char*>(&other->_impl_.message_content_));
 }
 
 ::google::protobuf::Metadata NodeRouteMessageResponse::GetMetadata() const {
@@ -2404,8 +2405,8 @@ PlayerNodeServiceRequest::PlayerNodeServiceRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
-                              arena, *from._impl_.body_)
+  _impl_.message_content_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
+                              arena, *from._impl_.message_content_)
                         : nullptr;
   _impl_.header_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerInfoExternal>(
                               arena, *from._impl_.header_)
@@ -2421,10 +2422,10 @@ inline PROTOBUF_NDEBUG_INLINE PlayerNodeServiceRequest::Impl_::Impl_(
 inline void PlayerNodeServiceRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, body_),
+               offsetof(Impl_, message_content_),
            0,
            offsetof(Impl_, header_) -
-               offsetof(Impl_, body_) +
+               offsetof(Impl_, message_content_) +
                sizeof(Impl_::header_));
 }
 PlayerNodeServiceRequest::~PlayerNodeServiceRequest() {
@@ -2434,7 +2435,7 @@ PlayerNodeServiceRequest::~PlayerNodeServiceRequest() {
 }
 inline void PlayerNodeServiceRequest::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.body_;
+  delete _impl_.message_content_;
   delete _impl_.header_;
   _impl_.~Impl_();
 }
@@ -2463,8 +2464,8 @@ PROTOBUF_NOINLINE void PlayerNodeServiceRequest::Clear() {
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(_impl_.body_ != nullptr);
-      _impl_.body_->Clear();
+      ABSL_DCHECK(_impl_.message_content_ != nullptr);
+      _impl_.message_content_->Clear();
     }
     if (cached_has_bits & 0x00000002u) {
       ABSL_DCHECK(_impl_.header_ != nullptr);
@@ -2503,14 +2504,14 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerNodeServiceRequest::_table_ = {
     // .PlayerInfoExternal header = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.header_)}},
-    // .MessageContent body = 1;
+    // .MessageContent message_content = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.body_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.message_content_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageContent body = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
+    // .MessageContent message_content = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .PlayerInfoExternal header = 2;
     {PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.header_), _Internal::kHasBitsOffset + 1, 1,
@@ -2530,10 +2531,10 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerNodeServiceRequest::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageContent body = 1;
+  // .MessageContent message_content = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
+        1, *_impl_.message_content_, _impl_.message_content_->GetCachedSize(), target, stream);
   }
 
   // .PlayerInfoExternal header = 2;
@@ -2561,10 +2562,10 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerNodeServiceRequest::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .MessageContent body = 1;
+    // .MessageContent message_content = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.body_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.message_content_);
     }
 
     // .PlayerInfoExternal header = 2;
@@ -2590,12 +2591,12 @@ void PlayerNodeServiceRequest::MergeImpl(::google::protobuf::MessageLite& to_msg
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(from._impl_.body_ != nullptr);
-      if (_this->_impl_.body_ == nullptr) {
-        _this->_impl_.body_ =
-            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
+      ABSL_DCHECK(from._impl_.message_content_ != nullptr);
+      if (_this->_impl_.message_content_ == nullptr) {
+        _this->_impl_.message_content_ =
+            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.message_content_);
       } else {
-        _this->_impl_.body_->MergeFrom(*from._impl_.body_);
+        _this->_impl_.message_content_->MergeFrom(*from._impl_.message_content_);
       }
     }
     if (cached_has_bits & 0x00000002u) {
@@ -2630,9 +2631,9 @@ void PlayerNodeServiceRequest::InternalSwap(PlayerNodeServiceRequest* PROTOBUF_R
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.header_)
       + sizeof(PlayerNodeServiceRequest::_impl_.header_)
-      - PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.body_)>(
-          reinterpret_cast<char*>(&_impl_.body_),
-          reinterpret_cast<char*>(&other->_impl_.body_));
+      - PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.message_content_)>(
+          reinterpret_cast<char*>(&_impl_.message_content_),
+          reinterpret_cast<char*>(&other->_impl_.message_content_));
 }
 
 ::google::protobuf::Metadata PlayerNodeServiceRequest::GetMetadata() const {
@@ -2670,8 +2671,8 @@ PlayerMessageResponse::PlayerMessageResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
-                              arena, *from._impl_.body_)
+  _impl_.message_content_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
+                              arena, *from._impl_.message_content_)
                         : nullptr;
   _impl_.header_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerInfoExternal>(
                               arena, *from._impl_.header_)
@@ -2687,10 +2688,10 @@ inline PROTOBUF_NDEBUG_INLINE PlayerMessageResponse::Impl_::Impl_(
 inline void PlayerMessageResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, body_),
+               offsetof(Impl_, message_content_),
            0,
            offsetof(Impl_, header_) -
-               offsetof(Impl_, body_) +
+               offsetof(Impl_, message_content_) +
                sizeof(Impl_::header_));
 }
 PlayerMessageResponse::~PlayerMessageResponse() {
@@ -2700,7 +2701,7 @@ PlayerMessageResponse::~PlayerMessageResponse() {
 }
 inline void PlayerMessageResponse::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.body_;
+  delete _impl_.message_content_;
   delete _impl_.header_;
   _impl_.~Impl_();
 }
@@ -2729,8 +2730,8 @@ PROTOBUF_NOINLINE void PlayerMessageResponse::Clear() {
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(_impl_.body_ != nullptr);
-      _impl_.body_->Clear();
+      ABSL_DCHECK(_impl_.message_content_ != nullptr);
+      _impl_.message_content_->Clear();
     }
     if (cached_has_bits & 0x00000002u) {
       ABSL_DCHECK(_impl_.header_ != nullptr);
@@ -2769,14 +2770,14 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerMessageResponse::_table_ = {
     // .PlayerInfoExternal header = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.header_)}},
-    // .MessageContent body = 1;
+    // .MessageContent message_content = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.body_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.message_content_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageContent body = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
+    // .MessageContent message_content = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .PlayerInfoExternal header = 2;
     {PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.header_), _Internal::kHasBitsOffset + 1, 1,
@@ -2796,10 +2797,10 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerMessageResponse::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageContent body = 1;
+  // .MessageContent message_content = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
+        1, *_impl_.message_content_, _impl_.message_content_->GetCachedSize(), target, stream);
   }
 
   // .PlayerInfoExternal header = 2;
@@ -2827,10 +2828,10 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerMessageResponse::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .MessageContent body = 1;
+    // .MessageContent message_content = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.body_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.message_content_);
     }
 
     // .PlayerInfoExternal header = 2;
@@ -2856,12 +2857,12 @@ void PlayerMessageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, c
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(from._impl_.body_ != nullptr);
-      if (_this->_impl_.body_ == nullptr) {
-        _this->_impl_.body_ =
-            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
+      ABSL_DCHECK(from._impl_.message_content_ != nullptr);
+      if (_this->_impl_.message_content_ == nullptr) {
+        _this->_impl_.message_content_ =
+            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.message_content_);
       } else {
-        _this->_impl_.body_->MergeFrom(*from._impl_.body_);
+        _this->_impl_.message_content_->MergeFrom(*from._impl_.message_content_);
       }
     }
     if (cached_has_bits & 0x00000002u) {
@@ -2896,9 +2897,9 @@ void PlayerMessageResponse::InternalSwap(PlayerMessageResponse* PROTOBUF_RESTRIC
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.header_)
       + sizeof(PlayerMessageResponse::_impl_.header_)
-      - PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.body_)>(
-          reinterpret_cast<char*>(&_impl_.body_),
-          reinterpret_cast<char*>(&other->_impl_.body_));
+      - PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.message_content_)>(
+          reinterpret_cast<char*>(&_impl_.message_content_),
+          reinterpret_cast<char*>(&other->_impl_.message_content_));
 }
 
 ::google::protobuf::Metadata PlayerMessageResponse::GetMetadata() const {

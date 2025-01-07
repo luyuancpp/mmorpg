@@ -163,7 +163,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr ClientSendMessageToPlayerResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        message_body_{nullptr},
+        message_content_{nullptr},
         session_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -183,7 +183,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr ClientSendMessageToPlayerRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        message_body_{nullptr},
+        message_content_{nullptr},
         session_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -226,7 +226,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerRequest, _impl_.message_body_),
+        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerRequest, _impl_.message_content_),
         PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerRequest, _impl_.session_id_),
         0,
         ~0u,
@@ -238,7 +238,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerResponse, _impl_.message_body_),
+        PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerResponse, _impl_.message_content_),
         PROTOBUF_FIELD_OFFSET(::ClientSendMessageToPlayerResponse, _impl_.session_id_),
         0,
         ~0u,
@@ -334,41 +334,41 @@ const char descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto[] A
     ".proto\032!proto/common/common_message.prot"
     "o\"[\n\032PlayerEnterGameNodeRequest\022\021\n\tplaye"
     "r_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\004\022\026\n\016centre"
-    "_node_id\030\003 \001(\r\"]\n ClientSendMessageToPla"
-    "yerRequest\022%\n\014message_body\030\001 \001(\0132\017.Messa"
-    "geContent\022\022\n\nsession_id\030\002 \001(\004\"^\n!ClientS"
-    "endMessageToPlayerResponse\022%\n\014message_bo"
-    "dy\030\001 \001(\0132\017.MessageContent\022\022\n\nsession_id\030"
-    "\002 \001(\004\"-\n\030SessionDisconnectRequest\022\021\n\tpla"
-    "yer_id\030\001 \001(\004\"S\n\026GameNodeConnectRequest\022#"
-    "\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022\024\n\014g"
-    "ate_node_id\030\002 \001(\r\"E\n\034RegisterPlayerSessi"
-    "onRequest\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_"
-    "id\030\002 \001(\004\"A\n\032Centre2GsEnterSceneRequest\022\021"
-    "\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"\'\n\022C"
-    "reateSceneRequest\022\021\n\tconfig_id\030\001 \001(\r\"@\n\023"
-    "CreateSceneResponse\022)\n\nscene_info\030\001 \001(\0132"
-    "\025.SceneInfoPBComponent2\375\005\n\013GameService\022:"
-    "\n\023PlayerEnterGameNode\022\033.PlayerEnterGameN"
-    "odeRequest\032\006.Empty\022J\n\023SendMessageToPlaye"
-    "r\022\030.NodeRouteMessageRequest\032\031.NodeRouteM"
-    "essageResponse\022b\n\031ClientSendMessageToPla"
-    "yer\022!.ClientSendMessageToPlayerRequest\032\""
-    ".ClientSendMessageToPlayerResponse\0224\n\020Re"
-    "gisterGateNode\022\030.RegisterGateNodeRequest"
-    "\032\006.Empty\022A\n\035CentreSendToPlayerViaGameNod"
-    "e\022\030.NodeRouteMessageRequest\032\006.Empty\022J\n\023I"
-    "nvokePlayerService\022\030.NodeRouteMessageReq"
-    "uest\032\031.NodeRouteMessageResponse\022A\n\022Route"
-    "NodeStringMsg\022\024.RouteMessageRequest\032\025.Ro"
-    "uteMessageResponse\022O\n\024RoutePlayerStringM"
-    "sg\022\032.RoutePlayerMessageRequest\032\033.RoutePl"
-    "ayerMessageResponse\022<\n\023UpdateSessionDeta"
-    "il\022\035.RegisterPlayerSessionRequest\032\006.Empt"
-    "y\0221\n\nEnterScene\022\033.Centre2GsEnterSceneReq"
-    "uest\032\006.Empty\0228\n\013CreateScene\022\023.CreateScen"
-    "eRequest\032\024.CreateSceneResponseB\014Z\007pb/gam"
-    "e\200\001\001b\006proto3"
+    "_node_id\030\003 \001(\r\"`\n ClientSendMessageToPla"
+    "yerRequest\022(\n\017message_content\030\001 \001(\0132\017.Me"
+    "ssageContent\022\022\n\nsession_id\030\002 \001(\004\"a\n!Clie"
+    "ntSendMessageToPlayerResponse\022(\n\017message"
+    "_content\030\001 \001(\0132\017.MessageContent\022\022\n\nsessi"
+    "on_id\030\002 \001(\004\"-\n\030SessionDisconnectRequest\022"
+    "\021\n\tplayer_id\030\001 \001(\004\"S\n\026GameNodeConnectReq"
+    "uest\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddres"
+    "s\022\024\n\014gate_node_id\030\002 \001(\r\"E\n\034RegisterPlaye"
+    "rSessionRequest\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tp"
+    "layer_id\030\002 \001(\004\"A\n\032Centre2GsEnterSceneReq"
+    "uest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001("
+    "\004\"\'\n\022CreateSceneRequest\022\021\n\tconfig_id\030\001 \001"
+    "(\r\"@\n\023CreateSceneResponse\022)\n\nscene_info\030"
+    "\001 \001(\0132\025.SceneInfoPBComponent2\375\005\n\013GameSer"
+    "vice\022:\n\023PlayerEnterGameNode\022\033.PlayerEnte"
+    "rGameNodeRequest\032\006.Empty\022J\n\023SendMessageT"
+    "oPlayer\022\030.NodeRouteMessageRequest\032\031.Node"
+    "RouteMessageResponse\022b\n\031ClientSendMessag"
+    "eToPlayer\022!.ClientSendMessageToPlayerReq"
+    "uest\032\".ClientSendMessageToPlayerResponse"
+    "\0224\n\020RegisterGateNode\022\030.RegisterGateNodeR"
+    "equest\032\006.Empty\022A\n\035CentreSendToPlayerViaG"
+    "ameNode\022\030.NodeRouteMessageRequest\032\006.Empt"
+    "y\022J\n\023InvokePlayerService\022\030.NodeRouteMess"
+    "ageRequest\032\031.NodeRouteMessageResponse\022A\n"
+    "\022RouteNodeStringMsg\022\024.RouteMessageReques"
+    "t\032\025.RouteMessageResponse\022O\n\024RoutePlayerS"
+    "tringMsg\022\032.RoutePlayerMessageRequest\032\033.R"
+    "outePlayerMessageResponse\022<\n\023UpdateSessi"
+    "onDetail\022\035.RegisterPlayerSessionRequest\032"
+    "\006.Empty\0221\n\nEnterScene\022\033.Centre2GsEnterSc"
+    "eneRequest\032\006.Empty\0228\n\013CreateScene\022\023.Crea"
+    "teSceneRequest\032\024.CreateSceneResponseB\014Z\007"
+    "pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto_deps[3] =
     {
@@ -380,7 +380,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fgame_5fservice_2eprot
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto = {
     false,
     false,
-    1572,
+    1578,
     descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto,
     "proto/common/game_service.proto",
     &descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto_once,
@@ -652,9 +652,9 @@ class ClientSendMessageToPlayerRequest::_Internal {
     8 * PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_._has_bits_);
 };
 
-void ClientSendMessageToPlayerRequest::clear_message_body() {
+void ClientSendMessageToPlayerRequest::clear_message_content() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.message_body_ != nullptr) _impl_.message_body_->Clear();
+  if (_impl_.message_content_ != nullptr) _impl_.message_content_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
 ClientSendMessageToPlayerRequest::ClientSendMessageToPlayerRequest(::google::protobuf::Arena* arena)
@@ -678,8 +678,8 @@ ClientSendMessageToPlayerRequest::ClientSendMessageToPlayerRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.message_body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
-                              arena, *from._impl_.message_body_)
+  _impl_.message_content_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
+                              arena, *from._impl_.message_content_)
                         : nullptr;
   _impl_.session_id_ = from._impl_.session_id_;
 
@@ -693,10 +693,10 @@ inline PROTOBUF_NDEBUG_INLINE ClientSendMessageToPlayerRequest::Impl_::Impl_(
 inline void ClientSendMessageToPlayerRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, message_body_),
+               offsetof(Impl_, message_content_),
            0,
            offsetof(Impl_, session_id_) -
-               offsetof(Impl_, message_body_) +
+               offsetof(Impl_, message_content_) +
                sizeof(Impl_::session_id_));
 }
 ClientSendMessageToPlayerRequest::~ClientSendMessageToPlayerRequest() {
@@ -706,7 +706,7 @@ ClientSendMessageToPlayerRequest::~ClientSendMessageToPlayerRequest() {
 }
 inline void ClientSendMessageToPlayerRequest::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.message_body_;
+  delete _impl_.message_content_;
   _impl_.~Impl_();
 }
 
@@ -733,8 +733,8 @@ PROTOBUF_NOINLINE void ClientSendMessageToPlayerRequest::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.message_body_ != nullptr);
-    _impl_.message_body_->Clear();
+    ABSL_DCHECK(_impl_.message_content_ != nullptr);
+    _impl_.message_content_->Clear();
   }
   _impl_.session_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
@@ -769,14 +769,14 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
     // uint64 session_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ClientSendMessageToPlayerRequest, _impl_.session_id_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_)}},
-    // .MessageContent message_body = 1;
+    // .MessageContent message_content = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_body_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_content_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageContent message_body = 1;
-    {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_body_), _Internal::kHasBitsOffset + 0, 0,
+    // .MessageContent message_content = 1;
+    {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 session_id = 2;
     {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_), -1, 0,
@@ -795,10 +795,10 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageContent message_body = 1;
+  // .MessageContent message_content = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *_impl_.message_body_, _impl_.message_body_->GetCachedSize(), target, stream);
+        1, *_impl_.message_content_, _impl_.message_content_->GetCachedSize(), target, stream);
   }
 
   // uint64 session_id = 2;
@@ -825,11 +825,11 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .MessageContent message_body = 1;
+  // .MessageContent message_content = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.message_body_);
+        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.message_content_);
   }
 
   // uint64 session_id = 2;
@@ -853,12 +853,12 @@ void ClientSendMessageToPlayerRequest::MergeImpl(::google::protobuf::MessageLite
 
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.message_body_ != nullptr);
-    if (_this->_impl_.message_body_ == nullptr) {
-      _this->_impl_.message_body_ =
-          ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.message_body_);
+    ABSL_DCHECK(from._impl_.message_content_ != nullptr);
+    if (_this->_impl_.message_content_ == nullptr) {
+      _this->_impl_.message_content_ =
+          ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.message_content_);
     } else {
-      _this->_impl_.message_body_->MergeFrom(*from._impl_.message_body_);
+      _this->_impl_.message_content_->MergeFrom(*from._impl_.message_content_);
     }
   }
   if (from._internal_session_id() != 0) {
@@ -886,9 +886,9 @@ void ClientSendMessageToPlayerRequest::InternalSwap(ClientSendMessageToPlayerReq
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_)
       + sizeof(ClientSendMessageToPlayerRequest::_impl_.session_id_)
-      - PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_body_)>(
-          reinterpret_cast<char*>(&_impl_.message_body_),
-          reinterpret_cast<char*>(&other->_impl_.message_body_));
+      - PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_content_)>(
+          reinterpret_cast<char*>(&_impl_.message_content_),
+          reinterpret_cast<char*>(&other->_impl_.message_content_));
 }
 
 ::google::protobuf::Metadata ClientSendMessageToPlayerRequest::GetMetadata() const {
@@ -905,9 +905,9 @@ class ClientSendMessageToPlayerResponse::_Internal {
     8 * PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_._has_bits_);
 };
 
-void ClientSendMessageToPlayerResponse::clear_message_body() {
+void ClientSendMessageToPlayerResponse::clear_message_content() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.message_body_ != nullptr) _impl_.message_body_->Clear();
+  if (_impl_.message_content_ != nullptr) _impl_.message_content_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
 ClientSendMessageToPlayerResponse::ClientSendMessageToPlayerResponse(::google::protobuf::Arena* arena)
@@ -931,8 +931,8 @@ ClientSendMessageToPlayerResponse::ClientSendMessageToPlayerResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.message_body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
-                              arena, *from._impl_.message_body_)
+  _impl_.message_content_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
+                              arena, *from._impl_.message_content_)
                         : nullptr;
   _impl_.session_id_ = from._impl_.session_id_;
 
@@ -946,10 +946,10 @@ inline PROTOBUF_NDEBUG_INLINE ClientSendMessageToPlayerResponse::Impl_::Impl_(
 inline void ClientSendMessageToPlayerResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, message_body_),
+               offsetof(Impl_, message_content_),
            0,
            offsetof(Impl_, session_id_) -
-               offsetof(Impl_, message_body_) +
+               offsetof(Impl_, message_content_) +
                sizeof(Impl_::session_id_));
 }
 ClientSendMessageToPlayerResponse::~ClientSendMessageToPlayerResponse() {
@@ -959,7 +959,7 @@ ClientSendMessageToPlayerResponse::~ClientSendMessageToPlayerResponse() {
 }
 inline void ClientSendMessageToPlayerResponse::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.message_body_;
+  delete _impl_.message_content_;
   _impl_.~Impl_();
 }
 
@@ -986,8 +986,8 @@ PROTOBUF_NOINLINE void ClientSendMessageToPlayerResponse::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.message_body_ != nullptr);
-    _impl_.message_body_->Clear();
+    ABSL_DCHECK(_impl_.message_content_ != nullptr);
+    _impl_.message_content_->Clear();
   }
   _impl_.session_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
@@ -1022,14 +1022,14 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
     // uint64 session_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ClientSendMessageToPlayerResponse, _impl_.session_id_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_)}},
-    // .MessageContent message_body = 1;
+    // .MessageContent message_content = 1;
     {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_body_)}},
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_content_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageContent message_body = 1;
-    {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_body_), _Internal::kHasBitsOffset + 0, 0,
+    // .MessageContent message_content = 1;
+    {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 session_id = 2;
     {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_), -1, 0,
@@ -1048,10 +1048,10 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageContent message_body = 1;
+  // .MessageContent message_content = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *_impl_.message_body_, _impl_.message_body_->GetCachedSize(), target, stream);
+        1, *_impl_.message_content_, _impl_.message_content_->GetCachedSize(), target, stream);
   }
 
   // uint64 session_id = 2;
@@ -1078,11 +1078,11 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .MessageContent message_body = 1;
+  // .MessageContent message_content = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.message_body_);
+        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.message_content_);
   }
 
   // uint64 session_id = 2;
@@ -1106,12 +1106,12 @@ void ClientSendMessageToPlayerResponse::MergeImpl(::google::protobuf::MessageLit
 
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.message_body_ != nullptr);
-    if (_this->_impl_.message_body_ == nullptr) {
-      _this->_impl_.message_body_ =
-          ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.message_body_);
+    ABSL_DCHECK(from._impl_.message_content_ != nullptr);
+    if (_this->_impl_.message_content_ == nullptr) {
+      _this->_impl_.message_content_ =
+          ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.message_content_);
     } else {
-      _this->_impl_.message_body_->MergeFrom(*from._impl_.message_body_);
+      _this->_impl_.message_content_->MergeFrom(*from._impl_.message_content_);
     }
   }
   if (from._internal_session_id() != 0) {
@@ -1139,9 +1139,9 @@ void ClientSendMessageToPlayerResponse::InternalSwap(ClientSendMessageToPlayerRe
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_)
       + sizeof(ClientSendMessageToPlayerResponse::_impl_.session_id_)
-      - PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_body_)>(
-          reinterpret_cast<char*>(&_impl_.message_body_),
-          reinterpret_cast<char*>(&other->_impl_.message_body_));
+      - PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_content_)>(
+          reinterpret_cast<char*>(&_impl_.message_content_),
+          reinterpret_cast<char*>(&other->_impl_.message_content_));
 }
 
 ::google::protobuf::Metadata ClientSendMessageToPlayerResponse::GetMetadata() const {
