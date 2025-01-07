@@ -336,9 +336,9 @@ const char descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto[] A
     "r_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\004\022\026\n\016centre"
     "_node_id\030\003 \001(\r\"]\n ClientSendMessageToPla"
     "yerRequest\022%\n\014message_body\030\001 \001(\0132\017.Messa"
-    "gePayload\022\022\n\nsession_id\030\002 \001(\004\"^\n!ClientS"
+    "geContent\022\022\n\nsession_id\030\002 \001(\004\"^\n!ClientS"
     "endMessageToPlayerResponse\022%\n\014message_bo"
-    "dy\030\001 \001(\0132\017.MessagePayload\022\022\n\nsession_id\030"
+    "dy\030\001 \001(\0132\017.MessageContent\022\022\n\nsession_id\030"
     "\002 \001(\004\"-\n\030SessionDisconnectRequest\022\021\n\tpla"
     "yer_id\030\001 \001(\004\"S\n\026GameNodeConnectRequest\022#"
     "\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022\024\n\014g"
@@ -769,13 +769,13 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
     // uint64 session_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ClientSendMessageToPlayerRequest, _impl_.session_id_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_)}},
-    // .MessagePayload message_body = 1;
+    // .MessageContent message_body = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_body_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessagePayload message_body = 1;
+    // .MessageContent message_body = 1;
     {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 session_id = 2;
@@ -795,7 +795,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessagePayload message_body = 1;
+  // .MessageContent message_body = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.message_body_, _impl_.message_body_->GetCachedSize(), target, stream);
@@ -825,7 +825,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .MessagePayload message_body = 1;
+  // .MessageContent message_body = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
@@ -1022,13 +1022,13 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
     // uint64 session_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ClientSendMessageToPlayerResponse, _impl_.session_id_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_)}},
-    // .MessagePayload message_body = 1;
+    // .MessageContent message_body = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_body_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessagePayload message_body = 1;
+    // .MessageContent message_body = 1;
     {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 session_id = 2;
@@ -1048,7 +1048,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessagePayload message_body = 1;
+  // .MessageContent message_body = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.message_body_, _impl_.message_body_->GetCachedSize(), target, stream);
@@ -1078,7 +1078,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .MessagePayload message_body = 1;
+  // .MessageContent message_body = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=

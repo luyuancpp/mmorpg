@@ -17,13 +17,13 @@ message PlayerEnterGameNodeRequest
 
 message ClientSendMessageToPlayerRequest
 {
-  MessageContent message_body = 1;
+  MessageContent message_content = 1;
   uint64 session_id = 2;
 }
 
 message ClientSendMessageToPlayerResponse
 {
-  MessageContent message_body = 1;
+  MessageContent message_content = 1;
   uint64 session_id = 2;
 }
 

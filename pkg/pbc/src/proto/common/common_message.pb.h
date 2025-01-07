@@ -56,8 +56,8 @@ class GateSessionDisconnectRequest;
 struct GateSessionDisconnectRequestDefaultTypeInternal;
 extern GateSessionDisconnectRequestDefaultTypeInternal _GateSessionDisconnectRequest_default_instance_;
 class MessageContent;
-struct MessagePayloadDefaultTypeInternal;
-extern MessagePayloadDefaultTypeInternal _MessagePayload_default_instance_;
+struct MessageContentDefaultTypeInternal;
+extern MessageContentDefaultTypeInternal _MessageContent_default_instance_;
 class NodeMessageHeader;
 struct NodeMessageHeaderDefaultTypeInternal;
 extern NodeMessageHeaderDefaultTypeInternal _NodeMessageHeader_default_instance_;
@@ -2709,7 +2709,7 @@ class NodeRoutingMessageBody final : public ::google::protobuf::Message
 // -------------------------------------------------------------------
 
 class MessageContent final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:MessagePayload) */ {
+/* @@protoc_insertion_point(class_definition:MessageContent) */ {
  public:
   inline MessageContent() : MessageContent(nullptr) {}
   ~MessageContent() override;
@@ -2761,7 +2761,7 @@ class MessageContent final : public ::google::protobuf::Message
   }
   static inline const MessageContent* internal_default_instance() {
     return reinterpret_cast<const MessageContent*>(
-        &_MessagePayload_default_instance_);
+        &_MessageContent_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
   friend void swap(MessageContent& a, MessageContent& b) { a.Swap(&b); }
@@ -2815,7 +2815,7 @@ class MessageContent final : public ::google::protobuf::Message
   void InternalSwap(MessageContent* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "MessagePayload"; }
+  static ::absl::string_view FullMessageName() { return "MessageContent"; }
 
  protected:
   explicit MessageContent(::google::protobuf::Arena* arena);
@@ -2889,7 +2889,7 @@ class MessageContent final : public ::google::protobuf::Message
   void _internal_set_message_id(::uint32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:MessagePayload)
+  // @@protoc_insertion_point(class_scope:MessageContent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -3680,7 +3680,7 @@ class PlayerNodeServiceRequest final : public ::google::protobuf::Message
     kBodyFieldNumber = 1,
     kHeaderFieldNumber = 2,
   };
-  // .MessagePayload body = 1;
+  // .MessageContent body = 1;
   bool has_body() const;
   void clear_body() ;
   const ::MessageContent& body() const;
@@ -3870,7 +3870,7 @@ class PlayerMessageResponse final : public ::google::protobuf::Message
     kBodyFieldNumber = 1,
     kHeaderFieldNumber = 2,
   };
-  // .MessagePayload body = 1;
+  // .MessageContent body = 1;
   bool has_body() const;
   void clear_body() ;
   const ::MessageContent& body() const;
@@ -4060,7 +4060,7 @@ class NodeRouteMessageResponse final : public ::google::protobuf::Message
     kBodyFieldNumber = 1,
     kHeaderFieldNumber = 2,
   };
-  // .MessagePayload body = 1;
+  // .MessageContent body = 1;
   bool has_body() const;
   void clear_body() ;
   const ::MessageContent& body() const;
@@ -4250,7 +4250,7 @@ class NodeRouteMessageRequest final : public ::google::protobuf::Message
     kBodyFieldNumber = 1,
     kHeaderFieldNumber = 2,
   };
-  // .MessagePayload body = 1;
+  // .MessageContent body = 1;
   bool has_body() const;
   void clear_body() ;
   const ::MessageContent& body() const;
@@ -4442,7 +4442,7 @@ inline void RoutingNodeInfo::_internal_set_message_id(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
-// MessagePayload
+// MessageContent
 
 // bytes body = 1;
 inline void MessageContent::clear_body() {
@@ -4451,7 +4451,7 @@ inline void MessageContent::clear_body() {
 }
 inline const std::string& MessageContent::body() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:MessagePayload.body)
+  // @@protoc_insertion_point(field_get:MessageContent.body)
   return _internal_body();
 }
 template <typename Arg_, typename... Args_>
@@ -4459,11 +4459,11 @@ inline PROTOBUF_ALWAYS_INLINE void MessageContent::set_body(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:MessagePayload.body)
+  // @@protoc_insertion_point(field_set:MessageContent.body)
 }
 inline std::string* MessageContent::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_body();
-  // @@protoc_insertion_point(field_mutable:MessagePayload.body)
+  // @@protoc_insertion_point(field_mutable:MessageContent.body)
   return _s;
 }
 inline const std::string& MessageContent::_internal_body() const {
@@ -4480,7 +4480,7 @@ inline std::string* MessageContent::_internal_mutable_body() {
 }
 inline std::string* MessageContent::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:MessagePayload.body)
+  // @@protoc_insertion_point(field_release:MessageContent.body)
   return _impl_.body_.Release();
 }
 inline void MessageContent::set_allocated_body(std::string* value) {
@@ -4491,7 +4491,7 @@ inline void MessageContent::set_allocated_body(std::string* value) {
           _impl_.body_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:MessagePayload.body)
+  // @@protoc_insertion_point(field_set_allocated:MessageContent.body)
 }
 
 // uint32 message_id = 2;
@@ -4500,12 +4500,12 @@ inline void MessageContent::clear_message_id() {
   _impl_.message_id_ = 0u;
 }
 inline ::uint32_t MessageContent::message_id() const {
-  // @@protoc_insertion_point(field_get:MessagePayload.message_id)
+  // @@protoc_insertion_point(field_get:MessageContent.message_id)
   return _internal_message_id();
 }
 inline void MessageContent::set_message_id(::uint32_t value) {
   _internal_set_message_id(value);
-  // @@protoc_insertion_point(field_set:MessagePayload.message_id)
+  // @@protoc_insertion_point(field_set:MessageContent.message_id)
 }
 inline ::uint32_t MessageContent::_internal_message_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
@@ -4522,12 +4522,12 @@ inline void MessageContent::clear_id() {
   _impl_.id_ = ::uint64_t{0u};
 }
 inline ::uint64_t MessageContent::id() const {
-  // @@protoc_insertion_point(field_get:MessagePayload.id)
+  // @@protoc_insertion_point(field_get:MessageContent.id)
   return _internal_id();
 }
 inline void MessageContent::set_id(::uint64_t value) {
   _internal_set_id(value);
-  // @@protoc_insertion_point(field_set:MessagePayload.id)
+  // @@protoc_insertion_point(field_set:MessageContent.id)
 }
 inline ::uint64_t MessageContent::_internal_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
@@ -4550,7 +4550,7 @@ inline const ::TipInfoMessage& MessageContent::_internal_error_message() const {
   return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
 }
 inline const ::TipInfoMessage& MessageContent::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:MessagePayload.error_message)
+  // @@protoc_insertion_point(field_get:MessageContent.error_message)
   return _internal_error_message();
 }
 inline void MessageContent::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
@@ -4564,7 +4564,7 @@ inline void MessageContent::unsafe_arena_set_allocated_error_message(::TipInfoMe
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:MessagePayload.error_message)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:MessageContent.error_message)
 }
 inline ::TipInfoMessage* MessageContent::release_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
@@ -4587,7 +4587,7 @@ inline ::TipInfoMessage* MessageContent::release_error_message() {
 }
 inline ::TipInfoMessage* MessageContent::unsafe_arena_release_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:MessagePayload.error_message)
+  // @@protoc_insertion_point(field_release:MessageContent.error_message)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::TipInfoMessage* temp = _impl_.error_message_;
@@ -4605,7 +4605,7 @@ inline ::TipInfoMessage* MessageContent::_internal_mutable_error_message() {
 inline ::TipInfoMessage* MessageContent::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
-  // @@protoc_insertion_point(field_mutable:MessagePayload.error_message)
+  // @@protoc_insertion_point(field_mutable:MessageContent.error_message)
   return _msg;
 }
 inline void MessageContent::set_allocated_error_message(::TipInfoMessage* value) {
@@ -4626,7 +4626,7 @@ inline void MessageContent::set_allocated_error_message(::TipInfoMessage* value)
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  // @@protoc_insertion_point(field_set_allocated:MessagePayload.error_message)
+  // @@protoc_insertion_point(field_set_allocated:MessageContent.error_message)
 }
 
 // -------------------------------------------------------------------
@@ -4681,7 +4681,7 @@ inline void NodeMessageHeader::_internal_set_session_id(::uint64_t value) {
 
 // NodeRouteMessageRequest
 
-// .MessagePayload body = 1;
+// .MessageContent body = 1;
 inline bool NodeRouteMessageRequest::has_body() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.body_ != nullptr);
@@ -4695,7 +4695,7 @@ inline void NodeRouteMessageRequest::clear_body() {
 inline const ::MessageContent& NodeRouteMessageRequest::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::MessageContent* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessagePayload_default_instance_);
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
 inline const ::MessageContent& NodeRouteMessageRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:NodeRouteMessageRequest.body)
@@ -4877,7 +4877,7 @@ inline void NodeRouteMessageRequest::set_allocated_header(::NodeMessageHeader* v
 
 // NodeRouteMessageResponse
 
-// .MessagePayload body = 1;
+// .MessageContent body = 1;
 inline bool NodeRouteMessageResponse::has_body() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.body_ != nullptr);
@@ -4891,7 +4891,7 @@ inline void NodeRouteMessageResponse::clear_body() {
 inline const ::MessageContent& NodeRouteMessageResponse::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::MessageContent* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessagePayload_default_instance_);
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
 inline const ::MessageContent& NodeRouteMessageResponse::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:NodeRouteMessageResponse.body)
@@ -5099,7 +5099,7 @@ inline void PlayerInfoExternal::_internal_set_player_id(::uint64_t value) {
 
 // PlayerNodeServiceRequest
 
-// .MessagePayload body = 1;
+// .MessageContent body = 1;
 inline bool PlayerNodeServiceRequest::has_body() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.body_ != nullptr);
@@ -5113,7 +5113,7 @@ inline void PlayerNodeServiceRequest::clear_body() {
 inline const ::MessageContent& PlayerNodeServiceRequest::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::MessageContent* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessagePayload_default_instance_);
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
 inline const ::MessageContent& PlayerNodeServiceRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:PlayerNodeServiceRequest.body)
@@ -5295,7 +5295,7 @@ inline void PlayerNodeServiceRequest::set_allocated_header(::PlayerInfoExternal*
 
 // PlayerMessageResponse
 
-// .MessagePayload body = 1;
+// .MessageContent body = 1;
 inline bool PlayerMessageResponse::has_body() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.body_ != nullptr);
@@ -5309,7 +5309,7 @@ inline void PlayerMessageResponse::clear_body() {
 inline const ::MessageContent& PlayerMessageResponse::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::MessageContent* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessagePayload_default_instance_);
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
 inline const ::MessageContent& PlayerMessageResponse::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:PlayerMessageResponse.body)

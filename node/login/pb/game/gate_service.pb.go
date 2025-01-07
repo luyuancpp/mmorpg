@@ -73,7 +73,7 @@ type BroadcastToPlayersRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	SessionList []uint64        `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
-	Body        *MessagePayload `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
+	Body        *MessageContent `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
 }
 
 func (x *BroadcastToPlayersRequest) Reset() {
@@ -115,7 +115,7 @@ func (x *BroadcastToPlayersRequest) GetSessionList() []uint64 {
 	return nil
 }
 
-func (x *BroadcastToPlayersRequest) GetBody() *MessagePayload {
+func (x *BroadcastToPlayersRequest) GetBody() *MessageContent {
 	if x != nil {
 		return x.Body
 	}
@@ -141,7 +141,7 @@ var file_proto_common_gate_service_proto_rawDesc = []byte{
 	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x69, 0x73, 0x74, 0x18, 0x01, 0x20, 0x03, 0x28,
 	0x04, 0x52, 0x0b, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x23,
 	0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x04, 0x62,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x52, 0x04, 0x62,
 	0x6f, 0x64, 0x79, 0x32, 0x86, 0x04, 0x0a, 0x0b, 0x47, 0x61, 0x74, 0x65, 0x53, 0x65, 0x72, 0x76,
 	0x69, 0x63, 0x65, 0x12, 0x30, 0x0a, 0x0c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x47,
 	0x61, 0x6d, 0x65, 0x12, 0x18, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x47, 0x61,
@@ -195,7 +195,7 @@ var file_proto_common_gate_service_proto_msgTypes = make([]protoimpl.MessageInfo
 var file_proto_common_gate_service_proto_goTypes = []any{
 	(*KickSessionRequest)(nil),              // 0: KickSessionRequest
 	(*BroadcastToPlayersRequest)(nil),       // 1: BroadcastToPlayersRequest
-	(*MessagePayload)(nil),                  // 2: MessagePayload
+	(*MessageContent)(nil),                  // 2: MessageContent
 	(*RegisterGameNodeRequest)(nil),         // 3: RegisterGameNodeRequest
 	(*UnregisterGameNodeRequest)(nil),       // 4: UnregisterGameNodeRequest
 	(*RegisterGameNodeSessionRequest)(nil),  // 5: RegisterGameNodeSessionRequest
@@ -208,7 +208,7 @@ var file_proto_common_gate_service_proto_goTypes = []any{
 	(*RoutePlayerMessageResponse)(nil),      // 12: RoutePlayerMessageResponse
 }
 var file_proto_common_gate_service_proto_depIdxs = []int32{
-	2,  // 0: BroadcastToPlayersRequest.body:type_name -> MessagePayload
+	2,  // 0: BroadcastToPlayersRequest.body:type_name -> MessageContent
 	3,  // 1: GateService.RegisterGame:input_type -> RegisterGameNodeRequest
 	4,  // 2: GateService.UnRegisterGame:input_type -> UnregisterGameNodeRequest
 	5,  // 3: GateService.PlayerEnterGameNode:input_type -> RegisterGameNodeSessionRequest

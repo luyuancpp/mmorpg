@@ -317,16 +317,16 @@ inline constexpr MessageContent::Impl_::Impl_(
 template <typename>
 PROTOBUF_CONSTEXPR MessageContent::MessageContent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct MessagePayloadDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MessagePayloadDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MessagePayloadDefaultTypeInternal() {}
+struct MessageContentDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MessageContentDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MessageContentDefaultTypeInternal() {}
   union {
     MessageContent _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MessagePayloadDefaultTypeInternal _MessagePayload_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MessageContentDefaultTypeInternal _MessageContent_default_instance_;
 
 inline constexpr GateSessionDisconnectRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -773,7 +773,7 @@ static const ::_pbi::MigrationSchema
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
-    &::_MessagePayload_default_instance_._instance,
+    &::_MessageContent_default_instance_._instance,
     &::_NodeMessageHeader_default_instance_._instance,
     &::_NodeRouteMessageRequest_default_instance_._instance,
     &::_NodeRouteMessageResponse_default_instance_._instance,
@@ -801,21 +801,21 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     "to/common/common.proto\032\032proto/common/ses"
     "sion.proto\032\026proto/common/tip.proto\"C\n\017Ro"
     "utingNodeInfo\022\034\n\tnode_info\030\001 \001(\0132\t.NodeI"
-    "nfo\022\022\n\nmessage_id\030\002 \001(\r\"f\n\016MessagePayloa"
-    "d\022\014\n\004body\030\001 \001(\014\022\022\n\nmessage_id\030\002 \001(\r\022\n\n\002i"
+    "nfo\022\022\n\nmessage_id\030\002 \001(\r\"f\n\016MessageConten"
+    "t\022\014\n\004body\030\001 \001(\014\022\022\n\nmessage_id\030\002 \001(\r\022\n\n\002i"
     "d\030\003 \001(\004\022&\n\rerror_message\030\004 \001(\0132\017.TipInfo"
     "Message\"8\n\021NodeMessageHeader\022\017\n\007node_id\030"
     "\001 \001(\r\022\022\n\nsession_id\030\002 \001(\004\"\\\n\027NodeRouteMe"
-    "ssageRequest\022\035\n\004body\030\001 \001(\0132\017.MessagePayl"
-    "oad\022\"\n\006header\030\002 \001(\0132\022.NodeMessageHeader\""
+    "ssageRequest\022\035\n\004body\030\001 \001(\0132\017.MessageCont"
+    "ent\022\"\n\006header\030\002 \001(\0132\022.NodeMessageHeader\""
     "]\n\030NodeRouteMessageResponse\022\035\n\004body\030\001 \001("
-    "\0132\017.MessagePayload\022\"\n\006header\030\002 \001(\0132\022.Nod"
+    "\0132\017.MessageContent\022\"\n\006header\030\002 \001(\0132\022.Nod"
     "eMessageHeader\"\'\n\022PlayerInfoExternal\022\021\n\t"
     "player_id\030\001 \001(\004\"^\n\030PlayerNodeServiceRequ"
-    "est\022\035\n\004body\030\001 \001(\0132\017.MessagePayload\022#\n\006he"
+    "est\022\035\n\004body\030\001 \001(\0132\017.MessageContent\022#\n\006he"
     "ader\030\002 \001(\0132\023.PlayerInfoExternal\"[\n\025Playe"
     "rMessageResponse\022\035\n\004body\030\001 \001(\0132\017.Message"
-    "Payload\022#\n\006header\030\002 \001(\0132\023.PlayerInfoExte"
+    "Content\022#\n\006header\030\002 \001(\0132\023.PlayerInfoExte"
     "rnal\"6\n\026NodeRoutingMessageBody\022\034\n\tnode_i"
     "nfo\030\002 \001(\0132\t.NodeInfo\"]\n\036RegisterGameNode"
     "SessionRequest\022%\n\014session_info\030\001 \001(\0132\017.S"
@@ -1160,7 +1160,7 @@ void MessageContent::clear_error_message() {
 MessageContent::MessageContent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:MessagePayload)
+  // @@protoc_insertion_point(arena_constructor:MessageContent)
 }
 inline PROTOBUF_NDEBUG_INLINE MessageContent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
@@ -1190,7 +1190,7 @@ MessageContent::MessageContent(
                offsetof(Impl_, id_) +
                sizeof(Impl_::message_id_));
 
-  // @@protoc_insertion_point(copy_constructor:MessagePayload)
+  // @@protoc_insertion_point(copy_constructor:MessageContent)
 }
 inline PROTOBUF_NDEBUG_INLINE MessageContent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
@@ -1208,7 +1208,7 @@ inline void MessageContent::SharedCtor(::_pb::Arena* arena) {
                sizeof(Impl_::message_id_));
 }
 MessageContent::~MessageContent() {
-  // @@protoc_insertion_point(destructor:MessagePayload)
+  // @@protoc_insertion_point(destructor:MessageContent)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
@@ -1234,7 +1234,7 @@ MessageContent::GetClassData() const {
   return &_data_;
 }
 PROTOBUF_NOINLINE void MessageContent::Clear() {
-// @@protoc_insertion_point(message_clear_start:MessagePayload)
+// @@protoc_insertion_point(message_clear_start:MessageContent)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -1272,7 +1272,7 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageContent::_table_ = {
     4,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
-    &_MessagePayload_default_instance_._instance,
+    &_MessageContent_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
     ::_pbi::TcParser::GetTable<::MessageContent>(),  // to_prefetch
@@ -1314,7 +1314,7 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageContent::_table_ = {
 ::uint8_t* MessageContent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:MessagePayload)
+  // @@protoc_insertion_point(serialize_to_array_start:MessageContent)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -1350,12 +1350,12 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageContent::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:MessagePayload)
+  // @@protoc_insertion_point(serialize_to_array_end:MessageContent)
   return target;
 }
 
 ::size_t MessageContent::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:MessagePayload)
+// @@protoc_insertion_point(message_byte_size_start:MessageContent)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -1395,7 +1395,7 @@ void MessageContent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   auto* const _this = static_cast<MessageContent*>(&to_msg);
   auto& from = static_cast<const MessageContent&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:MessagePayload)
+  // @@protoc_insertion_point(class_specific_merge_from_start:MessageContent)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1424,7 +1424,7 @@ void MessageContent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
 }
 
 void MessageContent::CopyFrom(const MessageContent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:MessagePayload)
+// @@protoc_insertion_point(class_specific_copy_from_start:MessageContent)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1794,13 +1794,13 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageRequest::_table_ = {
     // .NodeMessageHeader header = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.header_)}},
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.body_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     {PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .NodeMessageHeader header = 2;
@@ -1821,7 +1821,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageRequest::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessagePayload body = 1;
+  // .MessageContent body = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
@@ -1852,7 +1852,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageRequest::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.body_);
@@ -2060,13 +2060,13 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageResponse::_table_ = {
     // .NodeMessageHeader header = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.header_)}},
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.body_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     {PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .NodeMessageHeader header = 2;
@@ -2087,7 +2087,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageResponse::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessagePayload body = 1;
+  // .MessageContent body = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
@@ -2118,7 +2118,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageResponse::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.body_);
@@ -2503,13 +2503,13 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerNodeServiceRequest::_table_ = {
     // .PlayerInfoExternal header = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.header_)}},
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.body_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     {PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .PlayerInfoExternal header = 2;
@@ -2530,7 +2530,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerNodeServiceRequest::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessagePayload body = 1;
+  // .MessageContent body = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
@@ -2561,7 +2561,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerNodeServiceRequest::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.body_);
@@ -2769,13 +2769,13 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerMessageResponse::_table_ = {
     // .PlayerInfoExternal header = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.header_)}},
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.body_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     {PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // .PlayerInfoExternal header = 2;
@@ -2796,7 +2796,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerMessageResponse::_table_ = {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessagePayload body = 1;
+  // .MessageContent body = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
@@ -2827,7 +2827,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerMessageResponse::_table_ = {
 
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    // .MessagePayload body = 1;
+    // .MessageContent body = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.body_);
