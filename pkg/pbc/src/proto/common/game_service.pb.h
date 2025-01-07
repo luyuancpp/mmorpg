@@ -1460,7 +1460,7 @@ class ClientSendMessageToPlayerResponse final : public ::google::protobuf::Messa
     kMessageBodyFieldNumber = 1,
     kSessionIdFieldNumber = 2,
   };
-  // .MessagePayload message_body = 1;
+  // .MessageContent message_body = 1;
   bool has_message_body() const;
   void clear_message_body() ;
   const ::MessageContent& message_body() const;
@@ -1645,7 +1645,7 @@ class ClientSendMessageToPlayerRequest final : public ::google::protobuf::Messag
     kMessageBodyFieldNumber = 1,
     kSessionIdFieldNumber = 2,
   };
-  // .MessagePayload message_body = 1;
+  // .MessageContent message_body = 1;
   bool has_message_body() const;
   void clear_message_body() ;
   const ::MessageContent& message_body() const;
@@ -1929,7 +1929,7 @@ inline void PlayerEnterGameNodeRequest::_internal_set_centre_node_id(::uint32_t 
 
 // ClientSendMessageToPlayerRequest
 
-// .MessagePayload message_body = 1;
+// .MessageContent message_body = 1;
 inline bool ClientSendMessageToPlayerRequest::has_message_body() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.message_body_ != nullptr);
@@ -1938,7 +1938,7 @@ inline bool ClientSendMessageToPlayerRequest::has_message_body() const {
 inline const ::MessageContent& ClientSendMessageToPlayerRequest::_internal_message_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::MessageContent* p = _impl_.message_body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessagePayload_default_instance_);
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
 inline const ::MessageContent& ClientSendMessageToPlayerRequest::message_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerRequest.message_body)
@@ -2046,7 +2046,7 @@ inline void ClientSendMessageToPlayerRequest::_internal_set_session_id(::uint64_
 
 // ClientSendMessageToPlayerResponse
 
-// .MessagePayload message_body = 1;
+// .MessageContent message_body = 1;
 inline bool ClientSendMessageToPlayerResponse::has_message_body() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.message_body_ != nullptr);
@@ -2055,7 +2055,7 @@ inline bool ClientSendMessageToPlayerResponse::has_message_body() const {
 inline const ::MessageContent& ClientSendMessageToPlayerResponse::_internal_message_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::MessageContent* p = _impl_.message_body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessagePayload_default_instance_);
+  return p != nullptr ? *p : reinterpret_cast<const ::MessageContent&>(::_MessageContent_default_instance_);
 }
 inline const ::MessageContent& ClientSendMessageToPlayerResponse::message_body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:ClientSendMessageToPlayerResponse.message_body)

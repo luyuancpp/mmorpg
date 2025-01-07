@@ -32,14 +32,14 @@ message NodeMessageHeader
 // 节点路由消息请求
 message NodeRouteMessageRequest
 {
-  MessageContent body = 1;      // 消息内容
+  MessageContent message_content = 1;      // 消息内容
   NodeMessageHeader header = 2; // 节点消息头
 }
 
 // 节点路由消息响应
 message NodeRouteMessageResponse
 {
-  MessageContent body = 1;      // 消息内容
+  MessageContent message_content = 1;      // 消息内容
   NodeMessageHeader header = 2; // 节点消息头
 }
 
@@ -52,14 +52,14 @@ message PlayerInfoExternal
 // 玩家节点服务请求
 message PlayerNodeServiceRequest
 {
-  MessageContent body = 1;          // 消息内容
+  MessageContent message_content = 1;          // 消息内容
   PlayerInfoExternal header = 2;    // 玩家信息
 }
 
 // 玩家消息响应
 message PlayerMessageResponse
 {
-  MessageContent body = 1;          // 消息内容
+  MessageContent message_content = 1;          // 消息内容
   PlayerInfoExternal header = 2;    // 玩家信息
 }
 

@@ -108,8 +108,8 @@ const char descriptor_table_protodef_proto_2fcommon_2fgate_5fservice_2eproto[] A
     ".proto\032!proto/common/common_message.prot"
     "o\"(\n\022KickSessionRequest\022\022\n\nsession_id\030\001 "
     "\001(\004\"P\n\031BroadcastToPlayersRequest\022\024\n\014sess"
-    "ion_list\030\001 \003(\004\022\035\n\004body\030\002 \001(\0132\017.MessagePa"
-    "yload2\206\004\n\013GateService\0220\n\014RegisterGame\022\030."
+    "ion_list\030\001 \003(\004\022\035\n\004body\030\002 \001(\0132\017.MessageCo"
+    "ntent2\206\004\n\013GateService\0220\n\014RegisterGame\022\030."
     "RegisterGameNodeRequest\032\006.Empty\0224\n\016UnReg"
     "isterGame\022\032.UnregisterGameNodeRequest\032\006."
     "Empty\022X\n\023PlayerEnterGameNode\022\037.RegisterG"
@@ -461,7 +461,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::BroadcastToPlayersRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .MessagePayload body = 2;
+    // .MessageContent body = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.body_)}},
     // repeated uint64 session_list = 1;
@@ -473,7 +473,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
     // repeated uint64 session_list = 1;
     {PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.session_list_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
-    // .MessagePayload body = 2;
+    // .MessageContent body = 2;
     {PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
@@ -499,7 +499,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
   }
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessagePayload body = 2;
+  // .MessageContent body = 2;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
@@ -535,7 +535,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
     ;
     total_size += tag_size + data_size;
   }
-  // .MessagePayload body = 2;
+  // .MessageContent body = 2;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
