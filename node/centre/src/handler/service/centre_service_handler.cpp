@@ -525,8 +525,8 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMsgStringRequest* request,
-	     RouteMsgStringResponse* response,
+void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
+	     RouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -596,7 +596,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 
 	service->CallMethod(method, nullptr, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 
-	auto* mutable_request = const_cast<::RouteMsgStringRequest*>(request);
+	auto* mutable_request = const_cast<::RouteMessageRequest*>(request);
 
 	if (tlsCommonLogic.GetNextRouteNodeType() == UINT32_MAX)
 	{
@@ -667,22 +667,22 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMsgStringRequest* request,
-	     RoutePlayerMsgStringResponse* response,
+void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
+	     RoutePlayerMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController* controller,const ::UnRegisterGameNodeRequest* request,
+void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController* controller,const ::UnregisterGameNodeRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     for (const auto& [e, gate_node]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
     {
-		UnRegisterGameNodeRequest message;
+		UnregisterGameNodeRequest message;
 		message.set_game_node_id(request->game_node_id());
         gate_node->SendRequest(GateServiceRegisterGameMessageId, message);
     }

@@ -386,16 +386,16 @@ class BroadcastToPlayersRequest final : public ::google::protobuf::Message
   // .MessageBody body = 2;
   bool has_body() const;
   void clear_body() ;
-  const ::MessageBody& body() const;
-  PROTOBUF_NODISCARD ::MessageBody* release_body();
-  ::MessageBody* mutable_body();
-  void set_allocated_body(::MessageBody* value);
-  void unsafe_arena_set_allocated_body(::MessageBody* value);
-  ::MessageBody* unsafe_arena_release_body();
+  const ::MessagePayload& body() const;
+  PROTOBUF_NODISCARD ::MessagePayload* release_body();
+  ::MessagePayload* mutable_body();
+  void set_allocated_body(::MessagePayload* value);
+  void unsafe_arena_set_allocated_body(::MessagePayload* value);
+  ::MessagePayload* unsafe_arena_release_body();
 
   private:
-  const ::MessageBody& _internal_body() const;
-  ::MessageBody* _internal_mutable_body();
+  const ::MessagePayload& _internal_body() const;
+  ::MessagePayload* _internal_mutable_body();
 
   public:
   // @@protoc_insertion_point(class_scope:BroadcastToPlayersRequest)
@@ -423,7 +423,7 @@ class BroadcastToPlayersRequest final : public ::google::protobuf::Message
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedField<::uint64_t> session_list_;
     mutable ::google::protobuf::internal::CachedSize _session_list_cached_byte_size_;
-    ::MessageBody* body_;
+    ::MessagePayload* body_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -454,7 +454,7 @@ class GateService : public ::google::protobuf::Service {
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
   virtual void UnRegisterGame(::google::protobuf::RpcController* controller,
-                        const ::UnRegisterGameNodeRequest* request,
+                        const ::UnregisterGameNodeRequest* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
   virtual void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
@@ -470,12 +470,12 @@ class GateService : public ::google::protobuf::Service {
                         ::Empty* response,
                         ::google::protobuf::Closure* done);
   virtual void RouteNodeMessage(::google::protobuf::RpcController* controller,
-                        const ::RouteMsgStringRequest* request,
-                        ::RouteMsgStringResponse* response,
+                        const ::RouteMessageRequest* request,
+                        ::RouteMessageResponse* response,
                         ::google::protobuf::Closure* done);
   virtual void RoutePlayerMessage(::google::protobuf::RpcController* controller,
-                        const ::RoutePlayerMsgStringRequest* request,
-                        ::RoutePlayerMsgStringResponse* response,
+                        const ::RoutePlayerMessageRequest* request,
+                        ::RoutePlayerMessageResponse* response,
                         ::google::protobuf::Closure* done);
   virtual void BroadcastToPlayers(::google::protobuf::RpcController* controller,
                         const ::BroadcastToPlayersRequest* request,
@@ -517,7 +517,7 @@ class GateService_Stub final : public GateService {
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
   void UnRegisterGame(::google::protobuf::RpcController* controller,
-                        const ::UnRegisterGameNodeRequest* request,
+                        const ::UnregisterGameNodeRequest* request,
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
   void PlayerEnterGameNode(::google::protobuf::RpcController* controller,
@@ -533,12 +533,12 @@ class GateService_Stub final : public GateService {
                         ::Empty* response,
                         ::google::protobuf::Closure* done) override;
   void RouteNodeMessage(::google::protobuf::RpcController* controller,
-                        const ::RouteMsgStringRequest* request,
-                        ::RouteMsgStringResponse* response,
+                        const ::RouteMessageRequest* request,
+                        ::RouteMessageResponse* response,
                         ::google::protobuf::Closure* done) override;
   void RoutePlayerMessage(::google::protobuf::RpcController* controller,
-                        const ::RoutePlayerMsgStringRequest* request,
-                        ::RoutePlayerMsgStringResponse* response,
+                        const ::RoutePlayerMessageRequest* request,
+                        ::RoutePlayerMessageResponse* response,
                         ::google::protobuf::Closure* done) override;
   void BroadcastToPlayers(::google::protobuf::RpcController* controller,
                         const ::BroadcastToPlayersRequest* request,
@@ -641,21 +641,21 @@ inline bool BroadcastToPlayersRequest::has_body() const {
   PROTOBUF_ASSUME(!value || _impl_.body_ != nullptr);
   return value;
 }
-inline const ::MessageBody& BroadcastToPlayersRequest::_internal_body() const {
+inline const ::MessagePayload& BroadcastToPlayersRequest::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::MessageBody* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageBody&>(::_MessageBody_default_instance_);
+  const ::MessagePayload* p = _impl_.body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessagePayload&>(::_MessageBody_default_instance_);
 }
-inline const ::MessageBody& BroadcastToPlayersRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::MessagePayload& BroadcastToPlayersRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:BroadcastToPlayersRequest.body)
   return _internal_body();
 }
-inline void BroadcastToPlayersRequest::unsafe_arena_set_allocated_body(::MessageBody* value) {
+inline void BroadcastToPlayersRequest::unsafe_arena_set_allocated_body(::MessagePayload* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.body_);
   }
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -663,11 +663,11 @@ inline void BroadcastToPlayersRequest::unsafe_arena_set_allocated_body(::Message
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:BroadcastToPlayersRequest.body)
 }
-inline ::MessageBody* BroadcastToPlayersRequest::release_body() {
+inline ::MessagePayload* BroadcastToPlayersRequest::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* released = _impl_.body_;
+  ::MessagePayload* released = _impl_.body_;
   _impl_.body_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -682,30 +682,30 @@ inline ::MessageBody* BroadcastToPlayersRequest::release_body() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::MessageBody* BroadcastToPlayersRequest::unsafe_arena_release_body() {
+inline ::MessagePayload* BroadcastToPlayersRequest::unsafe_arena_release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:BroadcastToPlayersRequest.body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* temp = _impl_.body_;
+  ::MessagePayload* temp = _impl_.body_;
   _impl_.body_ = nullptr;
   return temp;
 }
-inline ::MessageBody* BroadcastToPlayersRequest::_internal_mutable_body() {
+inline ::MessagePayload* BroadcastToPlayersRequest::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.body_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageBody>(GetArena());
-    _impl_.body_ = reinterpret_cast<::MessageBody*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessagePayload>(GetArena());
+    _impl_.body_ = reinterpret_cast<::MessagePayload*>(p);
   }
   return _impl_.body_;
 }
-inline ::MessageBody* BroadcastToPlayersRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::MessagePayload* BroadcastToPlayersRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::MessageBody* _msg = _internal_mutable_body();
+  ::MessagePayload* _msg = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:BroadcastToPlayersRequest.body)
   return _msg;
 }
-inline void BroadcastToPlayersRequest::set_allocated_body(::MessageBody* value) {
+inline void BroadcastToPlayersRequest::set_allocated_body(::MessagePayload* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -722,7 +722,7 @@ inline void BroadcastToPlayersRequest::set_allocated_body(::MessageBody* value) 
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   // @@protoc_insertion_point(field_set_allocated:BroadcastToPlayersRequest.body)
 }
 

@@ -55,7 +55,7 @@ extern const ::google::protobuf::internal::DescriptorTable
 class GateSessionDisconnectRequest;
 struct GateSessionDisconnectRequestDefaultTypeInternal;
 extern GateSessionDisconnectRequestDefaultTypeInternal _GateSessionDisconnectRequest_default_instance_;
-class MessageBody;
+class MessagePayload;
 struct MessageBodyDefaultTypeInternal;
 extern MessageBodyDefaultTypeInternal _MessageBody_default_instance_;
 class NodeMessageHead;
@@ -100,22 +100,22 @@ extern RegisterSessionCentreNodeResponseDefaultTypeInternal _RegisterSessionCent
 class RegisterSessionGateNodeResponse;
 struct RegisterSessionGateNodeResponseDefaultTypeInternal;
 extern RegisterSessionGateNodeResponseDefaultTypeInternal _RegisterSessionGateNodeResponse_default_instance_;
-class RouteMsgStringRequest;
+class RouteMessageRequest;
 struct RouteMsgStringRequestDefaultTypeInternal;
 extern RouteMsgStringRequestDefaultTypeInternal _RouteMsgStringRequest_default_instance_;
-class RouteMsgStringResponse;
+class RouteMessageResponse;
 struct RouteMsgStringResponseDefaultTypeInternal;
 extern RouteMsgStringResponseDefaultTypeInternal _RouteMsgStringResponse_default_instance_;
 class RouteNodeInfo;
 struct RouteNodeInfoDefaultTypeInternal;
 extern RouteNodeInfoDefaultTypeInternal _RouteNodeInfo_default_instance_;
-class RoutePlayerMsgStringRequest;
+class RoutePlayerMessageRequest;
 struct RoutePlayerMsgStringRequestDefaultTypeInternal;
 extern RoutePlayerMsgStringRequestDefaultTypeInternal _RoutePlayerMsgStringRequest_default_instance_;
-class RoutePlayerMsgStringResponse;
+class RoutePlayerMessageResponse;
 struct RoutePlayerMsgStringResponseDefaultTypeInternal;
 extern RoutePlayerMsgStringResponseDefaultTypeInternal _RoutePlayerMsgStringResponse_default_instance_;
-class UnRegisterGameNodeRequest;
+class UnregisterGameNodeRequest;
 struct UnRegisterGameNodeRequestDefaultTypeInternal;
 extern UnRegisterGameNodeRequestDefaultTypeInternal _UnRegisterGameNodeRequest_default_instance_;
 namespace google {
@@ -129,23 +129,23 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class UnRegisterGameNodeRequest final : public ::google::protobuf::Message
+class UnregisterGameNodeRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:UnRegisterGameNodeRequest) */ {
  public:
-  inline UnRegisterGameNodeRequest() : UnRegisterGameNodeRequest(nullptr) {}
-  ~UnRegisterGameNodeRequest() override;
+  inline UnregisterGameNodeRequest() : UnregisterGameNodeRequest(nullptr) {}
+  ~UnregisterGameNodeRequest() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR UnRegisterGameNodeRequest(
+  explicit PROTOBUF_CONSTEXPR UnregisterGameNodeRequest(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline UnRegisterGameNodeRequest(const UnRegisterGameNodeRequest& from) : UnRegisterGameNodeRequest(nullptr, from) {}
-  inline UnRegisterGameNodeRequest(UnRegisterGameNodeRequest&& from) noexcept
-      : UnRegisterGameNodeRequest(nullptr, std::move(from)) {}
-  inline UnRegisterGameNodeRequest& operator=(const UnRegisterGameNodeRequest& from) {
+  inline UnregisterGameNodeRequest(const UnregisterGameNodeRequest& from) : UnregisterGameNodeRequest(nullptr, from) {}
+  inline UnregisterGameNodeRequest(UnregisterGameNodeRequest&& from) noexcept
+      : UnregisterGameNodeRequest(nullptr, std::move(from)) {}
+  inline UnregisterGameNodeRequest& operator=(const UnregisterGameNodeRequest& from) {
     CopyFrom(from);
     return *this;
   }
-  inline UnRegisterGameNodeRequest& operator=(UnRegisterGameNodeRequest&& from) noexcept {
+  inline UnregisterGameNodeRequest& operator=(UnregisterGameNodeRequest&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -177,16 +177,16 @@ class UnRegisterGameNodeRequest final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const UnRegisterGameNodeRequest& default_instance() {
+  static const UnregisterGameNodeRequest& default_instance() {
     return *internal_default_instance();
   }
-  static inline const UnRegisterGameNodeRequest* internal_default_instance() {
-    return reinterpret_cast<const UnRegisterGameNodeRequest*>(
+  static inline const UnregisterGameNodeRequest* internal_default_instance() {
+    return reinterpret_cast<const UnregisterGameNodeRequest*>(
         &_UnRegisterGameNodeRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 21;
-  friend void swap(UnRegisterGameNodeRequest& a, UnRegisterGameNodeRequest& b) { a.Swap(&b); }
-  inline void Swap(UnRegisterGameNodeRequest* other) {
+  friend void swap(UnregisterGameNodeRequest& a, UnregisterGameNodeRequest& b) { a.Swap(&b); }
+  inline void Swap(UnregisterGameNodeRequest* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -198,7 +198,7 @@ class UnRegisterGameNodeRequest final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(UnRegisterGameNodeRequest* other) {
+  void UnsafeArenaSwap(UnregisterGameNodeRequest* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -206,13 +206,13 @@ class UnRegisterGameNodeRequest final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  UnRegisterGameNodeRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<UnRegisterGameNodeRequest>(arena);
+  UnregisterGameNodeRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<UnregisterGameNodeRequest>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const UnRegisterGameNodeRequest& from);
+  void CopyFrom(const UnregisterGameNodeRequest& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const UnRegisterGameNodeRequest& from) { UnRegisterGameNodeRequest::MergeImpl(*this, from); }
+  void MergeFrom(const UnregisterGameNodeRequest& from) { UnregisterGameNodeRequest::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -233,16 +233,16 @@ class UnRegisterGameNodeRequest final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(UnRegisterGameNodeRequest* other);
+  void InternalSwap(UnregisterGameNodeRequest* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
   static ::absl::string_view FullMessageName() { return "UnRegisterGameNodeRequest"; }
 
  protected:
-  explicit UnRegisterGameNodeRequest(::google::protobuf::Arena* arena);
-  UnRegisterGameNodeRequest(::google::protobuf::Arena* arena, const UnRegisterGameNodeRequest& from);
-  UnRegisterGameNodeRequest(::google::protobuf::Arena* arena, UnRegisterGameNodeRequest&& from) noexcept
-      : UnRegisterGameNodeRequest(arena) {
+  explicit UnregisterGameNodeRequest(::google::protobuf::Arena* arena);
+  UnregisterGameNodeRequest(::google::protobuf::Arena* arena, const UnregisterGameNodeRequest& from);
+  UnregisterGameNodeRequest(::google::protobuf::Arena* arena, UnregisterGameNodeRequest&& from) noexcept
+      : UnregisterGameNodeRequest(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -642,23 +642,23 @@ class NodeMessageHead final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class RoutePlayerMsgStringResponse final : public ::google::protobuf::Message
+class RoutePlayerMessageResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:RoutePlayerMsgStringResponse) */ {
  public:
-  inline RoutePlayerMsgStringResponse() : RoutePlayerMsgStringResponse(nullptr) {}
-  ~RoutePlayerMsgStringResponse() override;
+  inline RoutePlayerMessageResponse() : RoutePlayerMessageResponse(nullptr) {}
+  ~RoutePlayerMessageResponse() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RoutePlayerMsgStringResponse(
+  explicit PROTOBUF_CONSTEXPR RoutePlayerMessageResponse(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline RoutePlayerMsgStringResponse(const RoutePlayerMsgStringResponse& from) : RoutePlayerMsgStringResponse(nullptr, from) {}
-  inline RoutePlayerMsgStringResponse(RoutePlayerMsgStringResponse&& from) noexcept
-      : RoutePlayerMsgStringResponse(nullptr, std::move(from)) {}
-  inline RoutePlayerMsgStringResponse& operator=(const RoutePlayerMsgStringResponse& from) {
+  inline RoutePlayerMessageResponse(const RoutePlayerMessageResponse& from) : RoutePlayerMessageResponse(nullptr, from) {}
+  inline RoutePlayerMessageResponse(RoutePlayerMessageResponse&& from) noexcept
+      : RoutePlayerMessageResponse(nullptr, std::move(from)) {}
+  inline RoutePlayerMessageResponse& operator=(const RoutePlayerMessageResponse& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RoutePlayerMsgStringResponse& operator=(RoutePlayerMsgStringResponse&& from) noexcept {
+  inline RoutePlayerMessageResponse& operator=(RoutePlayerMessageResponse&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -690,16 +690,16 @@ class RoutePlayerMsgStringResponse final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const RoutePlayerMsgStringResponse& default_instance() {
+  static const RoutePlayerMessageResponse& default_instance() {
     return *internal_default_instance();
   }
-  static inline const RoutePlayerMsgStringResponse* internal_default_instance() {
-    return reinterpret_cast<const RoutePlayerMsgStringResponse*>(
+  static inline const RoutePlayerMessageResponse* internal_default_instance() {
+    return reinterpret_cast<const RoutePlayerMessageResponse*>(
         &_RoutePlayerMsgStringResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 18;
-  friend void swap(RoutePlayerMsgStringResponse& a, RoutePlayerMsgStringResponse& b) { a.Swap(&b); }
-  inline void Swap(RoutePlayerMsgStringResponse* other) {
+  friend void swap(RoutePlayerMessageResponse& a, RoutePlayerMessageResponse& b) { a.Swap(&b); }
+  inline void Swap(RoutePlayerMessageResponse* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -711,7 +711,7 @@ class RoutePlayerMsgStringResponse final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RoutePlayerMsgStringResponse* other) {
+  void UnsafeArenaSwap(RoutePlayerMessageResponse* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -719,13 +719,13 @@ class RoutePlayerMsgStringResponse final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  RoutePlayerMsgStringResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<RoutePlayerMsgStringResponse>(arena);
+  RoutePlayerMessageResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<RoutePlayerMessageResponse>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RoutePlayerMsgStringResponse& from);
+  void CopyFrom(const RoutePlayerMessageResponse& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RoutePlayerMsgStringResponse& from) { RoutePlayerMsgStringResponse::MergeImpl(*this, from); }
+  void MergeFrom(const RoutePlayerMessageResponse& from) { RoutePlayerMessageResponse::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -746,16 +746,16 @@ class RoutePlayerMsgStringResponse final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(RoutePlayerMsgStringResponse* other);
+  void InternalSwap(RoutePlayerMessageResponse* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
   static ::absl::string_view FullMessageName() { return "RoutePlayerMsgStringResponse"; }
 
  protected:
-  explicit RoutePlayerMsgStringResponse(::google::protobuf::Arena* arena);
-  RoutePlayerMsgStringResponse(::google::protobuf::Arena* arena, const RoutePlayerMsgStringResponse& from);
-  RoutePlayerMsgStringResponse(::google::protobuf::Arena* arena, RoutePlayerMsgStringResponse&& from) noexcept
-      : RoutePlayerMsgStringResponse(arena) {
+  explicit RoutePlayerMessageResponse(::google::protobuf::Arena* arena);
+  RoutePlayerMessageResponse(::google::protobuf::Arena* arena, const RoutePlayerMessageResponse& from);
+  RoutePlayerMessageResponse(::google::protobuf::Arena* arena, RoutePlayerMessageResponse&& from) noexcept
+      : RoutePlayerMessageResponse(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -852,23 +852,23 @@ class RoutePlayerMsgStringResponse final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class RoutePlayerMsgStringRequest final : public ::google::protobuf::Message
+class RoutePlayerMessageRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:RoutePlayerMsgStringRequest) */ {
  public:
-  inline RoutePlayerMsgStringRequest() : RoutePlayerMsgStringRequest(nullptr) {}
-  ~RoutePlayerMsgStringRequest() override;
+  inline RoutePlayerMessageRequest() : RoutePlayerMessageRequest(nullptr) {}
+  ~RoutePlayerMessageRequest() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RoutePlayerMsgStringRequest(
+  explicit PROTOBUF_CONSTEXPR RoutePlayerMessageRequest(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline RoutePlayerMsgStringRequest(const RoutePlayerMsgStringRequest& from) : RoutePlayerMsgStringRequest(nullptr, from) {}
-  inline RoutePlayerMsgStringRequest(RoutePlayerMsgStringRequest&& from) noexcept
-      : RoutePlayerMsgStringRequest(nullptr, std::move(from)) {}
-  inline RoutePlayerMsgStringRequest& operator=(const RoutePlayerMsgStringRequest& from) {
+  inline RoutePlayerMessageRequest(const RoutePlayerMessageRequest& from) : RoutePlayerMessageRequest(nullptr, from) {}
+  inline RoutePlayerMessageRequest(RoutePlayerMessageRequest&& from) noexcept
+      : RoutePlayerMessageRequest(nullptr, std::move(from)) {}
+  inline RoutePlayerMessageRequest& operator=(const RoutePlayerMessageRequest& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RoutePlayerMsgStringRequest& operator=(RoutePlayerMsgStringRequest&& from) noexcept {
+  inline RoutePlayerMessageRequest& operator=(RoutePlayerMessageRequest&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -900,16 +900,16 @@ class RoutePlayerMsgStringRequest final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const RoutePlayerMsgStringRequest& default_instance() {
+  static const RoutePlayerMessageRequest& default_instance() {
     return *internal_default_instance();
   }
-  static inline const RoutePlayerMsgStringRequest* internal_default_instance() {
-    return reinterpret_cast<const RoutePlayerMsgStringRequest*>(
+  static inline const RoutePlayerMessageRequest* internal_default_instance() {
+    return reinterpret_cast<const RoutePlayerMessageRequest*>(
         &_RoutePlayerMsgStringRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 17;
-  friend void swap(RoutePlayerMsgStringRequest& a, RoutePlayerMsgStringRequest& b) { a.Swap(&b); }
-  inline void Swap(RoutePlayerMsgStringRequest* other) {
+  friend void swap(RoutePlayerMessageRequest& a, RoutePlayerMessageRequest& b) { a.Swap(&b); }
+  inline void Swap(RoutePlayerMessageRequest* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -921,7 +921,7 @@ class RoutePlayerMsgStringRequest final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RoutePlayerMsgStringRequest* other) {
+  void UnsafeArenaSwap(RoutePlayerMessageRequest* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -929,13 +929,13 @@ class RoutePlayerMsgStringRequest final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  RoutePlayerMsgStringRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<RoutePlayerMsgStringRequest>(arena);
+  RoutePlayerMessageRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<RoutePlayerMessageRequest>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RoutePlayerMsgStringRequest& from);
+  void CopyFrom(const RoutePlayerMessageRequest& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RoutePlayerMsgStringRequest& from) { RoutePlayerMsgStringRequest::MergeImpl(*this, from); }
+  void MergeFrom(const RoutePlayerMessageRequest& from) { RoutePlayerMessageRequest::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -956,16 +956,16 @@ class RoutePlayerMsgStringRequest final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(RoutePlayerMsgStringRequest* other);
+  void InternalSwap(RoutePlayerMessageRequest* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
   static ::absl::string_view FullMessageName() { return "RoutePlayerMsgStringRequest"; }
 
  protected:
-  explicit RoutePlayerMsgStringRequest(::google::protobuf::Arena* arena);
-  RoutePlayerMsgStringRequest(::google::protobuf::Arena* arena, const RoutePlayerMsgStringRequest& from);
-  RoutePlayerMsgStringRequest(::google::protobuf::Arena* arena, RoutePlayerMsgStringRequest&& from) noexcept
-      : RoutePlayerMsgStringRequest(arena) {
+  explicit RoutePlayerMessageRequest(::google::protobuf::Arena* arena);
+  RoutePlayerMessageRequest(::google::protobuf::Arena* arena, const RoutePlayerMessageRequest& from);
+  RoutePlayerMessageRequest(::google::protobuf::Arena* arena, RoutePlayerMessageRequest&& from) noexcept
+      : RoutePlayerMessageRequest(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -2708,23 +2708,23 @@ class NodeRouteMessageBody final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class MessageBody final : public ::google::protobuf::Message
+class MessagePayload final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:MessageBody) */ {
  public:
-  inline MessageBody() : MessageBody(nullptr) {}
-  ~MessageBody() override;
+  inline MessagePayload() : MessagePayload(nullptr) {}
+  ~MessagePayload() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MessageBody(
+  explicit PROTOBUF_CONSTEXPR MessagePayload(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline MessageBody(const MessageBody& from) : MessageBody(nullptr, from) {}
-  inline MessageBody(MessageBody&& from) noexcept
-      : MessageBody(nullptr, std::move(from)) {}
-  inline MessageBody& operator=(const MessageBody& from) {
+  inline MessagePayload(const MessagePayload& from) : MessagePayload(nullptr, from) {}
+  inline MessagePayload(MessagePayload&& from) noexcept
+      : MessagePayload(nullptr, std::move(from)) {}
+  inline MessagePayload& operator=(const MessagePayload& from) {
     CopyFrom(from);
     return *this;
   }
-  inline MessageBody& operator=(MessageBody&& from) noexcept {
+  inline MessagePayload& operator=(MessagePayload&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -2756,16 +2756,16 @@ class MessageBody final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const MessageBody& default_instance() {
+  static const MessagePayload& default_instance() {
     return *internal_default_instance();
   }
-  static inline const MessageBody* internal_default_instance() {
-    return reinterpret_cast<const MessageBody*>(
+  static inline const MessagePayload* internal_default_instance() {
+    return reinterpret_cast<const MessagePayload*>(
         &_MessageBody_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(MessageBody& a, MessageBody& b) { a.Swap(&b); }
-  inline void Swap(MessageBody* other) {
+  friend void swap(MessagePayload& a, MessagePayload& b) { a.Swap(&b); }
+  inline void Swap(MessagePayload* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -2777,7 +2777,7 @@ class MessageBody final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(MessageBody* other) {
+  void UnsafeArenaSwap(MessagePayload* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -2785,13 +2785,13 @@ class MessageBody final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  MessageBody* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<MessageBody>(arena);
+  MessagePayload* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<MessagePayload>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MessageBody& from);
+  void CopyFrom(const MessagePayload& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MessageBody& from) { MessageBody::MergeImpl(*this, from); }
+  void MergeFrom(const MessagePayload& from) { MessagePayload::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -2812,16 +2812,16 @@ class MessageBody final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(MessageBody* other);
+  void InternalSwap(MessagePayload* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
   static ::absl::string_view FullMessageName() { return "MessageBody"; }
 
  protected:
-  explicit MessageBody(::google::protobuf::Arena* arena);
-  MessageBody(::google::protobuf::Arena* arena, const MessageBody& from);
-  MessageBody(::google::protobuf::Arena* arena, MessageBody&& from) noexcept
-      : MessageBody(arena) {
+  explicit MessagePayload(::google::protobuf::Arena* arena);
+  MessagePayload(::google::protobuf::Arena* arena, const MessagePayload& from);
+  MessagePayload(::google::protobuf::Arena* arena, MessagePayload&& from) noexcept
+      : MessagePayload(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -3096,23 +3096,23 @@ class GateSessionDisconnectRequest final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class RouteMsgStringResponse final : public ::google::protobuf::Message
+class RouteMessageResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:RouteMsgStringResponse) */ {
  public:
-  inline RouteMsgStringResponse() : RouteMsgStringResponse(nullptr) {}
-  ~RouteMsgStringResponse() override;
+  inline RouteMessageResponse() : RouteMessageResponse(nullptr) {}
+  ~RouteMessageResponse() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RouteMsgStringResponse(
+  explicit PROTOBUF_CONSTEXPR RouteMessageResponse(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline RouteMsgStringResponse(const RouteMsgStringResponse& from) : RouteMsgStringResponse(nullptr, from) {}
-  inline RouteMsgStringResponse(RouteMsgStringResponse&& from) noexcept
-      : RouteMsgStringResponse(nullptr, std::move(from)) {}
-  inline RouteMsgStringResponse& operator=(const RouteMsgStringResponse& from) {
+  inline RouteMessageResponse(const RouteMessageResponse& from) : RouteMessageResponse(nullptr, from) {}
+  inline RouteMessageResponse(RouteMessageResponse&& from) noexcept
+      : RouteMessageResponse(nullptr, std::move(from)) {}
+  inline RouteMessageResponse& operator=(const RouteMessageResponse& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RouteMsgStringResponse& operator=(RouteMsgStringResponse&& from) noexcept {
+  inline RouteMessageResponse& operator=(RouteMessageResponse&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -3144,16 +3144,16 @@ class RouteMsgStringResponse final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const RouteMsgStringResponse& default_instance() {
+  static const RouteMessageResponse& default_instance() {
     return *internal_default_instance();
   }
-  static inline const RouteMsgStringResponse* internal_default_instance() {
-    return reinterpret_cast<const RouteMsgStringResponse*>(
+  static inline const RouteMessageResponse* internal_default_instance() {
+    return reinterpret_cast<const RouteMessageResponse*>(
         &_RouteMsgStringResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 16;
-  friend void swap(RouteMsgStringResponse& a, RouteMsgStringResponse& b) { a.Swap(&b); }
-  inline void Swap(RouteMsgStringResponse* other) {
+  friend void swap(RouteMessageResponse& a, RouteMessageResponse& b) { a.Swap(&b); }
+  inline void Swap(RouteMessageResponse* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -3165,7 +3165,7 @@ class RouteMsgStringResponse final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RouteMsgStringResponse* other) {
+  void UnsafeArenaSwap(RouteMessageResponse* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -3173,13 +3173,13 @@ class RouteMsgStringResponse final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  RouteMsgStringResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<RouteMsgStringResponse>(arena);
+  RouteMessageResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<RouteMessageResponse>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RouteMsgStringResponse& from);
+  void CopyFrom(const RouteMessageResponse& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RouteMsgStringResponse& from) { RouteMsgStringResponse::MergeImpl(*this, from); }
+  void MergeFrom(const RouteMessageResponse& from) { RouteMessageResponse::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -3200,16 +3200,16 @@ class RouteMsgStringResponse final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(RouteMsgStringResponse* other);
+  void InternalSwap(RouteMessageResponse* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
   static ::absl::string_view FullMessageName() { return "RouteMsgStringResponse"; }
 
  protected:
-  explicit RouteMsgStringResponse(::google::protobuf::Arena* arena);
-  RouteMsgStringResponse(::google::protobuf::Arena* arena, const RouteMsgStringResponse& from);
-  RouteMsgStringResponse(::google::protobuf::Arena* arena, RouteMsgStringResponse&& from) noexcept
-      : RouteMsgStringResponse(arena) {
+  explicit RouteMessageResponse(::google::protobuf::Arena* arena);
+  RouteMessageResponse(::google::protobuf::Arena* arena, const RouteMessageResponse& from);
+  RouteMessageResponse(::google::protobuf::Arena* arena, RouteMessageResponse&& from) noexcept
+      : RouteMessageResponse(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -3324,23 +3324,23 @@ class RouteMsgStringResponse final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class RouteMsgStringRequest final : public ::google::protobuf::Message
+class RouteMessageRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:RouteMsgStringRequest) */ {
  public:
-  inline RouteMsgStringRequest() : RouteMsgStringRequest(nullptr) {}
-  ~RouteMsgStringRequest() override;
+  inline RouteMessageRequest() : RouteMessageRequest(nullptr) {}
+  ~RouteMessageRequest() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RouteMsgStringRequest(
+  explicit PROTOBUF_CONSTEXPR RouteMessageRequest(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline RouteMsgStringRequest(const RouteMsgStringRequest& from) : RouteMsgStringRequest(nullptr, from) {}
-  inline RouteMsgStringRequest(RouteMsgStringRequest&& from) noexcept
-      : RouteMsgStringRequest(nullptr, std::move(from)) {}
-  inline RouteMsgStringRequest& operator=(const RouteMsgStringRequest& from) {
+  inline RouteMessageRequest(const RouteMessageRequest& from) : RouteMessageRequest(nullptr, from) {}
+  inline RouteMessageRequest(RouteMessageRequest&& from) noexcept
+      : RouteMessageRequest(nullptr, std::move(from)) {}
+  inline RouteMessageRequest& operator=(const RouteMessageRequest& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RouteMsgStringRequest& operator=(RouteMsgStringRequest&& from) noexcept {
+  inline RouteMessageRequest& operator=(RouteMessageRequest&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -3372,16 +3372,16 @@ class RouteMsgStringRequest final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const RouteMsgStringRequest& default_instance() {
+  static const RouteMessageRequest& default_instance() {
     return *internal_default_instance();
   }
-  static inline const RouteMsgStringRequest* internal_default_instance() {
-    return reinterpret_cast<const RouteMsgStringRequest*>(
+  static inline const RouteMessageRequest* internal_default_instance() {
+    return reinterpret_cast<const RouteMessageRequest*>(
         &_RouteMsgStringRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 15;
-  friend void swap(RouteMsgStringRequest& a, RouteMsgStringRequest& b) { a.Swap(&b); }
-  inline void Swap(RouteMsgStringRequest* other) {
+  friend void swap(RouteMessageRequest& a, RouteMessageRequest& b) { a.Swap(&b); }
+  inline void Swap(RouteMessageRequest* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -3393,7 +3393,7 @@ class RouteMsgStringRequest final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RouteMsgStringRequest* other) {
+  void UnsafeArenaSwap(RouteMessageRequest* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -3401,13 +3401,13 @@ class RouteMsgStringRequest final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  RouteMsgStringRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<RouteMsgStringRequest>(arena);
+  RouteMessageRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<RouteMessageRequest>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RouteMsgStringRequest& from);
+  void CopyFrom(const RouteMessageRequest& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RouteMsgStringRequest& from) { RouteMsgStringRequest::MergeImpl(*this, from); }
+  void MergeFrom(const RouteMessageRequest& from) { RouteMessageRequest::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -3428,16 +3428,16 @@ class RouteMsgStringRequest final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(RouteMsgStringRequest* other);
+  void InternalSwap(RouteMessageRequest* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
   static ::absl::string_view FullMessageName() { return "RouteMsgStringRequest"; }
 
  protected:
-  explicit RouteMsgStringRequest(::google::protobuf::Arena* arena);
-  RouteMsgStringRequest(::google::protobuf::Arena* arena, const RouteMsgStringRequest& from);
-  RouteMsgStringRequest(::google::protobuf::Arena* arena, RouteMsgStringRequest&& from) noexcept
-      : RouteMsgStringRequest(arena) {
+  explicit RouteMessageRequest(::google::protobuf::Arena* arena);
+  RouteMessageRequest(::google::protobuf::Arena* arena, const RouteMessageRequest& from);
+  RouteMessageRequest(::google::protobuf::Arena* arena, RouteMessageRequest&& from) noexcept
+      : RouteMessageRequest(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::MessageLite::ClassData* GetClassData()
@@ -3683,16 +3683,16 @@ class PlayerNodeServiceRequest final : public ::google::protobuf::Message
   // .MessageBody body = 1;
   bool has_body() const;
   void clear_body() ;
-  const ::MessageBody& body() const;
-  PROTOBUF_NODISCARD ::MessageBody* release_body();
-  ::MessageBody* mutable_body();
-  void set_allocated_body(::MessageBody* value);
-  void unsafe_arena_set_allocated_body(::MessageBody* value);
-  ::MessageBody* unsafe_arena_release_body();
+  const ::MessagePayload& body() const;
+  PROTOBUF_NODISCARD ::MessagePayload* release_body();
+  ::MessagePayload* mutable_body();
+  void set_allocated_body(::MessagePayload* value);
+  void unsafe_arena_set_allocated_body(::MessagePayload* value);
+  ::MessagePayload* unsafe_arena_release_body();
 
   private:
-  const ::MessageBody& _internal_body() const;
-  ::MessageBody* _internal_mutable_body();
+  const ::MessagePayload& _internal_body() const;
+  ::MessagePayload* _internal_mutable_body();
 
   public:
   // .PlayerMessageExtern head = 2;
@@ -3733,7 +3733,7 @@ class PlayerNodeServiceRequest final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::MessageBody* body_;
+    ::MessagePayload* body_;
     ::PlayerMessageExtern* head_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -3873,16 +3873,16 @@ class PlayerMessageResponse final : public ::google::protobuf::Message
   // .MessageBody body = 1;
   bool has_body() const;
   void clear_body() ;
-  const ::MessageBody& body() const;
-  PROTOBUF_NODISCARD ::MessageBody* release_body();
-  ::MessageBody* mutable_body();
-  void set_allocated_body(::MessageBody* value);
-  void unsafe_arena_set_allocated_body(::MessageBody* value);
-  ::MessageBody* unsafe_arena_release_body();
+  const ::MessagePayload& body() const;
+  PROTOBUF_NODISCARD ::MessagePayload* release_body();
+  ::MessagePayload* mutable_body();
+  void set_allocated_body(::MessagePayload* value);
+  void unsafe_arena_set_allocated_body(::MessagePayload* value);
+  ::MessagePayload* unsafe_arena_release_body();
 
   private:
-  const ::MessageBody& _internal_body() const;
-  ::MessageBody* _internal_mutable_body();
+  const ::MessagePayload& _internal_body() const;
+  ::MessagePayload* _internal_mutable_body();
 
   public:
   // .PlayerMessageExtern head = 2;
@@ -3923,7 +3923,7 @@ class PlayerMessageResponse final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::MessageBody* body_;
+    ::MessagePayload* body_;
     ::PlayerMessageExtern* head_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -4063,16 +4063,16 @@ class NodeRouteMessageResponse final : public ::google::protobuf::Message
   // .MessageBody body = 1;
   bool has_body() const;
   void clear_body() ;
-  const ::MessageBody& body() const;
-  PROTOBUF_NODISCARD ::MessageBody* release_body();
-  ::MessageBody* mutable_body();
-  void set_allocated_body(::MessageBody* value);
-  void unsafe_arena_set_allocated_body(::MessageBody* value);
-  ::MessageBody* unsafe_arena_release_body();
+  const ::MessagePayload& body() const;
+  PROTOBUF_NODISCARD ::MessagePayload* release_body();
+  ::MessagePayload* mutable_body();
+  void set_allocated_body(::MessagePayload* value);
+  void unsafe_arena_set_allocated_body(::MessagePayload* value);
+  ::MessagePayload* unsafe_arena_release_body();
 
   private:
-  const ::MessageBody& _internal_body() const;
-  ::MessageBody* _internal_mutable_body();
+  const ::MessagePayload& _internal_body() const;
+  ::MessagePayload* _internal_mutable_body();
 
   public:
   // .NodeMessageHead head = 2;
@@ -4113,7 +4113,7 @@ class NodeRouteMessageResponse final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::MessageBody* body_;
+    ::MessagePayload* body_;
     ::NodeMessageHead* head_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -4253,16 +4253,16 @@ class NodeRouteMessageRequest final : public ::google::protobuf::Message
   // .MessageBody body = 1;
   bool has_body() const;
   void clear_body() ;
-  const ::MessageBody& body() const;
-  PROTOBUF_NODISCARD ::MessageBody* release_body();
-  ::MessageBody* mutable_body();
-  void set_allocated_body(::MessageBody* value);
-  void unsafe_arena_set_allocated_body(::MessageBody* value);
-  ::MessageBody* unsafe_arena_release_body();
+  const ::MessagePayload& body() const;
+  PROTOBUF_NODISCARD ::MessagePayload* release_body();
+  ::MessagePayload* mutable_body();
+  void set_allocated_body(::MessagePayload* value);
+  void unsafe_arena_set_allocated_body(::MessagePayload* value);
+  ::MessagePayload* unsafe_arena_release_body();
 
   private:
-  const ::MessageBody& _internal_body() const;
-  ::MessageBody* _internal_mutable_body();
+  const ::MessagePayload& _internal_body() const;
+  ::MessagePayload* _internal_mutable_body();
 
   public:
   // .NodeMessageHead head = 2;
@@ -4303,7 +4303,7 @@ class NodeRouteMessageRequest final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::MessageBody* body_;
+    ::MessagePayload* body_;
     ::NodeMessageHead* head_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -4445,45 +4445,45 @@ inline void RouteNodeInfo::_internal_set_message_id(::uint32_t value) {
 // MessageBody
 
 // bytes body = 1;
-inline void MessageBody::clear_body() {
+inline void MessagePayload::clear_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.ClearToEmpty();
 }
-inline const std::string& MessageBody::body() const
+inline const std::string& MessagePayload::body() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:MessageBody.body)
   return _internal_body();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void MessageBody::set_body(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void MessagePayload::set_body(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:MessageBody.body)
 }
-inline std::string* MessageBody::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* MessagePayload::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:MessageBody.body)
   return _s;
 }
-inline const std::string& MessageBody::_internal_body() const {
+inline const std::string& MessagePayload::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.body_.Get();
 }
-inline void MessageBody::_internal_set_body(const std::string& value) {
+inline void MessagePayload::_internal_set_body(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.Set(value, GetArena());
 }
-inline std::string* MessageBody::_internal_mutable_body() {
+inline std::string* MessagePayload::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.body_.Mutable( GetArena());
 }
-inline std::string* MessageBody::release_body() {
+inline std::string* MessagePayload::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:MessageBody.body)
   return _impl_.body_.Release();
 }
-inline void MessageBody::set_allocated_body(std::string* value) {
+inline void MessagePayload::set_allocated_body(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -4495,65 +4495,65 @@ inline void MessageBody::set_allocated_body(std::string* value) {
 }
 
 // uint32 message_id = 2;
-inline void MessageBody::clear_message_id() {
+inline void MessagePayload::clear_message_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.message_id_ = 0u;
 }
-inline ::uint32_t MessageBody::message_id() const {
+inline ::uint32_t MessagePayload::message_id() const {
   // @@protoc_insertion_point(field_get:MessageBody.message_id)
   return _internal_message_id();
 }
-inline void MessageBody::set_message_id(::uint32_t value) {
+inline void MessagePayload::set_message_id(::uint32_t value) {
   _internal_set_message_id(value);
   // @@protoc_insertion_point(field_set:MessageBody.message_id)
 }
-inline ::uint32_t MessageBody::_internal_message_id() const {
+inline ::uint32_t MessagePayload::_internal_message_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.message_id_;
 }
-inline void MessageBody::_internal_set_message_id(::uint32_t value) {
+inline void MessagePayload::_internal_set_message_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.message_id_ = value;
 }
 
 // uint64 id = 3;
-inline void MessageBody::clear_id() {
+inline void MessagePayload::clear_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = ::uint64_t{0u};
 }
-inline ::uint64_t MessageBody::id() const {
+inline ::uint64_t MessagePayload::id() const {
   // @@protoc_insertion_point(field_get:MessageBody.id)
   return _internal_id();
 }
-inline void MessageBody::set_id(::uint64_t value) {
+inline void MessagePayload::set_id(::uint64_t value) {
   _internal_set_id(value);
   // @@protoc_insertion_point(field_set:MessageBody.id)
 }
-inline ::uint64_t MessageBody::_internal_id() const {
+inline ::uint64_t MessagePayload::_internal_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.id_;
 }
-inline void MessageBody::_internal_set_id(::uint64_t value) {
+inline void MessagePayload::_internal_set_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = value;
 }
 
 // .TipInfoMessage error_message = 4;
-inline bool MessageBody::has_error_message() const {
+inline bool MessagePayload::has_error_message() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
-inline const ::TipInfoMessage& MessageBody::_internal_error_message() const {
+inline const ::TipInfoMessage& MessagePayload::_internal_error_message() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::TipInfoMessage* p = _impl_.error_message_;
   return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
 }
-inline const ::TipInfoMessage& MessageBody::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::TipInfoMessage& MessagePayload::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:MessageBody.error_message)
   return _internal_error_message();
 }
-inline void MessageBody::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
+inline void MessagePayload::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
@@ -4566,7 +4566,7 @@ inline void MessageBody::unsafe_arena_set_allocated_error_message(::TipInfoMessa
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:MessageBody.error_message)
 }
-inline ::TipInfoMessage* MessageBody::release_error_message() {
+inline ::TipInfoMessage* MessagePayload::release_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -4585,7 +4585,7 @@ inline ::TipInfoMessage* MessageBody::release_error_message() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::TipInfoMessage* MessageBody::unsafe_arena_release_error_message() {
+inline ::TipInfoMessage* MessagePayload::unsafe_arena_release_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:MessageBody.error_message)
 
@@ -4594,7 +4594,7 @@ inline ::TipInfoMessage* MessageBody::unsafe_arena_release_error_message() {
   _impl_.error_message_ = nullptr;
   return temp;
 }
-inline ::TipInfoMessage* MessageBody::_internal_mutable_error_message() {
+inline ::TipInfoMessage* MessagePayload::_internal_mutable_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.error_message_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
@@ -4602,13 +4602,13 @@ inline ::TipInfoMessage* MessageBody::_internal_mutable_error_message() {
   }
   return _impl_.error_message_;
 }
-inline ::TipInfoMessage* MessageBody::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::TipInfoMessage* MessagePayload::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
   // @@protoc_insertion_point(field_mutable:MessageBody.error_message)
   return _msg;
 }
-inline void MessageBody::set_allocated_error_message(::TipInfoMessage* value) {
+inline void MessagePayload::set_allocated_error_message(::TipInfoMessage* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -4692,21 +4692,21 @@ inline void NodeRouteMessageRequest::clear_body() {
   if (_impl_.body_ != nullptr) _impl_.body_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::MessageBody& NodeRouteMessageRequest::_internal_body() const {
+inline const ::MessagePayload& NodeRouteMessageRequest::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::MessageBody* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageBody&>(::_MessageBody_default_instance_);
+  const ::MessagePayload* p = _impl_.body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessagePayload&>(::_MessageBody_default_instance_);
 }
-inline const ::MessageBody& NodeRouteMessageRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::MessagePayload& NodeRouteMessageRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:NodeRouteMessageRequest.body)
   return _internal_body();
 }
-inline void NodeRouteMessageRequest::unsafe_arena_set_allocated_body(::MessageBody* value) {
+inline void NodeRouteMessageRequest::unsafe_arena_set_allocated_body(::MessagePayload* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.body_);
   }
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -4714,11 +4714,11 @@ inline void NodeRouteMessageRequest::unsafe_arena_set_allocated_body(::MessageBo
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:NodeRouteMessageRequest.body)
 }
-inline ::MessageBody* NodeRouteMessageRequest::release_body() {
+inline ::MessagePayload* NodeRouteMessageRequest::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* released = _impl_.body_;
+  ::MessagePayload* released = _impl_.body_;
   _impl_.body_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -4733,30 +4733,30 @@ inline ::MessageBody* NodeRouteMessageRequest::release_body() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::MessageBody* NodeRouteMessageRequest::unsafe_arena_release_body() {
+inline ::MessagePayload* NodeRouteMessageRequest::unsafe_arena_release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:NodeRouteMessageRequest.body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* temp = _impl_.body_;
+  ::MessagePayload* temp = _impl_.body_;
   _impl_.body_ = nullptr;
   return temp;
 }
-inline ::MessageBody* NodeRouteMessageRequest::_internal_mutable_body() {
+inline ::MessagePayload* NodeRouteMessageRequest::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.body_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageBody>(GetArena());
-    _impl_.body_ = reinterpret_cast<::MessageBody*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessagePayload>(GetArena());
+    _impl_.body_ = reinterpret_cast<::MessagePayload*>(p);
   }
   return _impl_.body_;
 }
-inline ::MessageBody* NodeRouteMessageRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::MessagePayload* NodeRouteMessageRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::MessageBody* _msg = _internal_mutable_body();
+  ::MessagePayload* _msg = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:NodeRouteMessageRequest.body)
   return _msg;
 }
-inline void NodeRouteMessageRequest::set_allocated_body(::MessageBody* value) {
+inline void NodeRouteMessageRequest::set_allocated_body(::MessagePayload* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -4773,7 +4773,7 @@ inline void NodeRouteMessageRequest::set_allocated_body(::MessageBody* value) {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   // @@protoc_insertion_point(field_set_allocated:NodeRouteMessageRequest.body)
 }
 
@@ -4888,21 +4888,21 @@ inline void NodeRouteMessageResponse::clear_body() {
   if (_impl_.body_ != nullptr) _impl_.body_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::MessageBody& NodeRouteMessageResponse::_internal_body() const {
+inline const ::MessagePayload& NodeRouteMessageResponse::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::MessageBody* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageBody&>(::_MessageBody_default_instance_);
+  const ::MessagePayload* p = _impl_.body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessagePayload&>(::_MessageBody_default_instance_);
 }
-inline const ::MessageBody& NodeRouteMessageResponse::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::MessagePayload& NodeRouteMessageResponse::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:NodeRouteMessageResponse.body)
   return _internal_body();
 }
-inline void NodeRouteMessageResponse::unsafe_arena_set_allocated_body(::MessageBody* value) {
+inline void NodeRouteMessageResponse::unsafe_arena_set_allocated_body(::MessagePayload* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.body_);
   }
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -4910,11 +4910,11 @@ inline void NodeRouteMessageResponse::unsafe_arena_set_allocated_body(::MessageB
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:NodeRouteMessageResponse.body)
 }
-inline ::MessageBody* NodeRouteMessageResponse::release_body() {
+inline ::MessagePayload* NodeRouteMessageResponse::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* released = _impl_.body_;
+  ::MessagePayload* released = _impl_.body_;
   _impl_.body_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -4929,30 +4929,30 @@ inline ::MessageBody* NodeRouteMessageResponse::release_body() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::MessageBody* NodeRouteMessageResponse::unsafe_arena_release_body() {
+inline ::MessagePayload* NodeRouteMessageResponse::unsafe_arena_release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:NodeRouteMessageResponse.body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* temp = _impl_.body_;
+  ::MessagePayload* temp = _impl_.body_;
   _impl_.body_ = nullptr;
   return temp;
 }
-inline ::MessageBody* NodeRouteMessageResponse::_internal_mutable_body() {
+inline ::MessagePayload* NodeRouteMessageResponse::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.body_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageBody>(GetArena());
-    _impl_.body_ = reinterpret_cast<::MessageBody*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessagePayload>(GetArena());
+    _impl_.body_ = reinterpret_cast<::MessagePayload*>(p);
   }
   return _impl_.body_;
 }
-inline ::MessageBody* NodeRouteMessageResponse::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::MessagePayload* NodeRouteMessageResponse::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::MessageBody* _msg = _internal_mutable_body();
+  ::MessagePayload* _msg = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:NodeRouteMessageResponse.body)
   return _msg;
 }
-inline void NodeRouteMessageResponse::set_allocated_body(::MessageBody* value) {
+inline void NodeRouteMessageResponse::set_allocated_body(::MessagePayload* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -4969,7 +4969,7 @@ inline void NodeRouteMessageResponse::set_allocated_body(::MessageBody* value) {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   // @@protoc_insertion_point(field_set_allocated:NodeRouteMessageResponse.body)
 }
 
@@ -5110,21 +5110,21 @@ inline void PlayerNodeServiceRequest::clear_body() {
   if (_impl_.body_ != nullptr) _impl_.body_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::MessageBody& PlayerNodeServiceRequest::_internal_body() const {
+inline const ::MessagePayload& PlayerNodeServiceRequest::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::MessageBody* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageBody&>(::_MessageBody_default_instance_);
+  const ::MessagePayload* p = _impl_.body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessagePayload&>(::_MessageBody_default_instance_);
 }
-inline const ::MessageBody& PlayerNodeServiceRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::MessagePayload& PlayerNodeServiceRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:PlayerNodeServiceRequest.body)
   return _internal_body();
 }
-inline void PlayerNodeServiceRequest::unsafe_arena_set_allocated_body(::MessageBody* value) {
+inline void PlayerNodeServiceRequest::unsafe_arena_set_allocated_body(::MessagePayload* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.body_);
   }
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -5132,11 +5132,11 @@ inline void PlayerNodeServiceRequest::unsafe_arena_set_allocated_body(::MessageB
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerNodeServiceRequest.body)
 }
-inline ::MessageBody* PlayerNodeServiceRequest::release_body() {
+inline ::MessagePayload* PlayerNodeServiceRequest::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* released = _impl_.body_;
+  ::MessagePayload* released = _impl_.body_;
   _impl_.body_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -5151,30 +5151,30 @@ inline ::MessageBody* PlayerNodeServiceRequest::release_body() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::MessageBody* PlayerNodeServiceRequest::unsafe_arena_release_body() {
+inline ::MessagePayload* PlayerNodeServiceRequest::unsafe_arena_release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:PlayerNodeServiceRequest.body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* temp = _impl_.body_;
+  ::MessagePayload* temp = _impl_.body_;
   _impl_.body_ = nullptr;
   return temp;
 }
-inline ::MessageBody* PlayerNodeServiceRequest::_internal_mutable_body() {
+inline ::MessagePayload* PlayerNodeServiceRequest::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.body_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageBody>(GetArena());
-    _impl_.body_ = reinterpret_cast<::MessageBody*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessagePayload>(GetArena());
+    _impl_.body_ = reinterpret_cast<::MessagePayload*>(p);
   }
   return _impl_.body_;
 }
-inline ::MessageBody* PlayerNodeServiceRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::MessagePayload* PlayerNodeServiceRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::MessageBody* _msg = _internal_mutable_body();
+  ::MessagePayload* _msg = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:PlayerNodeServiceRequest.body)
   return _msg;
 }
-inline void PlayerNodeServiceRequest::set_allocated_body(::MessageBody* value) {
+inline void PlayerNodeServiceRequest::set_allocated_body(::MessagePayload* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -5191,7 +5191,7 @@ inline void PlayerNodeServiceRequest::set_allocated_body(::MessageBody* value) {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   // @@protoc_insertion_point(field_set_allocated:PlayerNodeServiceRequest.body)
 }
 
@@ -5306,21 +5306,21 @@ inline void PlayerMessageResponse::clear_body() {
   if (_impl_.body_ != nullptr) _impl_.body_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::MessageBody& PlayerMessageResponse::_internal_body() const {
+inline const ::MessagePayload& PlayerMessageResponse::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  const ::MessageBody* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessageBody&>(::_MessageBody_default_instance_);
+  const ::MessagePayload* p = _impl_.body_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MessagePayload&>(::_MessageBody_default_instance_);
 }
-inline const ::MessageBody& PlayerMessageResponse::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::MessagePayload& PlayerMessageResponse::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:PlayerMessageResponse.body)
   return _internal_body();
 }
-inline void PlayerMessageResponse::unsafe_arena_set_allocated_body(::MessageBody* value) {
+inline void PlayerMessageResponse::unsafe_arena_set_allocated_body(::MessagePayload* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.body_);
   }
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -5328,11 +5328,11 @@ inline void PlayerMessageResponse::unsafe_arena_set_allocated_body(::MessageBody
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerMessageResponse.body)
 }
-inline ::MessageBody* PlayerMessageResponse::release_body() {
+inline ::MessagePayload* PlayerMessageResponse::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* released = _impl_.body_;
+  ::MessagePayload* released = _impl_.body_;
   _impl_.body_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -5347,30 +5347,30 @@ inline ::MessageBody* PlayerMessageResponse::release_body() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::MessageBody* PlayerMessageResponse::unsafe_arena_release_body() {
+inline ::MessagePayload* PlayerMessageResponse::unsafe_arena_release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:PlayerMessageResponse.body)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::MessageBody* temp = _impl_.body_;
+  ::MessagePayload* temp = _impl_.body_;
   _impl_.body_ = nullptr;
   return temp;
 }
-inline ::MessageBody* PlayerMessageResponse::_internal_mutable_body() {
+inline ::MessagePayload* PlayerMessageResponse::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.body_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessageBody>(GetArena());
-    _impl_.body_ = reinterpret_cast<::MessageBody*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MessagePayload>(GetArena());
+    _impl_.body_ = reinterpret_cast<::MessagePayload*>(p);
   }
   return _impl_.body_;
 }
-inline ::MessageBody* PlayerMessageResponse::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::MessagePayload* PlayerMessageResponse::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::MessageBody* _msg = _internal_mutable_body();
+  ::MessagePayload* _msg = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:PlayerMessageResponse.body)
   return _msg;
 }
-inline void PlayerMessageResponse::set_allocated_body(::MessageBody* value) {
+inline void PlayerMessageResponse::set_allocated_body(::MessagePayload* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -5387,7 +5387,7 @@ inline void PlayerMessageResponse::set_allocated_body(::MessageBody* value) {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.body_ = reinterpret_cast<::MessageBody*>(value);
+  _impl_.body_ = reinterpret_cast<::MessagePayload*>(value);
   // @@protoc_insertion_point(field_set_allocated:PlayerMessageResponse.body)
 }
 
@@ -6201,45 +6201,45 @@ inline void GateSessionDisconnectRequest::set_allocated_session_info(::SessionDe
 // RouteMsgStringRequest
 
 // bytes body = 1;
-inline void RouteMsgStringRequest::clear_body() {
+inline void RouteMessageRequest::clear_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.ClearToEmpty();
 }
-inline const std::string& RouteMsgStringRequest::body() const
+inline const std::string& RouteMessageRequest::body() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RouteMsgStringRequest.body)
   return _internal_body();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void RouteMsgStringRequest::set_body(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void RouteMessageRequest::set_body(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:RouteMsgStringRequest.body)
 }
-inline std::string* RouteMsgStringRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* RouteMessageRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:RouteMsgStringRequest.body)
   return _s;
 }
-inline const std::string& RouteMsgStringRequest::_internal_body() const {
+inline const std::string& RouteMessageRequest::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.body_.Get();
 }
-inline void RouteMsgStringRequest::_internal_set_body(const std::string& value) {
+inline void RouteMessageRequest::_internal_set_body(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.Set(value, GetArena());
 }
-inline std::string* RouteMsgStringRequest::_internal_mutable_body() {
+inline std::string* RouteMessageRequest::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.body_.Mutable( GetArena());
 }
-inline std::string* RouteMsgStringRequest::release_body() {
+inline std::string* RouteMessageRequest::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:RouteMsgStringRequest.body)
   return _impl_.body_.Release();
 }
-inline void RouteMsgStringRequest::set_allocated_body(std::string* value) {
+inline void RouteMessageRequest::set_allocated_body(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -6251,116 +6251,116 @@ inline void RouteMsgStringRequest::set_allocated_body(std::string* value) {
 }
 
 // repeated .RouteNodeInfo route_data_list = 2;
-inline int RouteMsgStringRequest::_internal_route_data_list_size() const {
+inline int RouteMessageRequest::_internal_route_data_list_size() const {
   return _internal_route_data_list().size();
 }
-inline int RouteMsgStringRequest::route_data_list_size() const {
+inline int RouteMessageRequest::route_data_list_size() const {
   return _internal_route_data_list_size();
 }
-inline void RouteMsgStringRequest::clear_route_data_list() {
+inline void RouteMessageRequest::clear_route_data_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.route_data_list_.Clear();
 }
-inline ::RouteNodeInfo* RouteMsgStringRequest::mutable_route_data_list(int index)
+inline ::RouteNodeInfo* RouteMessageRequest::mutable_route_data_list(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:RouteMsgStringRequest.route_data_list)
   return _internal_mutable_route_data_list()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* RouteMsgStringRequest::mutable_route_data_list()
+inline ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* RouteMessageRequest::mutable_route_data_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:RouteMsgStringRequest.route_data_list)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_route_data_list();
 }
-inline const ::RouteNodeInfo& RouteMsgStringRequest::route_data_list(int index) const
+inline const ::RouteNodeInfo& RouteMessageRequest::route_data_list(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RouteMsgStringRequest.route_data_list)
   return _internal_route_data_list().Get(index);
 }
-inline ::RouteNodeInfo* RouteMsgStringRequest::add_route_data_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::RouteNodeInfo* RouteMessageRequest::add_route_data_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::RouteNodeInfo* _add = _internal_mutable_route_data_list()->Add();
   // @@protoc_insertion_point(field_add:RouteMsgStringRequest.route_data_list)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& RouteMsgStringRequest::route_data_list() const
+inline const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& RouteMessageRequest::route_data_list() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:RouteMsgStringRequest.route_data_list)
   return _internal_route_data_list();
 }
 inline const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>&
-RouteMsgStringRequest::_internal_route_data_list() const {
+RouteMessageRequest::_internal_route_data_list() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.route_data_list_;
 }
 inline ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>*
-RouteMsgStringRequest::_internal_mutable_route_data_list() {
+RouteMessageRequest::_internal_mutable_route_data_list() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.route_data_list_;
 }
 
 // uint64 session_id = 3;
-inline void RouteMsgStringRequest::clear_session_id() {
+inline void RouteMessageRequest::clear_session_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.session_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t RouteMsgStringRequest::session_id() const {
+inline ::uint64_t RouteMessageRequest::session_id() const {
   // @@protoc_insertion_point(field_get:RouteMsgStringRequest.session_id)
   return _internal_session_id();
 }
-inline void RouteMsgStringRequest::set_session_id(::uint64_t value) {
+inline void RouteMessageRequest::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
   // @@protoc_insertion_point(field_set:RouteMsgStringRequest.session_id)
 }
-inline ::uint64_t RouteMsgStringRequest::_internal_session_id() const {
+inline ::uint64_t RouteMessageRequest::_internal_session_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.session_id_;
 }
-inline void RouteMsgStringRequest::_internal_set_session_id(::uint64_t value) {
+inline void RouteMessageRequest::_internal_set_session_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.session_id_ = value;
 }
 
 // uint64 id = 4;
-inline void RouteMsgStringRequest::clear_id() {
+inline void RouteMessageRequest::clear_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = ::uint64_t{0u};
 }
-inline ::uint64_t RouteMsgStringRequest::id() const {
+inline ::uint64_t RouteMessageRequest::id() const {
   // @@protoc_insertion_point(field_get:RouteMsgStringRequest.id)
   return _internal_id();
 }
-inline void RouteMsgStringRequest::set_id(::uint64_t value) {
+inline void RouteMessageRequest::set_id(::uint64_t value) {
   _internal_set_id(value);
   // @@protoc_insertion_point(field_set:RouteMsgStringRequest.id)
 }
-inline ::uint64_t RouteMsgStringRequest::_internal_id() const {
+inline ::uint64_t RouteMessageRequest::_internal_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.id_;
 }
-inline void RouteMsgStringRequest::_internal_set_id(::uint64_t value) {
+inline void RouteMessageRequest::_internal_set_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = value;
 }
 
 // bool is_client = 5;
-inline void RouteMsgStringRequest::clear_is_client() {
+inline void RouteMessageRequest::clear_is_client() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.is_client_ = false;
 }
-inline bool RouteMsgStringRequest::is_client() const {
+inline bool RouteMessageRequest::is_client() const {
   // @@protoc_insertion_point(field_get:RouteMsgStringRequest.is_client)
   return _internal_is_client();
 }
-inline void RouteMsgStringRequest::set_is_client(bool value) {
+inline void RouteMessageRequest::set_is_client(bool value) {
   _internal_set_is_client(value);
   // @@protoc_insertion_point(field_set:RouteMsgStringRequest.is_client)
 }
-inline bool RouteMsgStringRequest::_internal_is_client() const {
+inline bool RouteMessageRequest::_internal_is_client() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.is_client_;
 }
-inline void RouteMsgStringRequest::_internal_set_is_client(bool value) {
+inline void RouteMessageRequest::_internal_set_is_client(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.is_client_ = value;
 }
@@ -6370,45 +6370,45 @@ inline void RouteMsgStringRequest::_internal_set_is_client(bool value) {
 // RouteMsgStringResponse
 
 // bytes body = 1;
-inline void RouteMsgStringResponse::clear_body() {
+inline void RouteMessageResponse::clear_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.ClearToEmpty();
 }
-inline const std::string& RouteMsgStringResponse::body() const
+inline const std::string& RouteMessageResponse::body() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RouteMsgStringResponse.body)
   return _internal_body();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void RouteMsgStringResponse::set_body(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void RouteMessageResponse::set_body(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:RouteMsgStringResponse.body)
 }
-inline std::string* RouteMsgStringResponse::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* RouteMessageResponse::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:RouteMsgStringResponse.body)
   return _s;
 }
-inline const std::string& RouteMsgStringResponse::_internal_body() const {
+inline const std::string& RouteMessageResponse::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.body_.Get();
 }
-inline void RouteMsgStringResponse::_internal_set_body(const std::string& value) {
+inline void RouteMessageResponse::_internal_set_body(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.Set(value, GetArena());
 }
-inline std::string* RouteMsgStringResponse::_internal_mutable_body() {
+inline std::string* RouteMessageResponse::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.body_.Mutable( GetArena());
 }
-inline std::string* RouteMsgStringResponse::release_body() {
+inline std::string* RouteMessageResponse::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:RouteMsgStringResponse.body)
   return _impl_.body_.Release();
 }
-inline void RouteMsgStringResponse::set_allocated_body(std::string* value) {
+inline void RouteMessageResponse::set_allocated_body(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -6420,116 +6420,116 @@ inline void RouteMsgStringResponse::set_allocated_body(std::string* value) {
 }
 
 // repeated .RouteNodeInfo route_data_list = 2;
-inline int RouteMsgStringResponse::_internal_route_data_list_size() const {
+inline int RouteMessageResponse::_internal_route_data_list_size() const {
   return _internal_route_data_list().size();
 }
-inline int RouteMsgStringResponse::route_data_list_size() const {
+inline int RouteMessageResponse::route_data_list_size() const {
   return _internal_route_data_list_size();
 }
-inline void RouteMsgStringResponse::clear_route_data_list() {
+inline void RouteMessageResponse::clear_route_data_list() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.route_data_list_.Clear();
 }
-inline ::RouteNodeInfo* RouteMsgStringResponse::mutable_route_data_list(int index)
+inline ::RouteNodeInfo* RouteMessageResponse::mutable_route_data_list(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:RouteMsgStringResponse.route_data_list)
   return _internal_mutable_route_data_list()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* RouteMsgStringResponse::mutable_route_data_list()
+inline ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* RouteMessageResponse::mutable_route_data_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:RouteMsgStringResponse.route_data_list)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_route_data_list();
 }
-inline const ::RouteNodeInfo& RouteMsgStringResponse::route_data_list(int index) const
+inline const ::RouteNodeInfo& RouteMessageResponse::route_data_list(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RouteMsgStringResponse.route_data_list)
   return _internal_route_data_list().Get(index);
 }
-inline ::RouteNodeInfo* RouteMsgStringResponse::add_route_data_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::RouteNodeInfo* RouteMessageResponse::add_route_data_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::RouteNodeInfo* _add = _internal_mutable_route_data_list()->Add();
   // @@protoc_insertion_point(field_add:RouteMsgStringResponse.route_data_list)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& RouteMsgStringResponse::route_data_list() const
+inline const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& RouteMessageResponse::route_data_list() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:RouteMsgStringResponse.route_data_list)
   return _internal_route_data_list();
 }
 inline const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>&
-RouteMsgStringResponse::_internal_route_data_list() const {
+RouteMessageResponse::_internal_route_data_list() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.route_data_list_;
 }
 inline ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>*
-RouteMsgStringResponse::_internal_mutable_route_data_list() {
+RouteMessageResponse::_internal_mutable_route_data_list() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.route_data_list_;
 }
 
 // uint64 session_id = 3;
-inline void RouteMsgStringResponse::clear_session_id() {
+inline void RouteMessageResponse::clear_session_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.session_id_ = ::uint64_t{0u};
 }
-inline ::uint64_t RouteMsgStringResponse::session_id() const {
+inline ::uint64_t RouteMessageResponse::session_id() const {
   // @@protoc_insertion_point(field_get:RouteMsgStringResponse.session_id)
   return _internal_session_id();
 }
-inline void RouteMsgStringResponse::set_session_id(::uint64_t value) {
+inline void RouteMessageResponse::set_session_id(::uint64_t value) {
   _internal_set_session_id(value);
   // @@protoc_insertion_point(field_set:RouteMsgStringResponse.session_id)
 }
-inline ::uint64_t RouteMsgStringResponse::_internal_session_id() const {
+inline ::uint64_t RouteMessageResponse::_internal_session_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.session_id_;
 }
-inline void RouteMsgStringResponse::_internal_set_session_id(::uint64_t value) {
+inline void RouteMessageResponse::_internal_set_session_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.session_id_ = value;
 }
 
 // uint64 id = 4;
-inline void RouteMsgStringResponse::clear_id() {
+inline void RouteMessageResponse::clear_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = ::uint64_t{0u};
 }
-inline ::uint64_t RouteMsgStringResponse::id() const {
+inline ::uint64_t RouteMessageResponse::id() const {
   // @@protoc_insertion_point(field_get:RouteMsgStringResponse.id)
   return _internal_id();
 }
-inline void RouteMsgStringResponse::set_id(::uint64_t value) {
+inline void RouteMessageResponse::set_id(::uint64_t value) {
   _internal_set_id(value);
   // @@protoc_insertion_point(field_set:RouteMsgStringResponse.id)
 }
-inline ::uint64_t RouteMsgStringResponse::_internal_id() const {
+inline ::uint64_t RouteMessageResponse::_internal_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.id_;
 }
-inline void RouteMsgStringResponse::_internal_set_id(::uint64_t value) {
+inline void RouteMessageResponse::_internal_set_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = value;
 }
 
 // bool is_client = 5;
-inline void RouteMsgStringResponse::clear_is_client() {
+inline void RouteMessageResponse::clear_is_client() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.is_client_ = false;
 }
-inline bool RouteMsgStringResponse::is_client() const {
+inline bool RouteMessageResponse::is_client() const {
   // @@protoc_insertion_point(field_get:RouteMsgStringResponse.is_client)
   return _internal_is_client();
 }
-inline void RouteMsgStringResponse::set_is_client(bool value) {
+inline void RouteMessageResponse::set_is_client(bool value) {
   _internal_set_is_client(value);
   // @@protoc_insertion_point(field_set:RouteMsgStringResponse.is_client)
 }
-inline bool RouteMsgStringResponse::_internal_is_client() const {
+inline bool RouteMessageResponse::_internal_is_client() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.is_client_;
 }
-inline void RouteMsgStringResponse::_internal_set_is_client(bool value) {
+inline void RouteMessageResponse::_internal_set_is_client(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.is_client_ = value;
 }
@@ -6539,45 +6539,45 @@ inline void RouteMsgStringResponse::_internal_set_is_client(bool value) {
 // RoutePlayerMsgStringRequest
 
 // bytes body = 1;
-inline void RoutePlayerMsgStringRequest::clear_body() {
+inline void RoutePlayerMessageRequest::clear_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.ClearToEmpty();
 }
-inline const std::string& RoutePlayerMsgStringRequest::body() const
+inline const std::string& RoutePlayerMessageRequest::body() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RoutePlayerMsgStringRequest.body)
   return _internal_body();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void RoutePlayerMsgStringRequest::set_body(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void RoutePlayerMessageRequest::set_body(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:RoutePlayerMsgStringRequest.body)
 }
-inline std::string* RoutePlayerMsgStringRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* RoutePlayerMessageRequest::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:RoutePlayerMsgStringRequest.body)
   return _s;
 }
-inline const std::string& RoutePlayerMsgStringRequest::_internal_body() const {
+inline const std::string& RoutePlayerMessageRequest::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.body_.Get();
 }
-inline void RoutePlayerMsgStringRequest::_internal_set_body(const std::string& value) {
+inline void RoutePlayerMessageRequest::_internal_set_body(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.Set(value, GetArena());
 }
-inline std::string* RoutePlayerMsgStringRequest::_internal_mutable_body() {
+inline std::string* RoutePlayerMessageRequest::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.body_.Mutable( GetArena());
 }
-inline std::string* RoutePlayerMsgStringRequest::release_body() {
+inline std::string* RoutePlayerMessageRequest::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:RoutePlayerMsgStringRequest.body)
   return _impl_.body_.Release();
 }
-inline void RoutePlayerMsgStringRequest::set_allocated_body(std::string* value) {
+inline void RoutePlayerMessageRequest::set_allocated_body(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -6589,71 +6589,71 @@ inline void RoutePlayerMsgStringRequest::set_allocated_body(std::string* value) 
 }
 
 // repeated .NodeInfo node_list = 2;
-inline int RoutePlayerMsgStringRequest::_internal_node_list_size() const {
+inline int RoutePlayerMessageRequest::_internal_node_list_size() const {
   return _internal_node_list().size();
 }
-inline int RoutePlayerMsgStringRequest::node_list_size() const {
+inline int RoutePlayerMessageRequest::node_list_size() const {
   return _internal_node_list_size();
 }
-inline ::NodeInfo* RoutePlayerMsgStringRequest::mutable_node_list(int index)
+inline ::NodeInfo* RoutePlayerMessageRequest::mutable_node_list(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:RoutePlayerMsgStringRequest.node_list)
   return _internal_mutable_node_list()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* RoutePlayerMsgStringRequest::mutable_node_list()
+inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* RoutePlayerMessageRequest::mutable_node_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:RoutePlayerMsgStringRequest.node_list)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_node_list();
 }
-inline const ::NodeInfo& RoutePlayerMsgStringRequest::node_list(int index) const
+inline const ::NodeInfo& RoutePlayerMessageRequest::node_list(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RoutePlayerMsgStringRequest.node_list)
   return _internal_node_list().Get(index);
 }
-inline ::NodeInfo* RoutePlayerMsgStringRequest::add_node_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::NodeInfo* RoutePlayerMessageRequest::add_node_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::NodeInfo* _add = _internal_mutable_node_list()->Add();
   // @@protoc_insertion_point(field_add:RoutePlayerMsgStringRequest.node_list)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>& RoutePlayerMsgStringRequest::node_list() const
+inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>& RoutePlayerMessageRequest::node_list() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:RoutePlayerMsgStringRequest.node_list)
   return _internal_node_list();
 }
 inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>&
-RoutePlayerMsgStringRequest::_internal_node_list() const {
+RoutePlayerMessageRequest::_internal_node_list() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.node_list_;
 }
 inline ::google::protobuf::RepeatedPtrField<::NodeInfo>*
-RoutePlayerMsgStringRequest::_internal_mutable_node_list() {
+RoutePlayerMessageRequest::_internal_mutable_node_list() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.node_list_;
 }
 
 // .PlayerMessageExtern player_ex = 3;
-inline bool RoutePlayerMsgStringRequest::has_player_ex() const {
+inline bool RoutePlayerMessageRequest::has_player_ex() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.player_ex_ != nullptr);
   return value;
 }
-inline void RoutePlayerMsgStringRequest::clear_player_ex() {
+inline void RoutePlayerMessageRequest::clear_player_ex() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.player_ex_ != nullptr) _impl_.player_ex_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::PlayerMessageExtern& RoutePlayerMsgStringRequest::_internal_player_ex() const {
+inline const ::PlayerMessageExtern& RoutePlayerMessageRequest::_internal_player_ex() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::PlayerMessageExtern* p = _impl_.player_ex_;
   return p != nullptr ? *p : reinterpret_cast<const ::PlayerMessageExtern&>(::_PlayerMessageExtern_default_instance_);
 }
-inline const ::PlayerMessageExtern& RoutePlayerMsgStringRequest::player_ex() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::PlayerMessageExtern& RoutePlayerMessageRequest::player_ex() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RoutePlayerMsgStringRequest.player_ex)
   return _internal_player_ex();
 }
-inline void RoutePlayerMsgStringRequest::unsafe_arena_set_allocated_player_ex(::PlayerMessageExtern* value) {
+inline void RoutePlayerMessageRequest::unsafe_arena_set_allocated_player_ex(::PlayerMessageExtern* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.player_ex_);
@@ -6666,7 +6666,7 @@ inline void RoutePlayerMsgStringRequest::unsafe_arena_set_allocated_player_ex(::
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:RoutePlayerMsgStringRequest.player_ex)
 }
-inline ::PlayerMessageExtern* RoutePlayerMsgStringRequest::release_player_ex() {
+inline ::PlayerMessageExtern* RoutePlayerMessageRequest::release_player_ex() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -6685,7 +6685,7 @@ inline ::PlayerMessageExtern* RoutePlayerMsgStringRequest::release_player_ex() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerMessageExtern* RoutePlayerMsgStringRequest::unsafe_arena_release_player_ex() {
+inline ::PlayerMessageExtern* RoutePlayerMessageRequest::unsafe_arena_release_player_ex() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:RoutePlayerMsgStringRequest.player_ex)
 
@@ -6694,7 +6694,7 @@ inline ::PlayerMessageExtern* RoutePlayerMsgStringRequest::unsafe_arena_release_
   _impl_.player_ex_ = nullptr;
   return temp;
 }
-inline ::PlayerMessageExtern* RoutePlayerMsgStringRequest::_internal_mutable_player_ex() {
+inline ::PlayerMessageExtern* RoutePlayerMessageRequest::_internal_mutable_player_ex() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.player_ex_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerMessageExtern>(GetArena());
@@ -6702,13 +6702,13 @@ inline ::PlayerMessageExtern* RoutePlayerMsgStringRequest::_internal_mutable_pla
   }
   return _impl_.player_ex_;
 }
-inline ::PlayerMessageExtern* RoutePlayerMsgStringRequest::mutable_player_ex() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerMessageExtern* RoutePlayerMessageRequest::mutable_player_ex() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::PlayerMessageExtern* _msg = _internal_mutable_player_ex();
   // @@protoc_insertion_point(field_mutable:RoutePlayerMsgStringRequest.player_ex)
   return _msg;
 }
-inline void RoutePlayerMsgStringRequest::set_allocated_player_ex(::PlayerMessageExtern* value) {
+inline void RoutePlayerMessageRequest::set_allocated_player_ex(::PlayerMessageExtern* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -6734,45 +6734,45 @@ inline void RoutePlayerMsgStringRequest::set_allocated_player_ex(::PlayerMessage
 // RoutePlayerMsgStringResponse
 
 // bytes body = 1;
-inline void RoutePlayerMsgStringResponse::clear_body() {
+inline void RoutePlayerMessageResponse::clear_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.ClearToEmpty();
 }
-inline const std::string& RoutePlayerMsgStringResponse::body() const
+inline const std::string& RoutePlayerMessageResponse::body() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RoutePlayerMsgStringResponse.body)
   return _internal_body();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void RoutePlayerMsgStringResponse::set_body(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void RoutePlayerMessageResponse::set_body(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:RoutePlayerMsgStringResponse.body)
 }
-inline std::string* RoutePlayerMsgStringResponse::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* RoutePlayerMessageResponse::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:RoutePlayerMsgStringResponse.body)
   return _s;
 }
-inline const std::string& RoutePlayerMsgStringResponse::_internal_body() const {
+inline const std::string& RoutePlayerMessageResponse::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.body_.Get();
 }
-inline void RoutePlayerMsgStringResponse::_internal_set_body(const std::string& value) {
+inline void RoutePlayerMessageResponse::_internal_set_body(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.Set(value, GetArena());
 }
-inline std::string* RoutePlayerMsgStringResponse::_internal_mutable_body() {
+inline std::string* RoutePlayerMessageResponse::_internal_mutable_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _impl_.body_.Mutable( GetArena());
 }
-inline std::string* RoutePlayerMsgStringResponse::release_body() {
+inline std::string* RoutePlayerMessageResponse::release_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:RoutePlayerMsgStringResponse.body)
   return _impl_.body_.Release();
 }
-inline void RoutePlayerMsgStringResponse::set_allocated_body(std::string* value) {
+inline void RoutePlayerMessageResponse::set_allocated_body(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -6784,71 +6784,71 @@ inline void RoutePlayerMsgStringResponse::set_allocated_body(std::string* value)
 }
 
 // repeated .NodeInfo node_list = 2;
-inline int RoutePlayerMsgStringResponse::_internal_node_list_size() const {
+inline int RoutePlayerMessageResponse::_internal_node_list_size() const {
   return _internal_node_list().size();
 }
-inline int RoutePlayerMsgStringResponse::node_list_size() const {
+inline int RoutePlayerMessageResponse::node_list_size() const {
   return _internal_node_list_size();
 }
-inline ::NodeInfo* RoutePlayerMsgStringResponse::mutable_node_list(int index)
+inline ::NodeInfo* RoutePlayerMessageResponse::mutable_node_list(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:RoutePlayerMsgStringResponse.node_list)
   return _internal_mutable_node_list()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* RoutePlayerMsgStringResponse::mutable_node_list()
+inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* RoutePlayerMessageResponse::mutable_node_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:RoutePlayerMsgStringResponse.node_list)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   return _internal_mutable_node_list();
 }
-inline const ::NodeInfo& RoutePlayerMsgStringResponse::node_list(int index) const
+inline const ::NodeInfo& RoutePlayerMessageResponse::node_list(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RoutePlayerMsgStringResponse.node_list)
   return _internal_node_list().Get(index);
 }
-inline ::NodeInfo* RoutePlayerMsgStringResponse::add_node_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::NodeInfo* RoutePlayerMessageResponse::add_node_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::NodeInfo* _add = _internal_mutable_node_list()->Add();
   // @@protoc_insertion_point(field_add:RoutePlayerMsgStringResponse.node_list)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>& RoutePlayerMsgStringResponse::node_list() const
+inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>& RoutePlayerMessageResponse::node_list() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:RoutePlayerMsgStringResponse.node_list)
   return _internal_node_list();
 }
 inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>&
-RoutePlayerMsgStringResponse::_internal_node_list() const {
+RoutePlayerMessageResponse::_internal_node_list() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.node_list_;
 }
 inline ::google::protobuf::RepeatedPtrField<::NodeInfo>*
-RoutePlayerMsgStringResponse::_internal_mutable_node_list() {
+RoutePlayerMessageResponse::_internal_mutable_node_list() {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return &_impl_.node_list_;
 }
 
 // .PlayerMessageExtern player_ex = 3;
-inline bool RoutePlayerMsgStringResponse::has_player_ex() const {
+inline bool RoutePlayerMessageResponse::has_player_ex() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.player_ex_ != nullptr);
   return value;
 }
-inline void RoutePlayerMsgStringResponse::clear_player_ex() {
+inline void RoutePlayerMessageResponse::clear_player_ex() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.player_ex_ != nullptr) _impl_.player_ex_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::PlayerMessageExtern& RoutePlayerMsgStringResponse::_internal_player_ex() const {
+inline const ::PlayerMessageExtern& RoutePlayerMessageResponse::_internal_player_ex() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::PlayerMessageExtern* p = _impl_.player_ex_;
   return p != nullptr ? *p : reinterpret_cast<const ::PlayerMessageExtern&>(::_PlayerMessageExtern_default_instance_);
 }
-inline const ::PlayerMessageExtern& RoutePlayerMsgStringResponse::player_ex() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::PlayerMessageExtern& RoutePlayerMessageResponse::player_ex() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:RoutePlayerMsgStringResponse.player_ex)
   return _internal_player_ex();
 }
-inline void RoutePlayerMsgStringResponse::unsafe_arena_set_allocated_player_ex(::PlayerMessageExtern* value) {
+inline void RoutePlayerMessageResponse::unsafe_arena_set_allocated_player_ex(::PlayerMessageExtern* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.player_ex_);
@@ -6861,7 +6861,7 @@ inline void RoutePlayerMsgStringResponse::unsafe_arena_set_allocated_player_ex(:
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:RoutePlayerMsgStringResponse.player_ex)
 }
-inline ::PlayerMessageExtern* RoutePlayerMsgStringResponse::release_player_ex() {
+inline ::PlayerMessageExtern* RoutePlayerMessageResponse::release_player_ex() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -6880,7 +6880,7 @@ inline ::PlayerMessageExtern* RoutePlayerMsgStringResponse::release_player_ex() 
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::PlayerMessageExtern* RoutePlayerMsgStringResponse::unsafe_arena_release_player_ex() {
+inline ::PlayerMessageExtern* RoutePlayerMessageResponse::unsafe_arena_release_player_ex() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   // @@protoc_insertion_point(field_release:RoutePlayerMsgStringResponse.player_ex)
 
@@ -6889,7 +6889,7 @@ inline ::PlayerMessageExtern* RoutePlayerMsgStringResponse::unsafe_arena_release
   _impl_.player_ex_ = nullptr;
   return temp;
 }
-inline ::PlayerMessageExtern* RoutePlayerMsgStringResponse::_internal_mutable_player_ex() {
+inline ::PlayerMessageExtern* RoutePlayerMessageResponse::_internal_mutable_player_ex() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.player_ex_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerMessageExtern>(GetArena());
@@ -6897,13 +6897,13 @@ inline ::PlayerMessageExtern* RoutePlayerMsgStringResponse::_internal_mutable_pl
   }
   return _impl_.player_ex_;
 }
-inline ::PlayerMessageExtern* RoutePlayerMsgStringResponse::mutable_player_ex() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::PlayerMessageExtern* RoutePlayerMessageResponse::mutable_player_ex() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::PlayerMessageExtern* _msg = _internal_mutable_player_ex();
   // @@protoc_insertion_point(field_mutable:RoutePlayerMsgStringResponse.player_ex)
   return _msg;
 }
-inline void RoutePlayerMsgStringResponse::set_allocated_player_ex(::PlayerMessageExtern* value) {
+inline void RoutePlayerMessageResponse::set_allocated_player_ex(::PlayerMessageExtern* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (message_arena == nullptr) {
@@ -7276,23 +7276,23 @@ inline void RegisterGateNodeRequest::_internal_set_gate_node_id(::uint32_t value
 // UnRegisterGameNodeRequest
 
 // uint32 game_node_id = 1;
-inline void UnRegisterGameNodeRequest::clear_game_node_id() {
+inline void UnregisterGameNodeRequest::clear_game_node_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.game_node_id_ = 0u;
 }
-inline ::uint32_t UnRegisterGameNodeRequest::game_node_id() const {
+inline ::uint32_t UnregisterGameNodeRequest::game_node_id() const {
   // @@protoc_insertion_point(field_get:UnRegisterGameNodeRequest.game_node_id)
   return _internal_game_node_id();
 }
-inline void UnRegisterGameNodeRequest::set_game_node_id(::uint32_t value) {
+inline void UnregisterGameNodeRequest::set_game_node_id(::uint32_t value) {
   _internal_set_game_node_id(value);
   // @@protoc_insertion_point(field_set:UnRegisterGameNodeRequest.game_node_id)
 }
-inline ::uint32_t UnRegisterGameNodeRequest::_internal_game_node_id() const {
+inline ::uint32_t UnregisterGameNodeRequest::_internal_game_node_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.game_node_id_;
 }
-inline void UnRegisterGameNodeRequest::_internal_set_game_node_id(::uint32_t value) {
+inline void UnregisterGameNodeRequest::_internal_set_game_node_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.game_node_id_ = value;
 }

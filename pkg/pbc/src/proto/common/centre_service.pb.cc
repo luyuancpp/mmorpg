@@ -1035,17 +1035,17 @@ void CentreService::EnterGsSucceed(::google::protobuf::RpcController* controller
   done->Run();
 }
 void CentreService::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-                         const ::RouteMsgStringRequest*, ::RouteMsgStringResponse*, ::google::protobuf::Closure* done) {
+                         const ::RouteMessageRequest*, ::RouteMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RouteNodeStringMsg() not implemented.");
   done->Run();
 }
 void CentreService::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-                         const ::RoutePlayerMsgStringRequest*, ::RoutePlayerMsgStringResponse*, ::google::protobuf::Closure* done) {
+                         const ::RoutePlayerMessageRequest*, ::RoutePlayerMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RoutePlayerStringMsg() not implemented.");
   done->Run();
 }
 void CentreService::UnRegisterGameNode(::google::protobuf::RpcController* controller,
-                         const ::UnRegisterGameNodeRequest*, ::Empty*, ::google::protobuf::Closure* done) {
+                         const ::UnregisterGameNodeRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method UnRegisterGameNode() not implemented.");
   done->Run();
 }
@@ -1109,17 +1109,17 @@ void CentreService::CallMethod(
       break;
     case 10:
       RouteNodeStringMsg(controller,
-             ::google::protobuf::internal::DownCast<const ::RouteMsgStringRequest*>(request),
-             ::google::protobuf::internal::DownCast<::RouteMsgStringResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::RouteMessageRequest*>(request),
+             ::google::protobuf::internal::DownCast<::RouteMessageResponse*>(response), done);
       break;
     case 11:
       RoutePlayerStringMsg(controller,
-             ::google::protobuf::internal::DownCast<const ::RoutePlayerMsgStringRequest*>(request),
-             ::google::protobuf::internal::DownCast<::RoutePlayerMsgStringResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::RoutePlayerMessageRequest*>(request),
+             ::google::protobuf::internal::DownCast<::RoutePlayerMessageResponse*>(response), done);
       break;
     case 12:
       UnRegisterGameNode(controller,
-             ::google::protobuf::internal::DownCast<const ::UnRegisterGameNodeRequest*>(request),
+             ::google::protobuf::internal::DownCast<const ::UnregisterGameNodeRequest*>(request),
              ::google::protobuf::internal::DownCast<::Empty*>(response), done);
       break;
 
@@ -1154,11 +1154,11 @@ const ::google::protobuf::Message& CentreService::GetRequestPrototype(
     case 9:
       return ::EnterGameNodeSuccessRequest::default_instance();
     case 10:
-      return ::RouteMsgStringRequest::default_instance();
+      return ::RouteMessageRequest::default_instance();
     case 11:
-      return ::RoutePlayerMsgStringRequest::default_instance();
+      return ::RoutePlayerMessageRequest::default_instance();
     case 12:
-      return ::UnRegisterGameNodeRequest::default_instance();
+      return ::UnregisterGameNodeRequest::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -1192,9 +1192,9 @@ const ::google::protobuf::Message& CentreService::GetResponsePrototype(
     case 9:
       return ::Empty::default_instance();
     case 10:
-      return ::RouteMsgStringResponse::default_instance();
+      return ::RouteMessageResponse::default_instance();
     case 11:
-      return ::RoutePlayerMsgStringResponse::default_instance();
+      return ::RoutePlayerMessageResponse::default_instance();
     case 12:
       return ::Empty::default_instance();
 
@@ -1280,19 +1280,19 @@ void CentreService_Stub::EnterGsSucceed(::google::protobuf::RpcController* contr
                        request, response, done);
 }
 void CentreService_Stub::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-                              const ::RouteMsgStringRequest* request,
-                              ::RouteMsgStringResponse* response, ::google::protobuf::Closure* done) {
+                              const ::RouteMessageRequest* request,
+                              ::RouteMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(10), controller,
                        request, response, done);
 }
 void CentreService_Stub::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-                              const ::RoutePlayerMsgStringRequest* request,
-                              ::RoutePlayerMsgStringResponse* response, ::google::protobuf::Closure* done) {
+                              const ::RoutePlayerMessageRequest* request,
+                              ::RoutePlayerMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(11), controller,
                        request, response, done);
 }
 void CentreService_Stub::UnRegisterGameNode(::google::protobuf::RpcController* controller,
-                              const ::UnRegisterGameNodeRequest* request,
+                              const ::UnregisterGameNodeRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(12), controller,
                        request, response, done);

@@ -64,19 +64,19 @@ public:
 
 
 	void RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-		const ::RouteMsgStringRequest* request,
-		::RouteMsgStringResponse* response,
+		const ::RouteMessageRequest* request,
+		::RouteMessageResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
 	void RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-		const ::RoutePlayerMsgStringRequest* request,
-		::RoutePlayerMsgStringResponse* response,
+		const ::RoutePlayerMessageRequest* request,
+		::RoutePlayerMessageResponse* response,
 		::google::protobuf::Closure* done)override;
 
 
 	void UnRegisterGameNode(::google::protobuf::RpcController* controller,
-		const ::UnRegisterGameNodeRequest* request,
+		const ::UnregisterGameNodeRequest* request,
 		::Empty* response,
 		::google::protobuf::Closure* done)override;
 

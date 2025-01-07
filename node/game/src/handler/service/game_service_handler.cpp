@@ -326,16 +326,16 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMsgStringRequest* request,
-	     RouteMsgStringResponse* response,
+void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
+	     RouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMsgStringRequest* request,
-	     RoutePlayerMsgStringResponse* response,
+void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
+	     RoutePlayerMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
