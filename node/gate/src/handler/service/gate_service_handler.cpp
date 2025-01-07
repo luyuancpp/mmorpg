@@ -48,7 +48,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,const ::UnRegisterGameNodeRequest* request,
+void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* controller,const ::UnregisterGameNodeRequest* request,
 	     Empty* response,
 	     ::google::protobuf::Closure* done)
 {
@@ -108,8 +108,8 @@ void GateServiceHandler::KickSessionByCentre(::google::protobuf::RpcController* 
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* controller,const ::RouteMsgStringRequest* request,
-	     RouteMsgStringResponse* response,
+void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* controller,const ::RouteMessageRequest* request,
+	     RouteMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -117,8 +117,8 @@ void GateServiceHandler::RouteNodeMessage(::google::protobuf::RpcController* con
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller,const ::RoutePlayerMsgStringRequest* request,
-	     RoutePlayerMsgStringResponse* response,
+void GateServiceHandler::RoutePlayerMessage(::google::protobuf::RpcController* controller,const ::RoutePlayerMessageRequest* request,
+	     RoutePlayerMessageResponse* response,
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE

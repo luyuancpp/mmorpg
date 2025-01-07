@@ -377,7 +377,7 @@ BroadcastToPlayersRequest::BroadcastToPlayersRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageBody>(
+  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessagePayload>(
                               arena, *from._impl_.body_)
                         : nullptr;
 
@@ -477,7 +477,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::MessageBody>()},
+    {::_pbi::TcParser::GetTable<::MessagePayload>()},
   }}, {{
   }},
 };
@@ -561,7 +561,7 @@ void BroadcastToPlayersRequest::MergeImpl(::google::protobuf::MessageLite& to_ms
     ABSL_DCHECK(from._impl_.body_ != nullptr);
     if (_this->_impl_.body_ == nullptr) {
       _this->_impl_.body_ =
-          ::google::protobuf::Message::CopyConstruct<::MessageBody>(arena, *from._impl_.body_);
+          ::google::protobuf::Message::CopyConstruct<::MessagePayload>(arena, *from._impl_.body_);
     } else {
       _this->_impl_.body_->MergeFrom(*from._impl_.body_);
     }
@@ -611,7 +611,7 @@ void GateService::RegisterGame(::google::protobuf::RpcController* controller,
   done->Run();
 }
 void GateService::UnRegisterGame(::google::protobuf::RpcController* controller,
-                         const ::UnRegisterGameNodeRequest*, ::Empty*, ::google::protobuf::Closure* done) {
+                         const ::UnregisterGameNodeRequest*, ::Empty*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method UnRegisterGame() not implemented.");
   done->Run();
 }
@@ -631,12 +631,12 @@ void GateService::KickSessionByCentre(::google::protobuf::RpcController* control
   done->Run();
 }
 void GateService::RouteNodeMessage(::google::protobuf::RpcController* controller,
-                         const ::RouteMsgStringRequest*, ::RouteMsgStringResponse*, ::google::protobuf::Closure* done) {
+                         const ::RouteMessageRequest*, ::RouteMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RouteNodeMessage() not implemented.");
   done->Run();
 }
 void GateService::RoutePlayerMessage(::google::protobuf::RpcController* controller,
-                         const ::RoutePlayerMsgStringRequest*, ::RoutePlayerMsgStringResponse*, ::google::protobuf::Closure* done) {
+                         const ::RoutePlayerMessageRequest*, ::RoutePlayerMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RoutePlayerMessage() not implemented.");
   done->Run();
 }
@@ -660,7 +660,7 @@ void GateService::CallMethod(
       break;
     case 1:
       UnRegisterGame(controller,
-             ::google::protobuf::internal::DownCast<const ::UnRegisterGameNodeRequest*>(request),
+             ::google::protobuf::internal::DownCast<const ::UnregisterGameNodeRequest*>(request),
              ::google::protobuf::internal::DownCast<::Empty*>(response), done);
       break;
     case 2:
@@ -680,13 +680,13 @@ void GateService::CallMethod(
       break;
     case 5:
       RouteNodeMessage(controller,
-             ::google::protobuf::internal::DownCast<const ::RouteMsgStringRequest*>(request),
-             ::google::protobuf::internal::DownCast<::RouteMsgStringResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::RouteMessageRequest*>(request),
+             ::google::protobuf::internal::DownCast<::RouteMessageResponse*>(response), done);
       break;
     case 6:
       RoutePlayerMessage(controller,
-             ::google::protobuf::internal::DownCast<const ::RoutePlayerMsgStringRequest*>(request),
-             ::google::protobuf::internal::DownCast<::RoutePlayerMsgStringResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::RoutePlayerMessageRequest*>(request),
+             ::google::protobuf::internal::DownCast<::RoutePlayerMessageResponse*>(response), done);
       break;
     case 7:
       BroadcastToPlayers(controller,
@@ -707,7 +707,7 @@ const ::google::protobuf::Message& GateService::GetRequestPrototype(
     case 0:
       return ::RegisterGameNodeRequest::default_instance();
     case 1:
-      return ::UnRegisterGameNodeRequest::default_instance();
+      return ::UnregisterGameNodeRequest::default_instance();
     case 2:
       return ::RegisterGameNodeSessionRequest::default_instance();
     case 3:
@@ -715,9 +715,9 @@ const ::google::protobuf::Message& GateService::GetRequestPrototype(
     case 4:
       return ::KickSessionRequest::default_instance();
     case 5:
-      return ::RouteMsgStringRequest::default_instance();
+      return ::RouteMessageRequest::default_instance();
     case 6:
-      return ::RoutePlayerMsgStringRequest::default_instance();
+      return ::RoutePlayerMessageRequest::default_instance();
     case 7:
       return ::BroadcastToPlayersRequest::default_instance();
 
@@ -743,9 +743,9 @@ const ::google::protobuf::Message& GateService::GetResponsePrototype(
     case 4:
       return ::Empty::default_instance();
     case 5:
-      return ::RouteMsgStringResponse::default_instance();
+      return ::RouteMessageResponse::default_instance();
     case 6:
-      return ::RoutePlayerMsgStringResponse::default_instance();
+      return ::RoutePlayerMessageResponse::default_instance();
     case 7:
       return ::Empty::default_instance();
 
@@ -777,7 +777,7 @@ void GateService_Stub::RegisterGame(::google::protobuf::RpcController* controlle
                        request, response, done);
 }
 void GateService_Stub::UnRegisterGame(::google::protobuf::RpcController* controller,
-                              const ::UnRegisterGameNodeRequest* request,
+                              const ::UnregisterGameNodeRequest* request,
                               ::Empty* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
@@ -801,14 +801,14 @@ void GateService_Stub::KickSessionByCentre(::google::protobuf::RpcController* co
                        request, response, done);
 }
 void GateService_Stub::RouteNodeMessage(::google::protobuf::RpcController* controller,
-                              const ::RouteMsgStringRequest* request,
-                              ::RouteMsgStringResponse* response, ::google::protobuf::Closure* done) {
+                              const ::RouteMessageRequest* request,
+                              ::RouteMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
 void GateService_Stub::RoutePlayerMessage(::google::protobuf::RpcController* controller,
-                              const ::RoutePlayerMsgStringRequest* request,
-                              ::RoutePlayerMsgStringResponse* response, ::google::protobuf::Closure* done) {
+                              const ::RoutePlayerMessageRequest* request,
+                              ::RoutePlayerMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }

@@ -11,7 +11,7 @@
 
 extern ProtobufDispatcher gResponseDispatcher;
 
-void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMsgStringResponse>& replied, Timestamp timestamp)
+void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMessageResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	defer(tlsCommonLogic.SetNextRouteNodeType(UINT32_MAX));
@@ -39,14 +39,14 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
 		return;
 	}
-	MessageBody message;
+	MessagePayload message;
 	message.set_body(replied->body());
 	message.set_message_id(route_data.message_id());;
 	g_gate_node->SendMessageToClient(it->second.conn, message);
 	///<<< END WRITING YOUR CODE
 }
 
-void OnRoutePlayerStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RoutePlayerMsgStringResponse>& replied, Timestamp timestamp)
+void OnRoutePlayerStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RoutePlayerMessageResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE

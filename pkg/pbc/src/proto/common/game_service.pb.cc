@@ -678,7 +678,7 @@ ClientSendMessageToPlayerRequest::ClientSendMessageToPlayerRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.message_body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageBody>(
+  _impl_.message_body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessagePayload>(
                               arena, *from._impl_.message_body_)
                         : nullptr;
   _impl_.session_id_ = from._impl_.session_id_;
@@ -782,7 +782,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
     {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::MessageBody>()},
+    {::_pbi::TcParser::GetTable<::MessagePayload>()},
   }}, {{
   }},
 };
@@ -856,7 +856,7 @@ void ClientSendMessageToPlayerRequest::MergeImpl(::google::protobuf::MessageLite
     ABSL_DCHECK(from._impl_.message_body_ != nullptr);
     if (_this->_impl_.message_body_ == nullptr) {
       _this->_impl_.message_body_ =
-          ::google::protobuf::Message::CopyConstruct<::MessageBody>(arena, *from._impl_.message_body_);
+          ::google::protobuf::Message::CopyConstruct<::MessagePayload>(arena, *from._impl_.message_body_);
     } else {
       _this->_impl_.message_body_->MergeFrom(*from._impl_.message_body_);
     }
@@ -931,7 +931,7 @@ ClientSendMessageToPlayerResponse::ClientSendMessageToPlayerResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.message_body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageBody>(
+  _impl_.message_body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessagePayload>(
                               arena, *from._impl_.message_body_)
                         : nullptr;
   _impl_.session_id_ = from._impl_.session_id_;
@@ -1035,7 +1035,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
     {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::MessageBody>()},
+    {::_pbi::TcParser::GetTable<::MessagePayload>()},
   }}, {{
   }},
 };
@@ -1109,7 +1109,7 @@ void ClientSendMessageToPlayerResponse::MergeImpl(::google::protobuf::MessageLit
     ABSL_DCHECK(from._impl_.message_body_ != nullptr);
     if (_this->_impl_.message_body_ == nullptr) {
       _this->_impl_.message_body_ =
-          ::google::protobuf::Message::CopyConstruct<::MessageBody>(arena, *from._impl_.message_body_);
+          ::google::protobuf::Message::CopyConstruct<::MessagePayload>(arena, *from._impl_.message_body_);
     } else {
       _this->_impl_.message_body_->MergeFrom(*from._impl_.message_body_);
     }
@@ -2439,12 +2439,12 @@ void GameService::InvokePlayerService(::google::protobuf::RpcController* control
   done->Run();
 }
 void GameService::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-                         const ::RouteMsgStringRequest*, ::RouteMsgStringResponse*, ::google::protobuf::Closure* done) {
+                         const ::RouteMessageRequest*, ::RouteMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RouteNodeStringMsg() not implemented.");
   done->Run();
 }
 void GameService::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-                         const ::RoutePlayerMsgStringRequest*, ::RoutePlayerMsgStringResponse*, ::google::protobuf::Closure* done) {
+                         const ::RoutePlayerMessageRequest*, ::RoutePlayerMessageResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method RoutePlayerStringMsg() not implemented.");
   done->Run();
 }
@@ -2503,13 +2503,13 @@ void GameService::CallMethod(
       break;
     case 6:
       RouteNodeStringMsg(controller,
-             ::google::protobuf::internal::DownCast<const ::RouteMsgStringRequest*>(request),
-             ::google::protobuf::internal::DownCast<::RouteMsgStringResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::RouteMessageRequest*>(request),
+             ::google::protobuf::internal::DownCast<::RouteMessageResponse*>(response), done);
       break;
     case 7:
       RoutePlayerStringMsg(controller,
-             ::google::protobuf::internal::DownCast<const ::RoutePlayerMsgStringRequest*>(request),
-             ::google::protobuf::internal::DownCast<::RoutePlayerMsgStringResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::RoutePlayerMessageRequest*>(request),
+             ::google::protobuf::internal::DownCast<::RoutePlayerMessageResponse*>(response), done);
       break;
     case 8:
       UpdateSessionDetail(controller,
@@ -2550,9 +2550,9 @@ const ::google::protobuf::Message& GameService::GetRequestPrototype(
     case 5:
       return ::NodeRouteMessageRequest::default_instance();
     case 6:
-      return ::RouteMsgStringRequest::default_instance();
+      return ::RouteMessageRequest::default_instance();
     case 7:
-      return ::RoutePlayerMsgStringRequest::default_instance();
+      return ::RoutePlayerMessageRequest::default_instance();
     case 8:
       return ::RegisterPlayerSessionRequest::default_instance();
     case 9:
@@ -2584,9 +2584,9 @@ const ::google::protobuf::Message& GameService::GetResponsePrototype(
     case 5:
       return ::NodeRouteMessageResponse::default_instance();
     case 6:
-      return ::RouteMsgStringResponse::default_instance();
+      return ::RouteMessageResponse::default_instance();
     case 7:
-      return ::RoutePlayerMsgStringResponse::default_instance();
+      return ::RoutePlayerMessageResponse::default_instance();
     case 8:
       return ::Empty::default_instance();
     case 9:
@@ -2652,14 +2652,14 @@ void GameService_Stub::InvokePlayerService(::google::protobuf::RpcController* co
                        request, response, done);
 }
 void GameService_Stub::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-                              const ::RouteMsgStringRequest* request,
-                              ::RouteMsgStringResponse* response, ::google::protobuf::Closure* done) {
+                              const ::RouteMessageRequest* request,
+                              ::RouteMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }
 void GameService_Stub::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-                              const ::RoutePlayerMsgStringRequest* request,
-                              ::RoutePlayerMsgStringResponse* response, ::google::protobuf::Closure* done) {
+                              const ::RoutePlayerMessageRequest* request,
+                              ::RoutePlayerMessageResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(7), controller,
                        request, response, done);
 }
