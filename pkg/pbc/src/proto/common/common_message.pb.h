@@ -2833,25 +2833,25 @@ class MessageContent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kBodyFieldNumber = 1,
+    kSerializedMessageFieldNumber = 1,
     kErrorMessageFieldNumber = 4,
     kIdFieldNumber = 3,
     kMessageIdFieldNumber = 2,
   };
-  // bytes body = 1;
-  void clear_body() ;
+  // bytes serialized_message = 1;
+  void clear_serialized_message() ;
   const std::string& serialized_message() const;
   template <typename Arg_ = const std::string&, typename... Args_>
-  void set_body(Arg_&& arg, Args_... args);
+  void set_serialized_message(Arg_&& arg, Args_... args);
   std::string* mutable_serialized_message();
-  PROTOBUF_NODISCARD std::string* release_body();
-  void set_allocated_body(std::string* value);
+  PROTOBUF_NODISCARD std::string* release_serialized_message();
+  void set_allocated_serialized_message(std::string* value);
 
   private:
-  const std::string& _internal_body() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(
+  const std::string& _internal_serialized_message() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_serialized_message(
       const std::string& value);
-  std::string* _internal_mutable_body();
+  std::string* _internal_mutable_serialized_message();
 
   public:
   // .TipInfoMessage error_message = 4;
@@ -2912,7 +2912,7 @@ class MessageContent final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr body_;
+    ::google::protobuf::internal::ArenaStringPtr serialized_message_;
     ::TipInfoMessage* error_message_;
     ::uint64_t id_;
     ::uint32_t message_id_;
@@ -4444,54 +4444,54 @@ inline void RoutingNodeInfo::_internal_set_message_id(::uint32_t value) {
 
 // MessageContent
 
-// bytes body = 1;
-inline void MessageContent::clear_body() {
+// bytes serialized_message = 1;
+inline void MessageContent::clear_serialized_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.body_.ClearToEmpty();
+  _impl_.serialized_message_.ClearToEmpty();
 }
 inline const std::string& MessageContent::serialized_message() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:MessageContent.body)
-  return _internal_body();
+  // @@protoc_insertion_point(field_get:MessageContent.serialized_message)
+  return _internal_serialized_message();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void MessageContent::set_body(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void MessageContent::set_serialized_message(Arg_&& arg,
                                                      Args_... args) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:MessageContent.body)
+  _impl_.serialized_message_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:MessageContent.serialized_message)
 }
 inline std::string* MessageContent::mutable_serialized_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_body();
-  // @@protoc_insertion_point(field_mutable:MessageContent.body)
+  std::string* _s = _internal_mutable_serialized_message();
+  // @@protoc_insertion_point(field_mutable:MessageContent.serialized_message)
   return _s;
 }
-inline const std::string& MessageContent::_internal_body() const {
+inline const std::string& MessageContent::_internal_serialized_message() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.body_.Get();
+  return _impl_.serialized_message_.Get();
 }
-inline void MessageContent::_internal_set_body(const std::string& value) {
+inline void MessageContent::_internal_set_serialized_message(const std::string& value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.body_.Set(value, GetArena());
+  _impl_.serialized_message_.Set(value, GetArena());
 }
-inline std::string* MessageContent::_internal_mutable_body() {
+inline std::string* MessageContent::_internal_mutable_serialized_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _impl_.body_.Mutable( GetArena());
+  return _impl_.serialized_message_.Mutable( GetArena());
 }
-inline std::string* MessageContent::release_body() {
+inline std::string* MessageContent::release_serialized_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:MessageContent.body)
-  return _impl_.body_.Release();
+  // @@protoc_insertion_point(field_release:MessageContent.serialized_message)
+  return _impl_.serialized_message_.Release();
 }
-inline void MessageContent::set_allocated_body(std::string* value) {
+inline void MessageContent::set_allocated_serialized_message(std::string* value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.body_.SetAllocated(value, GetArena());
+  _impl_.serialized_message_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.body_.IsDefault()) {
-          _impl_.body_.Set("", GetArena());
+        if (_impl_.serialized_message_.IsDefault()) {
+          _impl_.serialized_message_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:MessageContent.body)
+  // @@protoc_insertion_point(field_set_allocated:MessageContent.serialized_message)
 }
 
 // uint32 message_id = 2;
