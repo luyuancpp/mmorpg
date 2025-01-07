@@ -30,7 +30,7 @@ static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_mount_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\025mount_error_tip.proto*7\n\013mount_error\022\022"
-    "\n\016kMount_errorOK\020\000\022\024\n\020kMountNotMounted\020f"
+    "\n\016kMount_errorOK\020\000\022\024\n\020kMountNotMounted\020g"
     "B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mount_5ferror_5ftip_2eproto_once;
@@ -71,7 +71,7 @@ const ::google::protobuf::EnumDescriptor* mount_error_descriptor() {
   return file_level_enum_descriptors_mount_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t mount_error_internal_data_[] = {
-    65536u, 65536u, 102u, };
+    65536u, 65536u, 103u, };
 bool mount_error_IsValid(int value) {
   return ::_pbi::ValidateEnum(value, mount_error_internal_data_);
 }

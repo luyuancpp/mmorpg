@@ -29,6 +29,7 @@
     <ClCompile Include="src\globalvariable_config.cpp" />
     <ClCompile Include="src\item_config.cpp" />
     <ClCompile Include="src\mainscene_config.cpp" />
+    <ClCompile Include="src\messagelimiter_config.cpp" />
     <ClCompile Include="src\mission_config.cpp" />
     <ClCompile Include="src\monsterbase_config.cpp" />
     <ClCompile Include="src\pbc\ability_operator.pb.cc" />
@@ -48,11 +49,13 @@
     <ClCompile Include="src\pbc\item_config.pb.cc" />
     <ClCompile Include="src\pbc\login_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\mainscene_config.pb.cc" />
+    <ClCompile Include="src\pbc\messagelimiter_config.pb.cc" />
     <ClCompile Include="src\pbc\mission_config.pb.cc" />
     <ClCompile Include="src\pbc\mission_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\monsterbase_config.pb.cc" />
     <ClCompile Include="src\pbc\mount_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\reward_config.pb.cc" />
+    <ClCompile Include="src\pbc\reward_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\scene_config.pb.cc" />
     <ClCompile Include="src\pbc\scene_error_tip.pb.cc" />
     <ClCompile Include="src\pbc\scene_operator.pb.cc" />
@@ -84,6 +87,7 @@
     <ClInclude Include="src\globalvariable_config.h" />
     <ClInclude Include="src\item_config.h" />
     <ClInclude Include="src\mainscene_config.h" />
+    <ClInclude Include="src\messagelimiter_config.h" />
     <ClInclude Include="src\mission_config.h" />
     <ClInclude Include="src\monsterbase_config.h" />
     <ClInclude Include="src\pbc\ability_operator.pb.h" />
@@ -103,11 +107,13 @@
     <ClInclude Include="src\pbc\item_config.pb.h" />
     <ClInclude Include="src\pbc\login_error_tip.pb.h" />
     <ClInclude Include="src\pbc\mainscene_config.pb.h" />
+    <ClInclude Include="src\pbc\messagelimiter_config.pb.h" />
     <ClInclude Include="src\pbc\mission_config.pb.h" />
     <ClInclude Include="src\pbc\mission_error_tip.pb.h" />
     <ClInclude Include="src\pbc\monsterbase_config.pb.h" />
     <ClInclude Include="src\pbc\mount_error_tip.pb.h" />
     <ClInclude Include="src\pbc\reward_config.pb.h" />
+    <ClInclude Include="src\pbc\reward_error_tip.pb.h" />
     <ClInclude Include="src\pbc\scene_config.pb.h" />
     <ClInclude Include="src\pbc\scene_error_tip.pb.h" />
     <ClInclude Include="src\pbc\scene_operator.pb.h" />

@@ -55,24 +55,24 @@ namespace protobuf {
 
 enum team_error : int {
   kTeam_errorOK = 0,
-  kTeamNotInApplicants = 51,
-  kTeamPlayerId = 52,
-  kTeamMembersFull = 53,
-  kTeamMemberInTeam = 54,
-  kTeamMemberNotInTeam = 55,
-  kTeamKickSelf = 56,
-  kTeamKickNotLeader = 57,
-  kTeamAppointSelf = 58,
-  kTeamAppointLeaderNotLeader = 59,
-  kTeamFull = 60,
-  kTeamInApplicantList = 61,
-  kTeamNotInApplicantList = 62,
-  kTeamListMaxSize = 63,
-  kTeamHasNotTeamId = 64,
-  kTeamDismissNotLeader = 65,
-  kTeamMemberListFull = 66,
-  kTeamCreateTeamMaxMemberSize = 67,
-  kTeamPlayerNotFound = 68,
+  kTeamNotInApplicants = 52,
+  kTeamPlayerId = 53,
+  kTeamMembersFull = 54,
+  kTeamMemberInTeam = 55,
+  kTeamMemberNotInTeam = 56,
+  kTeamKickSelf = 57,
+  kTeamKickNotLeader = 58,
+  kTeamAppointSelf = 59,
+  kTeamAppointLeaderNotLeader = 60,
+  kTeamFull = 61,
+  kTeamInApplicantList = 62,
+  kTeamNotInApplicantList = 63,
+  kTeamListMaxSize = 64,
+  kTeamHasNotTeamId = 65,
+  kTeamDismissNotLeader = 66,
+  kTeamMemberListFull = 67,
+  kTeamCreateTeamMaxMemberSize = 68,
+  kTeamPlayerNotFound = 69,
   team_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   team_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -82,8 +82,8 @@ enum team_error : int {
 bool team_error_IsValid(int value);
 extern const uint32_t team_error_internal_data_[];
 constexpr team_error team_error_MIN = static_cast<team_error>(0);
-constexpr team_error team_error_MAX = static_cast<team_error>(68);
-constexpr int team_error_ARRAYSIZE = 68 + 1;
+constexpr team_error team_error_MAX = static_cast<team_error>(69);
+constexpr int team_error_ARRAYSIZE = 69 + 1;
 const ::google::protobuf::EnumDescriptor*
 team_error_descriptor();
 template <typename T>
