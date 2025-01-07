@@ -141,6 +141,25 @@ struct GameNodeConnectRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameNodeConnectRequestDefaultTypeInternal _GameNodeConnectRequest_default_instance_;
 
+inline constexpr CreateSceneResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        scene_info_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR CreateSceneResponse::CreateSceneResponse(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct CreateSceneResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CreateSceneResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CreateSceneResponseDefaultTypeInternal() {}
+  union {
+    CreateSceneResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CreateSceneResponseDefaultTypeInternal _CreateSceneResponse_default_instance_;
+
 inline constexpr ClientSendMessageToPlayerResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -180,25 +199,6 @@ struct ClientSendMessageToPlayerRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClientSendMessageToPlayerRequestDefaultTypeInternal _ClientSendMessageToPlayerRequest_default_instance_;
-
-inline constexpr CreateSceneResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        scene_info_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR CreateSceneResponse::CreateSceneResponse(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct CreateSceneResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CreateSceneResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CreateSceneResponseDefaultTypeInternal() {}
-  union {
-    CreateSceneResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CreateSceneResponseDefaultTypeInternal _CreateSceneResponse_default_instance_;
 static ::_pb::Metadata file_level_metadata_proto_2fcommon_2fgame_5fservice_2eproto[9];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fcommon_2fgame_5fservice_2eproto = nullptr;
@@ -334,41 +334,41 @@ const char descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto[] A
     ".proto\032!proto/common/common_message.prot"
     "o\"[\n\032PlayerEnterGameNodeRequest\022\021\n\tplaye"
     "r_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\004\022\026\n\016centre"
-    "_node_id\030\003 \001(\r\"Z\n ClientSendMessageToPla"
-    "yerRequest\022\"\n\014message_body\030\001 \001(\0132\014.Messa"
-    "geBody\022\022\n\nsession_id\030\002 \001(\004\"[\n!ClientSend"
-    "MessageToPlayerResponse\022\"\n\014message_body\030"
-    "\001 \001(\0132\014.MessageBody\022\022\n\nsession_id\030\002 \001(\004\""
-    "-\n\030SessionDisconnectRequest\022\021\n\tplayer_id"
-    "\030\001 \001(\004\"S\n\026GameNodeConnectRequest\022#\n\nrpc_"
-    "client\030\001 \001(\0132\017.NetworkAddress\022\024\n\014gate_no"
-    "de_id\030\002 \001(\r\"E\n\034RegisterPlayerSessionRequ"
-    "est\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001"
-    "(\004\"A\n\032Centre2GsEnterSceneRequest\022\021\n\tplay"
-    "er_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"\'\n\022CreateS"
-    "ceneRequest\022\021\n\tconfig_id\030\001 \001(\r\"@\n\023Create"
-    "SceneResponse\022)\n\nscene_info\030\001 \001(\0132\025.Scen"
-    "eInfoPBComponent2\205\006\n\013GameService\022:\n\023Play"
-    "erEnterGameNode\022\033.PlayerEnterGameNodeReq"
-    "uest\032\006.Empty\022J\n\023SendMessageToPlayer\022\030.No"
-    "deRouteMessageRequest\032\031.NodeRouteMessage"
-    "Response\022b\n\031ClientSendMessageToPlayer\022!."
-    "ClientSendMessageToPlayerRequest\032\".Clien"
-    "tSendMessageToPlayerResponse\0224\n\020Register"
-    "GateNode\022\030.RegisterGateNodeRequest\032\006.Emp"
-    "ty\022A\n\035CentreSendToPlayerViaGameNode\022\030.No"
-    "deRouteMessageRequest\032\006.Empty\022J\n\023InvokeP"
-    "layerService\022\030.NodeRouteMessageRequest\032\031"
-    ".NodeRouteMessageResponse\022E\n\022RouteNodeSt"
-    "ringMsg\022\026.RouteMsgStringRequest\032\027.RouteM"
-    "sgStringResponse\022S\n\024RoutePlayerStringMsg"
-    "\022\034.RoutePlayerMsgStringRequest\032\035.RoutePl"
-    "ayerMsgStringResponse\022<\n\023UpdateSessionDe"
-    "tail\022\035.RegisterPlayerSessionRequest\032\006.Em"
-    "pty\0221\n\nEnterScene\022\033.Centre2GsEnterSceneR"
-    "equest\032\006.Empty\0228\n\013CreateScene\022\023.CreateSc"
-    "eneRequest\032\024.CreateSceneResponseB\014Z\007pb/g"
-    "ame\200\001\001b\006proto3"
+    "_node_id\030\003 \001(\r\"]\n ClientSendMessageToPla"
+    "yerRequest\022%\n\014message_body\030\001 \001(\0132\017.Messa"
+    "gePayload\022\022\n\nsession_id\030\002 \001(\004\"^\n!ClientS"
+    "endMessageToPlayerResponse\022%\n\014message_bo"
+    "dy\030\001 \001(\0132\017.MessagePayload\022\022\n\nsession_id\030"
+    "\002 \001(\004\"-\n\030SessionDisconnectRequest\022\021\n\tpla"
+    "yer_id\030\001 \001(\004\"S\n\026GameNodeConnectRequest\022#"
+    "\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022\024\n\014g"
+    "ate_node_id\030\002 \001(\r\"E\n\034RegisterPlayerSessi"
+    "onRequest\022\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_"
+    "id\030\002 \001(\004\"A\n\032Centre2GsEnterSceneRequest\022\021"
+    "\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"\'\n\022C"
+    "reateSceneRequest\022\021\n\tconfig_id\030\001 \001(\r\"@\n\023"
+    "CreateSceneResponse\022)\n\nscene_info\030\001 \001(\0132"
+    "\025.SceneInfoPBComponent2\375\005\n\013GameService\022:"
+    "\n\023PlayerEnterGameNode\022\033.PlayerEnterGameN"
+    "odeRequest\032\006.Empty\022J\n\023SendMessageToPlaye"
+    "r\022\030.NodeRouteMessageRequest\032\031.NodeRouteM"
+    "essageResponse\022b\n\031ClientSendMessageToPla"
+    "yer\022!.ClientSendMessageToPlayerRequest\032\""
+    ".ClientSendMessageToPlayerResponse\0224\n\020Re"
+    "gisterGateNode\022\030.RegisterGateNodeRequest"
+    "\032\006.Empty\022A\n\035CentreSendToPlayerViaGameNod"
+    "e\022\030.NodeRouteMessageRequest\032\006.Empty\022J\n\023I"
+    "nvokePlayerService\022\030.NodeRouteMessageReq"
+    "uest\032\031.NodeRouteMessageResponse\022A\n\022Route"
+    "NodeStringMsg\022\024.RouteMessageRequest\032\025.Ro"
+    "uteMessageResponse\022O\n\024RoutePlayerStringM"
+    "sg\022\032.RoutePlayerMessageRequest\032\033.RoutePl"
+    "ayerMessageResponse\022<\n\023UpdateSessionDeta"
+    "il\022\035.RegisterPlayerSessionRequest\032\006.Empt"
+    "y\0221\n\nEnterScene\022\033.Centre2GsEnterSceneReq"
+    "uest\032\006.Empty\0228\n\013CreateScene\022\023.CreateScen"
+    "eRequest\032\024.CreateSceneResponseB\014Z\007pb/gam"
+    "e\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto_deps[3] =
     {
@@ -380,7 +380,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fgame_5fservice_2eprot
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto = {
     false,
     false,
-    1574,
+    1572,
     descriptor_table_protodef_proto_2fcommon_2fgame_5fservice_2eproto,
     "proto/common/game_service.proto",
     &descriptor_table_proto_2fcommon_2fgame_5fservice_2eproto_once,
@@ -769,13 +769,13 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
     // uint64 session_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ClientSendMessageToPlayerRequest, _impl_.session_id_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.session_id_)}},
-    // .MessageBody message_body = 1;
+    // .MessagePayload message_body = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_body_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageBody message_body = 1;
+    // .MessagePayload message_body = 1;
     {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerRequest, _impl_.message_body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 session_id = 2;
@@ -795,7 +795,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageBody message_body = 1;
+  // .MessagePayload message_body = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.message_body_, _impl_.message_body_->GetCachedSize(), target, stream);
@@ -825,7 +825,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerRequest::_tab
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .MessageBody message_body = 1;
+  // .MessagePayload message_body = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
@@ -1022,13 +1022,13 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
     // uint64 session_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ClientSendMessageToPlayerResponse, _impl_.session_id_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.session_id_)}},
-    // .MessageBody message_body = 1;
+    // .MessagePayload message_body = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_body_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .MessageBody message_body = 1;
+    // .MessagePayload message_body = 1;
     {PROTOBUF_FIELD_OFFSET(ClientSendMessageToPlayerResponse, _impl_.message_body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     // uint64 session_id = 2;
@@ -1048,7 +1048,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageBody message_body = 1;
+  // .MessagePayload message_body = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.message_body_, _impl_.message_body_->GetCachedSize(), target, stream);
@@ -1078,7 +1078,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> ClientSendMessageToPlayerResponse::_ta
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .MessageBody message_body = 1;
+  // .MessagePayload message_body = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=

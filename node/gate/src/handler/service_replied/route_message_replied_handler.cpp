@@ -20,13 +20,13 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 
     tlsCommonLogic.SetCurrentSessionId(replied->session_id());
 
-	if (replied->route_data_list_size() <= 0)
+	if (replied->route_nodes_size() <= 0)
 	{
 		LOG_ERROR << "msg list empty:" << replied->DebugString();
 		return;
 	}
 	
-	auto& route_data = replied->route_data_list(replied->route_data_list_size() - 1);
+	auto& route_data = replied->route_nodes(replied->route_nodes_size() - 1);
 	if ( route_data.message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "message_id not found " << route_data.message_id();

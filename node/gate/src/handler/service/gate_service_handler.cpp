@@ -83,12 +83,12 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto sessionIt = tls_gate.sessions().find(request->head().session_id());
+	auto sessionIt = tls_gate.sessions().find(request->header().session_id());
 	if (sessionIt == tls_gate.sessions().end())
 	{
 		if (shouldLogProtocolErrorForDisconnectedPlayer(request->body().message_id()))
 		{
-			LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->head().session_id() << ", message ID:" << request->body().message_id();
+			LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->body().message_id();
 		}
 
 		return;

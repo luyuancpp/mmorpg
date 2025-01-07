@@ -402,10 +402,10 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	const auto it = tlsSessions.find(request->head().session_id());
+	const auto it = tlsSessions.find(request->header().session_id());
 	if (it == tlsSessions.end())
 	{
-		LOG_ERROR << "Session not found: " << request->head().session_id() << " message id :" << request->body().message_id();
+		LOG_ERROR << "Session not found: " << request->header().session_id() << " message id :" << request->body().message_id();
 		return;
 	}
 
@@ -466,7 +466,7 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	response->mutable_head()->set_session_id(request->head().session_id());
+	response->mutable_header()->set_session_id(request->header().session_id());
 	const int32_t byte_size = playerResponse->ByteSizeLong();
 	response->mutable_body()->mutable_body()->resize(byte_size);
 	if (!playerResponse->SerializePartialToArray(response->mutable_body()->mutable_body()->data(), byte_size))
@@ -539,19 +539,19 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	// Set current session ID
 	tlsCommonLogic.SetCurrentSessionId(request->session_id());
 
-	if (request->route_data_list_size() >= kMaxRouteSize)
+	if (request->route_nodes_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "Route message size exceeds maximum limit: " << request->DebugString();
 		return;
 	}
 
-	if (request->route_data_list().empty())
+	if (request->route_nodes().empty())
 	{
 		LOG_ERROR << "Route data list is empty: " << request->DebugString();
 		return;
 	}
 
-	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
+	auto& route_data = request->route_nodes(request->route_nodes_size() - 1);
 
 	if (route_data.message_id() >= gMessageInfo.size())
 	{
@@ -605,9 +605,9 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 		current_node_response->SerializePartialToArray(response->mutable_body()->data(), byte_size);
 
 		// Copy route data list to response
-		for (const auto& request_data_it : request->route_data_list())
+		for (const auto& request_data_it : request->route_nodes())
 		{
-			*response->add_route_data_list() = request_data_it;
+			*response->add_route_nodes() = request_data_it;
 		}
 
 		response->set_session_id(tlsCommonLogic.GetSessionId());
@@ -616,8 +616,8 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	}
 
 	// Need to route to the next node
-	auto* next_route_data = mutable_request->add_route_data_list();
-	next_route_data->CopyFrom(tlsCommonLogic.RouteData());
+	auto* next_route_data = mutable_request->add_route_nodes();
+	next_route_data->CopyFrom(tlsCommonLogic.GetRoutingNodeInfo());
 	next_route_data->mutable_node_info()->CopyFrom(gCentreNode->GetNodeInfo());
 	mutable_request->set_body(tlsCommonLogic.RouteMsgBody());
 	mutable_request->set_id(request->id());

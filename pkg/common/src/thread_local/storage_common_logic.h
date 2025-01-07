@@ -8,7 +8,7 @@ class ThreadLocalStorageCommonLogic
 public:
     using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 
-    RouteNodeInfo& RouteData() { return route_data_; }
+    RoutingNodeInfo& GetRoutingNodeInfo() { return route_data_; }
     std::string& RouteMsgBody() { return route_msg_body_; }
     void SetNextRouteNodeType(const uint32_t node_type) { next_route_node_type_ = node_type; }
     uint32_t GetNextRouteNodeType() const { return next_route_node_type_; }
@@ -22,7 +22,7 @@ public:
     inline const PlayerListMap& GetPlayerList() const { return playerList; }
 
 private:
-    RouteNodeInfo route_data_;
+    RoutingNodeInfo route_data_;
     std::string route_msg_body_;
     uint32_t next_route_node_type_{UINT32_MAX};
     uint32_t next_route_node_id_{UINT32_MAX};

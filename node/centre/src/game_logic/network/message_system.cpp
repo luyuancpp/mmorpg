@@ -73,7 +73,7 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     request.mutable_body()->mutable_body()->resize(byteSize);
     message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
     request.mutable_body()->set_message_id(messageId);
-    request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
+    request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 
     // 发送请求到游戏节点
     (*gameSessionPtr)->SendRequest(GameServiceSendMessageToPlayerMessageId, request);
@@ -130,7 +130,7 @@ void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& mess
     const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
     request.mutable_body()->mutable_body()->resize(byteSize);
     message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
-    request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
+    request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 
     // 发送请求到游戏节点
     (*rpcSession)->SendRequest(messageId, request);
@@ -180,7 +180,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
 	request.mutable_body()->mutable_body()->resize(byteSize);
 	message.SerializePartialToArray(request.mutable_body()->mutable_body()->data(), byteSize);
-	request.mutable_head()->set_session_id(sessionId);
+	request.mutable_header()->set_session_id(sessionId);
 	request.mutable_body()->set_message_id(messageId);
 	gate->SendRequest(GateServiceSendMessageToPlayerMessageId, request);
 }
@@ -263,7 +263,7 @@ void CallGamePlayerMethod(uint32_t messageId, const google::protobuf::Message& m
 
     // 设置消息 ID 和会话 ID
     request.mutable_body()->set_message_id(messageId);
-    request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
+    request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 
     // 发送消息
     (*gameSession)->CallRemoteMethod(GameServiceInvokePlayerServiceMessageId, request);

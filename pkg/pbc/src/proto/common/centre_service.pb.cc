@@ -168,7 +168,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fcentre_5fservice_2eproto[]
     "(\004\022\024\n\014game_node_id\030\002 \001(\r\"u\n CentrePlayer"
     "GameNodeEntryRequest\022*\n\017client_msg_body\030"
     "\001 \001(\0132\021.EnterGameRequest\022%\n\014session_info"
-    "\030\002 \001(\0132\017.SessionDetails2\277\006\n\rCentreServic"
+    "\030\002 \001(\0132\017.SessionDetails2\267\006\n\rCentreServic"
     "e\0224\n\020RegisterGameNode\022\030.RegisterGameNode"
     "Request\032\006.Empty\0224\n\020RegisterGateNode\022\030.Re"
     "gisterGateNodeRequest\032\006.Empty\0226\n\021GatePla"
@@ -184,12 +184,12 @@ const char descriptor_table_protodef_proto_2fcommon_2fcentre_5fservice_2eproto[]
     "\rPlayerService\022\030.NodeRouteMessageRequest"
     "\032\031.NodeRouteMessageResponse\0226\n\016EnterGsSu"
     "cceed\022\034.EnterGameNodeSuccessRequest\032\006.Em"
-    "pty\022E\n\022RouteNodeStringMsg\022\026.RouteMsgStri"
-    "ngRequest\032\027.RouteMsgStringResponse\022S\n\024Ro"
-    "utePlayerStringMsg\022\034.RoutePlayerMsgStrin"
-    "gRequest\032\035.RoutePlayerMsgStringResponse\022"
-    "8\n\022UnRegisterGameNode\022\032.UnRegisterGameNo"
-    "deRequest\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "pty\022A\n\022RouteNodeStringMsg\022\024.RouteMessage"
+    "Request\032\025.RouteMessageResponse\022O\n\024RouteP"
+    "layerStringMsg\022\032.RoutePlayerMessageReque"
+    "st\032\033.RoutePlayerMessageResponse\0228\n\022UnReg"
+    "isterGameNode\022\032.UnregisterGameNodeReques"
+    "t\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto_deps[5] =
     {
@@ -203,7 +203,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcentre_5fservice_2epr
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto = {
     false,
     false,
-    1319,
+    1311,
     descriptor_table_protodef_proto_2fcommon_2fcentre_5fservice_2eproto,
     "proto/common/centre_service.proto",
     &descriptor_table_proto_2fcommon_2fcentre_5fservice_2eproto_once,

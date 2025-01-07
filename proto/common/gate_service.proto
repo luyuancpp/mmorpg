@@ -16,16 +16,16 @@ message KickSessionRequest
 message BroadcastToPlayersRequest
 {
   repeated uint64 session_list = 1;
-  MessageBody body = 2;
+  MessagePayload body = 2;
 }
 
 service GateService {
   rpc RegisterGame (RegisterGameNodeRequest) returns (Empty);
-  rpc UnRegisterGame (UnRegisterGameNodeRequest) returns (Empty);
+  rpc UnRegisterGame (UnregisterGameNodeRequest) returns (Empty);
   rpc PlayerEnterGameNode (RegisterGameNodeSessionRequest) returns (RegisterGameNodeSessionResponse);
   rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (Empty);
   rpc KickSessionByCentre (KickSessionRequest) returns (Empty);
-  rpc RouteNodeMessage (RouteMsgStringRequest) returns (RouteMsgStringResponse);
-  rpc RoutePlayerMessage (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc RouteNodeMessage (RouteMessageRequest) returns (RouteMessageResponse);
+  rpc RoutePlayerMessage (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
 }

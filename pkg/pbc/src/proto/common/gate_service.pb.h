@@ -383,7 +383,7 @@ class BroadcastToPlayersRequest final : public ::google::protobuf::Message
   ::google::protobuf::RepeatedField<::uint64_t>* _internal_mutable_session_list();
 
   public:
-  // .MessageBody body = 2;
+  // .MessagePayload body = 2;
   bool has_body() const;
   void clear_body() ;
   const ::MessagePayload& body() const;
@@ -635,7 +635,7 @@ inline ::google::protobuf::RepeatedField<::uint64_t>* BroadcastToPlayersRequest:
   return &_impl_.session_list_;
 }
 
-// .MessageBody body = 2;
+// .MessagePayload body = 2;
 inline bool BroadcastToPlayersRequest::has_body() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.body_ != nullptr);
@@ -644,7 +644,7 @@ inline bool BroadcastToPlayersRequest::has_body() const {
 inline const ::MessagePayload& BroadcastToPlayersRequest::_internal_body() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   const ::MessagePayload* p = _impl_.body_;
-  return p != nullptr ? *p : reinterpret_cast<const ::MessagePayload&>(::_MessageBody_default_instance_);
+  return p != nullptr ? *p : reinterpret_cast<const ::MessagePayload&>(::_MessagePayload_default_instance_);
 }
 inline const ::MessagePayload& BroadcastToPlayersRequest::body() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:BroadcastToPlayersRequest.body)
