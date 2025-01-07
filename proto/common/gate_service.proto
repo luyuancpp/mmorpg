@@ -16,7 +16,7 @@ message KickSessionRequest
 message BroadcastToPlayersRequest
 {
   repeated uint64 session_list = 1;
-  MessagePayload body = 2;
+  MessageContent body = 2;
 }
 
 service GateService {
