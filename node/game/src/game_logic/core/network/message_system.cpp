@@ -47,7 +47,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 	NodeRouteMessageRequest request;
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_body()->set_body(message.SerializeAsString());
-	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
+	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 	(*gateNode)->SendRequest(GateServiceSendMessageToPlayerMessageId, request);
 }
 
@@ -88,7 +88,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 	NodeRouteMessageRequest request;
 	request.mutable_body()->set_message_id(messageId);
 	request.mutable_body()->set_body(message.SerializeAsString());
-	request.mutable_head()->set_session_id(playerNodeInfo->gate_session_id());
+	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 	(*centreNode)->SendRequest(CentreServicePlayerServiceMessageId, request);
 }
 

@@ -107,22 +107,22 @@ const char descriptor_table_protodef_proto_2fcommon_2fgate_5fservice_2eproto[] A
     "/common/empty.proto\032\031proto/common/common"
     ".proto\032!proto/common/common_message.prot"
     "o\"(\n\022KickSessionRequest\022\022\n\nsession_id\030\001 "
-    "\001(\004\"M\n\031BroadcastToPlayersRequest\022\024\n\014sess"
-    "ion_list\030\001 \003(\004\022\032\n\004body\030\002 \001(\0132\014.MessageBo"
-    "dy2\216\004\n\013GateService\0220\n\014RegisterGame\022\030.Reg"
-    "isterGameNodeRequest\032\006.Empty\0224\n\016UnRegist"
-    "erGame\022\032.UnRegisterGameNodeRequest\032\006.Emp"
-    "ty\022X\n\023PlayerEnterGameNode\022\037.RegisterGame"
-    "NodeSessionRequest\032 .RegisterGameNodeSes"
-    "sionResponse\0227\n\023SendMessageToPlayer\022\030.No"
-    "deRouteMessageRequest\032\006.Empty\0222\n\023KickSes"
-    "sionByCentre\022\023.KickSessionRequest\032\006.Empt"
-    "y\022C\n\020RouteNodeMessage\022\026.RouteMsgStringRe"
-    "quest\032\027.RouteMsgStringResponse\022Q\n\022RouteP"
-    "layerMessage\022\034.RoutePlayerMsgStringReque"
-    "st\032\035.RoutePlayerMsgStringResponse\0228\n\022Bro"
-    "adcastToPlayers\022\032.BroadcastToPlayersRequ"
-    "est\032\006.EmptyB\014Z\007pb/game\200\001\001b\006proto3"
+    "\001(\004\"P\n\031BroadcastToPlayersRequest\022\024\n\014sess"
+    "ion_list\030\001 \003(\004\022\035\n\004body\030\002 \001(\0132\017.MessagePa"
+    "yload2\206\004\n\013GateService\0220\n\014RegisterGame\022\030."
+    "RegisterGameNodeRequest\032\006.Empty\0224\n\016UnReg"
+    "isterGame\022\032.UnregisterGameNodeRequest\032\006."
+    "Empty\022X\n\023PlayerEnterGameNode\022\037.RegisterG"
+    "ameNodeSessionRequest\032 .RegisterGameNode"
+    "SessionResponse\0227\n\023SendMessageToPlayer\022\030"
+    ".NodeRouteMessageRequest\032\006.Empty\0222\n\023Kick"
+    "SessionByCentre\022\023.KickSessionRequest\032\006.E"
+    "mpty\022\?\n\020RouteNodeMessage\022\024.RouteMessageR"
+    "equest\032\025.RouteMessageResponse\022M\n\022RoutePl"
+    "ayerMessage\022\032.RoutePlayerMessageRequest\032"
+    "\033.RoutePlayerMessageResponse\0228\n\022Broadcas"
+    "tToPlayers\022\032.BroadcastToPlayersRequest\032\006"
+    ".EmptyB\014Z\007pb/game\200\001\001b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fgate_5fservice_2eproto_deps[3] =
     {
@@ -134,7 +134,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fgate_5fservice_2eprot
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fgate_5fservice_2eproto = {
     false,
     false,
-    793,
+    788,
     descriptor_table_protodef_proto_2fcommon_2fgate_5fservice_2eproto,
     "proto/common/gate_service.proto",
     &descriptor_table_proto_2fcommon_2fgate_5fservice_2eproto_once,
@@ -461,7 +461,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::BroadcastToPlayersRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .MessageBody body = 2;
+    // .MessagePayload body = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.body_)}},
     // repeated uint64 session_list = 1;
@@ -473,7 +473,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
     // repeated uint64 session_list = 1;
     {PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.session_list_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
-    // .MessageBody body = 2;
+    // .MessagePayload body = 2;
     {PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
@@ -499,7 +499,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
   }
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .MessageBody body = 2;
+  // .MessagePayload body = 2;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *_impl_.body_, _impl_.body_->GetCachedSize(), target, stream);
@@ -535,7 +535,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
     ;
     total_size += tag_size + data_size;
   }
-  // .MessageBody body = 2;
+  // .MessagePayload body = 2;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=

@@ -72,10 +72,10 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		LOG_ERROR << "message_id not found " << replied->body().message_id() ;
 		return;
 	}
-	const auto it = tlsSessions.find(replied->head().session_id());
+	const auto it = tlsSessions.find(replied->header().session_id());
 	if (it == tlsSessions.end())
 	{
-		LOG_ERROR << "can not find session id " << replied->head().session_id();
+		LOG_ERROR << "can not find session id " << replied->header().session_id();
 		return;
 	}
 	const auto  player_id    = it->second.player_id();
@@ -94,7 +94,6 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		<< replied->body().message_id();
 		return;
 	}
-
 
 	const auto& serviceImpl = service_it->second;
 	google::protobuf::Service* service = serviceImpl->service();

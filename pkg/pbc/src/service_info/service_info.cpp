@@ -68,9 +68,9 @@ gMessageInfo[CentreServiceLoginNodeLeaveGameMessageId] = RpcService{"CentreServi
 gMessageInfo[CentreServiceLoginNodeSessionDisconnectMessageId] = RpcService{"CentreService","LoginNodeSessionDisconnect","GateSessionDisconnectRequest","Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
 gMessageInfo[CentreServicePlayerServiceMessageId] = RpcService{"CentreService","PlayerService","NodeRouteMessageRequest","NodeRouteMessageResponse",std::make_unique_for_overwrite<CentreServiceImpl>()};
 gMessageInfo[CentreServiceEnterGsSucceedMessageId] = RpcService{"CentreService","EnterGsSucceed","EnterGameNodeSuccessRequest","Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
-gMessageInfo[CentreServiceRouteNodeStringMsgMessageId] = RpcService{"CentreService","RouteNodeStringMsg","RouteMsgStringRequest","RouteMsgStringResponse",std::make_unique_for_overwrite<CentreServiceImpl>()};
-gMessageInfo[CentreServiceRoutePlayerStringMsgMessageId] = RpcService{"CentreService","RoutePlayerStringMsg","RoutePlayerMsgStringRequest","RoutePlayerMsgStringResponse",std::make_unique_for_overwrite<CentreServiceImpl>()};
-gMessageInfo[CentreServiceUnRegisterGameNodeMessageId] = RpcService{"CentreService","UnRegisterGameNode","UnRegisterGameNodeRequest","Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
+gMessageInfo[CentreServiceRouteNodeStringMsgMessageId] = RpcService{"CentreService","RouteNodeStringMsg","RouteMessageRequest","RouteMessageResponse",std::make_unique_for_overwrite<CentreServiceImpl>()};
+gMessageInfo[CentreServiceRoutePlayerStringMsgMessageId] = RpcService{"CentreService","RoutePlayerStringMsg","RoutePlayerMessageRequest","RoutePlayerMessageResponse",std::make_unique_for_overwrite<CentreServiceImpl>()};
+gMessageInfo[CentreServiceUnRegisterGameNodeMessageId] = RpcService{"CentreService","UnRegisterGameNode","UnregisterGameNodeRequest","Empty",std::make_unique_for_overwrite<CentreServiceImpl>()};
 
 gMessageInfo[ClientPlayerSceneServiceEnterSceneMessageId] = RpcService{"ClientPlayerSceneService","EnterScene","EnterSceneC2SRequest","EnterSceneC2SResponse",std::make_unique_for_overwrite<ClientPlayerSceneServiceImpl>()};
 gClientToServerMessageId.emplace(ClientPlayerSceneServiceEnterSceneMessageId);
@@ -117,19 +117,19 @@ gMessageInfo[GameServiceClientSendMessageToPlayerMessageId] = RpcService{"GameSe
 gMessageInfo[GameServiceRegisterGateNodeMessageId] = RpcService{"GameService","RegisterGateNode","RegisterGateNodeRequest","Empty",std::make_unique_for_overwrite<GameServiceImpl>()};
 gMessageInfo[GameServiceCentreSendToPlayerViaGameNodeMessageId] = RpcService{"GameService","CentreSendToPlayerViaGameNode","NodeRouteMessageRequest","Empty",std::make_unique_for_overwrite<GameServiceImpl>()};
 gMessageInfo[GameServiceInvokePlayerServiceMessageId] = RpcService{"GameService","InvokePlayerService","NodeRouteMessageRequest","NodeRouteMessageResponse",std::make_unique_for_overwrite<GameServiceImpl>()};
-gMessageInfo[GameServiceRouteNodeStringMsgMessageId] = RpcService{"GameService","RouteNodeStringMsg","RouteMsgStringRequest","RouteMsgStringResponse",std::make_unique_for_overwrite<GameServiceImpl>()};
-gMessageInfo[GameServiceRoutePlayerStringMsgMessageId] = RpcService{"GameService","RoutePlayerStringMsg","RoutePlayerMsgStringRequest","RoutePlayerMsgStringResponse",std::make_unique_for_overwrite<GameServiceImpl>()};
+gMessageInfo[GameServiceRouteNodeStringMsgMessageId] = RpcService{"GameService","RouteNodeStringMsg","RouteMessageRequest","RouteMessageResponse",std::make_unique_for_overwrite<GameServiceImpl>()};
+gMessageInfo[GameServiceRoutePlayerStringMsgMessageId] = RpcService{"GameService","RoutePlayerStringMsg","RoutePlayerMessageRequest","RoutePlayerMessageResponse",std::make_unique_for_overwrite<GameServiceImpl>()};
 gMessageInfo[GameServiceUpdateSessionDetailMessageId] = RpcService{"GameService","UpdateSessionDetail","RegisterPlayerSessionRequest","Empty",std::make_unique_for_overwrite<GameServiceImpl>()};
 gMessageInfo[GameServiceEnterSceneMessageId] = RpcService{"GameService","EnterScene","Centre2GsEnterSceneRequest","Empty",std::make_unique_for_overwrite<GameServiceImpl>()};
 gMessageInfo[GameServiceCreateSceneMessageId] = RpcService{"GameService","CreateScene","CreateSceneRequest","CreateSceneResponse",std::make_unique_for_overwrite<GameServiceImpl>()};
 
 gMessageInfo[GateServiceRegisterGameMessageId] = RpcService{"GateService","RegisterGame","RegisterGameNodeRequest","Empty",std::make_unique_for_overwrite<GateServiceImpl>()};
-gMessageInfo[GateServiceUnRegisterGameMessageId] = RpcService{"GateService","UnRegisterGame","UnRegisterGameNodeRequest","Empty",std::make_unique_for_overwrite<GateServiceImpl>()};
+gMessageInfo[GateServiceUnRegisterGameMessageId] = RpcService{"GateService","UnRegisterGame","UnregisterGameNodeRequest","Empty",std::make_unique_for_overwrite<GateServiceImpl>()};
 gMessageInfo[GateServicePlayerEnterGameNodeMessageId] = RpcService{"GateService","PlayerEnterGameNode","RegisterGameNodeSessionRequest","RegisterGameNodeSessionResponse",std::make_unique_for_overwrite<GateServiceImpl>()};
 gMessageInfo[GateServiceSendMessageToPlayerMessageId] = RpcService{"GateService","SendMessageToPlayer","NodeRouteMessageRequest","Empty",std::make_unique_for_overwrite<GateServiceImpl>()};
 gMessageInfo[GateServiceKickSessionByCentreMessageId] = RpcService{"GateService","KickSessionByCentre","KickSessionRequest","Empty",std::make_unique_for_overwrite<GateServiceImpl>()};
-gMessageInfo[GateServiceRouteNodeMessageMessageId] = RpcService{"GateService","RouteNodeMessage","RouteMsgStringRequest","RouteMsgStringResponse",std::make_unique_for_overwrite<GateServiceImpl>()};
-gMessageInfo[GateServiceRoutePlayerMessageMessageId] = RpcService{"GateService","RoutePlayerMessage","RoutePlayerMsgStringRequest","RoutePlayerMsgStringResponse",std::make_unique_for_overwrite<GateServiceImpl>()};
+gMessageInfo[GateServiceRouteNodeMessageMessageId] = RpcService{"GateService","RouteNodeMessage","RouteMessageRequest","RouteMessageResponse",std::make_unique_for_overwrite<GateServiceImpl>()};
+gMessageInfo[GateServiceRoutePlayerMessageMessageId] = RpcService{"GateService","RoutePlayerMessage","RoutePlayerMessageRequest","RoutePlayerMessageResponse",std::make_unique_for_overwrite<GateServiceImpl>()};
 gMessageInfo[GateServiceBroadcastToPlayersMessageId] = RpcService{"GateService","BroadcastToPlayers","BroadcastToPlayersRequest","Empty",std::make_unique_for_overwrite<GateServiceImpl>()};
 
 gMessageInfo[PlayerClientCommonServiceSendTipToClientMessageId] = RpcService{"PlayerClientCommonService","SendTipToClient","TipInfoMessage","Empty",std::make_unique_for_overwrite<PlayerClientCommonServiceImpl>()};

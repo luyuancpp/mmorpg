@@ -72,13 +72,13 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 {
 ///<<< BEGIN WRITING YOUR CODE
 
-	LOG_TRACE << "Handling message routing for session ID: " << request->head().session_id()
+	LOG_TRACE << "Handling message routing for session ID: " << request->header().session_id()
 		<< ", message ID: " << request->body().message_id();
 
-	const auto it = tlsSessions.find(request->head().session_id());
+	const auto it = tlsSessions.find(request->header().session_id());
 	if (it == tlsSessions.end())
 	{
-		LOG_ERROR << "Session ID not found: " << request->head().session_id()
+		LOG_ERROR << "Session ID not found: " << request->header().session_id()
 			<< ", message ID: " << request->body().message_id();
 		return;
 	}
@@ -128,7 +128,7 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 
 	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
-    response->mutable_head()->set_session_id(request->head().session_id());
+    response->mutable_header()->set_session_id(request->header().session_id());
     response->mutable_body()->set_message_id(request->body().message_id());
 
 	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
@@ -233,10 +233,10 @@ void GameServiceHandler::CentreSendToPlayerViaGameNode(::google::protobuf::RpcCo
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto it = tlsSessions.find(request->head().session_id());
+	const auto it = tlsSessions.find(request->header().session_id());
 	if (it == tlsSessions.end())
 	{
-		LOG_ERROR << "session id not found " << request->head().session_id() << ","
+		LOG_ERROR << "session id not found " << request->header().session_id() << ","
 			<< " message id " << request->body().message_id();
 		return;
 	}
@@ -257,10 +257,10 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto it = tlsSessions.find(request->head().session_id());
+	const auto it = tlsSessions.find(request->header().session_id());
 	if (it == tlsSessions.end())
 	{
-		LOG_ERROR << "session id not found " << request->head().session_id() << ","
+		LOG_ERROR << "session id not found " << request->header().session_id() << ","
 			<< " message id " << request->body().message_id();
 		return;
 	}
@@ -282,7 +282,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	const auto serviceIt = g_player_service.find(messageInfo.serviceName);
 	if (serviceIt == g_player_service.end())
 	{
-		LOG_ERROR << "PlayerService service not found " << request->head().session_id()
+		LOG_ERROR << "PlayerService service not found " << request->header().session_id()
 			<< "," << request->body().message_id();
 		return;
 	}
@@ -307,7 +307,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
 
-    response->mutable_head()->set_session_id(request->head().session_id());
+    response->mutable_header()->set_session_id(request->header().session_id());
     response->mutable_body()->set_message_id(request->body().message_id());
 	
     if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {

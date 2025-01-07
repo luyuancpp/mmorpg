@@ -17,13 +17,13 @@ message PlayerEnterGameNodeRequest
 
 message ClientSendMessageToPlayerRequest
 {
-  MessageBody message_body = 1;
+  MessagePayload message_body = 1;
   uint64 session_id = 2;
 }
 
 message ClientSendMessageToPlayerResponse
 {
-  MessageBody message_body = 1;
+  MessagePayload message_body = 1;
   uint64 session_id = 2;
 }
 
@@ -67,8 +67,8 @@ service GameService {
   rpc RegisterGateNode (RegisterGateNodeRequest) returns (Empty);
   rpc CentreSendToPlayerViaGameNode (NodeRouteMessageRequest) returns (Empty);
   rpc InvokePlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
-  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
-  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc RouteNodeStringMsg (RouteMessageRequest) returns (RouteMessageResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc UpdateSessionDetail (RegisterPlayerSessionRequest) returns (Empty);
   rpc EnterScene (Centre2GsEnterSceneRequest) returns (Empty);
   rpc CreateScene (CreateSceneRequest) returns (CreateSceneResponse);
