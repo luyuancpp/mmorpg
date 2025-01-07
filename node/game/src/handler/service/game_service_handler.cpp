@@ -309,11 +309,18 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 
     response->mutable_head()->set_session_id(request->head().session_id());
     response->mutable_body()->set_message_id(request->body().message_id());
-
+	
     if (Empty::GetDescriptor() == playerResponse->GetDescriptor()) {
         return;
     }
 
+	if (const auto tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
+		nullptr != tipInfoMessage)
+	{
+		response->mutable_body()->mutable_error_message()->CopyFrom(*tipInfoMessage);
+		tipInfoMessage->Clear();
+	}
+	
 	response->mutable_body()->set_body(playerResponse->SerializeAsString());
         
 ///<<< END WRITING YOUR CODE

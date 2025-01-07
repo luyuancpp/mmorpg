@@ -80,29 +80,6 @@ struct NodeMessageHeadDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeMessageHeadDefaultTypeInternal _NodeMessageHead_default_instance_;
 
-inline constexpr MessageBody::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : body_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        id_{::uint64_t{0u}},
-        message_id_{0u},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR MessageBody::MessageBody(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct MessageBodyDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MessageBodyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MessageBodyDefaultTypeInternal() {}
-  union {
-    MessageBody _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MessageBodyDefaultTypeInternal _MessageBody_default_instance_;
-
 inline constexpr RoutePlayerMsgStringResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -308,6 +285,118 @@ struct RegisterCentreSessionNodeRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RegisterCentreSessionNodeRequestDefaultTypeInternal _RegisterCentreSessionNodeRequest_default_instance_;
 
+inline constexpr NodeRouteMessageBody::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        node_info_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR NodeRouteMessageBody::NodeRouteMessageBody(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct NodeRouteMessageBodyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NodeRouteMessageBodyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NodeRouteMessageBodyDefaultTypeInternal() {}
+  union {
+    NodeRouteMessageBody _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageBodyDefaultTypeInternal _NodeRouteMessageBody_default_instance_;
+
+inline constexpr MessageBody::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        body_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        error_message_{nullptr},
+        id_{::uint64_t{0u}},
+        message_id_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MessageBody::MessageBody(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct MessageBodyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MessageBodyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MessageBodyDefaultTypeInternal() {}
+  union {
+    MessageBody _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MessageBodyDefaultTypeInternal _MessageBody_default_instance_;
+
+inline constexpr GateSessionDisconnectRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        session_info_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GateSessionDisconnectRequest::GateSessionDisconnectRequest(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct GateSessionDisconnectRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GateSessionDisconnectRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GateSessionDisconnectRequestDefaultTypeInternal() {}
+  union {
+    GateSessionDisconnectRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GateSessionDisconnectRequestDefaultTypeInternal _GateSessionDisconnectRequest_default_instance_;
+
+inline constexpr RouteMsgStringResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : route_data_list_{},
+        body_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        session_id_{::uint64_t{0u}},
+        id_{::uint64_t{0u}},
+        is_client_{false},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RouteMsgStringResponse::RouteMsgStringResponse(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct RouteMsgStringResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RouteMsgStringResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RouteMsgStringResponseDefaultTypeInternal() {}
+  union {
+    RouteMsgStringResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RouteMsgStringResponseDefaultTypeInternal _RouteMsgStringResponse_default_instance_;
+
+inline constexpr RouteMsgStringRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : route_data_list_{},
+        body_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        session_id_{::uint64_t{0u}},
+        id_{::uint64_t{0u}},
+        is_client_{false},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RouteMsgStringRequest::RouteMsgStringRequest(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct RouteMsgStringRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RouteMsgStringRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RouteMsgStringRequestDefaultTypeInternal() {}
+  union {
+    RouteMsgStringRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RouteMsgStringRequestDefaultTypeInternal _RouteMsgStringRequest_default_instance_;
+
 inline constexpr PlayerNodeServiceRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -387,94 +476,6 @@ struct NodeRouteMessageRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageRequestDefaultTypeInternal _NodeRouteMessageRequest_default_instance_;
-
-inline constexpr NodeRouteMessageBody::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        node_info_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR NodeRouteMessageBody::NodeRouteMessageBody(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct NodeRouteMessageBodyDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR NodeRouteMessageBodyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~NodeRouteMessageBodyDefaultTypeInternal() {}
-  union {
-    NodeRouteMessageBody _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageBodyDefaultTypeInternal _NodeRouteMessageBody_default_instance_;
-
-inline constexpr GateSessionDisconnectRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        session_info_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR GateSessionDisconnectRequest::GateSessionDisconnectRequest(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct GateSessionDisconnectRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR GateSessionDisconnectRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~GateSessionDisconnectRequestDefaultTypeInternal() {}
-  union {
-    GateSessionDisconnectRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GateSessionDisconnectRequestDefaultTypeInternal _GateSessionDisconnectRequest_default_instance_;
-
-inline constexpr RouteMsgStringResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : route_data_list_{},
-        body_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        session_id_{::uint64_t{0u}},
-        id_{::uint64_t{0u}},
-        is_client_{false},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR RouteMsgStringResponse::RouteMsgStringResponse(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct RouteMsgStringResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RouteMsgStringResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RouteMsgStringResponseDefaultTypeInternal() {}
-  union {
-    RouteMsgStringResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RouteMsgStringResponseDefaultTypeInternal _RouteMsgStringResponse_default_instance_;
-
-inline constexpr RouteMsgStringRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : route_data_list_{},
-        body_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        session_id_{::uint64_t{0u}},
-        id_{::uint64_t{0u}},
-        is_client_{false},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR RouteMsgStringRequest::RouteMsgStringRequest(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct RouteMsgStringRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RouteMsgStringRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RouteMsgStringRequestDefaultTypeInternal() {}
-  union {
-    RouteMsgStringRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RouteMsgStringRequestDefaultTypeInternal _RouteMsgStringRequest_default_instance_;
 static ::_pb::Metadata file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[22];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fcommon_2fcommon_5fmessage_2eproto = nullptr;
@@ -495,7 +496,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::RouteNodeInfo, _impl_.message_id_),
         0,
         ~0u,
-        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::MessageBody, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::MessageBody, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -506,6 +507,11 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::MessageBody, _impl_.body_),
         PROTOBUF_FIELD_OFFSET(::MessageBody, _impl_.message_id_),
         PROTOBUF_FIELD_OFFSET(::MessageBody, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::MessageBody, _impl_.error_message_),
+        ~0u,
+        ~0u,
+        ~0u,
+        0,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::NodeMessageHead, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -743,27 +749,27 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, 10, -1, sizeof(::RouteNodeInfo)},
-        {12, -1, -1, sizeof(::MessageBody)},
-        {23, -1, -1, sizeof(::NodeMessageHead)},
-        {33, 43, -1, sizeof(::NodeRouteMessageRequest)},
-        {45, 55, -1, sizeof(::NodeRouteMessageResponse)},
-        {57, -1, -1, sizeof(::PlayerMessageExtern)},
-        {66, 76, -1, sizeof(::PlayerNodeServiceRequest)},
-        {78, 88, -1, sizeof(::PlayerMessageResponse)},
-        {90, 99, -1, sizeof(::NodeRouteMessageBody)},
-        {100, 110, -1, sizeof(::RegisterGameNodeSessionRequest)},
-        {112, 121, -1, sizeof(::RegisterGameNodeSessionResponse)},
-        {122, 131, -1, sizeof(::RegisterSessionGateNodeResponse)},
-        {132, 142, -1, sizeof(::RegisterCentreSessionNodeRequest)},
-        {144, 153, -1, sizeof(::RegisterSessionCentreNodeResponse)},
-        {154, 163, -1, sizeof(::GateSessionDisconnectRequest)},
-        {164, -1, -1, sizeof(::RouteMsgStringRequest)},
-        {177, -1, -1, sizeof(::RouteMsgStringResponse)},
-        {190, 201, -1, sizeof(::RoutePlayerMsgStringRequest)},
-        {204, 215, -1, sizeof(::RoutePlayerMsgStringResponse)},
-        {218, 230, -1, sizeof(::RegisterGameNodeRequest)},
-        {234, 244, -1, sizeof(::RegisterGateNodeRequest)},
-        {246, -1, -1, sizeof(::UnRegisterGameNodeRequest)},
+        {12, 24, -1, sizeof(::MessageBody)},
+        {28, -1, -1, sizeof(::NodeMessageHead)},
+        {38, 48, -1, sizeof(::NodeRouteMessageRequest)},
+        {50, 60, -1, sizeof(::NodeRouteMessageResponse)},
+        {62, -1, -1, sizeof(::PlayerMessageExtern)},
+        {71, 81, -1, sizeof(::PlayerNodeServiceRequest)},
+        {83, 93, -1, sizeof(::PlayerMessageResponse)},
+        {95, 104, -1, sizeof(::NodeRouteMessageBody)},
+        {105, 115, -1, sizeof(::RegisterGameNodeSessionRequest)},
+        {117, 126, -1, sizeof(::RegisterGameNodeSessionResponse)},
+        {127, 136, -1, sizeof(::RegisterSessionGateNodeResponse)},
+        {137, 147, -1, sizeof(::RegisterCentreSessionNodeRequest)},
+        {149, 158, -1, sizeof(::RegisterSessionCentreNodeResponse)},
+        {159, 168, -1, sizeof(::GateSessionDisconnectRequest)},
+        {169, -1, -1, sizeof(::RouteMsgStringRequest)},
+        {182, -1, -1, sizeof(::RouteMsgStringResponse)},
+        {195, 206, -1, sizeof(::RoutePlayerMsgStringRequest)},
+        {209, 220, -1, sizeof(::RoutePlayerMsgStringResponse)},
+        {223, 235, -1, sizeof(::RegisterGameNodeRequest)},
+        {239, 249, -1, sizeof(::RegisterGateNodeRequest)},
+        {251, -1, -1, sizeof(::UnRegisterGameNodeRequest)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_RouteNodeInfo_default_instance_._instance,
@@ -793,71 +799,73 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     protodesc_cold) = {
     "\n!proto/common/common_message.proto\032\031pro"
     "to/common/common.proto\032\032proto/common/ses"
-    "sion.proto\"A\n\rRouteNodeInfo\022\034\n\tnode_info"
-    "\030\001 \001(\0132\t.NodeInfo\022\022\n\nmessage_id\030\002 \001(\r\";\n"
-    "\013MessageBody\022\014\n\004body\030\001 \001(\014\022\022\n\nmessage_id"
-    "\030\002 \001(\r\022\n\n\002id\030\003 \001(\004\"6\n\017NodeMessageHead\022\017\n"
-    "\007node_id\030\001 \001(\r\022\022\n\nsession_id\030\002 \001(\004\"U\n\027No"
-    "deRouteMessageRequest\022\032\n\004body\030\001 \001(\0132\014.Me"
-    "ssageBody\022\036\n\004head\030\002 \001(\0132\020.NodeMessageHea"
-    "d\"V\n\030NodeRouteMessageResponse\022\032\n\004body\030\001 "
-    "\001(\0132\014.MessageBody\022\036\n\004head\030\002 \001(\0132\020.NodeMe"
-    "ssageHead\"(\n\023PlayerMessageExtern\022\021\n\tplay"
-    "er_id\030\001 \001(\004\"Z\n\030PlayerNodeServiceRequest\022"
-    "\032\n\004body\030\001 \001(\0132\014.MessageBody\022\"\n\004head\030\002 \001("
-    "\0132\024.PlayerMessageExtern\"W\n\025PlayerMessage"
-    "Response\022\032\n\004body\030\001 \001(\0132\014.MessageBody\022\"\n\004"
-    "head\030\002 \001(\0132\024.PlayerMessageExtern\"4\n\024Node"
-    "RouteMessageBody\022\034\n\tnode_info\030\002 \001(\0132\t.No"
-    "deInfo\"]\n\036RegisterGameNodeSessionRequest"
-    "\022%\n\014session_info\030\001 \001(\0132\017.SessionDetails\022"
-    "\024\n\014game_node_id\030\002 \001(\r\"H\n\037RegisterGameNod"
-    "eSessionResponse\022%\n\014session_info\030\001 \001(\0132\017"
-    ".SessionDetails\"H\n\037RegisterSessionGateNo"
-    "deResponse\022%\n\014session_info\030\001 \001(\0132\017.Sessi"
-    "onDetails\"a\n RegisterCentreSessionNodeRe"
-    "quest\022%\n\014session_info\030\001 \001(\0132\017.SessionDet"
-    "ails\022\026\n\016centre_node_id\030\002 \001(\r\"J\n!Register"
-    "SessionCentreNodeResponse\022%\n\014session_inf"
-    "o\030\001 \001(\0132\017.SessionDetails\"E\n\034GateSessionD"
-    "isconnectRequest\022%\n\014session_info\030\001 \001(\0132\017"
-    ".SessionDetails\"\201\001\n\025RouteMsgStringReques"
-    "t\022\014\n\004body\030\001 \001(\014\022\'\n\017route_data_list\030\002 \003(\013"
-    "2\016.RouteNodeInfo\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002"
-    "id\030\004 \001(\004\022\021\n\tis_client\030\005 \001(\010\"\202\001\n\026RouteMsg"
-    "StringResponse\022\014\n\004body\030\001 \001(\014\022\'\n\017route_da"
-    "ta_list\030\002 \003(\0132\016.RouteNodeInfo\022\022\n\nsession"
-    "_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_client\030\005 \001(\010"
-    "\"r\n\033RoutePlayerMsgStringRequest\022\014\n\004body\030"
-    "\001 \001(\014\022\034\n\tnode_list\030\002 \003(\0132\t.NodeInfo\022\'\n\tp"
-    "layer_ex\030\003 \001(\0132\024.PlayerMessageExtern\"s\n\034"
-    "RoutePlayerMsgStringResponse\022\014\n\004body\030\001 \001"
-    "(\014\022\034\n\tnode_list\030\002 \003(\0132\t.NodeInfo\022\'\n\tplay"
-    "er_ex\030\003 \001(\0132\024.PlayerMessageExtern\"\216\001\n\027Re"
-    "gisterGameNodeRequest\022#\n\nrpc_client\030\001 \001("
-    "\0132\017.NetworkAddress\022#\n\nrpc_server\030\002 \001(\0132\017"
-    ".NetworkAddress\022\024\n\014game_node_id\030\003 \001(\r\022\023\n"
-    "\013server_type\030\004 \001(\r\"T\n\027RegisterGateNodeRe"
+    "sion.proto\032\026proto/common/tip.proto\"A\n\rRo"
+    "uteNodeInfo\022\034\n\tnode_info\030\001 \001(\0132\t.NodeInf"
+    "o\022\022\n\nmessage_id\030\002 \001(\r\"c\n\013MessageBody\022\014\n\004"
+    "body\030\001 \001(\014\022\022\n\nmessage_id\030\002 \001(\r\022\n\n\002id\030\003 \001"
+    "(\004\022&\n\rerror_message\030\004 \001(\0132\017.TipInfoMessa"
+    "ge\"6\n\017NodeMessageHead\022\017\n\007node_id\030\001 \001(\r\022\022"
+    "\n\nsession_id\030\002 \001(\004\"U\n\027NodeRouteMessageRe"
+    "quest\022\032\n\004body\030\001 \001(\0132\014.MessageBody\022\036\n\004hea"
+    "d\030\002 \001(\0132\020.NodeMessageHead\"V\n\030NodeRouteMe"
+    "ssageResponse\022\032\n\004body\030\001 \001(\0132\014.MessageBod"
+    "y\022\036\n\004head\030\002 \001(\0132\020.NodeMessageHead\"(\n\023Pla"
+    "yerMessageExtern\022\021\n\tplayer_id\030\001 \001(\004\"Z\n\030P"
+    "layerNodeServiceRequest\022\032\n\004body\030\001 \001(\0132\014."
+    "MessageBody\022\"\n\004head\030\002 \001(\0132\024.PlayerMessag"
+    "eExtern\"W\n\025PlayerMessageResponse\022\032\n\004body"
+    "\030\001 \001(\0132\014.MessageBody\022\"\n\004head\030\002 \001(\0132\024.Pla"
+    "yerMessageExtern\"4\n\024NodeRouteMessageBody"
+    "\022\034\n\tnode_info\030\002 \001(\0132\t.NodeInfo\"]\n\036Regist"
+    "erGameNodeSessionRequest\022%\n\014session_info"
+    "\030\001 \001(\0132\017.SessionDetails\022\024\n\014game_node_id\030"
+    "\002 \001(\r\"H\n\037RegisterGameNodeSessionResponse"
+    "\022%\n\014session_info\030\001 \001(\0132\017.SessionDetails\""
+    "H\n\037RegisterSessionGateNodeResponse\022%\n\014se"
+    "ssion_info\030\001 \001(\0132\017.SessionDetails\"a\n Reg"
+    "isterCentreSessionNodeRequest\022%\n\014session"
+    "_info\030\001 \001(\0132\017.SessionDetails\022\026\n\016centre_n"
+    "ode_id\030\002 \001(\r\"J\n!RegisterSessionCentreNod"
+    "eResponse\022%\n\014session_info\030\001 \001(\0132\017.Sessio"
+    "nDetails\"E\n\034GateSessionDisconnectRequest"
+    "\022%\n\014session_info\030\001 \001(\0132\017.SessionDetails\""
+    "\201\001\n\025RouteMsgStringRequest\022\014\n\004body\030\001 \001(\014\022"
+    "\'\n\017route_data_list\030\002 \003(\0132\016.RouteNodeInfo"
+    "\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_c"
+    "lient\030\005 \001(\010\"\202\001\n\026RouteMsgStringResponse\022\014"
+    "\n\004body\030\001 \001(\014\022\'\n\017route_data_list\030\002 \003(\0132\016."
+    "RouteNodeInfo\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002id\030"
+    "\004 \001(\004\022\021\n\tis_client\030\005 \001(\010\"r\n\033RoutePlayerM"
+    "sgStringRequest\022\014\n\004body\030\001 \001(\014\022\034\n\tnode_li"
+    "st\030\002 \003(\0132\t.NodeInfo\022\'\n\tplayer_ex\030\003 \001(\0132\024"
+    ".PlayerMessageExtern\"s\n\034RoutePlayerMsgSt"
+    "ringResponse\022\014\n\004body\030\001 \001(\014\022\034\n\tnode_list\030"
+    "\002 \003(\0132\t.NodeInfo\022\'\n\tplayer_ex\030\003 \001(\0132\024.Pl"
+    "ayerMessageExtern\"\216\001\n\027RegisterGameNodeRe"
     "quest\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddre"
-    "ss\022\024\n\014gate_node_id\030\002 \001(\r\"1\n\031UnRegisterGa"
-    "meNodeRequest\022\024\n\014game_node_id\030\001 \001(\rB\tZ\007p"
-    "b/gameb\006proto3"
+    "ss\022#\n\nrpc_server\030\002 \001(\0132\017.NetworkAddress\022"
+    "\024\n\014game_node_id\030\003 \001(\r\022\023\n\013server_type\030\004 \001"
+    "(\r\"T\n\027RegisterGateNodeRequest\022#\n\nrpc_cli"
+    "ent\030\001 \001(\0132\017.NetworkAddress\022\024\n\014gate_node_"
+    "id\030\002 \001(\r\"1\n\031UnRegisterGameNodeRequest\022\024\n"
+    "\014game_node_id\030\001 \001(\rB\tZ\007pb/gameb\006proto3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[2] =
+static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[3] =
     {
         &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fsession_2eproto,
+        &::descriptor_table_proto_2fcommon_2ftip_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto = {
     false,
     false,
-    2014,
+    2078,
     descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto,
     "proto/common/common_message.proto",
     &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
     descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps,
-    2,
+    3,
     22,
     schemas,
     file_default_instances,
@@ -1138,8 +1146,16 @@ void RouteNodeInfo::InternalSwap(RouteNodeInfo* PROTOBUF_RESTRICT other) {
 
 class MessageBody::_Internal {
  public:
+  using HasBits = decltype(std::declval<MessageBody>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+    8 * PROTOBUF_FIELD_OFFSET(MessageBody, _impl_._has_bits_);
 };
 
+void MessageBody::clear_error_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
 MessageBody::MessageBody(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
@@ -1148,8 +1164,9 @@ MessageBody::MessageBody(::google::protobuf::Arena* arena)
 inline PROTOBUF_NDEBUG_INLINE MessageBody::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
-      : body_(arena, from.body_),
-        _cached_size_{0} {}
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        body_(arena, from.body_) {}
 
 MessageBody::MessageBody(
     ::google::protobuf::Arena* arena,
@@ -1160,6 +1177,10 @@ MessageBody::MessageBody(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.error_message_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::TipInfoMessage>(
+                              arena, *from._impl_.error_message_)
+                        : nullptr;
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            reinterpret_cast<const char *>(&from._impl_) +
@@ -1173,16 +1194,16 @@ MessageBody::MessageBody(
 inline PROTOBUF_NDEBUG_INLINE MessageBody::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : body_(arena),
-        _cached_size_{0} {}
+      : _cached_size_{0},
+        body_(arena) {}
 
 inline void MessageBody::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, id_),
+               offsetof(Impl_, error_message_),
            0,
            offsetof(Impl_, message_id_) -
-               offsetof(Impl_, id_) +
+               offsetof(Impl_, error_message_) +
                sizeof(Impl_::message_id_));
 }
 MessageBody::~MessageBody() {
@@ -1193,6 +1214,7 @@ MessageBody::~MessageBody() {
 inline void MessageBody::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.body_.Destroy();
+  delete _impl_.error_message_;
   _impl_.~Impl_();
 }
 
@@ -1218,9 +1240,15 @@ PROTOBUF_NOINLINE void MessageBody::Clear() {
   (void) cached_has_bits;
 
   _impl_.body_.ClearToEmpty();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.error_message_ != nullptr);
+    _impl_.error_message_->Clear();
+  }
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.message_id_) -
       reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.message_id_));
+  _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -1232,24 +1260,26 @@ const char* MessageBody::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MessageBody::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageBody::_table_ = {
   {
-    0,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(MessageBody, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
+    4,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
     &_MessageBody_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
     ::_pbi::TcParser::GetTable<::MessageBody>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // .TipInfoMessage error_message = 4;
+    {::_pbi::TcParser::FastMtS1,
+     {34, 0, 0, PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.error_message_)}},
     // bytes body = 1;
     {::_pbi::TcParser::FastBS1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.body_)}},
@@ -1263,17 +1293,20 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MessageBody::_table_ = {
     65535, 65535
   }}, {{
     // bytes body = 1;
-    {PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.body_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.body_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
     // uint32 message_id = 2;
-    {PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.message_id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.message_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint64 id = 3;
-    {PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.id_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-  }},
-  // no aux_entries
-  {{
+    // .TipInfoMessage error_message = 4;
+    {PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
+  }}, {{
   }},
 };
 
@@ -1304,6 +1337,13 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MessageBody::_table_ = {
         3, this->_internal_id(), target);
   }
 
+  cached_has_bits = _impl_._has_bits_[0];
+  // .TipInfoMessage error_message = 4;
+  if (cached_has_bits & 0x00000001u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        4, *_impl_.error_message_, _impl_.error_message_->GetCachedSize(), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1327,6 +1367,13 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MessageBody::_table_ = {
                                     this->_internal_body());
   }
 
+  // .TipInfoMessage error_message = 4;
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    total_size +=
+        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.error_message_);
+  }
+
   // uint64 id = 3;
   if (this->_internal_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
@@ -1346,6 +1393,7 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> MessageBody::_table_ = {
 void MessageBody::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<MessageBody*>(&to_msg);
   auto& from = static_cast<const MessageBody&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:MessageBody)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
@@ -1354,12 +1402,23 @@ void MessageBody::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   if (!from._internal_body().empty()) {
     _this->_internal_set_body(from._internal_body());
   }
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+    if (_this->_impl_.error_message_ == nullptr) {
+      _this->_impl_.error_message_ =
+          ::google::protobuf::Message::CopyConstruct<::TipInfoMessage>(arena, *from._impl_.error_message_);
+    } else {
+      _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+    }
+  }
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
   }
   if (from._internal_message_id() != 0) {
     _this->_impl_.message_id_ = from._impl_.message_id_;
   }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -1379,13 +1438,14 @@ void MessageBody::InternalSwap(MessageBody* PROTOBUF_RESTRICT other) {
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.body_, &other->_impl_.body_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.message_id_)
       + sizeof(MessageBody::_impl_.message_id_)
-      - PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.id_)>(
-          reinterpret_cast<char*>(&_impl_.id_),
-          reinterpret_cast<char*>(&other->_impl_.id_));
+      - PROTOBUF_FIELD_OFFSET(MessageBody, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
 }
 
 ::google::protobuf::Metadata MessageBody::GetMetadata() const {

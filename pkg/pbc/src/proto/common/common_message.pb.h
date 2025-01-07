@@ -30,6 +30,7 @@
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/common.pb.h"
 #include "proto/common/session.pb.h"
+#include "proto/common/tip.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -633,203 +634,6 @@ class NodeMessageHead final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::uint64_t session_id_;
     ::uint32_t node_id_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
-};
-// -------------------------------------------------------------------
-
-class MessageBody final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:MessageBody) */ {
- public:
-  inline MessageBody() : MessageBody(nullptr) {}
-  ~MessageBody() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR MessageBody(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline MessageBody(const MessageBody& from) : MessageBody(nullptr, from) {}
-  inline MessageBody(MessageBody&& from) noexcept
-      : MessageBody(nullptr, std::move(from)) {}
-  inline MessageBody& operator=(const MessageBody& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline MessageBody& operator=(MessageBody&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const MessageBody& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const MessageBody* internal_default_instance() {
-    return reinterpret_cast<const MessageBody*>(
-        &_MessageBody_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(MessageBody& a, MessageBody& b) { a.Swap(&b); }
-  inline void Swap(MessageBody* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(MessageBody* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  MessageBody* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<MessageBody>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const MessageBody& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const MessageBody& from) { MessageBody::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(MessageBody* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "MessageBody"; }
-
- protected:
-  explicit MessageBody(::google::protobuf::Arena* arena);
-  MessageBody(::google::protobuf::Arena* arena, const MessageBody& from);
-  MessageBody(::google::protobuf::Arena* arena, MessageBody&& from) noexcept
-      : MessageBody(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kBodyFieldNumber = 1,
-    kIdFieldNumber = 3,
-    kMessageIdFieldNumber = 2,
-  };
-  // bytes body = 1;
-  void clear_body() ;
-  const std::string& body() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_body(Arg_&& arg, Args_... args);
-  std::string* mutable_body();
-  PROTOBUF_NODISCARD std::string* release_body();
-  void set_allocated_body(std::string* value);
-
-  private:
-  const std::string& _internal_body() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(
-      const std::string& value);
-  std::string* _internal_mutable_body();
-
-  public:
-  // uint64 id = 3;
-  void clear_id() ;
-  ::uint64_t id() const;
-  void set_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_id() const;
-  void _internal_set_id(::uint64_t value);
-
-  public:
-  // uint32 message_id = 2;
-  void clear_message_id() ;
-  ::uint32_t message_id() const;
-  void set_message_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_message_id() const;
-  void _internal_set_message_id(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:MessageBody)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 0,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::ArenaStringPtr body_;
-    ::uint64_t id_;
-    ::uint32_t message_id_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2731,6 +2535,1023 @@ class RegisterCentreSessionNodeRequest final : public ::google::protobuf::Messag
 };
 // -------------------------------------------------------------------
 
+class NodeRouteMessageBody final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:NodeRouteMessageBody) */ {
+ public:
+  inline NodeRouteMessageBody() : NodeRouteMessageBody(nullptr) {}
+  ~NodeRouteMessageBody() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR NodeRouteMessageBody(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline NodeRouteMessageBody(const NodeRouteMessageBody& from) : NodeRouteMessageBody(nullptr, from) {}
+  inline NodeRouteMessageBody(NodeRouteMessageBody&& from) noexcept
+      : NodeRouteMessageBody(nullptr, std::move(from)) {}
+  inline NodeRouteMessageBody& operator=(const NodeRouteMessageBody& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NodeRouteMessageBody& operator=(NodeRouteMessageBody&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NodeRouteMessageBody& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NodeRouteMessageBody* internal_default_instance() {
+    return reinterpret_cast<const NodeRouteMessageBody*>(
+        &_NodeRouteMessageBody_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 8;
+  friend void swap(NodeRouteMessageBody& a, NodeRouteMessageBody& b) { a.Swap(&b); }
+  inline void Swap(NodeRouteMessageBody* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NodeRouteMessageBody* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NodeRouteMessageBody* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<NodeRouteMessageBody>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const NodeRouteMessageBody& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const NodeRouteMessageBody& from) { NodeRouteMessageBody::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(NodeRouteMessageBody* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "NodeRouteMessageBody"; }
+
+ protected:
+  explicit NodeRouteMessageBody(::google::protobuf::Arena* arena);
+  NodeRouteMessageBody(::google::protobuf::Arena* arena, const NodeRouteMessageBody& from);
+  NodeRouteMessageBody(::google::protobuf::Arena* arena, NodeRouteMessageBody&& from) noexcept
+      : NodeRouteMessageBody(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kNodeInfoFieldNumber = 2,
+  };
+  // .NodeInfo node_info = 2;
+  bool has_node_info() const;
+  void clear_node_info() ;
+  const ::NodeInfo& node_info() const;
+  PROTOBUF_NODISCARD ::NodeInfo* release_node_info();
+  ::NodeInfo* mutable_node_info();
+  void set_allocated_node_info(::NodeInfo* value);
+  void unsafe_arena_set_allocated_node_info(::NodeInfo* value);
+  ::NodeInfo* unsafe_arena_release_node_info();
+
+  private:
+  const ::NodeInfo& _internal_node_info() const;
+  ::NodeInfo* _internal_mutable_node_info();
+
+  public:
+  // @@protoc_insertion_point(class_scope:NodeRouteMessageBody)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::NodeInfo* node_info_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class MessageBody final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:MessageBody) */ {
+ public:
+  inline MessageBody() : MessageBody(nullptr) {}
+  ~MessageBody() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MessageBody(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline MessageBody(const MessageBody& from) : MessageBody(nullptr, from) {}
+  inline MessageBody(MessageBody&& from) noexcept
+      : MessageBody(nullptr, std::move(from)) {}
+  inline MessageBody& operator=(const MessageBody& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MessageBody& operator=(MessageBody&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MessageBody& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const MessageBody* internal_default_instance() {
+    return reinterpret_cast<const MessageBody*>(
+        &_MessageBody_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(MessageBody& a, MessageBody& b) { a.Swap(&b); }
+  inline void Swap(MessageBody* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MessageBody* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MessageBody* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<MessageBody>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MessageBody& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MessageBody& from) { MessageBody::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(MessageBody* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "MessageBody"; }
+
+ protected:
+  explicit MessageBody(::google::protobuf::Arena* arena);
+  MessageBody(::google::protobuf::Arena* arena, const MessageBody& from);
+  MessageBody(::google::protobuf::Arena* arena, MessageBody&& from) noexcept
+      : MessageBody(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kBodyFieldNumber = 1,
+    kErrorMessageFieldNumber = 4,
+    kIdFieldNumber = 3,
+    kMessageIdFieldNumber = 2,
+  };
+  // bytes body = 1;
+  void clear_body() ;
+  const std::string& body() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_body(Arg_&& arg, Args_... args);
+  std::string* mutable_body();
+  PROTOBUF_NODISCARD std::string* release_body();
+  void set_allocated_body(std::string* value);
+
+  private:
+  const std::string& _internal_body() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(
+      const std::string& value);
+  std::string* _internal_mutable_body();
+
+  public:
+  // .TipInfoMessage error_message = 4;
+  bool has_error_message() const;
+  void clear_error_message() ;
+  const ::TipInfoMessage& error_message() const;
+  PROTOBUF_NODISCARD ::TipInfoMessage* release_error_message();
+  ::TipInfoMessage* mutable_error_message();
+  void set_allocated_error_message(::TipInfoMessage* value);
+  void unsafe_arena_set_allocated_error_message(::TipInfoMessage* value);
+  ::TipInfoMessage* unsafe_arena_release_error_message();
+
+  private:
+  const ::TipInfoMessage& _internal_error_message() const;
+  ::TipInfoMessage* _internal_mutable_error_message();
+
+  public:
+  // uint64 id = 3;
+  void clear_id() ;
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
+
+  public:
+  // uint32 message_id = 2;
+  void clear_message_id() ;
+  ::uint32_t message_id() const;
+  void set_message_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_message_id() const;
+  void _internal_set_message_id(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:MessageBody)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 4, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr body_;
+    ::TipInfoMessage* error_message_;
+    ::uint64_t id_;
+    ::uint32_t message_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class GateSessionDisconnectRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:GateSessionDisconnectRequest) */ {
+ public:
+  inline GateSessionDisconnectRequest() : GateSessionDisconnectRequest(nullptr) {}
+  ~GateSessionDisconnectRequest() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GateSessionDisconnectRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline GateSessionDisconnectRequest(const GateSessionDisconnectRequest& from) : GateSessionDisconnectRequest(nullptr, from) {}
+  inline GateSessionDisconnectRequest(GateSessionDisconnectRequest&& from) noexcept
+      : GateSessionDisconnectRequest(nullptr, std::move(from)) {}
+  inline GateSessionDisconnectRequest& operator=(const GateSessionDisconnectRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GateSessionDisconnectRequest& operator=(GateSessionDisconnectRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GateSessionDisconnectRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const GateSessionDisconnectRequest* internal_default_instance() {
+    return reinterpret_cast<const GateSessionDisconnectRequest*>(
+        &_GateSessionDisconnectRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 14;
+  friend void swap(GateSessionDisconnectRequest& a, GateSessionDisconnectRequest& b) { a.Swap(&b); }
+  inline void Swap(GateSessionDisconnectRequest* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GateSessionDisconnectRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GateSessionDisconnectRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<GateSessionDisconnectRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GateSessionDisconnectRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GateSessionDisconnectRequest& from) { GateSessionDisconnectRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(GateSessionDisconnectRequest* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "GateSessionDisconnectRequest"; }
+
+ protected:
+  explicit GateSessionDisconnectRequest(::google::protobuf::Arena* arena);
+  GateSessionDisconnectRequest(::google::protobuf::Arena* arena, const GateSessionDisconnectRequest& from);
+  GateSessionDisconnectRequest(::google::protobuf::Arena* arena, GateSessionDisconnectRequest&& from) noexcept
+      : GateSessionDisconnectRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSessionInfoFieldNumber = 1,
+  };
+  // .SessionDetails session_info = 1;
+  bool has_session_info() const;
+  void clear_session_info() ;
+  const ::SessionDetails& session_info() const;
+  PROTOBUF_NODISCARD ::SessionDetails* release_session_info();
+  ::SessionDetails* mutable_session_info();
+  void set_allocated_session_info(::SessionDetails* value);
+  void unsafe_arena_set_allocated_session_info(::SessionDetails* value);
+  ::SessionDetails* unsafe_arena_release_session_info();
+
+  private:
+  const ::SessionDetails& _internal_session_info() const;
+  ::SessionDetails* _internal_mutable_session_info();
+
+  public:
+  // @@protoc_insertion_point(class_scope:GateSessionDisconnectRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::SessionDetails* session_info_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class RouteMsgStringResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:RouteMsgStringResponse) */ {
+ public:
+  inline RouteMsgStringResponse() : RouteMsgStringResponse(nullptr) {}
+  ~RouteMsgStringResponse() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RouteMsgStringResponse(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline RouteMsgStringResponse(const RouteMsgStringResponse& from) : RouteMsgStringResponse(nullptr, from) {}
+  inline RouteMsgStringResponse(RouteMsgStringResponse&& from) noexcept
+      : RouteMsgStringResponse(nullptr, std::move(from)) {}
+  inline RouteMsgStringResponse& operator=(const RouteMsgStringResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RouteMsgStringResponse& operator=(RouteMsgStringResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RouteMsgStringResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const RouteMsgStringResponse* internal_default_instance() {
+    return reinterpret_cast<const RouteMsgStringResponse*>(
+        &_RouteMsgStringResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 16;
+  friend void swap(RouteMsgStringResponse& a, RouteMsgStringResponse& b) { a.Swap(&b); }
+  inline void Swap(RouteMsgStringResponse* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RouteMsgStringResponse* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RouteMsgStringResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<RouteMsgStringResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RouteMsgStringResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RouteMsgStringResponse& from) { RouteMsgStringResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(RouteMsgStringResponse* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "RouteMsgStringResponse"; }
+
+ protected:
+  explicit RouteMsgStringResponse(::google::protobuf::Arena* arena);
+  RouteMsgStringResponse(::google::protobuf::Arena* arena, const RouteMsgStringResponse& from);
+  RouteMsgStringResponse(::google::protobuf::Arena* arena, RouteMsgStringResponse&& from) noexcept
+      : RouteMsgStringResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRouteDataListFieldNumber = 2,
+    kBodyFieldNumber = 1,
+    kSessionIdFieldNumber = 3,
+    kIdFieldNumber = 4,
+    kIsClientFieldNumber = 5,
+  };
+  // repeated .RouteNodeInfo route_data_list = 2;
+  int route_data_list_size() const;
+  private:
+  int _internal_route_data_list_size() const;
+
+  public:
+  void clear_route_data_list() ;
+  ::RouteNodeInfo* mutable_route_data_list(int index);
+  ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* mutable_route_data_list();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& _internal_route_data_list() const;
+  ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* _internal_mutable_route_data_list();
+  public:
+  const ::RouteNodeInfo& route_data_list(int index) const;
+  ::RouteNodeInfo* add_route_data_list();
+  const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& route_data_list() const;
+  // bytes body = 1;
+  void clear_body() ;
+  const std::string& body() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_body(Arg_&& arg, Args_... args);
+  std::string* mutable_body();
+  PROTOBUF_NODISCARD std::string* release_body();
+  void set_allocated_body(std::string* value);
+
+  private:
+  const std::string& _internal_body() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(
+      const std::string& value);
+  std::string* _internal_mutable_body();
+
+  public:
+  // uint64 session_id = 3;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // uint64 id = 4;
+  void clear_id() ;
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
+
+  public:
+  // bool is_client = 5;
+  void clear_is_client() ;
+  bool is_client() const;
+  void set_is_client(bool value);
+
+  private:
+  bool _internal_is_client() const;
+  void _internal_set_is_client(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:RouteMsgStringResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      3, 5, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::RepeatedPtrField< ::RouteNodeInfo > route_data_list_;
+    ::google::protobuf::internal::ArenaStringPtr body_;
+    ::uint64_t session_id_;
+    ::uint64_t id_;
+    bool is_client_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class RouteMsgStringRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:RouteMsgStringRequest) */ {
+ public:
+  inline RouteMsgStringRequest() : RouteMsgStringRequest(nullptr) {}
+  ~RouteMsgStringRequest() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RouteMsgStringRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline RouteMsgStringRequest(const RouteMsgStringRequest& from) : RouteMsgStringRequest(nullptr, from) {}
+  inline RouteMsgStringRequest(RouteMsgStringRequest&& from) noexcept
+      : RouteMsgStringRequest(nullptr, std::move(from)) {}
+  inline RouteMsgStringRequest& operator=(const RouteMsgStringRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RouteMsgStringRequest& operator=(RouteMsgStringRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RouteMsgStringRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const RouteMsgStringRequest* internal_default_instance() {
+    return reinterpret_cast<const RouteMsgStringRequest*>(
+        &_RouteMsgStringRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 15;
+  friend void swap(RouteMsgStringRequest& a, RouteMsgStringRequest& b) { a.Swap(&b); }
+  inline void Swap(RouteMsgStringRequest* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RouteMsgStringRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RouteMsgStringRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<RouteMsgStringRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RouteMsgStringRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RouteMsgStringRequest& from) { RouteMsgStringRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(RouteMsgStringRequest* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "RouteMsgStringRequest"; }
+
+ protected:
+  explicit RouteMsgStringRequest(::google::protobuf::Arena* arena);
+  RouteMsgStringRequest(::google::protobuf::Arena* arena, const RouteMsgStringRequest& from);
+  RouteMsgStringRequest(::google::protobuf::Arena* arena, RouteMsgStringRequest&& from) noexcept
+      : RouteMsgStringRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRouteDataListFieldNumber = 2,
+    kBodyFieldNumber = 1,
+    kSessionIdFieldNumber = 3,
+    kIdFieldNumber = 4,
+    kIsClientFieldNumber = 5,
+  };
+  // repeated .RouteNodeInfo route_data_list = 2;
+  int route_data_list_size() const;
+  private:
+  int _internal_route_data_list_size() const;
+
+  public:
+  void clear_route_data_list() ;
+  ::RouteNodeInfo* mutable_route_data_list(int index);
+  ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* mutable_route_data_list();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& _internal_route_data_list() const;
+  ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* _internal_mutable_route_data_list();
+  public:
+  const ::RouteNodeInfo& route_data_list(int index) const;
+  ::RouteNodeInfo* add_route_data_list();
+  const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& route_data_list() const;
+  // bytes body = 1;
+  void clear_body() ;
+  const std::string& body() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_body(Arg_&& arg, Args_... args);
+  std::string* mutable_body();
+  PROTOBUF_NODISCARD std::string* release_body();
+  void set_allocated_body(std::string* value);
+
+  private:
+  const std::string& _internal_body() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(
+      const std::string& value);
+  std::string* _internal_mutable_body();
+
+  public:
+  // uint64 session_id = 3;
+  void clear_session_id() ;
+  ::uint64_t session_id() const;
+  void set_session_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_session_id() const;
+  void _internal_set_session_id(::uint64_t value);
+
+  public:
+  // uint64 id = 4;
+  void clear_id() ;
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
+
+  public:
+  // bool is_client = 5;
+  void clear_is_client() ;
+  bool is_client() const;
+  void set_is_client(bool value);
+
+  private:
+  bool _internal_is_client() const;
+  void _internal_set_is_client(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:RouteMsgStringRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      3, 5, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::RepeatedPtrField< ::RouteNodeInfo > route_data_list_;
+    ::google::protobuf::internal::ArenaStringPtr body_;
+    ::uint64_t session_id_;
+    ::uint64_t id_;
+    bool is_client_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
 class PlayerNodeServiceRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:PlayerNodeServiceRequest) */ {
  public:
@@ -3489,808 +4310,6 @@ class NodeRouteMessageRequest final : public ::google::protobuf::Message
   union { Impl_ _impl_; };
   friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
 };
-// -------------------------------------------------------------------
-
-class NodeRouteMessageBody final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:NodeRouteMessageBody) */ {
- public:
-  inline NodeRouteMessageBody() : NodeRouteMessageBody(nullptr) {}
-  ~NodeRouteMessageBody() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR NodeRouteMessageBody(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline NodeRouteMessageBody(const NodeRouteMessageBody& from) : NodeRouteMessageBody(nullptr, from) {}
-  inline NodeRouteMessageBody(NodeRouteMessageBody&& from) noexcept
-      : NodeRouteMessageBody(nullptr, std::move(from)) {}
-  inline NodeRouteMessageBody& operator=(const NodeRouteMessageBody& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline NodeRouteMessageBody& operator=(NodeRouteMessageBody&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const NodeRouteMessageBody& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const NodeRouteMessageBody* internal_default_instance() {
-    return reinterpret_cast<const NodeRouteMessageBody*>(
-        &_NodeRouteMessageBody_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 8;
-  friend void swap(NodeRouteMessageBody& a, NodeRouteMessageBody& b) { a.Swap(&b); }
-  inline void Swap(NodeRouteMessageBody* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(NodeRouteMessageBody* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  NodeRouteMessageBody* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<NodeRouteMessageBody>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const NodeRouteMessageBody& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const NodeRouteMessageBody& from) { NodeRouteMessageBody::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(NodeRouteMessageBody* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "NodeRouteMessageBody"; }
-
- protected:
-  explicit NodeRouteMessageBody(::google::protobuf::Arena* arena);
-  NodeRouteMessageBody(::google::protobuf::Arena* arena, const NodeRouteMessageBody& from);
-  NodeRouteMessageBody(::google::protobuf::Arena* arena, NodeRouteMessageBody&& from) noexcept
-      : NodeRouteMessageBody(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kNodeInfoFieldNumber = 2,
-  };
-  // .NodeInfo node_info = 2;
-  bool has_node_info() const;
-  void clear_node_info() ;
-  const ::NodeInfo& node_info() const;
-  PROTOBUF_NODISCARD ::NodeInfo* release_node_info();
-  ::NodeInfo* mutable_node_info();
-  void set_allocated_node_info(::NodeInfo* value);
-  void unsafe_arena_set_allocated_node_info(::NodeInfo* value);
-  ::NodeInfo* unsafe_arena_release_node_info();
-
-  private:
-  const ::NodeInfo& _internal_node_info() const;
-  ::NodeInfo* _internal_mutable_node_info();
-
-  public:
-  // @@protoc_insertion_point(class_scope:NodeRouteMessageBody)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 1,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::NodeInfo* node_info_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
-};
-// -------------------------------------------------------------------
-
-class GateSessionDisconnectRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:GateSessionDisconnectRequest) */ {
- public:
-  inline GateSessionDisconnectRequest() : GateSessionDisconnectRequest(nullptr) {}
-  ~GateSessionDisconnectRequest() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR GateSessionDisconnectRequest(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline GateSessionDisconnectRequest(const GateSessionDisconnectRequest& from) : GateSessionDisconnectRequest(nullptr, from) {}
-  inline GateSessionDisconnectRequest(GateSessionDisconnectRequest&& from) noexcept
-      : GateSessionDisconnectRequest(nullptr, std::move(from)) {}
-  inline GateSessionDisconnectRequest& operator=(const GateSessionDisconnectRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline GateSessionDisconnectRequest& operator=(GateSessionDisconnectRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const GateSessionDisconnectRequest& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const GateSessionDisconnectRequest* internal_default_instance() {
-    return reinterpret_cast<const GateSessionDisconnectRequest*>(
-        &_GateSessionDisconnectRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 14;
-  friend void swap(GateSessionDisconnectRequest& a, GateSessionDisconnectRequest& b) { a.Swap(&b); }
-  inline void Swap(GateSessionDisconnectRequest* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(GateSessionDisconnectRequest* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  GateSessionDisconnectRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<GateSessionDisconnectRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const GateSessionDisconnectRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const GateSessionDisconnectRequest& from) { GateSessionDisconnectRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(GateSessionDisconnectRequest* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "GateSessionDisconnectRequest"; }
-
- protected:
-  explicit GateSessionDisconnectRequest(::google::protobuf::Arena* arena);
-  GateSessionDisconnectRequest(::google::protobuf::Arena* arena, const GateSessionDisconnectRequest& from);
-  GateSessionDisconnectRequest(::google::protobuf::Arena* arena, GateSessionDisconnectRequest&& from) noexcept
-      : GateSessionDisconnectRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kSessionInfoFieldNumber = 1,
-  };
-  // .SessionDetails session_info = 1;
-  bool has_session_info() const;
-  void clear_session_info() ;
-  const ::SessionDetails& session_info() const;
-  PROTOBUF_NODISCARD ::SessionDetails* release_session_info();
-  ::SessionDetails* mutable_session_info();
-  void set_allocated_session_info(::SessionDetails* value);
-  void unsafe_arena_set_allocated_session_info(::SessionDetails* value);
-  ::SessionDetails* unsafe_arena_release_session_info();
-
-  private:
-  const ::SessionDetails& _internal_session_info() const;
-  ::SessionDetails* _internal_mutable_session_info();
-
-  public:
-  // @@protoc_insertion_point(class_scope:GateSessionDisconnectRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 1,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::SessionDetails* session_info_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
-};
-// -------------------------------------------------------------------
-
-class RouteMsgStringResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:RouteMsgStringResponse) */ {
- public:
-  inline RouteMsgStringResponse() : RouteMsgStringResponse(nullptr) {}
-  ~RouteMsgStringResponse() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RouteMsgStringResponse(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline RouteMsgStringResponse(const RouteMsgStringResponse& from) : RouteMsgStringResponse(nullptr, from) {}
-  inline RouteMsgStringResponse(RouteMsgStringResponse&& from) noexcept
-      : RouteMsgStringResponse(nullptr, std::move(from)) {}
-  inline RouteMsgStringResponse& operator=(const RouteMsgStringResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline RouteMsgStringResponse& operator=(RouteMsgStringResponse&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const RouteMsgStringResponse& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const RouteMsgStringResponse* internal_default_instance() {
-    return reinterpret_cast<const RouteMsgStringResponse*>(
-        &_RouteMsgStringResponse_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 16;
-  friend void swap(RouteMsgStringResponse& a, RouteMsgStringResponse& b) { a.Swap(&b); }
-  inline void Swap(RouteMsgStringResponse* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(RouteMsgStringResponse* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  RouteMsgStringResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<RouteMsgStringResponse>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RouteMsgStringResponse& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RouteMsgStringResponse& from) { RouteMsgStringResponse::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(RouteMsgStringResponse* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "RouteMsgStringResponse"; }
-
- protected:
-  explicit RouteMsgStringResponse(::google::protobuf::Arena* arena);
-  RouteMsgStringResponse(::google::protobuf::Arena* arena, const RouteMsgStringResponse& from);
-  RouteMsgStringResponse(::google::protobuf::Arena* arena, RouteMsgStringResponse&& from) noexcept
-      : RouteMsgStringResponse(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kRouteDataListFieldNumber = 2,
-    kBodyFieldNumber = 1,
-    kSessionIdFieldNumber = 3,
-    kIdFieldNumber = 4,
-    kIsClientFieldNumber = 5,
-  };
-  // repeated .RouteNodeInfo route_data_list = 2;
-  int route_data_list_size() const;
-  private:
-  int _internal_route_data_list_size() const;
-
-  public:
-  void clear_route_data_list() ;
-  ::RouteNodeInfo* mutable_route_data_list(int index);
-  ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* mutable_route_data_list();
-
-  private:
-  const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& _internal_route_data_list() const;
-  ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* _internal_mutable_route_data_list();
-  public:
-  const ::RouteNodeInfo& route_data_list(int index) const;
-  ::RouteNodeInfo* add_route_data_list();
-  const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& route_data_list() const;
-  // bytes body = 1;
-  void clear_body() ;
-  const std::string& body() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_body(Arg_&& arg, Args_... args);
-  std::string* mutable_body();
-  PROTOBUF_NODISCARD std::string* release_body();
-  void set_allocated_body(std::string* value);
-
-  private:
-  const std::string& _internal_body() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(
-      const std::string& value);
-  std::string* _internal_mutable_body();
-
-  public:
-  // uint64 session_id = 3;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint64 id = 4;
-  void clear_id() ;
-  ::uint64_t id() const;
-  void set_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_id() const;
-  void _internal_set_id(::uint64_t value);
-
-  public:
-  // bool is_client = 5;
-  void clear_is_client() ;
-  bool is_client() const;
-  void set_is_client(bool value);
-
-  private:
-  bool _internal_is_client() const;
-  void _internal_set_is_client(bool value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:RouteMsgStringResponse)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      3, 5, 1,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::RepeatedPtrField< ::RouteNodeInfo > route_data_list_;
-    ::google::protobuf::internal::ArenaStringPtr body_;
-    ::uint64_t session_id_;
-    ::uint64_t id_;
-    bool is_client_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
-};
-// -------------------------------------------------------------------
-
-class RouteMsgStringRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:RouteMsgStringRequest) */ {
- public:
-  inline RouteMsgStringRequest() : RouteMsgStringRequest(nullptr) {}
-  ~RouteMsgStringRequest() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR RouteMsgStringRequest(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline RouteMsgStringRequest(const RouteMsgStringRequest& from) : RouteMsgStringRequest(nullptr, from) {}
-  inline RouteMsgStringRequest(RouteMsgStringRequest&& from) noexcept
-      : RouteMsgStringRequest(nullptr, std::move(from)) {}
-  inline RouteMsgStringRequest& operator=(const RouteMsgStringRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline RouteMsgStringRequest& operator=(RouteMsgStringRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const RouteMsgStringRequest& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const RouteMsgStringRequest* internal_default_instance() {
-    return reinterpret_cast<const RouteMsgStringRequest*>(
-        &_RouteMsgStringRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 15;
-  friend void swap(RouteMsgStringRequest& a, RouteMsgStringRequest& b) { a.Swap(&b); }
-  inline void Swap(RouteMsgStringRequest* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(RouteMsgStringRequest* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  RouteMsgStringRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<RouteMsgStringRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const RouteMsgStringRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const RouteMsgStringRequest& from) { RouteMsgStringRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  ::size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(RouteMsgStringRequest* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "RouteMsgStringRequest"; }
-
- protected:
-  explicit RouteMsgStringRequest(::google::protobuf::Arena* arena);
-  RouteMsgStringRequest(::google::protobuf::Arena* arena, const RouteMsgStringRequest& from);
-  RouteMsgStringRequest(::google::protobuf::Arena* arena, RouteMsgStringRequest&& from) noexcept
-      : RouteMsgStringRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::MessageLite::ClassData* GetClassData()
-      const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const final;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kRouteDataListFieldNumber = 2,
-    kBodyFieldNumber = 1,
-    kSessionIdFieldNumber = 3,
-    kIdFieldNumber = 4,
-    kIsClientFieldNumber = 5,
-  };
-  // repeated .RouteNodeInfo route_data_list = 2;
-  int route_data_list_size() const;
-  private:
-  int _internal_route_data_list_size() const;
-
-  public:
-  void clear_route_data_list() ;
-  ::RouteNodeInfo* mutable_route_data_list(int index);
-  ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* mutable_route_data_list();
-
-  private:
-  const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& _internal_route_data_list() const;
-  ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>* _internal_mutable_route_data_list();
-  public:
-  const ::RouteNodeInfo& route_data_list(int index) const;
-  ::RouteNodeInfo* add_route_data_list();
-  const ::google::protobuf::RepeatedPtrField<::RouteNodeInfo>& route_data_list() const;
-  // bytes body = 1;
-  void clear_body() ;
-  const std::string& body() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_body(Arg_&& arg, Args_... args);
-  std::string* mutable_body();
-  PROTOBUF_NODISCARD std::string* release_body();
-  void set_allocated_body(std::string* value);
-
-  private:
-  const std::string& _internal_body() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(
-      const std::string& value);
-  std::string* _internal_mutable_body();
-
-  public:
-  // uint64 session_id = 3;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint64 id = 4;
-  void clear_id() ;
-  ::uint64_t id() const;
-  void set_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_id() const;
-  void _internal_set_id(::uint64_t value);
-
-  public:
-  // bool is_client = 5;
-  void clear_is_client() ;
-  bool is_client() const;
-  void set_is_client(bool value);
-
-  private:
-  bool _internal_is_client() const;
-  void _internal_set_is_client(bool value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:RouteMsgStringRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      3, 5, 1,
-      0, 2>
-      _table_;
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::RepeatedPtrField< ::RouteNodeInfo > route_data_list_;
-    ::google::protobuf::internal::ArenaStringPtr body_;
-    ::uint64_t session_id_;
-    ::uint64_t id_;
-    bool is_client_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
-};
 
 // ===================================================================
 
@@ -4517,6 +4536,97 @@ inline ::uint64_t MessageBody::_internal_id() const {
 inline void MessageBody::_internal_set_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.id_ = value;
+}
+
+// .TipInfoMessage error_message = 4;
+inline bool MessageBody::has_error_message() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
+  return value;
+}
+inline const ::TipInfoMessage& MessageBody::_internal_error_message() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::TipInfoMessage* p = _impl_.error_message_;
+  return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
+}
+inline const ::TipInfoMessage& MessageBody::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:MessageBody.error_message)
+  return _internal_error_message();
+}
+inline void MessageBody::unsafe_arena_set_allocated_error_message(::TipInfoMessage* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:MessageBody.error_message)
+}
+inline ::TipInfoMessage* MessageBody::release_error_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::TipInfoMessage* released = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::TipInfoMessage* MessageBody::unsafe_arena_release_error_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:MessageBody.error_message)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::TipInfoMessage* temp = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  return temp;
+}
+inline ::TipInfoMessage* MessageBody::_internal_mutable_error_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.error_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
+    _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(p);
+  }
+  return _impl_.error_message_;
+}
+inline ::TipInfoMessage* MessageBody::mutable_error_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::TipInfoMessage* _msg = _internal_mutable_error_message();
+  // @@protoc_insertion_point(field_mutable:MessageBody.error_message)
+  return _msg;
+}
+inline void MessageBody::set_allocated_error_message(::TipInfoMessage* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:MessageBody.error_message)
 }
 
 // -------------------------------------------------------------------

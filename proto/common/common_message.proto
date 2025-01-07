@@ -4,6 +4,7 @@ option go_package = "pb/game";
 
 import "proto/common/common.proto";
 import "proto/common/session.proto";
+import "proto/common/tip.proto";
 
 message RouteNodeInfo
 {
@@ -16,6 +17,7 @@ message MessageBody
   bytes body = 1;
   uint32 message_id = 2;
   uint64 id = 3;
+  TipInfoMessage error_message = 4;  
 }
 
 message NodeMessageHead
