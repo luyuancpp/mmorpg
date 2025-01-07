@@ -443,8 +443,8 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	}
 
 	const MessagePtr player_request(service->GetRequestPrototype(method).New());
-	if (!player_request->ParsePartialFromArray(request->message_content().body().data(),
-		request->message_content().body().size()))
+	if (!player_request->ParsePartialFromArray(request->message_content().serialized_message().data(),
+		request->message_content().serialized_message().size()))
 	{
 		LOG_ERROR << "Failed to parse request for message ID: " << request->message_content().message_id();
 		// TODO: Handle client error
@@ -468,8 +468,8 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 
 	response->mutable_header()->set_session_id(request->header().session_id());
 	const int32_t byte_size = playerResponse->ByteSizeLong();
-	response->mutable_message_content()->mutable_body()->resize(byte_size);
-	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_body()->data(), byte_size))
+	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
+	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(), byte_size))
 	{
 		LOG_ERROR << "Failed to serialize response for message ID: " << request->message_content().message_id();
 		// TODO: Handle message serialization error
@@ -588,7 +588,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	if (!current_node_request->ParsePartialFromArray(request->body().data(),
 		static_cast<int32_t>(request->body().size())))
 	{
-		LOG_ERROR << "Failed to parse request body: " << request->DebugString();
+		LOG_ERROR << "Failed to parse request serialized_message: " << request->DebugString();
 		return;
 	}
 

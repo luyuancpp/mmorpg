@@ -2840,10 +2840,10 @@ class MessageContent final : public ::google::protobuf::Message
   };
   // bytes body = 1;
   void clear_body() ;
-  const std::string& body() const;
+  const std::string& serialized_message() const;
   template <typename Arg_ = const std::string&, typename... Args_>
   void set_body(Arg_&& arg, Args_... args);
-  std::string* mutable_body();
+  std::string* mutable_serialized_message();
   PROTOBUF_NODISCARD std::string* release_body();
   void set_allocated_body(std::string* value);
 
@@ -4449,7 +4449,7 @@ inline void MessageContent::clear_body() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.body_.ClearToEmpty();
 }
-inline const std::string& MessageContent::body() const
+inline const std::string& MessageContent::serialized_message() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:MessageContent.body)
   return _internal_body();
@@ -4461,7 +4461,7 @@ inline PROTOBUF_ALWAYS_INLINE void MessageContent::set_body(Arg_&& arg,
   _impl_.body_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:MessageContent.body)
 }
-inline std::string* MessageContent::mutable_body() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* MessageContent::mutable_serialized_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_body();
   // @@protoc_insertion_point(field_mutable:MessageContent.body)
   return _s;
