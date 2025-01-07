@@ -477,6 +477,13 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	}
 
 	response->mutable_body()->set_message_id(request->body().message_id());
+	
+	if (const auto tipInfoMessage = tls.globalRegistry.try_get<TipInfoMessage>(GlobalEntity());
+		nullptr != tipInfoMessage)
+	{
+		response->mutable_body()->mutable_error_message()->CopyFrom(*tipInfoMessage);
+		tipInfoMessage->Clear();
+	}
 
 	LOG_TRACE << "Successfully processed message ID: " << request->body().message_id()
 		<< " for player ID: " << playerId;

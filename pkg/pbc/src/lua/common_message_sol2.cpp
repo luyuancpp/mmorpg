@@ -23,8 +23,9 @@ tls_lua_state.new_usertype<MessageBody>("MessageBody",
 sol::property(&MessageBody::message_id, &MessageBody::set_message_id),
 "id",
 sol::property(&MessageBody::id, &MessageBody::set_id),
+tls_lua_state.new_usertype<>("",
 "DebugString",
-&MessageBody::DebugString,
+&::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<NodeMessageHead>("NodeMessageHead",

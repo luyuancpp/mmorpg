@@ -261,8 +261,14 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
     // 根据服务 ID 转发消息
     if (gClientToServerMessageId.contains(request->message_id()))
     {
-        if (!session.messageLimiter.CanSend(request->message_id())){
+        if (const auto err = session.messageLimiter.CanSend(request->message_id());
+            kSuccess != err){
             
+            MessageBody errResponse;
+            errResponse.set_id(request->id());
+            errResponse.set_message_id(request->message_id());
+            errResponse.mutable_error_message()->set_id(err);
+            return;
         }
         
         HandleGameNodeMessage(session, request, sessionId, conn);
