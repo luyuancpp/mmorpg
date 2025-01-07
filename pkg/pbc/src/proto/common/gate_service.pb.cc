@@ -377,7 +377,7 @@ BroadcastToPlayersRequest::BroadcastToPlayersRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessagePayload>(
+  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
                               arena, *from._impl_.body_)
                         : nullptr;
 
@@ -477,7 +477,7 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> BroadcastToPlayersRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.body_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::MessagePayload>()},
+    {::_pbi::TcParser::GetTable<::MessageContent>()},
   }}, {{
   }},
 };
@@ -561,7 +561,7 @@ void BroadcastToPlayersRequest::MergeImpl(::google::protobuf::MessageLite& to_ms
     ABSL_DCHECK(from._impl_.body_ != nullptr);
     if (_this->_impl_.body_ == nullptr) {
       _this->_impl_.body_ =
-          ::google::protobuf::Message::CopyConstruct<::MessagePayload>(arena, *from._impl_.body_);
+          ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
     } else {
       _this->_impl_.body_->MergeFrom(*from._impl_.body_);
     }

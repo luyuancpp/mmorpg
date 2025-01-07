@@ -39,7 +39,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
 		return;
 	}
-	MessagePayload message;
+	MessageContent message;
 	message.set_body(replied->body());
 	message.set_message_id(route_data.message_id());;
 	g_gate_node->SendMessageToClient(it->second.conn, message);

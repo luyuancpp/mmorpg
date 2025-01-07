@@ -94,7 +94,7 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
 {
     TipInfoMessage tipMessage;
     tipMessage.set_id(tipId);
-    MessagePayload message;
+    MessageContent message;
     message.set_body(tipMessage.SerializeAsString());
     message.set_message_id(PlayerClientCommonServiceSendTipToClientMessageId);
     g_gate_node->Codec().send(conn, message);
@@ -264,7 +264,7 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
         if (const auto err = session.messageLimiter.CanSend(request->message_id());
             kSuccess != err){
             
-            MessagePayload errResponse;
+            MessageContent errResponse;
             errResponse.set_id(request->id());
             errResponse.set_message_id(request->message_id());
             errResponse.mutable_error_message()->set_id(err);

@@ -304,7 +304,7 @@ struct NodeRoutingMessageBodyDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRoutingMessageBodyDefaultTypeInternal _NodeRoutingMessageBody_default_instance_;
 
-inline constexpr MessagePayload::Impl_::Impl_(
+inline constexpr MessageContent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         body_(
@@ -315,13 +315,13 @@ inline constexpr MessagePayload::Impl_::Impl_(
         message_id_{0u} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR MessagePayload::MessagePayload(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR MessageContent::MessageContent(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
 struct MessagePayloadDefaultTypeInternal {
   PROTOBUF_CONSTEXPR MessagePayloadDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~MessagePayloadDefaultTypeInternal() {}
   union {
-    MessagePayload _instance;
+    MessageContent _instance;
   };
 };
 
@@ -496,18 +496,18 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::RoutingNodeInfo, _impl_.message_id_),
         0,
         ~0u,
-        PROTOBUF_FIELD_OFFSET(::MessagePayload, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::MessagePayload, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MessageContent, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::MessagePayload, _impl_.body_),
-        PROTOBUF_FIELD_OFFSET(::MessagePayload, _impl_.message_id_),
-        PROTOBUF_FIELD_OFFSET(::MessagePayload, _impl_.id_),
-        PROTOBUF_FIELD_OFFSET(::MessagePayload, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.message_id_),
+        PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.error_message_),
         ~0u,
         ~0u,
         ~0u,
@@ -749,7 +749,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, 10, -1, sizeof(::RoutingNodeInfo)},
-        {12, 24, -1, sizeof(::MessagePayload)},
+        {12, 24, -1, sizeof(::MessageContent)},
         {28, -1, -1, sizeof(::NodeMessageHeader)},
         {38, 48, -1, sizeof(::NodeRouteMessageRequest)},
         {50, 60, -1, sizeof(::NodeRouteMessageResponse)},
@@ -1145,35 +1145,35 @@ void RoutingNodeInfo::InternalSwap(RoutingNodeInfo* PROTOBUF_RESTRICT other) {
 }
 // ===================================================================
 
-class MessagePayload::_Internal {
+class MessageContent::_Internal {
  public:
-  using HasBits = decltype(std::declval<MessagePayload>()._impl_._has_bits_);
+  using HasBits = decltype(std::declval<MessageContent>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_._has_bits_);
+    8 * PROTOBUF_FIELD_OFFSET(MessageContent, _impl_._has_bits_);
 };
 
-void MessagePayload::clear_error_message() {
+void MessageContent::clear_error_message() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-MessagePayload::MessagePayload(::google::protobuf::Arena* arena)
+MessageContent::MessageContent(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:MessagePayload)
 }
-inline PROTOBUF_NDEBUG_INLINE MessagePayload::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE MessageContent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         body_(arena, from.body_) {}
 
-MessagePayload::MessagePayload(
+MessageContent::MessageContent(
     ::google::protobuf::Arena* arena,
-    const MessagePayload& from)
+    const MessageContent& from)
     : ::google::protobuf::Message(arena) {
-  MessagePayload* const _this = this;
+  MessageContent* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
@@ -1192,13 +1192,13 @@ MessagePayload::MessagePayload(
 
   // @@protoc_insertion_point(copy_constructor:MessagePayload)
 }
-inline PROTOBUF_NDEBUG_INLINE MessagePayload::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE MessageContent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0},
         body_(arena) {}
 
-inline void MessagePayload::SharedCtor(::_pb::Arena* arena) {
+inline void MessageContent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, error_message_),
@@ -1207,12 +1207,12 @@ inline void MessagePayload::SharedCtor(::_pb::Arena* arena) {
                offsetof(Impl_, error_message_) +
                sizeof(Impl_::message_id_));
 }
-MessagePayload::~MessagePayload() {
+MessageContent::~MessageContent() {
   // @@protoc_insertion_point(destructor:MessagePayload)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void MessagePayload::SharedDtor() {
+inline void MessageContent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.body_.Destroy();
   delete _impl_.error_message_;
@@ -1220,20 +1220,20 @@ inline void MessagePayload::SharedDtor() {
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-MessagePayload::GetClassData() const {
+MessageContent::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(MessageContent, _impl_._cached_size_),
               false,
           },
-          &MessagePayload::MergeImpl,
-          &MessagePayload::kDescriptorMethods,
+          &MessageContent::MergeImpl,
+          &MessageContent::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void MessagePayload::Clear() {
+PROTOBUF_NOINLINE void MessageContent::Clear() {
 // @@protoc_insertion_point(message_clear_start:MessagePayload)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
@@ -1253,7 +1253,7 @@ PROTOBUF_NOINLINE void MessagePayload::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* MessagePayload::_InternalParse(
+const char* MessageContent::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -1261,9 +1261,9 @@ const char* MessagePayload::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessagePayload::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageContent::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_._has_bits_),
+    PROTOBUF_FIELD_OFFSET(MessageContent, _impl_._has_bits_),
     0, // no _extensions_
     4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
@@ -1275,35 +1275,35 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessagePayload::_table_ = {
     &_MessagePayload_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::MessagePayload>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::MessageContent>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .TipInfoMessage error_message = 4;
     {::_pbi::TcParser::FastMtS1,
-     {34, 0, 0, PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.error_message_)}},
+     {34, 0, 0, PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.error_message_)}},
     // bytes body = 1;
     {::_pbi::TcParser::FastBS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.body_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.body_)}},
     // uint32 message_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessagePayload, _impl_.message_id_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.message_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageContent, _impl_.message_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.message_id_)}},
     // uint64 id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MessagePayload, _impl_.id_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MessageContent, _impl_.id_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.id_)}},
   }}, {{
     65535, 65535
   }}, {{
     // bytes body = 1;
-    {PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.body_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.body_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
     // uint32 message_id = 2;
-    {PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.message_id_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.message_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint64 id = 3;
-    {PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.id_), -1, 0,
+    {PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
     // .TipInfoMessage error_message = 4;
-    {PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
@@ -1311,7 +1311,7 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessagePayload::_table_ = {
   }},
 };
 
-::uint8_t* MessagePayload::_InternalSerialize(
+::uint8_t* MessageContent::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:MessagePayload)
@@ -1354,7 +1354,7 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessagePayload::_table_ = {
   return target;
 }
 
-::size_t MessagePayload::ByteSizeLong() const {
+::size_t MessageContent::ByteSizeLong() const {
 // @@protoc_insertion_point(message_byte_size_start:MessagePayload)
   ::size_t total_size = 0;
 
@@ -1391,9 +1391,9 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessagePayload::_table_ = {
 }
 
 
-void MessagePayload::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<MessagePayload*>(&to_msg);
-  auto& from = static_cast<const MessagePayload&>(from_msg);
+void MessageContent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MessageContent*>(&to_msg);
+  auto& from = static_cast<const MessageContent&>(from_msg);
   ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:MessagePayload)
   ABSL_DCHECK_NE(&from, _this);
@@ -1423,18 +1423,18 @@ void MessagePayload::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MessagePayload::CopyFrom(const MessagePayload& from) {
+void MessageContent::CopyFrom(const MessageContent& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:MessagePayload)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool MessagePayload::IsInitialized() const {
+PROTOBUF_NOINLINE bool MessageContent::IsInitialized() const {
   return true;
 }
 
-void MessagePayload::InternalSwap(MessagePayload* PROTOBUF_RESTRICT other) {
+void MessageContent::InternalSwap(MessageContent* PROTOBUF_RESTRICT other) {
   using std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -1442,14 +1442,14 @@ void MessagePayload::InternalSwap(MessagePayload* PROTOBUF_RESTRICT other) {
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.body_, &other->_impl_.body_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.message_id_)
-      + sizeof(MessagePayload::_impl_.message_id_)
-      - PROTOBUF_FIELD_OFFSET(MessagePayload, _impl_.error_message_)>(
+      PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.message_id_)
+      + sizeof(MessageContent::_impl_.message_id_)
+      - PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.error_message_)>(
           reinterpret_cast<char*>(&_impl_.error_message_),
           reinterpret_cast<char*>(&other->_impl_.error_message_));
 }
 
-::google::protobuf::Metadata MessagePayload::GetMetadata() const {
+::google::protobuf::Metadata MessageContent::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_getter,
                                    &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
                                    file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[1]);
@@ -1695,7 +1695,7 @@ NodeRouteMessageRequest::NodeRouteMessageRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessagePayload>(
+  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
                               arena, *from._impl_.body_)
                         : nullptr;
   _impl_.header_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::NodeMessageHeader>(
@@ -1807,7 +1807,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(NodeRouteMessageRequest, _impl_.header_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::MessagePayload>()},
+    {::_pbi::TcParser::GetTable<::MessageContent>()},
     {::_pbi::TcParser::GetTable<::NodeMessageHeader>()},
   }}, {{
   }},
@@ -1884,7 +1884,7 @@ void NodeRouteMessageRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       ABSL_DCHECK(from._impl_.body_ != nullptr);
       if (_this->_impl_.body_ == nullptr) {
         _this->_impl_.body_ =
-            ::google::protobuf::Message::CopyConstruct<::MessagePayload>(arena, *from._impl_.body_);
+            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
       } else {
         _this->_impl_.body_->MergeFrom(*from._impl_.body_);
       }
@@ -1961,7 +1961,7 @@ NodeRouteMessageResponse::NodeRouteMessageResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessagePayload>(
+  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
                               arena, *from._impl_.body_)
                         : nullptr;
   _impl_.header_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::NodeMessageHeader>(
@@ -2073,7 +2073,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> NodeRouteMessageResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(NodeRouteMessageResponse, _impl_.header_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::MessagePayload>()},
+    {::_pbi::TcParser::GetTable<::MessageContent>()},
     {::_pbi::TcParser::GetTable<::NodeMessageHeader>()},
   }}, {{
   }},
@@ -2150,7 +2150,7 @@ void NodeRouteMessageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg
       ABSL_DCHECK(from._impl_.body_ != nullptr);
       if (_this->_impl_.body_ == nullptr) {
         _this->_impl_.body_ =
-            ::google::protobuf::Message::CopyConstruct<::MessagePayload>(arena, *from._impl_.body_);
+            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
       } else {
         _this->_impl_.body_->MergeFrom(*from._impl_.body_);
       }
@@ -2404,7 +2404,7 @@ PlayerNodeServiceRequest::PlayerNodeServiceRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessagePayload>(
+  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
                               arena, *from._impl_.body_)
                         : nullptr;
   _impl_.header_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerInfoExternal>(
@@ -2516,7 +2516,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerNodeServiceRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(PlayerNodeServiceRequest, _impl_.header_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::MessagePayload>()},
+    {::_pbi::TcParser::GetTable<::MessageContent>()},
     {::_pbi::TcParser::GetTable<::PlayerInfoExternal>()},
   }}, {{
   }},
@@ -2593,7 +2593,7 @@ void PlayerNodeServiceRequest::MergeImpl(::google::protobuf::MessageLite& to_msg
       ABSL_DCHECK(from._impl_.body_ != nullptr);
       if (_this->_impl_.body_ == nullptr) {
         _this->_impl_.body_ =
-            ::google::protobuf::Message::CopyConstruct<::MessagePayload>(arena, *from._impl_.body_);
+            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
       } else {
         _this->_impl_.body_->MergeFrom(*from._impl_.body_);
       }
@@ -2670,7 +2670,7 @@ PlayerMessageResponse::PlayerMessageResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessagePayload>(
+  _impl_.body_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MessageContent>(
                               arena, *from._impl_.body_)
                         : nullptr;
   _impl_.header_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::PlayerInfoExternal>(
@@ -2782,7 +2782,7 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> PlayerMessageResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(PlayerMessageResponse, _impl_.header_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::MessagePayload>()},
+    {::_pbi::TcParser::GetTable<::MessageContent>()},
     {::_pbi::TcParser::GetTable<::PlayerInfoExternal>()},
   }}, {{
   }},
@@ -2859,7 +2859,7 @@ void PlayerMessageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, c
       ABSL_DCHECK(from._impl_.body_ != nullptr);
       if (_this->_impl_.body_ == nullptr) {
         _this->_impl_.body_ =
-            ::google::protobuf::Message::CopyConstruct<::MessagePayload>(arena, *from._impl_.body_);
+            ::google::protobuf::Message::CopyConstruct<::MessageContent>(arena, *from._impl_.body_);
       } else {
         _this->_impl_.body_->MergeFrom(*from._impl_.body_);
       }
