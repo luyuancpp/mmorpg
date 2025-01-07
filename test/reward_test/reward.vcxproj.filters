@@ -18,8 +18,5 @@
     <ClCompile Include="reward_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pkg\logic\src\reward\system\reward_system.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
