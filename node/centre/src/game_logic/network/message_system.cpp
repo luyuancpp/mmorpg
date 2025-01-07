@@ -70,8 +70,8 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     // 准备请求消息
     NodeRouteMessageRequest request;
     const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
-    request.mutable_message_content()->mutable_body()->resize(byteSize);
-    message.SerializePartialToArray(request.mutable_message_content()->mutable_body()->data(), byteSize);
+    request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
+    message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize);
     request.mutable_message_content()->set_message_id(messageId);
     request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 
@@ -128,8 +128,8 @@ void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& mess
     // 准备请求消息
     NodeRouteMessageRequest request;
     const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
-    request.mutable_message_content()->mutable_body()->resize(byteSize);
-    message.SerializePartialToArray(request.mutable_message_content()->mutable_body()->data(), byteSize);
+    request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
+    message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize);
     request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 
     // 发送请求到游戏节点
@@ -178,8 +178,8 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 {
 	NodeRouteMessageRequest request;
 	const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
-	request.mutable_message_content()->mutable_body()->resize(byteSize);
-	message.SerializePartialToArray(request.mutable_message_content()->mutable_body()->data(), byteSize);
+	request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
+	message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize);
 	request.mutable_header()->set_session_id(sessionId);
 	request.mutable_message_content()->set_message_id(messageId);
 	gate->SendRequest(GateServiceSendMessageToPlayerMessageId, request);
@@ -253,9 +253,9 @@ void CallGamePlayerMethod(uint32_t messageId, const google::protobuf::Message& m
     // 构造消息
     NodeRouteMessageRequest request;
     const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
-    request.mutable_message_content()->mutable_body()->resize(byteSize);
+    request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
 
-    if (!message.SerializePartialToArray(request.mutable_message_content()->mutable_body()->data(), byteSize))
+    if (!message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize))
     {
         LOG_ERROR << "Failed to serialize message.";
         return;

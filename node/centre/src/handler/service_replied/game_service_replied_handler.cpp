@@ -107,8 +107,8 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 	}
 
 	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-	if (!playerResponse->ParsePartialFromArray(replied->message_content().body().data(),
-		static_cast < int32_t > ( replied ->message_content( ).body( ). size ( ) )))
+	if (!playerResponse->ParsePartialFromArray(replied->message_content().serialized_message().data(),
+		static_cast < int32_t > ( replied ->message_content( ).serialized_message( ). size ( ) )))
 	{
         LOG_ERROR << "ParsePartialFromArray " << message_info.methodName;
         return;

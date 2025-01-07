@@ -118,7 +118,7 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 	}
 
 	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-	if (!playerRequest->ParsePartialFromArray(request->message_content().body().data(), int32_t(request->message_content().body().size())))
+	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(), int32_t(request->message_content().serialized_message().size())))
 	{
 		LOG_ERROR << "Failed to parse request message for message ID: " << request->message_content().message_id();
 		return;
@@ -185,7 +185,7 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 	}
 
 	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-	playerRequest->ParseFromArray(request->message_content().body().data(), static_cast<int32_t>(request->message_content().body().size()));
+	playerRequest->ParseFromArray(request->message_content().serialized_message().data(), static_cast<int32_t>(request->message_content().serialized_message().size()));
 
 	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
 	serviceIt->second->CallMethod(method, player, playerRequest.get(), playerResponse.get());
@@ -297,7 +297,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	}
 
 	MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-	if (!playerRequest->ParsePartialFromArray(request->message_content().body().data(), int32_t(request->message_content().body().size())))
+	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(), int32_t(request->message_content().serialized_message().size())))
 	{
 		LOG_ERROR << "ParsePartialFromArray " << request->message_content().message_id();
 		return;

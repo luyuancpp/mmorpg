@@ -16,7 +16,7 @@ message RoutingNodeInfo
 // 消息主体
 message MessageContent
 {
-  bytes body = 1;          // 消息内容
+  bytes serialized_message = 1;          // 消息内容
   uint32 message_id = 2;   // 消息 ID
   uint64 id = 3;           // 消息的唯一 ID
   TipInfoMessage error_message = 4;  // 错误消息（可选）
