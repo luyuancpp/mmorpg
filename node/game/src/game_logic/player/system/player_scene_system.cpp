@@ -4,10 +4,10 @@
 
 #include "game_logic/core/network/message_system.h"
 
-#include "scene/system/scene_system.h"
 #include "thread_local/storage_common_logic.h"
 
 #include "service_info/player_scene_service_info.h"
+#include "thread_local/storage.h"
 
 
 void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene)

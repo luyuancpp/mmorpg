@@ -53,6 +53,8 @@ void GateNode::Init()
         ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
     InitNodeByReqInfo();
 
+    InitGameConfig();
+
     node_info_.set_launch_time(TimeUtil::NowSecondsUTC());
 
     InitMessageInfo();
