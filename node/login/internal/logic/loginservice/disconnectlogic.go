@@ -28,5 +28,10 @@ func NewDisconnectLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Discon
 func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game.Empty, error) {
 	sessionId := strconv.FormatUint(in.SessionId, 10)
 	data.SessionList.Remove(sessionId)
+
+	centreRequest := &game.GateSessionDisconnectRequest{
+		SessionInfo: &game.SessionDetails{SessionId: in.SessionId},
+	}
+	l.svcCtx.CentreClient.Send(centreRequest, game.CentreServiceLoginNodeSessionDisconnectMessageId)
 	return &game.Empty{}, nil
 }

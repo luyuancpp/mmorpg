@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
-#include <ranges>
+#include <unordered_map>
+#include <optional>
 
 #include "gate_node.h"
 #include "grpc/request/login_grpc_request.h"
@@ -24,11 +25,12 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec& codec,
 {
     // 注册客户端请求消息回调
     messageDispatcher.registerMessageCallback<ClientRequest>(
-        std::bind(&RpcClientSessionHandler::HandleRpcRequest, this, _1, _2, _3));
+        std::bind(&RpcClientSessionHandler::HandleRpcRequest, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 //todo 考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
-std::optional<entt::entity> FindLoginNodeForSession(uint64_t sessionId) {
+std::optional<entt::entity> FindLoginNodeForSession(uint64_t sessionId)
+{
     const auto sessionIt = tls_gate.sessions().find(sessionId);
     if (sessionIt == tls_gate.sessions().end()) {
         LOG_ERROR << "Session not found for session id: " << sessionId;
@@ -53,7 +55,6 @@ std::optional<entt::entity> FindLoginNodeForSession(uint64_t sessionId) {
     }
     return loginNodeIt->second;
 }
-
 
 void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
@@ -90,16 +91,13 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
 {
     TipInfoMessage tipMessage;
     tipMessage.set_id(tipId);
-
     MessageContent message;
     message.set_serialized_message(tipMessage.SerializeAsString());
     message.set_message_id(PlayerClientCommonServiceSendTipToClientMessageId);
-
     g_gate_node->Codec().send(conn, message);
 
     LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
-
 
 void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr& conn)
 {
@@ -136,8 +134,8 @@ void SetSessionAndParseBody(Message& message, const Request& request, const uint
 void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr& conn)
 {
     // 重要: 此消息一定要发，不能只通过centre 的gate disconnect去发
-    // 重要: 比如:登录还没到centre, gate的disconnect 先到，登录后到，那么centre server 永远删除不了这个sessionid了
-    // todo 登录时候断开应该登录服务器也告诉centre
+    // 重要: 比如:登录还没到centre, gate的disconnect 先到centre，登录的消息后到centre,创建session，那么centre server 永远删除不了这个sessionid了
+    // 重要 登录时候断开应该登录服务器也告诉centre
 
     const auto sessionId = entt::to_integral(GetSessionId(conn));
 
@@ -147,16 +145,13 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     {
         LoginNodeDisconnectRequest request;
         request.set_session_id(sessionId);
-
         SendDisconnectC2LRequest(*loginNode, request);
     }
 
     // 通知中心服务器
-    {
-        GateSessionDisconnectRequest request;
-        request.mutable_session_info()->set_session_id(sessionId);
-        g_gate_node->GetZoneCentreNode()->CallRemoteMethod(CentreServiceGateSessionDisconnectMessageId, request);
-    }
+    GateSessionDisconnectRequest request;
+    request.mutable_session_info()->set_session_id(sessionId);
+    g_gate_node->GetZoneCentreNode()->CallRemoteMethod(CentreServiceGateSessionDisconnectMessageId, request);
 
     // 删除会话
     tls_gate.sessions().erase(sessionId);
@@ -164,6 +159,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     LOG_TRACE << "Disconnected session id: " << sessionId;
 }
 
+// Handle messages related to the game node
 void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
     const entt::entity gameNodeId{ session.gameNodeId };
@@ -240,6 +236,7 @@ void HandleLoginNodeMessage(Guid sessionId, const RpcClientMessagePtr& request, 
     }
 }
 
+// Main request handler, forwards the request to the appropriate service
 void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPtr& conn,
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
@@ -268,7 +265,7 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
             errResponse.mutable_error_message()->set_id(err);
             return;
         }
-        
+
         HandleGameNodeMessage(session, request, sessionId, conn);
     }
     else
