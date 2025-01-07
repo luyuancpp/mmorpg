@@ -46,7 +46,7 @@ void SendMessageToPlayer(uint32_t messageId, const google::protobuf::Message& me
 
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
-	request.mutable_message_content()->set_body(message.SerializeAsString());
+	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 	(*gateNode)->SendRequest(GateServiceSendMessageToPlayerMessageId, request);
 }
@@ -87,7 +87,7 @@ void SendToCentrePlayerById(uint32_t messageId, const google::protobuf::Message&
 
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
-	request.mutable_message_content()->set_body(message.SerializeAsString());
+	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 	request.mutable_header()->set_session_id(playerNodeInfo->gate_session_id());
 	(*centreNode)->SendRequest(CentreServicePlayerServiceMessageId, request);
 }
@@ -197,7 +197,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 		}
 
 		request.mutable_message_content()->set_message_id(messageId);
-		request.mutable_message_content()->set_body(message.SerializeAsString());
+		request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 		for (auto&& sessionId : sessionIdList)
 		{
 			request.mutable_session_list()->Add(sessionId);
@@ -247,7 +247,7 @@ void BroadCastToPlayer(const uint32_t messageId, const google::protobuf::Message
 		}
 
 		request.mutable_message_content()->set_message_id(messageId);
-		request.mutable_message_content()->set_body(message.SerializeAsString());
+		request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
 		for (auto&& sessionId : sessionIdList)
 		{
 			request.mutable_session_list()->Add(sessionId);

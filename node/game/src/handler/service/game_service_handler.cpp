@@ -136,7 +136,7 @@ void GameServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 		return;
 	}
 
-	response->mutable_message_content()->set_body(playerResponse->SerializeAsString());
+	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 
     ///<<< END WRITING YOUR CODE
 }
@@ -199,7 +199,7 @@ void GameServiceHandler::ClientSendMessageToPlayer(::google::protobuf::RpcContro
 		return;
 	}
 
-	response->mutable_message_content()->set_body(playerResponse->SerializeAsString());
+	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
 ///<<< END WRITING YOUR CODE
 }
 
@@ -321,7 +321,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 		tipInfoMessage->Clear();
 	}
 	
-	response->mutable_message_content()->set_body(playerResponse->SerializeAsString());
+	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
         
 ///<<< END WRITING YOUR CODE
 }

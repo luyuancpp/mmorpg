@@ -95,7 +95,7 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
     TipInfoMessage tipMessage;
     tipMessage.set_id(tipId);
     MessageContent message;
-    message.set_body(tipMessage.SerializeAsString());
+    message.set_serialized_message(tipMessage.SerializeAsString());
     message.set_message_id(PlayerClientCommonServiceSendTipToClientMessageId);
     g_gate_node->Codec().send(conn, message);
 
@@ -178,7 +178,7 @@ void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& re
 
     const auto& gameNode = tls.gameNodeRegistry.get<RpcClientPtr>(gameNodeId);
     ClientSendMessageToPlayerRequest message;
-    message.mutable_message_content()->set_body(request->body());
+    message.mutable_message_content()->set_serialized_message(request->body());
     message.set_session_id(sessionId);
     message.mutable_message_content()->set_id(request->id());
     message.mutable_message_content()->set_message_id(request->message_id());

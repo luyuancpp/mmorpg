@@ -307,7 +307,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr MessageContent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        body_(
+        serialized_message_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         error_message_{nullptr},
@@ -504,7 +504,7 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.serialized_message_),
         PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.message_id_),
         PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::MessageContent, _impl_.error_message_),
@@ -801,56 +801,56 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     "to/common/common.proto\032\032proto/common/ses"
     "sion.proto\032\026proto/common/tip.proto\"C\n\017Ro"
     "utingNodeInfo\022\034\n\tnode_info\030\001 \001(\0132\t.NodeI"
-    "nfo\022\022\n\nmessage_id\030\002 \001(\r\"f\n\016MessageConten"
-    "t\022\014\n\004body\030\001 \001(\014\022\022\n\nmessage_id\030\002 \001(\r\022\n\n\002i"
-    "d\030\003 \001(\004\022&\n\rerror_message\030\004 \001(\0132\017.TipInfo"
-    "Message\"8\n\021NodeMessageHeader\022\017\n\007node_id\030"
-    "\001 \001(\r\022\022\n\nsession_id\030\002 \001(\004\"g\n\027NodeRouteMe"
-    "ssageRequest\022(\n\017message_content\030\001 \001(\0132\017."
+    "nfo\022\022\n\nmessage_id\030\002 \001(\r\"t\n\016MessageConten"
+    "t\022\032\n\022serialized_message\030\001 \001(\014\022\022\n\nmessage"
+    "_id\030\002 \001(\r\022\n\n\002id\030\003 \001(\004\022&\n\rerror_message\030\004"
+    " \001(\0132\017.TipInfoMessage\"8\n\021NodeMessageHead"
+    "er\022\017\n\007node_id\030\001 \001(\r\022\022\n\nsession_id\030\002 \001(\004\""
+    "g\n\027NodeRouteMessageRequest\022(\n\017message_co"
+    "ntent\030\001 \001(\0132\017.MessageContent\022\"\n\006header\030\002"
+    " \001(\0132\022.NodeMessageHeader\"h\n\030NodeRouteMes"
+    "sageResponse\022(\n\017message_content\030\001 \001(\0132\017."
     "MessageContent\022\"\n\006header\030\002 \001(\0132\022.NodeMes"
-    "sageHeader\"h\n\030NodeRouteMessageResponse\022("
-    "\n\017message_content\030\001 \001(\0132\017.MessageContent"
-    "\022\"\n\006header\030\002 \001(\0132\022.NodeMessageHeader\"\'\n\022"
-    "PlayerInfoExternal\022\021\n\tplayer_id\030\001 \001(\004\"i\n"
-    "\030PlayerNodeServiceRequest\022(\n\017message_con"
-    "tent\030\001 \001(\0132\017.MessageContent\022#\n\006header\030\002 "
-    "\001(\0132\023.PlayerInfoExternal\"f\n\025PlayerMessag"
-    "eResponse\022(\n\017message_content\030\001 \001(\0132\017.Mes"
-    "sageContent\022#\n\006header\030\002 \001(\0132\023.PlayerInfo"
-    "External\"6\n\026NodeRoutingMessageBody\022\034\n\tno"
-    "de_info\030\002 \001(\0132\t.NodeInfo\"]\n\036RegisterGame"
-    "NodeSessionRequest\022%\n\014session_info\030\001 \001(\013"
-    "2\017.SessionDetails\022\024\n\014game_node_id\030\002 \001(\r\""
-    "H\n\037RegisterGameNodeSessionResponse\022%\n\014se"
-    "ssion_info\030\001 \001(\0132\017.SessionDetails\"H\n\037Reg"
-    "isterGateNodeSessionResponse\022%\n\014session_"
-    "info\030\001 \001(\0132\017.SessionDetails\"a\n RegisterC"
-    "entreSessionNodeRequest\022%\n\014session_info\030"
-    "\001 \001(\0132\017.SessionDetails\022\026\n\016centre_node_id"
-    "\030\002 \001(\r\"J\n!RegisterSessionCentreNodeRespo"
-    "nse\022%\n\014session_info\030\001 \001(\0132\017.SessionDetai"
-    "ls\"E\n\034GateSessionDisconnectRequest\022%\n\014se"
-    "ssion_info\030\001 \001(\0132\017.SessionDetails\"}\n\023Rou"
-    "teMessageRequest\022\014\n\004body\030\001 \001(\014\022%\n\013route_"
-    "nodes\030\002 \003(\0132\020.RoutingNodeInfo\022\022\n\nsession"
-    "_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_client\030\005 \001(\010"
-    "\"~\n\024RouteMessageResponse\022\014\n\004body\030\001 \001(\014\022%"
-    "\n\013route_nodes\030\002 \003(\0132\020.RoutingNodeInfo\022\022\n"
-    "\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_clie"
-    "nt\030\005 \001(\010\"q\n\031RoutePlayerMessageRequest\022\014\n"
-    "\004body\030\001 \001(\014\022\034\n\tnode_list\030\002 \003(\0132\t.NodeInf"
-    "o\022(\n\013player_info\030\003 \001(\0132\023.PlayerInfoExter"
-    "nal\"r\n\032RoutePlayerMessageResponse\022\014\n\004bod"
-    "y\030\001 \001(\014\022\034\n\tnode_list\030\002 \003(\0132\t.NodeInfo\022(\n"
-    "\013player_info\030\003 \001(\0132\023.PlayerInfoExternal\""
-    "\216\001\n\027RegisterGameNodeRequest\022#\n\nrpc_clien"
-    "t\030\001 \001(\0132\017.NetworkAddress\022#\n\nrpc_server\030\002"
-    " \001(\0132\017.NetworkAddress\022\024\n\014game_node_id\030\003 "
-    "\001(\r\022\023\n\013server_type\030\004 \001(\r\"T\n\027RegisterGate"
-    "NodeRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Networ"
-    "kAddress\022\024\n\014gate_node_id\030\002 \001(\r\"1\n\031Unregi"
-    "sterGameNodeRequest\022\024\n\014game_node_id\030\001 \001("
-    "\rB\tZ\007pb/gameb\006proto3"
+    "sageHeader\"\'\n\022PlayerInfoExternal\022\021\n\tplay"
+    "er_id\030\001 \001(\004\"i\n\030PlayerNodeServiceRequest\022"
+    "(\n\017message_content\030\001 \001(\0132\017.MessageConten"
+    "t\022#\n\006header\030\002 \001(\0132\023.PlayerInfoExternal\"f"
+    "\n\025PlayerMessageResponse\022(\n\017message_conte"
+    "nt\030\001 \001(\0132\017.MessageContent\022#\n\006header\030\002 \001("
+    "\0132\023.PlayerInfoExternal\"6\n\026NodeRoutingMes"
+    "sageBody\022\034\n\tnode_info\030\002 \001(\0132\t.NodeInfo\"]"
+    "\n\036RegisterGameNodeSessionRequest\022%\n\014sess"
+    "ion_info\030\001 \001(\0132\017.SessionDetails\022\024\n\014game_"
+    "node_id\030\002 \001(\r\"H\n\037RegisterGameNodeSession"
+    "Response\022%\n\014session_info\030\001 \001(\0132\017.Session"
+    "Details\"H\n\037RegisterGateNodeSessionRespon"
+    "se\022%\n\014session_info\030\001 \001(\0132\017.SessionDetail"
+    "s\"a\n RegisterCentreSessionNodeRequest\022%\n"
+    "\014session_info\030\001 \001(\0132\017.SessionDetails\022\026\n\016"
+    "centre_node_id\030\002 \001(\r\"J\n!RegisterSessionC"
+    "entreNodeResponse\022%\n\014session_info\030\001 \001(\0132"
+    "\017.SessionDetails\"E\n\034GateSessionDisconnec"
+    "tRequest\022%\n\014session_info\030\001 \001(\0132\017.Session"
+    "Details\"}\n\023RouteMessageRequest\022\014\n\004body\030\001"
+    " \001(\014\022%\n\013route_nodes\030\002 \003(\0132\020.RoutingNodeI"
+    "nfo\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\ti"
+    "s_client\030\005 \001(\010\"~\n\024RouteMessageResponse\022\014"
+    "\n\004body\030\001 \001(\014\022%\n\013route_nodes\030\002 \003(\0132\020.Rout"
+    "ingNodeInfo\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 "
+    "\001(\004\022\021\n\tis_client\030\005 \001(\010\"q\n\031RoutePlayerMes"
+    "sageRequest\022\014\n\004body\030\001 \001(\014\022\034\n\tnode_list\030\002"
+    " \003(\0132\t.NodeInfo\022(\n\013player_info\030\003 \001(\0132\023.P"
+    "layerInfoExternal\"r\n\032RoutePlayerMessageR"
+    "esponse\022\014\n\004body\030\001 \001(\014\022\034\n\tnode_list\030\002 \003(\013"
+    "2\t.NodeInfo\022(\n\013player_info\030\003 \001(\0132\023.Playe"
+    "rInfoExternal\"\216\001\n\027RegisterGameNodeReques"
+    "t\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022#"
+    "\n\nrpc_server\030\002 \001(\0132\017.NetworkAddress\022\024\n\014g"
+    "ame_node_id\030\003 \001(\r\022\023\n\013server_type\030\004 \001(\r\"T"
+    "\n\027RegisterGateNodeRequest\022#\n\nrpc_client\030"
+    "\001 \001(\0132\017.NetworkAddress\022\024\n\014gate_node_id\030\002"
+    " \001(\r\"1\n\031UnregisterGameNodeRequest\022\024\n\014gam"
+    "e_node_id\030\001 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[3] =
     {
@@ -862,7 +862,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_5fmessage_2epr
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto = {
     false,
     false,
-    2140,
+    2154,
     descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto,
     "proto/common/common_message.proto",
     &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
@@ -1168,7 +1168,7 @@ inline PROTOBUF_NDEBUG_INLINE MessageContent::Impl_::Impl_(
     const Impl_& from)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        body_(arena, from.body_) {}
+        serialized_message_(arena, from.serialized_message_) {}
 
 MessageContent::MessageContent(
     ::google::protobuf::Arena* arena,
@@ -1197,7 +1197,7 @@ inline PROTOBUF_NDEBUG_INLINE MessageContent::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0},
-        body_(arena) {}
+        serialized_message_(arena) {}
 
 inline void MessageContent::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -1215,7 +1215,7 @@ MessageContent::~MessageContent() {
 }
 inline void MessageContent::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.body_.Destroy();
+  _impl_.serialized_message_.Destroy();
   delete _impl_.error_message_;
   _impl_.~Impl_();
 }
@@ -1241,7 +1241,7 @@ PROTOBUF_NOINLINE void MessageContent::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.body_.ClearToEmpty();
+  _impl_.serialized_message_.ClearToEmpty();
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     ABSL_DCHECK(_impl_.error_message_ != nullptr);
@@ -1282,9 +1282,9 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageContent::_table_ = {
     // .TipInfoMessage error_message = 4;
     {::_pbi::TcParser::FastMtS1,
      {34, 0, 0, PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.error_message_)}},
-    // bytes body = 1;
+    // bytes serialized_message = 1;
     {::_pbi::TcParser::FastBS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.body_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.serialized_message_)}},
     // uint32 message_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageContent, _impl_.message_id_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.message_id_)}},
@@ -1294,8 +1294,8 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageContent::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // bytes body = 1;
-    {PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.body_), -1, 0,
+    // bytes serialized_message = 1;
+    {PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.serialized_message_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
     // uint32 message_id = 2;
     {PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.message_id_), -1, 0,
@@ -1319,9 +1319,9 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageContent::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // bytes body = 1;
-  if (!this->_internal_body().empty()) {
-    const std::string& _s = this->_internal_body();
+  // bytes serialized_message = 1;
+  if (!this->_internal_serialized_message().empty()) {
+    const std::string& _s = this->_internal_serialized_message();
     target = stream->WriteBytesMaybeAliased(1, _s, target);
   }
 
@@ -1363,10 +1363,10 @@ const ::_pbi::TcParseTable<2, 4, 1, 0, 2> MessageContent::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // bytes body = 1;
-  if (!this->_internal_body().empty()) {
+  // bytes serialized_message = 1;
+  if (!this->_internal_serialized_message().empty()) {
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
-                                    this->_internal_body());
+                                    this->_internal_serialized_message());
   }
 
   // .TipInfoMessage error_message = 4;
@@ -1401,8 +1401,8 @@ void MessageContent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (!from._internal_body().empty()) {
-    _this->_internal_set_body(from._internal_body());
+  if (!from._internal_serialized_message().empty()) {
+    _this->_internal_set_serialized_message(from._internal_serialized_message());
   }
   cached_has_bits = from._impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -1441,7 +1441,7 @@ void MessageContent::InternalSwap(MessageContent* PROTOBUF_RESTRICT other) {
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.body_, &other->_impl_.body_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.serialized_message_, &other->_impl_.serialized_message_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MessageContent, _impl_.message_id_)
       + sizeof(MessageContent::_impl_.message_id_)
