@@ -23,5 +23,6 @@
     <ClInclude Include="src\scene\system\scene_system.h" />
     <ClInclude Include="src\reward\system\reward_system.h" />
     <ClInclude Include="src\reward\comp\reward_comp.h" />
+    <ClInclude Include="src\network\constants\network_constants.h" />
   </ItemGroup>
 </Project>

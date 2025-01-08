@@ -13,6 +13,7 @@
 #include "muduo/net/InetAddress.h"
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
+#include "network/constants/network_constants.h"
 #include "pbc/login_error_tip.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
@@ -29,6 +30,7 @@
 #include "type_alias/player_session_type_alias.h"
 #include "util/defer.h"
 #include "util/pb.h"
+#include "util/proto_field_checker.h"
 #include "util/stacktrace_system.h"
 
 using namespace muduo;
@@ -442,8 +444,8 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	const MessagePtr player_request(service->GetRequestPrototype(method).New());
-	if (!player_request->ParsePartialFromArray(request->message_content().serialized_message().data(),
+	const MessagePtr playerRequest(service->GetRequestPrototype(method).New());
+	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(),
 		request->message_content().serialized_message().size()))
 	{
 		LOG_ERROR << "Failed to parse request for message ID: " << request->message_content().message_id();
@@ -451,10 +453,16 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
+	if (std::string outputProtoFieldChecker;
+		!ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, outputProtoFieldChecker)){
+		LOG_ERROR << outputProtoFieldChecker << " Failed to check request for message ID: " << request->message_content().message_id();
+		return;
+	}
+
 	const MessagePtr playerResponse(service->GetResponsePrototype(method).New());
 
 	// Call method on player service handler
-	service_handler->CallMethod(method, player, get_pointer(player_request), get_pointer(playerResponse));
+	service_handler->CallMethod(method, player, get_pointer(playerRequest), get_pointer(playerResponse));
 
 	// If response is nullptr, no need to send a reply
 	if (!response)

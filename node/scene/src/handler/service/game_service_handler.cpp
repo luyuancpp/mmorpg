@@ -11,6 +11,7 @@
 #include "scene/system/game_node_scene_system.h"
 #include "handler/service/player/player_service.h"
 #include "network/rpc_session.h"
+#include "network/constants/network_constants.h"
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
@@ -20,6 +21,7 @@
 #include "thread_local/storage_game.h"
 #include "type_alias/player_session_type_alias.h"
 #include "util/pb.h"
+#include "util/proto_field_checker.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
@@ -303,6 +305,12 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 		return;
 	}
 
+	if (std::string outputProtoFieldChecker;
+		!ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, outputProtoFieldChecker)){
+		LOG_ERROR << outputProtoFieldChecker << " Failed to check request for message ID: " << request->message_content().message_id();
+		return;
+		}
+	
 	MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
 	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
 
