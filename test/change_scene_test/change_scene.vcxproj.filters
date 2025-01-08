@@ -18,9 +18,6 @@
     <ClCompile Include="change_scene_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\node\centre\src\game_logic\scene\system\player_change_scene_system.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\node\centre\src\system\player_change_scene.h">
