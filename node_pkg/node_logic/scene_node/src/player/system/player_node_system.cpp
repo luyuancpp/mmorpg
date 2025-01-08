@@ -1,6 +1,6 @@
 #include "player_node_system.h"
 
-#include "node/scene_node.h"
+#include "node/scene_node_info.h"
 #include "proto/logic/event/actor_event.pb.h"
 #include "core/network/message_system.h"
 #include "proto/common/centre_service.pb.h"
@@ -127,7 +127,7 @@ void PlayerNodeSystem::NotifyEnterGsSucceed(entt::entity player, NodeId centreNo
 {
 	EnterGameNodeSuccessRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
-	request.set_game_node_id(gSceneNode.GetNodeId());
+	request.set_game_node_id(gSceneNodeInfo.GetNodeId());
 	CallCentreNodeMethod(CentreServiceEnterGsSucceedMessageId, request, centreNodeId);
 
 	// TODO: Handle game node update corresponding to gate before sending client messages
