@@ -18,22 +18,19 @@
     <ClCompile Include="aoi_system_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\test_adapters\message_system_test.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="mock_view.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\node\game\src\game_logic\scene\system\aoi_system.cpp">
+    <ClCompile Include="..\..\node\scene\src\game_logic\scene\system\aoi_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\node\game\src\game_logic\scene\system\grid_system.cpp">
+    <ClCompile Include="..\..\node\scene\src\game_logic\scene\system\grid_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="interest_system_mock.cpp">
+    <ClCompile Include="..\..\node\scene\src\game_logic\scene\system\interest_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\node\game\src\game_logic\entity\system\entity_system.cpp">
+    <ClCompile Include="..\test_adapters\message_system_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
