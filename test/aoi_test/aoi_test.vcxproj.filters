@@ -18,20 +18,5 @@
     <ClCompile Include="aoi_system_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="mock_view.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\node\scene\src\game_logic\scene\system\aoi_system.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\node\scene\src\game_logic\scene\system\grid_system.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\node\scene\src\game_logic\scene\system\interest_system.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\test_adapters\message_system_test.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
