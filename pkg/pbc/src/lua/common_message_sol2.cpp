@@ -291,4 +291,25 @@ sol::property(&UnregisterGameNodeRequest::game_node_id, &UnregisterGameNodeReque
 &UnregisterGameNodeRequest::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
+tls_lua_state.new_usertype<ProtoFieldCheckerTestSubPB>("ProtoFieldCheckerTestSubPB",
+"add_items",
+[](ProtoFieldCheckerTestSubPB& pb, const std::string& value) ->decltype(auto){ return pb.add_items(value);},
+"items",
+[](ProtoFieldCheckerTestSubPB& pb, int index) ->decltype(auto){ return pb.items(index);},
+"set_items",
+[](ProtoFieldCheckerTestSubPB& pb, int index, const std::string& value) ->decltype(auto){ return pb.set_items(index, value);},
+"items_size",
+&ProtoFieldCheckerTestSubPB::items_size,
+"clear_items",
+&ProtoFieldCheckerTestSubPB::clear_items,
+"DebugString",
+&ProtoFieldCheckerTestSubPB::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
+tls_lua_state.new_usertype<ProtoFieldCheckerTestPB>("ProtoFieldCheckerTestPB",
+tls_lua_state.new_usertype<sub_message>("sub_message",
+"DebugString",
+&sub_message::DebugString,
+sol::base_classes, sol::bases<::google::protobuf::Message>());
+
 }
