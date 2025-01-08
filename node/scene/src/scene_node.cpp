@@ -1,4 +1,4 @@
-#include "game_node.h"
+#include "scene_node.h"
 
 #include <ranges>
 
@@ -27,7 +27,7 @@
 #include "time/system/time_system.h"
 #include "util/game_registry.h"
 
-GameNode* gGameNode = nullptr;
+SceneNode* gSceneNode = nullptr;
 
 using namespace muduo::net;
 
@@ -35,7 +35,7 @@ void AsyncCompleteGrpcDeployService();
 
 void AsyncOutput(const char* msg, int len)
 {
-    gGameNode->Log().append(msg, len);
+    gSceneNode->Log().append(msg, len);
 #ifdef WIN32
     Log2Console(msg, len);
 #endif
@@ -43,26 +43,26 @@ void AsyncOutput(const char* msg, int len)
 
 void InitRepliedHandler();
 
-GameNode::GameNode(muduo::net::EventLoop* loop)
+SceneNode::SceneNode(muduo::net::EventLoop* loop)
     :loop_(loop),
      muduoLog { "logs/game", kMaxLogFileRollSize, 1},
      redis(std::make_shared<PbSyncRedisClientPtr::element_type>())
 {
 }
 
-GameNode::~GameNode()
+SceneNode::~SceneNode()
 {
     Exit (  );
 }
 
-const NodeInfo& GameNode::GetNodeInfo() const
+const NodeInfo& SceneNode::GetNodeInfo() const
 {
     return gSceneNodeInfo.GetNodeInfo();
 }
 
-void GameNode::Init()
+void SceneNode::Init()
 {
-    gGameNode = this; 
+    gSceneNode = this; 
     EventHandler::Register();
 
     InitLog();
@@ -83,45 +83,45 @@ void GameNode::Init()
 }
 
 
-void GameNode::InitLog ( )
+void SceneNode::InitLog ( )
 {
     InitTimeZone();
     muduo::Logger::setOutput(AsyncOutput);
     muduoLog.start();
 }
 
-void GameNode::Exit ( )
+void SceneNode::Exit ( )
 {
     muduoLog.stop();
-    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GameNode::Receive1>(*this);
-    tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameNode::Receive2>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&SceneNode::Receive1>(*this);
+    tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&SceneNode::Receive2>(*this);
 }
 
-void  GameNode::InitNodeConfig ( )
+void  SceneNode::InitNodeConfig ( )
 {
     ZoneConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void GameNode::InitGameConfig()
+void SceneNode::InitGameConfig()
 {
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();
     ConfigSystem::OnConfigLoadSuccessful();
 }
 
-void GameNode::InitTimeZone()
+void SceneNode::InitTimeZone()
 {
     const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
     muduo::Logger::setTimeZone(tz);
 }
 
-void GameNode::SetNodeId( const NodeId node_id)
+void SceneNode::SetNodeId( const NodeId node_id)
 {
     gSceneNodeInfo.SetNodeId(node_id);
 }
 
-void GameNode::StartServer(const ::nodes_info_data& info)
+void SceneNode::StartServer(const ::nodes_info_data& info)
 {
     nodeServiceInfo = info;
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
@@ -135,8 +135,8 @@ void GameNode::StartServer(const ::nodes_info_data& info)
 
     InetAddress service_addr(GetNodeConf().ip(), GetNodeConf().port());
     rpcServer = std::make_shared<RpcServerPtr::element_type>(loop_, service_addr);
-    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);
-    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&GameNode::Receive2>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&SceneNode::Receive1>(*this);
+    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&SceneNode::Receive2>(*this);
 
     rpcServer->registerService(&gameService);
     for ( auto & val : g_server_service | std::views::values )
@@ -157,7 +157,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     LOG_INFO << "game node  start " << GetNodeConf().DebugString();
 }
 
-void GameNode::Receive1(const OnConnected2ServerEvent& es)
+void SceneNode::Receive1(const OnConnected2ServerEvent& es)
 {
     if ( auto& conn = es.conn_ ; conn->connected())
     {
@@ -181,7 +181,7 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
 
 }
 
-void GameNode::Receive2(const OnBeConnectedEvent& es)
+void SceneNode::Receive2(const OnBeConnectedEvent& es)
 {
     if ( auto& conn = es.conn_ ; conn->connected())
 	{
@@ -213,12 +213,12 @@ void GameNode::Receive2(const OnBeConnectedEvent& es)
     }
 }
 
-const game_node_db& GameNode::GetNodeConf() const
+const game_node_db& SceneNode::GetNodeConf() const
 {
     return nodeServiceInfo.game_info().game_info(GetNodeConfIndex());
 }
 
-void GameNode::InitNodeByReqInfo()
+void SceneNode::InitNodeByReqInfo()
 {
     auto& zone = ZoneConfig::GetSingleton().ConfigInfo();
     const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
@@ -236,7 +236,7 @@ void GameNode::InitNodeByReqInfo()
     }
 }
 
-void GameNode::Connect2Centre()
+void SceneNode::Connect2Centre()
 {
     for (auto& centre_node_info : nodeServiceInfo.centre_info().centre_info())
     {

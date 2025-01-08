@@ -19,8 +19,8 @@ public:
 	~CentreNode();
 
 	inline PbSyncRedisClientPtr& GetRedis() { return redis_; }
-	inline uint32_t GetNodeId()const { return nodeInfo.node_id(); }
-	inline const NodeInfo& GetNodeInfo()const { return nodeInfo; }
+	uint32_t GetNodeId()const;
+	const NodeInfo& GetNodeInfo()const;
 
 	inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduoLog; }
 	
@@ -55,7 +55,6 @@ private:
 	PbSyncRedisClientPtr redis_;
 	RpcServerPtr server_;
 	CentreServiceHandler centreService;
-	NodeInfo nodeInfo;
 	nodes_info_data serversInfo;
     TimerTaskComp deployRpcTimer;
 };

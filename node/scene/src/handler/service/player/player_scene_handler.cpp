@@ -1,7 +1,7 @@
 #include "player_scene_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "game_node.h"
+#include "scene_node.h"
 #include "core/network/message_system.h"
 #include "pbc/scene_error_tip.pb.h"
 #include "proto/logic/server_player/centre_player_scene.pb.h"
@@ -17,7 +17,7 @@ void ClientPlayerSceneServiceHandler::EnterScene(entt::entity player,const ::Ent
 	LOG_TRACE << "EnterSceneC2S request received for player: " << tls.registry.get<Guid>(player)
 		<< ", scene_info: " << request->scene_info().DebugString();
 
-	auto game_node_type = gGameNode->GetNodeType();
+	auto game_node_type = gSceneNode->GetNodeType();
 	if (game_node_type == eGameNodeType::kRoomNode ||
 		game_node_type == eGameNodeType::kRoomSceneCrossNode)
 	{

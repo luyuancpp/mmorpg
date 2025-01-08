@@ -78,10 +78,7 @@
     <ClCompile Include="src\handler\service_replied\register_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\storage_game.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_node.cpp">
+    <ClCompile Include="src\scene_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\service\player\player_common_handler.cpp">
@@ -176,19 +173,7 @@
     <ClInclude Include="src\handler\service_replied\player\player_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\storage_game.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\type_alias\player_loading.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\type_alias\player_redis.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\game_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\type_alias\actor.h">
+    <ClInclude Include="src\scene_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\player\player_common_handler.h">

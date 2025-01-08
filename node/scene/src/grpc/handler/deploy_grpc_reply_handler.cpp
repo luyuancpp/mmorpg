@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "game_node.h"
+#include "scene_node.h"
 #include "grpc/async_client_call.h"
 #include "grpc/deploy/deploy_client.h"
 
@@ -28,8 +28,8 @@ void AsyncCompleteGrpcDeployService()
     }
     if (call->status.ok())
     {
-        gGameNode->SetNodeId(call->reply.node_id());
-        gGameNode->StartServer(call->reply.info());
+        gSceneNode->SetNodeId(call->reply.node_id());
+        gSceneNode->StartServer(call->reply.info());
     }
     else
     {

@@ -1,16 +1,16 @@
 #include "player_scene_system.h"
 #include "muduo/base/Logging.h"
-#include "centre_node.h"
 #include "scene/comp/scene_comp.h"
 #include "scene/system/scene_system.h"
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/scene_error_tip.pb.h"
-#include "game_logic/node/comp/game_node_comp.h"
-#include "game_logic/network/message_system.h"
+#include "node/comp/game_node_comp.h"
+#include "node/centre_node_info.h"
+#include "network/message_system.h"
 #include "service_info/game_player_scene_service_info.h"
 #include "service_info/game_service_service_info.h"
-#include "game_logic/scene/system/player_change_scene_system.h"
-#include "game_logic/player/system/player_tip_system.h"
+#include "scene/system/player_change_scene_system.h"
+#include "player/system/player_tip_system.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/component/player_scene_comp.pb.h"
 
@@ -134,7 +134,7 @@ void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity playerEntity, 
     PlayerEnterGameNodeRequest request;
     request.set_player_id(tls.registry.get<Guid>(playerEntity));
     request.set_session_id(playerNodeInfo->gate_session_id());
-    request.set_centre_node_id(gCentreNode ->GetNodeId());
+    request.set_centre_node_id(gCentreNodeInfo.GetNodeId());
     CallGameNodeMethod(GameServicePlayerEnterGameNodeMessageId, request, nodeId);
 }
 

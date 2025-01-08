@@ -21,7 +21,8 @@
 #include "thread_local/storage_centre.h"
 #include "log/system/console_log_system.h"
 #include "grpc/request/deploy_grpc_requst.h"
-#include "game_logic/player/system/player_session_system.h"
+#include "node/centre_node_info.h"
+#include "player/system/player_session_system.h"
 #include "time/system/time_system.h"
 
 using namespace muduo;
@@ -52,6 +53,16 @@ CentreNode::~CentreNode()
 	Exit();
 }
 
+uint32_t CentreNode::GetNodeId() const
+{
+	return gCentreNodeInfo.GetNodeId();
+}
+
+const NodeInfo& CentreNode::GetNodeInfo() const
+{
+	return gCentreNodeInfo.GetNodeInfo();
+}
+
 void CentreNode::Init()
 {
 	gCentreNode = this;
@@ -61,6 +72,8 @@ void CentreNode::Init()
 	InitLog();
 	EventHandler::Register();
 	InitNodeConfig();
+
+	auto& nodeInfo = gCentreNodeInfo.GetNodeInfo();
 
 	nodeInfo.set_node_type(kCentreNode);
 	nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
@@ -165,7 +178,7 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::enti
 
 void CentreNode::SetNodeId(NodeId nodeId)
 {
-	nodeInfo.set_node_id(nodeId);
+	gCentreNodeInfo.SetNodeId(nodeId);
 }
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)
