@@ -159,6 +159,7 @@
     <ClCompile Include="..\..\node\scene\src\game_logic\combat\buff\system\buff_system.cpp" />
     <ClCompile Include="..\..\node\scene\src\game_logic\combat\buff\system\modifier_buff_impl_system.cpp" />
     <ClCompile Include="..\..\node\scene\src\game_logic\combat\buff\system\motion_modifier_impl_system.cpp" />
+    <ClCompile Include="..\..\node\scene\src\thread_local\storage_game.cpp" />
     <ClCompile Include="..\test_adapters\message_system_test.cpp" />
     <ClCompile Include="buff_test.cpp" />
   </ItemGroup>
