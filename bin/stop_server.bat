@@ -4,7 +4,7 @@ REM 关闭指定的进程列表
 setlocal enabledelayedexpansion
 
 REM 设置进程列表，确保每个进程名称之间有空格
-set "processes=gate.exe game.exe centre.exe"
+set "processes=gate.exe scene.exe centre.exe"
 
 REM 循环遍历每个进程
 for %%i in (%processes%) do (

@@ -5,5 +5,6 @@
     <ClCompile Include="buff_test.cpp" />
     <ClCompile Include="..\..\node\scene\src\game_logic\combat\buff\system\modifier_buff_impl_system.cpp" />
     <ClCompile Include="..\..\node\scene\src\game_logic\combat\buff\system\motion_modifier_impl_system.cpp" />
+    <ClCompile Include="..\..\node\scene\src\thread_local\storage_game.cpp" />
   </ItemGroup>
 </Project>
