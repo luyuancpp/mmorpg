@@ -24,7 +24,7 @@
     <ProjectGuid>{341399B9-CD77-43CA-B0BD-B4504A3EC82B}</ProjectGuid>
     <RootNamespace>game_logic</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>scene_node_logic</ProjectName>
+    <ProjectName>scene_node</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

@@ -2,7 +2,7 @@
 #include "proto/logic/event/npc_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "game_logic/npc/system/npc_system.h"
+#include "npc/system/npc_system.h"
 ///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
 {
