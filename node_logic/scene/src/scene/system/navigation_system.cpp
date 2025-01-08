@@ -3,15 +3,10 @@
 
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
 #include "muduo/base/Logging.h"
-
 #include "mainscene_config.h"
-
 #include "DetourCrowd/DetourCrowd.h"
-#include "game_node.h"
 #include "core/network/message_system.h"
-#include "service_info/centre_scene_service_info.h"
 #include "scene/system/recast_system.h"
-#include "scene/system/scene_system.h"
 #include "thread_local/storage_game.h"
 #include "proto/logic/event/scene_event.pb.h"
 #include "scene/constants/nav_constants.h"

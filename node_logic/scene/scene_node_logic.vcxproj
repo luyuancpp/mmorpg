@@ -89,7 +89,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;NOMINMAX;GOOGLE_CHECK_EQ=ABSL_CHECK_EQ;GOOGLE_LOG=ABSL_LOG;GOOGLE_DCHECK=ABSL_DCHECK;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_TCHAR_DEFINED;UNICODE;NOMINMAX;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../../third_party/;../../third_party/boost/;./src/;../../third_party/protobuf/src/;../../third_party/zlib/;../../pkg/common/src;../../third_party/redis/;../../third_party/muduo/;../../third_party/muduo/contrib/windows/include/;../../third_party/redis/deps/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/;../../pkg/config/src/;../../pkg/config/src/pbc/;../../third_party/ue5navmesh/Public;../../third_party/rocketmq-clients/cpp/include/;../../third_party/grpc/include/;../../third_party/spdlog/include/;../../third_party/hexagons_grids/;../../pkg/logic/src/;../../pkg/game_system/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -187,6 +187,7 @@
     <ClInclude Include="src\core\system\redis_system.h" />
     <ClInclude Include="src\entity\system\entity_system.h" />
     <ClInclude Include="src\mount\system\mount_system.h" />
+    <ClInclude Include="src\node\scene_node.h" />
     <ClInclude Include="src\npc\system\npc_system.h" />
     <ClInclude Include="src\player\system\player_node_system.h" />
     <ClInclude Include="src\player\system\player_scene_system.h" />
@@ -196,7 +197,7 @@
     <ClInclude Include="src\scene\comp\dt_crowd_comp.h" />
     <ClInclude Include="src\scene\comp\grid_comp.h" />
     <ClInclude Include="src\scene\comp\nav_comp.h" />
-    <ClInclude Include="src\scene\comp\scene_comp.h" />
+    <ClInclude Include="src\scene\comp\scene_node_scene_comp.h" />
     <ClInclude Include="src\scene\constants\dt_crowd_constants.h" />
     <ClInclude Include="src\scene\constants\nav_constants.h" />
     <ClInclude Include="src\scene\constants\view_constants.h" />
@@ -215,6 +216,7 @@
     <ClInclude Include="src\type_alias\actor.h" />
     <ClInclude Include="src\type_alias\player_loading.h" />
     <ClInclude Include="src\type_alias\player_redis.h" />
+    <ClInclude Include="src\world\world.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\actor\action_state\system\actor_action_state_system.cpp" />
@@ -233,6 +235,7 @@
     <ClCompile Include="src\core\system\redis_system.cpp" />
     <ClCompile Include="src\entity\system\entity_system.cpp" />
     <ClCompile Include="src\mount\system\mount_system.cpp" />
+    <ClCompile Include="src\node\scene_node.cpp" />
     <ClCompile Include="src\npc\system\npc_system.cpp" />
     <ClCompile Include="src\player\system\player_node_system.cpp" />
     <ClCompile Include="src\player\system\player_player_database_1_system.cpp" />
@@ -253,6 +256,7 @@
     <ClCompile Include="src\scene\system\view_system.cpp" />
     <ClCompile Include="src\team\system\game_team_system.cpp" />
     <ClCompile Include="src\thread_local\storage_game.cpp" />
+    <ClCompile Include="src\world\world.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

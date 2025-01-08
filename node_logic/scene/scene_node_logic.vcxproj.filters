@@ -37,7 +37,7 @@
     <ClInclude Include="src\scene\comp\dt_crowd_comp.h" />
     <ClInclude Include="src\scene\comp\grid_comp.h" />
     <ClInclude Include="src\scene\comp\nav_comp.h" />
-    <ClInclude Include="src\scene\comp\scene_comp.h" />
+    <ClInclude Include="src\scene\comp\scene_node_scene_comp.h" />
     <ClInclude Include="src\scene\constants\dt_crowd_constants.h" />
     <ClInclude Include="src\scene\constants\nav_constants.h" />
     <ClInclude Include="src\scene\constants\view_constants.h" />
@@ -56,6 +56,8 @@
     <ClInclude Include="src\type_alias\actor.h" />
     <ClInclude Include="src\type_alias\player_loading.h" />
     <ClInclude Include="src\type_alias\player_redis.h" />
+    <ClInclude Include="src\node\scene_node.h" />
+    <ClInclude Include="src\world\world.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\actor\action_state\system\actor_action_state_system.cpp" />
@@ -94,5 +96,7 @@
     <ClCompile Include="src\scene\system\view_system.cpp" />
     <ClCompile Include="src\team\system\game_team_system.cpp" />
     <ClCompile Include="src\thread_local\storage_game.cpp" />
+    <ClCompile Include="src\node\scene_node.cpp" />
+    <ClCompile Include="src\world\world.cpp" />
   </ItemGroup>
 </Project>
