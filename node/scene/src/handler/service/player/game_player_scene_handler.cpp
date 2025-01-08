@@ -1,8 +1,8 @@
 #include "game_player_scene_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "game_logic/core/network/message_system.h"
-#include "game_logic/player/system/player_node_system.h"
-#include "game_logic/player/system/player_scene_system.h"
+#include "core/network/message_system.h"
+#include "player/system/player_node_system.h"
+#include "player/system/player_scene_system.h"
 #include "proto/logic/client_player/player_scene.pb.h"
 #include "scene/comp/scene_comp.h"
 #include "scene/system/scene_system.h"

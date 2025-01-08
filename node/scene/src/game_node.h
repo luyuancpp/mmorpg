@@ -23,7 +23,7 @@ public:
         GameNode(muduo::net::EventLoop* loop);
     ~GameNode();
 
-    inline const NodeInfo& GetNodeInfo()const { return nodeInfo; }
+    inline const NodeInfo& GetNodeInfo()const;
     const game_node_db& GetNodeConf() const;
     inline NodeId GetNodeId()const { return GetNodeInfo().node_id();  }
     uint32_t GetNodeType() const{ return GetNodeInfo().game_node_type(); }
@@ -57,7 +57,6 @@ private:
     PbSyncRedisClientPtr redis;
     RpcServerPtr rpcServer;
     nodes_info_data nodeServiceInfo;
-    NodeInfo nodeInfo;
     RpcClientPtr myZoneCentreNode;
     GameServiceHandler gameService;
     TimerTaskComp deployRpcTimer;

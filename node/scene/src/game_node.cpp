@@ -4,8 +4,9 @@
 
 #include "all_config.h"
 #include "game_config/deploy_json.h"
-#include "game_logic/world.h"
-#include "game_logic/core/config/config_system.h"
+#include "world/world.h"
+#include "core/config/config_system.h"
+#include "node/scene_node.h"
 #include "grpc/deploy/deploy_client.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
@@ -52,6 +53,11 @@ GameNode::GameNode(muduo::net::EventLoop* loop)
 GameNode::~GameNode()
 {
     Exit (  );
+}
+
+const NodeInfo& GameNode::GetNodeInfo() const
+{
+    return gSceneNode.GetNodeInfo();
 }
 
 void GameNode::Init()
@@ -112,7 +118,7 @@ void GameNode::InitTimeZone()
 
 void GameNode::SetNodeId( const NodeId node_id)
 {
-    nodeInfo.set_node_id(node_id);
+    gSceneNode.SetNodeId(node_id);
 }
 
 void GameNode::StartServer(const ::nodes_info_data& info)
@@ -120,6 +126,8 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     nodeServiceInfo = info;
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
     tlsGame.redis.Initialize(redis_addr);
+
+    auto& nodeInfo = gSceneNode.GetNodeInfo();
 
     nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().ConfigInfo().server_type());
     nodeInfo.set_node_type(eNodeType::kGameNode);
