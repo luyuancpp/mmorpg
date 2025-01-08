@@ -2,7 +2,7 @@
 #include "proto/logic/event/server_event.pb.h"
 #include "thread_local/storage.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "game_node.h"
+#include "scene_node.h"
 #include "network/rpc_client.h"
 #include "service_info/centre_service_service_info.h"
 #include "scene/system/game_node_scene_system.h"
@@ -43,10 +43,10 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 	RegisterGameNodeRequest registerGameRequest;
 	registerGameRequest.mutable_rpc_client()->set_ip(centreLocalAddr.toIp());
 	registerGameRequest.mutable_rpc_client()->set_port(centreLocalAddr.port());
-	registerGameRequest.mutable_rpc_server()->set_ip(gGameNode->GetNodeConf().ip());
-	registerGameRequest.mutable_rpc_server()->set_port(gGameNode->GetNodeConf().port());
-	registerGameRequest.set_server_type(gGameNode->GetNodeType());
-	registerGameRequest.set_game_node_id(gGameNode->GetNodeId());
+	registerGameRequest.mutable_rpc_server()->set_ip(gSceneNode->GetNodeConf().ip());
+	registerGameRequest.mutable_rpc_server()->set_port(gSceneNode->GetNodeConf().port());
+	registerGameRequest.set_server_type(gSceneNode->GetNodeType());
+	registerGameRequest.set_game_node_id(gSceneNode->GetNodeId());
 
 	LOG_INFO << "Sending RegisterGameRequest to centre node: " << entt::to_integral(centreId);
 	(*centreNode)->CallRemoteMethod(CentreServiceRegisterGameNodeMessageId, registerGameRequest);
@@ -77,7 +77,7 @@ void ServerEventHandler::OnConnect2LoginHandler(const OnConnect2Login& event)
 void ServerEventHandler::OnServerStartHandler(const OnServerStart& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    SceneUtil::SetSequenceNodeId(gGameNode->GetNodeId());
+    SceneUtil::SetSequenceNodeId(gSceneNode->GetNodeId());
     GameNodeSceneSystem::InitializeNodeScenes();
 ///<<< END WRITING YOUR CODE
 }

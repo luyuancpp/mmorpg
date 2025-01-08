@@ -3,7 +3,7 @@
 
 #include "muduo/net/InetAddress.h"
 
-#include "game_node.h"
+#include "scene_node.h"
 #include "game_common_logic/system/session_system.h"
 #include "core/network/message_system.h"
 #include "player/system/player_node_system.h"

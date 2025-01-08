@@ -1,5 +1,4 @@
 #pragma once
-#undef  TEXT//为了导航网格能编译过
 
 #include "muduo/net/EventLoop.h"
 #include "muduo/base/AsyncLogging.h"
@@ -14,14 +13,14 @@
 
 #include "proto/common/deploy_service.pb.h"
 
-class GameNode : muduo::noncopyable
+class SceneNode : muduo::noncopyable
 {
 public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
     explicit
-        GameNode(muduo::net::EventLoop* loop);
-    ~GameNode();
+        SceneNode(muduo::net::EventLoop* loop);
+    ~SceneNode();
 
     inline const NodeInfo& GetNodeInfo()const;
     const game_node_db& GetNodeConf() const;
@@ -63,4 +62,4 @@ private:
     TimerTaskComp worldTimer;
 };
 
-extern GameNode* gGameNode;
+extern SceneNode* gSceneNode;

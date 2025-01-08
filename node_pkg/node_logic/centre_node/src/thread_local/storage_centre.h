@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game_logic/redis/system/redis_system.h"
+#include "redis/system/redis_system.h"
 
 class ThreadLocalStorageCentre
 {
