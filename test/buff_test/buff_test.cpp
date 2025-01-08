@@ -1,11 +1,11 @@
 ﻿#include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "game_logic/combat/buff/system/buff_system.h"
+#include "combat/buff/system/buff_system.h"
 #include "buff_config.h"
 #include "buff_error_tip.pb.h"
 #include "thread_local/storage.h"
 #include "proto/logic/event/buff_event.pb.h"
-#include "game_logic/combat/buff/comp/buff_comp.h"
+#include "combat/buff/comp/buff_comp.h"
 #include "time/comp/timer_task_comp.h"
 #include "pbc/buff_error_tip.pb.h"
 #include "pbc/common_error_tip.pb.h"
