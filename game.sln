@@ -231,6 +231,13 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game_system", "pkg\game_system\game_logic.vcxproj", "{7581E55B-5BF0-4443-B28E-FFAC383F4C21}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene", "node\scene\scene.vcxproj", "{6348AEF3-B5C7-43C9-AEAD-D707F104140F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B} = {341399B9-CD77-43CA-B0BD-B4504A3EC82B}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "node_logic", "node_logic", "{C757BD0D-88DA-4A07-A389-AE7E3BC5360E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scene_node_logic", "node_logic\scene\scene_node_logic.vcxproj", "{341399B9-CD77-43CA-B0BD-B4504A3EC82B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -472,6 +479,14 @@ Global
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F}.Release|x64.Build.0 = Release|x64
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F}.Release|x86.ActiveCfg = Release|Win32
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F}.Release|x86.Build.0 = Release|Win32
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B}.Debug|x64.ActiveCfg = Debug|x64
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B}.Debug|x64.Build.0 = Debug|x64
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B}.Debug|x86.ActiveCfg = Debug|Win32
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B}.Debug|x86.Build.0 = Debug|Win32
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B}.Release|x64.ActiveCfg = Release|x64
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B}.Release|x64.Build.0 = Release|x64
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B}.Release|x86.ActiveCfg = Release|Win32
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -506,6 +521,7 @@ Global
 		{C0C06D7F-741F-4476-B56F-930B3799DD3D} = {99B5DD1D-6789-47B9-A4A3-1555F1E39454}
 		{7581E55B-5BF0-4443-B28E-FFAC383F4C21} = {9A3D9AF5-A60E-40E0-9A13-4196C05EDCCC}
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {4AFA0052-539B-4118-BE90-A2FAB7AA256B}
+		{341399B9-CD77-43CA-B0BD-B4504A3EC82B} = {C757BD0D-88DA-4A07-A389-AE7E3BC5360E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {39DD7ACD-8F24-4314-9D3C-74F6B00572A2}
