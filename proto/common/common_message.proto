@@ -164,3 +164,14 @@ message UnregisterGameNodeRequest
 {
   uint32 game_node_id = 1;  // 游戏节点 ID
 }
+
+
+message ProtoFieldCheckerTestSubPB
+{
+  repeated string items = 1;
+}
+
+message ProtoFieldCheckerTestPB
+{
+	ProtoFieldCheckerTestSubPB sub_message = 1;
+}

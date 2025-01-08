@@ -79,6 +79,12 @@ extern PlayerMessageResponseDefaultTypeInternal _PlayerMessageResponse_default_i
 class PlayerNodeServiceRequest;
 struct PlayerNodeServiceRequestDefaultTypeInternal;
 extern PlayerNodeServiceRequestDefaultTypeInternal _PlayerNodeServiceRequest_default_instance_;
+class ProtoFieldCheckerTestPB;
+struct ProtoFieldCheckerTestPBDefaultTypeInternal;
+extern ProtoFieldCheckerTestPBDefaultTypeInternal _ProtoFieldCheckerTestPB_default_instance_;
+class ProtoFieldCheckerTestSubPB;
+struct ProtoFieldCheckerTestSubPBDefaultTypeInternal;
+extern ProtoFieldCheckerTestSubPBDefaultTypeInternal _ProtoFieldCheckerTestSubPB_default_instance_;
 class RegisterCentreSessionNodeRequest;
 struct RegisterCentreSessionNodeRequestDefaultTypeInternal;
 extern RegisterCentreSessionNodeRequestDefaultTypeInternal _RegisterCentreSessionNodeRequest_default_instance_;
@@ -288,6 +294,191 @@ class UnregisterGameNodeRequest final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::uint32_t game_node_id_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ProtoFieldCheckerTestSubPB final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ProtoFieldCheckerTestSubPB) */ {
+ public:
+  inline ProtoFieldCheckerTestSubPB() : ProtoFieldCheckerTestSubPB(nullptr) {}
+  ~ProtoFieldCheckerTestSubPB() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ProtoFieldCheckerTestSubPB(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ProtoFieldCheckerTestSubPB(const ProtoFieldCheckerTestSubPB& from) : ProtoFieldCheckerTestSubPB(nullptr, from) {}
+  inline ProtoFieldCheckerTestSubPB(ProtoFieldCheckerTestSubPB&& from) noexcept
+      : ProtoFieldCheckerTestSubPB(nullptr, std::move(from)) {}
+  inline ProtoFieldCheckerTestSubPB& operator=(const ProtoFieldCheckerTestSubPB& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ProtoFieldCheckerTestSubPB& operator=(ProtoFieldCheckerTestSubPB&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ProtoFieldCheckerTestSubPB& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ProtoFieldCheckerTestSubPB* internal_default_instance() {
+    return reinterpret_cast<const ProtoFieldCheckerTestSubPB*>(
+        &_ProtoFieldCheckerTestSubPB_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 22;
+  friend void swap(ProtoFieldCheckerTestSubPB& a, ProtoFieldCheckerTestSubPB& b) { a.Swap(&b); }
+  inline void Swap(ProtoFieldCheckerTestSubPB* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ProtoFieldCheckerTestSubPB* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ProtoFieldCheckerTestSubPB* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ProtoFieldCheckerTestSubPB>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ProtoFieldCheckerTestSubPB& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ProtoFieldCheckerTestSubPB& from) { ProtoFieldCheckerTestSubPB::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ProtoFieldCheckerTestSubPB* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ProtoFieldCheckerTestSubPB"; }
+
+ protected:
+  explicit ProtoFieldCheckerTestSubPB(::google::protobuf::Arena* arena);
+  ProtoFieldCheckerTestSubPB(::google::protobuf::Arena* arena, const ProtoFieldCheckerTestSubPB& from);
+  ProtoFieldCheckerTestSubPB(::google::protobuf::Arena* arena, ProtoFieldCheckerTestSubPB&& from) noexcept
+      : ProtoFieldCheckerTestSubPB(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kItemsFieldNumber = 1,
+  };
+  // repeated string items = 1;
+  int items_size() const;
+  private:
+  int _internal_items_size() const;
+
+  public:
+  void clear_items() ;
+  const std::string& items(int index) const;
+  std::string* mutable_items(int index);
+  void set_items(int index, const std::string& value);
+  void set_items(int index, std::string&& value);
+  void set_items(int index, const char* value);
+  void set_items(int index, const char* value, std::size_t size);
+  void set_items(int index, absl::string_view value);
+  std::string* add_items();
+  void add_items(const std::string& value);
+  void add_items(std::string&& value);
+  void add_items(const char* value);
+  void add_items(const char* value, std::size_t size);
+  void add_items(absl::string_view value);
+  const ::google::protobuf::RepeatedPtrField<std::string>& items() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* mutable_items();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<std::string>& _internal_items() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* _internal_mutable_items();
+
+  public:
+  // @@protoc_insertion_point(class_scope:ProtoFieldCheckerTestSubPB)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 0,
+      40, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::RepeatedPtrField<std::string> items_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2528,6 +2719,179 @@ class RegisterCentreSessionNodeRequest final : public ::google::protobuf::Messag
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::SessionDetails* session_info_;
     ::uint32_t centre_node_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ProtoFieldCheckerTestPB final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ProtoFieldCheckerTestPB) */ {
+ public:
+  inline ProtoFieldCheckerTestPB() : ProtoFieldCheckerTestPB(nullptr) {}
+  ~ProtoFieldCheckerTestPB() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ProtoFieldCheckerTestPB(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline ProtoFieldCheckerTestPB(const ProtoFieldCheckerTestPB& from) : ProtoFieldCheckerTestPB(nullptr, from) {}
+  inline ProtoFieldCheckerTestPB(ProtoFieldCheckerTestPB&& from) noexcept
+      : ProtoFieldCheckerTestPB(nullptr, std::move(from)) {}
+  inline ProtoFieldCheckerTestPB& operator=(const ProtoFieldCheckerTestPB& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ProtoFieldCheckerTestPB& operator=(ProtoFieldCheckerTestPB&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ProtoFieldCheckerTestPB& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ProtoFieldCheckerTestPB* internal_default_instance() {
+    return reinterpret_cast<const ProtoFieldCheckerTestPB*>(
+        &_ProtoFieldCheckerTestPB_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 23;
+  friend void swap(ProtoFieldCheckerTestPB& a, ProtoFieldCheckerTestPB& b) { a.Swap(&b); }
+  inline void Swap(ProtoFieldCheckerTestPB* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ProtoFieldCheckerTestPB* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ProtoFieldCheckerTestPB* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<ProtoFieldCheckerTestPB>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ProtoFieldCheckerTestPB& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ProtoFieldCheckerTestPB& from) { ProtoFieldCheckerTestPB::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(ProtoFieldCheckerTestPB* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "ProtoFieldCheckerTestPB"; }
+
+ protected:
+  explicit ProtoFieldCheckerTestPB(::google::protobuf::Arena* arena);
+  ProtoFieldCheckerTestPB(::google::protobuf::Arena* arena, const ProtoFieldCheckerTestPB& from);
+  ProtoFieldCheckerTestPB(::google::protobuf::Arena* arena, ProtoFieldCheckerTestPB&& from) noexcept
+      : ProtoFieldCheckerTestPB(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSubMessageFieldNumber = 1,
+  };
+  // .ProtoFieldCheckerTestSubPB sub_message = 1;
+  bool has_sub_message() const;
+  void clear_sub_message() ;
+  const ::ProtoFieldCheckerTestSubPB& sub_message() const;
+  PROTOBUF_NODISCARD ::ProtoFieldCheckerTestSubPB* release_sub_message();
+  ::ProtoFieldCheckerTestSubPB* mutable_sub_message();
+  void set_allocated_sub_message(::ProtoFieldCheckerTestSubPB* value);
+  void unsafe_arena_set_allocated_sub_message(::ProtoFieldCheckerTestSubPB* value);
+  ::ProtoFieldCheckerTestSubPB* unsafe_arena_release_sub_message();
+
+  private:
+  const ::ProtoFieldCheckerTestSubPB& _internal_sub_message() const;
+  ::ProtoFieldCheckerTestSubPB* _internal_mutable_sub_message();
+
+  public:
+  // @@protoc_insertion_point(class_scope:ProtoFieldCheckerTestPB)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::ProtoFieldCheckerTestSubPB* sub_message_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -7295,6 +7659,212 @@ inline ::uint32_t UnregisterGameNodeRequest::_internal_game_node_id() const {
 inline void UnregisterGameNodeRequest::_internal_set_game_node_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.game_node_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// ProtoFieldCheckerTestSubPB
+
+// repeated string items = 1;
+inline int ProtoFieldCheckerTestSubPB::_internal_items_size() const {
+  return _internal_items().size();
+}
+inline int ProtoFieldCheckerTestSubPB::items_size() const {
+  return _internal_items_size();
+}
+inline void ProtoFieldCheckerTestSubPB::clear_items() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.items_.Clear();
+}
+inline std::string* ProtoFieldCheckerTestSubPB::add_items()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  std::string* _s = _internal_mutable_items()->Add();
+  // @@protoc_insertion_point(field_add_mutable:ProtoFieldCheckerTestSubPB.items)
+  return _s;
+}
+inline const std::string& ProtoFieldCheckerTestSubPB::items(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ProtoFieldCheckerTestSubPB.items)
+  return _internal_items().Get(index);
+}
+inline std::string* ProtoFieldCheckerTestSubPB::mutable_items(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:ProtoFieldCheckerTestSubPB.items)
+  return _internal_mutable_items()->Mutable(index);
+}
+inline void ProtoFieldCheckerTestSubPB::set_items(int index, const std::string& value) {
+  _internal_mutable_items()->Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::set_items(int index, std::string&& value) {
+  _internal_mutable_items()->Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::set_items(int index, const char* value) {
+  ABSL_DCHECK(value != nullptr);
+  _internal_mutable_items()->Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::set_items(int index, const char* value,
+                              std::size_t size) {
+  _internal_mutable_items()->Mutable(index)->assign(
+      reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::set_items(int index, absl::string_view value) {
+  _internal_mutable_items()->Mutable(index)->assign(
+      value.data(), value.size());
+  // @@protoc_insertion_point(field_set_string_piece:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::add_items(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_items()->Add()->assign(value);
+  // @@protoc_insertion_point(field_add:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::add_items(std::string&& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_items()->Add(std::move(value));
+  // @@protoc_insertion_point(field_add:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::add_items(const char* value) {
+  ABSL_DCHECK(value != nullptr);
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_items()->Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::add_items(const char* value, std::size_t size) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_items()->Add()->assign(
+      reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:ProtoFieldCheckerTestSubPB.items)
+}
+inline void ProtoFieldCheckerTestSubPB::add_items(absl::string_view value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_items()->Add()->assign(value.data(),
+                                                     value.size());
+  // @@protoc_insertion_point(field_add_string_piece:ProtoFieldCheckerTestSubPB.items)
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+ProtoFieldCheckerTestSubPB::items() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:ProtoFieldCheckerTestSubPB.items)
+  return _internal_items();
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+ProtoFieldCheckerTestSubPB::mutable_items() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:ProtoFieldCheckerTestSubPB.items)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _internal_mutable_items();
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+ProtoFieldCheckerTestSubPB::_internal_items() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.items_;
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+ProtoFieldCheckerTestSubPB::_internal_mutable_items() {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return &_impl_.items_;
+}
+
+// -------------------------------------------------------------------
+
+// ProtoFieldCheckerTestPB
+
+// .ProtoFieldCheckerTestSubPB sub_message = 1;
+inline bool ProtoFieldCheckerTestPB::has_sub_message() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.sub_message_ != nullptr);
+  return value;
+}
+inline void ProtoFieldCheckerTestPB::clear_sub_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.sub_message_ != nullptr) _impl_.sub_message_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::ProtoFieldCheckerTestSubPB& ProtoFieldCheckerTestPB::_internal_sub_message() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::ProtoFieldCheckerTestSubPB* p = _impl_.sub_message_;
+  return p != nullptr ? *p : reinterpret_cast<const ::ProtoFieldCheckerTestSubPB&>(::_ProtoFieldCheckerTestSubPB_default_instance_);
+}
+inline const ::ProtoFieldCheckerTestSubPB& ProtoFieldCheckerTestPB::sub_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ProtoFieldCheckerTestPB.sub_message)
+  return _internal_sub_message();
+}
+inline void ProtoFieldCheckerTestPB::unsafe_arena_set_allocated_sub_message(::ProtoFieldCheckerTestSubPB* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.sub_message_);
+  }
+  _impl_.sub_message_ = reinterpret_cast<::ProtoFieldCheckerTestSubPB*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ProtoFieldCheckerTestPB.sub_message)
+}
+inline ::ProtoFieldCheckerTestSubPB* ProtoFieldCheckerTestPB::release_sub_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::ProtoFieldCheckerTestSubPB* released = _impl_.sub_message_;
+  _impl_.sub_message_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::ProtoFieldCheckerTestSubPB* ProtoFieldCheckerTestPB::unsafe_arena_release_sub_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:ProtoFieldCheckerTestPB.sub_message)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::ProtoFieldCheckerTestSubPB* temp = _impl_.sub_message_;
+  _impl_.sub_message_ = nullptr;
+  return temp;
+}
+inline ::ProtoFieldCheckerTestSubPB* ProtoFieldCheckerTestPB::_internal_mutable_sub_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.sub_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::ProtoFieldCheckerTestSubPB>(GetArena());
+    _impl_.sub_message_ = reinterpret_cast<::ProtoFieldCheckerTestSubPB*>(p);
+  }
+  return _impl_.sub_message_;
+}
+inline ::ProtoFieldCheckerTestSubPB* ProtoFieldCheckerTestPB::mutable_sub_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::ProtoFieldCheckerTestSubPB* _msg = _internal_mutable_sub_message();
+  // @@protoc_insertion_point(field_mutable:ProtoFieldCheckerTestPB.sub_message)
+  return _msg;
+}
+inline void ProtoFieldCheckerTestPB::set_allocated_sub_message(::ProtoFieldCheckerTestSubPB* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete (_impl_.sub_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.sub_message_ = reinterpret_cast<::ProtoFieldCheckerTestSubPB*>(value);
+  // @@protoc_insertion_point(field_set_allocated:ProtoFieldCheckerTestPB.sub_message)
 }
 
 #ifdef __GNUC__

@@ -41,6 +41,25 @@ struct UnregisterGameNodeRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UnregisterGameNodeRequestDefaultTypeInternal _UnregisterGameNodeRequest_default_instance_;
 
+inline constexpr ProtoFieldCheckerTestSubPB::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : items_{},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ProtoFieldCheckerTestSubPB::ProtoFieldCheckerTestSubPB(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct ProtoFieldCheckerTestSubPBDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ProtoFieldCheckerTestSubPBDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ProtoFieldCheckerTestSubPBDefaultTypeInternal() {}
+  union {
+    ProtoFieldCheckerTestSubPB _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtoFieldCheckerTestSubPBDefaultTypeInternal _ProtoFieldCheckerTestSubPB_default_instance_;
+
 inline constexpr PlayerInfoExternal::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : player_id_{::uint64_t{0u}},
@@ -285,6 +304,25 @@ struct RegisterCentreSessionNodeRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RegisterCentreSessionNodeRequestDefaultTypeInternal _RegisterCentreSessionNodeRequest_default_instance_;
 
+inline constexpr ProtoFieldCheckerTestPB::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        sub_message_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ProtoFieldCheckerTestPB::ProtoFieldCheckerTestPB(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct ProtoFieldCheckerTestPBDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ProtoFieldCheckerTestPBDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ProtoFieldCheckerTestPBDefaultTypeInternal() {}
+  union {
+    ProtoFieldCheckerTestPB _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtoFieldCheckerTestPBDefaultTypeInternal _ProtoFieldCheckerTestPB_default_instance_;
+
 inline constexpr NodeRoutingMessageBody::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -476,7 +514,7 @@ struct NodeRouteMessageRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageRequestDefaultTypeInternal _NodeRouteMessageRequest_default_instance_;
-static ::_pb::Metadata file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[22];
+static ::_pb::Metadata file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[24];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fcommon_2fcommon_5fmessage_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -744,6 +782,25 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::UnregisterGameNodeRequest, _impl_.game_node_id_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::ProtoFieldCheckerTestSubPB, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::ProtoFieldCheckerTestSubPB, _impl_.items_),
+        PROTOBUF_FIELD_OFFSET(::ProtoFieldCheckerTestPB, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::ProtoFieldCheckerTestPB, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::ProtoFieldCheckerTestPB, _impl_.sub_message_),
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -770,6 +827,8 @@ static const ::_pbi::MigrationSchema
         {223, 235, -1, sizeof(::RegisterGameNodeRequest)},
         {239, 249, -1, sizeof(::RegisterGateNodeRequest)},
         {251, -1, -1, sizeof(::UnregisterGameNodeRequest)},
+        {260, -1, -1, sizeof(::ProtoFieldCheckerTestSubPB)},
+        {269, 278, -1, sizeof(::ProtoFieldCheckerTestPB)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
@@ -794,6 +853,8 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_RegisterGameNodeRequest_default_instance_._instance,
     &::_RegisterGateNodeRequest_default_instance_._instance,
     &::_UnregisterGameNodeRequest_default_instance_._instance,
+    &::_ProtoFieldCheckerTestSubPB_default_instance_._instance,
+    &::_ProtoFieldCheckerTestPB_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -850,7 +911,10 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     "\n\027RegisterGateNodeRequest\022#\n\nrpc_client\030"
     "\001 \001(\0132\017.NetworkAddress\022\024\n\014gate_node_id\030\002"
     " \001(\r\"1\n\031UnregisterGameNodeRequest\022\024\n\014gam"
-    "e_node_id\030\001 \001(\rB\tZ\007pb/gameb\006proto3"
+    "e_node_id\030\001 \001(\r\"+\n\032ProtoFieldCheckerTest"
+    "SubPB\022\r\n\005items\030\001 \003(\t\"K\n\027ProtoFieldChecke"
+    "rTestPB\0220\n\013sub_message\030\001 \001(\0132\033.ProtoFiel"
+    "dCheckerTestSubPBB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[3] =
     {
@@ -862,13 +926,13 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_5fmessage_2epr
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto = {
     false,
     false,
-    2154,
+    2276,
     descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto,
     "proto/common/common_message.proto",
     &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
     descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps,
     3,
-    22,
+    24,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto::offsets,
@@ -6439,6 +6503,412 @@ void UnregisterGameNodeRequest::InternalSwap(UnregisterGameNodeRequest* PROTOBUF
   return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_getter,
                                    &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
                                    file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[21]);
+}
+// ===================================================================
+
+class ProtoFieldCheckerTestSubPB::_Internal {
+ public:
+};
+
+ProtoFieldCheckerTestSubPB::ProtoFieldCheckerTestSubPB(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:ProtoFieldCheckerTestSubPB)
+}
+inline PROTOBUF_NDEBUG_INLINE ProtoFieldCheckerTestSubPB::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : items_{visibility, arena, from.items_},
+        _cached_size_{0} {}
+
+ProtoFieldCheckerTestSubPB::ProtoFieldCheckerTestSubPB(
+    ::google::protobuf::Arena* arena,
+    const ProtoFieldCheckerTestSubPB& from)
+    : ::google::protobuf::Message(arena) {
+  ProtoFieldCheckerTestSubPB* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+
+  // @@protoc_insertion_point(copy_constructor:ProtoFieldCheckerTestSubPB)
+}
+inline PROTOBUF_NDEBUG_INLINE ProtoFieldCheckerTestSubPB::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : items_{visibility, arena},
+        _cached_size_{0} {}
+
+inline void ProtoFieldCheckerTestSubPB::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+ProtoFieldCheckerTestSubPB::~ProtoFieldCheckerTestSubPB() {
+  // @@protoc_insertion_point(destructor:ProtoFieldCheckerTestSubPB)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void ProtoFieldCheckerTestSubPB::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+ProtoFieldCheckerTestSubPB::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(ProtoFieldCheckerTestSubPB, _impl_._cached_size_),
+              false,
+          },
+          &ProtoFieldCheckerTestSubPB::MergeImpl,
+          &ProtoFieldCheckerTestSubPB::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void ProtoFieldCheckerTestSubPB::Clear() {
+// @@protoc_insertion_point(message_clear_start:ProtoFieldCheckerTestSubPB)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.items_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* ProtoFieldCheckerTestSubPB::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 40, 2> ProtoFieldCheckerTestSubPB::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_ProtoFieldCheckerTestSubPB_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::ProtoFieldCheckerTestSubPB>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated string items = 1;
+    {::_pbi::TcParser::FastUR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ProtoFieldCheckerTestSubPB, _impl_.items_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated string items = 1;
+    {PROTOBUF_FIELD_OFFSET(ProtoFieldCheckerTestSubPB, _impl_.items_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+  }},
+  // no aux_entries
+  {{
+    "\32\5\0\0\0\0\0\0"
+    "ProtoFieldCheckerTestSubPB"
+    "items"
+  }},
+};
+
+::uint8_t* ProtoFieldCheckerTestSubPB::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:ProtoFieldCheckerTestSubPB)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // repeated string items = 1;
+  for (int i = 0, n = this->_internal_items_size(); i < n; ++i) {
+    const auto& s = this->_internal_items().Get(i);
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "ProtoFieldCheckerTestSubPB.items");
+    target = stream->WriteString(1, s, target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:ProtoFieldCheckerTestSubPB)
+  return target;
+}
+
+::size_t ProtoFieldCheckerTestSubPB::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:ProtoFieldCheckerTestSubPB)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated string items = 1;
+  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_items().size());
+  for (int i = 0, n = _internal_items().size(); i < n; ++i) {
+    total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
+        _internal_items().Get(i));
+  }
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void ProtoFieldCheckerTestSubPB::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ProtoFieldCheckerTestSubPB*>(&to_msg);
+  auto& from = static_cast<const ProtoFieldCheckerTestSubPB&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ProtoFieldCheckerTestSubPB)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_items()->MergeFrom(from._internal_items());
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ProtoFieldCheckerTestSubPB::CopyFrom(const ProtoFieldCheckerTestSubPB& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ProtoFieldCheckerTestSubPB)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool ProtoFieldCheckerTestSubPB::IsInitialized() const {
+  return true;
+}
+
+void ProtoFieldCheckerTestSubPB::InternalSwap(ProtoFieldCheckerTestSubPB* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.items_.InternalSwap(&other->_impl_.items_);
+}
+
+::google::protobuf::Metadata ProtoFieldCheckerTestSubPB::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_getter,
+                                   &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
+                                   file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[22]);
+}
+// ===================================================================
+
+class ProtoFieldCheckerTestPB::_Internal {
+ public:
+  using HasBits = decltype(std::declval<ProtoFieldCheckerTestPB>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+    8 * PROTOBUF_FIELD_OFFSET(ProtoFieldCheckerTestPB, _impl_._has_bits_);
+};
+
+ProtoFieldCheckerTestPB::ProtoFieldCheckerTestPB(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:ProtoFieldCheckerTestPB)
+}
+inline PROTOBUF_NDEBUG_INLINE ProtoFieldCheckerTestPB::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+ProtoFieldCheckerTestPB::ProtoFieldCheckerTestPB(
+    ::google::protobuf::Arena* arena,
+    const ProtoFieldCheckerTestPB& from)
+    : ::google::protobuf::Message(arena) {
+  ProtoFieldCheckerTestPB* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.sub_message_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::ProtoFieldCheckerTestSubPB>(
+                              arena, *from._impl_.sub_message_)
+                        : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:ProtoFieldCheckerTestPB)
+}
+inline PROTOBUF_NDEBUG_INLINE ProtoFieldCheckerTestPB::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void ProtoFieldCheckerTestPB::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.sub_message_ = {};
+}
+ProtoFieldCheckerTestPB::~ProtoFieldCheckerTestPB() {
+  // @@protoc_insertion_point(destructor:ProtoFieldCheckerTestPB)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void ProtoFieldCheckerTestPB::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  delete _impl_.sub_message_;
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+ProtoFieldCheckerTestPB::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(ProtoFieldCheckerTestPB, _impl_._cached_size_),
+              false,
+          },
+          &ProtoFieldCheckerTestPB::MergeImpl,
+          &ProtoFieldCheckerTestPB::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void ProtoFieldCheckerTestPB::Clear() {
+// @@protoc_insertion_point(message_clear_start:ProtoFieldCheckerTestPB)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.sub_message_ != nullptr);
+    _impl_.sub_message_->Clear();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* ProtoFieldCheckerTestPB::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> ProtoFieldCheckerTestPB::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ProtoFieldCheckerTestPB, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    &_ProtoFieldCheckerTestPB_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::ProtoFieldCheckerTestPB>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // .ProtoFieldCheckerTestSubPB sub_message = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ProtoFieldCheckerTestPB, _impl_.sub_message_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .ProtoFieldCheckerTestSubPB sub_message = 1;
+    {PROTOBUF_FIELD_OFFSET(ProtoFieldCheckerTestPB, _impl_.sub_message_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::ProtoFieldCheckerTestSubPB>()},
+  }}, {{
+  }},
+};
+
+::uint8_t* ProtoFieldCheckerTestPB::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:ProtoFieldCheckerTestPB)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  // .ProtoFieldCheckerTestSubPB sub_message = 1;
+  if (cached_has_bits & 0x00000001u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        1, *_impl_.sub_message_, _impl_.sub_message_->GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:ProtoFieldCheckerTestPB)
+  return target;
+}
+
+::size_t ProtoFieldCheckerTestPB::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:ProtoFieldCheckerTestPB)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // .ProtoFieldCheckerTestSubPB sub_message = 1;
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    total_size +=
+        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.sub_message_);
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void ProtoFieldCheckerTestPB::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ProtoFieldCheckerTestPB*>(&to_msg);
+  auto& from = static_cast<const ProtoFieldCheckerTestPB&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:ProtoFieldCheckerTestPB)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.sub_message_ != nullptr);
+    if (_this->_impl_.sub_message_ == nullptr) {
+      _this->_impl_.sub_message_ =
+          ::google::protobuf::Message::CopyConstruct<::ProtoFieldCheckerTestSubPB>(arena, *from._impl_.sub_message_);
+    } else {
+      _this->_impl_.sub_message_->MergeFrom(*from._impl_.sub_message_);
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ProtoFieldCheckerTestPB::CopyFrom(const ProtoFieldCheckerTestPB& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ProtoFieldCheckerTestPB)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool ProtoFieldCheckerTestPB::IsInitialized() const {
+  return true;
+}
+
+void ProtoFieldCheckerTestPB::InternalSwap(ProtoFieldCheckerTestPB* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.sub_message_, other->_impl_.sub_message_);
+}
+
+::google::protobuf::Metadata ProtoFieldCheckerTestPB::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_getter,
+                                   &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
+                                   file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[23]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
