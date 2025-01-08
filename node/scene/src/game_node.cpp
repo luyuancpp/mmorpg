@@ -6,7 +6,7 @@
 #include "game_config/deploy_json.h"
 #include "world/world.h"
 #include "core/config/config_system.h"
-#include "node/scene_node.h"
+#include "node/scene_node_info.h"
 #include "grpc/deploy/deploy_client.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
@@ -57,7 +57,7 @@ GameNode::~GameNode()
 
 const NodeInfo& GameNode::GetNodeInfo() const
 {
-    return gSceneNode.GetNodeInfo();
+    return gSceneNodeInfo.GetNodeInfo();
 }
 
 void GameNode::Init()
@@ -118,7 +118,7 @@ void GameNode::InitTimeZone()
 
 void GameNode::SetNodeId( const NodeId node_id)
 {
-    gSceneNode.SetNodeId(node_id);
+    gSceneNodeInfo.SetNodeId(node_id);
 }
 
 void GameNode::StartServer(const ::nodes_info_data& info)
@@ -127,7 +127,7 @@ void GameNode::StartServer(const ::nodes_info_data& info)
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
     tlsGame.redis.Initialize(redis_addr);
 
-    auto& nodeInfo = gSceneNode.GetNodeInfo();
+    auto& nodeInfo = gSceneNodeInfo.GetNodeInfo();
 
     nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().ConfigInfo().server_type());
     nodeInfo.set_node_type(eNodeType::kGameNode);
