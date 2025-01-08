@@ -28,7 +28,7 @@ public:
     inline NodeId GetNodeId()const { return GetNodeInfo().node_id();  }
     uint32_t GetNodeType() const{ return GetNodeInfo().game_node_type(); }
 
-    inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduoLog; }
+    inline [[nodiscard]] muduo::AsyncLogging& Log(){ return muduoLog; }
     
     void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);

@@ -3,6 +3,7 @@
 #include <entt/src/entt/entity/entity.hpp>
 
 #include "scene/comp/scene_comp.h"
+#include "scene/comp/scene_node_scene_comp.h"
 #include "thread_local/storage.h"
 
 void InterestSystem::InitializeActorComponents(const entt::entity entity)
