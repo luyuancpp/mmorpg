@@ -245,7 +245,8 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
     const auto sessionIt = tls_gate.sessions().find(sessionId);
     if (sessionIt == tls_gate.sessions().end())
     {
-        LOG_ERROR << "Session not found for session id: " << sessionId << " in RPC request.";
+        LOG_ERROR << "Session not found for session id: " << sessionId
+            << " in RPC request.";
         return;
     }
 
@@ -255,8 +256,9 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
     constexpr size_t maxByteSize = 1024; // 1KB
     if (request->ByteSizeLong() > maxByteSize)
     {
-        LOG_ERROR << "Message size exceeds 1KB. Session ID: " << sessionId 
-                  << ", Message ID: " << request->message_id();
+        LOG_ERROR << "Session ID: " << sessionId
+            << " - Message size exceeds 1KB. Message ID: "
+            << request->message_id();
 
         MessageContent errResponse;
         errResponse.set_id(request->id());
@@ -270,8 +272,13 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
     if (gClientToServerMessageId.contains(request->message_id()))
     {
         if (const auto err = session.messageLimiter.CanSend(request->message_id());
-            kSuccess != err){
-            
+            kSuccess != err) {
+
+            LOG_ERROR << "Session ID: " << sessionId
+                << " - Failed to send message. Message ID: "
+                << request->message_id()
+                << ", Error: " << err;
+
             MessageContent errResponse;
             errResponse.set_id(request->id());
             errResponse.set_message_id(request->message_id());
@@ -284,6 +291,10 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
     }
     else
     {
+        LOG_TRACE << "Session ID: " << sessionId
+            << " - Handling login node message. Message ID: "
+            << request->message_id();
+
         HandleLoginNodeMessage(sessionId, request, conn);
     }
 }
