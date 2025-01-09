@@ -72,12 +72,14 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 		LOG_ERROR << "message_id not found " << replied->message_content().message_id() ;
 		return;
 	}
+
 	const auto it = tlsSessions.find(replied->header().session_id());
 	if (it == tlsSessions.end())
 	{
 		LOG_ERROR << "can not find session id " << replied->header().session_id();
 		return;
 	}
+
 	const auto  player_id    = it->second.player_id();
 	const auto& message_info = gMessageInfo.at(replied->message_content().message_id() );
 	const auto  player = tlsCommonLogic.GetPlayer(player_id);
@@ -87,6 +89,7 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 			<< replied->message_content().message_id();
 		return;
 	}
+
 	const auto service_it = g_player_service_replied.find(message_info.serviceName);
 	if (service_it == g_player_service_replied.end())
 	{
@@ -102,7 +105,6 @@ void OnGameServiceInvokePlayerServiceRepliedHandler(const TcpConnectionPtr& conn
 	if (nullptr == method)
 	{
 		LOG_ERROR << "PlayerService method not found " << message_info.methodName;
-		//todo client error;
 		return;
 	}
 
