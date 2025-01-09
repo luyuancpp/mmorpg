@@ -6,4 +6,4 @@
 
 using PlayerLoadingInfoList = std::unordered_map<Guid, CentrePlayerGameNodeEntryRequest>;
 
-//todo game node 直接往另外一个game node 发玩家处理的消息
+//todo scene node 直接往另外一个scene node 发玩家处理的消息

@@ -46,7 +46,7 @@ void OnGateServicePlayerEnterGameNodeRepliedHandler(const TcpConnectionPtr& conn
 	const auto player = GetPlayerEntityBySessionId(replied->session_info().session_id());
 	if (entt::null == player)
 	{
-		LOG_ERROR << "session player not found " << replied->session_info().session_id();
+		LOG_TRACE << "session player not found " << replied->session_info().session_id();
 		return;
 	}
 	
