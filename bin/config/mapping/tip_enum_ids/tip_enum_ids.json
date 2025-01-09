@@ -1,0 +1,132 @@
+{
+    "common_error": {
+        "Success": 0,
+        "InvalidTableId": 1,
+        "InvalidTableData": 2,
+        "ServiceUnavailable": 3,
+        "EntityIsNull": 4,
+        "InvalidParameter": 5,
+        "ServerCrashed": 6,
+        "IndexOutOfRange": 7,
+        "RateLimitExceeded": 8,
+        "ThisEntityIsInvalid": 9,
+        "MessageSizeExceeded": 10
+    },
+    "login_error": {
+        "LoginAccountNotFound": 11,
+        "LoginAccountPlayerFull": 12,
+        "LoginCreatePlayerUnLoadAccount": 13,
+        "LoginCreatePlayerConnectionHasNotAccount": 14,
+        "LoginUnLogin": 15,
+        "LoginInProgress": 16,
+        "LoginPlayerGuidError": 17,
+        "LoginEnteringGame": 18,
+        "LoginPlaying": 19,
+        "LoginCreatingPlayer": 20,
+        "LoginWaitingEnterGame": 21,
+        "LoginEnterGameGuid": 22,
+        "LoginAccountNameEmpty": 23,
+        "LoginCreateConnectionAccountEmpty": 24,
+        "LoginEnterGameConnectionAccountEmpty": 25,
+        "LoginUnknownError": 26,
+        "LoginSessionDisconnect": 27,
+        "LoginBeKickByAnOtherAccount": 28,
+        "LoginSessionIdNotFound": 29
+    },
+    "scene_error": {
+        "EnterSceneNotFound": 30,
+        "EnterSceneNotFull": 31,
+        "EnterSceneMainFull": 32,
+        "EnterGameNodeCrash": 33,
+        "EnterSceneServerType": 34,
+        "EnterSceneParamError": 35,
+        "EnterSceneSceneFull": 36,
+        "EnterSceneSceneNotFound": 37,
+        "EnterSceneYouInCurrentScene": 38,
+        "EnterSceneEnterCrossRoomScene": 39,
+        "EnterSceneGsInfoNull": 40,
+        "EnterSceneGsFull": 41,
+        "EnterSceneYourSceneIsNull": 42,
+        "EnterSceneChangeSceneOffLine": 43,
+        "EnterSceneChangingScene": 44,
+        "EnterSceneChangingGs": 45,
+        "ChangeScenePlayerQueueNotFound": 46,
+        "ChangeScenePlayerQueueFull": 47,
+        "ChangeScenePlayerQueueComponentGsNull": 48,
+        "ChangeScenePlayerQueueComponentEmpty": 49,
+        "ChangeSceneEnQueueNotSameGs": 50,
+        "InvalidEnterSceneParameters": 51,
+        "CheckEnterSceneCreator": 52
+    },
+    "team_error": {
+        "TeamNotInApplicants": 53,
+        "TeamPlayerId": 54,
+        "TeamMembersFull": 55,
+        "TeamMemberInTeam": 56,
+        "TeamMemberNotInTeam": 57,
+        "TeamKickSelf": 58,
+        "TeamKickNotLeader": 59,
+        "TeamAppointSelf": 60,
+        "TeamAppointLeaderNotLeader": 61,
+        "TeamFull": 62,
+        "TeamInApplicantList": 63,
+        "TeamNotInApplicantList": 64,
+        "TeamListMaxSize": 65,
+        "TeamHasNotTeamId": 66,
+        "TeamDismissNotLeader": 67,
+        "TeamMemberListFull": 68,
+        "TeamCreateTeamMaxMemberSize": 69,
+        "TeamPlayerNotFound": 70
+    },
+    "mission_error": {
+        "MissionTypeAlreadyExists": 71,
+        "MissionAlreadyCompleted": 72,
+        "MissionIdNotInRewardList": 73,
+        "PlayerMissionComponentNotFound": 74,
+        "MissionIdRepeated": 75,
+        "ConditionIdOutOfRange": 76,
+        "MissionNotInProgress": 77
+    },
+    "bag_error": {
+        "BagDeleteItemFindGuid": 78,
+        "BagDeleteItemAlreadyHasGuid": 79,
+        "BagAddItemHasNotBaseComponent": 80,
+        "BagAddItemInvalidGuid": 81,
+        "BagAddItemInvalidParam": 82,
+        "BagAddItemBagFull": 83,
+        "BagItemNotStacked": 84,
+        "BagInsufficientItems": 85,
+        "BagDelItemPos": 86,
+        "BagDelItemConfig": 87,
+        "BagDelItemGuid": 88,
+        "BagDelItemFindItem": 89,
+        "BagDelItemSize": 90,
+        "BagItemDeletionSizeMismatch": 91,
+        "BagInsufficientBagSpace": 92
+    },
+    "skill_error": {
+        "SkillUnInterruptible": 93,
+        "SkillInvalidTargetId": 94,
+        "SkillInvalidTarget": 95,
+        "SkillCooldownNotReady": 96,
+        "SkillCannotBeCastInCurrentState": 97,
+        "SkillCannotBeCastSilenceRestriction": 98,
+        "SkillCannotBeCastStunRestriction": 99
+    },
+    "buff_error": {
+        "BuffMaxBuffStack": 100,
+        "BuffTargetImmuneToBuff": 101
+    },
+    "entity_error": {
+        "EntityTransformNotFound": 102
+    },
+    "actor_action_error": {
+        "ActorActionStateActionCannotBePerformedWhileInTeamFollowMode": 103
+    },
+    "mount_error": {
+        "MountNotMounted": 104
+    },
+    "reward_error": {
+        "RewardAlreadyClaimed": 105
+    }
+}
