@@ -1,6 +1,7 @@
 #include "game_service_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 
+#include "common_error_tip.pb.h"
 #include "muduo/net/InetAddress.h"
 
 #include "scene_node.h"
@@ -12,6 +13,7 @@
 #include "handler/service/player/player_service.h"
 #include "network/rpc_session.h"
 #include "network/constants/network_constants.h"
+#include "network/system/error_handling_system.h"
 #include "proto/logic/component/player_async_comp.pb.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
@@ -264,6 +266,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	{
 		LOG_ERROR << "session id not found " << request->header().session_id() << ","
 			<< " message id " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kSessionNotFound);
 		return;
 	}
 
@@ -271,12 +274,14 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	if (entt::null == player)
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
+		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
 		return;
 	}
 
 	if (request->message_content().message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "message_id not found " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kMessageIdNotFound);
 		return;
 	}
 
@@ -302,12 +307,14 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(), int32_t(request->message_content().serialized_message().size())))
 	{
 		LOG_ERROR << "ParsePartialFromArray " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kRequestMessageParseError);
 		return;
 	}
 
 	if (std::string outputProtoFieldChecker;
 		!ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, outputProtoFieldChecker)){
 		LOG_ERROR << outputProtoFieldChecker << " Failed to check request for message ID: " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
 		return;
 		}
 	
@@ -329,7 +336,15 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
 		tipInfoMessage->Clear();
 	}
 	
-	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
+	const auto byte_size = playerResponse->ByteSizeLong();
+	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
+	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
+	                                             static_cast<int32_t>(byte_size)))
+	{
+		LOG_ERROR << "Failed to serialize response for message ID: " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kResponseMessageParseError);
+		return;
+	}
         
 ///<<< END WRITING YOUR CODE
 }

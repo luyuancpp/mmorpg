@@ -10,7 +10,13 @@
         "IndexOutOfRange": 7,
         "RateLimitExceeded": 8,
         "ThisEntityIsInvalid": 9,
-        "MessageSizeExceeded": 10
+        "MessageSizeExceeded": 10,
+        "SessionNotFound": 105,
+        "PlayerNotFoundInSession": 106,
+        "MessageIdNotFound": 107,
+        "RequestMessageParseError": 108,
+        "ArraySizeTooLargeInMessage": 109,
+        "ResponseMessageParseError": 110
     },
     "login_error": {
         "LoginAccountNotFound": 11,

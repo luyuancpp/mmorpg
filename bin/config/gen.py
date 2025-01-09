@@ -64,6 +64,6 @@ for command in commands:
     except subprocess.CalledProcessError as e:
         logger.error(f"Error running command '{command}': {e}")
         if e.output:
-            logger.error(f"Error output: {e.output.decode()}")
+            logger.error(f"Error output: {e.output}")
         if e.stderr:
             logger.error(f"Standard error: {e.stderr}")

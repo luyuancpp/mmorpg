@@ -66,6 +66,12 @@ enum common_error : int {
   kRateLimitExceeded = 8,
   kThisEntityIsInvalid = 9,
   kMessageSizeExceeded = 10,
+  kSessionNotFound = 105,
+  kPlayerNotFoundInSession = 106,
+  kMessageIdNotFound = 107,
+  kRequestMessageParseError = 108,
+  kArraySizeTooLargeInMessage = 109,
+  kResponseMessageParseError = 110,
   common_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   common_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -75,8 +81,8 @@ enum common_error : int {
 bool common_error_IsValid(int value);
 extern const uint32_t common_error_internal_data_[];
 constexpr common_error common_error_MIN = static_cast<common_error>(0);
-constexpr common_error common_error_MAX = static_cast<common_error>(10);
-constexpr int common_error_ARRAYSIZE = 10 + 1;
+constexpr common_error common_error_MAX = static_cast<common_error>(110);
+constexpr int common_error_ARRAYSIZE = 110 + 1;
 const ::google::protobuf::EnumDescriptor*
 common_error_descriptor();
 template <typename T>
@@ -84,13 +90,7 @@ const std::string& common_error_Name(T value) {
   static_assert(std::is_same<T, common_error>::value ||
                     std::is_integral<T>::value,
                 "Incorrect type passed to common_error_Name().");
-  return common_error_Name(static_cast<common_error>(value));
-}
-template <>
-inline const std::string& common_error_Name(common_error value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<common_error_descriptor,
-                                                 0, 10>(
-      static_cast<int>(value));
+  return ::google::protobuf::internal::NameOfEnum(common_error_descriptor(), value);
 }
 inline bool common_error_Parse(absl::string_view name, common_error* value) {
   return ::google::protobuf::internal::ParseNamedEnum<common_error>(
