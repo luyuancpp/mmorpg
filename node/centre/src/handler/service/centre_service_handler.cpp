@@ -1,24 +1,26 @@
 #include "centre_service_handler.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "centre_node.h"
+#include "common_error_tip.pb.h"
 #include "mainscene_config.h"
 #include "game_common_logic/system/session_system.h"
-#include "network/message_system.h"
-#include "node/comp/game_node_comp.h"
-#include "player/system/player_node_system.h"
-#include "scene/system/player_change_scene_system.h"
 #include "handler/service/register_handler.h"
 #include "handler/service/player/player_service.h"
 #include "muduo/net/Callbacks.h"
 #include "muduo/net/InetAddress.h"
+#include "network/message_system.h"
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
 #include "network/constants/network_constants.h"
+#include "network/system/error_handling_system.h"
+#include "node/comp/game_node_comp.h"
 #include "pbc/login_error_tip.pb.h"
+#include "player/system/player_node_system.h"
 #include "proto/logic/component/player_comp.pb.h"
 #include "proto/logic/component/player_login_comp.pb.h"
 #include "proto/logic/component/player_network_comp.pb.h"
 #include "proto/logic/constants/node.pb.h"
+#include "scene/system/player_change_scene_system.h"
 #include "scene/system/scene_system.h"
 #include "service_info/game_service_service_info.h"
 #include "service_info/gate_service_service_info.h"
@@ -408,6 +410,7 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	if (it == tlsSessions.end())
 	{
 		LOG_ERROR << "Session not found: " << request->header().session_id() << " message id :" << request->message_content().message_id();
+        SendErrorToClient(*request, *response, kSessionNotFound);
 		return;
 	}
 
@@ -416,12 +419,14 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	if (!tls.registry.valid(player))
 	{
 		LOG_ERROR << "Player not found: " << playerId;
+		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
 		return;
 	}
 
 	if (request->message_content().message_id() >= gMessageInfo.size())
 	{
 		LOG_ERROR << "Message ID not found: " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kMessageIdNotFound);
 		return;
 	}
 
@@ -440,7 +445,6 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	if (!method)
 	{
 		LOG_ERROR << "Method not found: " << message_info.methodName;
-		// TODO: Handle client error
 		return;
 	}
 
@@ -449,13 +453,14 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		request->message_content().serialized_message().size()))
 	{
 		LOG_ERROR << "Failed to parse request for message ID: " << request->message_content().message_id();
-		// TODO: Handle client error
+		SendErrorToClient(*request, *response, kRequestMessageParseError);
 		return;
 	}
 
 	if (std::string outputProtoFieldChecker;
 		!ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, outputProtoFieldChecker)){
 		LOG_ERROR << outputProtoFieldChecker << " Failed to check request for message ID: " << request->message_content().message_id();
+		SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
 		return;
 	}
 
@@ -475,12 +480,13 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 	}
 
 	response->mutable_header()->set_session_id(request->header().session_id());
-	const int32_t byte_size = playerResponse->ByteSizeLong();
+	const auto byte_size = playerResponse->ByteSizeLong();
 	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
-	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(), byte_size))
+	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
+												 static_cast<int32_t>(byte_size)))
 	{
 		LOG_ERROR << "Failed to serialize response for message ID: " << request->message_content().message_id();
-		// TODO: Handle message serialization error
+		SendErrorToClient(*request, *response, kResponseMessageParseError);
 		return;
 	}
 

@@ -170,6 +170,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\network\constants\network_constants.h" />
+    <ClInclude Include="src\network\system\error_handling_system.h" />
     <ClInclude Include="src\reward\comp\reward_comp.h" />
     <ClInclude Include="src\reward\system\reward_system.h" />
     <ClInclude Include="src\mission\comp\mission_comp.h" />
