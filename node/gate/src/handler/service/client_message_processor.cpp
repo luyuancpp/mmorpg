@@ -252,7 +252,7 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
     auto& session = sessionIt->second;
 
     // 检查消息字节大小是否超过 1KB
-    const size_t maxByteSize = 1024; // 1KB
+    constexpr size_t maxByteSize = 1024; // 1KB
     if (request->ByteSizeLong() > maxByteSize)
     {
         LOG_ERROR << "Message size exceeds 1KB. Session ID: " << sessionId 

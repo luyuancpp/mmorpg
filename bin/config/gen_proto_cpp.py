@@ -22,11 +22,15 @@ def compile_protobuf_file(protobuf_file, protobuf_include_dir, output_dir):
     """
     filename = os.path.basename(protobuf_file)
     command = f'protoc --proto_path={os.path.dirname(protobuf_file)} --proto_path={protobuf_include_dir} --cpp_out={output_dir} {protobuf_file}'
+
     try:
-        subprocess.run(command, shell=True, check=True)
-        logger.info(f"Compiled {filename} successfully.")
+        # Capture the output and error messages from subprocess
+        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logger.info(f"Compiled {filename} successfully. Output: {result.stdout}")
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to compile {filename}: {e}")
+        logger.error(f"Failed to compile {filename}: {e}. Error: {e.stderr}")
+    except Exception as e:
+        logger.error(f"Unexpected error while compiling {filename}: {e}")
 
 def compile_protobuf_files(source_dir, protobuf_include_dir, output_dir):
     """
@@ -45,9 +49,14 @@ def compile_protobuf_files(source_dir, protobuf_include_dir, output_dir):
     with ThreadPoolExecutor(max_workers=num_cores) as executor:
         futures = []
         for (dirpath, _, filenames) in os.walk(source_dir):
+            if not filenames:
+                logger.warning(f"No files found in directory {dirpath}")
+                continue
+
             for filename in filenames:
                 if filename.endswith('.proto'):
                     full_file_path = os.path.join(dirpath, filename)
+                    # Submit each task with its own data
                     future = executor.submit(compile_protobuf_file, full_file_path, protobuf_include_dir, output_dir)
                     futures.append(future)
 
