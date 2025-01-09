@@ -55,7 +55,7 @@ namespace protobuf {
 
 enum reward_error : int {
   kReward_errorOK = 0,
-  kRewardAlreadyClaimed = 104,
+  kRewardAlreadyClaimed = 105,
   reward_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   reward_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -65,8 +65,8 @@ enum reward_error : int {
 bool reward_error_IsValid(int value);
 extern const uint32_t reward_error_internal_data_[];
 constexpr reward_error reward_error_MIN = static_cast<reward_error>(0);
-constexpr reward_error reward_error_MAX = static_cast<reward_error>(104);
-constexpr int reward_error_ARRAYSIZE = 104 + 1;
+constexpr reward_error reward_error_MAX = static_cast<reward_error>(105);
+constexpr int reward_error_ARRAYSIZE = 105 + 1;
 const ::google::protobuf::EnumDescriptor*
 reward_error_descriptor();
 template <typename T>

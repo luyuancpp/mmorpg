@@ -251,8 +251,21 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
 
     auto& session = sessionIt->second;
 
-    // todo 发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
-    // 有没有更好的办法
+    // 检查消息字节大小是否超过 1KB
+    const size_t maxByteSize = 1024; // 1KB
+    if (request->ByteSizeLong() > maxByteSize)
+    {
+        LOG_ERROR << "Message size exceeds 1KB. Session ID: " << sessionId 
+                  << ", Message ID: " << request->message_id();
+
+        MessageContent errResponse;
+        errResponse.set_id(request->id());
+        errResponse.set_message_id(request->message_id());
+        errResponse.mutable_error_message()->set_id(kMessageSizeExceeded); // 假设定义了对应的错误码
+        conn->send(errResponse.SerializeAsString()); // 发送错误响应
+        return;
+    }
+
     // 根据服务 ID 转发消息
     if (gClientToServerMessageId.contains(request->message_id()))
     {
@@ -263,6 +276,7 @@ void RpcClientSessionHandler::HandleRpcRequest(const muduo::net::TcpConnectionPt
             errResponse.set_id(request->id());
             errResponse.set_message_id(request->message_id());
             errResponse.mutable_error_message()->set_id(err);
+            conn->send(errResponse.SerializeAsString()); // 发送错误响应
             return;
         }
 

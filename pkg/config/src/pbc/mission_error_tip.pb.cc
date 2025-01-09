@@ -31,11 +31,11 @@ const char descriptor_table_protodef_mission_5ferror_5ftip_2eproto[] ABSL_ATTRIB
     protodesc_cold) = {
     "\n\027mission_error_tip.proto*\365\001\n\rmission_er"
     "ror\022\024\n\020kMission_errorOK\020\000\022\035\n\031kMissionTyp"
-    "eAlreadyExists\020F\022\034\n\030kMissionAlreadyCompl"
-    "eted\020G\022\035\n\031kMissionIdNotInRewardList\020H\022#\n"
-    "\037kPlayerMissionComponentNotFound\020I\022\026\n\022kM"
-    "issionIdRepeated\020J\022\032\n\026kConditionIdOutOfR"
-    "ange\020K\022\031\n\025kMissionNotInProgress\020LB\tZ\007pb/"
+    "eAlreadyExists\020G\022\034\n\030kMissionAlreadyCompl"
+    "eted\020H\022\035\n\031kMissionIdNotInRewardList\020I\022#\n"
+    "\037kPlayerMissionComponentNotFound\020J\022\026\n\022kM"
+    "issionIdRepeated\020K\022\032\n\026kConditionIdOutOfR"
+    "ange\020L\022\031\n\025kMissionNotInProgress\020MB\tZ\007pb/"
     "gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_mission_5ferror_5ftip_2eproto_once;
@@ -76,7 +76,7 @@ const ::google::protobuf::EnumDescriptor* mission_error_descriptor() {
   return file_level_enum_descriptors_mission_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t mission_error_internal_data_[] = {
-    65536u, 96u, 0u, 0u, 4064u, };
+    65536u, 96u, 0u, 0u, 8128u, };
 bool mission_error_IsValid(int value) {
   return ::_pbi::ValidateEnum(value, mission_error_internal_data_);
 }
