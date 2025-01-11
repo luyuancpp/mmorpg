@@ -4,6 +4,8 @@
 #include <string>
 #include <algorithm>
 
+constexpr size_t kMaxEntries = 10;
+
 inline std::string GetStackTraceAsString()
 {
 	// 获取堆栈跟踪
@@ -47,9 +49,8 @@ inline void PrintCurrentStackTrace(size_t maxEntries) {
     LOG_ERROR << GetCurrentStackTraceAsString(maxEntries);
 }
 
-// 打印默认 20 条堆栈信息
 inline void PrintDefaultStackTrace() {
-    PrintCurrentStackTrace(20);  // 固定打印 20 条堆栈
+    PrintCurrentStackTrace(kMaxEntries);
 }
 
 // 打印当前堆栈，传入自定义条数
