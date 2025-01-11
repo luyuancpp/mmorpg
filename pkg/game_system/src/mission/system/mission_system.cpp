@@ -1,5 +1,6 @@
 ﻿#include "mission_system.h"
 #include <ranges>
+#include "error_handling/error_handling.h"
 #include "muduo/base/Logging.h"
 #include "condition_config.h"
 #include "mission/constants/mission_constants.h"
@@ -35,21 +36,21 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam& param) {
 	// Check if player exists in the registry
 	if (!tls.registry.valid(param.playerId)) {
 		LOG_ERROR << "Player not found: playerId = " << tls.registry.get<Guid>(param.playerId);
-		return kInvalidParameter;
+		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
 	// Retrieve mission reward component for the player
 	auto* const missionRewardComp = tls.registry.try_get<RewardListPBComponent>(param.playerId);
 	if (nullptr == missionRewardComp) {
 		LOG_ERROR << "Mission reward component not found: playerId = " << tls.registry.get<Guid>(param.playerId);
-		return kPlayerMissionComponentNotFound;
+		return PrintStackAndReturnError(kPlayerMissionComponentNotFound);
 	}
 
 	// Check if the mission ID is valid for reward
 	auto rewardMissionIdMap = missionRewardComp->mutable_can_reward_mission_id();
 	if (rewardMissionIdMap->find(param.missionId) == rewardMissionIdMap->end()) {
 		LOG_ERROR << "Mission ID not found in reward list: missionId = " << param.missionId << ", playerId = " << tls.registry.get<Guid>(param.playerId);
-		return kMissionIdNotInRewardList;
+		return PrintStackAndReturnError(kMissionIdNotInRewardList);
 	}
 
 	// Remove mission ID from reward list

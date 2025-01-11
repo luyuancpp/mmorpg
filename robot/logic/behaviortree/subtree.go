@@ -9,9 +9,7 @@ import (
 )
 
 const (
-	LoginSubTree  = "Login"
-	SceneSubTree  = "Scene"
-	BattleSubTree = "Battle"
+	LoginSubTree = "Login"
 )
 
 type SetSubTree struct {
