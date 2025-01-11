@@ -1,8 +1,6 @@
-﻿#ifndef LIMITER_H
-#define LIMITER_H
+﻿#pragma once
 
 #include <cstdint>
-#include <deque>
 #include <unordered_map>
 #include <boost/circular_buffer.hpp>
 
@@ -20,4 +18,3 @@ private:
     std::unordered_map<uint32_t, boost::circular_buffer<uint64_t>> requestRecords;
 };
 
-#endif // LIMITER_H

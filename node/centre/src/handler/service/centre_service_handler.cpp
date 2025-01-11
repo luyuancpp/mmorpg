@@ -457,12 +457,23 @@ void CentreServiceHandler::PlayerService(::google::protobuf::RpcController* cont
 		return;
 	}
 
-	if (std::string outputProtoFieldChecker;
-		!ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, outputProtoFieldChecker)){
-		LOG_ERROR << outputProtoFieldChecker << " Failed to check request for message ID: " << request->message_content().message_id();
-		SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
-		return;
-	}
+	std::string errorDetails;
+
+    // 检查字段大小
+    if (!ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
+        LOG_ERROR << errorDetails << " Failed to check request for message ID: "
+            << request->message_content().message_id();
+        SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
+        return;
+    }
+
+    // 检查负数
+    if (!ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
+        LOG_ERROR << errorDetails << " Failed to check request for message ID: "
+            << request->message_content().message_id();
+        SendErrorToClient(*request, *response, kNegativeValueInMessage);
+        return;
+    }
 
 	const MessagePtr playerResponse(service->GetResponsePrototype(method).New());
 

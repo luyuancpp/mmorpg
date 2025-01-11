@@ -99,6 +99,26 @@ struct NodeMessageHeaderDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeMessageHeaderDefaultTypeInternal _NodeMessageHeader_default_instance_;
 
+inline constexpr MyNestedMessage::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : nested_int64_field_{::int64_t{0}},
+        nested_int32_field_{0},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MyNestedMessage::MyNestedMessage(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct MyNestedMessageDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MyNestedMessageDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MyNestedMessageDefaultTypeInternal() {}
+  union {
+    MyNestedMessage _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MyNestedMessageDefaultTypeInternal _MyNestedMessage_default_instance_;
+
 inline constexpr RoutingNodeInfo::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -342,6 +362,31 @@ struct NodeRoutingMessageBodyDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRoutingMessageBodyDefaultTypeInternal _NodeRoutingMessageBody_default_instance_;
 
+inline constexpr MyProtoMessage::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        repeated_int32_field_{},
+        _repeated_int32_field_cached_byte_size_{0},
+        repeated_int64_field_{},
+        _repeated_int64_field_cached_byte_size_{0},
+        nested_message_{nullptr},
+        single_int64_field_{::int64_t{0}},
+        single_int32_field_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MyProtoMessage::MyProtoMessage(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct MyProtoMessageDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MyProtoMessageDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MyProtoMessageDefaultTypeInternal() {}
+  union {
+    MyProtoMessage _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MyProtoMessageDefaultTypeInternal _MyProtoMessage_default_instance_;
+
 inline constexpr MessageContent::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -514,7 +559,7 @@ struct NodeRouteMessageRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeRouteMessageRequestDefaultTypeInternal _NodeRouteMessageRequest_default_instance_;
-static ::_pb::Metadata file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[24];
+static ::_pb::Metadata file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[26];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fcommon_2fcommon_5fmessage_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -801,6 +846,34 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::ProtoFieldCheckerTestPB, _impl_.sub_message_),
         0,
+        PROTOBUF_FIELD_OFFSET(::MyProtoMessage, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::MyProtoMessage, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::MyProtoMessage, _impl_.single_int32_field_),
+        PROTOBUF_FIELD_OFFSET(::MyProtoMessage, _impl_.single_int64_field_),
+        PROTOBUF_FIELD_OFFSET(::MyProtoMessage, _impl_.repeated_int32_field_),
+        PROTOBUF_FIELD_OFFSET(::MyProtoMessage, _impl_.repeated_int64_field_),
+        PROTOBUF_FIELD_OFFSET(::MyProtoMessage, _impl_.nested_message_),
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        0,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::MyNestedMessage, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::MyNestedMessage, _impl_.nested_int32_field_),
+        PROTOBUF_FIELD_OFFSET(::MyNestedMessage, _impl_.nested_int64_field_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -829,6 +902,8 @@ static const ::_pbi::MigrationSchema
         {251, -1, -1, sizeof(::UnregisterGameNodeRequest)},
         {260, -1, -1, sizeof(::ProtoFieldCheckerTestSubPB)},
         {269, 278, -1, sizeof(::ProtoFieldCheckerTestPB)},
+        {279, 292, -1, sizeof(::MyProtoMessage)},
+        {297, -1, -1, sizeof(::MyNestedMessage)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
@@ -855,6 +930,8 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_UnregisterGameNodeRequest_default_instance_._instance,
     &::_ProtoFieldCheckerTestSubPB_default_instance_._instance,
     &::_ProtoFieldCheckerTestPB_default_instance_._instance,
+    &::_MyProtoMessage_default_instance_._instance,
+    &::_MyNestedMessage_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -914,7 +991,14 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     "e_node_id\030\001 \001(\r\"+\n\032ProtoFieldCheckerTest"
     "SubPB\022\r\n\005items\030\001 \003(\t\"K\n\027ProtoFieldChecke"
     "rTestPB\0220\n\013sub_message\030\001 \001(\0132\033.ProtoFiel"
-    "dCheckerTestSubPBB\tZ\007pb/gameb\006proto3"
+    "dCheckerTestSubPB\"\256\001\n\016MyProtoMessage\022\032\n\022"
+    "single_int32_field\030\001 \001(\005\022\032\n\022single_int64"
+    "_field\030\002 \001(\003\022\034\n\024repeated_int32_field\030\003 \003"
+    "(\005\022\034\n\024repeated_int64_field\030\004 \003(\003\022(\n\016nest"
+    "ed_message\030\005 \001(\0132\020.MyNestedMessage\"I\n\017My"
+    "NestedMessage\022\032\n\022nested_int32_field\030\001 \001("
+    "\005\022\032\n\022nested_int64_field\030\002 \001(\003B\tZ\007pb/game"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[3] =
     {
@@ -926,13 +1010,13 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_5fmessage_2epr
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto = {
     false,
     false,
-    2276,
+    2528,
     descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto,
     "proto/common/common_message.proto",
     &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
     descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps,
     3,
-    24,
+    26,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto::offsets,
@@ -6909,6 +6993,568 @@ void ProtoFieldCheckerTestPB::InternalSwap(ProtoFieldCheckerTestPB* PROTOBUF_RES
   return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_getter,
                                    &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
                                    file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[23]);
+}
+// ===================================================================
+
+class MyProtoMessage::_Internal {
+ public:
+  using HasBits = decltype(std::declval<MyProtoMessage>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+    8 * PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_._has_bits_);
+};
+
+MyProtoMessage::MyProtoMessage(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:MyProtoMessage)
+}
+inline PROTOBUF_NDEBUG_INLINE MyProtoMessage::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        repeated_int32_field_{visibility, arena, from.repeated_int32_field_},
+        _repeated_int32_field_cached_byte_size_{0},
+        repeated_int64_field_{visibility, arena, from.repeated_int64_field_},
+        _repeated_int64_field_cached_byte_size_{0} {}
+
+MyProtoMessage::MyProtoMessage(
+    ::google::protobuf::Arena* arena,
+    const MyProtoMessage& from)
+    : ::google::protobuf::Message(arena) {
+  MyProtoMessage* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.nested_message_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::MyNestedMessage>(
+                              arena, *from._impl_.nested_message_)
+                        : nullptr;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, single_int64_field_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, single_int64_field_),
+           offsetof(Impl_, single_int32_field_) -
+               offsetof(Impl_, single_int64_field_) +
+               sizeof(Impl_::single_int32_field_));
+
+  // @@protoc_insertion_point(copy_constructor:MyProtoMessage)
+}
+inline PROTOBUF_NDEBUG_INLINE MyProtoMessage::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0},
+        repeated_int32_field_{visibility, arena},
+        _repeated_int32_field_cached_byte_size_{0},
+        repeated_int64_field_{visibility, arena},
+        _repeated_int64_field_cached_byte_size_{0} {}
+
+inline void MyProtoMessage::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, nested_message_),
+           0,
+           offsetof(Impl_, single_int32_field_) -
+               offsetof(Impl_, nested_message_) +
+               sizeof(Impl_::single_int32_field_));
+}
+MyProtoMessage::~MyProtoMessage() {
+  // @@protoc_insertion_point(destructor:MyProtoMessage)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void MyProtoMessage::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  delete _impl_.nested_message_;
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+MyProtoMessage::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_._cached_size_),
+              false,
+          },
+          &MyProtoMessage::MergeImpl,
+          &MyProtoMessage::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void MyProtoMessage::Clear() {
+// @@protoc_insertion_point(message_clear_start:MyProtoMessage)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.repeated_int32_field_.Clear();
+  _impl_.repeated_int64_field_.Clear();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.nested_message_ != nullptr);
+    _impl_.nested_message_->Clear();
+  }
+  ::memset(&_impl_.single_int64_field_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.single_int32_field_) -
+      reinterpret_cast<char*>(&_impl_.single_int64_field_)) + sizeof(_impl_.single_int32_field_));
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* MyProtoMessage::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 1, 0, 2> MyProtoMessage::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    &_MyProtoMessage_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::MyProtoMessage>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // int32 single_int32_field = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MyProtoMessage, _impl_.single_int32_field_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.single_int32_field_)}},
+    // int64 single_int64_field = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MyProtoMessage, _impl_.single_int64_field_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.single_int64_field_)}},
+    // repeated int32 repeated_int32_field = 3;
+    {::_pbi::TcParser::FastV32P1,
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.repeated_int32_field_)}},
+    // repeated int64 repeated_int64_field = 4;
+    {::_pbi::TcParser::FastV64P1,
+     {34, 63, 0, PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.repeated_int64_field_)}},
+    // .MyNestedMessage nested_message = 5;
+    {::_pbi::TcParser::FastMtS1,
+     {42, 0, 0, PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.nested_message_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int32 single_int32_field = 1;
+    {PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.single_int32_field_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    // int64 single_int64_field = 2;
+    {PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.single_int64_field_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // repeated int32 repeated_int32_field = 3;
+    {PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.repeated_int32_field_), -1, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedInt32)},
+    // repeated int64 repeated_int64_field = 4;
+    {PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.repeated_int64_field_), -1, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedInt64)},
+    // .MyNestedMessage nested_message = 5;
+    {PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.nested_message_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::MyNestedMessage>()},
+  }}, {{
+  }},
+};
+
+::uint8_t* MyProtoMessage::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:MyProtoMessage)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // int32 single_int32_field = 1;
+  if (this->_internal_single_int32_field() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt32ToArrayWithField<1>(
+            stream, this->_internal_single_int32_field(), target);
+  }
+
+  // int64 single_int64_field = 2;
+  if (this->_internal_single_int64_field() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt64ToArrayWithField<2>(
+            stream, this->_internal_single_int64_field(), target);
+  }
+
+  // repeated int32 repeated_int32_field = 3;
+  {
+    int byte_size = _impl_._repeated_int32_field_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteInt32Packed(
+          3, _internal_repeated_int32_field(), byte_size, target);
+    }
+  }
+
+  // repeated int64 repeated_int64_field = 4;
+  {
+    int byte_size = _impl_._repeated_int64_field_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteInt64Packed(
+          4, _internal_repeated_int64_field(), byte_size, target);
+    }
+  }
+
+  cached_has_bits = _impl_._has_bits_[0];
+  // .MyNestedMessage nested_message = 5;
+  if (cached_has_bits & 0x00000001u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        5, *_impl_.nested_message_, _impl_.nested_message_->GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:MyProtoMessage)
+  return target;
+}
+
+::size_t MyProtoMessage::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:MyProtoMessage)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated int32 repeated_int32_field = 3;
+  {
+    std::size_t data_size = ::_pbi::WireFormatLite::Int32Size(
+        this->_internal_repeated_int32_field())
+    ;
+    _impl_._repeated_int32_field_cached_byte_size_.Set(::_pbi::ToCachedSize(data_size));
+    std::size_t tag_size = data_size == 0
+        ? 0
+        : 1 + ::_pbi::WireFormatLite::Int32Size(
+                            static_cast<int32_t>(data_size))
+    ;
+    total_size += tag_size + data_size;
+  }
+  // repeated int64 repeated_int64_field = 4;
+  {
+    std::size_t data_size = ::_pbi::WireFormatLite::Int64Size(
+        this->_internal_repeated_int64_field())
+    ;
+    _impl_._repeated_int64_field_cached_byte_size_.Set(::_pbi::ToCachedSize(data_size));
+    std::size_t tag_size = data_size == 0
+        ? 0
+        : 1 + ::_pbi::WireFormatLite::Int32Size(
+                            static_cast<int32_t>(data_size))
+    ;
+    total_size += tag_size + data_size;
+  }
+  // .MyNestedMessage nested_message = 5;
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    total_size +=
+        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.nested_message_);
+  }
+
+  // int64 single_int64_field = 2;
+  if (this->_internal_single_int64_field() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+        this->_internal_single_int64_field());
+  }
+
+  // int32 single_int32_field = 1;
+  if (this->_internal_single_int32_field() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+        this->_internal_single_int32_field());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void MyProtoMessage::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MyProtoMessage*>(&to_msg);
+  auto& from = static_cast<const MyProtoMessage&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:MyProtoMessage)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_repeated_int32_field()->MergeFrom(from._internal_repeated_int32_field());
+  _this->_internal_mutable_repeated_int64_field()->MergeFrom(from._internal_repeated_int64_field());
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.nested_message_ != nullptr);
+    if (_this->_impl_.nested_message_ == nullptr) {
+      _this->_impl_.nested_message_ =
+          ::google::protobuf::Message::CopyConstruct<::MyNestedMessage>(arena, *from._impl_.nested_message_);
+    } else {
+      _this->_impl_.nested_message_->MergeFrom(*from._impl_.nested_message_);
+    }
+  }
+  if (from._internal_single_int64_field() != 0) {
+    _this->_impl_.single_int64_field_ = from._impl_.single_int64_field_;
+  }
+  if (from._internal_single_int32_field() != 0) {
+    _this->_impl_.single_int32_field_ = from._impl_.single_int32_field_;
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void MyProtoMessage::CopyFrom(const MyProtoMessage& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:MyProtoMessage)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool MyProtoMessage::IsInitialized() const {
+  return true;
+}
+
+void MyProtoMessage::InternalSwap(MyProtoMessage* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.repeated_int32_field_.InternalSwap(&other->_impl_.repeated_int32_field_);
+  _impl_.repeated_int64_field_.InternalSwap(&other->_impl_.repeated_int64_field_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.single_int32_field_)
+      + sizeof(MyProtoMessage::_impl_.single_int32_field_)
+      - PROTOBUF_FIELD_OFFSET(MyProtoMessage, _impl_.nested_message_)>(
+          reinterpret_cast<char*>(&_impl_.nested_message_),
+          reinterpret_cast<char*>(&other->_impl_.nested_message_));
+}
+
+::google::protobuf::Metadata MyProtoMessage::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_getter,
+                                   &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
+                                   file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[24]);
+}
+// ===================================================================
+
+class MyNestedMessage::_Internal {
+ public:
+};
+
+MyNestedMessage::MyNestedMessage(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:MyNestedMessage)
+}
+MyNestedMessage::MyNestedMessage(
+    ::google::protobuf::Arena* arena, const MyNestedMessage& from)
+    : MyNestedMessage(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE MyNestedMessage::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void MyNestedMessage::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, nested_int64_field_),
+           0,
+           offsetof(Impl_, nested_int32_field_) -
+               offsetof(Impl_, nested_int64_field_) +
+               sizeof(Impl_::nested_int32_field_));
+}
+MyNestedMessage::~MyNestedMessage() {
+  // @@protoc_insertion_point(destructor:MyNestedMessage)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void MyNestedMessage::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+MyNestedMessage::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(MyNestedMessage, _impl_._cached_size_),
+              false,
+          },
+          &MyNestedMessage::MergeImpl,
+          &MyNestedMessage::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void MyNestedMessage::Clear() {
+// @@protoc_insertion_point(message_clear_start:MyNestedMessage)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.nested_int64_field_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.nested_int32_field_) -
+      reinterpret_cast<char*>(&_impl_.nested_int64_field_)) + sizeof(_impl_.nested_int32_field_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* MyNestedMessage::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> MyNestedMessage::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_MyNestedMessage_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::MyNestedMessage>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 nested_int64_field = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(MyNestedMessage, _impl_.nested_int64_field_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(MyNestedMessage, _impl_.nested_int64_field_)}},
+    // int32 nested_int32_field = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MyNestedMessage, _impl_.nested_int32_field_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(MyNestedMessage, _impl_.nested_int32_field_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int32 nested_int32_field = 1;
+    {PROTOBUF_FIELD_OFFSET(MyNestedMessage, _impl_.nested_int32_field_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    // int64 nested_int64_field = 2;
+    {PROTOBUF_FIELD_OFFSET(MyNestedMessage, _impl_.nested_int64_field_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* MyNestedMessage::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:MyNestedMessage)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // int32 nested_int32_field = 1;
+  if (this->_internal_nested_int32_field() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt32ToArrayWithField<1>(
+            stream, this->_internal_nested_int32_field(), target);
+  }
+
+  // int64 nested_int64_field = 2;
+  if (this->_internal_nested_int64_field() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt64ToArrayWithField<2>(
+            stream, this->_internal_nested_int64_field(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:MyNestedMessage)
+  return target;
+}
+
+::size_t MyNestedMessage::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:MyNestedMessage)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // int64 nested_int64_field = 2;
+  if (this->_internal_nested_int64_field() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+        this->_internal_nested_int64_field());
+  }
+
+  // int32 nested_int32_field = 1;
+  if (this->_internal_nested_int32_field() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+        this->_internal_nested_int32_field());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void MyNestedMessage::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<MyNestedMessage*>(&to_msg);
+  auto& from = static_cast<const MyNestedMessage&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:MyNestedMessage)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_nested_int64_field() != 0) {
+    _this->_impl_.nested_int64_field_ = from._impl_.nested_int64_field_;
+  }
+  if (from._internal_nested_int32_field() != 0) {
+    _this->_impl_.nested_int32_field_ = from._impl_.nested_int32_field_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void MyNestedMessage::CopyFrom(const MyNestedMessage& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:MyNestedMessage)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool MyNestedMessage::IsInitialized() const {
+  return true;
+}
+
+void MyNestedMessage::InternalSwap(MyNestedMessage* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(MyNestedMessage, _impl_.nested_int32_field_)
+      + sizeof(MyNestedMessage::_impl_.nested_int32_field_)
+      - PROTOBUF_FIELD_OFFSET(MyNestedMessage, _impl_.nested_int64_field_)>(
+          reinterpret_cast<char*>(&_impl_.nested_int64_field_),
+          reinterpret_cast<char*>(&other->_impl_.nested_int64_field_));
+}
+
+::google::protobuf::Metadata MyNestedMessage::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_getter,
+                                   &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
+                                   file_level_metadata_proto_2fcommon_2fcommon_5fmessage_2eproto[25]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

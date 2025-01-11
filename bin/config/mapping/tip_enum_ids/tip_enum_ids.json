@@ -16,7 +16,8 @@
         "MessageIdNotFound": 107,
         "RequestMessageParseError": 108,
         "ArraySizeTooLargeInMessage": 109,
-        "ResponseMessageParseError": 110
+        "ResponseMessageParseError": 110,
+        "NegativeValueInMessage": 110
     },
     "login_error": {
         "LoginAccountNotFound": 11,

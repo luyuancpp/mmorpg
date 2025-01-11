@@ -175,3 +175,20 @@ message ProtoFieldCheckerTestPB
 {
 	ProtoFieldCheckerTestSubPB sub_message = 1;
 }
+
+// 主消息类型
+message MyProtoMessage 
+{
+  int32 single_int32_field = 1;          // 单个 int32 字段
+  int64 single_int64_field = 2;          // 单个 int64 字段
+  repeated int32 repeated_int32_field = 3; // repeated int32 字段
+  repeated int64 repeated_int64_field = 4; // repeated int64 字段
+  MyNestedMessage nested_message = 5;    // 嵌套消息字段
+}
+
+// 嵌套消息类型
+message MyNestedMessage 
+{
+  int32 nested_int32_field = 1;          // 单个 int32 字段
+  int64 nested_int64_field = 2;          // 单个 int64 字段
+}

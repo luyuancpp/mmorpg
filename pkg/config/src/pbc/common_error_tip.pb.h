@@ -72,6 +72,7 @@ enum common_error : int {
   kRequestMessageParseError = 108,
   kArraySizeTooLargeInMessage = 109,
   kResponseMessageParseError = 110,
+  kNegativeValueInMessage = 110,
   common_error_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   common_error_INT_MAX_SENTINEL_DO_NOT_USE_ =
