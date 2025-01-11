@@ -1386,6 +1386,142 @@ func (x *ProtoFieldCheckerTestPB) GetSubMessage() *ProtoFieldCheckerTestSubPB {
 	return nil
 }
 
+// 主消息类型
+type MyProtoMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	SingleInt32Field   int32            `protobuf:"varint,1,opt,name=single_int32_field,json=singleInt32Field,proto3" json:"single_int32_field,omitempty"`              // 单个 int32 字段
+	SingleInt64Field   int64            `protobuf:"varint,2,opt,name=single_int64_field,json=singleInt64Field,proto3" json:"single_int64_field,omitempty"`              // 单个 int64 字段
+	RepeatedInt32Field []int32          `protobuf:"varint,3,rep,packed,name=repeated_int32_field,json=repeatedInt32Field,proto3" json:"repeated_int32_field,omitempty"` // repeated int32 字段
+	RepeatedInt64Field []int64          `protobuf:"varint,4,rep,packed,name=repeated_int64_field,json=repeatedInt64Field,proto3" json:"repeated_int64_field,omitempty"` // repeated int64 字段
+	NestedMessage      *MyNestedMessage `protobuf:"bytes,5,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`                          // 嵌套消息字段
+}
+
+func (x *MyProtoMessage) Reset() {
+	*x = MyProtoMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_common_common_message_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MyProtoMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MyProtoMessage) ProtoMessage() {}
+
+func (x *MyProtoMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_common_message_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MyProtoMessage.ProtoReflect.Descriptor instead.
+func (*MyProtoMessage) Descriptor() ([]byte, []int) {
+	return file_proto_common_common_message_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *MyProtoMessage) GetSingleInt32Field() int32 {
+	if x != nil {
+		return x.SingleInt32Field
+	}
+	return 0
+}
+
+func (x *MyProtoMessage) GetSingleInt64Field() int64 {
+	if x != nil {
+		return x.SingleInt64Field
+	}
+	return 0
+}
+
+func (x *MyProtoMessage) GetRepeatedInt32Field() []int32 {
+	if x != nil {
+		return x.RepeatedInt32Field
+	}
+	return nil
+}
+
+func (x *MyProtoMessage) GetRepeatedInt64Field() []int64 {
+	if x != nil {
+		return x.RepeatedInt64Field
+	}
+	return nil
+}
+
+func (x *MyProtoMessage) GetNestedMessage() *MyNestedMessage {
+	if x != nil {
+		return x.NestedMessage
+	}
+	return nil
+}
+
+// 嵌套消息类型
+type MyNestedMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	NestedInt32Field int32 `protobuf:"varint,1,opt,name=nested_int32_field,json=nestedInt32Field,proto3" json:"nested_int32_field,omitempty"` // 单个 int32 字段
+	NestedInt64Field int64 `protobuf:"varint,2,opt,name=nested_int64_field,json=nestedInt64Field,proto3" json:"nested_int64_field,omitempty"` // 单个 int64 字段
+}
+
+func (x *MyNestedMessage) Reset() {
+	*x = MyNestedMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_common_common_message_proto_msgTypes[25]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MyNestedMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MyNestedMessage) ProtoMessage() {}
+
+func (x *MyNestedMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_common_message_proto_msgTypes[25]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MyNestedMessage.ProtoReflect.Descriptor instead.
+func (*MyNestedMessage) Descriptor() ([]byte, []int) {
+	return file_proto_common_common_message_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *MyNestedMessage) GetNestedInt32Field() int32 {
+	if x != nil {
+		return x.NestedInt32Field
+	}
+	return 0
+}
+
+func (x *MyNestedMessage) GetNestedInt64Field() int64 {
+	if x != nil {
+		return x.NestedInt64Field
+	}
+	return 0
+}
+
 var File_proto_common_common_message_proto protoreflect.FileDescriptor
 
 var file_proto_common_common_message_proto_rawDesc = []byte{
@@ -1564,9 +1700,32 @@ var file_proto_common_common_message_proto_rawDesc = []byte{
 	0x12, 0x3c, 0x0a, 0x0b, 0x73, 0x75, 0x62, 0x5f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x46, 0x69, 0x65,
 	0x6c, 0x64, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x65, 0x72, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x62,
-	0x50, 0x42, 0x52, 0x0a, 0x73, 0x75, 0x62, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x09,
-	0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x50, 0x42, 0x52, 0x0a, 0x73, 0x75, 0x62, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x89,
+	0x02, 0x0a, 0x0e, 0x4d, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x12, 0x2c, 0x0a, 0x12, 0x73, 0x69, 0x6e, 0x67, 0x6c, 0x65, 0x5f, 0x69, 0x6e, 0x74, 0x33,
+	0x32, 0x5f, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x10, 0x73,
+	0x69, 0x6e, 0x67, 0x6c, 0x65, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x12,
+	0x2c, 0x0a, 0x12, 0x73, 0x69, 0x6e, 0x67, 0x6c, 0x65, 0x5f, 0x69, 0x6e, 0x74, 0x36, 0x34, 0x5f,
+	0x66, 0x69, 0x65, 0x6c, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x10, 0x73, 0x69, 0x6e,
+	0x67, 0x6c, 0x65, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x12, 0x30, 0x0a,
+	0x14, 0x72, 0x65, 0x70, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x69, 0x6e, 0x74, 0x33, 0x32, 0x5f,
+	0x66, 0x69, 0x65, 0x6c, 0x64, 0x18, 0x03, 0x20, 0x03, 0x28, 0x05, 0x52, 0x12, 0x72, 0x65, 0x70,
+	0x65, 0x61, 0x74, 0x65, 0x64, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x12,
+	0x30, 0x0a, 0x14, 0x72, 0x65, 0x70, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x69, 0x6e, 0x74, 0x36,
+	0x34, 0x5f, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x18, 0x04, 0x20, 0x03, 0x28, 0x03, 0x52, 0x12, 0x72,
+	0x65, 0x70, 0x65, 0x61, 0x74, 0x65, 0x64, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x46, 0x69, 0x65, 0x6c,
+	0x64, 0x12, 0x37, 0x0a, 0x0e, 0x6e, 0x65, 0x73, 0x74, 0x65, 0x64, 0x5f, 0x6d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x4d, 0x79, 0x4e, 0x65,
+	0x73, 0x74, 0x65, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x0d, 0x6e, 0x65, 0x73,
+	0x74, 0x65, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x6d, 0x0a, 0x0f, 0x4d, 0x79,
+	0x4e, 0x65, 0x73, 0x74, 0x65, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2c, 0x0a,
+	0x12, 0x6e, 0x65, 0x73, 0x74, 0x65, 0x64, 0x5f, 0x69, 0x6e, 0x74, 0x33, 0x32, 0x5f, 0x66, 0x69,
+	0x65, 0x6c, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x10, 0x6e, 0x65, 0x73, 0x74, 0x65,
+	0x64, 0x49, 0x6e, 0x74, 0x33, 0x32, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x12, 0x2c, 0x0a, 0x12, 0x6e,
+	0x65, 0x73, 0x74, 0x65, 0x64, 0x5f, 0x69, 0x6e, 0x74, 0x36, 0x34, 0x5f, 0x66, 0x69, 0x65, 0x6c,
+	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x10, 0x6e, 0x65, 0x73, 0x74, 0x65, 0x64, 0x49,
+	0x6e, 0x74, 0x36, 0x34, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f,
+	0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1581,7 +1740,7 @@ func file_proto_common_common_message_proto_rawDescGZIP() []byte {
 	return file_proto_common_common_message_proto_rawDescData
 }
 
-var file_proto_common_common_message_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_proto_common_common_message_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_proto_common_common_message_proto_goTypes = []any{
 	(*RoutingNodeInfo)(nil),                   // 0: RoutingNodeInfo
 	(*MessageContent)(nil),                    // 1: MessageContent
@@ -1607,14 +1766,16 @@ var file_proto_common_common_message_proto_goTypes = []any{
 	(*UnregisterGameNodeRequest)(nil),         // 21: UnregisterGameNodeRequest
 	(*ProtoFieldCheckerTestSubPB)(nil),        // 22: ProtoFieldCheckerTestSubPB
 	(*ProtoFieldCheckerTestPB)(nil),           // 23: ProtoFieldCheckerTestPB
-	(*NodeInfo)(nil),                          // 24: NodeInfo
-	(*TipInfoMessage)(nil),                    // 25: TipInfoMessage
-	(*SessionDetails)(nil),                    // 26: SessionDetails
-	(*NetworkAddress)(nil),                    // 27: NetworkAddress
+	(*MyProtoMessage)(nil),                    // 24: MyProtoMessage
+	(*MyNestedMessage)(nil),                   // 25: MyNestedMessage
+	(*NodeInfo)(nil),                          // 26: NodeInfo
+	(*TipInfoMessage)(nil),                    // 27: TipInfoMessage
+	(*SessionDetails)(nil),                    // 28: SessionDetails
+	(*NetworkAddress)(nil),                    // 29: NetworkAddress
 }
 var file_proto_common_common_message_proto_depIdxs = []int32{
-	24, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
-	25, // 1: MessageContent.error_message:type_name -> TipInfoMessage
+	26, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
+	27, // 1: MessageContent.error_message:type_name -> TipInfoMessage
 	1,  // 2: NodeRouteMessageRequest.message_content:type_name -> MessageContent
 	2,  // 3: NodeRouteMessageRequest.header:type_name -> NodeMessageHeader
 	1,  // 4: NodeRouteMessageResponse.message_content:type_name -> MessageContent
@@ -1623,28 +1784,29 @@ var file_proto_common_common_message_proto_depIdxs = []int32{
 	5,  // 7: PlayerNodeServiceRequest.header:type_name -> PlayerInfoExternal
 	1,  // 8: PlayerMessageResponse.message_content:type_name -> MessageContent
 	5,  // 9: PlayerMessageResponse.header:type_name -> PlayerInfoExternal
-	24, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
-	26, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
-	26, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
-	26, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
-	26, // 14: RegisterCentreSessionNodeRequest.session_info:type_name -> SessionDetails
-	26, // 15: RegisterSessionCentreNodeResponse.session_info:type_name -> SessionDetails
-	26, // 16: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
+	26, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
+	28, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
+	28, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
+	28, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
+	28, // 14: RegisterCentreSessionNodeRequest.session_info:type_name -> SessionDetails
+	28, // 15: RegisterSessionCentreNodeResponse.session_info:type_name -> SessionDetails
+	28, // 16: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
 	0,  // 17: RouteMessageRequest.route_nodes:type_name -> RoutingNodeInfo
 	0,  // 18: RouteMessageResponse.route_nodes:type_name -> RoutingNodeInfo
-	24, // 19: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
+	26, // 19: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
 	5,  // 20: RoutePlayerMessageRequest.player_info:type_name -> PlayerInfoExternal
-	24, // 21: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
+	26, // 21: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
 	5,  // 22: RoutePlayerMessageResponse.player_info:type_name -> PlayerInfoExternal
-	27, // 23: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
-	27, // 24: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
-	27, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
+	29, // 23: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
+	29, // 24: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
+	29, // 25: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
 	22, // 26: ProtoFieldCheckerTestPB.sub_message:type_name -> ProtoFieldCheckerTestSubPB
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	25, // 27: MyProtoMessage.nested_message:type_name -> MyNestedMessage
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_common_message_proto_init() }
@@ -1944,6 +2106,30 @@ func file_proto_common_common_message_proto_init() {
 				return nil
 			}
 		}
+		file_proto_common_common_message_proto_msgTypes[24].Exporter = func(v any, i int) any {
+			switch v := v.(*MyProtoMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_common_common_message_proto_msgTypes[25].Exporter = func(v any, i int) any {
+			switch v := v.(*MyNestedMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1951,7 +2137,7 @@ func file_proto_common_common_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_common_common_message_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

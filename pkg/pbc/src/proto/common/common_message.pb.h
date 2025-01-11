@@ -58,6 +58,12 @@ extern GateSessionDisconnectRequestDefaultTypeInternal _GateSessionDisconnectReq
 class MessageContent;
 struct MessageContentDefaultTypeInternal;
 extern MessageContentDefaultTypeInternal _MessageContent_default_instance_;
+class MyNestedMessage;
+struct MyNestedMessageDefaultTypeInternal;
+extern MyNestedMessageDefaultTypeInternal _MyNestedMessage_default_instance_;
+class MyProtoMessage;
+struct MyProtoMessageDefaultTypeInternal;
+extern MyProtoMessageDefaultTypeInternal _MyProtoMessage_default_instance_;
 class NodeMessageHeader;
 struct NodeMessageHeaderDefaultTypeInternal;
 extern NodeMessageHeaderDefaultTypeInternal _NodeMessageHeader_default_instance_;
@@ -825,6 +831,185 @@ class NodeMessageHeader final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::uint64_t session_id_;
     ::uint32_t node_id_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class MyNestedMessage final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:MyNestedMessage) */ {
+ public:
+  inline MyNestedMessage() : MyNestedMessage(nullptr) {}
+  ~MyNestedMessage() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MyNestedMessage(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline MyNestedMessage(const MyNestedMessage& from) : MyNestedMessage(nullptr, from) {}
+  inline MyNestedMessage(MyNestedMessage&& from) noexcept
+      : MyNestedMessage(nullptr, std::move(from)) {}
+  inline MyNestedMessage& operator=(const MyNestedMessage& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MyNestedMessage& operator=(MyNestedMessage&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MyNestedMessage& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const MyNestedMessage* internal_default_instance() {
+    return reinterpret_cast<const MyNestedMessage*>(
+        &_MyNestedMessage_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 25;
+  friend void swap(MyNestedMessage& a, MyNestedMessage& b) { a.Swap(&b); }
+  inline void Swap(MyNestedMessage* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MyNestedMessage* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MyNestedMessage* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<MyNestedMessage>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MyNestedMessage& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MyNestedMessage& from) { MyNestedMessage::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(MyNestedMessage* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "MyNestedMessage"; }
+
+ protected:
+  explicit MyNestedMessage(::google::protobuf::Arena* arena);
+  MyNestedMessage(::google::protobuf::Arena* arena, const MyNestedMessage& from);
+  MyNestedMessage(::google::protobuf::Arena* arena, MyNestedMessage&& from) noexcept
+      : MyNestedMessage(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kNestedInt64FieldFieldNumber = 2,
+    kNestedInt32FieldFieldNumber = 1,
+  };
+  // int64 nested_int64_field = 2;
+  void clear_nested_int64_field() ;
+  ::int64_t nested_int64_field() const;
+  void set_nested_int64_field(::int64_t value);
+
+  private:
+  ::int64_t _internal_nested_int64_field() const;
+  void _internal_set_nested_int64_field(::int64_t value);
+
+  public:
+  // int32 nested_int32_field = 1;
+  void clear_nested_int32_field() ;
+  ::int32_t nested_int32_field() const;
+  void set_nested_int32_field(::int32_t value);
+
+  private:
+  ::int32_t _internal_nested_int32_field() const;
+  void _internal_set_nested_int32_field(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:MyNestedMessage)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::int64_t nested_int64_field_;
+    ::int32_t nested_int32_field_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -3065,6 +3250,245 @@ class NodeRoutingMessageBody final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::NodeInfo* node_info_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcommon_5fmessage_2eproto;
+};
+// -------------------------------------------------------------------
+
+class MyProtoMessage final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:MyProtoMessage) */ {
+ public:
+  inline MyProtoMessage() : MyProtoMessage(nullptr) {}
+  ~MyProtoMessage() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MyProtoMessage(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline MyProtoMessage(const MyProtoMessage& from) : MyProtoMessage(nullptr, from) {}
+  inline MyProtoMessage(MyProtoMessage&& from) noexcept
+      : MyProtoMessage(nullptr, std::move(from)) {}
+  inline MyProtoMessage& operator=(const MyProtoMessage& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MyProtoMessage& operator=(MyProtoMessage&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MyProtoMessage& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const MyProtoMessage* internal_default_instance() {
+    return reinterpret_cast<const MyProtoMessage*>(
+        &_MyProtoMessage_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 24;
+  friend void swap(MyProtoMessage& a, MyProtoMessage& b) { a.Swap(&b); }
+  inline void Swap(MyProtoMessage* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MyProtoMessage* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MyProtoMessage* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<MyProtoMessage>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MyProtoMessage& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MyProtoMessage& from) { MyProtoMessage::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(MyProtoMessage* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "MyProtoMessage"; }
+
+ protected:
+  explicit MyProtoMessage(::google::protobuf::Arena* arena);
+  MyProtoMessage(::google::protobuf::Arena* arena, const MyProtoMessage& from);
+  MyProtoMessage(::google::protobuf::Arena* arena, MyProtoMessage&& from) noexcept
+      : MyProtoMessage(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRepeatedInt32FieldFieldNumber = 3,
+    kRepeatedInt64FieldFieldNumber = 4,
+    kNestedMessageFieldNumber = 5,
+    kSingleInt64FieldFieldNumber = 2,
+    kSingleInt32FieldFieldNumber = 1,
+  };
+  // repeated int32 repeated_int32_field = 3;
+  int repeated_int32_field_size() const;
+  private:
+  int _internal_repeated_int32_field_size() const;
+
+  public:
+  void clear_repeated_int32_field() ;
+  ::int32_t repeated_int32_field(int index) const;
+  void set_repeated_int32_field(int index, ::int32_t value);
+  void add_repeated_int32_field(::int32_t value);
+  const ::google::protobuf::RepeatedField<::int32_t>& repeated_int32_field() const;
+  ::google::protobuf::RepeatedField<::int32_t>* mutable_repeated_int32_field();
+
+  private:
+  const ::google::protobuf::RepeatedField<::int32_t>& _internal_repeated_int32_field() const;
+  ::google::protobuf::RepeatedField<::int32_t>* _internal_mutable_repeated_int32_field();
+
+  public:
+  // repeated int64 repeated_int64_field = 4;
+  int repeated_int64_field_size() const;
+  private:
+  int _internal_repeated_int64_field_size() const;
+
+  public:
+  void clear_repeated_int64_field() ;
+  ::int64_t repeated_int64_field(int index) const;
+  void set_repeated_int64_field(int index, ::int64_t value);
+  void add_repeated_int64_field(::int64_t value);
+  const ::google::protobuf::RepeatedField<::int64_t>& repeated_int64_field() const;
+  ::google::protobuf::RepeatedField<::int64_t>* mutable_repeated_int64_field();
+
+  private:
+  const ::google::protobuf::RepeatedField<::int64_t>& _internal_repeated_int64_field() const;
+  ::google::protobuf::RepeatedField<::int64_t>* _internal_mutable_repeated_int64_field();
+
+  public:
+  // .MyNestedMessage nested_message = 5;
+  bool has_nested_message() const;
+  void clear_nested_message() ;
+  const ::MyNestedMessage& nested_message() const;
+  PROTOBUF_NODISCARD ::MyNestedMessage* release_nested_message();
+  ::MyNestedMessage* mutable_nested_message();
+  void set_allocated_nested_message(::MyNestedMessage* value);
+  void unsafe_arena_set_allocated_nested_message(::MyNestedMessage* value);
+  ::MyNestedMessage* unsafe_arena_release_nested_message();
+
+  private:
+  const ::MyNestedMessage& _internal_nested_message() const;
+  ::MyNestedMessage* _internal_mutable_nested_message();
+
+  public:
+  // int64 single_int64_field = 2;
+  void clear_single_int64_field() ;
+  ::int64_t single_int64_field() const;
+  void set_single_int64_field(::int64_t value);
+
+  private:
+  ::int64_t _internal_single_int64_field() const;
+  void _internal_set_single_int64_field(::int64_t value);
+
+  public:
+  // int32 single_int32_field = 1;
+  void clear_single_int32_field() ;
+  ::int32_t single_int32_field() const;
+  void set_single_int32_field(::int32_t value);
+
+  private:
+  ::int32_t _internal_single_int32_field() const;
+  void _internal_set_single_int32_field(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:MyProtoMessage)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      3, 5, 1,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<::int32_t> repeated_int32_field_;
+    mutable ::google::protobuf::internal::CachedSize _repeated_int32_field_cached_byte_size_;
+    ::google::protobuf::RepeatedField<::int64_t> repeated_int64_field_;
+    mutable ::google::protobuf::internal::CachedSize _repeated_int64_field_cached_byte_size_;
+    ::MyNestedMessage* nested_message_;
+    ::int64_t single_int64_field_;
+    ::int32_t single_int32_field_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -7865,6 +8289,288 @@ inline void ProtoFieldCheckerTestPB::set_allocated_sub_message(::ProtoFieldCheck
 
   _impl_.sub_message_ = reinterpret_cast<::ProtoFieldCheckerTestSubPB*>(value);
   // @@protoc_insertion_point(field_set_allocated:ProtoFieldCheckerTestPB.sub_message)
+}
+
+// -------------------------------------------------------------------
+
+// MyProtoMessage
+
+// int32 single_int32_field = 1;
+inline void MyProtoMessage::clear_single_int32_field() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.single_int32_field_ = 0;
+}
+inline ::int32_t MyProtoMessage::single_int32_field() const {
+  // @@protoc_insertion_point(field_get:MyProtoMessage.single_int32_field)
+  return _internal_single_int32_field();
+}
+inline void MyProtoMessage::set_single_int32_field(::int32_t value) {
+  _internal_set_single_int32_field(value);
+  // @@protoc_insertion_point(field_set:MyProtoMessage.single_int32_field)
+}
+inline ::int32_t MyProtoMessage::_internal_single_int32_field() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.single_int32_field_;
+}
+inline void MyProtoMessage::_internal_set_single_int32_field(::int32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.single_int32_field_ = value;
+}
+
+// int64 single_int64_field = 2;
+inline void MyProtoMessage::clear_single_int64_field() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.single_int64_field_ = ::int64_t{0};
+}
+inline ::int64_t MyProtoMessage::single_int64_field() const {
+  // @@protoc_insertion_point(field_get:MyProtoMessage.single_int64_field)
+  return _internal_single_int64_field();
+}
+inline void MyProtoMessage::set_single_int64_field(::int64_t value) {
+  _internal_set_single_int64_field(value);
+  // @@protoc_insertion_point(field_set:MyProtoMessage.single_int64_field)
+}
+inline ::int64_t MyProtoMessage::_internal_single_int64_field() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.single_int64_field_;
+}
+inline void MyProtoMessage::_internal_set_single_int64_field(::int64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.single_int64_field_ = value;
+}
+
+// repeated int32 repeated_int32_field = 3;
+inline int MyProtoMessage::_internal_repeated_int32_field_size() const {
+  return _internal_repeated_int32_field().size();
+}
+inline int MyProtoMessage::repeated_int32_field_size() const {
+  return _internal_repeated_int32_field_size();
+}
+inline void MyProtoMessage::clear_repeated_int32_field() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.repeated_int32_field_.Clear();
+}
+inline ::int32_t MyProtoMessage::repeated_int32_field(int index) const {
+  // @@protoc_insertion_point(field_get:MyProtoMessage.repeated_int32_field)
+  return _internal_repeated_int32_field().Get(index);
+}
+inline void MyProtoMessage::set_repeated_int32_field(int index, ::int32_t value) {
+  _internal_mutable_repeated_int32_field()->Set(index, value);
+  // @@protoc_insertion_point(field_set:MyProtoMessage.repeated_int32_field)
+}
+inline void MyProtoMessage::add_repeated_int32_field(::int32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_repeated_int32_field()->Add(value);
+  // @@protoc_insertion_point(field_add:MyProtoMessage.repeated_int32_field)
+}
+inline const ::google::protobuf::RepeatedField<::int32_t>& MyProtoMessage::repeated_int32_field() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:MyProtoMessage.repeated_int32_field)
+  return _internal_repeated_int32_field();
+}
+inline ::google::protobuf::RepeatedField<::int32_t>* MyProtoMessage::mutable_repeated_int32_field()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:MyProtoMessage.repeated_int32_field)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _internal_mutable_repeated_int32_field();
+}
+inline const ::google::protobuf::RepeatedField<::int32_t>&
+MyProtoMessage::_internal_repeated_int32_field() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.repeated_int32_field_;
+}
+inline ::google::protobuf::RepeatedField<::int32_t>* MyProtoMessage::_internal_mutable_repeated_int32_field() {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return &_impl_.repeated_int32_field_;
+}
+
+// repeated int64 repeated_int64_field = 4;
+inline int MyProtoMessage::_internal_repeated_int64_field_size() const {
+  return _internal_repeated_int64_field().size();
+}
+inline int MyProtoMessage::repeated_int64_field_size() const {
+  return _internal_repeated_int64_field_size();
+}
+inline void MyProtoMessage::clear_repeated_int64_field() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.repeated_int64_field_.Clear();
+}
+inline ::int64_t MyProtoMessage::repeated_int64_field(int index) const {
+  // @@protoc_insertion_point(field_get:MyProtoMessage.repeated_int64_field)
+  return _internal_repeated_int64_field().Get(index);
+}
+inline void MyProtoMessage::set_repeated_int64_field(int index, ::int64_t value) {
+  _internal_mutable_repeated_int64_field()->Set(index, value);
+  // @@protoc_insertion_point(field_set:MyProtoMessage.repeated_int64_field)
+}
+inline void MyProtoMessage::add_repeated_int64_field(::int64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_repeated_int64_field()->Add(value);
+  // @@protoc_insertion_point(field_add:MyProtoMessage.repeated_int64_field)
+}
+inline const ::google::protobuf::RepeatedField<::int64_t>& MyProtoMessage::repeated_int64_field() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:MyProtoMessage.repeated_int64_field)
+  return _internal_repeated_int64_field();
+}
+inline ::google::protobuf::RepeatedField<::int64_t>* MyProtoMessage::mutable_repeated_int64_field()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:MyProtoMessage.repeated_int64_field)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _internal_mutable_repeated_int64_field();
+}
+inline const ::google::protobuf::RepeatedField<::int64_t>&
+MyProtoMessage::_internal_repeated_int64_field() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.repeated_int64_field_;
+}
+inline ::google::protobuf::RepeatedField<::int64_t>* MyProtoMessage::_internal_mutable_repeated_int64_field() {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return &_impl_.repeated_int64_field_;
+}
+
+// .MyNestedMessage nested_message = 5;
+inline bool MyProtoMessage::has_nested_message() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.nested_message_ != nullptr);
+  return value;
+}
+inline void MyProtoMessage::clear_nested_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.nested_message_ != nullptr) _impl_.nested_message_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::MyNestedMessage& MyProtoMessage::_internal_nested_message() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  const ::MyNestedMessage* p = _impl_.nested_message_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MyNestedMessage&>(::_MyNestedMessage_default_instance_);
+}
+inline const ::MyNestedMessage& MyProtoMessage::nested_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:MyProtoMessage.nested_message)
+  return _internal_nested_message();
+}
+inline void MyProtoMessage::unsafe_arena_set_allocated_nested_message(::MyNestedMessage* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.nested_message_);
+  }
+  _impl_.nested_message_ = reinterpret_cast<::MyNestedMessage*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:MyProtoMessage.nested_message)
+}
+inline ::MyNestedMessage* MyProtoMessage::release_nested_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MyNestedMessage* released = _impl_.nested_message_;
+  _impl_.nested_message_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::MyNestedMessage* MyProtoMessage::unsafe_arena_release_nested_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:MyProtoMessage.nested_message)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::MyNestedMessage* temp = _impl_.nested_message_;
+  _impl_.nested_message_ = nullptr;
+  return temp;
+}
+inline ::MyNestedMessage* MyProtoMessage::_internal_mutable_nested_message() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (_impl_.nested_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MyNestedMessage>(GetArena());
+    _impl_.nested_message_ = reinterpret_cast<::MyNestedMessage*>(p);
+  }
+  return _impl_.nested_message_;
+}
+inline ::MyNestedMessage* MyProtoMessage::mutable_nested_message() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::MyNestedMessage* _msg = _internal_mutable_nested_message();
+  // @@protoc_insertion_point(field_mutable:MyProtoMessage.nested_message)
+  return _msg;
+}
+inline void MyProtoMessage::set_allocated_nested_message(::MyNestedMessage* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  if (message_arena == nullptr) {
+    delete (_impl_.nested_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.nested_message_ = reinterpret_cast<::MyNestedMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:MyProtoMessage.nested_message)
+}
+
+// -------------------------------------------------------------------
+
+// MyNestedMessage
+
+// int32 nested_int32_field = 1;
+inline void MyNestedMessage::clear_nested_int32_field() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.nested_int32_field_ = 0;
+}
+inline ::int32_t MyNestedMessage::nested_int32_field() const {
+  // @@protoc_insertion_point(field_get:MyNestedMessage.nested_int32_field)
+  return _internal_nested_int32_field();
+}
+inline void MyNestedMessage::set_nested_int32_field(::int32_t value) {
+  _internal_set_nested_int32_field(value);
+  // @@protoc_insertion_point(field_set:MyNestedMessage.nested_int32_field)
+}
+inline ::int32_t MyNestedMessage::_internal_nested_int32_field() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.nested_int32_field_;
+}
+inline void MyNestedMessage::_internal_set_nested_int32_field(::int32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.nested_int32_field_ = value;
+}
+
+// int64 nested_int64_field = 2;
+inline void MyNestedMessage::clear_nested_int64_field() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.nested_int64_field_ = ::int64_t{0};
+}
+inline ::int64_t MyNestedMessage::nested_int64_field() const {
+  // @@protoc_insertion_point(field_get:MyNestedMessage.nested_int64_field)
+  return _internal_nested_int64_field();
+}
+inline void MyNestedMessage::set_nested_int64_field(::int64_t value) {
+  _internal_set_nested_int64_field(value);
+  // @@protoc_insertion_point(field_set:MyNestedMessage.nested_int64_field)
+}
+inline ::int64_t MyNestedMessage::_internal_nested_int64_field() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.nested_int64_field_;
+}
+inline void MyNestedMessage::_internal_set_nested_int64_field(::int64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.nested_int64_field_ = value;
 }
 
 #ifdef __GNUC__
