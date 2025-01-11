@@ -170,6 +170,7 @@
     <ClCompile Include="src\time\system\time_system.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\error_handling\error_handling.h" />
     <ClInclude Include="src\message_limiter\message_limiter.h" />
     <ClInclude Include="src\log\macros\game_log.h" />
     <ClInclude Include="src\macros\return_define.h" />

@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "error_handling/error_handling.h"
 #include "macros/return_define.h"
 #include "pbc/common_error_tip.pb.h"
 #include "pbc/bag_error_tip.pb.h"
@@ -69,13 +70,13 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
 
         if (itemTable->max_statck_size() <= 0) {
             LOG_ERROR << "config error:" << try_item.first << "player:" << PlayerGuid();
-            return kInvalidTableData;
+            return PrintStackAndReturnError(kInvalidTableData);
         }
 
         if (itemTable->max_statck_size() == 1) {
             std::size_t need_grid_size = static_cast<std::size_t>(itemTable->max_statck_size() * try_item.second);
             if (emptySize <= 0 || emptySize < need_grid_size) {
-                return kBagItemNotStacked;
+                return PrintStackAndReturnError(kBagItemNotStacked);
             }
             emptySize -= need_grid_size;
         }
@@ -114,7 +115,7 @@ uint32_t Bag::HasEnoughSpace(const U32U32UnorderedMap& try_add_item_map) {
 		FetchItemTableOrContinue(it.first);
         auto need_grid_size = CalculateStackGridSize(it.second, itemTable->max_statck_size());
         if (emptySize <= 0 || emptySize < need_grid_size) {
-            return kBagItemNotStacked;
+            return PrintStackAndReturnError(kBagItemNotStacked);
         }
         emptySize -= need_grid_size;
     }
@@ -138,7 +139,7 @@ uint32_t Bag::HasSufficientItems(const U32U32UnorderedMap& requiredItems) {
         }
     }
 
-    return itemsToCheck.empty() ? kSuccess : kBagInsufficientItems;
+    return itemsToCheck.empty() ? kSuccess : PrintStackAndReturnError(kBagInsufficientItems);
 }
 
 
@@ -178,30 +179,30 @@ uint32_t Bag::RemoveItems(const U32U32UnorderedMap& itemsToRemove) {
 
 uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam& p) {
     if (p.size_ <= 0) {
-        return kBagDelItemSize;
+        return PrintStackAndReturnError(kBagDelItemSize);
     }
 
     auto pit = pos_.find(p.pos_);
     if (pit == pos_.end()) {
-        return kBagDelItemPos;
+        return PrintStackAndReturnError(kBagDelItemPos);
     }
 
     if (pit->second != p.item_guid_) {
-        return kBagDelItemGuid;
+        return PrintStackAndReturnError(kBagDelItemGuid);
     }
 
     auto item_it = items_.find(p.item_guid_);
     if (item_it == items_.end()) {
-        return kBagDelItemFindItem;
+        return PrintStackAndReturnError(kBagDelItemFindItem);
     }
 
     auto& item = itemRegistry.get<ItemPBComponent>(item_it->second);
     if (item.config_id() != p.item_config_id_) {
-        return kBagDelItemConfig;
+        return PrintStackAndReturnError(kBagDelItemConfig);
     }
 
     if (item.size() < p.size_) {
-        return kBagItemDeletionSizeMismatch;
+        return PrintStackAndReturnError(kBagItemDeletionSizeMismatch);
     }
 
     item.set_size(item.size() - p.size_);
@@ -320,14 +321,14 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 	if (itemPBCompCopy.config_id() <= 0 || itemPBCompCopy.size() <= 0)
 	{
 		LOG_ERROR << "bag add item player:" << PlayerGuid();
-		return kBagAddItemInvalidParam;
+		return PrintStackAndReturnError(kBagAddItemInvalidParam);
 	}
 
 	FetchAndValidateItemTable(itemPBCompCopy.config_id());
 
 	if (itemTable->max_statck_size() <= 0)
 	{
-		return kInvalidTableData;
+		return PrintStackAndReturnError(kInvalidTableData);
 	}
 
 	if (itemTable->max_statck_size() == 1)//不可以堆叠直接生成新guid
@@ -335,7 +336,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 		if (NotAdequateSize(itemPBCompCopy.size()))
 		{
             // todo temp bag or mail
-            return kBagAddItemBagFull;
+            return PrintStackAndReturnError(kBagAddItemBagFull);
 		}
 
 		if (itemPBCompCopy.size() == 1)//只有一个
@@ -353,7 +354,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			{
 				defer(Destroy(itemRegistry, newItem));
 				LOG_ERROR << "bag add item" << PlayerGuid();
-				return kBagDeleteItemAlreadyHasGuid;
+				return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 			}
 
 			OnNewGrid(newItemPBComp.item_id());
@@ -374,7 +375,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 				if (!it.second)
 				{
 					LOG_ERROR << "bag add item" << PlayerGuid();
-					return kBagDeleteItemAlreadyHasGuid;
+					return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 				}
 
 				OnNewGrid(newItemPBComp.item_id());
@@ -421,7 +422,7 @@ uint32_t Bag::AddItem(const InitItemParam& initItemParam)
 			needEmptyGridSize = CalculateStackGridSize(checkNeedStackSize, itemTable->max_statck_size());
 			if (NotAdequateSize(needEmptyGridSize))
 			{
-				return kBagAddItemBagFull;
+				return PrintStackAndReturnError(kBagAddItemBagFull);
 			}
 		}
 
@@ -486,7 +487,7 @@ uint32_t Bag::RemoveItem(Guid del_guid)
 	auto it = items_.find(del_guid);
 	if (it == items_.end())
 	{
-		return kBagDeleteItemFindGuid;
+		return PrintStackAndReturnError(kBagDeleteItemFindGuid);
 	}
 	DestroyItem(del_guid);
 	for (auto& pit : pos_)
