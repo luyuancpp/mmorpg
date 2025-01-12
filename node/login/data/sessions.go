@@ -2,8 +2,8 @@ package data
 
 import cmap "github.com/orcaman/concurrent-map/v2"
 
-var SessionList cmap.ConcurrentMap[string, *Player]
+var SessionList cmap.ConcurrentMap[string, *Session]
 
 func init() {
-	SessionList = cmap.New[*Player]()
+	SessionList = cmap.New[*Session]()
 }

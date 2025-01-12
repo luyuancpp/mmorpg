@@ -2,6 +2,7 @@ package loginservicelogic
 
 import (
 	"context"
+	"github.com/looplab/fsm"
 	"login/data"
 	"strconv"
 	"time"
@@ -41,6 +42,13 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 		return resp, nil
 	}
 
+	defer func(Fsm *fsm.FSM, ctx context.Context, event string, args ...interface{}) {
+		err := Fsm.Event(ctx, event, args)
+		if err != nil {
+			logx.Error(err)
+		}
+	}(session.Fsm, context.Background(), data.EventProcessLogin)
+
 	key := "account" + session.Account
 	cmd := l.svcCtx.Redis.Get(l.ctx, key)
 	if cmd == nil {
@@ -48,8 +56,14 @@ func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game
 		return resp, nil
 	}
 
+	err := session.Fsm.Event(context.Background(), data.EventCreateChar) //开始创建角色状态
+	if err != nil {
+		logx.Error(err)
+		return resp, nil
+	}
+
 	accountData := &game.UserAccounts{}
-	err := proto.Unmarshal([]byte(cmd.Val()), accountData)
+	err = proto.Unmarshal([]byte(cmd.Val()), accountData)
 	if err != nil {
 		return resp, nil
 	}
