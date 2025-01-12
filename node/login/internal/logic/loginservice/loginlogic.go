@@ -3,6 +3,7 @@ package loginservicelogic
 import (
 	"context"
 	"github.com/golang/protobuf/proto"
+	fsm "github.com/looplab/fsm"
 	"login/client/accountdbservice"
 	"login/data"
 	"strconv"
@@ -42,7 +43,18 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: 1005}
 		return resp, nil
 	}
-	data.SessionList.Set(sessionId, &data.Player{Account: in.ClientMsgBody.Account})
+
+	session := &data.Session{Account: in.ClientMsgBody.Account}
+	session.Fsm = data.InitPlayerFSM()
+
+	data.SessionList.Set(sessionId, session)
+
+	defer func(Fsm *fsm.FSM, ctx context.Context, event string, args ...interface{}) {
+		err := Fsm.Event(ctx, event, args)
+		if err != nil {
+			logx.Error(err)
+		}
+	}(session.Fsm, context.Background(), data.EventProcessLogin)
 
 	rdKey := "account" + in.ClientMsgBody.Account
 	cmd := l.svcCtx.Redis.Get(l.ctx, rdKey)
@@ -62,14 +74,14 @@ func (l *LoginLogic) Login(in *game.LoginC2LRequest) (*game.LoginC2LResponse, er
 		return nil, err
 	}
 
-	accountDatabase := &game.UserAccounts{}
-	err = proto.Unmarshal(valueBytes, accountDatabase)
+	session.UserAccount = &game.UserAccounts{}
+	err = proto.Unmarshal(valueBytes, session.UserAccount)
 	if err != nil {
 		logx.Error(err)
 		return nil, err
 	}
-	if nil != accountDatabase.SimplePlayers {
-		for _, v := range accountDatabase.SimplePlayers.Players {
+	if nil != session.UserAccount.SimplePlayers {
+		for _, v := range session.UserAccount.SimplePlayers.Players {
 			cPlayer := &game.AccountSimplePlayerWrapper{Player: v}
 			resp.ClientMsgBody.Players = append(resp.ClientMsgBody.Players, cPlayer)
 		}

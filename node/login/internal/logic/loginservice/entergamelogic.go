@@ -30,6 +30,9 @@ func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGa
 func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGameC2LResponse, error) {
 	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
 	defer data.SessionList.Remove(sessionId)
+
+	//这里没有验证是不是自己账号里面的玩家
+
 	playerIdStr := strconv.FormatUint(in.ClientMsgBody.PlayerId, 10)
 
 	resp := &game.EnterGameC2LResponse{
@@ -37,9 +40,30 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 		SessionInfo:   in.SessionInfo,
 	}
 
+	session, ok := data.SessionList.Get(sessionId)
+
 	// Check if session is valid
-	if _, ok := data.SessionList.Get(sessionId); !ok {
+	if !ok {
 		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
+		return resp, nil
+	}
+
+	foundPlayer := false
+	for _, v := range session.UserAccount.SimplePlayers.Players {
+		if v.PlayerId != in.ClientMsgBody.PlayerId {
+			continue
+		}
+		foundPlayer = true
+	}
+
+	if !foundPlayer {
+		resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginSessionIdNotFound)}
+		return resp, nil
+	}
+
+	err := session.Fsm.Event(context.Background(), data.EventEnterGame) //开始创建角色状态
+	if err != nil {
+		logx.Error(err)
 		return resp, nil
 	}
 
@@ -49,7 +73,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	playerData := l.svcCtx.Redis.Get(l.ctx, key).Val()
 
 	if len(playerData) == 0 {
-		// Player data not found in Redis, load it from the database
+		// Session data not found in Redis, load it from the database
 		service := playerdbservice.NewPlayerDBService(*l.svcCtx.DBClient)
 		if _, err := service.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: in.ClientMsgBody.PlayerId}); err != nil {
 			resp.ClientMsgBody.ErrorMessage = &game.TipInfoMessage{Id: uint32(game.LoginError_kLoginPlayerGuidError)}
