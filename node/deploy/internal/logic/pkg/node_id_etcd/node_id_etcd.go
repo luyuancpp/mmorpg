@@ -29,11 +29,12 @@ func initEtcdClient() (*clientv3.Client, error) {
 }
 
 // 获取下一个自增的 ID，或者从回收池中获取
-func generateID(ctx context.Context, etcdClient *clientv3.Client) (string, error) {
+func generateID(ctx context.Context, etcdClient *clientv3.Client) (uint64, error) {
 	// 先尝试从回收池中获取一个 ID
 	resp, err := etcdClient.Get(ctx, recycledIDKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to get recycled IDs: %v", err)
+		// 错误时返回 uint64 最大值
+		return ^uint64(0), fmt.Errorf("failed to get recycled IDs: %v", err)
 	}
 
 	if len(resp.Kvs) > 0 {
@@ -41,10 +42,18 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client) (string, error
 		recycledID := string(resp.Kvs[0].Value)
 		_, err := etcdClient.Delete(ctx, recycledIDKey)
 		if err != nil {
-			return "", fmt.Errorf("failed to delete recycled ID %s: %v", recycledID, err)
+			// 错误时返回 uint64 最大值
+			return ^uint64(0), fmt.Errorf("failed to delete recycled ID %s: %v", recycledID, err)
 		}
 		log.Printf("Recycled ID %s", recycledID)
-		return recycledID, nil
+		// 解析回收池的 ID 并返回
+		var id uint64
+		_, err = fmt.Sscanf(recycledID, "%d", &id)
+		if err != nil {
+			// 错误时返回 uint64 最大值
+			return ^uint64(0), fmt.Errorf("failed to parse recycled ID %s: %v", recycledID, err)
+		}
+		return id, nil
 	}
 
 	// 如果回收池为空，使用自增计数器生成 ID
@@ -53,13 +62,18 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client) (string, error
 	// 获取当前 ID 值并进行自增
 	resp, err = etcdClient.Get(ctx, idKey)
 	if err != nil {
-		return "", fmt.Errorf("failed to get current ID: %v", err)
+		// 错误时返回 uint64 最大值
+		return ^uint64(0), fmt.Errorf("failed to get current ID: %v", err)
 	}
 
 	// 获取当前的计数器值
-	var currentID int64
+	var currentID uint64
 	if len(resp.Kvs) > 0 {
-		currentID = ParseIDValue(resp.Kvs[0].Value)
+		_, err = fmt.Sscanf(string(resp.Kvs[0].Value), "%d", &currentID)
+		if err != nil {
+			// 错误时返回 uint64 最大值
+			return ^uint64(0), fmt.Errorf("failed to parse current ID: %v", err)
+		}
 	} else {
 		currentID = 0
 	}
@@ -73,32 +87,24 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client) (string, error
 	newID := currentID + 1
 	_, err = txn.Then(clientv3.OpPut(idKey, fmt.Sprintf("%d", newID))).Commit()
 	if err != nil {
-		return "", fmt.Errorf("failed to increment ID: %v", err)
+		// 错误时返回 uint64 最大值
+		return ^uint64(0), fmt.Errorf("failed to increment ID: %v", err)
 	}
 
 	// 返回新的 ID
-	return fmt.Sprintf("node-%d", newID), nil
+	return newID - 1, nil
 }
 
 // 释放一个 ID 到回收池
-func releaseID(ctx context.Context, etcdClient *clientv3.Client, id string) error {
-	// 将 ID 放入回收池
-	_, err := etcdClient.Put(ctx, recycledIDKey, id)
+func releaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64) error {
+	// 将 ID 转换为字符串并放入回收池
+	idStr := fmt.Sprintf("%d", id)
+	_, err := etcdClient.Put(ctx, recycledIDKey, idStr)
 	if err != nil {
-		return fmt.Errorf("failed to release ID %s: %v", id, err)
+		return fmt.Errorf("failed to release ID %d: %v", id, err)
 	}
-	log.Printf("ID %s successfully released", id)
+	log.Printf("ID %d successfully released", id)
 	return nil
-}
-
-// 解析 ID 的值
-func ParseIDValue(value []byte) int64 {
-	var id int64
-	_, err := fmt.Sscanf(string(value), "%d", &id)
-	if err != nil {
-		log.Printf("Failed to parse ID value: %v", err)
-	}
-	return id
 }
 
 // 清除所有的 ID 键
@@ -120,37 +126,35 @@ func clearAllIDs(etcdClient *clientv3.Client) error {
 
 // 定期清理过期的 ID
 func sweepExpiredIDs(etcdClient *clientv3.Client) {
-	for {
-		// 等待一段时间（例如 10 秒）
-		time.Sleep(10 * time.Second)
+	// 等待一段时间（例如 10 秒）
+	time.Sleep(10 * time.Second)
 
-		// 获取所有的 ID 键
-		resp, err := etcdClient.Get(context.Background(), "ids/", clientv3.WithPrefix())
+	// 获取所有的 ID 键
+	resp, err := etcdClient.Get(context.Background(), "ids/", clientv3.WithPrefix())
+	if err != nil {
+		log.Printf("Failed to list IDs: %v", err)
+		return
+	}
+
+	// 遍历所有键，检查是否过期
+	for _, kv := range resp.Kvs {
+		key := string(kv.Key)
+
+		// 检查每个键的租约状态
+		leaseResp, err := etcdClient.TimeToLive(context.Background(), clientv3.LeaseID(kv.Lease))
 		if err != nil {
-			log.Printf("Failed to list IDs: %v", err)
+			log.Printf("Failed to get TTL for key %s: %v", key, err)
 			continue
 		}
 
-		// 遍历所有键，检查是否过期
-		for _, kv := range resp.Kvs {
-			key := string(kv.Key)
-
-			// 检查每个键的租约状态
-			leaseResp, err := etcdClient.TimeToLive(context.Background(), clientv3.LeaseID(kv.Lease))
+		// 如果 TTL 为 0，表示租约已经过期
+		if leaseResp.TTL == 0 {
+			// 删除过期的 ID
+			_, err := etcdClient.Delete(context.Background(), key)
 			if err != nil {
-				log.Printf("Failed to get TTL for key %s: %v", key, err)
-				continue
-			}
-
-			// 如果 TTL 为 0，表示租约已经过期
-			if leaseResp.TTL == 0 {
-				// 删除过期的 ID
-				_, err := etcdClient.Delete(context.Background(), key)
-				if err != nil {
-					log.Printf("Failed to delete expired ID %s: %v", key, err)
-				} else {
-					log.Printf("ID %s expired and deleted", key)
-				}
+				log.Printf("Failed to delete expired ID %s: %v", key, err)
+			} else {
+				log.Printf("ID %s expired and deleted", key)
 			}
 		}
 	}

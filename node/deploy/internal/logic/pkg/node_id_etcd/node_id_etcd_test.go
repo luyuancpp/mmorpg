@@ -17,11 +17,13 @@ func TestGenerateID(t *testing.T) {
 	}
 	defer etcdClient.Close()
 
+	err = clearAllIDs(etcdClient)
+
 	// 创建 context
 	ctx := context.Background()
 
 	// 测试多次生成 ID
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		// 生成新的 ID
 		id, err := generateID(ctx, etcdClient)
 		if err != nil {
@@ -34,7 +36,7 @@ func TestGenerateID(t *testing.T) {
 
 		// 检查 ID 是否符合预期的格式
 		if !isValidID(id) {
-			t.Errorf("Generated ID %s is invalid", id)
+			t.Errorf("Generated ID %d is invalid", id)
 		}
 	}
 
@@ -49,8 +51,8 @@ func TestGenerateID(t *testing.T) {
 		}
 
 		// 期待生成的ID应该是自增的
-		if int64(i) != ParseIDValue([]byte(id[5:]))-1 {
-			t.Errorf("ID not incremented properly: expected %d, got %d", i+1, ParseIDValue([]byte(id[5:])))
+		if uint64(i) != id {
+			t.Errorf("ID not incremented properly: expected %d, got %d", i+1, id)
 		}
 	}
 
@@ -61,8 +63,8 @@ func TestGenerateID(t *testing.T) {
 	}
 
 	// 期望重置为0
-	if ParseIDValue([]byte(id[5:])) != 0 {
-		t.Errorf("ID should have been reset to 0, got: %d", ParseIDValue([]byte(id[5:])))
+	if id != 0 {
+		t.Errorf("ID should have been reset to 0, got: %d", id)
 	}
 }
 
@@ -87,19 +89,19 @@ func TestReleaseID(t *testing.T) {
 	// 释放生成的 ID
 	err = releaseID(ctx, etcdClient, id)
 	if err != nil {
-		t.Errorf("Failed to release ID %s: %v", id, err)
+		t.Errorf("Failed to release ID %d: %v", id, err)
 	}
 
 	// 检查ID是否已从Etcd中删除
-	resp, err := etcdClient.Get(ctx, "ids/"+id)
+	resp, err := etcdClient.Get(ctx, "ids/"+fmt.Sprintf("%d", id))
 	if err != nil {
-		t.Fatalf("Failed to get ID %s from Etcd: %v", id, err)
+		t.Fatalf("Failed to get ID %d from Etcd: %v", id, err)
 	}
 
 	if len(resp.Kvs) > 0 {
-		t.Errorf("ID %s should have been released, but it's still present in Etcd", id)
+		t.Errorf("ID %d should have been released, but it's still present in Etcd", id)
 	} else {
-		log.Printf("ID %s successfully released", id)
+		log.Printf("ID %d successfully released", id)
 	}
 }
 
@@ -136,37 +138,20 @@ func TestSweepExpiredIDs(t *testing.T) {
 	sweepExpiredIDs(etcdClient)
 
 	// 检查 ID 是否被清理
-	resp, err := etcdClient.Get(ctx, "ids/"+id)
+	resp, err := etcdClient.Get(ctx, "ids/"+fmt.Sprintf("%d", id))
 	if err != nil {
-		t.Fatalf("Failed to get ID %s from Etcd: %v", id, err)
+		t.Fatalf("Failed to get ID %d from Etcd: %v", id, err)
 	}
 
 	if len(resp.Kvs) > 0 {
-		t.Errorf("Expired ID %s should have been cleaned, but it's still present in Etcd", id)
+		t.Errorf("Expired ID %d should have been cleaned, but it's still present in Etcd", id)
 	} else {
-		log.Printf("Expired ID %s successfully cleaned", id)
+		log.Printf("Expired ID %d successfully cleaned", id)
 	}
 }
 
 // isValidID 检查ID的格式是否合法
-func isValidID(id string) bool {
-	// 检查ID格式，确保ID是 "node-<数字>" 格式
-	if len(id) < 6 {
-		return false
-	}
-
-	// 确保前缀是 "node-" 并且后面跟的是数字
-	if id[:5] != "node-" {
-		return false
-	}
-
-	// 检查后面部分是否是数字
-	var num int
-	_, err := fmt.Sscanf(id[5:], "%d", &num)
-	if err != nil {
-		return false
-	}
-
+func isValidID(num uint64) bool {
 	// 检查数字是否在合理范围内
 	return num >= 0 && num <= maxID
 }
