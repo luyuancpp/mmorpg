@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	etcdAddr = "localhost:2379"  // Etcd 服务地址
-	idTTL    = 60 * time.Second  // ID 的 TTL 设置为 60 秒
-	idKey    = "node_id_counter" // 用于存储计数器的键
-	maxID    = 65535             // 最大ID值
+	etcdAddr      = "localhost:2379"  // Etcd 服务地址
+	idTTL         = 60 * time.Second  // ID 的 TTL 设置为 60 秒
+	idKey         = "node_id_counter" // 用于存储计数器的键
+	recycledIDKey = "recycled_ids"    // 用于存储回收的 ID 键
+	maxID         = 65535             // 最大 ID 值
 )
 
 // 初始化 Etcd 客户端
@@ -27,13 +28,30 @@ func initEtcdClient() (*clientv3.Client, error) {
 	return cli, nil
 }
 
-// 获取下一个自增的 ID
+// 获取下一个自增的 ID，或者从回收池中获取
 func generateID(ctx context.Context, etcdClient *clientv3.Client) (string, error) {
-	// 使用事务确保自增操作是原子性的
+	// 先尝试从回收池中获取一个 ID
+	resp, err := etcdClient.Get(ctx, recycledIDKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to get recycled IDs: %v", err)
+	}
+
+	if len(resp.Kvs) > 0 {
+		// 如果回收池中有 ID，直接从回收池中取一个
+		recycledID := string(resp.Kvs[0].Value)
+		_, err := etcdClient.Delete(ctx, recycledIDKey)
+		if err != nil {
+			return "", fmt.Errorf("failed to delete recycled ID %s: %v", recycledID, err)
+		}
+		log.Printf("Recycled ID %s", recycledID)
+		return recycledID, nil
+	}
+
+	// 如果回收池为空，使用自增计数器生成 ID
 	txn := etcdClient.Txn(ctx)
 
 	// 获取当前 ID 值并进行自增
-	resp, err := etcdClient.Get(ctx, idKey)
+	resp, err = etcdClient.Get(ctx, idKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get current ID: %v", err)
 	}
@@ -62,6 +80,17 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client) (string, error
 	return fmt.Sprintf("node-%d", newID), nil
 }
 
+// 释放一个 ID 到回收池
+func releaseID(ctx context.Context, etcdClient *clientv3.Client, id string) error {
+	// 将 ID 放入回收池
+	_, err := etcdClient.Put(ctx, recycledIDKey, id)
+	if err != nil {
+		return fmt.Errorf("failed to release ID %s: %v", id, err)
+	}
+	log.Printf("ID %s successfully released", id)
+	return nil
+}
+
 // 解析 ID 的值
 func ParseIDValue(value []byte) int64 {
 	var id int64
@@ -72,11 +101,20 @@ func ParseIDValue(value []byte) int64 {
 	return id
 }
 
-// 回收 ID
-func releaseID(ctx context.Context, etcdClient *clientv3.Client, id string) error {
-	// Etcd 中不需要特别删除 ID，因为它是自增的计数器
-	// 这里只是示例，没有实际的回收操作
-	log.Printf("Released ID: %s", id)
+// 清除所有的 ID 键
+func clearAllIDs(etcdClient *clientv3.Client) error {
+	// 删除 ID 和回收池的键
+	_, err := etcdClient.Delete(context.Background(), idKey)
+	if err != nil {
+		return fmt.Errorf("failed to delete node_id_counter: %v", err)
+	}
+
+	_, err = etcdClient.Delete(context.Background(), recycledIDKey)
+	if err != nil {
+		return fmt.Errorf("failed to delete recycled_ids: %v", err)
+	}
+
+	log.Println("All ID-related keys cleared")
 	return nil
 }
 

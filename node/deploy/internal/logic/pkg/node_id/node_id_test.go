@@ -21,7 +21,7 @@ func TestGenerateID(t *testing.T) {
 	ctx := context.Background()
 
 	// 测试多次生成 ID
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		// 生成新的 ID
 		id, err := generateID(ctx, etcdClient)
 		if err != nil {
@@ -37,6 +37,8 @@ func TestGenerateID(t *testing.T) {
 			t.Errorf("Generated ID %s is invalid", id)
 		}
 	}
+
+	err = clearAllIDs(etcdClient)
 
 	// 测试 ID 达到最大值后是否重置为 0
 	for i := 0; i < int(maxID); i++ {
@@ -110,6 +112,8 @@ func TestSweepExpiredIDs(t *testing.T) {
 	}
 	defer etcdClient.Close()
 
+	err = clearAllIDs(etcdClient)
+
 	// 创建 context
 	ctx := context.Background()
 
@@ -165,4 +169,30 @@ func isValidID(id string) bool {
 
 	// 检查数字是否在合理范围内
 	return num >= 0 && num <= maxID
+}
+
+func TestGenerateIDClear(t *testing.T) {
+	// 初始化 Etcd 客户端
+	etcdClient, err := initEtcdClient()
+	if err != nil {
+		t.Fatalf("Error initializing Etcd client: %v", err)
+	}
+	defer etcdClient.Close()
+
+	// 清除所有 ID
+	err = clearAllIDs(etcdClient)
+	if err != nil {
+		t.Fatalf("Error clearing Etcd IDs: %v", err)
+	}
+
+	// 创建 context
+	ctx := context.Background()
+
+	// 测试生成 ID
+	_, err = generateID(ctx, etcdClient)
+	if err != nil {
+		t.Fatalf("Error generating ID: %v", err)
+	}
+
+	// 继续你的其他测试逻辑...
 }
