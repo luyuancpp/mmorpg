@@ -203,9 +203,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\handler\service_replied\centre_service_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\player\player_service_replied.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="src\game_logic\actor\combat_state\util\combat_state_util.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
