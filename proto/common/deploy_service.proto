@@ -127,30 +127,36 @@ message NodeInfoResponse
   uint32 node_id = 2;
 }
 
-message NewGameNodeRequest
+
+// 请求分配 ID
+message GetIDRequest 
 {
-  uint32 zone_id = 1;
-  game_node_db my_info = 2;
+  string client_name = 1;
+  string server_type = 2; // 服务器类型，例如 "gate" 或 "scene"
 }
 
-message NewGameNodeResponse
+// 返回的 ID
+message GetIDResponse 
 {
-  game_node_db my_info = 1;
-  uint32 error_no = 2;
-  redis_node_db redis_info = 5;
+  string id = 1;  // 分配的唯一 ID
 }
 
-message GetGameNodeInfoRequest
+// 请求释放 ID
+message ReleaseIDRequest 
 {
-  uint32 node_id = 1;
+  string id = 1;  // 要释放的 ID
+  string server_type = 2;  // 服务器类型
 }
 
-message GetGameNodeInfoResponse
+// 返回的响应
+message ReleaseIDResponse 
 {
-  uint32 node_id = 1;
-  NetworkAddress service_addr = 2;
+  bool success = 1;  // 是否成功回收 ID
 }
 
 service DeployService {
   rpc GetNodeInfo (NodeInfoRequest) returns (NodeInfoResponse);
+  rpc GetID (GetIDRequest) returns (GetIDResponse);
+  rpc ReleaseID (ReleaseIDRequest) returns (ReleaseIDResponse);
+  
 }

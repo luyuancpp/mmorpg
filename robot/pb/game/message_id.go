@@ -72,4 +72,6 @@ const EntitySyncServiceSyncAttribute5FramesMessageId = 68
 const EntitySyncServiceSyncAttribute10FramesMessageId = 69
 const EntitySyncServiceSyncAttribute60FramesMessageId = 70
 const EntitySyncServiceSyncAttribute30FramesMessageId = 71
+const DeployServiceGetIDMessageId = 72
+const DeployServiceReleaseIDMessageId = 73
 const GameServiceEnterSceneMessageId = 75

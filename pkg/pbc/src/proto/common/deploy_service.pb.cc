@@ -187,6 +187,49 @@ struct centre_node_dbDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 centre_node_dbDefaultTypeInternal _centre_node_db_default_instance_;
 
+inline constexpr ReleaseIDResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : success_{false},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ReleaseIDResponse::ReleaseIDResponse(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct ReleaseIDResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ReleaseIDResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ReleaseIDResponseDefaultTypeInternal() {}
+  union {
+    ReleaseIDResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ReleaseIDResponseDefaultTypeInternal _ReleaseIDResponse_default_instance_;
+
+inline constexpr ReleaseIDRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        server_type_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ReleaseIDRequest::ReleaseIDRequest(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct ReleaseIDRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ReleaseIDRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ReleaseIDRequestDefaultTypeInternal() {}
+  union {
+    ReleaseIDRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ReleaseIDRequestDefaultTypeInternal _ReleaseIDRequest_default_instance_;
+
 inline constexpr NodeInfoRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : zone_id_{0u},
@@ -207,24 +250,50 @@ struct NodeInfoRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeInfoRequestDefaultTypeInternal _NodeInfoRequest_default_instance_;
 
-inline constexpr GetGameNodeInfoRequest::Impl_::Impl_(
+inline constexpr GetIDResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : node_id_{0u},
+      : id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR GetGameNodeInfoRequest::GetGameNodeInfoRequest(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR GetIDResponse::GetIDResponse(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct GetGameNodeInfoRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR GetGameNodeInfoRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~GetGameNodeInfoRequestDefaultTypeInternal() {}
+struct GetIDResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetIDResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetIDResponseDefaultTypeInternal() {}
   union {
-    GetGameNodeInfoRequest _instance;
+    GetIDResponse _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetGameNodeInfoRequestDefaultTypeInternal _GetGameNodeInfoRequest_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetIDResponseDefaultTypeInternal _GetIDResponse_default_instance_;
+
+inline constexpr GetIDRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : client_name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        server_type_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetIDRequest::GetIDRequest(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct GetIDRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetIDRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetIDRequestDefaultTypeInternal() {}
+  union {
+    GetIDRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetIDRequestDefaultTypeInternal _GetIDRequest_default_instance_;
 
 inline constexpr redis_node_list_db::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -320,67 +389,6 @@ struct centre_node_list_dbDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 centre_node_list_dbDefaultTypeInternal _centre_node_list_db_default_instance_;
-
-inline constexpr NewGameNodeResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        my_info_{nullptr},
-        redis_info_{nullptr},
-        error_no_{0u} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR NewGameNodeResponse::NewGameNodeResponse(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct NewGameNodeResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR NewGameNodeResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~NewGameNodeResponseDefaultTypeInternal() {}
-  union {
-    NewGameNodeResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NewGameNodeResponseDefaultTypeInternal _NewGameNodeResponse_default_instance_;
-
-inline constexpr NewGameNodeRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        my_info_{nullptr},
-        zone_id_{0u} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR NewGameNodeRequest::NewGameNodeRequest(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct NewGameNodeRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR NewGameNodeRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~NewGameNodeRequestDefaultTypeInternal() {}
-  union {
-    NewGameNodeRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NewGameNodeRequestDefaultTypeInternal _NewGameNodeRequest_default_instance_;
-
-inline constexpr GetGameNodeInfoResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        service_addr_{nullptr},
-        node_id_{0u} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR GetGameNodeInfoResponse::GetGameNodeInfoResponse(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct GetGameNodeInfoResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR GetGameNodeInfoResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~GetGameNodeInfoResponseDefaultTypeInternal() {}
-  union {
-    GetGameNodeInfoResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetGameNodeInfoResponseDefaultTypeInternal _GetGameNodeInfoResponse_default_instance_;
 
 inline constexpr nodes_info_data::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -601,53 +609,44 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::NodeInfoResponse, _impl_.node_id_),
         0,
         ~0u,
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeRequest, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeRequest, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeRequest, _impl_.zone_id_),
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeRequest, _impl_.my_info_),
-        ~0u,
-        0,
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeResponse, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeResponse, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeResponse, _impl_.my_info_),
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeResponse, _impl_.error_no_),
-        PROTOBUF_FIELD_OFFSET(::NewGameNodeResponse, _impl_.redis_info_),
-        0,
-        ~0u,
-        1,
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::GetGameNodeInfoRequest, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::GetIDRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::GetGameNodeInfoRequest, _impl_.node_id_),
-        PROTOBUF_FIELD_OFFSET(::GetGameNodeInfoResponse, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::GetGameNodeInfoResponse, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::GetIDRequest, _impl_.client_name_),
+        PROTOBUF_FIELD_OFFSET(::GetIDRequest, _impl_.server_type_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::GetIDResponse, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::GetGameNodeInfoResponse, _impl_.node_id_),
-        PROTOBUF_FIELD_OFFSET(::GetGameNodeInfoResponse, _impl_.service_addr_),
-        ~0u,
-        0,
+        PROTOBUF_FIELD_OFFSET(::GetIDResponse, _impl_.id_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _impl_.server_type_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::ReleaseIDResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::ReleaseIDResponse, _impl_.success_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -667,10 +666,10 @@ static const ::_pbi::MigrationSchema
         {134, -1, -1, sizeof(::gate_node_db)},
         {146, -1, -1, sizeof(::NodeInfoRequest)},
         {156, 166, -1, sizeof(::NodeInfoResponse)},
-        {168, 178, -1, sizeof(::NewGameNodeRequest)},
-        {180, 191, -1, sizeof(::NewGameNodeResponse)},
-        {194, -1, -1, sizeof(::GetGameNodeInfoRequest)},
-        {203, 213, -1, sizeof(::GetGameNodeInfoResponse)},
+        {168, -1, -1, sizeof(::GetIDRequest)},
+        {178, -1, -1, sizeof(::GetIDResponse)},
+        {187, -1, -1, sizeof(::ReleaseIDRequest)},
+        {197, -1, -1, sizeof(::ReleaseIDResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_database_node_db_default_instance_._instance,
@@ -688,10 +687,10 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_gate_node_db_default_instance_._instance,
     &::_NodeInfoRequest_default_instance_._instance,
     &::_NodeInfoResponse_default_instance_._instance,
-    &::_NewGameNodeRequest_default_instance_._instance,
-    &::_NewGameNodeResponse_default_instance_._instance,
-    &::_GetGameNodeInfoRequest_default_instance_._instance,
-    &::_GetGameNodeInfoResponse_default_instance_._instance,
+    &::_GetIDRequest_default_instance_._instance,
+    &::_GetIDResponse_default_instance_._instance,
+    &::_ReleaseIDRequest_default_instance_._instance,
+    &::_ReleaseIDResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -731,17 +730,16 @@ const char descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto[]
     "\262\265\030\002id\"5\n\017NodeInfoRequest\022\017\n\007zone_id\030\001 \001"
     "(\r\022\021\n\tnode_type\030\002 \001(\r\"C\n\020NodeInfoRespons"
     "e\022\036\n\004info\030\001 \001(\0132\020.nodes_info_data\022\017\n\007nod"
-    "e_id\030\002 \001(\r\"E\n\022NewGameNodeRequest\022\017\n\007zone"
-    "_id\030\001 \001(\r\022\036\n\007my_info\030\002 \001(\0132\r.game_node_d"
-    "b\"k\n\023NewGameNodeResponse\022\036\n\007my_info\030\001 \001("
-    "\0132\r.game_node_db\022\020\n\010error_no\030\002 \001(\r\022\"\n\nre"
-    "dis_info\030\005 \001(\0132\016.redis_node_db\")\n\026GetGam"
-    "eNodeInfoRequest\022\017\n\007node_id\030\001 \001(\r\"Q\n\027Get"
-    "GameNodeInfoResponse\022\017\n\007node_id\030\001 \001(\r\022%\n"
-    "\014service_addr\030\002 \001(\0132\017.NetworkAddress2C\n\r"
-    "DeployService\0222\n\013GetNodeInfo\022\020.NodeInfoR"
-    "equest\032\021.NodeInfoResponseB\tZ\007pb/gameb\006pr"
-    "oto3"
+    "e_id\030\002 \001(\r\"8\n\014GetIDRequest\022\023\n\013client_nam"
+    "e\030\001 \001(\t\022\023\n\013server_type\030\002 \001(\t\"\033\n\rGetIDRes"
+    "ponse\022\n\n\002id\030\001 \001(\t\"3\n\020ReleaseIDRequest\022\n\n"
+    "\002id\030\001 \001(\t\022\023\n\013server_type\030\002 \001(\t\"$\n\021Releas"
+    "eIDResponse\022\017\n\007success\030\001 \001(\0102\237\001\n\rDeployS"
+    "ervice\0222\n\013GetNodeInfo\022\020.NodeInfoRequest\032"
+    "\021.NodeInfoResponse\022&\n\005GetID\022\r.GetIDReque"
+    "st\032\016.GetIDResponse\0222\n\tReleaseID\022\021.Releas"
+    "eIDRequest\032\022.ReleaseIDResponseB\tZ\007pb/gam"
+    "eb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_deps[2] =
     {
@@ -752,7 +750,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdeploy_5fservice_2epr
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto = {
     false,
     false,
-    1844,
+    1809,
     descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto,
     "proto/common/deploy_service.proto",
     &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
@@ -4546,98 +4544,83 @@ void NodeInfoResponse::InternalSwap(NodeInfoResponse* PROTOBUF_RESTRICT other) {
 }
 // ===================================================================
 
-class NewGameNodeRequest::_Internal {
+class GetIDRequest::_Internal {
  public:
-  using HasBits = decltype(std::declval<NewGameNodeRequest>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_._has_bits_);
 };
 
-NewGameNodeRequest::NewGameNodeRequest(::google::protobuf::Arena* arena)
+GetIDRequest::GetIDRequest(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:NewGameNodeRequest)
+  // @@protoc_insertion_point(arena_constructor:GetIDRequest)
 }
-inline PROTOBUF_NDEBUG_INLINE NewGameNodeRequest::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE GetIDRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
-      : _has_bits_{from._has_bits_},
+      : client_name_(arena, from.client_name_),
+        server_type_(arena, from.server_type_),
         _cached_size_{0} {}
 
-NewGameNodeRequest::NewGameNodeRequest(
+GetIDRequest::GetIDRequest(
     ::google::protobuf::Arena* arena,
-    const NewGameNodeRequest& from)
+    const GetIDRequest& from)
     : ::google::protobuf::Message(arena) {
-  NewGameNodeRequest* const _this = this;
+  GetIDRequest* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.my_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::game_node_db>(
-                              arena, *from._impl_.my_info_)
-                        : nullptr;
-  _impl_.zone_id_ = from._impl_.zone_id_;
 
-  // @@protoc_insertion_point(copy_constructor:NewGameNodeRequest)
+  // @@protoc_insertion_point(copy_constructor:GetIDRequest)
 }
-inline PROTOBUF_NDEBUG_INLINE NewGameNodeRequest::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE GetIDRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
+      : client_name_(arena),
+        server_type_(arena),
+        _cached_size_{0} {}
 
-inline void NewGameNodeRequest::SharedCtor(::_pb::Arena* arena) {
+inline void GetIDRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, my_info_),
-           0,
-           offsetof(Impl_, zone_id_) -
-               offsetof(Impl_, my_info_) +
-               sizeof(Impl_::zone_id_));
 }
-NewGameNodeRequest::~NewGameNodeRequest() {
-  // @@protoc_insertion_point(destructor:NewGameNodeRequest)
+GetIDRequest::~GetIDRequest() {
+  // @@protoc_insertion_point(destructor:GetIDRequest)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void NewGameNodeRequest::SharedDtor() {
+inline void GetIDRequest::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.my_info_;
+  _impl_.client_name_.Destroy();
+  _impl_.server_type_.Destroy();
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-NewGameNodeRequest::GetClassData() const {
+GetIDRequest::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_._cached_size_),
               false,
           },
-          &NewGameNodeRequest::MergeImpl,
-          &NewGameNodeRequest::kDescriptorMethods,
+          &GetIDRequest::MergeImpl,
+          &GetIDRequest::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void NewGameNodeRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:NewGameNodeRequest)
+PROTOBUF_NOINLINE void GetIDRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:GetIDRequest)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.my_info_ != nullptr);
-    _impl_.my_info_->Clear();
-  }
-  _impl_.zone_id_ = 0u;
-  _impl_._has_bits_.Clear();
+  _impl_.client_name_.ClearToEmpty();
+  _impl_.server_type_.ClearToEmpty();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* NewGameNodeRequest::_InternalParse(
+const char* GetIDRequest::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -4645,63 +4628,69 @@ const char* NewGameNodeRequest::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 1, 0, 2> NewGameNodeRequest::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 43, 2> GetIDRequest::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_._has_bits_),
+    0,  // no _has_bits_
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
     4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
     2,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_NewGameNodeRequest_default_instance_._instance,
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_GetIDRequest_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::NewGameNodeRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::GetIDRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .game_node_db my_info = 2;
-    {::_pbi::TcParser::FastMtS1,
-     {18, 0, 0, PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_.my_info_)}},
-    // uint32 zone_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NewGameNodeRequest, _impl_.zone_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_.zone_id_)}},
+    // string server_type = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.server_type_)}},
+    // string client_name = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.client_name_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint32 zone_id = 1;
-    {PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_.zone_id_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // .game_node_db my_info = 2;
-    {PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_.my_info_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-  }}, {{
-    {::_pbi::TcParser::GetTable<::game_node_db>()},
-  }}, {{
+    // string client_name = 1;
+    {PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.client_name_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string server_type = 2;
+    {PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.server_type_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\14\13\13\0\0\0\0\0"
+    "GetIDRequest"
+    "client_name"
+    "server_type"
   }},
 };
 
-::uint8_t* NewGameNodeRequest::_InternalSerialize(
+::uint8_t* GetIDRequest::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:NewGameNodeRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:GetIDRequest)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint32 zone_id = 1;
-  if (this->_internal_zone_id() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        1, this->_internal_zone_id(), target);
+  // string client_name = 1;
+  if (!this->_internal_client_name().empty()) {
+    const std::string& _s = this->_internal_client_name();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GetIDRequest.client_name");
+    target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
-  cached_has_bits = _impl_._has_bits_[0];
-  // .game_node_db my_info = 2;
-  if (cached_has_bits & 0x00000001u) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        2, *_impl_.my_info_, _impl_.my_info_->GetCachedSize(), target, stream);
+  // string server_type = 2;
+  if (!this->_internal_server_type().empty()) {
+    const std::string& _s = this->_internal_server_type();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GetIDRequest.server_type");
+    target = stream->WriteStringMaybeAliased(2, _s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4709,193 +4698,151 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> NewGameNodeRequest::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:NewGameNodeRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:GetIDRequest)
   return target;
 }
 
-::size_t NewGameNodeRequest::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:NewGameNodeRequest)
+::size_t GetIDRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:GetIDRequest)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .game_node_db my_info = 2;
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.my_info_);
+  // string client_name = 1;
+  if (!this->_internal_client_name().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_client_name());
   }
 
-  // uint32 zone_id = 1;
-  if (this->_internal_zone_id() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_zone_id());
+  // string server_type = 2;
+  if (!this->_internal_server_type().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_server_type());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
 
-void NewGameNodeRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<NewGameNodeRequest*>(&to_msg);
-  auto& from = static_cast<const NewGameNodeRequest&>(from_msg);
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:NewGameNodeRequest)
+void GetIDRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GetIDRequest*>(&to_msg);
+  auto& from = static_cast<const GetIDRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:GetIDRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.my_info_ != nullptr);
-    if (_this->_impl_.my_info_ == nullptr) {
-      _this->_impl_.my_info_ =
-          ::google::protobuf::Message::CopyConstruct<::game_node_db>(arena, *from._impl_.my_info_);
-    } else {
-      _this->_impl_.my_info_->MergeFrom(*from._impl_.my_info_);
-    }
+  if (!from._internal_client_name().empty()) {
+    _this->_internal_set_client_name(from._internal_client_name());
   }
-  if (from._internal_zone_id() != 0) {
-    _this->_impl_.zone_id_ = from._impl_.zone_id_;
+  if (!from._internal_server_type().empty()) {
+    _this->_internal_set_server_type(from._internal_server_type());
   }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void NewGameNodeRequest::CopyFrom(const NewGameNodeRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:NewGameNodeRequest)
+void GetIDRequest::CopyFrom(const GetIDRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:GetIDRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool NewGameNodeRequest::IsInitialized() const {
+PROTOBUF_NOINLINE bool GetIDRequest::IsInitialized() const {
   return true;
 }
 
-void NewGameNodeRequest::InternalSwap(NewGameNodeRequest* PROTOBUF_RESTRICT other) {
+void GetIDRequest::InternalSwap(GetIDRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_.zone_id_)
-      + sizeof(NewGameNodeRequest::_impl_.zone_id_)
-      - PROTOBUF_FIELD_OFFSET(NewGameNodeRequest, _impl_.my_info_)>(
-          reinterpret_cast<char*>(&_impl_.my_info_),
-          reinterpret_cast<char*>(&other->_impl_.my_info_));
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.client_name_, &other->_impl_.client_name_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.server_type_, &other->_impl_.server_type_, arena);
 }
 
-::google::protobuf::Metadata NewGameNodeRequest::GetMetadata() const {
+::google::protobuf::Metadata GetIDRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_getter,
                                    &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
                                    file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[15]);
 }
 // ===================================================================
 
-class NewGameNodeResponse::_Internal {
+class GetIDResponse::_Internal {
  public:
-  using HasBits = decltype(std::declval<NewGameNodeResponse>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_._has_bits_);
 };
 
-NewGameNodeResponse::NewGameNodeResponse(::google::protobuf::Arena* arena)
+GetIDResponse::GetIDResponse(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:NewGameNodeResponse)
+  // @@protoc_insertion_point(arena_constructor:GetIDResponse)
 }
-inline PROTOBUF_NDEBUG_INLINE NewGameNodeResponse::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE GetIDResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
-      : _has_bits_{from._has_bits_},
+      : id_(arena, from.id_),
         _cached_size_{0} {}
 
-NewGameNodeResponse::NewGameNodeResponse(
+GetIDResponse::GetIDResponse(
     ::google::protobuf::Arena* arena,
-    const NewGameNodeResponse& from)
+    const GetIDResponse& from)
     : ::google::protobuf::Message(arena) {
-  NewGameNodeResponse* const _this = this;
+  GetIDResponse* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.my_info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::game_node_db>(
-                              arena, *from._impl_.my_info_)
-                        : nullptr;
-  _impl_.redis_info_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::redis_node_db>(
-                              arena, *from._impl_.redis_info_)
-                        : nullptr;
-  _impl_.error_no_ = from._impl_.error_no_;
 
-  // @@protoc_insertion_point(copy_constructor:NewGameNodeResponse)
+  // @@protoc_insertion_point(copy_constructor:GetIDResponse)
 }
-inline PROTOBUF_NDEBUG_INLINE NewGameNodeResponse::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE GetIDResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
+      : id_(arena),
+        _cached_size_{0} {}
 
-inline void NewGameNodeResponse::SharedCtor(::_pb::Arena* arena) {
+inline void GetIDResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, my_info_),
-           0,
-           offsetof(Impl_, error_no_) -
-               offsetof(Impl_, my_info_) +
-               sizeof(Impl_::error_no_));
 }
-NewGameNodeResponse::~NewGameNodeResponse() {
-  // @@protoc_insertion_point(destructor:NewGameNodeResponse)
+GetIDResponse::~GetIDResponse() {
+  // @@protoc_insertion_point(destructor:GetIDResponse)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void NewGameNodeResponse::SharedDtor() {
+inline void GetIDResponse::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.my_info_;
-  delete _impl_.redis_info_;
+  _impl_.id_.Destroy();
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-NewGameNodeResponse::GetClassData() const {
+GetIDResponse::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_._cached_size_),
               false,
           },
-          &NewGameNodeResponse::MergeImpl,
-          &NewGameNodeResponse::kDescriptorMethods,
+          &GetIDResponse::MergeImpl,
+          &GetIDResponse::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void NewGameNodeResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:NewGameNodeResponse)
+PROTOBUF_NOINLINE void GetIDResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:GetIDResponse)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000003u) {
-    if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(_impl_.my_info_ != nullptr);
-      _impl_.my_info_->Clear();
-    }
-    if (cached_has_bits & 0x00000002u) {
-      ABSL_DCHECK(_impl_.redis_info_ != nullptr);
-      _impl_.redis_info_->Clear();
-    }
-  }
-  _impl_.error_no_ = 0u;
-  _impl_._has_bits_.Clear();
+  _impl_.id_.ClearToEmpty();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* NewGameNodeResponse::_InternalParse(
+const char* GetIDResponse::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -4903,251 +4850,7 @@ const char* NewGameNodeResponse::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 3, 2, 0, 2> NewGameNodeResponse::_table_ = {
-  {
-    PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_._has_bits_),
-    0, // no _extensions_
-    5, 8,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967276,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
-    2,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_NewGameNodeResponse_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::NewGameNodeResponse>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // uint32 error_no = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NewGameNodeResponse, _impl_.error_no_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_.error_no_)}},
-    // .game_node_db my_info = 1;
-    {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_.my_info_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // .game_node_db my_info = 1;
-    {PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_.my_info_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // uint32 error_no = 2;
-    {PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_.error_no_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // .redis_node_db redis_info = 5;
-    {PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_.redis_info_), _Internal::kHasBitsOffset + 1, 1,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-  }}, {{
-    {::_pbi::TcParser::GetTable<::game_node_db>()},
-    {::_pbi::TcParser::GetTable<::redis_node_db>()},
-  }}, {{
-  }},
-};
-
-::uint8_t* NewGameNodeResponse::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:NewGameNodeResponse)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  // .game_node_db my_info = 1;
-  if (cached_has_bits & 0x00000001u) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *_impl_.my_info_, _impl_.my_info_->GetCachedSize(), target, stream);
-  }
-
-  // uint32 error_no = 2;
-  if (this->_internal_error_no() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        2, this->_internal_error_no(), target);
-  }
-
-  // .redis_node_db redis_info = 5;
-  if (cached_has_bits & 0x00000002u) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        5, *_impl_.redis_info_, _impl_.redis_info_->GetCachedSize(), target, stream);
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:NewGameNodeResponse)
-  return target;
-}
-
-::size_t NewGameNodeResponse::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:NewGameNodeResponse)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000003u) {
-    // .game_node_db my_info = 1;
-    if (cached_has_bits & 0x00000001u) {
-      total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.my_info_);
-    }
-
-    // .redis_node_db redis_info = 5;
-    if (cached_has_bits & 0x00000002u) {
-      total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.redis_info_);
-    }
-
-  }
-  // uint32 error_no = 2;
-  if (this->_internal_error_no() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_error_no());
-  }
-
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void NewGameNodeResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<NewGameNodeResponse*>(&to_msg);
-  auto& from = static_cast<const NewGameNodeResponse&>(from_msg);
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:NewGameNodeResponse)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000003u) {
-    if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(from._impl_.my_info_ != nullptr);
-      if (_this->_impl_.my_info_ == nullptr) {
-        _this->_impl_.my_info_ =
-            ::google::protobuf::Message::CopyConstruct<::game_node_db>(arena, *from._impl_.my_info_);
-      } else {
-        _this->_impl_.my_info_->MergeFrom(*from._impl_.my_info_);
-      }
-    }
-    if (cached_has_bits & 0x00000002u) {
-      ABSL_DCHECK(from._impl_.redis_info_ != nullptr);
-      if (_this->_impl_.redis_info_ == nullptr) {
-        _this->_impl_.redis_info_ =
-            ::google::protobuf::Message::CopyConstruct<::redis_node_db>(arena, *from._impl_.redis_info_);
-      } else {
-        _this->_impl_.redis_info_->MergeFrom(*from._impl_.redis_info_);
-      }
-    }
-  }
-  if (from._internal_error_no() != 0) {
-    _this->_impl_.error_no_ = from._impl_.error_no_;
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void NewGameNodeResponse::CopyFrom(const NewGameNodeResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:NewGameNodeResponse)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-PROTOBUF_NOINLINE bool NewGameNodeResponse::IsInitialized() const {
-  return true;
-}
-
-void NewGameNodeResponse::InternalSwap(NewGameNodeResponse* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_.error_no_)
-      + sizeof(NewGameNodeResponse::_impl_.error_no_)
-      - PROTOBUF_FIELD_OFFSET(NewGameNodeResponse, _impl_.my_info_)>(
-          reinterpret_cast<char*>(&_impl_.my_info_),
-          reinterpret_cast<char*>(&other->_impl_.my_info_));
-}
-
-::google::protobuf::Metadata NewGameNodeResponse::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_getter,
-                                   &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
-                                   file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[16]);
-}
-// ===================================================================
-
-class GetGameNodeInfoRequest::_Internal {
- public:
-};
-
-GetGameNodeInfoRequest::GetGameNodeInfoRequest(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:GetGameNodeInfoRequest)
-}
-GetGameNodeInfoRequest::GetGameNodeInfoRequest(
-    ::google::protobuf::Arena* arena, const GetGameNodeInfoRequest& from)
-    : GetGameNodeInfoRequest(arena) {
-  MergeFrom(from);
-}
-inline PROTOBUF_NDEBUG_INLINE GetGameNodeInfoRequest::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
-
-inline void GetGameNodeInfoRequest::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.node_id_ = {};
-}
-GetGameNodeInfoRequest::~GetGameNodeInfoRequest() {
-  // @@protoc_insertion_point(destructor:GetGameNodeInfoRequest)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void GetGameNodeInfoRequest::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.~Impl_();
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-GetGameNodeInfoRequest::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(GetGameNodeInfoRequest, _impl_._cached_size_),
-              false,
-          },
-          &GetGameNodeInfoRequest::MergeImpl,
-          &GetGameNodeInfoRequest::kDescriptorMethods,
-      };
-  return &_data_;
-}
-PROTOBUF_NOINLINE void GetGameNodeInfoRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:GetGameNodeInfoRequest)
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.node_id_ = 0u;
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-const char* GetGameNodeInfoRequest::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
-  return ptr;
-}
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetGameNodeInfoRequest::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 24, 2> GetIDResponse::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -5158,39 +4861,43 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetGameNodeInfoRequest::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_GetGameNodeInfoRequest_default_instance_._instance,
+    &_GetIDResponse_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::GetGameNodeInfoRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::GetIDResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 node_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetGameNodeInfoRequest, _impl_.node_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(GetGameNodeInfoRequest, _impl_.node_id_)}},
+    // string id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint32 node_id = 1;
-    {PROTOBUF_FIELD_OFFSET(GetGameNodeInfoRequest, _impl_.node_id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // string id = 1;
+    {PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
+    "\15\2\0\0\0\0\0\0"
+    "GetIDResponse"
+    "id"
   }},
 };
 
-::uint8_t* GetGameNodeInfoRequest::_InternalSerialize(
+::uint8_t* GetIDResponse::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:GetGameNodeInfoRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:GetIDResponse)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint32 node_id = 1;
-  if (this->_internal_node_id() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        1, this->_internal_node_id(), target);
+  // string id = 1;
+  if (!this->_internal_id().empty()) {
+    const std::string& _s = this->_internal_id();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GetIDResponse.id");
+    target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5198,163 +4905,145 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetGameNodeInfoRequest::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:GetGameNodeInfoRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:GetIDResponse)
   return target;
 }
 
-::size_t GetGameNodeInfoRequest::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:GetGameNodeInfoRequest)
+::size_t GetIDResponse::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:GetIDResponse)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // uint32 node_id = 1;
-  if (this->_internal_node_id() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_node_id());
+  // string id = 1;
+  if (!this->_internal_id().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_id());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
 
-void GetGameNodeInfoRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<GetGameNodeInfoRequest*>(&to_msg);
-  auto& from = static_cast<const GetGameNodeInfoRequest&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:GetGameNodeInfoRequest)
+void GetIDResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<GetIDResponse*>(&to_msg);
+  auto& from = static_cast<const GetIDResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:GetIDResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_node_id() != 0) {
-    _this->_impl_.node_id_ = from._impl_.node_id_;
+  if (!from._internal_id().empty()) {
+    _this->_internal_set_id(from._internal_id());
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void GetGameNodeInfoRequest::CopyFrom(const GetGameNodeInfoRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:GetGameNodeInfoRequest)
+void GetIDResponse::CopyFrom(const GetIDResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:GetIDResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool GetGameNodeInfoRequest::IsInitialized() const {
+PROTOBUF_NOINLINE bool GetIDResponse::IsInitialized() const {
   return true;
 }
 
-void GetGameNodeInfoRequest::InternalSwap(GetGameNodeInfoRequest* PROTOBUF_RESTRICT other) {
+void GetIDResponse::InternalSwap(GetIDResponse* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.node_id_, other->_impl_.node_id_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.id_, &other->_impl_.id_, arena);
 }
 
-::google::protobuf::Metadata GetGameNodeInfoRequest::GetMetadata() const {
+::google::protobuf::Metadata GetIDResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_getter,
                                    &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
-                                   file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[17]);
+                                   file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[16]);
 }
 // ===================================================================
 
-class GetGameNodeInfoResponse::_Internal {
+class ReleaseIDRequest::_Internal {
  public:
-  using HasBits = decltype(std::declval<GetGameNodeInfoResponse>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-    8 * PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_._has_bits_);
 };
 
-void GetGameNodeInfoResponse::clear_service_addr() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  if (_impl_.service_addr_ != nullptr) _impl_.service_addr_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-GetGameNodeInfoResponse::GetGameNodeInfoResponse(::google::protobuf::Arena* arena)
+ReleaseIDRequest::ReleaseIDRequest(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:GetGameNodeInfoResponse)
+  // @@protoc_insertion_point(arena_constructor:ReleaseIDRequest)
 }
-inline PROTOBUF_NDEBUG_INLINE GetGameNodeInfoResponse::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ReleaseIDRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
-      : _has_bits_{from._has_bits_},
+      : id_(arena, from.id_),
+        server_type_(arena, from.server_type_),
         _cached_size_{0} {}
 
-GetGameNodeInfoResponse::GetGameNodeInfoResponse(
+ReleaseIDRequest::ReleaseIDRequest(
     ::google::protobuf::Arena* arena,
-    const GetGameNodeInfoResponse& from)
+    const ReleaseIDRequest& from)
     : ::google::protobuf::Message(arena) {
-  GetGameNodeInfoResponse* const _this = this;
+  ReleaseIDRequest* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.service_addr_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::NetworkAddress>(
-                              arena, *from._impl_.service_addr_)
-                        : nullptr;
-  _impl_.node_id_ = from._impl_.node_id_;
 
-  // @@protoc_insertion_point(copy_constructor:GetGameNodeInfoResponse)
+  // @@protoc_insertion_point(copy_constructor:ReleaseIDRequest)
 }
-inline PROTOBUF_NDEBUG_INLINE GetGameNodeInfoResponse::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE ReleaseIDRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
+      : id_(arena),
+        server_type_(arena),
+        _cached_size_{0} {}
 
-inline void GetGameNodeInfoResponse::SharedCtor(::_pb::Arena* arena) {
+inline void ReleaseIDRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, service_addr_),
-           0,
-           offsetof(Impl_, node_id_) -
-               offsetof(Impl_, service_addr_) +
-               sizeof(Impl_::node_id_));
 }
-GetGameNodeInfoResponse::~GetGameNodeInfoResponse() {
-  // @@protoc_insertion_point(destructor:GetGameNodeInfoResponse)
+ReleaseIDRequest::~ReleaseIDRequest() {
+  // @@protoc_insertion_point(destructor:ReleaseIDRequest)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void GetGameNodeInfoResponse::SharedDtor() {
+inline void ReleaseIDRequest::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.service_addr_;
+  _impl_.id_.Destroy();
+  _impl_.server_type_.Destroy();
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-GetGameNodeInfoResponse::GetClassData() const {
+ReleaseIDRequest::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               nullptr,  // OnDemandRegisterArenaDtor
-              PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_._cached_size_),
               false,
           },
-          &GetGameNodeInfoResponse::MergeImpl,
-          &GetGameNodeInfoResponse::kDescriptorMethods,
+          &ReleaseIDRequest::MergeImpl,
+          &ReleaseIDRequest::kDescriptorMethods,
       };
   return &_data_;
 }
-PROTOBUF_NOINLINE void GetGameNodeInfoResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:GetGameNodeInfoResponse)
+PROTOBUF_NOINLINE void ReleaseIDRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:ReleaseIDRequest)
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.service_addr_ != nullptr);
-    _impl_.service_addr_->Clear();
-  }
-  _impl_.node_id_ = 0u;
-  _impl_._has_bits_.Clear();
+  _impl_.id_.ClearToEmpty();
+  _impl_.server_type_.ClearToEmpty();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* GetGameNodeInfoResponse::_InternalParse(
+const char* ReleaseIDRequest::_InternalParse(
     const char* ptr, ::_pbi::ParseContext* ctx) {
   ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
@@ -5362,63 +5051,69 @@ const char* GetGameNodeInfoResponse::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 1, 0, 2> GetGameNodeInfoResponse::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 38, 2> ReleaseIDRequest::_table_ = {
   {
-    PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_._has_bits_),
+    0,  // no _has_bits_
     0, // no _extensions_
     2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
     4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
     2,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_GetGameNodeInfoResponse_default_instance_._instance,
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_ReleaseIDRequest_default_instance_._instance,
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::GetGameNodeInfoResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::ReleaseIDRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .NetworkAddress service_addr = 2;
-    {::_pbi::TcParser::FastMtS1,
-     {18, 0, 0, PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_.service_addr_)}},
-    // uint32 node_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetGameNodeInfoResponse, _impl_.node_id_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_.node_id_)}},
+    // string server_type = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_)}},
+    // string id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint32 node_id = 1;
-    {PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_.node_id_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // .NetworkAddress service_addr = 2;
-    {PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_.service_addr_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-  }}, {{
-    {::_pbi::TcParser::GetTable<::NetworkAddress>()},
-  }}, {{
+    // string id = 1;
+    {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string server_type = 2;
+    {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\20\2\13\0\0\0\0\0"
+    "ReleaseIDRequest"
+    "id"
+    "server_type"
   }},
 };
 
-::uint8_t* GetGameNodeInfoResponse::_InternalSerialize(
+::uint8_t* ReleaseIDRequest::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:GetGameNodeInfoResponse)
+  // @@protoc_insertion_point(serialize_to_array_start:ReleaseIDRequest)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint32 node_id = 1;
-  if (this->_internal_node_id() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        1, this->_internal_node_id(), target);
+  // string id = 1;
+  if (!this->_internal_id().empty()) {
+    const std::string& _s = this->_internal_id();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "ReleaseIDRequest.id");
+    target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
-  cached_has_bits = _impl_._has_bits_[0];
-  // .NetworkAddress service_addr = 2;
-  if (cached_has_bits & 0x00000001u) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        2, *_impl_.service_addr_, _impl_.service_addr_->GetCachedSize(), target, stream);
+  // string server_type = 2;
+  if (!this->_internal_server_type().empty()) {
+    const std::string& _s = this->_internal_server_type();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "ReleaseIDRequest.server_type");
+    target = stream->WriteStringMaybeAliased(2, _s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5426,85 +5121,248 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> GetGameNodeInfoResponse::_table_ = {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:GetGameNodeInfoResponse)
+  // @@protoc_insertion_point(serialize_to_array_end:ReleaseIDRequest)
   return target;
 }
 
-::size_t GetGameNodeInfoResponse::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:GetGameNodeInfoResponse)
+::size_t ReleaseIDRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:ReleaseIDRequest)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // .NetworkAddress service_addr = 2;
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.service_addr_);
+  // string id = 1;
+  if (!this->_internal_id().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_id());
   }
 
-  // uint32 node_id = 1;
-  if (this->_internal_node_id() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_node_id());
+  // string server_type = 2;
+  if (!this->_internal_server_type().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_server_type());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
 
-void GetGameNodeInfoResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<GetGameNodeInfoResponse*>(&to_msg);
-  auto& from = static_cast<const GetGameNodeInfoResponse&>(from_msg);
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:GetGameNodeInfoResponse)
+void ReleaseIDRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ReleaseIDRequest*>(&to_msg);
+  auto& from = static_cast<const ReleaseIDRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ReleaseIDRequest)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.service_addr_ != nullptr);
-    if (_this->_impl_.service_addr_ == nullptr) {
-      _this->_impl_.service_addr_ =
-          ::google::protobuf::Message::CopyConstruct<::NetworkAddress>(arena, *from._impl_.service_addr_);
-    } else {
-      _this->_impl_.service_addr_->MergeFrom(*from._impl_.service_addr_);
-    }
+  if (!from._internal_id().empty()) {
+    _this->_internal_set_id(from._internal_id());
   }
-  if (from._internal_node_id() != 0) {
-    _this->_impl_.node_id_ = from._impl_.node_id_;
+  if (!from._internal_server_type().empty()) {
+    _this->_internal_set_server_type(from._internal_server_type());
   }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void GetGameNodeInfoResponse::CopyFrom(const GetGameNodeInfoResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:GetGameNodeInfoResponse)
+void ReleaseIDRequest::CopyFrom(const ReleaseIDRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ReleaseIDRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool GetGameNodeInfoResponse::IsInitialized() const {
+PROTOBUF_NOINLINE bool ReleaseIDRequest::IsInitialized() const {
   return true;
 }
 
-void GetGameNodeInfoResponse::InternalSwap(GetGameNodeInfoResponse* PROTOBUF_RESTRICT other) {
+void ReleaseIDRequest::InternalSwap(ReleaseIDRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_.node_id_)
-      + sizeof(GetGameNodeInfoResponse::_impl_.node_id_)
-      - PROTOBUF_FIELD_OFFSET(GetGameNodeInfoResponse, _impl_.service_addr_)>(
-          reinterpret_cast<char*>(&_impl_.service_addr_),
-          reinterpret_cast<char*>(&other->_impl_.service_addr_));
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.id_, &other->_impl_.id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.server_type_, &other->_impl_.server_type_, arena);
 }
 
-::google::protobuf::Metadata GetGameNodeInfoResponse::GetMetadata() const {
+::google::protobuf::Metadata ReleaseIDRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_getter,
+                                   &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
+                                   file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[17]);
+}
+// ===================================================================
+
+class ReleaseIDResponse::_Internal {
+ public:
+};
+
+ReleaseIDResponse::ReleaseIDResponse(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:ReleaseIDResponse)
+}
+ReleaseIDResponse::ReleaseIDResponse(
+    ::google::protobuf::Arena* arena, const ReleaseIDResponse& from)
+    : ReleaseIDResponse(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE ReleaseIDResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void ReleaseIDResponse::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.success_ = {};
+}
+ReleaseIDResponse::~ReleaseIDResponse() {
+  // @@protoc_insertion_point(destructor:ReleaseIDResponse)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void ReleaseIDResponse::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+ReleaseIDResponse::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(ReleaseIDResponse, _impl_._cached_size_),
+              false,
+          },
+          &ReleaseIDResponse::MergeImpl,
+          &ReleaseIDResponse::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void ReleaseIDResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:ReleaseIDResponse)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.success_ = false;
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* ReleaseIDResponse::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> ReleaseIDResponse::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_ReleaseIDResponse_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::ReleaseIDResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bool success = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ReleaseIDResponse, _impl_.success_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDResponse, _impl_.success_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // bool success = 1;
+    {PROTOBUF_FIELD_OFFSET(ReleaseIDResponse, _impl_.success_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* ReleaseIDResponse::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:ReleaseIDResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // bool success = 1;
+  if (this->_internal_success() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(
+        1, this->_internal_success(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:ReleaseIDResponse)
+  return target;
+}
+
+::size_t ReleaseIDResponse::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:ReleaseIDResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // bool success = 1;
+  if (this->_internal_success() != 0) {
+    total_size += 2;
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void ReleaseIDResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ReleaseIDResponse*>(&to_msg);
+  auto& from = static_cast<const ReleaseIDResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:ReleaseIDResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_success() != 0) {
+    _this->_impl_.success_ = from._impl_.success_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ReleaseIDResponse::CopyFrom(const ReleaseIDResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:ReleaseIDResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool ReleaseIDResponse::IsInitialized() const {
+  return true;
+}
+
+void ReleaseIDResponse::InternalSwap(ReleaseIDResponse* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.success_, other->_impl_.success_);
+}
+
+::google::protobuf::Metadata ReleaseIDResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_getter,
                                    &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
                                    file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[18]);

@@ -73,16 +73,12 @@ func generateCppFiles(fileName, outputDir string) error {
 			"--cpp_out="+outputDir,
 			fileName,
 			"-I="+config.ProtoParentIncludePathDir,
-			"-I="+config.ProtoDir+"common/",
-			"-I="+config.ProtoDir+"logic/",
 			"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 	} else {
 		cmd = exec.Command("./protoc.exe",
 			"--cpp_out="+outputDir,
 			fileName,
 			"-I="+config.ProtoParentIncludePathDir,
-			"-I="+config.ProtoDir+"common/",
-			"-I="+config.ProtoDir+"logic/",
 			"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 	}
 
@@ -145,8 +141,6 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 					"--plugin=protoc-gen-grpc=grpc_cpp_plugin",
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoDir+"common/",
-					"--proto_path="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				// Command for other systems (presumably Windows)
@@ -155,8 +149,6 @@ func BuildProtoGrpc(protoPath string, protoMd5Path string) (err error) {
 					"--plugin=protoc-gen-grpc=grpc_cpp_plugin.exe",
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"--proto_path="+config.ProtoDir+"common/",
-					"--proto_path="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -222,8 +214,6 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.LoginDirectory,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				// Command for other systems (presumably Windows)
@@ -231,8 +221,6 @@ func BuildProtoGoLogin(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.LoginDirectory,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -283,8 +271,6 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 			defer util.Wg.Done()
 
 			fileName := protoPath + fd.Name()
-			dstFileName := config.DbGoGameDirectory + fd.Name()
-			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Determine the operating system type
 			sysType := runtime.GOOS
@@ -295,8 +281,6 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.DbGoDirectory,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				// Command for other systems (presumably Windows)
@@ -304,8 +288,6 @@ func BuildProtoGoDb(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.DbGoDirectory,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -348,9 +330,6 @@ func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
 			// Construct file paths
 			fileName := protoPath + fd.Name()
 
-			dstFileName := config.DbGoGameDirectory + fd.Name()
-			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
-
 			// Determine the operating system type
 			sysType := runtime.GOOS
 			var cmd *exec.Cmd
@@ -361,8 +340,6 @@ func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
 					"--descriptor_set_out="+config.DBDescDirectory+fd.Name()+config.ProtoDescExtension,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				// Command for other systems (presumably Windows)
@@ -370,8 +347,6 @@ func BuildProtoDesc(protoPath string, protoMd5Path string) (err error) {
 					"--descriptor_set_out="+config.DBDescDirectory+fd.Name()+config.ProtoDescExtension,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -418,8 +393,6 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 
 			// Construct file paths
 			fileName := protoPath + fd.Name()
-			dstFileName := config.RobotGoGamePbDirectory + fd.Name()
-			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoGoEx, 1)
 
 			// Determine the operating system type
 			sysType := runtime.GOOS
@@ -430,8 +403,6 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.RobotGoOutputDirectory,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			} else {
 				// Command for other systems (presumably Windows)
@@ -439,8 +410,6 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 					"--go_out="+config.RobotGoOutputDirectory,
 					fileName,
 					"--proto_path="+config.ProtoParentIncludePathDir,
-					"-I="+config.ProtoDir+"common/",
-					"-I="+config.ProtoDir+"logic/",
 					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
 			}
 
@@ -458,6 +427,72 @@ func BuildProtoGoClient(protoPath string, protoMd5Path string) (err error) {
 		}(fd)
 	}
 
+	return err
+}
+
+func BuildProtoGoDeploy(protoPath string, protoMd5Path string) (err error) {
+	// Read directory entries
+	var fds []os.DirEntry
+	if fds, err = os.ReadDir(protoPath); err != nil {
+		return err
+	}
+
+	// Process each protobuf file in the directory
+	for _, fd := range fds {
+		if !util.IsProtoFile(fd) {
+			continue
+		}
+		// Skip the DbProtoName and check for specific directories
+		if fd.Name() == config.DbProtoFileName ||
+			fd.Name() == config.GameMysqlDBProtoFileName ||
+			fd.Name() == config.LoginServiceProtoFileName {
+			continue
+		}
+
+		if !(strings.Contains(protoPath, config.ProtoDirectoryNames[config.CommonProtoDirIndex])) {
+			return
+		}
+
+		// Concurrent execution for each file
+		util.Wg.Add(1)
+		go func(fd os.DirEntry) {
+			defer util.Wg.Done()
+
+			// Construct file paths
+			fileName := protoPath + fd.Name()
+
+			// Determine the operating system type
+			sysType := runtime.GOOS
+			var cmd *exec.Cmd
+			if sysType == `linux` {
+				// Command for Linux
+				cmd = exec.Command("protoc",
+					"--go_out="+config.DeployDirectory,
+					fileName,
+					"--proto_path="+config.ProtoParentIncludePathDir,
+					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+			} else {
+				// Command for other systems (presumably Windows)
+				cmd = exec.Command("./protoc.exe",
+					"--go_out="+config.DeployDirectory,
+					fileName,
+					"--proto_path="+config.ProtoParentIncludePathDir,
+					"--proto_path="+config.ProjectDir+"/third_party/protobuf/src/")
+			}
+
+			// Execute the command and handle errors
+			var out bytes.Buffer
+			var stderr bytes.Buffer
+			cmd.Stdout = &out
+			cmd.Stderr = &stderr
+			err = cmd.Run()
+			if err != nil {
+				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+				log.Fatal(err)
+			}
+
+		}(fd)
+	}
 	return err
 }
 
@@ -495,6 +530,13 @@ func BuildAllProtoc() {
 
 		go func(i int) {
 			err := BuildProtoGoDb(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(i)
+
+		go func(i int) {
+			err := BuildProtoGoDeploy(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
 			if err != nil {
 				log.Fatal(err)
 			}

@@ -926,17 +926,18 @@ func (x *NodeInfoResponse) GetNodeId() uint32 {
 	return 0
 }
 
-type NewGameNodeRequest struct {
+// 请求分配 ID
+type GetIDRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ZoneId uint32      `protobuf:"varint,1,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
-	MyInfo *GameNodeDb `protobuf:"bytes,2,opt,name=my_info,json=myInfo,proto3" json:"my_info,omitempty"`
+	ClientName string `protobuf:"bytes,1,opt,name=client_name,json=clientName,proto3" json:"client_name,omitempty"`
+	ServerType string `protobuf:"bytes,2,opt,name=server_type,json=serverType,proto3" json:"server_type,omitempty"` // 服务器类型，例如 "gate" 或 "scene"
 }
 
-func (x *NewGameNodeRequest) Reset() {
-	*x = NewGameNodeRequest{}
+func (x *GetIDRequest) Reset() {
+	*x = GetIDRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_common_deploy_service_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -944,13 +945,13 @@ func (x *NewGameNodeRequest) Reset() {
 	}
 }
 
-func (x *NewGameNodeRequest) String() string {
+func (x *GetIDRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NewGameNodeRequest) ProtoMessage() {}
+func (*GetIDRequest) ProtoMessage() {}
 
-func (x *NewGameNodeRequest) ProtoReflect() protoreflect.Message {
+func (x *GetIDRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_deploy_service_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -962,37 +963,36 @@ func (x *NewGameNodeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NewGameNodeRequest.ProtoReflect.Descriptor instead.
-func (*NewGameNodeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetIDRequest.ProtoReflect.Descriptor instead.
+func (*GetIDRequest) Descriptor() ([]byte, []int) {
 	return file_proto_common_deploy_service_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *NewGameNodeRequest) GetZoneId() uint32 {
+func (x *GetIDRequest) GetClientName() string {
 	if x != nil {
-		return x.ZoneId
+		return x.ClientName
 	}
-	return 0
+	return ""
 }
 
-func (x *NewGameNodeRequest) GetMyInfo() *GameNodeDb {
+func (x *GetIDRequest) GetServerType() string {
 	if x != nil {
-		return x.MyInfo
+		return x.ServerType
 	}
-	return nil
+	return ""
 }
 
-type NewGameNodeResponse struct {
+// 返回的 ID
+type GetIDResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MyInfo    *GameNodeDb  `protobuf:"bytes,1,opt,name=my_info,json=myInfo,proto3" json:"my_info,omitempty"`
-	ErrorNo   uint32       `protobuf:"varint,2,opt,name=error_no,json=errorNo,proto3" json:"error_no,omitempty"`
-	RedisInfo *RedisNodeDb `protobuf:"bytes,5,opt,name=redis_info,json=redisInfo,proto3" json:"redis_info,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // 分配的唯一 ID
 }
 
-func (x *NewGameNodeResponse) Reset() {
-	*x = NewGameNodeResponse{}
+func (x *GetIDResponse) Reset() {
+	*x = GetIDResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_common_deploy_service_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1000,13 +1000,13 @@ func (x *NewGameNodeResponse) Reset() {
 	}
 }
 
-func (x *NewGameNodeResponse) String() string {
+func (x *GetIDResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NewGameNodeResponse) ProtoMessage() {}
+func (*GetIDResponse) ProtoMessage() {}
 
-func (x *NewGameNodeResponse) ProtoReflect() protoreflect.Message {
+func (x *GetIDResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_deploy_service_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1018,42 +1018,30 @@ func (x *NewGameNodeResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NewGameNodeResponse.ProtoReflect.Descriptor instead.
-func (*NewGameNodeResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetIDResponse.ProtoReflect.Descriptor instead.
+func (*GetIDResponse) Descriptor() ([]byte, []int) {
 	return file_proto_common_deploy_service_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *NewGameNodeResponse) GetMyInfo() *GameNodeDb {
+func (x *GetIDResponse) GetId() string {
 	if x != nil {
-		return x.MyInfo
+		return x.Id
 	}
-	return nil
+	return ""
 }
 
-func (x *NewGameNodeResponse) GetErrorNo() uint32 {
-	if x != nil {
-		return x.ErrorNo
-	}
-	return 0
-}
-
-func (x *NewGameNodeResponse) GetRedisInfo() *RedisNodeDb {
-	if x != nil {
-		return x.RedisInfo
-	}
-	return nil
-}
-
-type GetGameNodeInfoRequest struct {
+// 请求释放 ID
+type ReleaseIDRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NodeId uint32 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Id         string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                   // 要释放的 ID
+	ServerType string `protobuf:"bytes,2,opt,name=server_type,json=serverType,proto3" json:"server_type,omitempty"` // 服务器类型
 }
 
-func (x *GetGameNodeInfoRequest) Reset() {
-	*x = GetGameNodeInfoRequest{}
+func (x *ReleaseIDRequest) Reset() {
+	*x = ReleaseIDRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_common_deploy_service_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1061,13 +1049,13 @@ func (x *GetGameNodeInfoRequest) Reset() {
 	}
 }
 
-func (x *GetGameNodeInfoRequest) String() string {
+func (x *ReleaseIDRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetGameNodeInfoRequest) ProtoMessage() {}
+func (*ReleaseIDRequest) ProtoMessage() {}
 
-func (x *GetGameNodeInfoRequest) ProtoReflect() protoreflect.Message {
+func (x *ReleaseIDRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_deploy_service_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1079,29 +1067,36 @@ func (x *GetGameNodeInfoRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetGameNodeInfoRequest.ProtoReflect.Descriptor instead.
-func (*GetGameNodeInfoRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReleaseIDRequest.ProtoReflect.Descriptor instead.
+func (*ReleaseIDRequest) Descriptor() ([]byte, []int) {
 	return file_proto_common_deploy_service_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *GetGameNodeInfoRequest) GetNodeId() uint32 {
+func (x *ReleaseIDRequest) GetId() string {
 	if x != nil {
-		return x.NodeId
+		return x.Id
 	}
-	return 0
+	return ""
 }
 
-type GetGameNodeInfoResponse struct {
+func (x *ReleaseIDRequest) GetServerType() string {
+	if x != nil {
+		return x.ServerType
+	}
+	return ""
+}
+
+// 返回的响应
+type ReleaseIDResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NodeId      uint32          `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	ServiceAddr *NetworkAddress `protobuf:"bytes,2,opt,name=service_addr,json=serviceAddr,proto3" json:"service_addr,omitempty"`
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功回收 ID
 }
 
-func (x *GetGameNodeInfoResponse) Reset() {
-	*x = GetGameNodeInfoResponse{}
+func (x *ReleaseIDResponse) Reset() {
+	*x = ReleaseIDResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_common_deploy_service_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1109,13 +1104,13 @@ func (x *GetGameNodeInfoResponse) Reset() {
 	}
 }
 
-func (x *GetGameNodeInfoResponse) String() string {
+func (x *ReleaseIDResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetGameNodeInfoResponse) ProtoMessage() {}
+func (*ReleaseIDResponse) ProtoMessage() {}
 
-func (x *GetGameNodeInfoResponse) ProtoReflect() protoreflect.Message {
+func (x *ReleaseIDResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_common_deploy_service_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1127,23 +1122,16 @@ func (x *GetGameNodeInfoResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetGameNodeInfoResponse.ProtoReflect.Descriptor instead.
-func (*GetGameNodeInfoResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReleaseIDResponse.ProtoReflect.Descriptor instead.
+func (*ReleaseIDResponse) Descriptor() ([]byte, []int) {
 	return file_proto_common_deploy_service_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *GetGameNodeInfoResponse) GetNodeId() uint32 {
+func (x *ReleaseIDResponse) GetSuccess() bool {
 	if x != nil {
-		return x.NodeId
+		return x.Success
 	}
-	return 0
-}
-
-func (x *GetGameNodeInfoResponse) GetServiceAddr() *NetworkAddress {
-	if x != nil {
-		return x.ServiceAddr
-	}
-	return nil
+	return false
 }
 
 var File_proto_common_deploy_service_proto protoreflect.FileDescriptor
@@ -1257,37 +1245,33 @@ var file_proto_common_deploy_service_proto_rawDesc = []byte{
 	0x24, 0x0a, 0x04, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e,
 	0x6e, 0x6f, 0x64, 0x65, 0x73, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x52,
 	0x04, 0x69, 0x6e, 0x66, 0x6f, 0x12, 0x17, 0x0a, 0x07, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x64,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x6e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x22, 0x55,
-	0x0a, 0x12, 0x4e, 0x65, 0x77, 0x47, 0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x7a, 0x6f, 0x6e, 0x65, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x7a, 0x6f, 0x6e, 0x65, 0x49, 0x64, 0x12, 0x26, 0x0a,
-	0x07, 0x6d, 0x79, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d,
-	0x2e, 0x67, 0x61, 0x6d, 0x65, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x64, 0x62, 0x52, 0x06, 0x6d,
-	0x79, 0x49, 0x6e, 0x66, 0x6f, 0x22, 0x87, 0x01, 0x0a, 0x13, 0x4e, 0x65, 0x77, 0x47, 0x61, 0x6d,
-	0x65, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x26, 0x0a,
-	0x07, 0x6d, 0x79, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d,
-	0x2e, 0x67, 0x61, 0x6d, 0x65, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x64, 0x62, 0x52, 0x06, 0x6d,
-	0x79, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x19, 0x0a, 0x08, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x5f, 0x6e,
-	0x6f, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4e, 0x6f,
-	0x12, 0x2d, 0x0a, 0x0a, 0x72, 0x65, 0x64, 0x69, 0x73, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x05,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x72, 0x65, 0x64, 0x69, 0x73, 0x5f, 0x6e, 0x6f, 0x64,
-	0x65, 0x5f, 0x64, 0x62, 0x52, 0x09, 0x72, 0x65, 0x64, 0x69, 0x73, 0x49, 0x6e, 0x66, 0x6f, 0x22,
-	0x31, 0x0a, 0x16, 0x47, 0x65, 0x74, 0x47, 0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e,
-	0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x6e, 0x6f, 0x64,
-	0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x6e, 0x6f, 0x64, 0x65,
-	0x49, 0x64, 0x22, 0x66, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x47, 0x61, 0x6d, 0x65, 0x4e, 0x6f, 0x64,
-	0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x17, 0x0a,
-	0x07, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06,
-	0x6e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x12, 0x32, 0x0a, 0x0c, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x4e,
-	0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x0b, 0x73,
-	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x64, 0x64, 0x72, 0x32, 0x43, 0x0a, 0x0d, 0x44, 0x65,
-	0x70, 0x6c, 0x6f, 0x79, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x32, 0x0a, 0x0b, 0x47,
-	0x65, 0x74, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x10, 0x2e, 0x4e, 0x6f, 0x64,
-	0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x11, 0x2e, 0x4e,
-	0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
-	0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x6e, 0x6f, 0x64, 0x65, 0x49, 0x64, 0x22, 0x50,
+	0x0a, 0x0c, 0x47, 0x65, 0x74, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f,
+	0x0a, 0x0b, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x0a, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x12,
+	0x1f, 0x0a, 0x0b, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65,
+	0x22, 0x1f, 0x0a, 0x0d, 0x47, 0x65, 0x74, 0x49, 0x44, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69,
+	0x64, 0x22, 0x43, 0x0a, 0x10, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x49, 0x44, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f,
+	0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73, 0x65, 0x72, 0x76,
+	0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x22, 0x2d, 0x0a, 0x11, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73,
+	0x65, 0x49, 0x44, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x73,
+	0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75,
+	0x63, 0x63, 0x65, 0x73, 0x73, 0x32, 0x9f, 0x01, 0x0a, 0x0d, 0x44, 0x65, 0x70, 0x6c, 0x6f, 0x79,
+	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x32, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x4e, 0x6f,
+	0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x10, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66,
+	0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x11, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49,
+	0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x26, 0x0a, 0x05, 0x47,
+	0x65, 0x74, 0x49, 0x44, 0x12, 0x0d, 0x2e, 0x47, 0x65, 0x74, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x0e, 0x2e, 0x47, 0x65, 0x74, 0x49, 0x44, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x32, 0x0a, 0x09, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x49, 0x44,
+	0x12, 0x11, 0x2e, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x49, 0x44, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61,
+	0x6d, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1304,26 +1288,25 @@ func file_proto_common_deploy_service_proto_rawDescGZIP() []byte {
 
 var file_proto_common_deploy_service_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_proto_common_deploy_service_proto_goTypes = []any{
-	(*DatabaseNodeDb)(nil),          // 0: database_node_db
-	(*LoginNodeListDb)(nil),         // 1: login_node_list_db
-	(*CentreNodeListDb)(nil),        // 2: centre_node_list_db
-	(*GateNodeListDb)(nil),          // 3: gate_node_list_db
-	(*GameNodeListDb)(nil),          // 4: game_node_list_db
-	(*RedisNodeListDb)(nil),         // 5: redis_node_list_db
-	(*NodesInfoData)(nil),           // 6: nodes_info_data
-	(*LoginNodeDb)(nil),             // 7: login_node_db
-	(*CentreNodeDb)(nil),            // 8: centre_node_db
-	(*LobbyNodeDb)(nil),             // 9: lobby_node_db
-	(*RedisNodeDb)(nil),             // 10: redis_node_db
-	(*GameNodeDb)(nil),              // 11: game_node_db
-	(*GateNodeDb)(nil),              // 12: gate_node_db
-	(*NodeInfoRequest)(nil),         // 13: NodeInfoRequest
-	(*NodeInfoResponse)(nil),        // 14: NodeInfoResponse
-	(*NewGameNodeRequest)(nil),      // 15: NewGameNodeRequest
-	(*NewGameNodeResponse)(nil),     // 16: NewGameNodeResponse
-	(*GetGameNodeInfoRequest)(nil),  // 17: GetGameNodeInfoRequest
-	(*GetGameNodeInfoResponse)(nil), // 18: GetGameNodeInfoResponse
-	(*NetworkAddress)(nil),          // 19: NetworkAddress
+	(*DatabaseNodeDb)(nil),    // 0: database_node_db
+	(*LoginNodeListDb)(nil),   // 1: login_node_list_db
+	(*CentreNodeListDb)(nil),  // 2: centre_node_list_db
+	(*GateNodeListDb)(nil),    // 3: gate_node_list_db
+	(*GameNodeListDb)(nil),    // 4: game_node_list_db
+	(*RedisNodeListDb)(nil),   // 5: redis_node_list_db
+	(*NodesInfoData)(nil),     // 6: nodes_info_data
+	(*LoginNodeDb)(nil),       // 7: login_node_db
+	(*CentreNodeDb)(nil),      // 8: centre_node_db
+	(*LobbyNodeDb)(nil),       // 9: lobby_node_db
+	(*RedisNodeDb)(nil),       // 10: redis_node_db
+	(*GameNodeDb)(nil),        // 11: game_node_db
+	(*GateNodeDb)(nil),        // 12: gate_node_db
+	(*NodeInfoRequest)(nil),   // 13: NodeInfoRequest
+	(*NodeInfoResponse)(nil),  // 14: NodeInfoResponse
+	(*GetIDRequest)(nil),      // 15: GetIDRequest
+	(*GetIDResponse)(nil),     // 16: GetIDResponse
+	(*ReleaseIDRequest)(nil),  // 17: ReleaseIDRequest
+	(*ReleaseIDResponse)(nil), // 18: ReleaseIDResponse
 }
 var file_proto_common_deploy_service_proto_depIdxs = []int32{
 	7,  // 0: login_node_list_db.login_info:type_name -> login_node_db
@@ -1338,17 +1321,17 @@ var file_proto_common_deploy_service_proto_depIdxs = []int32{
 	4,  // 9: nodes_info_data.game_info:type_name -> game_node_list_db
 	5,  // 10: nodes_info_data.redis_info:type_name -> redis_node_list_db
 	6,  // 11: NodeInfoResponse.info:type_name -> nodes_info_data
-	11, // 12: NewGameNodeRequest.my_info:type_name -> game_node_db
-	11, // 13: NewGameNodeResponse.my_info:type_name -> game_node_db
-	10, // 14: NewGameNodeResponse.redis_info:type_name -> redis_node_db
-	19, // 15: GetGameNodeInfoResponse.service_addr:type_name -> NetworkAddress
-	13, // 16: DeployService.GetNodeInfo:input_type -> NodeInfoRequest
-	14, // 17: DeployService.GetNodeInfo:output_type -> NodeInfoResponse
-	17, // [17:18] is the sub-list for method output_type
-	16, // [16:17] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	13, // 12: DeployService.GetNodeInfo:input_type -> NodeInfoRequest
+	15, // 13: DeployService.GetID:input_type -> GetIDRequest
+	17, // 14: DeployService.ReleaseID:input_type -> ReleaseIDRequest
+	14, // 15: DeployService.GetNodeInfo:output_type -> NodeInfoResponse
+	16, // 16: DeployService.GetID:output_type -> GetIDResponse
+	18, // 17: DeployService.ReleaseID:output_type -> ReleaseIDResponse
+	15, // [15:18] is the sub-list for method output_type
+	12, // [12:15] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_deploy_service_proto_init() }
@@ -1539,7 +1522,7 @@ func file_proto_common_deploy_service_proto_init() {
 			}
 		}
 		file_proto_common_deploy_service_proto_msgTypes[15].Exporter = func(v any, i int) any {
-			switch v := v.(*NewGameNodeRequest); i {
+			switch v := v.(*GetIDRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1551,7 +1534,7 @@ func file_proto_common_deploy_service_proto_init() {
 			}
 		}
 		file_proto_common_deploy_service_proto_msgTypes[16].Exporter = func(v any, i int) any {
-			switch v := v.(*NewGameNodeResponse); i {
+			switch v := v.(*GetIDResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1563,7 +1546,7 @@ func file_proto_common_deploy_service_proto_init() {
 			}
 		}
 		file_proto_common_deploy_service_proto_msgTypes[17].Exporter = func(v any, i int) any {
-			switch v := v.(*GetGameNodeInfoRequest); i {
+			switch v := v.(*ReleaseIDRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1575,7 +1558,7 @@ func file_proto_common_deploy_service_proto_init() {
 			}
 		}
 		file_proto_common_deploy_service_proto_msgTypes[18].Exporter = func(v any, i int) any {
-			switch v := v.(*GetGameNodeInfoResponse); i {
+			switch v := v.(*ReleaseIDResponse); i {
 			case 0:
 				return &v.state
 			case 1:

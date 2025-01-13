@@ -22,6 +22,8 @@
 
 static const char* DeployService_method_names[] = {
   "/DeployService/GetNodeInfo",
+  "/DeployService/GetID",
+  "/DeployService/ReleaseID",
 };
 
 std::unique_ptr< DeployService::Stub> DeployService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -32,6 +34,8 @@ std::unique_ptr< DeployService::Stub> DeployService::NewStub(const std::shared_p
 
 DeployService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_GetNodeInfo_(DeployService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetID_(DeployService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ReleaseID_(DeployService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status DeployService::Stub::GetNodeInfo(::grpc::ClientContext* context, const ::NodeInfoRequest& request, ::NodeInfoResponse* response) {
@@ -57,6 +61,52 @@ void DeployService::Stub::async::GetNodeInfo(::grpc::ClientContext* context, con
   return result;
 }
 
+::grpc::Status DeployService::Stub::GetID(::grpc::ClientContext* context, const ::GetIDRequest& request, ::GetIDResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::GetIDRequest, ::GetIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetID_, context, request, response);
+}
+
+void DeployService::Stub::async::GetID(::grpc::ClientContext* context, const ::GetIDRequest* request, ::GetIDResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::GetIDRequest, ::GetIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetID_, context, request, response, std::move(f));
+}
+
+void DeployService::Stub::async::GetID(::grpc::ClientContext* context, const ::GetIDRequest* request, ::GetIDResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetID_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::GetIDResponse>* DeployService::Stub::PrepareAsyncGetIDRaw(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::GetIDResponse, ::GetIDRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetID_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::GetIDResponse>* DeployService::Stub::AsyncGetIDRaw(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetIDRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DeployService::Stub::ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::ReleaseIDResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::ReleaseIDRequest, ::ReleaseIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ReleaseID_, context, request, response);
+}
+
+void DeployService::Stub::async::ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::ReleaseIDRequest, ::ReleaseIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ReleaseID_, context, request, response, std::move(f));
+}
+
+void DeployService::Stub::async::ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ReleaseID_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>* DeployService::Stub::PrepareAsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::ReleaseIDResponse, ::ReleaseIDRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ReleaseID_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>* DeployService::Stub::AsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncReleaseIDRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 DeployService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       DeployService_method_names[0],
@@ -68,12 +118,46 @@ DeployService::Service::Service() {
              ::NodeInfoResponse* resp) {
                return service->GetNodeInfo(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DeployService_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DeployService::Service, ::GetIDRequest, ::GetIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DeployService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::GetIDRequest* req,
+             ::GetIDResponse* resp) {
+               return service->GetID(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DeployService_method_names[2],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DeployService::Service, ::ReleaseIDRequest, ::ReleaseIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DeployService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::ReleaseIDRequest* req,
+             ::ReleaseIDResponse* resp) {
+               return service->ReleaseID(ctx, req, resp);
+             }, this)));
 }
 
 DeployService::Service::~Service() {
 }
 
 ::grpc::Status DeployService::Service::GetNodeInfo(::grpc::ServerContext* context, const ::NodeInfoRequest* request, ::NodeInfoResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DeployService::Service::GetID(::grpc::ServerContext* context, const ::GetIDRequest* request, ::GetIDResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DeployService::Service::ReleaseID(::grpc::ServerContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response) {
   (void) context;
   (void) request;
   (void) response;
