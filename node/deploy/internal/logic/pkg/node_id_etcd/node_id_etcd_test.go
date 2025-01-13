@@ -1,4 +1,4 @@
-package node_id
+package node_id_etcd
 
 import (
 	"context"

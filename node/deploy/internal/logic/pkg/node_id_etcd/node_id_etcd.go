@@ -1,4 +1,4 @@
-package node_id
+package node_id_etcd
 
 import (
 	"context"
@@ -14,7 +14,7 @@ const (
 	idTTL         = 60 * time.Second  // ID 的 TTL 设置为 60 秒
 	idKey         = "node_id_counter" // 用于存储计数器的键
 	recycledIDKey = "recycled_ids"    // 用于存储回收的 ID 键
-	maxID         = 65535             // 最大 ID 值
+	maxID         = 1000              // 最大 ID 值
 )
 
 // 初始化 Etcd 客户端
