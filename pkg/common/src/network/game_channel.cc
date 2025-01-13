@@ -11,6 +11,7 @@
 using namespace std::placeholders;
 
 // ====================== 全局变量 ======================
+constexpr  size_t kMaxMessageByteSize = 2048;
 
 // 处理未知的 Protobuf 消息
 void HandleUnknownProtobufMessage(const TcpConnectionPtr&, const MessagePtr& message, muduo::Timestamp) {
@@ -79,7 +80,7 @@ void GameChannel::SendRpcRequestMessage(GameMessageType type, uint32_t messageId
 // 构造并发送响应消息
 void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage* content) {
     if (!IsValidMessageId(messageId)) return;
-
+    
     GameRpcMessage rpcMessage;
     rpcMessage.set_type(type);
     rpcMessage.set_message_id(messageId);
@@ -89,6 +90,11 @@ void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageI
         return;
     }
 
+    if (const size_t messageSize = rpcMessage.ByteSizeLong(); messageSize > kMaxMessageByteSize) {
+        LOG_ERROR << "RPC message size exceeds 2KB, message ID: " << rpcMessage.message_id() << ", size: " << messageSize
+                  << ", message content: " << rpcMessage.DebugString();  // 输出 Protobuf 消息内容
+    }
+    
     codec_.send(connection_, rpcMessage);
     LogMessageStatistics(rpcMessage);
 }
@@ -199,10 +205,17 @@ void GameChannel::HandleIncomingMessage(const TcpConnectionPtr& connection, mudu
     codec_.onMessage(connection, buffer, receiveTime);
 }
 
-// 处理 RPC 消息
+// 定义 2KB 的常量
+
 void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessagePtr& messagePtr, muduo::Timestamp receiveTime) {
     assert(conn == connection_);
     const auto& rpcMessage = *messagePtr;
+    
+    // 如果消息大小超过 2KB，记录错误日志
+    if (const size_t messageSize = rpcMessage.ByteSizeLong(); messageSize > kMaxMessageByteSize) {
+        LOG_ERROR << "RPC message size exceeds 2KB, message ID: " << rpcMessage.message_id() << ", size: " << messageSize
+                  << ", message content: " << rpcMessage.DebugString();  // 输出 Protobuf 消息内容
+    }
 
     LOG_DEBUG << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
 
@@ -225,6 +238,7 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr& conn, const RpcMessag
         break;
     }
 }
+
 
 // 处理响应消息
 void GameChannel::HandleResponseMessage(const TcpConnectionPtr& conn, const GameRpcMessage& rpcMessage, muduo::Timestamp receiveTime) {

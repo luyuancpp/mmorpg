@@ -237,9 +237,6 @@
     <ClInclude Include="src\handler\service_replied\login_service_replied_handler.h" />
     <ClInclude Include="src\handler\service_replied\player\player_service_replied.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="src\game_logic\scene\" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
