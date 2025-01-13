@@ -15,9 +15,6 @@ const (
 	ProtoGoEx                 = ".pb.go"
 	GrpcPbcEx                 = ".grpc.pb.cc"
 	GrpcEx                    = "grpc"
-	ClientGoMd5Ex             = "client_go"
-	LoginGoMd5Ex              = "login_go"
-	DBGoMd5Ex                 = "db_go"
 	DBDescDirectory           = "../bin/proto_desc/"
 	ProtoDescExtension        = ".desc"
 	ProtoDirName              = "proto/"
@@ -40,16 +37,19 @@ const (
 
 // 常量：目录路径
 const (
-	GameNodeDirectory             = "node/game/"
-	CentreNodeDirectory           = "node/centre/"
-	GateNodeDirectory             = "node/gate/"
-	RobotDirectory                = "robot/"
-	PbcProtoDirectory             = "pkg/pbc/src/"
-	ServiceIdFilePath             = ProtoDir + "serviceid.txt"
-	HandlerSourceDirectory        = "src/handler/service/"
-	RepliedHandlerSourceDirectory = "src/handler/service_replied/"
-	EventHandlerSourceDirectory   = "src/handler/event/"
-	PbcLuaDirectory               = PbcOutputDirectory + "lua/"
+	NodePkgDirectory               = "node_pkg/"
+	NodePkgLogicDirectory          = NodePkgDirectory + "node_logic/"
+	NodePkgLogicSceneNodeDirectory = NodePkgLogicDirectory + "scene_node/"
+	GameNodeDirectory              = "node/scene/"
+	CentreNodeDirectory            = "node/centre/"
+	GateNodeDirectory              = "node/gate/"
+	RobotDirectory                 = "robot/"
+	PbcProtoDirectory              = "pkg/pbc/src/"
+	ServiceIdFilePath              = ProtoDir + "serviceid.txt"
+	HandlerSourceDirectory         = "src/handler/service/"
+	RepliedHandlerSourceDirectory  = "src/handler/service_replied/"
+	EventHandlerSourceDirectory    = "src/handler/event/"
+	PbcLuaDirectory                = PbcOutputDirectory + "lua/"
 )
 
 // 常量：方法处理目录
@@ -79,6 +79,7 @@ const (
 	MessageIdGoFile                  = "message_id.go"
 	RobotMessageIdFilePath           = RobotGoGamePbDirectory + MessageIdGoFile
 	LoginDirectory                   = ProjectDir + "node/login/"
+	DeployDirectory                  = ProjectDir + "node/deploy/"
 	LoginGoGameDirectory             = LoginDirectory + GoPbGameDirectory
 	LoginMessageIdGoFile             = LoginGoGameDirectory + MessageIdGoFile
 	DbGoDirectory                    = ProjectDir + "node/db/"
@@ -92,7 +93,8 @@ const (
 	ClientLuaServiceFilePath         = ProjectDir + "client/src/handler/service_lua.cpp"
 	ClientServiceInstanceFilePath    = ProjectDir + "client/src/handler/player_service.cpp"
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
-	PlayerStorageSystemDirectory     = ProjectDir + GameNodeDirectory + "src/game_logic/player/system/"
+	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
+	DeployGoGameDirectory            = DeployDirectory + GoPbGameDirectory
 )
 
 // 常量：文件名
@@ -106,6 +108,7 @@ const (
 	RegisterHandlerCppExtension        = "register" + HandlerCppExtension
 	DbProtoFileName                    = "db_base.proto"
 	GameMysqlDBProtoFileName           = "mysql_database_table.proto"
+	LoginServiceProtoFileName          = "login_service.proto"
 )
 
 // 常量：代码相关
@@ -134,7 +137,7 @@ var (
 		"pkg/common/",
 		"pkg/pbc/",
 		"node/centre/",
-		"node/game/",
+		"node/scene/",
 		"node/gate/",
 		"client/",
 	}

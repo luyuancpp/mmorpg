@@ -70,4 +70,6 @@
 69=EntitySyncServiceSyncAttribute10Frames
 70=EntitySyncServiceSyncAttribute60Frames
 71=EntitySyncServiceSyncAttribute30Frames
+72=DeployServiceGetID
+73=DeployServiceReleaseID
 75=GameServiceEnterScene

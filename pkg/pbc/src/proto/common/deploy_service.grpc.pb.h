@@ -40,11 +40,29 @@ class DeployService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NodeInfoResponse>> PrepareAsyncGetNodeInfo(::grpc::ClientContext* context, const ::NodeInfoRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::NodeInfoResponse>>(PrepareAsyncGetNodeInfoRaw(context, request, cq));
     }
+    virtual ::grpc::Status GetID(::grpc::ClientContext* context, const ::GetIDRequest& request, ::GetIDResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::GetIDResponse>> AsyncGetID(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::GetIDResponse>>(AsyncGetIDRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::GetIDResponse>> PrepareAsyncGetID(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::GetIDResponse>>(PrepareAsyncGetIDRaw(context, request, cq));
+    }
+    virtual ::grpc::Status ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::ReleaseIDResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>> AsyncReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>>(AsyncReleaseIDRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>> PrepareAsyncReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>>(PrepareAsyncReleaseIDRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
       virtual void GetNodeInfo(::grpc::ClientContext* context, const ::NodeInfoRequest* request, ::NodeInfoResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void GetNodeInfo(::grpc::ClientContext* context, const ::NodeInfoRequest* request, ::NodeInfoResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetID(::grpc::ClientContext* context, const ::GetIDRequest* request, ::GetIDResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetID(::grpc::ClientContext* context, const ::GetIDRequest* request, ::GetIDResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -52,6 +70,10 @@ class DeployService final {
    private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::NodeInfoResponse>* AsyncGetNodeInfoRaw(::grpc::ClientContext* context, const ::NodeInfoRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::NodeInfoResponse>* PrepareAsyncGetNodeInfoRaw(::grpc::ClientContext* context, const ::NodeInfoRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::GetIDResponse>* AsyncGetIDRaw(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::GetIDResponse>* PrepareAsyncGetIDRaw(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>* AsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>* PrepareAsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -63,11 +85,29 @@ class DeployService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::NodeInfoResponse>> PrepareAsyncGetNodeInfo(::grpc::ClientContext* context, const ::NodeInfoRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::NodeInfoResponse>>(PrepareAsyncGetNodeInfoRaw(context, request, cq));
     }
+    ::grpc::Status GetID(::grpc::ClientContext* context, const ::GetIDRequest& request, ::GetIDResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::GetIDResponse>> AsyncGetID(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::GetIDResponse>>(AsyncGetIDRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::GetIDResponse>> PrepareAsyncGetID(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::GetIDResponse>>(PrepareAsyncGetIDRaw(context, request, cq));
+    }
+    ::grpc::Status ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::ReleaseIDResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>> AsyncReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>>(AsyncReleaseIDRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>> PrepareAsyncReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>>(PrepareAsyncReleaseIDRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
       void GetNodeInfo(::grpc::ClientContext* context, const ::NodeInfoRequest* request, ::NodeInfoResponse* response, std::function<void(::grpc::Status)>) override;
       void GetNodeInfo(::grpc::ClientContext* context, const ::NodeInfoRequest* request, ::NodeInfoResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetID(::grpc::ClientContext* context, const ::GetIDRequest* request, ::GetIDResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetID(::grpc::ClientContext* context, const ::GetIDRequest* request, ::GetIDResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, std::function<void(::grpc::Status)>) override;
+      void ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -81,7 +121,13 @@ class DeployService final {
     class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::NodeInfoResponse>* AsyncGetNodeInfoRaw(::grpc::ClientContext* context, const ::NodeInfoRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::NodeInfoResponse>* PrepareAsyncGetNodeInfoRaw(::grpc::ClientContext* context, const ::NodeInfoRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::GetIDResponse>* AsyncGetIDRaw(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::GetIDResponse>* PrepareAsyncGetIDRaw(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>* AsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>* PrepareAsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_GetNodeInfo_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetID_;
+    const ::grpc::internal::RpcMethod rpcmethod_ReleaseID_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -90,6 +136,8 @@ class DeployService final {
     Service();
     virtual ~Service();
     virtual ::grpc::Status GetNodeInfo(::grpc::ServerContext* context, const ::NodeInfoRequest* request, ::NodeInfoResponse* response);
+    virtual ::grpc::Status GetID(::grpc::ServerContext* context, const ::GetIDRequest* request, ::GetIDResponse* response);
+    virtual ::grpc::Status ReleaseID(::grpc::ServerContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_GetNodeInfo : public BaseClass {
@@ -111,7 +159,47 @@ class DeployService final {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_GetNodeInfo<Service > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_GetID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetID() {
+      ::grpc::Service::MarkMethodAsync(1);
+    }
+    ~WithAsyncMethod_GetID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetID(::grpc::ServerContext* /*context*/, const ::GetIDRequest* /*request*/, ::GetIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetID(::grpc::ServerContext* context, ::GetIDRequest* request, ::grpc::ServerAsyncResponseWriter< ::GetIDResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_ReleaseID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ReleaseID() {
+      ::grpc::Service::MarkMethodAsync(2);
+    }
+    ~WithAsyncMethod_ReleaseID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleaseID(::grpc::ServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReleaseID(::grpc::ServerContext* context, ::ReleaseIDRequest* request, ::grpc::ServerAsyncResponseWriter< ::ReleaseIDResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_GetNodeInfo<WithAsyncMethod_GetID<WithAsyncMethod_ReleaseID<Service > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_GetNodeInfo : public BaseClass {
    private:
@@ -139,7 +227,61 @@ class DeployService final {
     virtual ::grpc::ServerUnaryReactor* GetNodeInfo(
       ::grpc::CallbackServerContext* /*context*/, const ::NodeInfoRequest* /*request*/, ::NodeInfoResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_GetNodeInfo<Service > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_GetID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetID() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::GetIDRequest, ::GetIDResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::GetIDRequest* request, ::GetIDResponse* response) { return this->GetID(context, request, response); }));}
+    void SetMessageAllocatorFor_GetID(
+        ::grpc::MessageAllocator< ::GetIDRequest, ::GetIDResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::GetIDRequest, ::GetIDResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetID(::grpc::ServerContext* /*context*/, const ::GetIDRequest* /*request*/, ::GetIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetID(
+      ::grpc::CallbackServerContext* /*context*/, const ::GetIDRequest* /*request*/, ::GetIDResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_ReleaseID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ReleaseID() {
+      ::grpc::Service::MarkMethodCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::ReleaseIDRequest, ::ReleaseIDResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response) { return this->ReleaseID(context, request, response); }));}
+    void SetMessageAllocatorFor_ReleaseID(
+        ::grpc::MessageAllocator< ::ReleaseIDRequest, ::ReleaseIDResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::ReleaseIDRequest, ::ReleaseIDResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ReleaseID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleaseID(::grpc::ServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ReleaseID(
+      ::grpc::CallbackServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_GetNodeInfo<WithCallbackMethod_GetID<WithCallbackMethod_ReleaseID<Service > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_GetNodeInfo : public BaseClass {
@@ -154,6 +296,40 @@ class DeployService final {
     }
     // disable synchronous version of this method
     ::grpc::Status GetNodeInfo(::grpc::ServerContext* /*context*/, const ::NodeInfoRequest* /*request*/, ::NodeInfoResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetID() {
+      ::grpc::Service::MarkMethodGeneric(1);
+    }
+    ~WithGenericMethod_GetID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetID(::grpc::ServerContext* /*context*/, const ::GetIDRequest* /*request*/, ::GetIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ReleaseID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ReleaseID() {
+      ::grpc::Service::MarkMethodGeneric(2);
+    }
+    ~WithGenericMethod_ReleaseID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleaseID(::grpc::ServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -179,6 +355,46 @@ class DeployService final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_GetID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetID() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_GetID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetID(::grpc::ServerContext* /*context*/, const ::GetIDRequest* /*request*/, ::GetIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetID(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_ReleaseID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ReleaseID() {
+      ::grpc::Service::MarkMethodRaw(2);
+    }
+    ~WithRawMethod_ReleaseID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleaseID(::grpc::ServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReleaseID(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_GetNodeInfo : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
@@ -198,6 +414,50 @@ class DeployService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* GetNodeInfo(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetID() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetID(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetID(::grpc::ServerContext* /*context*/, const ::GetIDRequest* /*request*/, ::GetIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetID(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ReleaseID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ReleaseID() {
+      ::grpc::Service::MarkMethodRawCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ReleaseID(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ReleaseID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleaseID(::grpc::ServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ReleaseID(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -227,9 +487,63 @@ class DeployService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedGetNodeInfo(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::NodeInfoRequest,::NodeInfoResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_GetNodeInfo<Service > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetID() {
+      ::grpc::Service::MarkMethodStreamed(1,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::GetIDRequest, ::GetIDResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::GetIDRequest, ::GetIDResponse>* streamer) {
+                       return this->StreamedGetID(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetID(::grpc::ServerContext* /*context*/, const ::GetIDRequest* /*request*/, ::GetIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetID(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::GetIDRequest,::GetIDResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ReleaseID : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ReleaseID() {
+      ::grpc::Service::MarkMethodStreamed(2,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::ReleaseIDRequest, ::ReleaseIDResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::ReleaseIDRequest, ::ReleaseIDResponse>* streamer) {
+                       return this->StreamedReleaseID(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ReleaseID() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ReleaseID(::grpc::ServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedReleaseID(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::ReleaseIDRequest,::ReleaseIDResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_GetNodeInfo<WithStreamedUnaryMethod_GetID<WithStreamedUnaryMethod_ReleaseID<Service > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_GetNodeInfo<Service > StreamedService;
+  typedef WithStreamedUnaryMethod_GetNodeInfo<WithStreamedUnaryMethod_GetID<WithStreamedUnaryMethod_ReleaseID<Service > > > StreamedService;
 };
 
 

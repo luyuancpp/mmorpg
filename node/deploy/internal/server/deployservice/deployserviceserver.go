@@ -26,3 +26,13 @@ func (s *DeployServiceServer) GetNodeInfo(ctx context.Context, in *game.NodeInfo
 	l := deployservicelogic.NewGetNodeInfoLogic(ctx, s.svcCtx)
 	return l.GetNodeInfo(in)
 }
+
+func (s *DeployServiceServer) GetID(ctx context.Context, in *game.GetIDRequest) (*game.GetIDResponse, error) {
+	l := deployservicelogic.NewGetIDLogic(ctx, s.svcCtx)
+	return l.GetID(in)
+}
+
+func (s *DeployServiceServer) ReleaseID(ctx context.Context, in *game.ReleaseIDRequest) (*game.ReleaseIDResponse, error) {
+	l := deployservicelogic.NewReleaseIDLogic(ctx, s.svcCtx)
+	return l.ReleaseID(in)
+}
