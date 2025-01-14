@@ -76,24 +76,24 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 		if err != nil {
 			return 0, fmt.Errorf("failed to parse recycled ID: %v", err)
 		}
-		logx.Info("Returned recycled ID ", currentID, "for server type ", serverType)
+		logx.Info("Returned recycled ID ", currentID, " for server type ", serverType)
 		return currentID, nil
 	}
 
 	// 事务 2：如果回收池没有 ID，则获取自增 ID，并自增
 	var prevID uint64
 
-	// Handle case where the idKey doesn't exist and initialize it to "1"
+	// 确保 idKey 存在并初始化为 "0"（即使之前没有此键）
 	txn2 := etcdClient.Txn(ctx)
 	txn2.If(
 		clientv3.Compare(clientv3.Version(idKey), "=", 0), // idKey doesn't exist
 	).
 		Then(
-			clientv3.OpPut(idKey, "0"), // Initialize idKey to 0
-			clientv3.OpGet(idKey),      // Retrieve new ID
+			clientv3.OpPut(idKey, "0"), // 初始化 idKey 为 0
+			clientv3.OpGet(idKey),      // 获取新 ID
 		).
 		Else(
-			clientv3.OpGet(idKey), // If idKey exists, just retrieve the value
+			clientv3.OpGet(idKey), // 如果 idKey 已存在，则直接获取值
 		)
 
 	// 提交事务 2
@@ -108,7 +108,6 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 		if err != nil {
 			return 0, fmt.Errorf("failed to parse current ID: %v", err)
 		}
-		// Set prevID correctly after initializing
 		prevID = currentID
 	} else if len(txn2Resp.Responses) == 2 && txn2Resp.Responses[1].GetResponseRange() != nil {
 		value := txn2Resp.Responses[1].GetResponseRange().Kvs[0].Value
@@ -116,10 +115,10 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 		if err != nil {
 			return 0, fmt.Errorf("failed to parse current ID: %v", err)
 		}
-		return currentID, nil
+		prevID = currentID
 	}
 
-	// Start the loop to increment the ID
+	// 开始循环进行自增
 	for {
 		// 获取当前 ID 值并准备自增
 		txn3 := etcdClient.Txn(ctx)
@@ -129,6 +128,10 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 			Then(
 				clientv3.OpPut(idKey, fmt.Sprintf("%d", prevID+1)), // 自增
 				clientv3.OpGet(idKey),                              // 获取新的 ID
+			).
+			Else(
+				clientv3.OpPut(idKey, fmt.Sprintf("%d", prevID+1)), // 自增
+				clientv3.OpGet(idKey),
 			)
 
 		// 提交事务 3

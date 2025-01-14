@@ -278,6 +278,22 @@ func TestGenerateIDAndReleaseIDConcurrently1(t *testing.T) {
 	// 等待所有的 generateID 操作完成
 	wg.Wait()
 
+	// 启动多个 goroutine 来并发回收 ID
+	for _, id := range generatedIDs {
+		releaseWG.Add(1) // 每次启动一个 goroutine 调用 releaseID
+		go func(id uint64) {
+			defer releaseWG.Done()
+
+			// 并发调用 releaseID
+			err := releaseID(ctx, etcdClient, id, serverType)
+			if err != nil {
+				t.Errorf("Released ID error: %v", err)
+				return
+			}
+			t.Logf("Released ID: %d", id)
+		}(id)
+	}
+
 	// 等待所有的 releaseID 操作完成
 	releaseWG.Wait()
 }
