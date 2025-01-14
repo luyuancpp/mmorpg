@@ -16,8 +16,8 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var configFile = flag.String("config", "etc/deployservice.yaml", "the config file")
-var dbConfigFile = flag.String("dbconfig", "etc/db.json", "the db config file")
+var configFile = flag.String("config", "etc/deploy_service.yaml", "the config file")
+var dbConfigFile = flag.String("db_config", "etc/db.json", "the db config file")
 
 func main() {
 	flag.Parse()

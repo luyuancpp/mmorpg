@@ -20,14 +20,14 @@ const (
 )
 
 var (
-	configFile    = flag.String("config", "../../../../etc/deployservice.yaml", "the config file")
-	isInitialized bool // 标记是否已经初始化
+	nodeIdConfigFile = flag.String("node_id_config", "etc/deploy_service.yaml", "the config file")
+	isInitialized    bool // 标记是否已经初始化
 )
 
 // 初始化 Etcd 客户端
 func InitEtcdClient() (*clientv3.Client, error) {
 	var c config.Config
-	conf.MustLoad(*configFile, &c)
+	conf.MustLoad(*nodeIdConfigFile, &c)
 
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints: c.Etcd.Hosts,
