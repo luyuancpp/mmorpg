@@ -2,7 +2,10 @@ package node_id_etcd
 
 import (
 	"context"
+	"deploy/internal/config"
+	"flag"
 	"fmt"
+	"github.com/zeromicro/go-zero/core/conf"
 	"log"
 	"time"
 
@@ -10,17 +13,22 @@ import (
 )
 
 const (
-	etcdAddr      = "localhost:2379"  // Etcd 服务地址
 	idTTL         = 60 * time.Second  // ID 的 TTL 设置为 60 秒
 	idKey         = "node_id_counter" // 用于存储计数器的键
 	recycledIDKey = "recycled_ids"    // 用于存储回收的 ID 键
 	maxID         = 1000              // 最大 ID 值
 )
 
+var configFile = flag.String("config", "../../../../etc/deployservice.yaml", "the config file")
+
 // 初始化 Etcd 客户端
 func initEtcdClient() (*clientv3.Client, error) {
+
+	var c config.Config
+	conf.MustLoad(*configFile, &c)
+
 	cli, err := clientv3.New(clientv3.Config{
-		Endpoints: []string{etcdAddr},
+		Endpoints: c.Etcd.Hosts,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create etcd client: %v", err)
