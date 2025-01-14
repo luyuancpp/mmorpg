@@ -19,7 +19,10 @@ const (
 	maxServerType = 2
 )
 
-var configFile = flag.String("config", "../../../../etc/deployservice.yaml", "the config file")
+var (
+	configFile    = flag.String("config", "../../../../etc/deployservice.yaml", "the config file")
+	isInitialized bool // 标记是否已经初始化
+)
 
 // 初始化 Etcd 客户端
 func initEtcdClient() (*clientv3.Client, error) {
@@ -45,11 +48,36 @@ func getRecycledIDKey(serverType uint32) string {
 	return fmt.Sprintf("recycled_ids_%d", serverType)
 }
 
+// 初始化 ID 计数器（如果未初始化）
+func initializeIDCounter(ctx context.Context, etcdClient *clientv3.Client, serverType uint32) error {
+	if isInitialized {
+		// 如果已经初始化，则跳过
+		return nil
+	}
+
+	idKey := getServerTypeKey(serverType)
+	// 确保 idKey 存在并初始化为 "0"
+	_, err := etcdClient.Put(ctx, idKey, "0")
+	if err != nil {
+		return fmt.Errorf("failed to initialize ID counter for server type %d: %v", serverType, err)
+	}
+
+	isInitialized = true
+	logx.Info("Initialized ID counter for server type ", serverType)
+	return nil
+}
+
 // 获取下一个自增的 ID，或者从回收池中获取
 func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uint32) (uint64, error) {
+	// 初始化 ID 计数器（如果尚未初始化）
+	err := initializeIDCounter(ctx, etcdClient, serverType)
+	if err != nil {
+		return 0, err
+	}
+
 	// 定义回收池和计数器键
 	recycledIDKey := getRecycledIDKey(serverType)
-	idKey := getServerTypeKey(serverType)
+	serverTypeKey := getServerTypeKey(serverType)
 
 	// 事务 1：从回收池中获取 ID
 	txn1 := etcdClient.Txn(ctx)
@@ -83,18 +111,11 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 	// 事务 2：如果回收池没有 ID，则获取自增 ID，并自增
 	var prevID uint64
 
-	// 确保 idKey 存在并初始化为 "0"（即使之前没有此键）
+	// 确保 serverTypeKey 存在并初始化为 "0"（即使之前没有此键）
 	txn2 := etcdClient.Txn(ctx)
-	txn2.If(
-		clientv3.Compare(clientv3.Version(idKey), "=", 0), // idKey doesn't exist
-	).
-		Then(
-			clientv3.OpPut(idKey, "0"), // 初始化 idKey 为 0
-			clientv3.OpGet(idKey),      // 获取新 ID
-		).
-		Else(
-			clientv3.OpGet(idKey), // 如果 idKey 已存在，则直接获取值
-		)
+	txn2.Then(
+		clientv3.OpGet(serverTypeKey), // 获取新 ID
+	)
 
 	// 提交事务 2
 	txn2Resp, err := txn2.Commit()
@@ -109,13 +130,6 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 			return 0, fmt.Errorf("failed to parse current ID: %v", err)
 		}
 		prevID = currentID
-	} else if len(txn2Resp.Responses) == 2 && txn2Resp.Responses[1].GetResponseRange() != nil {
-		value := txn2Resp.Responses[1].GetResponseRange().Kvs[0].Value
-		_, err := fmt.Sscanf(string(value), "%d", &currentID)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse current ID: %v", err)
-		}
-		prevID = currentID
 	}
 
 	// 开始循环进行自增
@@ -123,15 +137,15 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 		// 获取当前 ID 值并准备自增
 		txn3 := etcdClient.Txn(ctx)
 		txn3.If(
-			clientv3.Compare(clientv3.Value(idKey), "=", fmt.Sprintf("%d", prevID)), // 保证版本未变
+			clientv3.Compare(clientv3.Value(serverTypeKey), "=", fmt.Sprintf("%d", prevID)), // 保证版本未变
 		).
 			Then(
-				clientv3.OpPut(idKey, fmt.Sprintf("%d", prevID+1)), // 自增
-				clientv3.OpGet(idKey),                              // 获取新的 ID
+				clientv3.OpGet(serverTypeKey),                              // 获取新的 ID
+				clientv3.OpPut(serverTypeKey, fmt.Sprintf("%d", prevID+1)), // 自增
 			).
 			Else(
-				clientv3.OpPut(idKey, fmt.Sprintf("%d", prevID+1)), // 自增
-				clientv3.OpGet(idKey),
+				clientv3.OpGet(serverTypeKey),
+				clientv3.OpPut(serverTypeKey, fmt.Sprintf("%d", prevID+1)), // 自增
 			)
 
 		// 提交事务 3
@@ -141,15 +155,15 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 		}
 
 		// 如果事务提交成功
-		if len(txn3Resp.Responses) > 0 && txn3Resp.Responses[1].GetResponseRange() != nil {
-			value := txn3Resp.Responses[1].GetResponseRange().Kvs[0].Value
+		if len(txn3Resp.Responses) > 0 && txn3Resp.Responses[0].GetResponseRange() != nil {
+			value := txn3Resp.Responses[0].GetResponseRange().Kvs[0].Value
 			_, err := fmt.Sscanf(string(value), "%d", &currentID)
 			if err != nil {
 				return 0, fmt.Errorf("failed to parse current ID: %v", err)
 			}
 
 			// 如果成功自增，则退出循环
-			if prevID == currentID-1 {
+			if prevID == currentID {
 				logx.Info("Generated new ID ", currentID, " for server type ", serverType)
 				return currentID, nil
 			}
@@ -184,7 +198,7 @@ func clearAllIDs(etcdClient *clientv3.Client) error {
 		serverTypeKey := getServerTypeKey(serverType)
 
 		// 删除服务器类型的计数器键
-		_, err := etcdClient.Delete(context.Background(), serverTypeKey)
+		_, err := etcdClient.Put(context.Background(), serverTypeKey, "0")
 		if err != nil {
 			return fmt.Errorf("failed to delete node_id_counter for server type %d: %v", serverType, err)
 		}
