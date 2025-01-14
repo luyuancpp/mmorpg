@@ -114,7 +114,7 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 	// 确保 serverTypeKey 存在并初始化为 "0"（即使之前没有此键）
 	txn2 := etcdClient.Txn(ctx)
 	txn2.Then(
-		clientv3.OpGet(serverTypeKey), // 获取新 ID
+		clientv3.OpGet(serverTypeKey), // 获取当前的 ID
 	)
 
 	// 提交事务 2
@@ -134,6 +134,11 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 
 	// 开始循环进行自增
 	for {
+		// 检查当前 ID 是否超过最大值
+		if currentID >= maxID {
+			return 0, fmt.Errorf("ID exceeds maximum value of %d", maxID)
+		}
+
 		// 获取当前 ID 值并准备自增
 		txn3 := etcdClient.Txn(ctx)
 		txn3.If(
