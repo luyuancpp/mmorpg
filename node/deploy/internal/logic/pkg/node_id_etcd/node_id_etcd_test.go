@@ -201,7 +201,6 @@ func TestGenerateIDAndReleaseIDConcurrently(t *testing.T) {
 	ctx := context.Background()
 
 	var wg sync.WaitGroup
-	var mu sync.Mutex // 用于保护共享资源 idCounter
 
 	// 启动多个 goroutine 来并发调用 generateID 和 releaseID
 	for i := 0; i < 100; i++ {
@@ -209,9 +208,11 @@ func TestGenerateIDAndReleaseIDConcurrently(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// 并发调用 generateID
-			mu.Lock() // 锁定临界区，保护 idCounter
-			id, _ := generateID(ctx, etcdClient, serverType)
-			mu.Unlock()
+			id, err := generateID(ctx, etcdClient, serverType)
+			if err != nil {
+				t.Errorf("Generated ID: %s", err)
+				return
+			}
 			t.Logf("Generated ID: %d", id)
 		}()
 
@@ -219,11 +220,64 @@ func TestGenerateIDAndReleaseIDConcurrently(t *testing.T) {
 			defer wg.Done()
 			// 并发调用 releaseID
 			id := i + 1 // 假设每次 release 的 ID 是按顺序来的
-			releaseID(ctx, etcdClient, uint64(id), serverType)
+			err := releaseID(ctx, etcdClient, uint64(id), serverType)
+			if err != nil {
+				t.Errorf("Released ID: %s", err)
+				return
+			}
 			t.Logf("Released ID: %d", id)
 		}()
 	}
 
 	// 等待所有 goroutine 完成
 	wg.Wait()
+}
+
+func TestGenerateIDAndReleaseIDConcurrently1(t *testing.T) {
+	// 初始化 Etcd 客户端
+	etcdClient, err := initEtcdClient()
+	if err != nil {
+		t.Fatalf("Error initializing Etcd client: %v", err)
+	}
+	defer etcdClient.Close()
+
+	// 清理所有 ID 键
+	err = clearAllIDs(etcdClient)
+	if err != nil {
+		t.Fatalf("Error clearing all IDs: %v", err)
+	}
+
+	// 创建 context
+	ctx := context.Background()
+
+	var wg sync.WaitGroup
+	// 用于存储生成的 ID
+	var generatedIDs []uint64
+	// 用于同步回收的操作
+	var releaseWG sync.WaitGroup
+
+	// 启动多个 goroutine 来并发调用 generateID，先生成所有 ID
+	for i := 0; i < 100; i++ {
+		wg.Add(1) // 每次启动一个 goroutine 调用 generateID
+		go func() {
+			defer wg.Done()
+
+			// 并发调用 generateID
+			id, err := generateID(ctx, etcdClient, serverType)
+			if err != nil {
+				t.Errorf("Generated ID error: %v", err)
+				return
+			}
+
+			// 将生成的 ID 存储在切片中
+			generatedIDs = append(generatedIDs, id)
+			t.Logf("Generated ID: %d", id)
+		}()
+	}
+
+	// 等待所有的 generateID 操作完成
+	wg.Wait()
+
+	// 等待所有的 releaseID 操作完成
+	releaseWG.Wait()
 }
