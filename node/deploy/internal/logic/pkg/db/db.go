@@ -14,7 +14,7 @@ import (
 )
 
 var db *sql.DB
-var PBDB *pbmysql.PbMysqlDB
+var PbDb *pbmysql.PbMysqlDB
 
 func NewMysqlConfig(config config.DBConfig) *mysql.Config {
 	myCnf := mysql.NewConfig()
@@ -80,8 +80,8 @@ func OpenDB(path string) error {
 	db.SetMaxOpenConns(dbConfig.MaxOpenConn)
 	db.SetMaxIdleConns(dbConfig.MaxIdleConn)
 
-	PBDB = pbmysql.NewPb2DbTables()
-	if err := PBDB.OpenDB(db, mysqlConfig.DBName); err != nil {
+	PbDb = pbmysql.NewPb2DbTables()
+	if err := PbDb.OpenDB(db, mysqlConfig.DBName); err != nil {
 		logx.Error("error opening PbMysqlDB: %w", err)
 		return err
 	}
@@ -100,8 +100,8 @@ func InitDBTable() {
 	}
 
 	for _, table := range tables {
-		PBDB.AddMysqlTable(table)
-		sqlQuery := PBDB.GetCreateTableSql(table)
+		PbDb.AddMysqlTable(table)
+		sqlQuery := PbDb.GetCreateTableSql(table)
 		_, err := db.Exec(sqlQuery)
 		if err != nil {
 			logx.Error("error creating table: %v", err)
@@ -120,7 +120,7 @@ func AlterCreateDBTable() {
 	}
 
 	for _, table := range tables {
-		PBDB.UpdateTableField(table)
+		PbDb.UpdateTableField(table)
 	}
 }
 

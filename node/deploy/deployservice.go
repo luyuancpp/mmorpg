@@ -27,7 +27,7 @@ func main() {
 	ctx := svc.NewServiceContext(c)
 
 	db.InitDB(*dbConfigFile)
-	defer db.PBDB.Close()
+	defer db.PbDb.Close()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterDeployServiceServer(grpcServer, deployserviceServer.NewDeployServiceServer(ctx))
