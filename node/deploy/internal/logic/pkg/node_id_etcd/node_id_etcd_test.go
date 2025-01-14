@@ -15,7 +15,7 @@ const (
 )
 
 // TestGenerateID 测试ID生成器的功能
-func TestGenerateID(t *testing.T) {
+func TestGenerateID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := initEtcdClient()
 	if err != nil {
@@ -70,7 +70,7 @@ func TestGenerateID(t *testing.T) {
 }
 
 // TestReleaseID 测试释放ID的功能
-func TestReleaseID(t *testing.T) {
+func TestReleaseID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := initEtcdClient()
 	if err != nil {
@@ -107,7 +107,7 @@ func TestReleaseID(t *testing.T) {
 }
 
 // TestSweepExpiredIDs 测试清理过期ID的功能
-func TestSweepExpiredIDs(t *testing.T) {
+func TestSweepExpiredIDs_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := initEtcdClient()
 	if err != nil {
@@ -157,7 +157,7 @@ func isValidID(num uint64) bool {
 	return num >= 0 && num <= maxID
 }
 
-func TestGenerateIDAndReleaseIDConcurrently(t *testing.T) {
+func TestGenerateIDAndReleaseID_Concurrently_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := initEtcdClient()
 	if err != nil {
@@ -203,7 +203,7 @@ func TestGenerateIDAndReleaseIDConcurrently(t *testing.T) {
 	wg.Wait()
 }
 
-func TestGenerateIDAndReleaseIDConcurrently1(t *testing.T) {
+func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := initEtcdClient()
 	if err != nil {
