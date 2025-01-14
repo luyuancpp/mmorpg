@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	idTTL = 60 * time.Second // ID 的 TTL 设置为 60 秒
-	maxID = 1000             // 最大 ID 值
+	idTTL         = 60 * time.Second // ID 的 TTL 设置为 60 秒
+	maxID         = 1000             // 最大 ID 值
+	maxServerType = 2
 )
 
 var configFile = flag.String("config", "../../../../etc/deployservice.yaml", "the config file")
@@ -45,63 +46,85 @@ func getRecycledIDKey(serverType uint32) string {
 
 // 获取下一个自增的 ID，或者从回收池中获取
 func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uint32) (uint64, error) {
-	// 先尝试从回收池中获取一个 ID
+	// 定义回收池和计数器键
 	recycledIDKey := getRecycledIDKey(serverType)
-	resp, err := etcdClient.Get(ctx, recycledIDKey)
+	idKey := getServerTypeKey(serverType)
+
+	// 事务 1：从回收池中获取 ID
+	txn1 := etcdClient.Txn(ctx)
+	txn1.If(
+		clientv3.Compare(clientv3.Version(recycledIDKey), ">", 0), // 判断回收池中是否有 ID
+	).
+		Then(
+			clientv3.OpGet(recycledIDKey),    // 获取回收池中的 ID
+			clientv3.OpDelete(recycledIDKey), // 删除回收池中的 ID
+		)
+
+	// 提交事务 1
+	txn1Resp, err := txn1.Commit()
 	if err != nil {
-		return ^uint64(0), fmt.Errorf("failed to get recycled IDs for server type %d: %v", serverType, err)
+		return 0, fmt.Errorf("failed to commit txn for recycled ID: %v", err)
 	}
 
-	if len(resp.Kvs) > 0 {
-		// 如果回收池中有 ID，直接从回收池中取一个
-		recycledID := string(resp.Kvs[0].Value)
-		_, err := etcdClient.Delete(ctx, recycledIDKey)
-		if err != nil {
-			return ^uint64(0), fmt.Errorf("failed to delete recycled ID %s for server type %d: %v", recycledID, serverType, err)
-		}
-		log.Printf("Recycled ID %s for server type %d", recycledID, serverType)
-		var id uint64
-		_, err = fmt.Sscanf(recycledID, "%d", &id)
-		if err != nil {
-			return ^uint64(0), fmt.Errorf("failed to parse recycled ID %s for server type %d: %v", recycledID, serverType, err)
-		}
-		return id, nil
-	}
-
-	// 使用服务器类型生成 ID 计数器键
-	serverTypeKey := getServerTypeKey(serverType)
-
-	// 获取当前 ID 值并进行自增
-	resp, err = etcdClient.Get(ctx, serverTypeKey)
-	if err != nil {
-		return ^uint64(0), fmt.Errorf("failed to get current ID for server type %d: %v", serverType, err)
-	}
-
-	// 获取当前的计数器值
 	var currentID uint64
-	if len(resp.Kvs) > 0 {
-		_, err = fmt.Sscanf(string(resp.Kvs[0].Value), "%d", &currentID)
+
+	// 如果回收池有 ID，直接返回
+	if len(txn1Resp.Responses) > 0 && txn1Resp.Responses[0].GetResponseRange() != nil {
+		recycledID := string(txn1Resp.Responses[0].GetResponseRange().Kvs[0].Value)
+		_, err := fmt.Sscanf(recycledID, "%d", &currentID)
 		if err != nil {
-			return ^uint64(0), fmt.Errorf("failed to parse current ID for server type %d: %v", serverType, err)
+			return 0, fmt.Errorf("failed to parse recycled ID: %v", err)
 		}
-	} else {
-		currentID = 0
+		log.Printf("Returned recycled ID %d for server type %d", currentID, serverType)
+		return currentID, nil
 	}
 
-	// 如果 ID 超过最大值，则重置为 0
-	if currentID >= maxID {
-		currentID = 0
-	}
+	// 事务 2：如果回收池没有 ID，则获取自增 ID
+	txn2 := etcdClient.Txn(ctx)
+	txn2.If(
+		clientv3.Compare(clientv3.Version(idKey), "=", 0), // 判断 idKey 是否存在
+	).
+		Then(
+			clientv3.OpPut(idKey, "0"), // 初始化 idKey 为 0
+			clientv3.OpGet(idKey),      // 获取当前值
+		).
+		Else(
+			clientv3.OpGet(idKey), // 获取现有自增 ID
+		)
 
-	// 更新 ID 计数器
-	newID := currentID + 1
-	_, err = etcdClient.Put(ctx, serverTypeKey, fmt.Sprintf("%d", newID))
+	// 提交事务 2
+	txn2Resp, err := txn2.Commit()
 	if err != nil {
-		return ^uint64(0), fmt.Errorf("failed to increment ID for server type %d: %v", serverType, err)
+		return 0, fmt.Errorf("failed to commit txn for generating ID: %v", err)
 	}
 
-	// 返回新的 ID
-	return newID - 1, nil
+	// 获取当前自增 ID 值
+	if len(txn2Resp.Responses) > 0 {
+		if txn2Resp.Responses[0].GetResponseRange() != nil {
+			// 获取现有的 ID
+			value := txn2Resp.Responses[0].GetResponseRange().Kvs[0].Value
+			currentIDStr := string(value)
+			_, err := fmt.Sscanf(currentIDStr, "%d", &currentID)
+			if err != nil {
+				return 0, fmt.Errorf("failed to parse current ID: %v", err)
+			}
+		} else {
+			// 初始化 ID 为 0
+			currentID = 0
+		}
+	}
+
+	// 自增 ID
+	currentID++
+
+	// 更新自增 ID 到 Etcd
+	_, err = etcdClient.Put(ctx, idKey, fmt.Sprintf("%d", currentID))
+	if err != nil {
+		return 0, fmt.Errorf("failed to update IDKey for server type %d: %v", serverType, err)
+	}
+
+	log.Printf("Generated new ID %d for server type %d", currentID, serverType)
+	return currentID, nil
 }
 
 // 释放一个 ID 到对应的回收池
@@ -119,20 +142,33 @@ func releaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, serv
 }
 
 // 清除所有的 ID 键
+// 清除所有的 ID 键，包括每种服务器类型的计数器键和回收池键
 func clearAllIDs(etcdClient *clientv3.Client) error {
-	// 删除所有服务器类型的计数器键
-	_, err := etcdClient.Delete(context.Background(), "node_id_counter_", clientv3.WithPrefix())
-	if err != nil {
-		return fmt.Errorf("failed to delete node_id_counter keys: %v", err)
+	// 获取所有的服务器类型（假设服务器类型范围是 [0, maxServerType]）
+	// 在实际情况下，你可以从配置或者其他方式获取所有服务器类型
+	for serverType := uint32(0); serverType < maxServerType; serverType++ {
+		// 获取对应服务器类型的计数器键
+		serverTypeKey := getServerTypeKey(serverType)
+
+		// 删除服务器类型的计数器键
+		_, err := etcdClient.Delete(context.Background(), serverTypeKey)
+		if err != nil {
+			return fmt.Errorf("failed to delete node_id_counter for server type %d: %v", serverType, err)
+		}
+
+		// 获取对应服务器类型的回收池键
+		recycledIDKey := getRecycledIDKey(serverType)
+
+		// 删除回收池的键
+		_, err = etcdClient.Delete(context.Background(), recycledIDKey)
+		if err != nil {
+			return fmt.Errorf("failed to delete recycled_ids for server type %d: %v", serverType, err)
+		}
+
+		log.Printf("ID-related keys for server type %d cleared", serverType)
 	}
 
-	// 删除所有回收池的键
-	_, err = etcdClient.Delete(context.Background(), "recycled_ids_", clientv3.WithPrefix())
-	if err != nil {
-		return fmt.Errorf("failed to delete recycled_ids keys: %v", err)
-	}
-
-	log.Println("All ID-related keys cleared")
+	log.Println("All server type ID-related keys cleared")
 	return nil
 }
 
