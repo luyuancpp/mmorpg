@@ -48,7 +48,7 @@ func TestGenerateID(t *testing.T) {
 	err = clearAllIDs(etcdClient)
 
 	// 测试 ID 达到最大值后是否重置为 0
-	for i := 0; i < int(maxID); i++ {
+	for i := 0; i < maxID; i++ {
 		id, err := generateID(ctx, etcdClient, serverType)
 		if err != nil {
 			t.Errorf("Failed to generate ID: %v", err)
@@ -57,7 +57,7 @@ func TestGenerateID(t *testing.T) {
 
 		// 期待生成的ID应该是自增的
 		if uint64(i) != id {
-			t.Errorf("ID not incremented properly: expected %d, got %d", i+1, id)
+			t.Errorf("ID not incremented properly: expected %d, got %d", i, id)
 		}
 	}
 

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/core/logx"
 	"log"
 	"time"
 
@@ -75,47 +76,79 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 		if err != nil {
 			return 0, fmt.Errorf("failed to parse recycled ID: %v", err)
 		}
-		log.Printf("Returned recycled ID %d for server type %d", currentID, serverType)
+		logx.Info("Returned recycled ID ", currentID, "for server type ", serverType)
 		return currentID, nil
 	}
 
 	// 事务 2：如果回收池没有 ID，则获取自增 ID，并自增
 	var prevID uint64
+
+	// Handle case where the idKey doesn't exist and initialize it to "1"
+	txn2 := etcdClient.Txn(ctx)
+	txn2.If(
+		clientv3.Compare(clientv3.Version(idKey), "=", 0), // idKey doesn't exist
+	).
+		Then(
+			clientv3.OpPut(idKey, "0"), // Initialize idKey to 0
+			clientv3.OpGet(idKey),      // Retrieve new ID
+		).
+		Else(
+			clientv3.OpGet(idKey), // If idKey exists, just retrieve the value
+		)
+
+	// 提交事务 2
+	txn2Resp, err := txn2.Commit()
+	if err != nil {
+		return 0, fmt.Errorf("failed to commit txn for initializing or getting ID: %v", err)
+	}
+
+	if len(txn2Resp.Responses) == 1 && txn2Resp.Responses[0].GetResponseRange() != nil {
+		value := txn2Resp.Responses[0].GetResponseRange().Kvs[0].Value
+		_, err := fmt.Sscanf(string(value), "%d", &currentID)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse current ID: %v", err)
+		}
+		// Set prevID correctly after initializing
+		prevID = currentID
+	} else if len(txn2Resp.Responses) == 2 && txn2Resp.Responses[1].GetResponseRange() != nil {
+		value := txn2Resp.Responses[1].GetResponseRange().Kvs[0].Value
+		_, err := fmt.Sscanf(string(value), "%d", &currentID)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse current ID: %v", err)
+		}
+		// Set prevID correctly after initializing
+		prevID = currentID
+	}
+
+	// Start the loop to increment the ID
 	for {
 		// 获取当前 ID 值并准备自增
-		txn2 := etcdClient.Txn(ctx)
-		txn2.If(
-			clientv3.Compare(clientv3.Version(idKey), ">", 0),                       // 如果 idKey 存在
+		txn3 := etcdClient.Txn(ctx)
+		txn3.If(
 			clientv3.Compare(clientv3.Value(idKey), "=", fmt.Sprintf("%d", prevID)), // 保证版本未变
 		).
 			Then(
 				clientv3.OpPut(idKey, fmt.Sprintf("%d", prevID+1)), // 自增
 				clientv3.OpGet(idKey),                              // 获取新的 ID
-			).
-			Else(
-				// 如果 idKey 不存在，初始化 idKey 为 1
-				clientv3.OpPut(idKey, "1"),
-				clientv3.OpGet(idKey),
 			)
 
-		// 提交事务 2
-		txn2Resp, err := txn2.Commit()
+		// 提交事务 3
+		txn3Resp, err := txn3.Commit()
 		if err != nil {
 			return 0, fmt.Errorf("failed to commit txn for generating ID: %v", err)
 		}
 
 		// 如果事务提交成功
-		if len(txn2Resp.Responses) > 0 && txn2Resp.Responses[0].GetResponseRange() != nil {
-			value := txn2Resp.Responses[0].GetResponseRange().Kvs[0].Value
-			currentIDStr := string(value)
-			_, err := fmt.Sscanf(currentIDStr, "%d", &currentID)
+		if len(txn3Resp.Responses) > 0 && txn3Resp.Responses[1].GetResponseRange() != nil {
+			value := txn3Resp.Responses[1].GetResponseRange().Kvs[0].Value
+			_, err := fmt.Sscanf(string(value), "%d", &currentID)
 			if err != nil {
 				return 0, fmt.Errorf("failed to parse current ID: %v", err)
 			}
 
 			// 如果成功自增，则退出循环
 			if prevID == currentID-1 {
-				log.Printf("Generated new ID %d for server type %d", currentID, serverType)
+				logx.Info("Generated new ID ", currentID, " for server type ", serverType)
 				return currentID, nil
 			}
 		}
@@ -135,7 +168,7 @@ func releaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, serv
 	if err != nil {
 		return fmt.Errorf("failed to release ID %d for server type %d: %v", id, serverType, err)
 	}
-	log.Printf("ID %d successfully released for server type %d", id, serverType)
+	logx.Info("ID ", id, " successfully released for server type ", serverType)
 	return nil
 }
 
@@ -163,7 +196,7 @@ func clearAllIDs(etcdClient *clientv3.Client) error {
 			return fmt.Errorf("failed to delete recycled_ids for server type %d: %v", serverType, err)
 		}
 
-		log.Printf("ID-related keys for server type %d cleared", serverType)
+		logx.Info("ID-related keys for server type ", serverType, " cleared")
 	}
 
 	log.Println("All server type ID-related keys cleared")
@@ -178,7 +211,7 @@ func sweepExpiredIDs(etcdClient *clientv3.Client) {
 	// 获取所有的 ID 键
 	resp, err := etcdClient.Get(context.Background(), "ids/", clientv3.WithPrefix())
 	if err != nil {
-		log.Printf("Failed to list IDs: %v", err)
+		logx.Error("Failed to list IDs: ", err)
 		return
 	}
 
@@ -189,7 +222,7 @@ func sweepExpiredIDs(etcdClient *clientv3.Client) {
 		// 检查每个键的租约状态
 		leaseResp, err := etcdClient.TimeToLive(context.Background(), clientv3.LeaseID(kv.Lease))
 		if err != nil {
-			log.Printf("Failed to get TTL for key %s: %v", key, err)
+			logx.Error("Failed to get TTL for key ", key, ": ", err)
 			continue
 		}
 
@@ -198,9 +231,9 @@ func sweepExpiredIDs(etcdClient *clientv3.Client) {
 			// 删除过期的 ID
 			_, err := etcdClient.Delete(context.Background(), key)
 			if err != nil {
-				log.Printf("Failed to delete expired ID %s: %v", key, err)
+				logx.Error("Failed to delete expired ID ", key, ": ", err)
 			} else {
-				log.Printf("ID %s expired and deleted", key)
+				logx.Info("ID ", key, " expired and deleted")
 			}
 		}
 	}
