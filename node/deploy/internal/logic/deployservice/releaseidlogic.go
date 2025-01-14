@@ -2,6 +2,7 @@ package deployservicelogic
 
 import (
 	"context"
+	"deploy/internal/logic/pkg/node_id_etcd"
 
 	"deploy/internal/svc"
 	"deploy/pb/game"
@@ -24,7 +25,11 @@ func NewReleaseIDLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Release
 }
 
 func (l *ReleaseIDLogic) ReleaseID(in *game.ReleaseIDRequest) (*game.ReleaseIDResponse, error) {
-	// todo: add your logic here and delete this line
+	err := node_id_etcd.ReleaseID(l.ctx, l.svcCtx.NodeEtcdClient, in.Id, in.ServerType)
+	if err != nil {
+		logx.Error(err)
+		return &game.ReleaseIDResponse{}, err
+	}
 
 	return &game.ReleaseIDResponse{}, nil
 }

@@ -2,12 +2,9 @@ package deployservicelogic
 
 import (
 	"context"
-	"fmt"
-	"time"
-
+	node_id_etcd "deploy/internal/logic/pkg/node_id_etcd"
 	"deploy/internal/svc"
 	"deploy/pb/game"
-
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -26,17 +23,11 @@ func NewGetIDLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetIDLogic 
 }
 
 func (l *GetIDLogic) GetID(in *game.GetIDRequest) (*game.GetIDResponse, error) {
-	// todo: add your logic here and delete this line
+	id, err := node_id_etcd.GenerateID(l.ctx, l.svcCtx.NodeEtcdClient, in.ServerType)
+	if err != nil {
+		logx.Error(err)
+		return &game.GetIDResponse{}, err
+	}
 
-	// 生成一个唯一 ID（在实际应用中，可以更复杂）
-	id := fmt.Sprintf("%d", time.Now().UnixNano())
-
-	// 将 ID 存入 ID 池，并设置 TTL
-	s.idPool[id] = time.Now().Add(s.idTTL)
-	fmt.Printf("Assigned ID: %s\n", id)
-
-	return &idservice.GetIDResponse{
-		Id: id,
-	}, nil
-	return &game.GetIDResponse{}, nil
+	return &game.GetIDResponse{Id: id}, nil
 }

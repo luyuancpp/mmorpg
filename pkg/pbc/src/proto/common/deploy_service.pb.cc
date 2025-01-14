@@ -208,12 +208,8 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr ReleaseIDRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : id_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        server_type_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
+      : id_{::uint64_t{0u}},
+        server_type_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -252,9 +248,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr GetIDResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : id_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
+      : id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -276,9 +270,7 @@ inline constexpr GetIDRequest::Impl_::Impl_(
       : client_name_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        server_type_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
+        server_type_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -731,9 +723,9 @@ const char descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto[]
     "(\r\022\021\n\tnode_type\030\002 \001(\r\"C\n\020NodeInfoRespons"
     "e\022\036\n\004info\030\001 \001(\0132\020.nodes_info_data\022\017\n\007nod"
     "e_id\030\002 \001(\r\"8\n\014GetIDRequest\022\023\n\013client_nam"
-    "e\030\001 \001(\t\022\023\n\013server_type\030\002 \001(\t\"\033\n\rGetIDRes"
-    "ponse\022\n\n\002id\030\001 \001(\t\"3\n\020ReleaseIDRequest\022\n\n"
-    "\002id\030\001 \001(\t\022\023\n\013server_type\030\002 \001(\t\"$\n\021Releas"
+    "e\030\001 \001(\t\022\023\n\013server_type\030\002 \001(\r\"\033\n\rGetIDRes"
+    "ponse\022\n\n\002id\030\001 \001(\004\"3\n\020ReleaseIDRequest\022\n\n"
+    "\002id\030\001 \001(\004\022\023\n\013server_type\030\002 \001(\r\"$\n\021Releas"
     "eIDResponse\022\017\n\007success\030\001 \001(\0102\237\001\n\rDeployS"
     "ervice\0222\n\013GetNodeInfo\022\020.NodeInfoRequest\032"
     "\021.NodeInfoResponse\022&\n\005GetID\022\r.GetIDReque"
@@ -4557,7 +4549,6 @@ inline PROTOBUF_NDEBUG_INLINE GetIDRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from)
       : client_name_(arena, from.client_name_),
-        server_type_(arena, from.server_type_),
         _cached_size_{0} {}
 
 GetIDRequest::GetIDRequest(
@@ -4569,6 +4560,7 @@ GetIDRequest::GetIDRequest(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  _impl_.server_type_ = from._impl_.server_type_;
 
   // @@protoc_insertion_point(copy_constructor:GetIDRequest)
 }
@@ -4576,11 +4568,11 @@ inline PROTOBUF_NDEBUG_INLINE GetIDRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : client_name_(arena),
-        server_type_(arena),
         _cached_size_{0} {}
 
 inline void GetIDRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.server_type_ = {};
 }
 GetIDRequest::~GetIDRequest() {
   // @@protoc_insertion_point(destructor:GetIDRequest)
@@ -4590,7 +4582,6 @@ GetIDRequest::~GetIDRequest() {
 inline void GetIDRequest::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.client_name_.Destroy();
-  _impl_.server_type_.Destroy();
   _impl_.~Impl_();
 }
 
@@ -4616,7 +4607,7 @@ PROTOBUF_NOINLINE void GetIDRequest::Clear() {
   (void) cached_has_bits;
 
   _impl_.client_name_.ClearToEmpty();
-  _impl_.server_type_.ClearToEmpty();
+  _impl_.server_type_ = 0u;
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -4628,7 +4619,7 @@ const char* GetIDRequest::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 43, 2> GetIDRequest::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 32, 2> GetIDRequest::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -4645,9 +4636,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 43, 2> GetIDRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::GetIDRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // string server_type = 2;
-    {::_pbi::TcParser::FastUS1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.server_type_)}},
+    // uint32 server_type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetIDRequest, _impl_.server_type_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.server_type_)}},
     // string client_name = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.client_name_)}},
@@ -4657,16 +4648,15 @@ const ::_pbi::TcParseTable<1, 2, 0, 43, 2> GetIDRequest::_table_ = {
     // string client_name = 1;
     {PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.client_name_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // string server_type = 2;
+    // uint32 server_type = 2;
     {PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.server_type_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
-    "\14\13\13\0\0\0\0\0"
+    "\14\13\0\0\0\0\0\0"
     "GetIDRequest"
     "client_name"
-    "server_type"
   }},
 };
 
@@ -4685,12 +4675,11 @@ const ::_pbi::TcParseTable<1, 2, 0, 43, 2> GetIDRequest::_table_ = {
     target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
-  // string server_type = 2;
-  if (!this->_internal_server_type().empty()) {
-    const std::string& _s = this->_internal_server_type();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GetIDRequest.server_type");
-    target = stream->WriteStringMaybeAliased(2, _s, target);
+  // uint32 server_type = 2;
+  if (this->_internal_server_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        2, this->_internal_server_type(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4716,10 +4705,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 43, 2> GetIDRequest::_table_ = {
                                     this->_internal_client_name());
   }
 
-  // string server_type = 2;
-  if (!this->_internal_server_type().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                    this->_internal_server_type());
+  // uint32 server_type = 2;
+  if (this->_internal_server_type() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_server_type());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -4737,8 +4726,8 @@ void GetIDRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::go
   if (!from._internal_client_name().empty()) {
     _this->_internal_set_client_name(from._internal_client_name());
   }
-  if (!from._internal_server_type().empty()) {
-    _this->_internal_set_server_type(from._internal_server_type());
+  if (from._internal_server_type() != 0) {
+    _this->_impl_.server_type_ = from._impl_.server_type_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -4760,7 +4749,7 @@ void GetIDRequest::InternalSwap(GetIDRequest* PROTOBUF_RESTRICT other) {
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.client_name_, &other->_impl_.client_name_, arena);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.server_type_, &other->_impl_.server_type_, arena);
+        swap(_impl_.server_type_, other->_impl_.server_type_);
 }
 
 ::google::protobuf::Metadata GetIDRequest::GetMetadata() const {
@@ -4779,32 +4768,19 @@ GetIDResponse::GetIDResponse(::google::protobuf::Arena* arena)
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:GetIDResponse)
 }
-inline PROTOBUF_NDEBUG_INLINE GetIDResponse::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from)
-      : id_(arena, from.id_),
-        _cached_size_{0} {}
-
 GetIDResponse::GetIDResponse(
-    ::google::protobuf::Arena* arena,
-    const GetIDResponse& from)
-    : ::google::protobuf::Message(arena) {
-  GetIDResponse* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-
-  // @@protoc_insertion_point(copy_constructor:GetIDResponse)
+    ::google::protobuf::Arena* arena, const GetIDResponse& from)
+    : GetIDResponse(arena) {
+  MergeFrom(from);
 }
 inline PROTOBUF_NDEBUG_INLINE GetIDResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : id_(arena),
-        _cached_size_{0} {}
+      : _cached_size_{0} {}
 
 inline void GetIDResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.id_ = {};
 }
 GetIDResponse::~GetIDResponse() {
   // @@protoc_insertion_point(destructor:GetIDResponse)
@@ -4813,7 +4789,6 @@ GetIDResponse::~GetIDResponse() {
 }
 inline void GetIDResponse::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.id_.Destroy();
   _impl_.~Impl_();
 }
 
@@ -4838,7 +4813,7 @@ PROTOBUF_NOINLINE void GetIDResponse::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.id_.ClearToEmpty();
+  _impl_.id_ = ::uint64_t{0u};
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -4850,7 +4825,7 @@ const char* GetIDResponse::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 24, 2> GetIDResponse::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetIDResponse::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -4867,21 +4842,18 @@ const ::_pbi::TcParseTable<0, 1, 0, 24, 2> GetIDResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::GetIDResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // string id = 1;
-    {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.id_)}},
+    // uint64 id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetIDResponse, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // string id = 1;
+    // uint64 id = 1;
     {PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
-    "\15\2\0\0\0\0\0\0"
-    "GetIDResponse"
-    "id"
   }},
 };
 
@@ -4892,12 +4864,11 @@ const ::_pbi::TcParseTable<0, 1, 0, 24, 2> GetIDResponse::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // string id = 1;
-  if (!this->_internal_id().empty()) {
-    const std::string& _s = this->_internal_id();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GetIDResponse.id");
-    target = stream->WriteStringMaybeAliased(1, _s, target);
+  // uint64 id = 1;
+  if (this->_internal_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4917,10 +4888,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 24, 2> GetIDResponse::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // string id = 1;
-  if (!this->_internal_id().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                    this->_internal_id());
+  // uint64 id = 1;
+  if (this->_internal_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_id());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -4935,8 +4906,8 @@ void GetIDResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (!from._internal_id().empty()) {
-    _this->_internal_set_id(from._internal_id());
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -4954,10 +4925,8 @@ PROTOBUF_NOINLINE bool GetIDResponse::IsInitialized() const {
 
 void GetIDResponse::InternalSwap(GetIDResponse* PROTOBUF_RESTRICT other) {
   using std::swap;
-  auto* arena = GetArena();
-  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.id_, &other->_impl_.id_, arena);
+        swap(_impl_.id_, other->_impl_.id_);
 }
 
 ::google::protobuf::Metadata GetIDResponse::GetMetadata() const {
@@ -4976,34 +4945,24 @@ ReleaseIDRequest::ReleaseIDRequest(::google::protobuf::Arena* arena)
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:ReleaseIDRequest)
 }
-inline PROTOBUF_NDEBUG_INLINE ReleaseIDRequest::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from)
-      : id_(arena, from.id_),
-        server_type_(arena, from.server_type_),
-        _cached_size_{0} {}
-
 ReleaseIDRequest::ReleaseIDRequest(
-    ::google::protobuf::Arena* arena,
-    const ReleaseIDRequest& from)
-    : ::google::protobuf::Message(arena) {
-  ReleaseIDRequest* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-
-  // @@protoc_insertion_point(copy_constructor:ReleaseIDRequest)
+    ::google::protobuf::Arena* arena, const ReleaseIDRequest& from)
+    : ReleaseIDRequest(arena) {
+  MergeFrom(from);
 }
 inline PROTOBUF_NDEBUG_INLINE ReleaseIDRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : id_(arena),
-        server_type_(arena),
-        _cached_size_{0} {}
+      : _cached_size_{0} {}
 
 inline void ReleaseIDRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           0,
+           offsetof(Impl_, server_type_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::server_type_));
 }
 ReleaseIDRequest::~ReleaseIDRequest() {
   // @@protoc_insertion_point(destructor:ReleaseIDRequest)
@@ -5012,8 +4971,6 @@ ReleaseIDRequest::~ReleaseIDRequest() {
 }
 inline void ReleaseIDRequest::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.id_.Destroy();
-  _impl_.server_type_.Destroy();
   _impl_.~Impl_();
 }
 
@@ -5038,8 +4995,9 @@ PROTOBUF_NOINLINE void ReleaseIDRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.id_.ClearToEmpty();
-  _impl_.server_type_.ClearToEmpty();
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.server_type_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.server_type_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -5051,7 +5009,7 @@ const char* ReleaseIDRequest::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 38, 2> ReleaseIDRequest::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -5068,28 +5026,24 @@ const ::_pbi::TcParseTable<1, 2, 0, 38, 2> ReleaseIDRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::ReleaseIDRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // string server_type = 2;
-    {::_pbi::TcParser::FastUS1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_)}},
-    // string id = 1;
-    {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_)}},
+    // uint32 server_type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ReleaseIDRequest, _impl_.server_type_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_)}},
+    // uint64 id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleaseIDRequest, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // string id = 1;
+    // uint64 id = 1;
     {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // string server_type = 2;
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint32 server_type = 2;
     {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
-    "\20\2\13\0\0\0\0\0"
-    "ReleaseIDRequest"
-    "id"
-    "server_type"
   }},
 };
 
@@ -5100,20 +5054,18 @@ const ::_pbi::TcParseTable<1, 2, 0, 38, 2> ReleaseIDRequest::_table_ = {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // string id = 1;
-  if (!this->_internal_id().empty()) {
-    const std::string& _s = this->_internal_id();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "ReleaseIDRequest.id");
-    target = stream->WriteStringMaybeAliased(1, _s, target);
+  // uint64 id = 1;
+  if (this->_internal_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_id(), target);
   }
 
-  // string server_type = 2;
-  if (!this->_internal_server_type().empty()) {
-    const std::string& _s = this->_internal_server_type();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "ReleaseIDRequest.server_type");
-    target = stream->WriteStringMaybeAliased(2, _s, target);
+  // uint32 server_type = 2;
+  if (this->_internal_server_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        2, this->_internal_server_type(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5133,16 +5085,16 @@ const ::_pbi::TcParseTable<1, 2, 0, 38, 2> ReleaseIDRequest::_table_ = {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // string id = 1;
-  if (!this->_internal_id().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                    this->_internal_id());
+  // uint64 id = 1;
+  if (this->_internal_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_id());
   }
 
-  // string server_type = 2;
-  if (!this->_internal_server_type().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                    this->_internal_server_type());
+  // uint32 server_type = 2;
+  if (this->_internal_server_type() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_server_type());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -5157,11 +5109,11 @@ void ReleaseIDRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (!from._internal_id().empty()) {
-    _this->_internal_set_id(from._internal_id());
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
   }
-  if (!from._internal_server_type().empty()) {
-    _this->_internal_set_server_type(from._internal_server_type());
+  if (from._internal_server_type() != 0) {
+    _this->_impl_.server_type_ = from._impl_.server_type_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -5179,11 +5131,13 @@ PROTOBUF_NOINLINE bool ReleaseIDRequest::IsInitialized() const {
 
 void ReleaseIDRequest::InternalSwap(ReleaseIDRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
-  auto* arena = GetArena();
-  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.id_, &other->_impl_.id_, arena);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.server_type_, &other->_impl_.server_type_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_)
+      + sizeof(ReleaseIDRequest::_impl_.server_type_)
+      - PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_)>(
+          reinterpret_cast<char*>(&_impl_.id_),
+          reinterpret_cast<char*>(&other->_impl_.id_));
 }
 
 ::google::protobuf::Metadata ReleaseIDRequest::GetMetadata() const {

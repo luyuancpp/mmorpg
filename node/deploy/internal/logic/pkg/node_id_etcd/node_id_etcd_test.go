@@ -17,7 +17,7 @@ const (
 // TestGenerateID 测试ID生成器的功能
 func TestGenerateID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
-	etcdClient, err := initEtcdClient()
+	etcdClient, err := InitEtcdClient()
 	if err != nil {
 		t.Fatalf("Error initializing Etcd client: %v", err)
 	}
@@ -31,7 +31,7 @@ func TestGenerateID_Success(t *testing.T) {
 	// 测试多次生成 ID
 	for i := 0; i < 10; i++ {
 		// 生成新的 ID
-		id, err := generateID(ctx, etcdClient, serverType)
+		id, err := GenerateID(ctx, etcdClient, serverType)
 		if err != nil {
 			t.Errorf("Failed to generate ID: %v", err)
 			continue
@@ -50,7 +50,7 @@ func TestGenerateID_Success(t *testing.T) {
 
 	// 测试 ID 达到最大值后是否重置为 0
 	for i := 0; i < maxID; i++ {
-		id, err := generateID(ctx, etcdClient, serverType)
+		id, err := GenerateID(ctx, etcdClient, serverType)
 		if err != nil {
 			t.Errorf("Failed to generate ID: %v", err)
 			continue
@@ -63,7 +63,7 @@ func TestGenerateID_Success(t *testing.T) {
 	}
 
 	// 测试 ID 是否在最大值后重置
-	_, err = generateID(ctx, etcdClient, serverType)
+	_, err = GenerateID(ctx, etcdClient, serverType)
 	if err != nil {
 		logx.Info("Failed to generate ID after max ID: ", err)
 	}
@@ -72,7 +72,7 @@ func TestGenerateID_Success(t *testing.T) {
 // TestReleaseID 测试释放ID的功能
 func TestReleaseID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
-	etcdClient, err := initEtcdClient()
+	etcdClient, err := InitEtcdClient()
 	if err != nil {
 		t.Fatalf("Error initializing Etcd client: %v", err)
 	}
@@ -82,13 +82,13 @@ func TestReleaseID_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// 生成新的 ID
-	id, err := generateID(ctx, etcdClient, serverType)
+	id, err := GenerateID(ctx, etcdClient, serverType)
 	if err != nil {
 		t.Fatalf("Failed to generate ID: %v", err)
 	}
 
 	// 释放生成的 ID
-	err = releaseID(ctx, etcdClient, id, serverType)
+	err = ReleaseID(ctx, etcdClient, id, serverType)
 	if err != nil {
 		t.Errorf("Failed to release ID %d: %v", id, err)
 	}
@@ -109,7 +109,7 @@ func TestReleaseID_Success(t *testing.T) {
 // TestSweepExpiredIDs 测试清理过期ID的功能
 func TestSweepExpiredIDs_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
-	etcdClient, err := initEtcdClient()
+	etcdClient, err := InitEtcdClient()
 	if err != nil {
 		t.Fatalf("Error initializing Etcd client: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestSweepExpiredIDs_Success(t *testing.T) {
 	}
 
 	// 使用租约创建 ID
-	id, err := generateID(ctx, etcdClient, serverType)
+	id, err := GenerateID(ctx, etcdClient, serverType)
 	if err != nil {
 		t.Fatalf("Failed to generate ID with lease: %v", err)
 	}
@@ -159,7 +159,7 @@ func isValidID(num uint64) bool {
 
 func TestGenerateIDAndReleaseID_Concurrently_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
-	etcdClient, err := initEtcdClient()
+	etcdClient, err := InitEtcdClient()
 	if err != nil {
 		t.Fatalf("Error initializing Etcd client: %v", err)
 	}
@@ -172,13 +172,13 @@ func TestGenerateIDAndReleaseID_Concurrently_Success(t *testing.T) {
 
 	var wg sync.WaitGroup
 
-	// 启动多个 goroutine 来并发调用 generateID 和 releaseID
+	// 启动多个 goroutine 来并发调用 GenerateID 和 ReleaseID
 	for i := 0; i < 100; i++ {
-		wg.Add(2) // 每次启动两个 goroutine，一个调用 generateID，另一个调用 releaseID
+		wg.Add(2) // 每次启动两个 goroutine，一个调用 GenerateID，另一个调用 ReleaseID
 		go func() {
 			defer wg.Done()
-			// 并发调用 generateID
-			id, err := generateID(ctx, etcdClient, serverType)
+			// 并发调用 GenerateID
+			id, err := GenerateID(ctx, etcdClient, serverType)
 			if err != nil {
 				t.Errorf("Generated ID: %s", err)
 				return
@@ -188,9 +188,9 @@ func TestGenerateIDAndReleaseID_Concurrently_Success(t *testing.T) {
 
 		go func() {
 			defer wg.Done()
-			// 并发调用 releaseID
+			// 并发调用 ReleaseID
 			id := i + 1 // 假设每次 release 的 ID 是按顺序来的
-			err := releaseID(ctx, etcdClient, uint64(id), serverType)
+			err := ReleaseID(ctx, etcdClient, uint64(id), serverType)
 			if err != nil {
 				t.Errorf("Released ID: %s", err)
 				return
@@ -205,7 +205,7 @@ func TestGenerateIDAndReleaseID_Concurrently_Success(t *testing.T) {
 
 func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 	// 初始化 Etcd 客户端
-	etcdClient, err := initEtcdClient()
+	etcdClient, err := InitEtcdClient()
 	if err != nil {
 		t.Fatalf("Error initializing Etcd client: %v", err)
 	}
@@ -226,14 +226,14 @@ func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 	// 用于同步回收的操作
 	var releaseWG sync.WaitGroup
 
-	// 启动多个 goroutine 来并发调用 generateID，先生成所有 ID
+	// 启动多个 goroutine 来并发调用 GenerateID，先生成所有 ID
 	for i := 0; i < 100; i++ {
-		wg.Add(1) // 每次启动一个 goroutine 调用 generateID
+		wg.Add(1) // 每次启动一个 goroutine 调用 GenerateID
 		go func() {
 			defer wg.Done()
 
-			// 并发调用 generateID
-			id, err := generateID(ctx, etcdClient, serverType)
+			// 并发调用 GenerateID
+			id, err := GenerateID(ctx, etcdClient, serverType)
 			if err != nil {
 				t.Errorf("Generated ID error: %v", err)
 				return
@@ -245,17 +245,17 @@ func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 		}()
 	}
 
-	// 等待所有的 generateID 操作完成
+	// 等待所有的 GenerateID 操作完成
 	wg.Wait()
 
 	// 启动多个 goroutine 来并发回收 ID
 	for _, id := range generatedIDs {
-		releaseWG.Add(1) // 每次启动一个 goroutine 调用 releaseID
+		releaseWG.Add(1) // 每次启动一个 goroutine 调用 ReleaseID
 		go func(id uint64) {
 			defer releaseWG.Done()
 
-			// 并发调用 releaseID
-			err := releaseID(ctx, etcdClient, id, serverType)
+			// 并发调用 ReleaseID
+			err := ReleaseID(ctx, etcdClient, id, serverType)
 			if err != nil {
 				t.Errorf("Released ID error: %v", err)
 				return
@@ -264,14 +264,14 @@ func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 		}(id)
 	}
 
-	// 等待所有的 releaseID 操作完成
+	// 等待所有的 ReleaseID 操作完成
 	releaseWG.Wait()
 }
 
 // TestReleaseAndReuseID_Success 测试释放后的 ID 是否能被重用
 func TestReleaseAndReuseID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
-	etcdClient, err := initEtcdClient()
+	etcdClient, err := InitEtcdClient()
 	if err != nil {
 		t.Fatalf("Error initializing Etcd client: %v", err)
 	}
@@ -283,20 +283,20 @@ func TestReleaseAndReuseID_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// 生成新的 ID
-	id, err := generateID(ctx, etcdClient, serverType)
+	id, err := GenerateID(ctx, etcdClient, serverType)
 	if err != nil {
 		t.Fatalf("Failed to generate ID: %v", err)
 	}
 	t.Logf("Generated ID: %d", id)
 
 	// 释放生成的 ID
-	err = releaseID(ctx, etcdClient, id, serverType)
+	err = ReleaseID(ctx, etcdClient, id, serverType)
 	if err != nil {
 		t.Errorf("Failed to release ID %d: %v", id, err)
 	}
 
 	// 再次生成 ID
-	reusedID, err := generateID(ctx, etcdClient, serverType)
+	reusedID, err := GenerateID(ctx, etcdClient, serverType)
 	if err != nil {
 		t.Fatalf("Failed to generate ID after release: %v", err)
 	}

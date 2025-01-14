@@ -1841,36 +1841,24 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
     kIdFieldNumber = 1,
     kServerTypeFieldNumber = 2,
   };
-  // string id = 1;
+  // uint64 id = 1;
   void clear_id() ;
-  const std::string& id() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_id(Arg_&& arg, Args_... args);
-  std::string* mutable_id();
-  PROTOBUF_NODISCARD std::string* release_id();
-  void set_allocated_id(std::string* value);
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
 
   private:
-  const std::string& _internal_id() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_id(
-      const std::string& value);
-  std::string* _internal_mutable_id();
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
 
   public:
-  // string server_type = 2;
+  // uint32 server_type = 2;
   void clear_server_type() ;
-  const std::string& server_type() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_server_type(Arg_&& arg, Args_... args);
-  std::string* mutable_server_type();
-  PROTOBUF_NODISCARD std::string* release_server_type();
-  void set_allocated_server_type(std::string* value);
+  ::uint32_t server_type() const;
+  void set_server_type(::uint32_t value);
 
   private:
-  const std::string& _internal_server_type() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_server_type(
-      const std::string& value);
-  std::string* _internal_mutable_server_type();
+  ::uint32_t _internal_server_type() const;
+  void _internal_set_server_type(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:ReleaseIDRequest)
@@ -1879,7 +1867,7 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       1, 2, 0,
-      38, 2>
+      0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -1894,8 +1882,8 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::ArenaStringPtr id_;
-    ::google::protobuf::internal::ArenaStringPtr server_type_;
+    ::uint64_t id_;
+    ::uint32_t server_type_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2210,20 +2198,14 @@ class GetIDResponse final : public ::google::protobuf::Message
   enum : int {
     kIdFieldNumber = 1,
   };
-  // string id = 1;
+  // uint64 id = 1;
   void clear_id() ;
-  const std::string& id() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_id(Arg_&& arg, Args_... args);
-  std::string* mutable_id();
-  PROTOBUF_NODISCARD std::string* release_id();
-  void set_allocated_id(std::string* value);
+  ::uint64_t id() const;
+  void set_id(::uint64_t value);
 
   private:
-  const std::string& _internal_id() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_id(
-      const std::string& value);
-  std::string* _internal_mutable_id();
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:GetIDResponse)
@@ -2232,7 +2214,7 @@ class GetIDResponse final : public ::google::protobuf::Message
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       0, 1, 0,
-      24, 2>
+      0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -2247,7 +2229,7 @@ class GetIDResponse final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
-    ::google::protobuf::internal::ArenaStringPtr id_;
+    ::uint64_t id_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2400,20 +2382,14 @@ class GetIDRequest final : public ::google::protobuf::Message
   std::string* _internal_mutable_client_name();
 
   public:
-  // string server_type = 2;
+  // uint32 server_type = 2;
   void clear_server_type() ;
-  const std::string& server_type() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_server_type(Arg_&& arg, Args_... args);
-  std::string* mutable_server_type();
-  PROTOBUF_NODISCARD std::string* release_server_type();
-  void set_allocated_server_type(std::string* value);
+  ::uint32_t server_type() const;
+  void set_server_type(::uint32_t value);
 
   private:
-  const std::string& _internal_server_type() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_server_type(
-      const std::string& value);
-  std::string* _internal_mutable_server_type();
+  ::uint32_t _internal_server_type() const;
+  void _internal_set_server_type(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:GetIDRequest)
@@ -2422,7 +2398,7 @@ class GetIDRequest final : public ::google::protobuf::Message
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       1, 2, 0,
-      43, 2>
+      32, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -2438,7 +2414,7 @@ class GetIDRequest final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::ArenaStringPtr client_name_;
-    ::google::protobuf::internal::ArenaStringPtr server_type_;
+    ::uint32_t server_type_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -5614,212 +5590,100 @@ inline void GetIDRequest::set_allocated_client_name(std::string* value) {
   // @@protoc_insertion_point(field_set_allocated:GetIDRequest.client_name)
 }
 
-// string server_type = 2;
+// uint32 server_type = 2;
 inline void GetIDRequest::clear_server_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_.ClearToEmpty();
+  _impl_.server_type_ = 0u;
 }
-inline const std::string& GetIDRequest::server_type() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::uint32_t GetIDRequest::server_type() const {
   // @@protoc_insertion_point(field_get:GetIDRequest.server_type)
   return _internal_server_type();
 }
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void GetIDRequest::set_server_type(Arg_&& arg,
-                                                     Args_... args) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+inline void GetIDRequest::set_server_type(::uint32_t value) {
+  _internal_set_server_type(value);
   // @@protoc_insertion_point(field_set:GetIDRequest.server_type)
 }
-inline std::string* GetIDRequest::mutable_server_type() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_server_type();
-  // @@protoc_insertion_point(field_mutable:GetIDRequest.server_type)
-  return _s;
-}
-inline const std::string& GetIDRequest::_internal_server_type() const {
+inline ::uint32_t GetIDRequest::_internal_server_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.server_type_.Get();
+  return _impl_.server_type_;
 }
-inline void GetIDRequest::_internal_set_server_type(const std::string& value) {
+inline void GetIDRequest::_internal_set_server_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_.Set(value, GetArena());
-}
-inline std::string* GetIDRequest::_internal_mutable_server_type() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _impl_.server_type_.Mutable( GetArena());
-}
-inline std::string* GetIDRequest::release_server_type() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:GetIDRequest.server_type)
-  return _impl_.server_type_.Release();
-}
-inline void GetIDRequest::set_allocated_server_type(std::string* value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.server_type_.IsDefault()) {
-          _impl_.server_type_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:GetIDRequest.server_type)
+  _impl_.server_type_ = value;
 }
 
 // -------------------------------------------------------------------
 
 // GetIDResponse
 
-// string id = 1;
+// uint64 id = 1;
 inline void GetIDResponse::clear_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_.ClearToEmpty();
+  _impl_.id_ = ::uint64_t{0u};
 }
-inline const std::string& GetIDResponse::id() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::uint64_t GetIDResponse::id() const {
   // @@protoc_insertion_point(field_get:GetIDResponse.id)
   return _internal_id();
 }
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void GetIDResponse::set_id(Arg_&& arg,
-                                                     Args_... args) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+inline void GetIDResponse::set_id(::uint64_t value) {
+  _internal_set_id(value);
   // @@protoc_insertion_point(field_set:GetIDResponse.id)
 }
-inline std::string* GetIDResponse::mutable_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_id();
-  // @@protoc_insertion_point(field_mutable:GetIDResponse.id)
-  return _s;
-}
-inline const std::string& GetIDResponse::_internal_id() const {
+inline ::uint64_t GetIDResponse::_internal_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.id_.Get();
+  return _impl_.id_;
 }
-inline void GetIDResponse::_internal_set_id(const std::string& value) {
+inline void GetIDResponse::_internal_set_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_.Set(value, GetArena());
-}
-inline std::string* GetIDResponse::_internal_mutable_id() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _impl_.id_.Mutable( GetArena());
-}
-inline std::string* GetIDResponse::release_id() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:GetIDResponse.id)
-  return _impl_.id_.Release();
-}
-inline void GetIDResponse::set_allocated_id(std::string* value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.id_.IsDefault()) {
-          _impl_.id_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:GetIDResponse.id)
+  _impl_.id_ = value;
 }
 
 // -------------------------------------------------------------------
 
 // ReleaseIDRequest
 
-// string id = 1;
+// uint64 id = 1;
 inline void ReleaseIDRequest::clear_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_.ClearToEmpty();
+  _impl_.id_ = ::uint64_t{0u};
 }
-inline const std::string& ReleaseIDRequest::id() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::uint64_t ReleaseIDRequest::id() const {
   // @@protoc_insertion_point(field_get:ReleaseIDRequest.id)
   return _internal_id();
 }
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void ReleaseIDRequest::set_id(Arg_&& arg,
-                                                     Args_... args) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+inline void ReleaseIDRequest::set_id(::uint64_t value) {
+  _internal_set_id(value);
   // @@protoc_insertion_point(field_set:ReleaseIDRequest.id)
 }
-inline std::string* ReleaseIDRequest::mutable_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_id();
-  // @@protoc_insertion_point(field_mutable:ReleaseIDRequest.id)
-  return _s;
-}
-inline const std::string& ReleaseIDRequest::_internal_id() const {
+inline ::uint64_t ReleaseIDRequest::_internal_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.id_.Get();
+  return _impl_.id_;
 }
-inline void ReleaseIDRequest::_internal_set_id(const std::string& value) {
+inline void ReleaseIDRequest::_internal_set_id(::uint64_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_.Set(value, GetArena());
-}
-inline std::string* ReleaseIDRequest::_internal_mutable_id() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _impl_.id_.Mutable( GetArena());
-}
-inline std::string* ReleaseIDRequest::release_id() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:ReleaseIDRequest.id)
-  return _impl_.id_.Release();
-}
-inline void ReleaseIDRequest::set_allocated_id(std::string* value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.id_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.id_.IsDefault()) {
-          _impl_.id_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:ReleaseIDRequest.id)
+  _impl_.id_ = value;
 }
 
-// string server_type = 2;
+// uint32 server_type = 2;
 inline void ReleaseIDRequest::clear_server_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_.ClearToEmpty();
+  _impl_.server_type_ = 0u;
 }
-inline const std::string& ReleaseIDRequest::server_type() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::uint32_t ReleaseIDRequest::server_type() const {
   // @@protoc_insertion_point(field_get:ReleaseIDRequest.server_type)
   return _internal_server_type();
 }
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void ReleaseIDRequest::set_server_type(Arg_&& arg,
-                                                     Args_... args) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+inline void ReleaseIDRequest::set_server_type(::uint32_t value) {
+  _internal_set_server_type(value);
   // @@protoc_insertion_point(field_set:ReleaseIDRequest.server_type)
 }
-inline std::string* ReleaseIDRequest::mutable_server_type() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_server_type();
-  // @@protoc_insertion_point(field_mutable:ReleaseIDRequest.server_type)
-  return _s;
-}
-inline const std::string& ReleaseIDRequest::_internal_server_type() const {
+inline ::uint32_t ReleaseIDRequest::_internal_server_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.server_type_.Get();
+  return _impl_.server_type_;
 }
-inline void ReleaseIDRequest::_internal_set_server_type(const std::string& value) {
+inline void ReleaseIDRequest::_internal_set_server_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_.Set(value, GetArena());
-}
-inline std::string* ReleaseIDRequest::_internal_mutable_server_type() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  return _impl_.server_type_.Mutable( GetArena());
-}
-inline std::string* ReleaseIDRequest::release_server_type() {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  // @@protoc_insertion_point(field_release:ReleaseIDRequest.server_type)
-  return _impl_.server_type_.Release();
-}
-inline void ReleaseIDRequest::set_allocated_server_type(std::string* value) {
-  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.server_type_.IsDefault()) {
-          _impl_.server_type_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:ReleaseIDRequest.server_type)
+  _impl_.server_type_ = value;
 }
 
 // -------------------------------------------------------------------
