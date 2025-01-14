@@ -116,8 +116,7 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 		if err != nil {
 			return 0, fmt.Errorf("failed to parse current ID: %v", err)
 		}
-		// Set prevID correctly after initializing
-		prevID = currentID
+		return currentID, nil
 	}
 
 	// Start the loop to increment the ID
