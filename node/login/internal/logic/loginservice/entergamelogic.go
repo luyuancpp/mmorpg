@@ -86,7 +86,7 @@ func (l *EnterGameLogic) ensurePlayerDataInRedis(playerId uint64) error {
 
 	if len(playerData) == 0 {
 		// Load data from the database if not found in Redis
-		dbService := playerdbservice.NewPlayerDBService(*l.svcCtx.DBClient)
+		dbService := playerdbservice.NewPlayerDBService(*l.svcCtx.DbClient)
 		_, err := dbService.Load2Redis(l.ctx, &game.LoadPlayerRequest{PlayerId: playerId})
 		return err
 	}
