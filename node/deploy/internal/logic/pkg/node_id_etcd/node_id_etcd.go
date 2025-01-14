@@ -16,7 +16,7 @@ import (
 const (
 	idTTL         = 60 * time.Second // ID 的 TTL 设置为 60 秒
 	maxID         = 1000             // 最大 ID 值
-	maxServerType = 2
+	maxServerType = 10
 )
 
 var (
@@ -25,7 +25,7 @@ var (
 )
 
 // 初始化 Etcd 客户端
-func initEtcdClient() (*clientv3.Client, error) {
+func InitEtcdClient() (*clientv3.Client, error) {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
@@ -68,7 +68,7 @@ func initializeIDCounter(ctx context.Context, etcdClient *clientv3.Client, serve
 }
 
 // 获取下一个自增的 ID，或者从回收池中获取
-func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uint32) (uint64, error) {
+func GenerateID(ctx context.Context, etcdClient *clientv3.Client, serverType uint32) (uint64, error) {
 	// 初始化 ID 计数器（如果尚未初始化）
 	err := initializeIDCounter(ctx, etcdClient, serverType)
 	if err != nil {
@@ -180,7 +180,7 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 }
 
 // 释放一个 ID 到对应的回收池
-func releaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, serverType uint32) error {
+func ReleaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, serverType uint32) error {
 	// 获取对应服务器类型的回收池键
 	recycledIDKey := getRecycledIDKey(serverType)
 	// 将 ID 转换为字符串并放入回收池
