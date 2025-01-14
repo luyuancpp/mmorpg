@@ -79,52 +79,50 @@ func generateID(ctx context.Context, etcdClient *clientv3.Client, serverType uin
 		return currentID, nil
 	}
 
-	// 事务 2：如果回收池没有 ID，则获取自增 ID
-	txn2 := etcdClient.Txn(ctx)
-	txn2.If(
-		clientv3.Compare(clientv3.Version(idKey), "=", 0), // 判断 idKey 是否存在
-	).
-		Then(
-			clientv3.OpPut(idKey, "0"), // 初始化 idKey 为 0
-			clientv3.OpGet(idKey),      // 获取当前值
+	// 事务 2：如果回收池没有 ID，则获取自增 ID，并自增
+	var prevID uint64
+	for {
+		// 获取当前 ID 值并准备自增
+		txn2 := etcdClient.Txn(ctx)
+		txn2.If(
+			clientv3.Compare(clientv3.Version(idKey), ">", 0),                       // 如果 idKey 存在
+			clientv3.Compare(clientv3.Value(idKey), "=", fmt.Sprintf("%d", prevID)), // 保证版本未变
 		).
-		Else(
-			clientv3.OpGet(idKey), // 获取现有自增 ID
-		)
+			Then(
+				clientv3.OpPut(idKey, fmt.Sprintf("%d", prevID+1)), // 自增
+				clientv3.OpGet(idKey),                              // 获取新的 ID
+			).
+			Else(
+				// 如果 idKey 不存在，初始化 idKey 为 1
+				clientv3.OpPut(idKey, "1"),
+				clientv3.OpGet(idKey),
+			)
 
-	// 提交事务 2
-	txn2Resp, err := txn2.Commit()
-	if err != nil {
-		return 0, fmt.Errorf("failed to commit txn for generating ID: %v", err)
-	}
+		// 提交事务 2
+		txn2Resp, err := txn2.Commit()
+		if err != nil {
+			return 0, fmt.Errorf("failed to commit txn for generating ID: %v", err)
+		}
 
-	// 获取当前自增 ID 值
-	if len(txn2Resp.Responses) > 0 {
-		if txn2Resp.Responses[0].GetResponseRange() != nil {
-			// 获取现有的 ID
+		// 如果事务提交成功
+		if len(txn2Resp.Responses) > 0 && txn2Resp.Responses[0].GetResponseRange() != nil {
 			value := txn2Resp.Responses[0].GetResponseRange().Kvs[0].Value
 			currentIDStr := string(value)
 			_, err := fmt.Sscanf(currentIDStr, "%d", &currentID)
 			if err != nil {
 				return 0, fmt.Errorf("failed to parse current ID: %v", err)
 			}
-		} else {
-			// 初始化 ID 为 0
-			currentID = 0
+
+			// 如果成功自增，则退出循环
+			if prevID == currentID-1 {
+				log.Printf("Generated new ID %d for server type %d", currentID, serverType)
+				return currentID, nil
+			}
 		}
+
+		// 如果版本冲突，重新获取 ID 和重试
+		prevID = currentID
 	}
-
-	// 自增 ID
-	currentID++
-
-	// 更新自增 ID 到 Etcd
-	_, err = etcdClient.Put(ctx, idKey, fmt.Sprintf("%d", currentID))
-	if err != nil {
-		return 0, fmt.Errorf("failed to update IDKey for server type %d: %v", serverType, err)
-	}
-
-	log.Printf("Generated new ID %d for server type %d", currentID, serverType)
-	return currentID, nil
 }
 
 // 释放一个 ID 到对应的回收池
