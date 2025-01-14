@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var configFile = flag.String("loginService", "etc/loginservice.yaml", "the config file")
+var configFile = flag.String("loginService", "etc/login_service.yaml", "the config file")
 
 func main() {
 	flag.Parse()
@@ -31,6 +31,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	
 	defer s.Stop()
 
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
