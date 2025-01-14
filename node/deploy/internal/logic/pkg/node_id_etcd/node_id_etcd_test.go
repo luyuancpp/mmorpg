@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"testing"
 	"time"
 )
@@ -184,4 +185,45 @@ func TestGenerateIDClear(t *testing.T) {
 	}
 
 	// 继续你的其他测试逻辑...
+}
+
+func TestGenerateIDAndReleaseIDConcurrently(t *testing.T) {
+	// 初始化 Etcd 客户端
+	etcdClient, err := initEtcdClient()
+	if err != nil {
+		t.Fatalf("Error initializing Etcd client: %v", err)
+	}
+	defer etcdClient.Close()
+
+	err = clearAllIDs(etcdClient)
+
+	// 创建 context
+	ctx := context.Background()
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex // 用于保护共享资源 idCounter
+
+	// 启动多个 goroutine 来并发调用 generateID 和 releaseID
+	for i := 0; i < 100; i++ {
+		wg.Add(2) // 每次启动两个 goroutine，一个调用 generateID，另一个调用 releaseID
+		go func() {
+			defer wg.Done()
+			// 并发调用 generateID
+			mu.Lock() // 锁定临界区，保护 idCounter
+			id, _ := generateID(ctx, etcdClient, serverType)
+			mu.Unlock()
+			t.Logf("Generated ID: %d", id)
+		}()
+
+		go func() {
+			defer wg.Done()
+			// 并发调用 releaseID
+			id := i + 1 // 假设每次 release 的 ID 是按顺序来的
+			releaseID(ctx, etcdClient, uint64(id), serverType)
+			t.Logf("Released ID: %d", id)
+		}()
+	}
+
+	// 等待所有 goroutine 完成
+	wg.Wait()
 }
