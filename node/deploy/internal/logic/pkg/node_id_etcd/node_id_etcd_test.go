@@ -267,3 +267,45 @@ func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 	// 等待所有的 releaseID 操作完成
 	releaseWG.Wait()
 }
+
+// TestReleaseAndReuseID_Success 测试释放后的 ID 是否能被重用
+func TestReleaseAndReuseID_Success(t *testing.T) {
+	// 初始化 Etcd 客户端
+	etcdClient, err := initEtcdClient()
+	if err != nil {
+		t.Fatalf("Error initializing Etcd client: %v", err)
+	}
+	defer etcdClient.Close()
+
+	err = clearAllIDs(etcdClient)
+
+	// 创建 context
+	ctx := context.Background()
+
+	// 生成新的 ID
+	id, err := generateID(ctx, etcdClient, serverType)
+	if err != nil {
+		t.Fatalf("Failed to generate ID: %v", err)
+	}
+	t.Logf("Generated ID: %d", id)
+
+	// 释放生成的 ID
+	err = releaseID(ctx, etcdClient, id, serverType)
+	if err != nil {
+		t.Errorf("Failed to release ID %d: %v", id, err)
+	}
+
+	// 再次生成 ID
+	reusedID, err := generateID(ctx, etcdClient, serverType)
+	if err != nil {
+		t.Fatalf("Failed to generate ID after release: %v", err)
+	}
+	t.Logf("Reused ID: %d", reusedID)
+
+	// 验证生成的 ID 是否与释放的 ID 相同
+	if reusedID != id {
+		t.Errorf("Expected reused ID %d, but got %d", id, reusedID)
+	} else {
+		log.Printf("ID %d successfully reused", id)
+	}
+}
