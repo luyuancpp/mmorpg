@@ -4,7 +4,6 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "proto/common/db_base.proto";
-import "proto/common/common.proto";
 
 message database_node_db
 {
