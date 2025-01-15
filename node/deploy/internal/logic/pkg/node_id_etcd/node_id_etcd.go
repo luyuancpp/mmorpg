@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
-	"log"
 	"time"
 
 	"go.etcd.io/etcd/client/v3"
@@ -193,9 +192,8 @@ func ReleaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, node
 	return nil
 }
 
-// 清除所有的 ID 键
 // 清除所有的 ID 键，包括每种服务器类型的计数器键和回收池键
-func clearAllIDs(etcdClient *clientv3.Client) error {
+func ClearAllIDs(etcdClient *clientv3.Client) error {
 	// 获取所有的服务器类型（假设服务器类型范围是 [0, maxNodeType]）
 	// 在实际情况下，你可以从配置或者其他方式获取所有服务器类型
 	for nodeType := uint32(0); nodeType < maxNodeType; nodeType++ {
@@ -220,7 +218,7 @@ func clearAllIDs(etcdClient *clientv3.Client) error {
 		logx.Info("ID-related keys for server type ", nodeType, " cleared")
 	}
 
-	log.Println("All server type ID-related keys cleared")
+	logx.Info("All server type ID-related keys cleared")
 	return nil
 }
 

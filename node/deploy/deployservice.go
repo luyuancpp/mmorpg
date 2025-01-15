@@ -3,11 +3,13 @@ package main
 import (
 	"deploy/internal/config"
 	"deploy/internal/logic/pkg/db"
+	"deploy/internal/logic/pkg/node_id_etcd"
 	deployserviceServer "deploy/internal/server/deployservice"
 	"deploy/internal/svc"
 	"deploy/pb/game"
 	"flag"
 	"fmt"
+	"github.com/zeromicro/go-zero/core/logx"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
@@ -25,6 +27,12 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)
+
+	err := node_id_etcd.ClearAllIDs(ctx.NodeEtcdClient)
+	if err != nil {
+		logx.Error(err)
+		return
+	}
 
 	db.InitDB(*dbConfigFile)
 	defer db.PbDb.Close()
