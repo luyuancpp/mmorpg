@@ -15,7 +15,7 @@ import (
 
 const (
 	idTTL       = 60 * time.Second // ID 的 TTL 设置为 60 秒
-	maxID       = 1000             // 最大 ID 值
+	maxID       = 8191             // 最大 ID 值
 	maxNodeType = 10
 )
 

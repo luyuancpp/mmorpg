@@ -11,8 +11,8 @@ import (
 	"login/internal/logic/pkg/centre"
 )
 
-var dbConfigFile = flag.String("db_rpc_client", "etc/db_client.json", "the config file")
-var deployConfigFile = flag.String("deploy_rpc_client", "etc/db_client.json", "the config file")
+var dbConfigFile = flag.String("db_rpc_client", "etc/db_client.yaml", "the config file")
+var deployConfigFile = flag.String("deploy_rpc_client", "etc/db_client.yaml", "the config file")
 
 type ServiceContext struct {
 	Config       config.Config

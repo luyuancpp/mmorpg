@@ -49,10 +49,11 @@ private:
     
     inline NodeId GetNodeConfIndex()const { return GetNodeId() - 1; }
 
+    void ReleaseNodeId();
+
     muduo::net::EventLoop* loop_{ nullptr };
     muduo::AsyncLogging muduoLog;
 
-private:
     PbSyncRedisClientPtr redis;
     RpcServerPtr rpcServer;
     nodes_info_data nodeServiceInfo;

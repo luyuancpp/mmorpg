@@ -18,7 +18,7 @@ void AsyncCompleteGrpcDeployService()
         return;
     }
 
-    std::unique_ptr<DeployAsyncClientCall> call (static_cast<DeployAsyncClientCall*>(got_tag));
+    std::unique_ptr<DeployAsyncGetNodeInfoClientCall> call (static_cast<DeployAsyncGetNodeInfoClientCall*>(got_tag));
 	if (!ok)
 	{
 		LOG_ERROR << "RPC failed";

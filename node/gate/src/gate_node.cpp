@@ -4,6 +4,7 @@
 
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
+#include "grpc/request/deploy_grpc_requst.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "muduo/base/TimeZone.h"
@@ -69,6 +70,7 @@ void GateNode::Exit()
 {
     muduo_log_.stop();
     tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateNode::Receive1>(*this);
+    ReleaseNodeId();
 }
 
 void GateNode::InitNodeByReqInfo()
@@ -235,4 +237,11 @@ void GateNode::InitTimeZone()
 {
     const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
     muduo::Logger::setTimeZone(tz);
+}
+
+void GateNode::ReleaseNodeId()
+{
+    ReleaseIDRequest request;
+    request.set_id(GetNodeId());
+    ReleaseID(request);
 }

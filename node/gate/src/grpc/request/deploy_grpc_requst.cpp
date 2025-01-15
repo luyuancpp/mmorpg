@@ -5,11 +5,37 @@
 
 std::unique_ptr<DeployService::Stub> gDeployStub;
 
-void SendGetNodeInfo( const NodeInfoRequest& request)
+void SendGetNodeInfo(const NodeInfoRequest& request)
 {
-    const auto call(new DeployAsyncClientCall);
+    DeployAsyncGetNodeInfoClientCall* call = new DeployAsyncGetNodeInfoClientCall;
+
     call->response_reader =
         gDeployStub->PrepareAsyncGetNodeInfo(&call->context, request, gDeployCq.get());
+
     call->response_reader->StartCall();
+
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+}
+
+
+void GetID(const GetIDRequest& request) {
+    DeployAsyncGetIDClientCall* call = new DeployAsyncGetIDClientCall;
+
+    call->response_reader =
+        gDeployStub->PrepareAsyncGetID(&call->context, request, gDeployCq.get());
+
+    call->response_reader->StartCall();
+
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+}
+
+void ReleaseID(const ReleaseIDRequest& request) {
+    DeployAsyncReleaseIDClientCall* call = new DeployAsyncReleaseIDClientCall;
+
+    call->response_reader =
+        gDeployStub->PrepareAsyncReleaseID(&call->context, request, gDeployCq.get());
+
+    call->response_reader->StartCall();
+
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }

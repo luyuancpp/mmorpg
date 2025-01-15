@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "centre_node.h"
-#include "grpc/async_client_call.h"
+#include "grpc/client/deploy_async_client_call.h"
 #include "grpc/deploy/deploy_client.h"
 
 void AsyncCompleteGrpcDeployService()
@@ -20,7 +20,7 @@ void AsyncCompleteGrpcDeployService()
         return;
     }
 
-    std::unique_ptr<DeployAsyncClientCall> call (static_cast<DeployAsyncClientCall*>(got_tag));
+    std::unique_ptr<DeployAsyncGetNodeInfoClientCall> call (static_cast<DeployAsyncGetNodeInfoClientCall*>(got_tag));
 	if (!ok)
 	{
 		LOG_ERROR << "RPC failed";

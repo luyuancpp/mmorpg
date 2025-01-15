@@ -72,11 +72,11 @@ private:
     static void InitTimeZone();
     
     inline NodeId GetNodeConfIndex() const { return GetNodeId() - 1; }
+    
+    void ReleaseNodeId();
 
     muduo::net::EventLoop* loop_{ nullptr };
     muduo::AsyncLogging muduo_log_;
-
-private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;

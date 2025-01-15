@@ -5,24 +5,24 @@
 #include <grpcpp/grpcpp.h>
 
 #include "all_config.h"
-#include "proto/common/deploy_service.grpc.pb.h"
-#include "log/constants/log_constants.h"
-#include "proto/logic/constants/node.pb.h"
-#include "handler/event/event_handler.h"
 #include "grpc/deploy/deploy_client.h"
-#include "handler/service/player/player_service.h"
+#include "grpc/request/deploy_grpc_requst.h"
+#include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
+#include "handler/service/player/player_service.h"
+#include "handler/service_replied/player/player_service_replied.h"
+#include "log/constants/log_constants.h"
+#include "log/system/console_log_system.h"
 #include "muduo/base/TimeZone.h"
 #include "muduo/net/EventLoop.h"
 #include "network/rpc_session.h"
-#include "handler/service_replied/player/player_service_replied.h"
+#include "node/centre_node_info.h"
+#include "player/system/player_session_system.h"
+#include "proto/common/deploy_service.grpc.pb.h"
+#include "proto/logic/constants/node.pb.h"
 #include "service_info/gate_service_service_info.h"
 #include "service_info/service_info.h"
 #include "thread_local/storage_centre.h"
-#include "log/system/console_log_system.h"
-#include "grpc/request/deploy_grpc_requst.h"
-#include "node/centre_node_info.h"
-#include "player/system/player_session_system.h"
 #include "time/system/time_system.h"
 
 using namespace muduo;
@@ -103,6 +103,7 @@ void CentreNode::Exit()
 {
 	muduoLog.stop();
 	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
+	ReleaseNodeId();
 }
 
 void CentreNode::InitGameConfig()
@@ -254,4 +255,11 @@ void CentreNode::InitSystemAfterConnect() const
 	InetAddress redisAddr(serversInfo.redis_info().redis_info(0).ip(),
 		serversInfo.redis_info().redis_info(0).port());
 	tls_centre.redis_system().Initialize(redisAddr);
+}
+
+void CentreNode::ReleaseNodeId()
+{
+	ReleaseIDRequest request;
+	request.set_id(GetNodeId());
+	ReleaseID(request);
 }
