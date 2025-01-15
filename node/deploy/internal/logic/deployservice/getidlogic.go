@@ -23,7 +23,7 @@ func NewGetIDLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetIDLogic 
 }
 
 func (l *GetIDLogic) GetID(in *game.GetIDRequest) (*game.GetIDResponse, error) {
-	id, err := node_id_etcd.GenerateID(l.ctx, l.svcCtx.NodeEtcdClient, in.ServerType)
+	id, err := node_id_etcd.GenerateID(l.ctx, l.svcCtx.NodeEtcdClient, in.NodeType)
 	if err != nil {
 		logx.Error(err)
 		return &game.GetIDResponse{}, err

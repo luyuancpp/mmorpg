@@ -29,19 +29,19 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n proto/logic/constants/node.proto*]\n\teN"
-    "odeType\022\017\n\013kCentreNode\020\000\022\r\n\tkGameNode\020\001\022"
-    "\016\n\nkLoginNode\020\002\022\r\n\tkGateNode\020\003\022\021\n\rkDatab"
-    "aseNode\020\004*d\n\reGameNodeType\022\022\n\016kMainScene"
-    "Node\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneCross"
-    "Node\020\002\022\027\n\023kRoomSceneCrossNode\020\003B\tZ\007pb/ga"
-    "meb\006proto3"
+    "\n proto/logic/constants/node.proto*^\n\teN"
+    "odeType\022\017\n\013kCentreNode\020\000\022\016\n\nkSceneNode\020\001"
+    "\022\016\n\nkLoginNode\020\002\022\r\n\tkGateNode\020\003\022\021\n\rkData"
+    "baseNode\020\004*d\n\reGameNodeType\022\022\n\016kMainScen"
+    "eNode\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneCros"
+    "sNode\020\002\022\027\n\023kRoomSceneCrossNode\020\003B\tZ\007pb/g"
+    "ameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto = {
     false,
     false,
-    250,
+    251,
     descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto,
     "proto/logic/constants/node.proto",
     &descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once,
