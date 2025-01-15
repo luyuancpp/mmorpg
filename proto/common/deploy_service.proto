@@ -154,9 +154,9 @@ message ReleaseIDResponse
   bool success = 1;  // 是否成功回收 ID
 }
 
-service DeployService {
+service DeployService 
+{
   rpc GetNodeInfo (NodeInfoRequest) returns (NodeInfoResponse);
   rpc GetID (GetIDRequest) returns (GetIDResponse);
   rpc ReleaseID (ReleaseIDRequest) returns (ReleaseIDResponse);
-  
 }

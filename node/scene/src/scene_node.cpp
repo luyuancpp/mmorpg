@@ -3,11 +3,10 @@
 #include <ranges>
 
 #include "all_config.h"
-#include "game_config/deploy_json.h"
-#include "world/world.h"
 #include "core/config/config_system.h"
-#include "node/scene_node_info.h"
+#include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
+#include "grpc/request/deploy_grpc_requst.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
 #include "handler/service/player/player_service.h"
@@ -18,6 +17,7 @@
 #include "muduo/base/TimeZone.h"
 #include "muduo/net/InetAddress.h"
 #include "network/rpc_session.h"
+#include "node/scene_node_info.h"
 #include "proto/common/deploy_service.grpc.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "proto/logic/event/server_event.pb.h"
@@ -26,6 +26,7 @@
 #include "thread_local/storage_game.h"
 #include "time/system/time_system.h"
 #include "util/game_registry.h"
+#include "world/world.h"
 
 SceneNode* gSceneNode = nullptr;
 
@@ -52,7 +53,7 @@ SceneNode::SceneNode(muduo::net::EventLoop* loop)
 
 SceneNode::~SceneNode()
 {
-    Exit (  );
+    Exit();
 }
 
 const NodeInfo& SceneNode::GetNodeInfo() const
@@ -95,6 +96,8 @@ void SceneNode::Exit ( )
     muduoLog.stop();
     tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&SceneNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&SceneNode::Receive2>(*this);
+
+    ReleaseNodeId();
 }
 
 void  SceneNode::InitNodeConfig ( )
@@ -114,6 +117,13 @@ void SceneNode::InitTimeZone()
 {
     const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
     muduo::Logger::setTimeZone(tz);
+}
+
+void SceneNode::ReleaseNodeId()
+{
+    ReleaseIDRequest request;
+    request.set_id(GetNodeId());
+    ReleaseID(request);
 }
 
 void SceneNode::SetNodeId( const NodeId node_id)
