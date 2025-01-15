@@ -67,7 +67,7 @@ func main() {
 						handler.CreatePlayerHandler(gameClient, resp)
 						gameClient.TickBehaviorTree()
 					case "MessageBody":
-						resp := msg.(*game.MessageBody)
+						resp := msg.(*game.MessageContent)
 						handler.MessageBodyHandler(gameClient, resp)
 						gameClient.TickBehaviorTree()
 					case "EnterGameResponse":

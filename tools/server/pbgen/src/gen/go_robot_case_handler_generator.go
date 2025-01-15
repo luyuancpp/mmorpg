@@ -19,7 +19,7 @@ import (
 	"robot/pkg"
 )
 
-func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
+func MessageBodyHandler(client *pkg.GameClient, response *game.MessageContent) {
 	// Log the incoming message body for debugging
 	zap.L().Debug("Received message body", zap.String("response", response.String()))
 
@@ -34,7 +34,7 @@ func MessageBodyHandler(client *pkg.GameClient, response *game.MessageBody) {
 	switch response.MessageId {
 	{{- range .Cases }}
 	case game.{{.MessageID}}:
-		{{.HandlerFunction}}(player, response.Body)
+		{{.HandlerFunction}}(player, response.SerializedMessage)
 	{{- end }}
 	default:
 		// Handle unknown message IDs
