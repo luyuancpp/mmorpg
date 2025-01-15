@@ -666,7 +666,7 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 		(*gate_node)->RouteMessageToNode(GateServiceRouteNodeMessageMessageId, *mutable_request);
 		break;
 	}
-	case kGameNode:
+	case kSceneNode:
 	{
 		entt::entity game_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
 		if (!tls.gameNodeRegistry.valid(game_node_id))

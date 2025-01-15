@@ -259,7 +259,8 @@ void CentreNode::InitSystemAfterConnect() const
 
 void CentreNode::ReleaseNodeId()
 {
-	ReleaseIDRequest request;
-	request.set_id(GetNodeId());
-	ReleaseID(request);
+    ReleaseIDRequest request;
+    request.set_id(GetNodeId());
+    request.set_node_type(kCentreNode);
+    ReleaseID(request);
 }

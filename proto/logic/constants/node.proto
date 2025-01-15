@@ -5,7 +5,7 @@ option go_package = "pb/game";
 enum eNodeType
 {
 	kCentreNode = 0;//场景切换中心服务器
-	kGameNode = 1;//逻辑服务器
+	kSceneNode = 1;//场景服务器
 	kLoginNode = 2;//登录服务器
 	kGateNode = 3;//网关服务器
 	kDatabaseNode = 4;//数据库服务器

@@ -29,7 +29,6 @@
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/db_base.pb.h"
-#include "proto/common/common.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -1839,7 +1838,7 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kIdFieldNumber = 1,
-    kServerTypeFieldNumber = 2,
+    kNodeTypeFieldNumber = 2,
   };
   // uint64 id = 1;
   void clear_id() ;
@@ -1851,14 +1850,14 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
   void _internal_set_id(::uint64_t value);
 
   public:
-  // uint32 server_type = 2;
-  void clear_server_type() ;
-  ::uint32_t server_type() const;
-  void set_server_type(::uint32_t value);
+  // uint32 node_type = 2;
+  void clear_node_type() ;
+  ::uint32_t node_type() const;
+  void set_node_type(::uint32_t value);
 
   private:
-  ::uint32_t _internal_server_type() const;
-  void _internal_set_server_type(::uint32_t value);
+  ::uint32_t _internal_node_type() const;
+  void _internal_set_node_type(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:ReleaseIDRequest)
@@ -1883,7 +1882,7 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::uint64_t id_;
-    ::uint32_t server_type_;
+    ::uint32_t node_type_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2364,7 +2363,7 @@ class GetIDRequest final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kClientNameFieldNumber = 1,
-    kServerTypeFieldNumber = 2,
+    kNodeTypeFieldNumber = 2,
   };
   // string client_name = 1;
   void clear_client_name() ;
@@ -2382,14 +2381,14 @@ class GetIDRequest final : public ::google::protobuf::Message
   std::string* _internal_mutable_client_name();
 
   public:
-  // uint32 server_type = 2;
-  void clear_server_type() ;
-  ::uint32_t server_type() const;
-  void set_server_type(::uint32_t value);
+  // uint32 node_type = 2;
+  void clear_node_type() ;
+  ::uint32_t node_type() const;
+  void set_node_type(::uint32_t value);
 
   private:
-  ::uint32_t _internal_server_type() const;
-  void _internal_set_server_type(::uint32_t value);
+  ::uint32_t _internal_node_type() const;
+  void _internal_set_node_type(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:GetIDRequest)
@@ -2414,7 +2413,7 @@ class GetIDRequest final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::google::protobuf::internal::ArenaStringPtr client_name_;
-    ::uint32_t server_type_;
+    ::uint32_t node_type_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -5590,26 +5589,26 @@ inline void GetIDRequest::set_allocated_client_name(std::string* value) {
   // @@protoc_insertion_point(field_set_allocated:GetIDRequest.client_name)
 }
 
-// uint32 server_type = 2;
-inline void GetIDRequest::clear_server_type() {
+// uint32 node_type = 2;
+inline void GetIDRequest::clear_node_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_ = 0u;
+  _impl_.node_type_ = 0u;
 }
-inline ::uint32_t GetIDRequest::server_type() const {
-  // @@protoc_insertion_point(field_get:GetIDRequest.server_type)
-  return _internal_server_type();
+inline ::uint32_t GetIDRequest::node_type() const {
+  // @@protoc_insertion_point(field_get:GetIDRequest.node_type)
+  return _internal_node_type();
 }
-inline void GetIDRequest::set_server_type(::uint32_t value) {
-  _internal_set_server_type(value);
-  // @@protoc_insertion_point(field_set:GetIDRequest.server_type)
+inline void GetIDRequest::set_node_type(::uint32_t value) {
+  _internal_set_node_type(value);
+  // @@protoc_insertion_point(field_set:GetIDRequest.node_type)
 }
-inline ::uint32_t GetIDRequest::_internal_server_type() const {
+inline ::uint32_t GetIDRequest::_internal_node_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.server_type_;
+  return _impl_.node_type_;
 }
-inline void GetIDRequest::_internal_set_server_type(::uint32_t value) {
+inline void GetIDRequest::_internal_set_node_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_ = value;
+  _impl_.node_type_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -5664,26 +5663,26 @@ inline void ReleaseIDRequest::_internal_set_id(::uint64_t value) {
   _impl_.id_ = value;
 }
 
-// uint32 server_type = 2;
-inline void ReleaseIDRequest::clear_server_type() {
+// uint32 node_type = 2;
+inline void ReleaseIDRequest::clear_node_type() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_ = 0u;
+  _impl_.node_type_ = 0u;
 }
-inline ::uint32_t ReleaseIDRequest::server_type() const {
-  // @@protoc_insertion_point(field_get:ReleaseIDRequest.server_type)
-  return _internal_server_type();
+inline ::uint32_t ReleaseIDRequest::node_type() const {
+  // @@protoc_insertion_point(field_get:ReleaseIDRequest.node_type)
+  return _internal_node_type();
 }
-inline void ReleaseIDRequest::set_server_type(::uint32_t value) {
-  _internal_set_server_type(value);
-  // @@protoc_insertion_point(field_set:ReleaseIDRequest.server_type)
+inline void ReleaseIDRequest::set_node_type(::uint32_t value) {
+  _internal_set_node_type(value);
+  // @@protoc_insertion_point(field_set:ReleaseIDRequest.node_type)
 }
-inline ::uint32_t ReleaseIDRequest::_internal_server_type() const {
+inline ::uint32_t ReleaseIDRequest::_internal_node_type() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.server_type_;
+  return _impl_.node_type_;
 }
-inline void ReleaseIDRequest::_internal_set_server_type(::uint32_t value) {
+inline void ReleaseIDRequest::_internal_set_node_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.server_type_ = value;
+  _impl_.node_type_ = value;
 }
 
 // -------------------------------------------------------------------

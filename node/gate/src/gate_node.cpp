@@ -243,5 +243,6 @@ void GateNode::ReleaseNodeId()
 {
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
+    request.set_node_type(kGateNode);
     ReleaseID(request);
 }

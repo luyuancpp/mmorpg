@@ -209,7 +209,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr ReleaseIDRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : id_{::uint64_t{0u}},
-        server_type_{0u},
+        node_type_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -270,7 +270,7 @@ inline constexpr GetIDRequest::Impl_::Impl_(
       : client_name_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        server_type_{0u},
+        node_type_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -610,7 +610,7 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::GetIDRequest, _impl_.client_name_),
-        PROTOBUF_FIELD_OFFSET(::GetIDRequest, _impl_.server_type_),
+        PROTOBUF_FIELD_OFFSET(::GetIDRequest, _impl_.node_type_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::GetIDResponse, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -629,7 +629,7 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _impl_.id_),
-        PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _impl_.server_type_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _impl_.node_type_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::ReleaseIDResponse, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -687,67 +687,65 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n!proto/common/deploy_service.proto\032\032pro"
-    "to/common/db_base.proto\032\031proto/common/co"
-    "mmon.proto\"_\n\020database_node_db\022\n\n\002id\030\001 \001"
-    "(\r\022\014\n\004addr\030\002 \001(\t\022\017\n\007zone_id\030\003 \001(\r: \212\265\030\020d"
-    "atabase_node_db\222\265\030\002id\262\265\030\002id\"8\n\022login_nod"
-    "e_list_db\022\"\n\nlogin_info\030\001 \003(\0132\016.login_no"
-    "de_db\";\n\023centre_node_list_db\022$\n\013centre_i"
-    "nfo\030\001 \003(\0132\017.centre_node_db\"5\n\021gate_node_"
-    "list_db\022 \n\tgate_info\030\001 \003(\0132\r.gate_node_d"
-    "b\"5\n\021game_node_list_db\022 \n\tgame_info\030\001 \003("
-    "\0132\r.game_node_db\"8\n\022redis_node_list_db\022\""
-    "\n\nredis_info\030\001 \003(\0132\016.redis_node_db\"\206\002\n\017n"
-    "odes_info_data\022(\n\rdatabase_info\030\001 \001(\0132\021."
-    "database_node_db\022\'\n\nlogin_info\030\002 \001(\0132\023.l"
-    "ogin_node_list_db\022)\n\013centre_info\030\003 \001(\0132\024"
-    ".centre_node_list_db\022%\n\tgate_info\030\004 \001(\0132"
-    "\022.gate_node_list_db\022%\n\tgame_info\030\005 \001(\0132\022"
-    ".game_node_list_db\022\'\n\nredis_info\030\006 \001(\0132\023"
-    ".redis_node_list_db\"Y\n\rlogin_node_db\022\n\n\002"
-    "id\030\001 \001(\r\022\014\n\004addr\030\002 \001(\t\022\017\n\007zone_id\030\003 \001(\r:"
-    "\035\212\265\030\rlogin_node_db\222\265\030\002id\262\265\030\002id\"g\n\016centre"
-    "_node_db\022\n\n\002id\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004port"
-    "\030\003 \001(\r\022\017\n\007zone_id\030\004 \001(\r:\036\212\265\030\016centre_node"
-    "_db\222\265\030\002id\262\265\030\002id\"T\n\rlobby_node_db\022\n\n\002id\030\001"
-    " \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\r:\035\212\265\030\rlobb"
-    "y_node_db\222\265\030\002id\262\265\030\002id\"e\n\rredis_node_db\022\n"
-    "\n\002id\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\r\022\017\n\007"
-    "zone_id\030\004 \001(\r:\035\212\265\030\rredis_node_db\222\265\030\002id\262\265"
-    "\030\002id\"c\n\014game_node_db\022\n\n\002id\030\001 \001(\r\022\n\n\002ip\030\002"
-    " \001(\t\022\014\n\004port\030\003 \001(\r\022\017\n\007zone_id\030\004 \001(\r:\034\212\265\030"
-    "\014game_node_db\222\265\030\002id\262\265\030\002id\"c\n\014gate_node_d"
-    "b\022\n\n\002id\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\r\022"
-    "\017\n\007zone_id\030\004 \001(\r:\034\212\265\030\014gate_node_db\222\265\030\002id"
-    "\262\265\030\002id\"5\n\017NodeInfoRequest\022\017\n\007zone_id\030\001 \001"
-    "(\r\022\021\n\tnode_type\030\002 \001(\r\"C\n\020NodeInfoRespons"
-    "e\022\036\n\004info\030\001 \001(\0132\020.nodes_info_data\022\017\n\007nod"
-    "e_id\030\002 \001(\r\"8\n\014GetIDRequest\022\023\n\013client_nam"
-    "e\030\001 \001(\t\022\023\n\013server_type\030\002 \001(\r\"\033\n\rGetIDRes"
-    "ponse\022\n\n\002id\030\001 \001(\004\"3\n\020ReleaseIDRequest\022\n\n"
-    "\002id\030\001 \001(\004\022\023\n\013server_type\030\002 \001(\r\"$\n\021Releas"
-    "eIDResponse\022\017\n\007success\030\001 \001(\0102\237\001\n\rDeployS"
-    "ervice\0222\n\013GetNodeInfo\022\020.NodeInfoRequest\032"
-    "\021.NodeInfoResponse\022&\n\005GetID\022\r.GetIDReque"
-    "st\032\016.GetIDResponse\0222\n\tReleaseID\022\021.Releas"
-    "eIDRequest\032\022.ReleaseIDResponseB\tZ\007pb/gam"
-    "eb\006proto3"
+    "to/common/db_base.proto\"_\n\020database_node"
+    "_db\022\n\n\002id\030\001 \001(\r\022\014\n\004addr\030\002 \001(\t\022\017\n\007zone_id"
+    "\030\003 \001(\r: \212\265\030\020database_node_db\222\265\030\002id\262\265\030\002id"
+    "\"8\n\022login_node_list_db\022\"\n\nlogin_info\030\001 \003"
+    "(\0132\016.login_node_db\";\n\023centre_node_list_d"
+    "b\022$\n\013centre_info\030\001 \003(\0132\017.centre_node_db\""
+    "5\n\021gate_node_list_db\022 \n\tgate_info\030\001 \003(\0132"
+    "\r.gate_node_db\"5\n\021game_node_list_db\022 \n\tg"
+    "ame_info\030\001 \003(\0132\r.game_node_db\"8\n\022redis_n"
+    "ode_list_db\022\"\n\nredis_info\030\001 \003(\0132\016.redis_"
+    "node_db\"\206\002\n\017nodes_info_data\022(\n\rdatabase_"
+    "info\030\001 \001(\0132\021.database_node_db\022\'\n\nlogin_i"
+    "nfo\030\002 \001(\0132\023.login_node_list_db\022)\n\013centre"
+    "_info\030\003 \001(\0132\024.centre_node_list_db\022%\n\tgat"
+    "e_info\030\004 \001(\0132\022.gate_node_list_db\022%\n\tgame"
+    "_info\030\005 \001(\0132\022.game_node_list_db\022\'\n\nredis"
+    "_info\030\006 \001(\0132\023.redis_node_list_db\"Y\n\rlogi"
+    "n_node_db\022\n\n\002id\030\001 \001(\r\022\014\n\004addr\030\002 \001(\t\022\017\n\007z"
+    "one_id\030\003 \001(\r:\035\212\265\030\rlogin_node_db\222\265\030\002id\262\265\030"
+    "\002id\"g\n\016centre_node_db\022\n\n\002id\030\001 \001(\r\022\n\n\002ip\030"
+    "\002 \001(\t\022\014\n\004port\030\003 \001(\r\022\017\n\007zone_id\030\004 \001(\r:\036\212\265"
+    "\030\016centre_node_db\222\265\030\002id\262\265\030\002id\"T\n\rlobby_no"
+    "de_db\022\n\n\002id\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 "
+    "\001(\r:\035\212\265\030\rlobby_node_db\222\265\030\002id\262\265\030\002id\"e\n\rre"
+    "dis_node_db\022\n\n\002id\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004p"
+    "ort\030\003 \001(\r\022\017\n\007zone_id\030\004 \001(\r:\035\212\265\030\rredis_no"
+    "de_db\222\265\030\002id\262\265\030\002id\"c\n\014game_node_db\022\n\n\002id\030"
+    "\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\r\022\017\n\007zone_"
+    "id\030\004 \001(\r:\034\212\265\030\014game_node_db\222\265\030\002id\262\265\030\002id\"c"
+    "\n\014gate_node_db\022\n\n\002id\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014"
+    "\n\004port\030\003 \001(\r\022\017\n\007zone_id\030\004 \001(\r:\034\212\265\030\014gate_"
+    "node_db\222\265\030\002id\262\265\030\002id\"5\n\017NodeInfoRequest\022\017"
+    "\n\007zone_id\030\001 \001(\r\022\021\n\tnode_type\030\002 \001(\r\"C\n\020No"
+    "deInfoResponse\022\036\n\004info\030\001 \001(\0132\020.nodes_inf"
+    "o_data\022\017\n\007node_id\030\002 \001(\r\"6\n\014GetIDRequest\022"
+    "\023\n\013client_name\030\001 \001(\t\022\021\n\tnode_type\030\002 \001(\r\""
+    "\033\n\rGetIDResponse\022\n\n\002id\030\001 \001(\004\"1\n\020ReleaseI"
+    "DRequest\022\n\n\002id\030\001 \001(\004\022\021\n\tnode_type\030\002 \001(\r\""
+    "$\n\021ReleaseIDResponse\022\017\n\007success\030\001 \001(\0102\237\001"
+    "\n\rDeployService\0222\n\013GetNodeInfo\022\020.NodeInf"
+    "oRequest\032\021.NodeInfoResponse\022&\n\005GetID\022\r.G"
+    "etIDRequest\032\016.GetIDResponse\0222\n\tReleaseID"
+    "\022\021.ReleaseIDRequest\032\022.ReleaseIDResponseB"
+    "\tZ\007pb/gameb\006proto3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_deps[2] =
+static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_deps[1] =
     {
-        &::descriptor_table_proto_2fcommon_2fcommon_2eproto,
         &::descriptor_table_proto_2fcommon_2fdb_5fbase_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto = {
     false,
     false,
-    1809,
+    1778,
     descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto,
     "proto/common/deploy_service.proto",
     &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
     descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_deps,
-    2,
+    1,
     19,
     schemas,
     file_default_instances,
@@ -4560,7 +4558,7 @@ GetIDRequest::GetIDRequest(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
-  _impl_.server_type_ = from._impl_.server_type_;
+  _impl_.node_type_ = from._impl_.node_type_;
 
   // @@protoc_insertion_point(copy_constructor:GetIDRequest)
 }
@@ -4572,7 +4570,7 @@ inline PROTOBUF_NDEBUG_INLINE GetIDRequest::Impl_::Impl_(
 
 inline void GetIDRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.server_type_ = {};
+  _impl_.node_type_ = {};
 }
 GetIDRequest::~GetIDRequest() {
   // @@protoc_insertion_point(destructor:GetIDRequest)
@@ -4607,7 +4605,7 @@ PROTOBUF_NOINLINE void GetIDRequest::Clear() {
   (void) cached_has_bits;
 
   _impl_.client_name_.ClearToEmpty();
-  _impl_.server_type_ = 0u;
+  _impl_.node_type_ = 0u;
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -4636,9 +4634,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 32, 2> GetIDRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::GetIDRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 server_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetIDRequest, _impl_.server_type_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.server_type_)}},
+    // uint32 node_type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetIDRequest, _impl_.node_type_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.node_type_)}},
     // string client_name = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.client_name_)}},
@@ -4648,8 +4646,8 @@ const ::_pbi::TcParseTable<1, 2, 0, 32, 2> GetIDRequest::_table_ = {
     // string client_name = 1;
     {PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.client_name_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // uint32 server_type = 2;
-    {PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.server_type_), 0, 0,
+    // uint32 node_type = 2;
+    {PROTOBUF_FIELD_OFFSET(GetIDRequest, _impl_.node_type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -4675,11 +4673,11 @@ const ::_pbi::TcParseTable<1, 2, 0, 32, 2> GetIDRequest::_table_ = {
     target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
-  // uint32 server_type = 2;
-  if (this->_internal_server_type() != 0) {
+  // uint32 node_type = 2;
+  if (this->_internal_node_type() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        2, this->_internal_server_type(), target);
+        2, this->_internal_node_type(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4705,10 +4703,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 32, 2> GetIDRequest::_table_ = {
                                     this->_internal_client_name());
   }
 
-  // uint32 server_type = 2;
-  if (this->_internal_server_type() != 0) {
+  // uint32 node_type = 2;
+  if (this->_internal_node_type() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_server_type());
+        this->_internal_node_type());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -4726,8 +4724,8 @@ void GetIDRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::go
   if (!from._internal_client_name().empty()) {
     _this->_internal_set_client_name(from._internal_client_name());
   }
-  if (from._internal_server_type() != 0) {
-    _this->_impl_.server_type_ = from._impl_.server_type_;
+  if (from._internal_node_type() != 0) {
+    _this->_impl_.node_type_ = from._impl_.node_type_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -4749,7 +4747,7 @@ void GetIDRequest::InternalSwap(GetIDRequest* PROTOBUF_RESTRICT other) {
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.client_name_, &other->_impl_.client_name_, arena);
-        swap(_impl_.server_type_, other->_impl_.server_type_);
+        swap(_impl_.node_type_, other->_impl_.node_type_);
 }
 
 ::google::protobuf::Metadata GetIDRequest::GetMetadata() const {
@@ -4960,9 +4958,9 @@ inline void ReleaseIDRequest::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, server_type_) -
+           offsetof(Impl_, node_type_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::server_type_));
+               sizeof(Impl_::node_type_));
 }
 ReleaseIDRequest::~ReleaseIDRequest() {
   // @@protoc_insertion_point(destructor:ReleaseIDRequest)
@@ -4996,8 +4994,8 @@ PROTOBUF_NOINLINE void ReleaseIDRequest::Clear() {
   (void) cached_has_bits;
 
   ::memset(&_impl_.id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.server_type_) -
-      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.server_type_));
+      reinterpret_cast<char*>(&_impl_.node_type_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.node_type_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -5026,9 +5024,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::ReleaseIDRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 server_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ReleaseIDRequest, _impl_.server_type_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_)}},
+    // uint32 node_type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ReleaseIDRequest, _impl_.node_type_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.node_type_)}},
     // uint64 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleaseIDRequest, _impl_.id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_)}},
@@ -5038,8 +5036,8 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
     // uint64 id = 1;
     {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
-    // uint32 server_type = 2;
-    {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_), 0, 0,
+    // uint32 node_type = 2;
+    {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.node_type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
@@ -5061,11 +5059,11 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
         1, this->_internal_id(), target);
   }
 
-  // uint32 server_type = 2;
-  if (this->_internal_server_type() != 0) {
+  // uint32 node_type = 2;
+  if (this->_internal_node_type() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        2, this->_internal_server_type(), target);
+        2, this->_internal_node_type(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5091,10 +5089,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
         this->_internal_id());
   }
 
-  // uint32 server_type = 2;
-  if (this->_internal_server_type() != 0) {
+  // uint32 node_type = 2;
+  if (this->_internal_node_type() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_server_type());
+        this->_internal_node_type());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -5112,8 +5110,8 @@ void ReleaseIDRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
   }
-  if (from._internal_server_type() != 0) {
-    _this->_impl_.server_type_ = from._impl_.server_type_;
+  if (from._internal_node_type() != 0) {
+    _this->_impl_.node_type_ = from._impl_.node_type_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -5133,8 +5131,8 @@ void ReleaseIDRequest::InternalSwap(ReleaseIDRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.server_type_)
-      + sizeof(ReleaseIDRequest::_impl_.server_type_)
+      PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.node_type_)
+      + sizeof(ReleaseIDRequest::_impl_.node_type_)
       - PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));
