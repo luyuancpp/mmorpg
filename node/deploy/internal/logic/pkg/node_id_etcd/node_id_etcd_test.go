@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/zeromicro/go-zero/core/logx"
-	"log"
 	"sync"
 	"testing"
 	"time"
@@ -14,12 +13,12 @@ const (
 	nodeType = uint32(1)
 )
 
-// TestGenerateID 测试ID生成器的功能
+// TestGenerateID_Success 测试ID生成器的功能
 func TestGenerateID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
 	if err != nil {
-		t.Fatalf("Error initializing Etcd client: %v", err)
+		logx.Fatalf("Error initializing Etcd client: %v", err)
 	}
 	defer etcdClient.Close()
 
@@ -69,7 +68,7 @@ func TestGenerateID_Success(t *testing.T) {
 	}
 }
 
-// TestReleaseID 测试释放ID的功能
+// TestReleaseID_Success 测试释放ID的功能
 func TestReleaseID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
@@ -108,12 +107,12 @@ func TestReleaseID_Success(t *testing.T) {
 	}
 }
 
-// TestSweepExpiredIDs 测试清理过期ID的功能
+// TestSweepExpiredIDs_Success 测试清理过期ID的功能
 func TestSweepExpiredIDs_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
 	if err != nil {
-		t.Fatalf("Error initializing Etcd client: %v", err)
+		logx.Fatalf("Error initializing Etcd client: %v", err)
 	}
 	defer etcdClient.Close()
 
@@ -125,13 +124,13 @@ func TestSweepExpiredIDs_Success(t *testing.T) {
 	// 创建一个租约，模拟过期的ID
 	_, err = etcdClient.Grant(ctx, 1) // 设置 TTL 为1秒
 	if err != nil {
-		t.Fatalf("Failed to create lease: %v", err)
+		logx.Errorf("Failed to create lease: %v", err)
 	}
 
 	// 使用租约创建 ID
 	id, err := GenerateID(ctx, etcdClient, nodeType)
 	if err != nil {
-		t.Fatalf("Failed to generate ID with lease: %v", err)
+		logx.Errorf("Failed to generate ID with lease: %v", err)
 	}
 
 	// 等待1秒钟，确保租约过期
@@ -143,13 +142,13 @@ func TestSweepExpiredIDs_Success(t *testing.T) {
 	// 检查 ID 是否被清理
 	resp, err := etcdClient.Get(ctx, "ids/"+fmt.Sprintf("%d", id))
 	if err != nil {
-		t.Fatalf("Failed to get ID %d from Etcd: %v", id, err)
+		logx.Errorf("Failed to get ID %d from Etcd: %v", id, err)
 	}
 
 	if len(resp.Kvs) > 0 {
-		t.Errorf("Expired ID %d should have been cleaned, but it's still present in Etcd", id)
+		logx.Errorf("Expired ID %d should have been cleaned, but it's still present in Etcd", id)
 	} else {
-		log.Printf("Expired ID %d successfully cleaned", id)
+		logx.Infof("Expired ID %d successfully cleaned", id)
 	}
 }
 
@@ -163,7 +162,7 @@ func TestGenerateIDAndReleaseID_Concurrently_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
 	if err != nil {
-		t.Fatalf("Error initializing Etcd client: %v", err)
+		logx.Errorf("Error initializing Etcd client: %v", err)
 	}
 	defer etcdClient.Close()
 
@@ -182,10 +181,10 @@ func TestGenerateIDAndReleaseID_Concurrently_Success(t *testing.T) {
 			// 并发调用 GenerateID
 			id, err := GenerateID(ctx, etcdClient, nodeType)
 			if err != nil {
-				t.Errorf("Generated ID: %s", err)
+				logx.Errorf("Generated ID: %s", err)
 				return
 			}
-			t.Logf("Generated ID: %d", id)
+			logx.Infof("Generated ID: %d", id)
 		}()
 
 		go func() {
@@ -194,10 +193,10 @@ func TestGenerateIDAndReleaseID_Concurrently_Success(t *testing.T) {
 			id := i + 1 // 假设每次 release 的 ID 是按顺序来的
 			err := ReleaseID(ctx, etcdClient, uint64(id), nodeType)
 			if err != nil {
-				t.Errorf("Released ID: %s", err)
+				logx.Errorf("Released ID: %s", err)
 				return
 			}
-			t.Logf("Released ID: %d", id)
+			logx.Infof("Released ID: %d", id)
 		}()
 	}
 
@@ -209,14 +208,14 @@ func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
 	if err != nil {
-		t.Fatalf("Error initializing Etcd client: %v", err)
+		logx.Errorf("Error initializing Etcd client: %v", err)
 	}
 	defer etcdClient.Close()
 
 	// 清理所有 ID 键
 	err = ClearAllIDs(etcdClient)
 	if err != nil {
-		t.Fatalf("Error clearing all IDs: %v", err)
+		logx.Errorf("Error clearing all IDs: %v", err)
 	}
 
 	// 创建 context
@@ -237,13 +236,13 @@ func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 			// 并发调用 GenerateID
 			id, err := GenerateID(ctx, etcdClient, nodeType)
 			if err != nil {
-				t.Errorf("Generated ID error: %v", err)
+				logx.Errorf("Generated ID error: %v", err)
 				return
 			}
 
 			// 将生成的 ID 存储在切片中
 			generatedIDs = append(generatedIDs, id)
-			t.Logf("Generated ID: %d", id)
+			logx.Infof("Generated ID: %d", id)
 		}()
 	}
 
@@ -259,10 +258,10 @@ func TestGenerateIDAndReleaseID_Concurrently_SequentialRelease(t *testing.T) {
 			// 并发调用 ReleaseID
 			err := ReleaseID(ctx, etcdClient, id, nodeType)
 			if err != nil {
-				t.Errorf("Released ID error: %v", err)
+				logx.Errorf("Released ID error: %v", err)
 				return
 			}
-			t.Logf("Released ID: %d", id)
+			logx.Infof("Released ID: %d", id)
 		}(id)
 	}
 
@@ -275,7 +274,7 @@ func TestReleaseAndReuseID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
 	if err != nil {
-		t.Fatalf("Error initializing Etcd client: %v", err)
+		logx.Errorf("Error initializing Etcd client: %v", err)
 	}
 	defer etcdClient.Close()
 
@@ -287,27 +286,27 @@ func TestReleaseAndReuseID_Success(t *testing.T) {
 	// 生成新的 ID
 	id, err := GenerateID(ctx, etcdClient, nodeType)
 	if err != nil {
-		t.Fatalf("Failed to generate ID: %v", err)
+		logx.Errorf("Failed to generate ID: %v", err)
 	}
-	t.Logf("Generated ID: %d", id)
+	logx.Infof("Generated ID: %d", id)
 
 	// 释放生成的 ID
 	err = ReleaseID(ctx, etcdClient, id, nodeType)
 	if err != nil {
-		t.Errorf("Failed to release ID %d: %v", id, err)
+		logx.Errorf("Failed to release ID %d: %v", id, err)
 	}
 
 	// 再次生成 ID
 	reusedID, err := GenerateID(ctx, etcdClient, nodeType)
 	if err != nil {
-		t.Fatalf("Failed to generate ID after release: %v", err)
+		logx.Errorf("Failed to generate ID after release: %v", err)
 	}
-	t.Logf("Reused ID: %d", reusedID)
+	logx.Infof("Reused ID: %d", reusedID)
 
 	// 验证生成的 ID 是否与释放的 ID 相同
 	if reusedID != id {
-		t.Errorf("Expected reused ID %d, but got %d", id, reusedID)
+		logx.Errorf("Expected reused ID %d, but got %d", id, reusedID)
 	} else {
-		log.Printf("ID %d successfully reused", id)
+		logx.Infof("ID %d successfully reused", id)
 	}
 }
