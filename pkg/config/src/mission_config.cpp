@@ -29,3 +29,12 @@ std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTable(con
     return { it->second, kSuccess };
 }
 
+
+std::pair<const MissionTable*, uint32_t> MissionConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+

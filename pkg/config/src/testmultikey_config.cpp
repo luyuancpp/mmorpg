@@ -36,6 +36,15 @@ std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::Ge
 }
 
 
+std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+
+
 std::pair<const TestMultiKeyTable*, uint32_t> TestMultiKeyConfigurationTable::GetByStringkey(const std::string& tableId) const {
     const auto it = kv_stringkeydata_.find(tableId);
     if (it == kv_stringkeydata_.end()) {

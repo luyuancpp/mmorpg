@@ -90,6 +90,7 @@ def generate_cpp_header(datastring, sheetname, use_flat_multimap):
         f'    static {sheetname}ConfigurationTable& Instance() {{ static {sheetname}ConfigurationTable instance; return instance; }}',
         f'    const {table_data_name}& All() const {{ return data_; }}',
         f'    {get_table_return_type} GetTable(uint32_t tableId);',
+        f'    {get_table_return_type} GetTableWithoutErrorLogging(uint32_t tableId);',
         f'    const KeyValueDataType& KeyValueData() const {{ return kv_data_; }}',
         '    void Load();\n',
     ]
@@ -267,6 +268,16 @@ def generate_cpp_implementation(datastring, sheetname, use_flat_multimap):
         '    const auto it = kv_data_.find(tableId);',
         '    if (it == kv_data_.end()) {',
         f'       {not_found_error_log}',
+        '        return { nullptr, kInvalidTableId };',
+        '    }',
+        '    return { it->second, kSuccess };',
+        '}\n\n',
+    ])
+
+    cpp_content.extend([
+        f'{get_table_return_type} {sheetname}ConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {{',
+        '    const auto it = kv_data_.find(tableId);',
+        '    if (it == kv_data_.end()) {',
         '        return { nullptr, kInvalidTableId };',
         '    }',
         '    return { it->second, kSuccess };',

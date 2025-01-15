@@ -314,7 +314,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
     std::string errorDetails;
 
     // 检查字段大小
-    if (!ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
+    if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails)) {
         LOG_ERROR << errorDetails << " Failed to check request for message ID: "
             << request->message_content().message_id();
         SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
@@ -322,7 +322,7 @@ void GameServiceHandler::InvokePlayerService(::google::protobuf::RpcController* 
     }
 
     // 检查负数
-    if (!ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
+    if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails)) {
         LOG_ERROR << errorDetails << " Failed to check request for message ID: "
             << request->message_content().message_id();
         SendErrorToClient(*request, *response, kNegativeValueInMessage);

@@ -29,3 +29,12 @@ std::pair<const ClassTable*, uint32_t> ClassConfigurationTable::GetTable(const u
     return { it->second, kSuccess };
 }
 
+
+std::pair<const ClassTable*, uint32_t> ClassConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+

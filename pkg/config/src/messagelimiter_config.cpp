@@ -29,3 +29,12 @@ std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterConfigurationTable
     return { it->second, kSuccess };
 }
 
+
+std::pair<const MessageLimiterTable*, uint32_t> MessageLimiterConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+

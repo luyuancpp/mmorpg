@@ -35,3 +35,12 @@ std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTable(const uin
     return { it->second, kSuccess };
 }
 
+
+std::pair<const BuffTable*, uint32_t> BuffConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+

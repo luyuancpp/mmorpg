@@ -29,3 +29,12 @@ std::pair<const RewardTable*, uint32_t> RewardConfigurationTable::GetTable(const
     return { it->second, kSuccess };
 }
 
+
+std::pair<const RewardTable*, uint32_t> RewardConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+

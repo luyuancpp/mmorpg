@@ -13,6 +13,7 @@ public:
     static SceneConfigurationTable& Instance() { static SceneConfigurationTable instance; return instance; }
     const SceneTabledData& All() const { return data_; }
     std::pair<const SceneTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const SceneTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 

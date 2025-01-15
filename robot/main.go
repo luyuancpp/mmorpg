@@ -66,7 +66,7 @@ func main() {
 						resp := msg.(*game.CreatePlayerResponse)
 						handler.CreatePlayerHandler(gameClient, resp)
 						gameClient.TickBehaviorTree()
-					case "MessageBody":
+					case "MessageContent":
 						resp := msg.(*game.MessageContent)
 						handler.MessageBodyHandler(gameClient, resp)
 						gameClient.TickBehaviorTree()

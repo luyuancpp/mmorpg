@@ -13,16 +13,6 @@ public:
         nodeInfo.set_node_id(nodeId);
     }
     
-    [[nodiscard]] uint32_t GetNodeType() const
-    {
-        return nodeInfo.node_type();
-    }
-
-    void SetNodeType(const uint32_t nodeType)
-    {
-        nodeInfo.set_node_type(nodeType);
-    }
-
     [[nodiscard]] NodeInfo& GetNodeInfo() 
     {
         return nodeInfo;
