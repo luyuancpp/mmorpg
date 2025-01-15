@@ -32,7 +32,7 @@ func main() {
 
 	// 获取ID
 	deployService := deployservice.NewDeployService(*ctx.DeployClient)
-	id, err := deployService.GetID(context.Background(), &game.GetIDRequest{NodeType: NodeType})
+	id, err := deployService.GetID(context.Background(), &game.GetIDRequest{NodeType: 2})
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -43,7 +43,7 @@ func main() {
 
 	// 程序退出时释放 ID
 	defer func() {
-		_, err := deployService.ReleaseID(context.Background(), &game.ReleaseIDRequest{NodeType: NodeType, Id: id.Id})
+		_, err := deployService.ReleaseID(context.Background(), &game.ReleaseIDRequest{NodeType: 2, Id: id.Id})
 		if err != nil {
 			log.Fatal(err)
 			return
