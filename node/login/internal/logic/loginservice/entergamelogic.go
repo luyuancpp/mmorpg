@@ -60,6 +60,7 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 	// Ensure player data is loaded in Redis
 	if err := l.ensurePlayerDataInRedis(in.ClientMsgBody.PlayerId); err != nil {
 		resp.ClientMsgBody.ErrorMessage.Id = uint32(game.LoginError_kLoginPlayerGuidError)
+		logx.Error(err)
 		return resp, err
 	}
 
@@ -71,6 +72,10 @@ func (l *EnterGameLogic) EnterGame(in *game.EnterGameC2LRequest) (*game.EnterGam
 
 // Check if player exists in session
 func (l *EnterGameLogic) isPlayerInSession(session *data.Session, playerId uint64) bool {
+	if session.UserAccount == nil || session.UserAccount.SimplePlayers == nil || session.UserAccount.SimplePlayers.Players == nil {
+		return false
+	}
+
 	for _, player := range session.UserAccount.SimplePlayers.Players {
 		if player.PlayerId == playerId {
 			return true
