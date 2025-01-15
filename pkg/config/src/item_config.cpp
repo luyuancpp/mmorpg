@@ -29,3 +29,12 @@ std::pair<const ItemTable*, uint32_t> ItemConfigurationTable::GetTable(const uin
     return { it->second, kSuccess };
 }
 
+
+std::pair<const ItemTable*, uint32_t> ItemConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+

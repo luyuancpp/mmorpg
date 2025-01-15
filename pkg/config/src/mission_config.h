@@ -13,6 +13,7 @@ public:
     static MissionConfigurationTable& Instance() { static MissionConfigurationTable instance; return instance; }
     const MissionTabledData& All() const { return data_; }
     std::pair<const MissionTable*, uint32_t> GetTable(uint32_t tableId);
+    std::pair<const MissionTable*, uint32_t> GetTableWithoutErrorLogging(uint32_t tableId);
     const KeyValueDataType& KeyValueData() const { return kv_data_; }
     void Load();
 

@@ -34,3 +34,12 @@ std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTable(const u
     return { it->second, kSuccess };
 }
 
+
+std::pair<const SkillTable*, uint32_t> SkillConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+
