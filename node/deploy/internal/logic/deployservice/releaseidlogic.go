@@ -25,7 +25,7 @@ func NewReleaseIDLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Release
 }
 
 func (l *ReleaseIDLogic) ReleaseID(in *game.ReleaseIDRequest) (*game.ReleaseIDResponse, error) {
-	err := node_id_etcd.ReleaseID(l.ctx, l.svcCtx.NodeEtcdClient, in.Id, in.ServerType)
+	err := node_id_etcd.ReleaseID(l.ctx, l.svcCtx.NodeEtcdClient, in.Id, in.NodeType)
 	if err != nil {
 		logx.Error(err)
 		return &game.ReleaseIDResponse{}, err
