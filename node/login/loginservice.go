@@ -30,13 +30,22 @@ func main() {
 	ctx := svc.NewServiceContext(c)
 
 	deployService := deployservice.NewDeployService(*ctx.DeployClient)
-	id, err := deployService.GetID(context.Background(), &game.GetIDRequest{ServerType: NodeType})
+	id, err := deployService.GetID(context.Background(), &game.GetIDRequest{NodeType: NodeType})
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	ctx.SetNodeId(id)
+	ctx.SetNodeId(id.Id)
+
+	defer func() {
+		_, err := deployService.ReleaseID(context.Background(), &game.ReleaseIDRequest{NodeType: NodeType, Id: id.Id})
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+
+	}()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))

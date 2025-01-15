@@ -123,6 +123,7 @@ void SceneNode::ReleaseNodeId()
 {
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
+    request.set_node_type(kSceneNode);
     ReleaseID(request);
 }
 
@@ -140,7 +141,7 @@ void SceneNode::StartServer(const ::nodes_info_data& info)
     auto& nodeInfo = gSceneNodeInfo.GetNodeInfo();
 
     nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().ConfigInfo().server_type());
-    nodeInfo.set_node_type(eNodeType::kGameNode);
+    nodeInfo.set_node_type(eNodeType::kSceneNode);
     nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
 
     InetAddress service_addr(GetNodeConf().ip(), GetNodeConf().port());
@@ -239,7 +240,7 @@ void SceneNode::InitNodeByReqInfo()
     deployRpcTimer.RunEvery(0.001, AsyncCompleteGrpcDeployService);
     {
         NodeInfoRequest rq;
-        rq.set_node_type(kGameNode);
+        rq.set_node_type(kSceneNode);
         rq.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
         void SendGetNodeInfo(const NodeInfoRequest& request);
         SendGetNodeInfo(rq);

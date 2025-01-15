@@ -55,7 +55,7 @@ namespace protobuf {
 
 enum eNodeType : int {
   kCentreNode = 0,
-  kGameNode = 1,
+  kSceneNode = 1,
   kLoginNode = 2,
   kGateNode = 3,
   kDatabaseNode = 4,
