@@ -225,7 +225,7 @@ void SceneNode::Receive2(const OnBeConnectedEvent& es)
 
 const game_node_db& SceneNode::GetNodeConf() const
 {
-    return nodeServiceInfo.game_info().game_info(GetNodeConfIndex());
+    return nodeServiceInfo.game_info().game_info(GetNodeId());
 }
 
 void SceneNode::InitNodeByReqInfo()

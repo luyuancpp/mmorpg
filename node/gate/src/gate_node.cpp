@@ -94,7 +94,7 @@ void GateNode::InitNodeByReqInfo()
 void GateNode::StartServer(const nodes_info_data& data)
 {
     node_net_info_ = std::move(data);
-    auto& gate_info = node_net_info_.gate_info().gate_info()[GetNodeConfIndex()];
+    auto& gate_info = node_net_info_.gate_info().gate_info()[GetNodeId()];
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(

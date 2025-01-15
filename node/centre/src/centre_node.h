@@ -47,8 +47,6 @@ private:
 	static void InitSystemBeforeConnect();
 	void InitSystemAfterConnect() const;
 
-	NodeId GetNodeConfIndex() const { return GetNodeId() - 1; }
-
     void ReleaseNodeId();
 
 	muduo::net::EventLoop* loop_{ nullptr };

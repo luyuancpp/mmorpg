@@ -139,7 +139,7 @@ void CentreNode::InitNodeByReqInfo()
 void CentreNode::StartServer(const ::nodes_info_data& info)
 {
 	serversInfo = info;
-	auto& myNodeInfo = serversInfo.centre_info().centre_info()[GetNodeConfIndex()];
+	auto& myNodeInfo = serversInfo.centre_info().centre_info()[GetNodeId()];
 
 	InetAddress serviceAddr(myNodeInfo.ip(), myNodeInfo.port());
 	server_ = std::make_shared<RpcServerPtr::element_type>(loop_, serviceAddr);

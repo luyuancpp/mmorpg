@@ -47,8 +47,6 @@ private:
     static void InitGameConfig();
     static void InitTimeZone();
     
-    inline NodeId GetNodeConfIndex()const { return GetNodeId() - 1; }
-
     void ReleaseNodeId();
 
     muduo::net::EventLoop* loop_{ nullptr };
