@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"log"
+	"login/client/deployservice"
 	"login/internal/config"
 	loginserviceServer "login/internal/server/loginservice"
 	"login/internal/svc"
@@ -17,12 +20,23 @@ import (
 
 var configFile = flag.String("loginService", "etc/login_service.yaml", "the config file")
 
+const NodeType = 2
+
 func main() {
 	flag.Parse()
 
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)
+
+	deployService := deployservice.NewDeployService(*ctx.DeployClient)
+	id, err := deployService.GetID(context.Background(), &game.GetIDRequest{ServerType: NodeType})
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	ctx.SetNodeId(id)
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))
@@ -31,7 +45,7 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
-	
+
 	defer s.Stop()
 
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
