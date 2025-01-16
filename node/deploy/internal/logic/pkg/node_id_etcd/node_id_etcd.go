@@ -223,8 +223,8 @@ func RenewLease(ctx context.Context, etcdClient *clientv3.Client, leaseID client
 	return nil
 }
 
-// 释放 ID 和租约
-func ReleaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, nodeType uint32, leaseID clientv3.LeaseID) error {
+// 释放一个 ID 到对应的回收池
+func ReleaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, nodeType uint32) error {
 	// 获取对应服务器类型的回收池键
 	recycledIDKey := getRecycledIDKey(nodeType)
 	// 将 ID 转换为字符串并放入回收池
@@ -232,6 +232,16 @@ func ReleaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, node
 	_, err := etcdClient.Put(ctx, recycledIDKey, idStr)
 	if err != nil {
 		return fmt.Errorf("failed to release ID %d for server type %d: %v", id, nodeType, err)
+	}
+	logx.Info("ID ", id, " successfully released for server type ", nodeType)
+	return nil
+}
+
+// 释放 ID 和租约
+func ReleaseIDWithLease(ctx context.Context, etcdClient *clientv3.Client, id uint64, nodeType uint32, leaseID clientv3.LeaseID) error {
+	err := ReleaseID(ctx, etcdClient, id, nodeType)
+	if err != nil {
+		return err
 	}
 
 	// 释放租约
@@ -275,12 +285,12 @@ func ClearAllIDs(etcdClient *clientv3.Client) error {
 }
 
 // 定期清理过期的 ID
+// 定期清理过期的 ID，并将其放回回收池
 func SweepExpiredIDs(etcdClient *clientv3.Client) {
 	// 等待一段时间（例如 10 秒）
 	time.Sleep(10 * time.Second)
 
 	// 获取所有的服务器类型（假设服务器类型范围是 [0, maxNodeType]）
-	// 在实际情况下，你可以从配置或者其他方式获取所有服务器类型
 	for nodeType := uint32(0); nodeType < maxNodeType; nodeType++ {
 		// 获取对应服务器类型的计数器键（node_id_counter_<nodeType>）
 		serverTypeKey := getServerTypeKey(nodeType)
@@ -294,25 +304,37 @@ func SweepExpiredIDs(etcdClient *clientv3.Client) {
 
 		// 遍历所有返回的键，检查是否过期
 		for _, kv := range resp.Kvs {
-			key := string(kv.Key)
-
-			// 检查键是否有租约
-			if clientv3.LeaseID(kv.Lease) != clientv3.NoLease {
-				// 获取该键的 TTL
-				leaseResp, err := etcdClient.TimeToLive(context.Background(), clientv3.LeaseID(kv.Lease))
+			// 获取租约 ID
+			leaseID := clientv3.LeaseID(kv.Lease)
+			if leaseID != clientv3.NoLease {
+				// 检查租约是否过期
+				leaseResp, err := etcdClient.TimeToLive(context.Background(), leaseID)
 				if err != nil {
-					logx.Error("Failed to get TTL for key ", key, ": ", err)
+					logx.Error("Failed to get TTL for lease ", leaseID, ": ", err)
 					continue
 				}
 
-				// 如果 TTL 为 0，表示租约已经过期
+				// 如果租约 TTL 为 0，表示租约已经过期
 				if leaseResp.TTL == 0 {
 					// 删除过期的 ID
-					_, err := etcdClient.Delete(context.Background(), key)
+					idKey := string(kv.Key)
+					_, err := etcdClient.Delete(context.Background(), idKey)
 					if err != nil {
-						logx.Error("Failed to delete expired ID ", key, ": ", err)
+						logx.Error("Failed to delete expired ID ", idKey, ": ", err)
 					} else {
-						logx.Info("ID ", key, " expired and deleted")
+						logx.Info("ID ", idKey, " expired and deleted")
+					}
+
+					// 将过期的 ID 放回回收池
+					// 假设过期的 ID 是从 kv.Key 中提取出的 ID
+					id := extractIDFromKey(idKey)
+					recycledIDKey := getRecycledIDKey(nodeType)
+					// 将 ID 加入回收池（如果它尚未存在于回收池中）
+					_, err = etcdClient.Put(context.Background(), recycledIDKey, fmt.Sprintf("%d", id))
+					if err != nil {
+						logx.Error("Failed to add expired ID to recycled pool: ", err)
+					} else {
+						logx.Info("ID ", id, " added to recycled pool for server type ", nodeType)
 					}
 				}
 			}
@@ -320,4 +342,15 @@ func SweepExpiredIDs(etcdClient *clientv3.Client) {
 	}
 
 	logx.Info("Finished sweeping expired IDs")
+}
+
+func extractIDFromKey(idKey string) uint64 {
+	var id uint64
+	var nodeType uint64
+	_, err := fmt.Sscanf(idKey, "node_id_%d_%d", &nodeType, &id)
+	if err != nil {
+		logx.Error("Failed to extract ID from key ", idKey, ": ", err)
+		return 0
+	}
+	return id
 }
