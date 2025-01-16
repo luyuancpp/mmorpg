@@ -178,8 +178,53 @@ func GenerateID(ctx context.Context, etcdClient *clientv3.Client, nodeType uint3
 	}
 }
 
-// 释放一个 ID 到对应的回收池
-func ReleaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, nodeType uint32) error {
+// 生成 ID 并附带租约
+func GenerateIDWithLease(ctx context.Context, etcdClient *clientv3.Client, nodeType uint32) (uint64, clientv3.LeaseID, error) {
+	// 初始化 ID 计数器（如果尚未初始化）
+	err := initializeIDCounter(ctx, etcdClient, nodeType)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// 创建一个租约（例如 60 秒）
+	leaseResp, err := etcdClient.Grant(ctx, int64(idTTL.Seconds()))
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to create lease: %v", err)
+	}
+
+	// 生成一个新 ID，并将其与租约关联
+	currentID, err := GenerateID(ctx, etcdClient, nodeType)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to generate ID: %v", err)
+	}
+
+	// 将 ID 存储在 Etcd 中，并附加租约
+	idKey := fmt.Sprintf("node_id_%d_%d", nodeType, currentID)
+	_, err = etcdClient.Put(ctx, idKey, fmt.Sprintf("%d", currentID), clientv3.WithLease(leaseResp.ID))
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to store ID with lease: %v", err)
+	}
+
+	logx.Info("Generated new ID with lease ", currentID, " for server type ", nodeType)
+
+	// 返回生成的 ID 和租约 ID
+	return currentID, leaseResp.ID, nil
+}
+
+// 续租 ID
+func RenewLease(ctx context.Context, etcdClient *clientv3.Client, leaseID clientv3.LeaseID) error {
+	// 续租操作
+	_, err := etcdClient.KeepAlive(ctx, leaseID)
+	if err != nil {
+		return fmt.Errorf("failed to renew lease: %v", err)
+	}
+
+	logx.Info("Successfully renewed lease ", leaseID)
+	return nil
+}
+
+// 释放 ID 和租约
+func ReleaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, nodeType uint32, leaseID clientv3.LeaseID) error {
 	// 获取对应服务器类型的回收池键
 	recycledIDKey := getRecycledIDKey(nodeType)
 	// 将 ID 转换为字符串并放入回收池
@@ -188,6 +233,13 @@ func ReleaseID(ctx context.Context, etcdClient *clientv3.Client, id uint64, node
 	if err != nil {
 		return fmt.Errorf("failed to release ID %d for server type %d: %v", id, nodeType, err)
 	}
+
+	// 释放租约
+	_, err = etcdClient.Revoke(ctx, leaseID)
+	if err != nil {
+		return fmt.Errorf("failed to revoke lease for ID %d: %v", id, err)
+	}
+
 	logx.Info("ID ", id, " successfully released for server type ", nodeType)
 	return nil
 }

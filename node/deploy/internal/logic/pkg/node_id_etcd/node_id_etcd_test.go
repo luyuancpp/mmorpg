@@ -112,43 +112,58 @@ func TestSweepExpiredIDs_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
 	if err != nil {
-		logx.Errorf("Error initializing Etcd client: %v", err)
+		t.Fatalf("Error initializing Etcd client: %v", err)
 	}
 	defer etcdClient.Close()
 
+	// 清理所有 ID
 	err = ClearAllIDs(etcdClient)
+	if err != nil {
+		t.Fatalf("Failed to clear all IDs: %v", err)
+	}
 
 	// 创建 context
 	ctx := context.Background()
 
-	// 创建一个租约，模拟过期的ID
+	// 创建一个租约，模拟过期的 ID
 	_, err = etcdClient.Grant(ctx, 1) // 设置 TTL 为1秒
 	if err != nil {
-		logx.Errorf("Failed to create lease: %v", err)
+		t.Fatalf("Failed to create lease: %v", err)
 	}
 
-	// 使用租约创建 ID
+	// 使用租约生成 ID
 	id, err := GenerateID(ctx, etcdClient, nodeType)
 	if err != nil {
-		logx.Errorf("Failed to generate ID with lease: %v", err)
+		t.Fatalf("Failed to generate ID with lease: %v", err)
 	}
 
 	// 等待1秒钟，确保租约过期
 	time.Sleep(2 * time.Second)
 
-	// 测试清理过期ID
+	// 执行清理过期 ID 的操作
 	SweepExpiredIDs(etcdClient)
 
-	// 检查 ID 是否被清理
-	resp, err := etcdClient.Get(ctx, fmt.Sprintf(getServerTypeKey(nodeType), id))
+	// 检查 ID 是否已被清理
+	// 由于回收池是清理过期 ID 的地方，所以检查回收池是否有此 ID
+	recycledIDKey := getRecycledIDKey(nodeType)
+	resp, err := etcdClient.Get(ctx, recycledIDKey)
 	if err != nil {
-		logx.Errorf("Failed to get ID %d from Etcd: %v", id, err)
+		t.Fatalf("Failed to get recycled IDs from Etcd: %v", err)
 	}
 
-	if len(resp.Kvs) > 0 {
-		logx.Errorf("Expired ID %d should have been cleaned, but it's still present in Etcd", id)
+	// 检查回收池中是否有该 ID
+	found := false
+	for _, kv := range resp.Kvs {
+		if string(kv.Value) == fmt.Sprintf("%d", id) {
+			found = true
+			break
+		}
+	}
+
+	if found {
+		t.Errorf("Expired ID %d should have been cleaned, but it is still in the recycled pool", id)
 	} else {
-		logx.Infof("Expired ID %d successfully cleaned", id)
+		t.Logf("Expired ID %d successfully cleaned", id)
 	}
 }
 
