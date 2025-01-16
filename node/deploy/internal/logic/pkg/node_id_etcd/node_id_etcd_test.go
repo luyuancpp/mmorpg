@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	nodeType = uint32(1)
+	nodeType = uint32(0)
 )
 
 // TestGenerateID_Success 测试ID生成器的功能
@@ -114,9 +114,6 @@ func TestSweepExpiredIDs_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to initialize Etcd client: %v", err)
 	}
-
-	// 假设服务器类型为 1
-	nodeType := uint32(1)
 
 	// Step 1: 生成带租约的 ID
 	id, leaseID, err := GenerateIDWithLease(context.Background(), etcdClient, nodeType)
