@@ -18,7 +18,7 @@ func TestGenerateID_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
 	if err != nil {
-		logx.Fatalf("Error initializing Etcd client: %v", err)
+		logx.Errorf("Error initializing Etcd client: %v", err)
 	}
 	defer etcdClient.Close()
 
@@ -112,7 +112,7 @@ func TestSweepExpiredIDs_Success(t *testing.T) {
 	// 初始化 Etcd 客户端
 	etcdClient, err := InitEtcdClient()
 	if err != nil {
-		logx.Fatalf("Error initializing Etcd client: %v", err)
+		logx.Errorf("Error initializing Etcd client: %v", err)
 	}
 	defer etcdClient.Close()
 
@@ -140,7 +140,7 @@ func TestSweepExpiredIDs_Success(t *testing.T) {
 	SweepExpiredIDs(etcdClient)
 
 	// 检查 ID 是否被清理
-	resp, err := etcdClient.Get(ctx, "ids/"+fmt.Sprintf("%d", id))
+	resp, err := etcdClient.Get(ctx, fmt.Sprintf(getServerTypeKey(nodeType), id))
 	if err != nil {
 		logx.Errorf("Failed to get ID %d from Etcd: %v", id, err)
 	}
