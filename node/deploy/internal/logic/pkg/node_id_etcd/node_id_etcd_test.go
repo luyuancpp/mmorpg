@@ -137,7 +137,7 @@ func TestSweepExpiredIDs_Success(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// 测试清理过期ID
-	sweepExpiredIDs(etcdClient)
+	SweepExpiredIDs(etcdClient)
 
 	// 检查 ID 是否被清理
 	resp, err := etcdClient.Get(ctx, "ids/"+fmt.Sprintf("%d", id))

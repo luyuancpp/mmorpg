@@ -223,7 +223,7 @@ func ClearAllIDs(etcdClient *clientv3.Client) error {
 }
 
 // 定期清理过期的 ID
-func sweepExpiredIDs(etcdClient *clientv3.Client) {
+func SweepExpiredIDs(etcdClient *clientv3.Client) {
 	// 等待一段时间（例如 10 秒）
 	time.Sleep(10 * time.Second)
 
