@@ -227,33 +227,45 @@ func SweepExpiredIDs(etcdClient *clientv3.Client) {
 	// 等待一段时间（例如 10 秒）
 	time.Sleep(10 * time.Second)
 
-	// 获取所有的 ID 键
-	resp, err := etcdClient.Get(context.Background(), "ids/", clientv3.WithPrefix())
-	if err != nil {
-		logx.Error("Failed to list IDs: ", err)
-		return
-	}
+	// 获取所有的服务器类型（假设服务器类型范围是 [0, maxNodeType]）
+	// 在实际情况下，你可以从配置或者其他方式获取所有服务器类型
+	for nodeType := uint32(0); nodeType < maxNodeType; nodeType++ {
+		// 获取对应服务器类型的计数器键（node_id_counter_<nodeType>）
+		serverTypeKey := getServerTypeKey(nodeType)
 
-	// 遍历所有键，检查是否过期
-	for _, kv := range resp.Kvs {
-		key := string(kv.Key)
-
-		// 检查每个键的租约状态
-		leaseResp, err := etcdClient.TimeToLive(context.Background(), clientv3.LeaseID(kv.Lease))
+		// 获取该键的 TTL
+		resp, err := etcdClient.Get(context.Background(), serverTypeKey)
 		if err != nil {
-			logx.Error("Failed to get TTL for key ", key, ": ", err)
+			logx.Error("Failed to get TTL for key ", serverTypeKey, ": ", err)
 			continue
 		}
 
-		// 如果 TTL 为 0，表示租约已经过期
-		if leaseResp.TTL == 0 {
-			// 删除过期的 ID
-			_, err := etcdClient.Delete(context.Background(), key)
-			if err != nil {
-				logx.Error("Failed to delete expired ID ", key, ": ", err)
-			} else {
-				logx.Info("ID ", key, " expired and deleted")
+		// 遍历所有返回的键，检查是否过期
+		for _, kv := range resp.Kvs {
+			key := string(kv.Key)
+
+			// 检查键是否有租约
+			if clientv3.LeaseID(kv.Lease) != clientv3.NoLease {
+				// 获取该键的 TTL
+				leaseResp, err := etcdClient.TimeToLive(context.Background(), clientv3.LeaseID(kv.Lease))
+				if err != nil {
+					logx.Error("Failed to get TTL for key ", key, ": ", err)
+					continue
+				}
+
+				// 如果 TTL 为 0，表示租约已经过期
+				if leaseResp.TTL == 0 {
+					// 删除过期的 ID
+					_, err := etcdClient.Delete(context.Background(), key)
+					if err != nil {
+						logx.Error("Failed to delete expired ID ", key, ": ", err)
+					} else {
+						logx.Info("ID ", key, " expired and deleted")
+					}
+				}
 			}
 		}
 	}
+
+	logx.Info("Finished sweeping expired IDs")
 }
