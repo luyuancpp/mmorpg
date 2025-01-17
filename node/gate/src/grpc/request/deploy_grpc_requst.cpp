@@ -39,3 +39,14 @@ void ReleaseID(const ReleaseIDRequest& request) {
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
+
+void RenewLease(const RenewLeaseIDRequest& request) {
+    DeployAsyncRenewLeaseIDClientCall* call = new DeployAsyncRenewLeaseIDClientCall;
+
+    call->response_reader =
+        gDeployStub->PrepareAsyncRenewLease(&call->context, request, gDeployCq.get());
+
+    call->response_reader->StartCall();
+
+    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+}

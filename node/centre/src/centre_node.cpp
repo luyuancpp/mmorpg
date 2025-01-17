@@ -15,6 +15,7 @@
 #include "log/system/console_log_system.h"
 #include "muduo/base/TimeZone.h"
 #include "muduo/net/EventLoop.h"
+#include "network/network_constants.h"
 #include "network/rpc_session.h"
 #include "node/centre_node_info.h"
 #include "player/system/player_session_system.h"
@@ -134,6 +135,12 @@ void CentreNode::InitNodeByReqInfo()
 		request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
 		SendGetNodeInfo(request);
 	}
+
+	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
+		RenewLeaseIDRequest request;
+        request.set_lease_id(gCentreNodeInfo.GetNodeInfo().lease_id());
+		RenewLease(request);
+		});
 }
 
 void CentreNode::StartServer(const ::nodes_info_data& info)
@@ -175,11 +182,6 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::enti
 	request.mutable_rpc_server()->set_port(gameNodeServiceAddr->port());
 	request.set_game_node_id(entt::to_integral(gameNodeId));
 	(*gateNode)->SendRequest(GateServiceRegisterGameMessageId, request);
-}
-
-void CentreNode::SetNodeId(NodeId nodeId)
-{
-	gCentreNodeInfo.SetNodeId(nodeId);
 }
 
 void CentreNode::Receive2(const OnBeConnectedEvent& es)

@@ -16,6 +16,7 @@
 #include "muduo/base/Logging.h"
 #include "muduo/base/TimeZone.h"
 #include "muduo/net/InetAddress.h"
+#include "network/network_constants.h"
 #include "network/rpc_session.h"
 #include "node/scene_node_info.h"
 #include "proto/common/deploy_service.grpc.pb.h"
@@ -127,11 +128,6 @@ void SceneNode::ReleaseNodeId()
     ReleaseID(request);
 }
 
-void SceneNode::SetNodeId( const NodeId node_id)
-{
-    gSceneNodeInfo.SetNodeId(node_id);
-}
-
 void SceneNode::StartServer(const ::nodes_info_data& info)
 {
     nodeServiceInfo = info;
@@ -238,6 +234,7 @@ void SceneNode::InitNodeByReqInfo()
     gDeployStub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
     deployRpcTimer.RunEvery(0.001, AsyncCompleteGrpcDeployService);
+
     {
         NodeInfoRequest rq;
         rq.set_node_type(kSceneNode);
@@ -245,6 +242,12 @@ void SceneNode::InitNodeByReqInfo()
         void SendGetNodeInfo(const NodeInfoRequest& request);
         SendGetNodeInfo(rq);
     }
+
+    renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
+        RenewLeaseIDRequest request;
+        request.set_lease_id(gSceneNodeInfo.GetNodeInfo().lease_id());
+        RenewLease(request);
+        });
 }
 
 void SceneNode::Connect2Centre()

@@ -5,6 +5,7 @@
 #include "centre_node.h"
 #include "grpc/client/deploy_async_client_call.h"
 #include "grpc/deploy/deploy_client.h"
+#include "node/centre_node_info.h"
 
 void AsyncCompleteGrpcDeployService()
 {
@@ -28,7 +29,8 @@ void AsyncCompleteGrpcDeployService()
 	}
     if (call->status.ok())
     {
-        gCentreNode ->SetNodeId(call->reply.node_id());
+        gCentreNodeInfo.SetNodeId(call->reply.node_id());
+        gCentreNodeInfo.GetNodeInfo().set_lease_id(call->reply.lease_id());
         gCentreNode ->StartServer(call->reply.info());
     }
     else

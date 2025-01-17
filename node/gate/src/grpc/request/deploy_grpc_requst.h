@@ -8,3 +8,6 @@ void GetID(const GetIDRequest& request);
 
 class ReleaseIDRequest;
 void ReleaseID(const ReleaseIDRequest& request);
+
+class RenewLeaseIDRequest;
+void RenewLease(const RenewLeaseIDRequest& request);

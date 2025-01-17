@@ -36,3 +36,14 @@ public:
     ReleaseIDResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<ReleaseIDResponse>> response_reader;
 };
+
+
+class DeployAsyncRenewLeaseIDClientCall
+{
+public:
+    ClientContext context;
+    Status status;
+
+    RenewLeaseIDResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<RenewLeaseIDResponse>> response_reader;
+};

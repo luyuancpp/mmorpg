@@ -8,6 +8,7 @@
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "muduo/base/TimeZone.h"
+#include "network/network_constants.h"
 #include "network/rpc_session.h"
 #include "proto/common/deploy_service.grpc.pb.h"
 #include "proto/common/login_service.grpc.pb.h"
@@ -89,6 +90,12 @@ void GateNode::InitNodeByReqInfo()
         void SendGetNodeInfo(const NodeInfoRequest& rq);
         SendGetNodeInfo(rq);
     }
+
+    renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
+        RenewLeaseIDRequest request;
+        request.set_lease_id(g_gate_node->GetNodeInfo().lease_id());
+        RenewLease(request);
+        });
 }
 
 void GateNode::StartServer(const nodes_info_data& data)

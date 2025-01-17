@@ -29,7 +29,6 @@ public:
 
     inline [[nodiscard]] muduo::AsyncLogging& Log(){ return muduoLog; }
     
-    void SetNodeId(NodeId node_id);
     void StartServer(const ::nodes_info_data& info);
     
     void Init();
@@ -59,6 +58,7 @@ private:
     GameServiceHandler gameService;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp worldTimer;
+    TimerTaskComp renewNodeLeaseTimer;
 };
 
 extern SceneNode* gSceneNode;
