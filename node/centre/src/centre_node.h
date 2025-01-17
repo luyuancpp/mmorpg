@@ -46,7 +46,7 @@ private:
 	static void InitSystemBeforeConnect();
 	void InitSystemAfterConnect() const;
 
-	void ReleaseNodeId();
+	void ReleaseNodeId() const;
 
 	muduo::net::EventLoop* loop_{ nullptr };
 	muduo::AsyncLogging muduoLog;

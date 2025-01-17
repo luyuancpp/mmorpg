@@ -46,7 +46,7 @@ private:
     static void InitGameConfig();
     static void InitTimeZone();
     
-    void ReleaseNodeId();
+    void ReleaseNodeId() const;
 
     muduo::net::EventLoop* loop_{ nullptr };
     muduo::AsyncLogging muduoLog;

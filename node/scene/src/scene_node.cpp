@@ -6,6 +6,7 @@
 #include "core/config/config_system.h"
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
+#include "grpc/generator/deploy_service_grpc.h"
 #include "grpc/request/deploy_grpc_requst.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
@@ -120,12 +121,12 @@ void SceneNode::InitTimeZone()
     muduo::Logger::setTimeZone(tz);
 }
 
-void SceneNode::ReleaseNodeId()
+void SceneNode::ReleaseNodeId() const
 {
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
     request.set_node_type(kSceneNode);
-    ReleaseID(request);
+    DeployServiceReleaseID(request);
 }
 
 void SceneNode::StartServer(const ::nodes_info_data& info)
@@ -236,17 +237,16 @@ void SceneNode::InitNodeByReqInfo()
     deployRpcTimer.RunEvery(0.001, AsyncCompleteGrpcDeployService);
 
     {
-        NodeInfoRequest rq;
-        rq.set_node_type(kSceneNode);
-        rq.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-        void SendGetNodeInfo(const NodeInfoRequest& request);
-        SendGetNodeInfo(rq);
+        NodeInfoRequest request;
+        request.set_node_type(kSceneNode);
+        request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
+        DeployServiceGetNodeInfo(request);
     }
 
     renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
         RenewLeaseIDRequest request;
         request.set_lease_id(gSceneNodeInfo.GetNodeInfo().lease_id());
-        RenewLease(request);
+        DeployServiceRenewLease(request);
         });
 }
 

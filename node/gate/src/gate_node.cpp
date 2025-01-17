@@ -84,6 +84,7 @@ void GateNode::InitNodeByReqInfo()
     gDeployStub = DeployService::NewStub(channel);
     gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
     deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
+    
     {
         NodeInfoRequest rq;
         rq.set_node_type(kGateNode);
