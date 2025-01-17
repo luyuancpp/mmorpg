@@ -13,30 +13,33 @@ import (
 )
 
 type (
-	CentreNodeDb      = game.CentreNodeDb
-	CentreNodeListDb  = game.CentreNodeListDb
-	DatabaseNodeDb    = game.DatabaseNodeDb
-	GameNodeDb        = game.GameNodeDb
-	GameNodeListDb    = game.GameNodeListDb
-	GateNodeDb        = game.GateNodeDb
-	GateNodeListDb    = game.GateNodeListDb
-	GetIDRequest      = game.GetIDRequest
-	GetIDResponse     = game.GetIDResponse
-	LobbyNodeDb       = game.LobbyNodeDb
-	LoginNodeDb       = game.LoginNodeDb
-	LoginNodeListDb   = game.LoginNodeListDb
-	NodeInfoRequest   = game.NodeInfoRequest
-	NodeInfoResponse  = game.NodeInfoResponse
-	NodesInfoData     = game.NodesInfoData
-	RedisNodeDb       = game.RedisNodeDb
-	RedisNodeListDb   = game.RedisNodeListDb
-	ReleaseIDRequest  = game.ReleaseIDRequest
-	ReleaseIDResponse = game.ReleaseIDResponse
+	CentreNodeDb         = game.CentreNodeDb
+	CentreNodeListDb     = game.CentreNodeListDb
+	DatabaseNodeDb       = game.DatabaseNodeDb
+	GameNodeDb           = game.GameNodeDb
+	GameNodeListDb       = game.GameNodeListDb
+	GateNodeDb           = game.GateNodeDb
+	GateNodeListDb       = game.GateNodeListDb
+	GetIDRequest         = game.GetIDRequest
+	GetIDResponse        = game.GetIDResponse
+	LobbyNodeDb          = game.LobbyNodeDb
+	LoginNodeDb          = game.LoginNodeDb
+	LoginNodeListDb      = game.LoginNodeListDb
+	NodeInfoRequest      = game.NodeInfoRequest
+	NodeInfoResponse     = game.NodeInfoResponse
+	NodesInfoData        = game.NodesInfoData
+	RedisNodeDb          = game.RedisNodeDb
+	RedisNodeListDb      = game.RedisNodeListDb
+	ReleaseIDRequest     = game.ReleaseIDRequest
+	ReleaseIDResponse    = game.ReleaseIDResponse
+	RenewLeaseIDRequest  = game.RenewLeaseIDRequest
+	RenewLeaseIDResponse = game.RenewLeaseIDResponse
 
 	DeployService interface {
 		GetNodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error)
 		GetID(ctx context.Context, in *GetIDRequest, opts ...grpc.CallOption) (*GetIDResponse, error)
 		ReleaseID(ctx context.Context, in *ReleaseIDRequest, opts ...grpc.CallOption) (*ReleaseIDResponse, error)
+		RenewLease(ctx context.Context, in *RenewLeaseIDRequest, opts ...grpc.CallOption) (*RenewLeaseIDResponse, error)
 	}
 
 	defaultDeployService struct {
@@ -63,4 +66,9 @@ func (m *defaultDeployService) GetID(ctx context.Context, in *GetIDRequest, opts
 func (m *defaultDeployService) ReleaseID(ctx context.Context, in *ReleaseIDRequest, opts ...grpc.CallOption) (*ReleaseIDResponse, error) {
 	client := game.NewDeployServiceClient(m.cli.Conn())
 	return client.ReleaseID(ctx, in, opts...)
+}
+
+func (m *defaultDeployService) RenewLease(ctx context.Context, in *RenewLeaseIDRequest, opts ...grpc.CallOption) (*RenewLeaseIDResponse, error) {
+	client := game.NewDeployServiceClient(m.cli.Conn())
+	return client.RenewLease(ctx, in, opts...)
 }
