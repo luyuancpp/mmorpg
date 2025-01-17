@@ -3,6 +3,7 @@ package gen
 import (
 	"fmt"
 	"os"
+	"pbgen/config"
 	"strings"
 	"text/template"
 )
@@ -64,9 +65,9 @@ func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []
 
 func CppGrpcCallClient() {
 
-	grpcServices := make([]GrpcService, 0)
-
 	for _, serviceMethods := range ServiceMethodMap {
+
+		grpcServices := make([]GrpcService, 0)
 
 		for _, method := range serviceMethods {
 
@@ -76,18 +77,27 @@ func CppGrpcCallClient() {
 
 			grpcServices = generateGrpcMethod(method, grpcServices)
 		}
+
+		if len(serviceMethods) <= 0 {
+
+			continue
+		}
+
+		// Generate different handler files based on the templates
+		if err := generateGrpcFile(config.CentreGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcHeaderExtension,
+			serviceMethods[0].FileBaseName(),
+			grpcServices,
+			AsyncClientHeaderTemplate); err != nil {
+			return
+		}
+
+		// if err := generateHandlerFile(config.ResponseHandlerFile, v, responseHandlerTemplate); err != nil {
+		// 	return
+		// 	}
+
+		// if err := generateHandlerFile(config.ServerHandlerFile, generateGrpcFile, serverHandlerTemplate); err != nil {
+		// 	return
+		// }
 	}
 
-	// Generate different handler files based on the templates
-	if err := generateGrpcFile("test_grpc", "hello", grpcServices, AsyncClientHeaderTemplate); err != nil {
-		return
-	}
-
-	// if err := generateHandlerFile(config.ResponseHandlerFile, v, responseHandlerTemplate); err != nil {
-	// 	return
-	// 	}
-
-	// if err := generateHandlerFile(config.ServerHandlerFile, generateGrpcFile, serverHandlerTemplate); err != nil {
-	// 	return
-	// }
 }
