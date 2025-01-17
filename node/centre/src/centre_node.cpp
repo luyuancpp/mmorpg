@@ -6,6 +6,7 @@
 
 #include "all_config.h"
 #include "grpc/deploy/deploy_client.h"
+#include "grpc/generator/deploy_service_grpc.h"
 #include "grpc/request/deploy_grpc_requst.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
@@ -132,14 +133,15 @@ void CentreNode::InitNodeByReqInfo()
 
 	{
 		NodeInfoRequest request;
+		request.set_node_type(kCentreNode);
 		request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-		SendGetNodeInfo(request);
+		DeployServiceGetNodeInfo(request);
 	}
 
 	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
 		RenewLeaseIDRequest request;
         request.set_lease_id(gCentreNodeInfo.GetNodeInfo().lease_id());
-		RenewLease(request);
+		DeployServiceRenewLease(request);
 		});
 }
 
@@ -259,10 +261,10 @@ void CentreNode::InitSystemAfterConnect() const
 	tls_centre.redis_system().Initialize(redisAddr);
 }
 
-void CentreNode::ReleaseNodeId()
+void CentreNode::ReleaseNodeId() const
 {
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
     request.set_node_type(kCentreNode);
-    ReleaseID(request);
+    DeployServiceReleaseID(request);
 }
