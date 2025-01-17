@@ -313,47 +313,31 @@ func SweepExpiredIDs(etcdClient *clientv3.Client) {
 					logx.Error("Failed to get TTL for key ", idKey, ": ", err)
 					continue
 				}
-				for _, kvId := range respId.Kvs {
+
+				if respId.Kvs == nil {
 					// 获取租约 ID
-					leaseID := clientv3.LeaseID(kvId.Lease)
-					if leaseID != clientv3.NoLease {
-						// 检查租约是否过期
-						leaseResp, err := etcdClient.TimeToLive(context.Background(), leaseID)
-						if err != nil {
-							logx.Error("Failed to get TTL for lease ", leaseID, ": ", err)
-							continue
-						}
+					_, err := etcdClient.Delete(context.Background(), idKey)
+					if err != nil {
+						logx.Error("Failed to delete expired ID ", idKey, ": ", err)
+					} else {
+						logx.Info("ID ", idKey, " expired and deleted")
+					}
 
-						// 如果租约 TTL 为 0，表示租约已经过期
-						if leaseResp.TTL == 0 {
-							idKey := string(kv.Key)
-							_, err := etcdClient.Delete(context.Background(), idKey)
-							if err != nil {
-								logx.Error("Failed to delete expired ID ", idKey, ": ", err)
-							} else {
-								logx.Info("ID ", idKey, " expired and deleted")
-							}
-
-							// 将过期的 ID 放回回收池
-							// 假设过期的 ID 是从 kv.Key 中提取出的 ID
-							id := extractIDFromKey(idKey)
-							recycledIDKey := getRecycledIDKey(nodeType)
-							// 将 ID 加入回收池（如果它尚未存在于回收池中）
-							_, err = etcdClient.Put(context.Background(), recycledIDKey, fmt.Sprintf("%d", id))
-							if err != nil {
-								logx.Error("Failed to add expired ID to recycled pool: ", err)
-							} else {
-								logx.Info("ID ", id, " added to recycled pool for server type ", nodeType)
-							}
-						}
+					// 将过期的 ID 放回回收池
+					// 假设过期的 ID 是从 kv.Key 中提取出的 ID
+					id := extractIDFromKey(idKey)
+					recycledIDKey := getRecycledIDKey(nodeType)
+					// 将 ID 加入回收池（如果它尚未存在于回收池中）
+					_, err = etcdClient.Put(context.Background(), recycledIDKey, fmt.Sprintf("%d", id))
+					if err != nil {
+						logx.Error("Failed to add expired ID to recycled pool: ", err)
+					} else {
+						logx.Info("ID ", id, " added to recycled pool for server type ", nodeType)
 					}
 				}
 			}
-
 		}
 	}
-
-	logx.Debug("Finished sweeping expired IDs")
 }
 
 func extractIDFromKey(idKey string) uint64 {
