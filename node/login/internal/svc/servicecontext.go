@@ -20,6 +20,7 @@ type ServiceContext struct {
 	DeployClient *zrpc.Client
 	CentreClient *centre.Client
 	SnowFlake    *snowflake.Node
+	NodeLeaseID  uint64
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {

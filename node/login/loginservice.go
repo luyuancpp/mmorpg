@@ -16,6 +16,7 @@ import (
 	loginserviceServer "login/internal/server/loginservice"
 	"login/internal/svc"
 	"login/pb/game"
+	"time"
 )
 
 var configFile = flag.String("loginService", "etc/login_service.yaml", "the config file")
@@ -40,6 +41,23 @@ func main() {
 
 	// 设置 Node ID
 	ctx.SetNodeId(id.Id)
+	ctx.NodeLeaseID = id.LeaseId
+
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				_, err := deployService.RenewLease(context.Background(), &game.RenewLeaseIDRequest{LeaseId: ctx.NodeLeaseID})
+				if err != nil {
+					log.Fatal(err)
+					return
+				}
+			}
+		}
+	}()
 
 	// 程序退出时释放 ID
 	defer func() {
