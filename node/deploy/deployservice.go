@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zeromicro/go-zero/core/logx"
+	"time"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
@@ -33,6 +34,9 @@ func main() {
 		logx.Error(err)
 		return
 	}
+
+	// 调用 StartPeriodicSweep 启动定时任务，每隔 60 秒调用一次 SweepExpiredIDs
+	go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 60*time.Second)
 
 	db.InitDB(*dbConfigFile)
 	defer db.PbDb.Close()
