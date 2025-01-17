@@ -4,7 +4,7 @@
   "data": {
     "version": "0.3.0",
     "scope": "project",
-    "selectedTree": "3961d49d-3426-410b-bc92-6fe8f3b1dee2",
+    "selectedTree": "a87f1c3e-947b-4e46-8a1f-e4f0af9b5ecb",
     "trees": [
       {
         "version": "0.3.0",
@@ -169,7 +169,6 @@
               "y": -132
             },
             "children": [
-              "cde68fdc-daae-4ccc-ba87-749f3947eda3",
               "d9837df3-b98b-4c0f-8109-4cb51db7b057"
             ]
           },
@@ -185,18 +184,6 @@
             "display": {
               "x": 336,
               "y": 72
-            }
-          },
-          "cde68fdc-daae-4ccc-ba87-749f3947eda3": {
-            "id": "cde68fdc-daae-4ccc-ba87-749f3947eda3",
-            "name": "RandomEnterScene",
-            "category": "action",
-            "title": "RandomEnterScene",
-            "description": "",
-            "properties": {},
-            "display": {
-              "x": 372,
-              "y": -216
             }
           }
         },
@@ -354,8 +341,7 @@
         "category": "condition",
         "title": null,
         "description": "登录的时候角色列表是否为空",
-        "properties": {},
-        "parent": null
+        "properties": {}
       },
       {
         "version": "0.3.0",
@@ -364,8 +350,7 @@
         "category": "condition",
         "title": null,
         "description": "是否已经登录",
-        "properties": {},
-        "parent": null
+        "properties": {}
       },
       {
         "version": "0.3.0",
@@ -374,8 +359,7 @@
         "category": "action",
         "title": null,
         "description": null,
-        "properties": {},
-        "parent": null
+        "properties": {}
       },
       {
         "version": "0.3.0",
@@ -384,8 +368,7 @@
         "category": "action",
         "title": null,
         "description": null,
-        "properties": {},
-        "parent": null
+        "properties": {}
       },
       {
         "version": "0.3.0",
@@ -394,8 +377,7 @@
         "category": "action",
         "title": null,
         "description": null,
-        "properties": {},
-        "parent": null
+        "properties": {}
       },
       {
         "version": "0.3.0",
@@ -406,8 +388,7 @@
         "description": null,
         "properties": {
           "treeTitle": "treeTitle"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -418,8 +399,7 @@
         "description": null,
         "properties": {
           "count": 1000
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -428,8 +408,7 @@
         "category": "action",
         "title": "IncrementTestCount()",
         "description": null,
-        "properties": {},
-        "parent": null
+        "properties": {}
       },
       {
         "version": "0.3.0",
@@ -438,8 +417,7 @@
         "category": "action",
         "title": null,
         "description": null,
-        "properties": {},
-        "parent": null
+        "properties": {}
       },
       {
         "version": "0.3.0",
@@ -450,8 +428,7 @@
         "description": "获取仇恨目标",
         "properties": {
           "TargetIDBoard": "HatredTarget"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -463,8 +440,7 @@
         "properties": {
           "key": "key",
           "value": 1
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -476,8 +452,7 @@
         "properties": {
           "key": "key",
           "value": 1
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -489,8 +464,7 @@
         "properties": {
           "targetIDBoard": "needset",
           "storeBoard": "needset"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -503,8 +477,7 @@
           "origMaxDistance": 1000,
           "targetBoard": "needset",
           "originalPosBoard": "needset"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -516,8 +489,7 @@
         "properties": {
           "TargetBoard": "target",
           "DistanceBoard": "targetDistance"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -529,8 +501,7 @@
         "properties": {
           "SkillGroupIndex": 1,
           "ReleasableSkillBoard": "relaseableSkillBoard"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -543,8 +514,7 @@
           "DistanceBoard": "distance",
           "ReleasableSkillBoard": "relableSkill",
           "AfterCheckReleasableSkillBoard": "afterCheckSkill"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -557,8 +527,7 @@
           "SkillListBoard": "skillList",
           "SkillIndex": 0,
           "SkillIDBoard": "idBoard"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -569,8 +538,7 @@
         "description": null,
         "properties": {
           "Duration": 1000
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -581,8 +549,7 @@
         "description": "释放技能",
         "properties": {
           "SkillIDBoard": "SkillID"
-        },
-        "parent": null
+        }
       },
       {
         "version": "0.3.0",
@@ -591,11 +558,9 @@
         "category": "action",
         "title": "ResetTestCount()",
         "description": null,
-        "properties": {},
-        "parent": null
+        "properties": {}
       }
-    ],
-    "custom_folders": []
+    ]
   },
   "path": "F:\\work\\turn-based-game\\robot\\etc\\robot.b3"
 }

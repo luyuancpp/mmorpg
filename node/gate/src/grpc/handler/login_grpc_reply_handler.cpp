@@ -1,4 +1,3 @@
-
 #include "muduo/base/Logging.h"
 
 #include "gate_node.h"
