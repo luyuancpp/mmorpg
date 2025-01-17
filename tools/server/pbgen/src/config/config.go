@@ -33,6 +33,8 @@ const (
 	MessageIdName                 = "MessageId"
 	MethodIndexName               = "Index"
 	CppSystemExtension            = "_system.cpp"
+	GrpcHeaderExtension           = "_grpc.h"
+	GrpcCppExtension              = "_grpc.cpp"
 )
 
 // 常量：目录路径
@@ -95,6 +97,7 @@ const (
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
 	DeployGoGameDirectory            = DeployDirectory + GoPbGameDirectory
+	CentreGrpcDirectory              = ProjectDir + CentreNodeDirectory + "src/grpc/gen/"
 )
 
 // 常量：文件名

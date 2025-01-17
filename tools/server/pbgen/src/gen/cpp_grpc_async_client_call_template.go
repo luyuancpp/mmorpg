@@ -20,4 +20,7 @@ public:
     std::unique_ptr<ClientAsyncResponseReader< {{.Response}}>> response_reader;
 };
 
+{{- range .GrpcServices }}
+class {{.Request}};
+void {{.ServiceName}}{{.Method}}(const {{.Request}};& rq);
 {{- end }}`
