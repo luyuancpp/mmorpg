@@ -97,5 +97,6 @@ func main() {
 	gen.GoRobotHandlerGenerator()
 	gen.GoRobotTotalHandlerGenerator()
 	gen.CppPlayerDataLoadGenerator()
+	gen.CppGrpcCallClient()
 	util.Wg.Wait()
 }
