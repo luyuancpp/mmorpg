@@ -284,9 +284,22 @@ func ClearAllIDs(etcdClient *clientv3.Client) error {
 	return nil
 }
 
+// StartPeriodicSweep 启动定时任务，每 60 秒调用一次 SweepExpiredIDs 函数
+func StartPeriodicSweep(etcdClient *clientv3.Client, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			logx.Info("Starting SweepExpiredIDs...")
+			SweepExpiredIDs(etcdClient)
+		}
+	}
+}
+
 // 定期清理过期的 ID，并将其放回回收池
 func SweepExpiredIDs(etcdClient *clientv3.Client) {
-	time.Sleep(2 * time.Second)
 
 	// 获取所有的服务器类型（假设服务器类型范围是 [0, maxNodeType]）
 	for nodeType := uint32(0); nodeType < maxNodeType; nodeType++ {

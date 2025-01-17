@@ -35,7 +35,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	for i := 0; i < config.AppConfig.Robots.Count; i++ {
-		time.Sleep(1 * time.Second)
+		time.Sleep(50 * time.Millisecond)
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
@@ -75,7 +75,7 @@ func main() {
 						zap.L().Warn("Unhandled message type", zap.String("message_type", string(d.Name())))
 
 					}
-				case <-time.After(1 * time.Second):
+				case <-time.After(20 * time.Millisecond):
 					gameClient.TickBehaviorTree()
 				}
 			}
