@@ -124,6 +124,7 @@ message NodeInfoResponse
 {
   nodes_info_data info = 1;
   uint32 node_id = 2;
+  uint64 lease_id = 3; //租约
 }
 
 
@@ -138,6 +139,7 @@ message GetIDRequest
 message GetIDResponse 
 {
   uint64 id = 1;  // 分配的唯一 ID
+  uint64 lease_id = 2; //租约
 }
 
 // 请求释放 ID
@@ -145,6 +147,7 @@ message ReleaseIDRequest
 {
   uint64 id = 1;  // 要释放的 ID
   uint32 node_type = 2;  // 服务器类型
+  uint64 lease_id = 3; //租约
 }
 
 // 返回的响应
@@ -153,9 +156,21 @@ message ReleaseIDResponse
   bool success = 1;  // 是否成功回收 ID
 }
 
+// 续租 ID
+message RenewLeaseIDRequest 
+{
+  uint64 lease_id = 1; //租约
+}
+
+// 
+message RenewLeaseIDResponse 
+{
+}
+
 service DeployService 
 {
   rpc GetNodeInfo (NodeInfoRequest) returns (NodeInfoResponse);
   rpc GetID (GetIDRequest) returns (GetIDResponse);
   rpc ReleaseID (ReleaseIDRequest) returns (ReleaseIDResponse);
+  rpc RenewLease (RenewLeaseIDRequest) returns (RenewLeaseIDResponse);
 }

@@ -23,11 +23,11 @@ func NewGetIDLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetIDLogic 
 }
 
 func (l *GetIDLogic) GetID(in *game.GetIDRequest) (*game.GetIDResponse, error) {
-	id, err := node_id_etcd.GenerateID(l.ctx, l.svcCtx.NodeEtcdClient, in.NodeType)
+	id, leaseID, err := node_id_etcd.GenerateIDWithLease(l.ctx, l.svcCtx.NodeEtcdClient, in.NodeType)
 	if err != nil {
 		logx.Error(err)
 		return &game.GetIDResponse{}, err
 	}
 
-	return &game.GetIDResponse{Id: id}, nil
+	return &game.GetIDResponse{Id: id, LeaseId: uint64(leaseID)}, nil
 }

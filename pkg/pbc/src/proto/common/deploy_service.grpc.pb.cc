@@ -24,6 +24,7 @@ static const char* DeployService_method_names[] = {
   "/DeployService/GetNodeInfo",
   "/DeployService/GetID",
   "/DeployService/ReleaseID",
+  "/DeployService/RenewLease",
 };
 
 std::unique_ptr< DeployService::Stub> DeployService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -36,6 +37,7 @@ DeployService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& chan
   : channel_(channel), rpcmethod_GetNodeInfo_(DeployService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_GetID_(DeployService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_ReleaseID_(DeployService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RenewLease_(DeployService_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status DeployService::Stub::GetNodeInfo(::grpc::ClientContext* context, const ::NodeInfoRequest& request, ::NodeInfoResponse* response) {
@@ -107,6 +109,29 @@ void DeployService::Stub::async::ReleaseID(::grpc::ClientContext* context, const
   return result;
 }
 
+::grpc::Status DeployService::Stub::RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::RenewLeaseIDResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::RenewLeaseIDRequest, ::RenewLeaseIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RenewLease_, context, request, response);
+}
+
+void DeployService::Stub::async::RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::RenewLeaseIDRequest, ::RenewLeaseIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RenewLease_, context, request, response, std::move(f));
+}
+
+void DeployService::Stub::async::RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RenewLease_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::RenewLeaseIDResponse>* DeployService::Stub::PrepareAsyncRenewLeaseRaw(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::RenewLeaseIDResponse, ::RenewLeaseIDRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RenewLease_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::RenewLeaseIDResponse>* DeployService::Stub::AsyncRenewLeaseRaw(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRenewLeaseRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 DeployService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       DeployService_method_names[0],
@@ -138,6 +163,16 @@ DeployService::Service::Service() {
              ::ReleaseIDResponse* resp) {
                return service->ReleaseID(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DeployService_method_names[3],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DeployService::Service, ::RenewLeaseIDRequest, ::RenewLeaseIDResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DeployService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::RenewLeaseIDRequest* req,
+             ::RenewLeaseIDResponse* resp) {
+               return service->RenewLease(ctx, req, resp);
+             }, this)));
 }
 
 DeployService::Service::~Service() {
@@ -158,6 +193,13 @@ DeployService::Service::~Service() {
 }
 
 ::grpc::Status DeployService::Service::ReleaseID(::grpc::ServerContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DeployService::Service::RenewLease(::grpc::ServerContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response) {
   (void) context;
   (void) request;
   (void) response;

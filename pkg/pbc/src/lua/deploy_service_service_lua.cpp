@@ -24,4 +24,10 @@ void InitDeployServiceLua()
 		return DeployService_Stub::descriptor()->method(2);
 	};
 
+	tls_lua_state["DeployServiceRenewLeaseMessageId"] = 74;
+	tls_lua_state["DeployServiceRenewLeaseIndex"] = 3;
+	tls_lua_state["DeployServiceRenewLease"] = []()-> const ::google::protobuf::MethodDescriptor* {
+		return DeployService_Stub::descriptor()->method(3);
+	};
+
 }

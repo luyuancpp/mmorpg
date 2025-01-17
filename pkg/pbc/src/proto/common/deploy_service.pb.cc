@@ -186,6 +186,37 @@ struct centre_node_dbDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 centre_node_dbDefaultTypeInternal _centre_node_db_default_instance_;
+      template <typename>
+PROTOBUF_CONSTEXPR RenewLeaseIDResponse::RenewLeaseIDResponse(::_pbi::ConstantInitialized) {}
+struct RenewLeaseIDResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RenewLeaseIDResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RenewLeaseIDResponseDefaultTypeInternal() {}
+  union {
+    RenewLeaseIDResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RenewLeaseIDResponseDefaultTypeInternal _RenewLeaseIDResponse_default_instance_;
+
+inline constexpr RenewLeaseIDRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : lease_id_{::uint64_t{0u}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RenewLeaseIDRequest::RenewLeaseIDRequest(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct RenewLeaseIDRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RenewLeaseIDRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RenewLeaseIDRequestDefaultTypeInternal() {}
+  union {
+    RenewLeaseIDRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RenewLeaseIDRequestDefaultTypeInternal _RenewLeaseIDRequest_default_instance_;
 
 inline constexpr ReleaseIDResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -209,6 +240,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr ReleaseIDRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : id_{::uint64_t{0u}},
+        lease_id_{::uint64_t{0u}},
         node_type_{0u},
         _cached_size_{0} {}
 
@@ -249,6 +281,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr GetIDResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : id_{::uint64_t{0u}},
+        lease_id_{::uint64_t{0u}},
         _cached_size_{0} {}
 
 template <typename>
@@ -410,6 +443,7 @@ inline constexpr NodeInfoResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         info_{nullptr},
+        lease_id_{::uint64_t{0u}},
         node_id_{0u} {}
 
 template <typename>
@@ -425,7 +459,7 @@ struct NodeInfoResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NodeInfoResponseDefaultTypeInternal _NodeInfoResponse_default_instance_;
-static ::_pb::Metadata file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[19];
+static ::_pb::Metadata file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[21];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_proto_2fcommon_2fdeploy_5fservice_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -599,7 +633,9 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::NodeInfoResponse, _impl_.info_),
         PROTOBUF_FIELD_OFFSET(::NodeInfoResponse, _impl_.node_id_),
+        PROTOBUF_FIELD_OFFSET(::NodeInfoResponse, _impl_.lease_id_),
         0,
+        ~0u,
         ~0u,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::GetIDRequest, _internal_metadata_),
@@ -620,6 +656,7 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::GetIDResponse, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::GetIDResponse, _impl_.lease_id_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -630,6 +667,7 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _impl_.node_type_),
+        PROTOBUF_FIELD_OFFSET(::ReleaseIDRequest, _impl_.lease_id_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::ReleaseIDResponse, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -639,6 +677,23 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::ReleaseIDResponse, _impl_.success_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::RenewLeaseIDRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::RenewLeaseIDRequest, _impl_.lease_id_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::RenewLeaseIDResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
 };
 
 static const ::_pbi::MigrationSchema
@@ -657,11 +712,13 @@ static const ::_pbi::MigrationSchema
         {122, -1, -1, sizeof(::game_node_db)},
         {134, -1, -1, sizeof(::gate_node_db)},
         {146, -1, -1, sizeof(::NodeInfoRequest)},
-        {156, 166, -1, sizeof(::NodeInfoResponse)},
-        {168, -1, -1, sizeof(::GetIDRequest)},
-        {178, -1, -1, sizeof(::GetIDResponse)},
-        {187, -1, -1, sizeof(::ReleaseIDRequest)},
-        {197, -1, -1, sizeof(::ReleaseIDResponse)},
+        {156, 167, -1, sizeof(::NodeInfoResponse)},
+        {170, -1, -1, sizeof(::GetIDRequest)},
+        {180, -1, -1, sizeof(::GetIDResponse)},
+        {190, -1, -1, sizeof(::ReleaseIDRequest)},
+        {201, -1, -1, sizeof(::ReleaseIDResponse)},
+        {210, -1, -1, sizeof(::RenewLeaseIDRequest)},
+        {219, -1, -1, sizeof(::RenewLeaseIDResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_database_node_db_default_instance_._instance,
@@ -683,6 +740,8 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_GetIDResponse_default_instance_._instance,
     &::_ReleaseIDRequest_default_instance_._instance,
     &::_ReleaseIDResponse_default_instance_._instance,
+    &::_RenewLeaseIDRequest_default_instance_._instance,
+    &::_RenewLeaseIDResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -719,18 +778,22 @@ const char descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto[]
     "\n\014gate_node_db\022\n\n\002id\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014"
     "\n\004port\030\003 \001(\r\022\017\n\007zone_id\030\004 \001(\r:\034\212\265\030\014gate_"
     "node_db\222\265\030\002id\262\265\030\002id\"5\n\017NodeInfoRequest\022\017"
-    "\n\007zone_id\030\001 \001(\r\022\021\n\tnode_type\030\002 \001(\r\"C\n\020No"
+    "\n\007zone_id\030\001 \001(\r\022\021\n\tnode_type\030\002 \001(\r\"U\n\020No"
     "deInfoResponse\022\036\n\004info\030\001 \001(\0132\020.nodes_inf"
-    "o_data\022\017\n\007node_id\030\002 \001(\r\"6\n\014GetIDRequest\022"
-    "\023\n\013client_name\030\001 \001(\t\022\021\n\tnode_type\030\002 \001(\r\""
-    "\033\n\rGetIDResponse\022\n\n\002id\030\001 \001(\004\"1\n\020ReleaseI"
-    "DRequest\022\n\n\002id\030\001 \001(\004\022\021\n\tnode_type\030\002 \001(\r\""
-    "$\n\021ReleaseIDResponse\022\017\n\007success\030\001 \001(\0102\237\001"
-    "\n\rDeployService\0222\n\013GetNodeInfo\022\020.NodeInf"
-    "oRequest\032\021.NodeInfoResponse\022&\n\005GetID\022\r.G"
-    "etIDRequest\032\016.GetIDResponse\0222\n\tReleaseID"
-    "\022\021.ReleaseIDRequest\032\022.ReleaseIDResponseB"
-    "\tZ\007pb/gameb\006proto3"
+    "o_data\022\017\n\007node_id\030\002 \001(\r\022\020\n\010lease_id\030\003 \001("
+    "\004\"6\n\014GetIDRequest\022\023\n\013client_name\030\001 \001(\t\022\021"
+    "\n\tnode_type\030\002 \001(\r\"-\n\rGetIDResponse\022\n\n\002id"
+    "\030\001 \001(\004\022\020\n\010lease_id\030\002 \001(\004\"C\n\020ReleaseIDReq"
+    "uest\022\n\n\002id\030\001 \001(\004\022\021\n\tnode_type\030\002 \001(\r\022\020\n\010l"
+    "ease_id\030\003 \001(\004\"$\n\021ReleaseIDResponse\022\017\n\007su"
+    "ccess\030\001 \001(\010\"\'\n\023RenewLeaseIDRequest\022\020\n\010le"
+    "ase_id\030\001 \001(\004\"\026\n\024RenewLeaseIDResponse2\332\001\n"
+    "\rDeployService\0222\n\013GetNodeInfo\022\020.NodeInfo"
+    "Request\032\021.NodeInfoResponse\022&\n\005GetID\022\r.Ge"
+    "tIDRequest\032\016.GetIDResponse\0222\n\tReleaseID\022"
+    "\021.ReleaseIDRequest\032\022.ReleaseIDResponse\0229"
+    "\n\nRenewLease\022\024.RenewLeaseIDRequest\032\025.Ren"
+    "ewLeaseIDResponseB\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_deps[1] =
     {
@@ -740,13 +803,13 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdeploy_5fservice_2epr
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto = {
     false,
     false,
-    1778,
+    1956,
     descriptor_table_protodef_proto_2fcommon_2fdeploy_5fservice_2eproto,
     "proto/common/deploy_service.proto",
     &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
     descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_deps,
     1,
-    19,
+    21,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fdeploy_5fservice_2eproto::offsets,
@@ -4317,7 +4380,13 @@ NodeInfoResponse::NodeInfoResponse(
   _impl_.info_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::nodes_info_data>(
                               arena, *from._impl_.info_)
                         : nullptr;
-  _impl_.node_id_ = from._impl_.node_id_;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, lease_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, lease_id_),
+           offsetof(Impl_, node_id_) -
+               offsetof(Impl_, lease_id_) +
+               sizeof(Impl_::node_id_));
 
   // @@protoc_insertion_point(copy_constructor:NodeInfoResponse)
 }
@@ -4372,7 +4441,9 @@ PROTOBUF_NOINLINE void NodeInfoResponse::Clear() {
     ABSL_DCHECK(_impl_.info_ != nullptr);
     _impl_.info_->Clear();
   }
-  _impl_.node_id_ = 0u;
+  ::memset(&_impl_.lease_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.node_id_) -
+      reinterpret_cast<char*>(&_impl_.lease_id_)) + sizeof(_impl_.node_id_));
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -4385,15 +4456,15 @@ const char* NodeInfoResponse::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 1, 0, 2> NodeInfoResponse::_table_ = {
+const ::_pbi::TcParseTable<2, 3, 1, 0, 2> NodeInfoResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(NodeInfoResponse, _impl_._has_bits_),
     0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
+    3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
+    4294967288,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
+    3,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_NodeInfoResponse_default_instance_._instance,
@@ -4402,12 +4473,16 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> NodeInfoResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::NodeInfoResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 node_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfoResponse, _impl_.node_id_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfoResponse, _impl_.node_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // .nodes_info_data info = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(NodeInfoResponse, _impl_.info_)}},
+    // uint32 node_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeInfoResponse, _impl_.node_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfoResponse, _impl_.node_id_)}},
+    // uint64 lease_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(NodeInfoResponse, _impl_.lease_id_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(NodeInfoResponse, _impl_.lease_id_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -4417,6 +4492,9 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> NodeInfoResponse::_table_ = {
     // uint32 node_id = 2;
     {PROTOBUF_FIELD_OFFSET(NodeInfoResponse, _impl_.node_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint64 lease_id = 3;
+    {PROTOBUF_FIELD_OFFSET(NodeInfoResponse, _impl_.lease_id_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }}, {{
     {::_pbi::TcParser::GetTable<::nodes_info_data>()},
   }}, {{
@@ -4444,6 +4522,13 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> NodeInfoResponse::_table_ = {
         2, this->_internal_node_id(), target);
   }
 
+  // uint64 lease_id = 3;
+  if (this->_internal_lease_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        3, this->_internal_lease_id(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -4466,6 +4551,12 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> NodeInfoResponse::_table_ = {
   if (cached_has_bits & 0x00000001u) {
     total_size +=
         1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.info_);
+  }
+
+  // uint64 lease_id = 3;
+  if (this->_internal_lease_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_lease_id());
   }
 
   // uint32 node_id = 2;
@@ -4496,6 +4587,9 @@ void NodeInfoResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
     } else {
       _this->_impl_.info_->MergeFrom(*from._impl_.info_);
     }
+  }
+  if (from._internal_lease_id() != 0) {
+    _this->_impl_.lease_id_ = from._impl_.lease_id_;
   }
   if (from._internal_node_id() != 0) {
     _this->_impl_.node_id_ = from._impl_.node_id_;
@@ -4778,7 +4872,12 @@ inline PROTOBUF_NDEBUG_INLINE GetIDResponse::Impl_::Impl_(
 
 inline void GetIDResponse::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.id_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           0,
+           offsetof(Impl_, lease_id_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::lease_id_));
 }
 GetIDResponse::~GetIDResponse() {
   // @@protoc_insertion_point(destructor:GetIDResponse)
@@ -4811,7 +4910,9 @@ PROTOBUF_NOINLINE void GetIDResponse::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.id_ = ::uint64_t{0u};
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.lease_id_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.lease_id_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -4823,15 +4924,15 @@ const char* GetIDResponse::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetIDResponse::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> GetIDResponse::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     &_GetIDResponse_default_instance_._instance,
@@ -4840,6 +4941,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetIDResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::GetIDResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // uint64 lease_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetIDResponse, _impl_.lease_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.lease_id_)}},
     // uint64 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetIDResponse, _impl_.id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.id_)}},
@@ -4848,6 +4952,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetIDResponse::_table_ = {
   }}, {{
     // uint64 id = 1;
     {PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // uint64 lease_id = 2;
+    {PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.lease_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -4867,6 +4974,13 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetIDResponse::_table_ = {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
         1, this->_internal_id(), target);
+  }
+
+  // uint64 lease_id = 2;
+  if (this->_internal_lease_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        2, this->_internal_lease_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4892,6 +5006,12 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> GetIDResponse::_table_ = {
         this->_internal_id());
   }
 
+  // uint64 lease_id = 2;
+  if (this->_internal_lease_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_lease_id());
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -4906,6 +5026,9 @@ void GetIDResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
 
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
+  }
+  if (from._internal_lease_id() != 0) {
+    _this->_impl_.lease_id_ = from._impl_.lease_id_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -4924,7 +5047,12 @@ PROTOBUF_NOINLINE bool GetIDResponse::IsInitialized() const {
 void GetIDResponse::InternalSwap(GetIDResponse* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-        swap(_impl_.id_, other->_impl_.id_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.lease_id_)
+      + sizeof(GetIDResponse::_impl_.lease_id_)
+      - PROTOBUF_FIELD_OFFSET(GetIDResponse, _impl_.id_)>(
+          reinterpret_cast<char*>(&_impl_.id_),
+          reinterpret_cast<char*>(&other->_impl_.id_));
 }
 
 ::google::protobuf::Metadata GetIDResponse::GetMetadata() const {
@@ -5007,15 +5135,15 @@ const char* ReleaseIDRequest::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2> ReleaseIDRequest::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
+    3, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
+    4294967288,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
+    3,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     &_ReleaseIDRequest_default_instance_._instance,
@@ -5024,12 +5152,16 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::ReleaseIDRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 node_type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ReleaseIDRequest, _impl_.node_type_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.node_type_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint64 id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleaseIDRequest, _impl_.id_), 63>(),
      {8, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.id_)}},
+    // uint32 node_type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ReleaseIDRequest, _impl_.node_type_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.node_type_)}},
+    // uint64 lease_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleaseIDRequest, _impl_.lease_id_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.lease_id_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -5039,6 +5171,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
     // uint32 node_type = 2;
     {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.node_type_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint64 lease_id = 3;
+    {PROTOBUF_FIELD_OFFSET(ReleaseIDRequest, _impl_.lease_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
   }},
   // no aux_entries
   {{
@@ -5066,6 +5201,13 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
         2, this->_internal_node_type(), target);
   }
 
+  // uint64 lease_id = 3;
+  if (this->_internal_lease_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        3, this->_internal_lease_id(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -5089,6 +5231,12 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> ReleaseIDRequest::_table_ = {
         this->_internal_id());
   }
 
+  // uint64 lease_id = 3;
+  if (this->_internal_lease_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_lease_id());
+  }
+
   // uint32 node_type = 2;
   if (this->_internal_node_type() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
@@ -5109,6 +5257,9 @@ void ReleaseIDRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
 
   if (from._internal_id() != 0) {
     _this->_impl_.id_ = from._impl_.id_;
+  }
+  if (from._internal_lease_id() != 0) {
+    _this->_impl_.lease_id_ = from._impl_.lease_id_;
   }
   if (from._internal_node_type() != 0) {
     _this->_impl_.node_type_ = from._impl_.node_type_;
@@ -5318,6 +5469,218 @@ void ReleaseIDResponse::InternalSwap(ReleaseIDResponse* PROTOBUF_RESTRICT other)
   return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_getter,
                                    &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
                                    file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[18]);
+}
+// ===================================================================
+
+class RenewLeaseIDRequest::_Internal {
+ public:
+};
+
+RenewLeaseIDRequest::RenewLeaseIDRequest(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:RenewLeaseIDRequest)
+}
+RenewLeaseIDRequest::RenewLeaseIDRequest(
+    ::google::protobuf::Arena* arena, const RenewLeaseIDRequest& from)
+    : RenewLeaseIDRequest(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE RenewLeaseIDRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void RenewLeaseIDRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.lease_id_ = {};
+}
+RenewLeaseIDRequest::~RenewLeaseIDRequest() {
+  // @@protoc_insertion_point(destructor:RenewLeaseIDRequest)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void RenewLeaseIDRequest::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+RenewLeaseIDRequest::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              nullptr,  // OnDemandRegisterArenaDtor
+              PROTOBUF_FIELD_OFFSET(RenewLeaseIDRequest, _impl_._cached_size_),
+              false,
+          },
+          &RenewLeaseIDRequest::MergeImpl,
+          &RenewLeaseIDRequest::kDescriptorMethods,
+      };
+  return &_data_;
+}
+PROTOBUF_NOINLINE void RenewLeaseIDRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:RenewLeaseIDRequest)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.lease_id_ = ::uint64_t{0u};
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* RenewLeaseIDRequest::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> RenewLeaseIDRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_RenewLeaseIDRequest_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::RenewLeaseIDRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint64 lease_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RenewLeaseIDRequest, _impl_.lease_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(RenewLeaseIDRequest, _impl_.lease_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 lease_id = 1;
+    {PROTOBUF_FIELD_OFFSET(RenewLeaseIDRequest, _impl_.lease_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+::uint8_t* RenewLeaseIDRequest::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:RenewLeaseIDRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 lease_id = 1;
+  if (this->_internal_lease_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        1, this->_internal_lease_id(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:RenewLeaseIDRequest)
+  return target;
+}
+
+::size_t RenewLeaseIDRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:RenewLeaseIDRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // uint64 lease_id = 1;
+  if (this->_internal_lease_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_lease_id());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void RenewLeaseIDRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RenewLeaseIDRequest*>(&to_msg);
+  auto& from = static_cast<const RenewLeaseIDRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:RenewLeaseIDRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_lease_id() != 0) {
+    _this->_impl_.lease_id_ = from._impl_.lease_id_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void RenewLeaseIDRequest::CopyFrom(const RenewLeaseIDRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:RenewLeaseIDRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool RenewLeaseIDRequest::IsInitialized() const {
+  return true;
+}
+
+void RenewLeaseIDRequest::InternalSwap(RenewLeaseIDRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.lease_id_, other->_impl_.lease_id_);
+}
+
+::google::protobuf::Metadata RenewLeaseIDRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_getter,
+                                   &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
+                                   file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[19]);
+}
+// ===================================================================
+
+class RenewLeaseIDResponse::_Internal {
+ public:
+};
+
+RenewLeaseIDResponse::RenewLeaseIDResponse(::google::protobuf::Arena* arena)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  // @@protoc_insertion_point(arena_constructor:RenewLeaseIDResponse)
+}
+RenewLeaseIDResponse::RenewLeaseIDResponse(
+    ::google::protobuf::Arena* arena,
+    const RenewLeaseIDResponse& from)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+  RenewLeaseIDResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:RenewLeaseIDResponse)
+}
+
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata RenewLeaseIDResponse::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(&descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_getter,
+                                   &descriptor_table_proto_2fcommon_2fdeploy_5fservice_2eproto_once,
+                                   file_level_metadata_proto_2fcommon_2fdeploy_5fservice_2eproto[20]);
 }
 // @@protoc_insertion_point(namespace_scope)
 namespace google {

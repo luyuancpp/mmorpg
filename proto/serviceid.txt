@@ -72,4 +72,5 @@
 71=EntitySyncServiceSyncAttribute30Frames
 72=DeployServiceGetID
 73=DeployServiceReleaseID
+74=DeployServiceRenewLease
 75=GameServiceEnterScene
