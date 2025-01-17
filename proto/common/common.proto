@@ -10,6 +10,7 @@ message NodeInfo
   uint32 node_type = 2;
   uint64 launch_time = 3;
   uint32 game_node_type = 4;
+  uint64 lease_id = 5; //租约
 }
 
 message NetworkAddress

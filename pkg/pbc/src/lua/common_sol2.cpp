@@ -12,6 +12,8 @@ sol::property(&NodeInfo::node_type, &NodeInfo::set_node_type),
 sol::property(&NodeInfo::launch_time, &NodeInfo::set_launch_time),
 "game_node_type",
 sol::property(&NodeInfo::game_node_type, &NodeInfo::set_game_node_type),
+"lease_id",
+sol::property(&NodeInfo::lease_id, &NodeInfo::set_lease_id),
 "DebugString",
 &NodeInfo::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

@@ -31,7 +31,7 @@ public:
     inline GateServiceHandler& GetServiceHandler() { return service_handler_; }
     inline uint32_t GetNodeId()const { return node_info_.node_id(); }
     inline RpcClientPtr& GetZoneCentreNode() { return zone_centre_node_; }
-    inline const NodeInfo& GetNodeInfo()const { return node_info_; }
+    inline  NodeInfo& GetNodeInfo() { return node_info_; }
     inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduo_log_; }
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
@@ -85,10 +85,7 @@ private:
     GateServiceHandler service_handler_;
     TimerTaskComp deploy_rpc_timer_;
     TimerTaskComp loginGrpcSelectTimer;
+    TimerTaskComp renewNodeLeaseTimer;
 };
 
-
 extern GateNode* g_gate_node;
-
-
-

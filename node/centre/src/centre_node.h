@@ -12,7 +12,7 @@
 class CentreNode : muduo::noncopyable
 {
 public:
-	
+
 	using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
 	explicit CentreNode(muduo::net::EventLoop* loop);
@@ -22,15 +22,14 @@ public:
 	uint32_t GetNodeId()const;
 	const NodeInfo& GetNodeInfo()const;
 
-	inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduoLog; }
-	
+	inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
+
 	void        Init();
 	void		Exit();
-	
+
 	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
 
-    void SetNodeId(NodeId node_id);
-    void StartServer(const ::nodes_info_data& info);
+	void StartServer(const ::nodes_info_data& info);
 
 	void Receive2(const OnBeConnectedEvent& es);
 
@@ -47,7 +46,7 @@ private:
 	static void InitSystemBeforeConnect();
 	void InitSystemAfterConnect() const;
 
-    void ReleaseNodeId();
+	void ReleaseNodeId();
 
 	muduo::net::EventLoop* loop_{ nullptr };
 	muduo::AsyncLogging muduoLog;
@@ -55,7 +54,8 @@ private:
 	RpcServerPtr server_;
 	CentreServiceHandler centreService;
 	nodes_info_data serversInfo;
-    TimerTaskComp deployRpcTimer;
+	TimerTaskComp deployRpcTimer;
+	TimerTaskComp renewNodeLeaseTimer;
 };
 
 extern CentreNode* gCentreNode ;

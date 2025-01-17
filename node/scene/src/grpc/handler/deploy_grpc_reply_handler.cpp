@@ -5,6 +5,7 @@
 #include "scene_node.h"
 #include "grpc/client/deploy_async_client_call.h"
 #include "grpc/deploy/deploy_client.h"
+#include "node/scene_node_info.h"
 
 void AsyncCompleteGrpcDeployService()
 {
@@ -28,7 +29,8 @@ void AsyncCompleteGrpcDeployService()
     }
     if (call->status.ok())
     {
-        gSceneNode->SetNodeId(call->reply.node_id());
+        gSceneNodeInfo.SetNodeId(call->reply.node_id());
+        gSceneNodeInfo.GetNodeInfo().set_lease_id(call->reply.lease_id());
         gSceneNode->StartServer(call->reply.info());
     }
     else

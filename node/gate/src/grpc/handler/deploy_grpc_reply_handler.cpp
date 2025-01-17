@@ -26,6 +26,7 @@ void AsyncCompleteGrpcDeployService()
 	}
     if (call->status.ok())
     {
+        g_gate_node->GetNodeInfo().set_lease_id(call->reply.lease_id());
         g_gate_node->SetNodeId(call->reply.node_id());
         g_gate_node->StartServer(call->reply.info());
     }

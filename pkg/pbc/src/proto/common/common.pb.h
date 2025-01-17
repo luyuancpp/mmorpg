@@ -230,6 +230,7 @@ class NodeInfo final : public ::google::protobuf::Message
     kNodeIdFieldNumber = 1,
     kNodeTypeFieldNumber = 2,
     kLaunchTimeFieldNumber = 3,
+    kLeaseIdFieldNumber = 5,
     kGameNodeTypeFieldNumber = 4,
   };
   // uint32 node_id = 1;
@@ -262,6 +263,16 @@ class NodeInfo final : public ::google::protobuf::Message
   void _internal_set_launch_time(::uint64_t value);
 
   public:
+  // uint64 lease_id = 5;
+  void clear_lease_id() ;
+  ::uint64_t lease_id() const;
+  void set_lease_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_lease_id() const;
+  void _internal_set_lease_id(::uint64_t value);
+
+  public:
   // uint32 game_node_type = 4;
   void clear_game_node_type() ;
   ::uint32_t game_node_type() const;
@@ -277,7 +288,7 @@ class NodeInfo final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 0,
+      3, 5, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -296,6 +307,7 @@ class NodeInfo final : public ::google::protobuf::Message
     ::uint32_t node_id_;
     ::uint32_t node_type_;
     ::uint64_t launch_time_;
+    ::uint64_t lease_id_;
     ::uint32_t game_node_type_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -814,6 +826,28 @@ inline ::uint32_t NodeInfo::_internal_game_node_type() const {
 inline void NodeInfo::_internal_set_game_node_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.game_node_type_ = value;
+}
+
+// uint64 lease_id = 5;
+inline void NodeInfo::clear_lease_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t NodeInfo::lease_id() const {
+  // @@protoc_insertion_point(field_get:NodeInfo.lease_id)
+  return _internal_lease_id();
+}
+inline void NodeInfo::set_lease_id(::uint64_t value) {
+  _internal_set_lease_id(value);
+  // @@protoc_insertion_point(field_set:NodeInfo.lease_id)
+}
+inline ::uint64_t NodeInfo::_internal_lease_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.lease_id_;
+}
+inline void NodeInfo::_internal_set_lease_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = value;
 }
 
 // -------------------------------------------------------------------
