@@ -97,7 +97,7 @@ const (
 	RobotMessageBodyHandlerDirectory = RobotMethodHandlerDirectory + "message_body_handler.go"
 	PlayerStorageSystemDirectory     = ProjectDir + NodePkgLogicSceneNodeDirectory + "src/player/system/"
 	DeployGoGameDirectory            = DeployDirectory + GoPbGameDirectory
-	CentreGrpcDirectory              = ProjectDir + CentreNodeDirectory + "src/grpc/gen/"
+	CppGenGrpcDirectory              = ProjectDir + PbcProtoDirectory + "grpc/generator/"
 )
 
 // 常量：文件名
