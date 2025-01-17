@@ -44,6 +44,7 @@ func MakeProjectDir() {
 	os.MkdirAll(config.GrpcOutputDirectory, os.FileMode(0777))
 	os.MkdirAll(config.PbcLuaDirectory, os.FileMode(0777))
 	os.MkdirAll(config.ServiceInfoDirectory, os.FileMode(0777))
+	os.MkdirAll(config.CppGenGrpcDirectory, os.FileMode(0777))
 }
 
 func MakeMd5Dir() {

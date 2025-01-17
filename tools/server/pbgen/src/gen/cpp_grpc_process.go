@@ -2,6 +2,7 @@ package gen
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"pbgen/config"
 	"strings"
@@ -41,10 +42,11 @@ func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []
 	if err != nil {
 		return fmt.Errorf("could not create file: %w", err)
 	}
+
 	defer file.Close()
 
 	// Template for the Go file content
-	tmpl, err := template.New("handler").Parse(text)
+	tmpl, err := template.New(fileName).Parse(text)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -55,49 +57,35 @@ func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []
 		FileBaseName: protoFileBaseName,
 	}
 
-	if err := tmpl.Execute(file, data); err != nil {
-		return fmt.Errorf("could not execute template: %w", err)
-	}
-
 	// Write the content to the file
 	return tmpl.Execute(file, data)
 }
 
 func CppGrpcCallClient() {
-
 	for _, serviceMethods := range ServiceMethodMap {
-
 		grpcServices := make([]GrpcService, 0)
 
-		for _, method := range serviceMethods {
+		if len(serviceMethods) <= 0 {
+			continue
+		}
 
-			if !isRelevantService(method) {
-				continue
-			}
+		if !strings.Contains(serviceMethods[0].Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
+			continue
+		}
+
+		for _, method := range serviceMethods {
 
 			grpcServices = generateGrpcMethod(method, grpcServices)
 		}
 
-		if len(serviceMethods) <= 0 {
-
-			continue
-		}
-
 		// Generate different handler files based on the templates
-		if err := generateGrpcFile(config.CentreGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcHeaderExtension,
+		if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcHeaderExtension,
 			serviceMethods[0].FileBaseName(),
 			grpcServices,
 			AsyncClientHeaderTemplate); err != nil {
-			return
+			log.Fatal(err)
 		}
 
-		// if err := generateHandlerFile(config.ResponseHandlerFile, v, responseHandlerTemplate); err != nil {
-		// 	return
-		// 	}
-
-		// if err := generateHandlerFile(config.ServerHandlerFile, generateGrpcFile, serverHandlerTemplate); err != nil {
-		// 	return
-		// }
 	}
 
 }
