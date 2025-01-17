@@ -4,6 +4,7 @@
 
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
+#include "grpc/generator/deploy_service_grpc.h"
 #include "grpc/request/deploy_grpc_requst.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
@@ -87,14 +88,13 @@ void GateNode::InitNodeByReqInfo()
         NodeInfoRequest rq;
         rq.set_node_type(kGateNode);
         rq.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-        void SendGetNodeInfo(const NodeInfoRequest& rq);
-        SendGetNodeInfo(rq);
+        DeployServiceGetNodeInfo(rq);
     }
 
     renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
         RenewLeaseIDRequest request;
         request.set_lease_id(g_gate_node->GetNodeInfo().lease_id());
-        RenewLease(request);
+        DeployServiceRenewLease(request);
         });
 }
 
@@ -246,10 +246,10 @@ void GateNode::InitTimeZone()
     muduo::Logger::setTimeZone(tz);
 }
 
-void GateNode::ReleaseNodeId()
+void GateNode::ReleaseNodeId() const
 {
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
     request.set_node_type(kGateNode);
-    ReleaseID(request);
+    DeployServiceReleaseID(request);
 }

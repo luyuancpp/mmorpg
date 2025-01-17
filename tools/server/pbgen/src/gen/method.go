@@ -801,7 +801,7 @@ func isCentrePlayerRepliedHandler(methodList *RPCMethods) bool {
 		return false
 	}
 
-	// Check if it's a player service and not containing CentrePrefixName in FileBaseName
+	// Check if it's a player service and not containing CentrePrefixName in ProtoFileBaseName
 	return firstMethodInfo.IsPlayerService() && !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
@@ -869,7 +869,7 @@ func isGateMethodRepliedHandler(methodList *RPCMethods) (check bool) {
 		return false
 	}
 
-	// Check if the FileBaseName of the method contains any of the specified prefixes
+	// Check if the ProtoFileBaseName of the method contains any of the specified prefixes
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.DeployPrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.GameNodePrefixName) ||
@@ -890,7 +890,7 @@ func isGateServiceHandler(methodList *RPCMethods) (check bool) {
 		return false
 	}
 
-	// Check if the FileBaseName of the method contains the substring "gate"
+	// Check if the ProtoFileBaseName of the method contains the substring "gate"
 	return strings.Contains(firstMethodInfo.FileBaseName(), "gate")
 }
 

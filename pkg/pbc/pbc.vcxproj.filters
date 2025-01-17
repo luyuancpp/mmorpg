@@ -216,6 +216,9 @@
     <ClCompile Include="src\service_info\service_info.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\generator\deploy_service_grpc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\proto\common\c2gate.pb.h">
@@ -465,6 +468,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service_info\service_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\grpc\generator\deploy_service_grpc.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

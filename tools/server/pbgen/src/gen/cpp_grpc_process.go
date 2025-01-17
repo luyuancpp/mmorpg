@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"pbgen/config"
 	"strings"
 	"text/template"
@@ -17,9 +18,11 @@ type GrpcService struct {
 	FileBaseName string
 }
 
-type GrpcServiceData struct {
-	GrpcServices []GrpcService
-	FileBaseName string
+type GrpcServiceTemplateData struct {
+	GrpcServices      []GrpcService
+	ProtoFileBaseName string
+	GeneratorFileName string
+	ServiceName       string
 }
 
 // generateHandlerCases creates the cases for the switch statement based on the method.
@@ -36,7 +39,7 @@ func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcSer
 }
 
 // Generates a Go file using the provided handler and response names.
-func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []GrpcService, text string) error {
+func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []GrpcService, text string, ServiceName string) error {
 	// Create the file
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -52,9 +55,11 @@ func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []
 	}
 
 	// Fill the template with handler name and response type
-	data := GrpcServiceData{
-		GrpcServices: grpcServices,
-		FileBaseName: protoFileBaseName,
+	data := GrpcServiceTemplateData{
+		GrpcServices:      grpcServices,
+		ProtoFileBaseName: protoFileBaseName,
+		GeneratorFileName: filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
+		ServiceName:       ServiceName,
 	}
 
 	// Write the content to the file
@@ -82,10 +87,18 @@ func CppGrpcCallClient() {
 		if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcHeaderExtension,
 			serviceMethods[0].FileBaseName(),
 			grpcServices,
-			AsyncClientHeaderTemplate); err != nil {
+			AsyncClientHeaderTemplate,
+			serviceMethods[0].Service); err != nil {
 			log.Fatal(err)
 		}
 
+		if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcCppExtension,
+			serviceMethods[0].FileBaseName(),
+			grpcServices,
+			AsyncClientCppHandleTemplate,
+			serviceMethods[0].Service); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 }
