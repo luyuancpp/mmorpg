@@ -22,6 +22,7 @@ const (
 	DeployService_GetNodeInfo_FullMethodName = "/DeployService/GetNodeInfo"
 	DeployService_GetID_FullMethodName       = "/DeployService/GetID"
 	DeployService_ReleaseID_FullMethodName   = "/DeployService/ReleaseID"
+	DeployService_RenewLease_FullMethodName  = "/DeployService/RenewLease"
 )
 
 // DeployServiceClient is the client API for DeployService service.
@@ -31,6 +32,7 @@ type DeployServiceClient interface {
 	GetNodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error)
 	GetID(ctx context.Context, in *GetIDRequest, opts ...grpc.CallOption) (*GetIDResponse, error)
 	ReleaseID(ctx context.Context, in *ReleaseIDRequest, opts ...grpc.CallOption) (*ReleaseIDResponse, error)
+	RenewLease(ctx context.Context, in *RenewLeaseIDRequest, opts ...grpc.CallOption) (*RenewLeaseIDResponse, error)
 }
 
 type deployServiceClient struct {
@@ -71,6 +73,16 @@ func (c *deployServiceClient) ReleaseID(ctx context.Context, in *ReleaseIDReques
 	return out, nil
 }
 
+func (c *deployServiceClient) RenewLease(ctx context.Context, in *RenewLeaseIDRequest, opts ...grpc.CallOption) (*RenewLeaseIDResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RenewLeaseIDResponse)
+	err := c.cc.Invoke(ctx, DeployService_RenewLease_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DeployServiceServer is the server API for DeployService service.
 // All implementations must embed UnimplementedDeployServiceServer
 // for forward compatibility
@@ -78,6 +90,7 @@ type DeployServiceServer interface {
 	GetNodeInfo(context.Context, *NodeInfoRequest) (*NodeInfoResponse, error)
 	GetID(context.Context, *GetIDRequest) (*GetIDResponse, error)
 	ReleaseID(context.Context, *ReleaseIDRequest) (*ReleaseIDResponse, error)
+	RenewLease(context.Context, *RenewLeaseIDRequest) (*RenewLeaseIDResponse, error)
 	mustEmbedUnimplementedDeployServiceServer()
 }
 
@@ -93,6 +106,9 @@ func (UnimplementedDeployServiceServer) GetID(context.Context, *GetIDRequest) (*
 }
 func (UnimplementedDeployServiceServer) ReleaseID(context.Context, *ReleaseIDRequest) (*ReleaseIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReleaseID not implemented")
+}
+func (UnimplementedDeployServiceServer) RenewLease(context.Context, *RenewLeaseIDRequest) (*RenewLeaseIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RenewLease not implemented")
 }
 func (UnimplementedDeployServiceServer) mustEmbedUnimplementedDeployServiceServer() {}
 
@@ -161,6 +177,24 @@ func _DeployService_ReleaseID_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DeployService_RenewLease_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RenewLeaseIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeployServiceServer).RenewLease(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeployService_RenewLease_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeployServiceServer).RenewLease(ctx, req.(*RenewLeaseIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DeployService_ServiceDesc is the grpc.ServiceDesc for DeployService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -179,6 +213,10 @@ var DeployService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReleaseID",
 			Handler:    _DeployService_ReleaseID_Handler,
+		},
+		{
+			MethodName: "RenewLease",
+			Handler:    _DeployService_RenewLease_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

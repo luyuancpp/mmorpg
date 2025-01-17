@@ -54,6 +54,13 @@ class DeployService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>> PrepareAsyncReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>>(PrepareAsyncReleaseIDRaw(context, request, cq));
     }
+    virtual ::grpc::Status RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::RenewLeaseIDResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::RenewLeaseIDResponse>> AsyncRenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::RenewLeaseIDResponse>>(AsyncRenewLeaseRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::RenewLeaseIDResponse>> PrepareAsyncRenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::RenewLeaseIDResponse>>(PrepareAsyncRenewLeaseRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -63,6 +70,8 @@ class DeployService final {
       virtual void GetID(::grpc::ClientContext* context, const ::GetIDRequest* request, ::GetIDResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -74,6 +83,8 @@ class DeployService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::GetIDResponse>* PrepareAsyncGetIDRaw(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>* AsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::ReleaseIDResponse>* PrepareAsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::RenewLeaseIDResponse>* AsyncRenewLeaseRaw(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::RenewLeaseIDResponse>* PrepareAsyncRenewLeaseRaw(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -99,6 +110,13 @@ class DeployService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>> PrepareAsyncReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>>(PrepareAsyncReleaseIDRaw(context, request, cq));
     }
+    ::grpc::Status RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::RenewLeaseIDResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::RenewLeaseIDResponse>> AsyncRenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::RenewLeaseIDResponse>>(AsyncRenewLeaseRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::RenewLeaseIDResponse>> PrepareAsyncRenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::RenewLeaseIDResponse>>(PrepareAsyncRenewLeaseRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -108,6 +126,8 @@ class DeployService final {
       void GetID(::grpc::ClientContext* context, const ::GetIDRequest* request, ::GetIDResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, std::function<void(::grpc::Status)>) override;
       void ReleaseID(::grpc::ClientContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response, std::function<void(::grpc::Status)>) override;
+      void RenewLease(::grpc::ClientContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -125,9 +145,12 @@ class DeployService final {
     ::grpc::ClientAsyncResponseReader< ::GetIDResponse>* PrepareAsyncGetIDRaw(::grpc::ClientContext* context, const ::GetIDRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>* AsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::ReleaseIDResponse>* PrepareAsyncReleaseIDRaw(::grpc::ClientContext* context, const ::ReleaseIDRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::RenewLeaseIDResponse>* AsyncRenewLeaseRaw(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::RenewLeaseIDResponse>* PrepareAsyncRenewLeaseRaw(::grpc::ClientContext* context, const ::RenewLeaseIDRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_GetNodeInfo_;
     const ::grpc::internal::RpcMethod rpcmethod_GetID_;
     const ::grpc::internal::RpcMethod rpcmethod_ReleaseID_;
+    const ::grpc::internal::RpcMethod rpcmethod_RenewLease_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -138,6 +161,7 @@ class DeployService final {
     virtual ::grpc::Status GetNodeInfo(::grpc::ServerContext* context, const ::NodeInfoRequest* request, ::NodeInfoResponse* response);
     virtual ::grpc::Status GetID(::grpc::ServerContext* context, const ::GetIDRequest* request, ::GetIDResponse* response);
     virtual ::grpc::Status ReleaseID(::grpc::ServerContext* context, const ::ReleaseIDRequest* request, ::ReleaseIDResponse* response);
+    virtual ::grpc::Status RenewLease(::grpc::ServerContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_GetNodeInfo : public BaseClass {
@@ -199,7 +223,27 @@ class DeployService final {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_GetNodeInfo<WithAsyncMethod_GetID<WithAsyncMethod_ReleaseID<Service > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_RenewLease : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RenewLease() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_RenewLease() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RenewLease(::grpc::ServerContext* /*context*/, const ::RenewLeaseIDRequest* /*request*/, ::RenewLeaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRenewLease(::grpc::ServerContext* context, ::RenewLeaseIDRequest* request, ::grpc::ServerAsyncResponseWriter< ::RenewLeaseIDResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_GetNodeInfo<WithAsyncMethod_GetID<WithAsyncMethod_ReleaseID<WithAsyncMethod_RenewLease<Service > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_GetNodeInfo : public BaseClass {
    private:
@@ -281,7 +325,34 @@ class DeployService final {
     virtual ::grpc::ServerUnaryReactor* ReleaseID(
       ::grpc::CallbackServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_GetNodeInfo<WithCallbackMethod_GetID<WithCallbackMethod_ReleaseID<Service > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_RenewLease : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RenewLease() {
+      ::grpc::Service::MarkMethodCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::RenewLeaseIDRequest, ::RenewLeaseIDResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::RenewLeaseIDRequest* request, ::RenewLeaseIDResponse* response) { return this->RenewLease(context, request, response); }));}
+    void SetMessageAllocatorFor_RenewLease(
+        ::grpc::MessageAllocator< ::RenewLeaseIDRequest, ::RenewLeaseIDResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::RenewLeaseIDRequest, ::RenewLeaseIDResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RenewLease() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RenewLease(::grpc::ServerContext* /*context*/, const ::RenewLeaseIDRequest* /*request*/, ::RenewLeaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RenewLease(
+      ::grpc::CallbackServerContext* /*context*/, const ::RenewLeaseIDRequest* /*request*/, ::RenewLeaseIDResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_GetNodeInfo<WithCallbackMethod_GetID<WithCallbackMethod_ReleaseID<WithCallbackMethod_RenewLease<Service > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_GetNodeInfo : public BaseClass {
@@ -330,6 +401,23 @@ class DeployService final {
     }
     // disable synchronous version of this method
     ::grpc::Status ReleaseID(::grpc::ServerContext* /*context*/, const ::ReleaseIDRequest* /*request*/, ::ReleaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_RenewLease : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RenewLease() {
+      ::grpc::Service::MarkMethodGeneric(3);
+    }
+    ~WithGenericMethod_RenewLease() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RenewLease(::grpc::ServerContext* /*context*/, const ::RenewLeaseIDRequest* /*request*/, ::RenewLeaseIDResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -392,6 +480,26 @@ class DeployService final {
     }
     void RequestReleaseID(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RenewLease : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RenewLease() {
+      ::grpc::Service::MarkMethodRaw(3);
+    }
+    ~WithRawMethod_RenewLease() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RenewLease(::grpc::ServerContext* /*context*/, const ::RenewLeaseIDRequest* /*request*/, ::RenewLeaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRenewLease(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -458,6 +566,28 @@ class DeployService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* ReleaseID(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RenewLease : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RenewLease() {
+      ::grpc::Service::MarkMethodRawCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RenewLease(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RenewLease() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RenewLease(::grpc::ServerContext* /*context*/, const ::RenewLeaseIDRequest* /*request*/, ::RenewLeaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RenewLease(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -541,9 +671,36 @@ class DeployService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedReleaseID(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::ReleaseIDRequest,::ReleaseIDResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_GetNodeInfo<WithStreamedUnaryMethod_GetID<WithStreamedUnaryMethod_ReleaseID<Service > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RenewLease : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RenewLease() {
+      ::grpc::Service::MarkMethodStreamed(3,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::RenewLeaseIDRequest, ::RenewLeaseIDResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::RenewLeaseIDRequest, ::RenewLeaseIDResponse>* streamer) {
+                       return this->StreamedRenewLease(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RenewLease() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RenewLease(::grpc::ServerContext* /*context*/, const ::RenewLeaseIDRequest* /*request*/, ::RenewLeaseIDResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRenewLease(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::RenewLeaseIDRequest,::RenewLeaseIDResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_GetNodeInfo<WithStreamedUnaryMethod_GetID<WithStreamedUnaryMethod_ReleaseID<WithStreamedUnaryMethod_RenewLease<Service > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_GetNodeInfo<WithStreamedUnaryMethod_GetID<WithStreamedUnaryMethod_ReleaseID<Service > > > StreamedService;
+  typedef WithStreamedUnaryMethod_GetNodeInfo<WithStreamedUnaryMethod_GetID<WithStreamedUnaryMethod_ReleaseID<WithStreamedUnaryMethod_RenewLease<Service > > > > StreamedService;
 };
 
 

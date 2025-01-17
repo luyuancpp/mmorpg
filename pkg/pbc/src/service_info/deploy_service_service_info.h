@@ -15,3 +15,7 @@ constexpr uint32_t DeployServiceReleaseIDMessageId = 73;
 constexpr uint32_t DeployServiceReleaseIDIndex = 2;
 #define DeployServiceReleaseIDMethod  ::DeployService_Stub::descriptor()->method(2)
 
+constexpr uint32_t DeployServiceRenewLeaseMessageId = 74;
+constexpr uint32_t DeployServiceRenewLeaseIndex = 3;
+#define DeployServiceRenewLeaseMethod  ::DeployService_Stub::descriptor()->method(3)
+

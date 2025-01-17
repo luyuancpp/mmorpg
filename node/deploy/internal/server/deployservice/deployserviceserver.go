@@ -36,3 +36,8 @@ func (s *DeployServiceServer) ReleaseID(ctx context.Context, in *game.ReleaseIDR
 	l := deployservicelogic.NewReleaseIDLogic(ctx, s.svcCtx)
 	return l.ReleaseID(in)
 }
+
+func (s *DeployServiceServer) RenewLease(ctx context.Context, in *game.RenewLeaseIDRequest) (*game.RenewLeaseIDResponse, error) {
+	l := deployservicelogic.NewRenewLeaseLogic(ctx, s.svcCtx)
+	return l.RenewLease(in)
+}

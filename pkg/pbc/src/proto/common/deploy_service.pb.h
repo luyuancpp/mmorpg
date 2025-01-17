@@ -20,6 +20,7 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
+#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -68,6 +69,12 @@ extern ReleaseIDRequestDefaultTypeInternal _ReleaseIDRequest_default_instance_;
 class ReleaseIDResponse;
 struct ReleaseIDResponseDefaultTypeInternal;
 extern ReleaseIDResponseDefaultTypeInternal _ReleaseIDResponse_default_instance_;
+class RenewLeaseIDRequest;
+struct RenewLeaseIDRequestDefaultTypeInternal;
+extern RenewLeaseIDRequestDefaultTypeInternal _RenewLeaseIDRequest_default_instance_;
+class RenewLeaseIDResponse;
+struct RenewLeaseIDResponseDefaultTypeInternal;
+extern RenewLeaseIDResponseDefaultTypeInternal _RenewLeaseIDResponse_default_instance_;
 class centre_node_db;
 struct centre_node_dbDefaultTypeInternal;
 extern centre_node_dbDefaultTypeInternal _centre_node_db_default_instance_;
@@ -1545,6 +1552,301 @@ class centre_node_db final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class RenewLeaseIDResponse final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:RenewLeaseIDResponse) */ {
+ public:
+  inline RenewLeaseIDResponse() : RenewLeaseIDResponse(nullptr) {}
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RenewLeaseIDResponse(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline RenewLeaseIDResponse(const RenewLeaseIDResponse& from) : RenewLeaseIDResponse(nullptr, from) {}
+  inline RenewLeaseIDResponse(RenewLeaseIDResponse&& from) noexcept
+      : RenewLeaseIDResponse(nullptr, std::move(from)) {}
+  inline RenewLeaseIDResponse& operator=(const RenewLeaseIDResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RenewLeaseIDResponse& operator=(RenewLeaseIDResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RenewLeaseIDResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const RenewLeaseIDResponse* internal_default_instance() {
+    return reinterpret_cast<const RenewLeaseIDResponse*>(
+        &_RenewLeaseIDResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 20;
+  friend void swap(RenewLeaseIDResponse& a, RenewLeaseIDResponse& b) { a.Swap(&b); }
+  inline void Swap(RenewLeaseIDResponse* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RenewLeaseIDResponse* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RenewLeaseIDResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<RenewLeaseIDResponse>(arena);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const RenewLeaseIDResponse& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const RenewLeaseIDResponse& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
+  }
+
+  public:
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "RenewLeaseIDResponse"; }
+
+ protected:
+  explicit RenewLeaseIDResponse(::google::protobuf::Arena* arena);
+  RenewLeaseIDResponse(::google::protobuf::Arena* arena, const RenewLeaseIDResponse& from);
+  RenewLeaseIDResponse(::google::protobuf::Arena* arena, RenewLeaseIDResponse&& from) noexcept
+      : RenewLeaseIDResponse(arena) {
+    *this = ::std::move(from);
+  }
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  // @@protoc_insertion_point(class_scope:RenewLeaseIDResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  friend struct ::TableStruct_proto_2fcommon_2fdeploy_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
+class RenewLeaseIDRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:RenewLeaseIDRequest) */ {
+ public:
+  inline RenewLeaseIDRequest() : RenewLeaseIDRequest(nullptr) {}
+  ~RenewLeaseIDRequest() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RenewLeaseIDRequest(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline RenewLeaseIDRequest(const RenewLeaseIDRequest& from) : RenewLeaseIDRequest(nullptr, from) {}
+  inline RenewLeaseIDRequest(RenewLeaseIDRequest&& from) noexcept
+      : RenewLeaseIDRequest(nullptr, std::move(from)) {}
+  inline RenewLeaseIDRequest& operator=(const RenewLeaseIDRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RenewLeaseIDRequest& operator=(RenewLeaseIDRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RenewLeaseIDRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const RenewLeaseIDRequest* internal_default_instance() {
+    return reinterpret_cast<const RenewLeaseIDRequest*>(
+        &_RenewLeaseIDRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 19;
+  friend void swap(RenewLeaseIDRequest& a, RenewLeaseIDRequest& b) { a.Swap(&b); }
+  inline void Swap(RenewLeaseIDRequest* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RenewLeaseIDRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RenewLeaseIDRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<RenewLeaseIDRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RenewLeaseIDRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RenewLeaseIDRequest& from) { RenewLeaseIDRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(RenewLeaseIDRequest* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "RenewLeaseIDRequest"; }
+
+ protected:
+  explicit RenewLeaseIDRequest(::google::protobuf::Arena* arena);
+  RenewLeaseIDRequest(::google::protobuf::Arena* arena, const RenewLeaseIDRequest& from);
+  RenewLeaseIDRequest(::google::protobuf::Arena* arena, RenewLeaseIDRequest&& from) noexcept
+      : RenewLeaseIDRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::MessageLite::ClassData* GetClassData()
+      const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const final;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kLeaseIdFieldNumber = 1,
+  };
+  // uint64 lease_id = 1;
+  void clear_lease_id() ;
+  ::uint64_t lease_id() const;
+  void set_lease_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_lease_id() const;
+  void _internal_set_lease_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:RenewLeaseIDRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      0, 1, 0,
+      0, 2>
+      _table_;
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from);
+    ::uint64_t lease_id_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fdeploy_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
 class ReleaseIDResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:ReleaseIDResponse) */ {
  public:
@@ -1838,6 +2140,7 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kIdFieldNumber = 1,
+    kLeaseIdFieldNumber = 3,
     kNodeTypeFieldNumber = 2,
   };
   // uint64 id = 1;
@@ -1848,6 +2151,16 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_id() const;
   void _internal_set_id(::uint64_t value);
+
+  public:
+  // uint64 lease_id = 3;
+  void clear_lease_id() ;
+  ::uint64_t lease_id() const;
+  void set_lease_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_lease_id() const;
+  void _internal_set_lease_id(::uint64_t value);
 
   public:
   // uint32 node_type = 2;
@@ -1865,7 +2178,7 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 0,
+      2, 3, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -1882,6 +2195,7 @@ class ReleaseIDRequest final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::uint64_t id_;
+    ::uint64_t lease_id_;
     ::uint32_t node_type_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -2196,6 +2510,7 @@ class GetIDResponse final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kIdFieldNumber = 1,
+    kLeaseIdFieldNumber = 2,
   };
   // uint64 id = 1;
   void clear_id() ;
@@ -2207,12 +2522,22 @@ class GetIDResponse final : public ::google::protobuf::Message
   void _internal_set_id(::uint64_t value);
 
   public:
+  // uint64 lease_id = 2;
+  void clear_lease_id() ;
+  ::uint64_t lease_id() const;
+  void set_lease_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_lease_id() const;
+  void _internal_set_lease_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:GetIDResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
+      1, 2, 0,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -2229,6 +2554,7 @@ class GetIDResponse final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from);
     ::uint64_t id_;
+    ::uint64_t lease_id_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -3676,6 +4002,7 @@ class NodeInfoResponse final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kInfoFieldNumber = 1,
+    kLeaseIdFieldNumber = 3,
     kNodeIdFieldNumber = 2,
   };
   // .nodes_info_data info = 1;
@@ -3693,6 +4020,16 @@ class NodeInfoResponse final : public ::google::protobuf::Message
   ::nodes_info_data* _internal_mutable_info();
 
   public:
+  // uint64 lease_id = 3;
+  void clear_lease_id() ;
+  ::uint64_t lease_id() const;
+  void set_lease_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_lease_id() const;
+  void _internal_set_lease_id(::uint64_t value);
+
+  public:
   // uint32 node_id = 2;
   void clear_node_id() ;
   ::uint32_t node_id() const;
@@ -3708,7 +4045,7 @@ class NodeInfoResponse final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 1,
+      2, 3, 1,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -3727,6 +4064,7 @@ class NodeInfoResponse final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::nodes_info_data* info_;
+    ::uint64_t lease_id_;
     ::uint32_t node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -5535,6 +5873,28 @@ inline void NodeInfoResponse::_internal_set_node_id(::uint32_t value) {
   _impl_.node_id_ = value;
 }
 
+// uint64 lease_id = 3;
+inline void NodeInfoResponse::clear_lease_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t NodeInfoResponse::lease_id() const {
+  // @@protoc_insertion_point(field_get:NodeInfoResponse.lease_id)
+  return _internal_lease_id();
+}
+inline void NodeInfoResponse::set_lease_id(::uint64_t value) {
+  _internal_set_lease_id(value);
+  // @@protoc_insertion_point(field_set:NodeInfoResponse.lease_id)
+}
+inline ::uint64_t NodeInfoResponse::_internal_lease_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.lease_id_;
+}
+inline void NodeInfoResponse::_internal_set_lease_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // GetIDRequest
@@ -5637,6 +5997,28 @@ inline void GetIDResponse::_internal_set_id(::uint64_t value) {
   _impl_.id_ = value;
 }
 
+// uint64 lease_id = 2;
+inline void GetIDResponse::clear_lease_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t GetIDResponse::lease_id() const {
+  // @@protoc_insertion_point(field_get:GetIDResponse.lease_id)
+  return _internal_lease_id();
+}
+inline void GetIDResponse::set_lease_id(::uint64_t value) {
+  _internal_set_lease_id(value);
+  // @@protoc_insertion_point(field_set:GetIDResponse.lease_id)
+}
+inline ::uint64_t GetIDResponse::_internal_lease_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.lease_id_;
+}
+inline void GetIDResponse::_internal_set_lease_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // ReleaseIDRequest
@@ -5685,6 +6067,28 @@ inline void ReleaseIDRequest::_internal_set_node_type(::uint32_t value) {
   _impl_.node_type_ = value;
 }
 
+// uint64 lease_id = 3;
+inline void ReleaseIDRequest::clear_lease_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t ReleaseIDRequest::lease_id() const {
+  // @@protoc_insertion_point(field_get:ReleaseIDRequest.lease_id)
+  return _internal_lease_id();
+}
+inline void ReleaseIDRequest::set_lease_id(::uint64_t value) {
+  _internal_set_lease_id(value);
+  // @@protoc_insertion_point(field_set:ReleaseIDRequest.lease_id)
+}
+inline ::uint64_t ReleaseIDRequest::_internal_lease_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.lease_id_;
+}
+inline void ReleaseIDRequest::_internal_set_lease_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // ReleaseIDResponse
@@ -5710,6 +6114,36 @@ inline void ReleaseIDResponse::_internal_set_success(bool value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.success_ = value;
 }
+
+// -------------------------------------------------------------------
+
+// RenewLeaseIDRequest
+
+// uint64 lease_id = 1;
+inline void RenewLeaseIDRequest::clear_lease_id() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = ::uint64_t{0u};
+}
+inline ::uint64_t RenewLeaseIDRequest::lease_id() const {
+  // @@protoc_insertion_point(field_get:RenewLeaseIDRequest.lease_id)
+  return _internal_lease_id();
+}
+inline void RenewLeaseIDRequest::set_lease_id(::uint64_t value) {
+  _internal_set_lease_id(value);
+  // @@protoc_insertion_point(field_set:RenewLeaseIDRequest.lease_id)
+}
+inline ::uint64_t RenewLeaseIDRequest::_internal_lease_id() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.lease_id_;
+}
+inline void RenewLeaseIDRequest::_internal_set_lease_id(::uint64_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.lease_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// RenewLeaseIDResponse
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

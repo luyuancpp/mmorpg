@@ -38,13 +38,14 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 		},
 	}
 
-	id, err := node_id_etcd.GenerateID(l.ctx, l.svcCtx.NodeEtcdClient, in.NodeType)
+	id, leaseID, err := node_id_etcd.GenerateIDWithLease(l.ctx, l.svcCtx.NodeEtcdClient, in.NodeType)
 	if err != nil {
 		logx.Error(err)
 		return response, err
 	}
 
 	response.NodeId = uint32(id)
+	response.LeaseId = uint64(leaseID)
 
 	zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
 	db.PbDb.LoadOneByWhereCase(response.Info.GetDatabaseInfo(), "where zone_id="+zoneId)
