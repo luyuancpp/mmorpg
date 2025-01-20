@@ -635,7 +635,7 @@ void InitCompletedQueue() {
 	tls.grpc_node_registry.emplace<CentreServiceUnRegisterGameNodeCompleteQueue>(GlobalGrpcNodeEntity());
 }
 
-void HandleCompletedQueueMessage() {
+void HandleCentreServiceCompletedQueueMessage() {
     AsyncCompleteGrpcCentreServiceRegisterGameNode();
     AsyncCompleteGrpcCentreServiceRegisterGateNode();
     AsyncCompleteGrpcCentreServiceGatePlayerService();

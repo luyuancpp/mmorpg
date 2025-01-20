@@ -162,3 +162,5 @@ public:
 
 class UnregisterGameNodeRequest;
 void CentreServiceUnRegisterGameNode(const UnregisterGameNodeRequest& request);
+
+static void HandleCentreServiceCompletedQueueMessage(); 

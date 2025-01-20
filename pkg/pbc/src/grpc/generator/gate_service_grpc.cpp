@@ -395,7 +395,7 @@ void InitCompletedQueue() {
 	tls.grpc_node_registry.emplace<GateServiceBroadcastToPlayersCompleteQueue>(GlobalGrpcNodeEntity());
 }
 
-void HandleCompletedQueueMessage() {
+void HandleGateServiceCompletedQueueMessage() {
     AsyncCompleteGrpcGateServiceRegisterGame();
     AsyncCompleteGrpcGateServiceUnRegisterGame();
     AsyncCompleteGrpcGateServicePlayerEnterGameNode();

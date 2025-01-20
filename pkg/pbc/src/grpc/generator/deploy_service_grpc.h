@@ -54,3 +54,5 @@ public:
 
 class RenewLeaseIDRequest;
 void DeployServiceRenewLease(const RenewLeaseIDRequest& request);
+
+void HandleDeployServiceCompletedQueueMessage(); 

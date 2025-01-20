@@ -24,7 +24,10 @@ public:
 class {{.Request}};
 void {{.ServiceName}}{{.Method}}(const {{.Request}}& request);
 
-{{- end }}`
+{{- end }}
+
+static void Handle{{.ServiceName}}CompletedQueueMessage(); 
+`
 
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 
@@ -95,7 +98,7 @@ void InitCompletedQueue() {
 {{- end }}
 }
 
-void HandleCompletedQueueMessage() {
+void Handle{{.ServiceName}}CompletedQueueMessage() {
 {{- range .GrpcServices }}
     AsyncCompleteGrpc{{.ServiceName}}{{.Method}}();
 {{- end }}

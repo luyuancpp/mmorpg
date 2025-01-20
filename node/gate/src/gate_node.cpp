@@ -78,10 +78,9 @@ void GateNode::InitNodeByReqInfo()
     const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
     const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
     const auto channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
-    extern std::unique_ptr<DeployService::Stub> gDeployStub;
-    gDeployStub = DeployService::NewStub(channel);
-    gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
-    deploy_rpc_timer_.RunEvery(0.001, AsyncCompleteGrpcDeployService);
+    extern std::unique_ptr<DeployService::Stub> gDeployServiceStub;
+    gDeployServiceStub = DeployService::NewStub(channel);
+    deploy_rpc_timer_.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
     
     {
         NodeInfoRequest rq;

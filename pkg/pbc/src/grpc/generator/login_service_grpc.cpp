@@ -251,7 +251,7 @@ void InitCompletedQueue() {
 	tls.grpc_node_registry.emplace<LoginServiceDisconnectCompleteQueue>(GlobalGrpcNodeEntity());
 }
 
-void HandleCompletedQueueMessage() {
+void HandleLoginServiceCompletedQueueMessage() {
     AsyncCompleteGrpcLoginServiceLogin();
     AsyncCompleteGrpcLoginServiceCreatePlayer();
     AsyncCompleteGrpcLoginServiceEnterGame();
