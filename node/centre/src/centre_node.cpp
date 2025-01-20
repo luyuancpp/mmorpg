@@ -7,7 +7,6 @@
 #include "all_config.h"
 #include "grpc/deploy/deploy_client.h"
 #include "grpc/generator/deploy_service_grpc.h"
-#include "grpc/request/deploy_grpc_requst.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
 #include "handler/service/player/player_service.h"
@@ -89,6 +88,9 @@ void CentreNode::Init()
 	InitMessageInfo();
 	InitSystemBeforeConnect();
 
+	void InitGrpcDeploySercieResponseHandler();
+	InitGrpcDeploySercieResponseHandler();
+
 	InitNodeByReqInfo();
 
 	void InitServiceHandler();
@@ -125,11 +127,11 @@ void CentreNode::InitNodeByReqInfo()
 {
 	const auto& deployInfo = DeployConfig::GetSingleton().DeployInfo();
 	const std::string targetStr = deployInfo.ip() + ":" + std::to_string(deployInfo.port());
-	extern std::unique_ptr<DeployService::Stub> gDeployStub;
-	gDeployStub = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+	extern std::unique_ptr<DeployService::Stub> gDeployServiceStub;
+	gDeployServiceStub = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
 	gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
 
-	deployRpcTimer.RunEvery(0.001, AsyncCompleteGrpcDeployService);
+	deployRpcTimer.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
 
 	{
 		NodeInfoRequest request;

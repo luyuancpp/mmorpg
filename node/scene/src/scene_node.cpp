@@ -231,8 +231,8 @@ void SceneNode::InitNodeByReqInfo()
     auto& zone = ZoneConfig::GetSingleton().ConfigInfo();
     const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
     const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    extern std::unique_ptr<DeployService::Stub> gDeployStub;
-    gDeployStub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+    extern std::unique_ptr<DeployService::Stub> gDeployServiceStub;
+    gDeployServiceStub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
     deployRpcTimer.RunEvery(0.001, AsyncCompleteGrpcDeployService);
 
