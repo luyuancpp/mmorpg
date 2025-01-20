@@ -20,7 +20,6 @@ import (
 )
 
 var configFile = flag.String("config", "etc/deploy_service.yaml", "the config file")
-var dbConfigFile = flag.String("db_config", "etc/db.json", "the db config file")
 
 func main() {
 	flag.Parse()
@@ -35,10 +34,30 @@ func main() {
 		return
 	}
 
+	// 检查是否处于临时维护模式
+	if config.DeployConfig.MaintenanceMode {
+		go func() {
+			// 如果是临时维护模式，延迟60秒后再启动定时任务
+			logx.Info("In maintenance mode, delaying periodic sweep start...")
+			time.Sleep(60 * time.Second) // 延迟60秒
+			go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 60*time.Second)
+		}()
+
+	} else {
+		err := node_id_etcd.ClearAllIDs(ctx.NodeEtcdClient)
+		if err != nil {
+			logx.Error(err)
+			return
+		}
+
+		// 在非维护模式下，启动定时任务
+		go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 60*time.Second)
+	}
+
 	// 调用 StartPeriodicSweep 启动定时任务，每隔 60 秒调用一次 SweepExpiredIDs
 	go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 60*time.Second)
 
-	db.InitDB(*dbConfigFile)
+	db.InitDB()
 	defer db.PbDb.Close()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
