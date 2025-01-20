@@ -96,6 +96,7 @@ func main() {
 	gen.WriteLuaServiceHeadHandlerFile()
 	//gen.WriteClientServiceHeadHandlerFile()
 	gen.GoRobotHandlerGenerator()
+	util.Wg.Wait()
 	gen.GoRobotTotalHandlerGenerator()
 	gen.CppPlayerDataLoadGenerator()
 	gen.CppGrpcCallClient()

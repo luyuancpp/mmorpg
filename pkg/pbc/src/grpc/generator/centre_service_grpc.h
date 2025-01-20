@@ -1,4 +1,5 @@
 #pragma once
+#include "entt/src/entt/entity/registry.hpp"
 
 #include "proto/common/centre_service.grpc.pb.h"
 #include "proto/common/centre_service.pb.h"
@@ -165,4 +166,6 @@ public:
 class UnregisterGameNodeRequest;
 void CentreServiceUnRegisterGameNode(GrpcCentreServiceStubPtr& stub, const UnregisterGameNodeRequest& request);
 
-void HandleCentreServiceCompletedQueueMessage(); 
+void HandleCentreServiceCompletedQueueMessage(entt::registry& registry	); 
+
+void InitCentreServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

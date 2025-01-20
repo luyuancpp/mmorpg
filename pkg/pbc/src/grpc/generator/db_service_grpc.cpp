@@ -27,7 +27,7 @@ void AccountDBServiceLoad2Redis(GrpcAccountDBServiceStubPtr& stub, const LoadAcc
 
 std::function<void(const std::unique_ptr<AsyncAccountDBServiceLoad2RedisGrpcClientCall>&)> AsyncAccountDBServiceLoad2RedisHandler;
 
-void AsyncCompleteGrpcAccountDBServiceLoad2Redis()
+void AsyncCompleteGrpcAccountDBServiceLoad2Redis(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -37,7 +37,7 @@ void AsyncCompleteGrpcAccountDBServiceLoad2Redis()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<AccountDBServiceLoad2RedisCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -71,7 +71,7 @@ void AccountDBServiceSave2Redis(GrpcAccountDBServiceStubPtr& stub, const SaveAcc
 
 std::function<void(const std::unique_ptr<AsyncAccountDBServiceSave2RedisGrpcClientCall>&)> AsyncAccountDBServiceSave2RedisHandler;
 
-void AsyncCompleteGrpcAccountDBServiceSave2Redis()
+void AsyncCompleteGrpcAccountDBServiceSave2Redis(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -81,7 +81,7 @@ void AsyncCompleteGrpcAccountDBServiceSave2Redis()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<AccountDBServiceSave2RedisCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -100,13 +100,23 @@ void AsyncCompleteGrpcAccountDBServiceSave2Redis()
     }
 }
 
-void InitAccountDBServiceCompletedQueue() {
-	tls.grpc_node_registry.emplace<AccountDBServiceLoad2RedisCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<AccountDBServiceSave2RedisCompleteQueue>(GlobalGrpcNodeEntity());
+void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+	registry.emplace<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity);
+	registry.emplace<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity);
 }
 
-void HandleAccountDBServiceCompletedQueueMessage() {
-    AsyncCompleteGrpcAccountDBServiceLoad2Redis();
-    AsyncCompleteGrpcAccountDBServiceSave2Redis();
+void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry) {
+	{
+		auto&& view = registry.view<AccountDBServiceLoad2RedisCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcAccountDBServiceLoad2Redis(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<AccountDBServiceSave2RedisCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcAccountDBServiceSave2Redis(completeQueueComp.cq);
+		}
+	}
 }
 

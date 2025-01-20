@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	"pbgen/util"
 	"strings"
 	"text/template"
 )
@@ -68,37 +69,43 @@ func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []
 
 func CppGrpcCallClient() {
 	for _, serviceMethods := range ServiceMethodMap {
-		grpcServices := make([]GrpcService, 0)
 
-		if len(serviceMethods) <= 0 {
-			continue
-		}
+		util.Wg.Add(1)
+		go func() {
+			defer util.Wg.Done()
 
-		if !strings.Contains(serviceMethods[0].Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
-			continue
-		}
+			grpcServices := make([]GrpcService, 0)
 
-		for _, method := range serviceMethods {
+			if len(serviceMethods) <= 0 {
+				return
+			}
 
-			grpcServices = generateGrpcMethod(method, grpcServices)
-		}
+			if !strings.Contains(serviceMethods[0].Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
+				return
+			}
 
-		// Generate different handler files based on the templates
-		if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcHeaderExtension,
-			serviceMethods[0].FileBaseName(),
-			grpcServices,
-			AsyncClientHeaderTemplate,
-			serviceMethods[0].Service); err != nil {
-			log.Fatal(err)
-		}
+			for _, method := range serviceMethods {
 
-		if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcCppExtension,
-			serviceMethods[0].FileBaseName(),
-			grpcServices,
-			AsyncClientCppHandleTemplate,
-			serviceMethods[0].Service); err != nil {
-			log.Fatal(err)
-		}
+				grpcServices = generateGrpcMethod(method, grpcServices)
+			}
+
+			// Generate different handler files based on the templates
+			if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcHeaderExtension,
+				serviceMethods[0].FileBaseName(),
+				grpcServices,
+				AsyncClientHeaderTemplate,
+				serviceMethods[0].Service); err != nil {
+				log.Fatal(err)
+			}
+
+			if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcCppExtension,
+				serviceMethods[0].FileBaseName(),
+				grpcServices,
+				AsyncClientCppHandleTemplate,
+				serviceMethods[0].Service); err != nil {
+				log.Fatal(err)
+			}
+		}()
 	}
 
 }

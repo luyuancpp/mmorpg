@@ -7,7 +7,6 @@
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
 #include "grpc/generator/deploy_service_grpc.h"
-#include "grpc/request/deploy_grpc_requst.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
 #include "handler/service/player/player_service.h"
@@ -74,8 +73,7 @@ void SceneNode::Init()
     
     InitMessageInfo();
 
-    void InitDeployServiceCompletedQueue();
-    InitDeployServiceCompletedQueue();
+    InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
 
     void InitGrpcDeploySercieResponseHandler();
     InitGrpcDeploySercieResponseHandler();
@@ -241,7 +239,10 @@ void SceneNode::InitNodeByReqInfo()
        tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
        = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
 
-    deployRpcTimer.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
+    deployRpcTimer.RunEvery(0.001, []() {
+        HandleDeployServiceCompletedQueueMessage(tls.grpc_node_registry);
+        }
+    );
 
     {
         NodeInfoRequest request;

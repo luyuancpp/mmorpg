@@ -1,4 +1,5 @@
 #pragma once
+#include "entt/src/entt/entity/registry.hpp"
 
 #include "proto/common/deploy_service.grpc.pb.h"
 #include "proto/common/deploy_service.pb.h"
@@ -57,4 +58,6 @@ public:
 class RenewLeaseIDRequest;
 void DeployServiceRenewLease(GrpcDeployServiceStubPtr& stub, const RenewLeaseIDRequest& request);
 
-void HandleDeployServiceCompletedQueueMessage(); 
+void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
+
+void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"pbgen/config"
+	"pbgen/util"
 	"strings"
 	"text/template"
 )
@@ -28,46 +29,48 @@ type ServiceData struct {
 // GoRobotHandlerGenerator generates Go handler files and removes obsolete ones.
 func GoRobotHandlerGenerator() {
 	// Track the handlers that should exist based on the current service mappings
-	existingHandlers := make(map[string]bool)
 
 	for _, v := range ServiceMethodMap {
-		if !isClientMethodRepliedHandler(&v) {
-			continue
-		}
-		for _, method := range v {
-			serviceName := method.Service
-
-			if !isRelevantService(method) {
-				continue
-			}
-			// Generate the Go handler function name and response type
-			handlerName := fmt.Sprintf("%sHandler", serviceName+method.Method)
-			responseType := method.Response
-
-			if strings.Contains(responseType, config.EmptyResponseName) {
-				responseType = method.Request
+		util.Wg.Add(1)
+		go func() {
+			defer util.Wg.Done()
+			if !isClientMethodRepliedHandler(&v) {
+				return
 			}
 
-			// Generate a valid file name for the Go file
-			fileName := sanitizeFileName(serviceName + method.Method)
-			filePath := filepath.Join(config.RobotMethodHandlerDirectory, fileName+".go")
+			for _, method := range v {
+				serviceName := method.Service
 
-			// Mark this handler as existing
-			existingHandlers[filePath] = true
+				if !isRelevantService(method) {
+					continue
+				}
+				// Generate the Go handler function name and response type
+				handlerName := fmt.Sprintf("%sHandler", serviceName+method.Method)
+				responseType := method.Response
 
-			// Check if the file already exists
-			if fileExists(filePath) {
-				continue
+				if strings.Contains(responseType, config.EmptyResponseName) {
+					responseType = method.Request
+				}
+
+				// Generate a valid file name for the Go file
+				fileName := sanitizeFileName(serviceName + method.Method)
+				filePath := filepath.Join(config.RobotMethodHandlerDirectory, fileName+".go")
+
+				// Check if the file already exists
+				if fileExists(filePath) {
+					continue
+				}
+
+				// Create a file for the service
+				err := generateHandlerFile(filePath, handlerName, responseType)
+				if err != nil {
+					continue
+				}
+
+				fmt.Printf("Generated %s for service %s\n", filePath, fileName)
 			}
+		}()
 
-			// Create a file for the service
-			err := generateHandlerFile(filePath, handlerName, responseType)
-			if err != nil {
-				continue
-			}
-
-			fmt.Printf("Generated %s for service %s\n", filePath, fileName)
-		}
 	}
 }
 

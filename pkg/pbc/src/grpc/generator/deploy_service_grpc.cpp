@@ -33,7 +33,7 @@ void DeployServiceGetNodeInfo(GrpcDeployServiceStubPtr& stub, const NodeInfoRequ
 
 std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)> AsyncDeployServiceGetNodeInfoHandler;
 
-void AsyncCompleteGrpcDeployServiceGetNodeInfo()
+void AsyncCompleteGrpcDeployServiceGetNodeInfo(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -43,7 +43,7 @@ void AsyncCompleteGrpcDeployServiceGetNodeInfo()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<DeployServiceGetNodeInfoCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -77,7 +77,7 @@ void DeployServiceGetID(GrpcDeployServiceStubPtr& stub, const GetIDRequest& requ
 
 std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)> AsyncDeployServiceGetIDHandler;
 
-void AsyncCompleteGrpcDeployServiceGetID()
+void AsyncCompleteGrpcDeployServiceGetID(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -87,7 +87,7 @@ void AsyncCompleteGrpcDeployServiceGetID()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<DeployServiceGetIDCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -121,7 +121,7 @@ void DeployServiceReleaseID(GrpcDeployServiceStubPtr& stub, const ReleaseIDReque
 
 std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)> AsyncDeployServiceReleaseIDHandler;
 
-void AsyncCompleteGrpcDeployServiceReleaseID()
+void AsyncCompleteGrpcDeployServiceReleaseID(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -131,7 +131,7 @@ void AsyncCompleteGrpcDeployServiceReleaseID()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<DeployServiceReleaseIDCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -165,7 +165,7 @@ void DeployServiceRenewLease(GrpcDeployServiceStubPtr& stub, const RenewLeaseIDR
 
 std::function<void(const std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall>&)> AsyncDeployServiceRenewLeaseHandler;
 
-void AsyncCompleteGrpcDeployServiceRenewLease()
+void AsyncCompleteGrpcDeployServiceRenewLease(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -175,7 +175,7 @@ void AsyncCompleteGrpcDeployServiceRenewLease()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<DeployServiceRenewLeaseCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -194,17 +194,37 @@ void AsyncCompleteGrpcDeployServiceRenewLease()
     }
 }
 
-void InitDeployServiceCompletedQueue() {
-	tls.grpc_node_registry.emplace<DeployServiceGetNodeInfoCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<DeployServiceGetIDCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<DeployServiceReleaseIDCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<DeployServiceRenewLeaseCompleteQueue>(GlobalGrpcNodeEntity());
+void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+	registry.emplace<DeployServiceGetNodeInfoCompleteQueue>(nodeEntity);
+	registry.emplace<DeployServiceGetIDCompleteQueue>(nodeEntity);
+	registry.emplace<DeployServiceReleaseIDCompleteQueue>(nodeEntity);
+	registry.emplace<DeployServiceRenewLeaseCompleteQueue>(nodeEntity);
 }
 
-void HandleDeployServiceCompletedQueueMessage() {
-    AsyncCompleteGrpcDeployServiceGetNodeInfo();
-    AsyncCompleteGrpcDeployServiceGetID();
-    AsyncCompleteGrpcDeployServiceReleaseID();
-    AsyncCompleteGrpcDeployServiceRenewLease();
+void HandleDeployServiceCompletedQueueMessage(entt::registry& registry) {
+	{
+		auto&& view = registry.view<DeployServiceGetNodeInfoCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcDeployServiceGetNodeInfo(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<DeployServiceGetIDCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcDeployServiceGetID(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<DeployServiceReleaseIDCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcDeployServiceReleaseID(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<DeployServiceRenewLeaseCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcDeployServiceRenewLease(completeQueueComp.cq);
+		}
+	}
 }
 

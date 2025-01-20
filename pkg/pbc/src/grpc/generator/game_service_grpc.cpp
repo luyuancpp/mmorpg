@@ -54,7 +54,7 @@ void GameServicePlayerEnterGameNode(GrpcGameServiceStubPtr& stub, const PlayerEn
 
 std::function<void(const std::unique_ptr<AsyncGameServicePlayerEnterGameNodeGrpcClientCall>&)> AsyncGameServicePlayerEnterGameNodeHandler;
 
-void AsyncCompleteGrpcGameServicePlayerEnterGameNode()
+void AsyncCompleteGrpcGameServicePlayerEnterGameNode(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -64,7 +64,7 @@ void AsyncCompleteGrpcGameServicePlayerEnterGameNode()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServicePlayerEnterGameNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -98,7 +98,7 @@ void GameServiceSendMessageToPlayer(GrpcGameServiceStubPtr& stub, const NodeRout
 
 std::function<void(const std::unique_ptr<AsyncGameServiceSendMessageToPlayerGrpcClientCall>&)> AsyncGameServiceSendMessageToPlayerHandler;
 
-void AsyncCompleteGrpcGameServiceSendMessageToPlayer()
+void AsyncCompleteGrpcGameServiceSendMessageToPlayer(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -108,7 +108,7 @@ void AsyncCompleteGrpcGameServiceSendMessageToPlayer()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -142,7 +142,7 @@ void GameServiceClientSendMessageToPlayer(GrpcGameServiceStubPtr& stub, const Cl
 
 std::function<void(const std::unique_ptr<AsyncGameServiceClientSendMessageToPlayerGrpcClientCall>&)> AsyncGameServiceClientSendMessageToPlayerHandler;
 
-void AsyncCompleteGrpcGameServiceClientSendMessageToPlayer()
+void AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -152,7 +152,7 @@ void AsyncCompleteGrpcGameServiceClientSendMessageToPlayer()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceClientSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -186,7 +186,7 @@ void GameServiceRegisterGateNode(GrpcGameServiceStubPtr& stub, const RegisterGat
 
 std::function<void(const std::unique_ptr<AsyncGameServiceRegisterGateNodeGrpcClientCall>&)> AsyncGameServiceRegisterGateNodeHandler;
 
-void AsyncCompleteGrpcGameServiceRegisterGateNode()
+void AsyncCompleteGrpcGameServiceRegisterGateNode(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -196,7 +196,7 @@ void AsyncCompleteGrpcGameServiceRegisterGateNode()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceRegisterGateNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -230,7 +230,7 @@ void GameServiceCentreSendToPlayerViaGameNode(GrpcGameServiceStubPtr& stub, cons
 
 std::function<void(const std::unique_ptr<AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall>&)> AsyncGameServiceCentreSendToPlayerViaGameNodeHandler;
 
-void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode()
+void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -240,7 +240,7 @@ void AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -274,7 +274,7 @@ void GameServiceInvokePlayerService(GrpcGameServiceStubPtr& stub, const NodeRout
 
 std::function<void(const std::unique_ptr<AsyncGameServiceInvokePlayerServiceGrpcClientCall>&)> AsyncGameServiceInvokePlayerServiceHandler;
 
-void AsyncCompleteGrpcGameServiceInvokePlayerService()
+void AsyncCompleteGrpcGameServiceInvokePlayerService(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -284,7 +284,7 @@ void AsyncCompleteGrpcGameServiceInvokePlayerService()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceInvokePlayerServiceCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -318,7 +318,7 @@ void GameServiceRouteNodeStringMsg(GrpcGameServiceStubPtr& stub, const RouteMess
 
 std::function<void(const std::unique_ptr<AsyncGameServiceRouteNodeStringMsgGrpcClientCall>&)> AsyncGameServiceRouteNodeStringMsgHandler;
 
-void AsyncCompleteGrpcGameServiceRouteNodeStringMsg()
+void AsyncCompleteGrpcGameServiceRouteNodeStringMsg(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -328,7 +328,7 @@ void AsyncCompleteGrpcGameServiceRouteNodeStringMsg()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceRouteNodeStringMsgCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -362,7 +362,7 @@ void GameServiceRoutePlayerStringMsg(GrpcGameServiceStubPtr& stub, const RoutePl
 
 std::function<void(const std::unique_ptr<AsyncGameServiceRoutePlayerStringMsgGrpcClientCall>&)> AsyncGameServiceRoutePlayerStringMsgHandler;
 
-void AsyncCompleteGrpcGameServiceRoutePlayerStringMsg()
+void AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -372,7 +372,7 @@ void AsyncCompleteGrpcGameServiceRoutePlayerStringMsg()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceRoutePlayerStringMsgCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -406,7 +406,7 @@ void GameServiceUpdateSessionDetail(GrpcGameServiceStubPtr& stub, const Register
 
 std::function<void(const std::unique_ptr<AsyncGameServiceUpdateSessionDetailGrpcClientCall>&)> AsyncGameServiceUpdateSessionDetailHandler;
 
-void AsyncCompleteGrpcGameServiceUpdateSessionDetail()
+void AsyncCompleteGrpcGameServiceUpdateSessionDetail(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -416,7 +416,7 @@ void AsyncCompleteGrpcGameServiceUpdateSessionDetail()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceUpdateSessionDetailCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -450,7 +450,7 @@ void GameServiceEnterScene(GrpcGameServiceStubPtr& stub, const Centre2GsEnterSce
 
 std::function<void(const std::unique_ptr<AsyncGameServiceEnterSceneGrpcClientCall>&)> AsyncGameServiceEnterSceneHandler;
 
-void AsyncCompleteGrpcGameServiceEnterScene()
+void AsyncCompleteGrpcGameServiceEnterScene(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -460,7 +460,7 @@ void AsyncCompleteGrpcGameServiceEnterScene()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceEnterSceneCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -494,7 +494,7 @@ void GameServiceCreateScene(GrpcGameServiceStubPtr& stub, const CreateSceneReque
 
 std::function<void(const std::unique_ptr<AsyncGameServiceCreateSceneGrpcClientCall>&)> AsyncGameServiceCreateSceneHandler;
 
-void AsyncCompleteGrpcGameServiceCreateScene()
+void AsyncCompleteGrpcGameServiceCreateScene(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -504,7 +504,7 @@ void AsyncCompleteGrpcGameServiceCreateScene()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GameServiceCreateSceneCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -523,31 +523,86 @@ void AsyncCompleteGrpcGameServiceCreateScene()
     }
 }
 
-void InitGameServiceCompletedQueue() {
-	tls.grpc_node_registry.emplace<GameServicePlayerEnterGameNodeCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceClientSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceRegisterGateNodeCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceInvokePlayerServiceCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceRouteNodeStringMsgCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceRoutePlayerStringMsgCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceUpdateSessionDetailCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceEnterSceneCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GameServiceCreateSceneCompleteQueue>(GlobalGrpcNodeEntity());
+void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+	registry.emplace<GameServicePlayerEnterGameNodeCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceSendMessageToPlayerCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceClientSendMessageToPlayerCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceRegisterGateNodeCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceInvokePlayerServiceCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceRouteNodeStringMsgCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceRoutePlayerStringMsgCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceUpdateSessionDetailCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceEnterSceneCompleteQueue>(nodeEntity);
+	registry.emplace<GameServiceCreateSceneCompleteQueue>(nodeEntity);
 }
 
-void HandleGameServiceCompletedQueueMessage() {
-    AsyncCompleteGrpcGameServicePlayerEnterGameNode();
-    AsyncCompleteGrpcGameServiceSendMessageToPlayer();
-    AsyncCompleteGrpcGameServiceClientSendMessageToPlayer();
-    AsyncCompleteGrpcGameServiceRegisterGateNode();
-    AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode();
-    AsyncCompleteGrpcGameServiceInvokePlayerService();
-    AsyncCompleteGrpcGameServiceRouteNodeStringMsg();
-    AsyncCompleteGrpcGameServiceRoutePlayerStringMsg();
-    AsyncCompleteGrpcGameServiceUpdateSessionDetail();
-    AsyncCompleteGrpcGameServiceEnterScene();
-    AsyncCompleteGrpcGameServiceCreateScene();
+void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
+	{
+		auto&& view = registry.view<GameServicePlayerEnterGameNodeCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServicePlayerEnterGameNode(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceSendMessageToPlayerCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceSendMessageToPlayer(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceClientSendMessageToPlayerCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceClientSendMessageToPlayer(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceRegisterGateNodeCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceRegisterGateNode(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceCentreSendToPlayerViaGameNode(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceInvokePlayerServiceCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceInvokePlayerService(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceRouteNodeStringMsgCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceRouteNodeStringMsg(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceRoutePlayerStringMsgCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceRoutePlayerStringMsg(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceUpdateSessionDetailCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceUpdateSessionDetail(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceEnterSceneCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceEnterScene(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GameServiceCreateSceneCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGameServiceCreateScene(completeQueueComp.cq);
+		}
+	}
 }
 
