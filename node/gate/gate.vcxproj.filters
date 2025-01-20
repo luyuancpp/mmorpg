@@ -24,9 +24,6 @@
     <ClCompile Include="src\grpc\handler\login_grpc_reply_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\grpc\request\login_grpc_request.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\service\client_message_processor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -53,12 +50,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\grpc\client\login_async_client_call.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\request\login_grpc_request.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\handler\service\client_message_processor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
