@@ -9,6 +9,7 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
+
 {{- range .GrpcServices }}
 class Async{{.ServiceName}}{{.Method}}GrpcClientCall
 {
@@ -28,29 +29,37 @@ void {{.ServiceName}}{{.Method}}(const {{.Request}}& request);
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 
 #include "grpc/generator/{{.GeneratorFileName}}.h"
+#include "thread_local/storage.h"
 
 using Grpc{{.ServiceName}}StubPtr = std::unique_ptr<{{.ServiceName}}::Stub>;
 Grpc{{.ServiceName}}StubPtr g{{.ServiceName}}Stub;
 
+entt::entity GlobalGrpcNodeEntity();
 
 {{- range .GrpcServices }}
+struct {{.ServiceName}}{{.Method}}CompleteQueue{
+	grpc::CompletionQueue cq;
+};
+{{- end }}
 
-std::unique_ptr<grpc::CompletionQueue> g{{.ServiceName}}{{.Method}}Cq;
+{{- range .GrpcServices }}
 
 void {{.ServiceName}}{{.Method}}(const {{.Request}}& request)
 {
     Async{{.ServiceName}}{{.Method}}GrpcClientCall* call = new Async{{.ServiceName}}{{.Method}}GrpcClientCall;
 
     call->response_reader =
-        g{{.ServiceName}}Stub->PrepareAsync{{.Method}}(&call->context, request, g{{.ServiceName}}{{.Method}}Cq.get());
+        g{{.ServiceName}}Stub->PrepareAsync{{.Method}}(&call->context, request,
+		&tls.grpc_node_registry.get<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
+std::function<void(const std::unique_ptr<Async{{.ServiceName}}{{.Method}}GrpcClientCall>&)> Async{{.ServiceName}}{{.Method}}Handler;
 
-void AsyncCompleteGrpc{{.ServiceName}}{{.Method}}(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpc{{.ServiceName}}{{.Method}}()
 {
     void* got_tag;
     bool ok = false;
@@ -59,24 +68,37 @@ void AsyncCompleteGrpc{{.ServiceName}}{{.Method}}(grpc::CompletionQueue& cq)
     tm.tv_sec = 0;
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (grpc::CompletionQueue::GOT_EVENT != cq.AsyncNext(&got_tag, &ok, tm))
-    {
+    if (grpc::CompletionQueue::GOT_EVENT != 
+		tls.grpc_node_registry.get<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
     std::unique_ptr<Async{{.ServiceName}}{{.Method}}GrpcClientCall> call(static_cast<Async{{.ServiceName}}{{.Method}}GrpcClientCall*>(got_tag));
-	if (!ok)
-	{
+	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
-    if (call->status.ok())
-    {
-    }
-    else
-    {
+
+    if (call->status.ok()){
+		if(Async{{.ServiceName}}{{.Method}}Handler){
+			Async{{.ServiceName}}{{.Method}}Handler(call);
+		}
+    }else{
         LOG_ERROR << call->status.error_message();
     }
 }
+{{- end }}
 
-{{- end }}`
+void InitCompletedQueue() {
+{{- range .GrpcServices }}
+	tls.grpc_node_registry.emplace<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity());
+{{- end }}
+}
+
+void HandleCompletedQueueMessage() {
+{{- range .GrpcServices }}
+    AsyncCompleteGrpc{{.ServiceName}}{{.Method}}();
+{{- end }}
+}
+
+`

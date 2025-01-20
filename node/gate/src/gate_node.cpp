@@ -5,7 +5,6 @@
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
 #include "grpc/generator/deploy_service_grpc.h"
-#include "grpc/request/deploy_grpc_requst.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "muduo/base/TimeZone.h"
@@ -22,7 +21,6 @@
 
 GateNode* g_gate_node = nullptr; 
 
-void AsyncCompleteGrpcDeployService();
 void AsyncCompleteRpcLoginService();
 
 void AsyncOutput(const char* msg, int len)

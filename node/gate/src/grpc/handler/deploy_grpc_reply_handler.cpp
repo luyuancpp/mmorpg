@@ -1,39 +1,16 @@
-#include "muduo/base/Logging.h"
+#include <functional>
+#include <memory>
 
 #include "gate_node.h"
-#include "grpc/client/deploy_async_client_call.h"
-#include "grpc/deploy/deploy_client.h"
+#include "grpc/generator/deploy_service_grpc.h"
+
+extern std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)> AsyncDeployServiceGetNodeInfoHandler;
 
 
-void AsyncCompleteGrpcDeployService()
-{
-    void* got_tag;
-    bool ok = false;
-   
-    gpr_timespec tm;
-    tm.tv_sec = 0;
-    tm.tv_nsec = 0;
-    tm.clock_type = GPR_CLOCK_MONOTONIC;
-    if (CompletionQueue::GOT_EVENT != gDeployCq->AsyncNext(&got_tag, &ok, tm))
-    {
-        return;
-    }
-
-    std::unique_ptr<DeployAsyncGetNodeInfoClientCall> call (static_cast<DeployAsyncGetNodeInfoClientCall*>(got_tag));
-	if (!ok)
-	{
-		LOG_ERROR << "RPC failed";
-		return;
-	}
-    if (call->status.ok())
-    {
+void InitCallBack() {
+    AsyncDeployServiceGetNodeInfoHandler = [](const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>& call) {
         g_gate_node->GetNodeInfo().set_lease_id(call->reply.lease_id());
         g_gate_node->SetNodeId(call->reply.node_id());
         g_gate_node->StartServer(call->reply.info());
-    }
-    else
-    {
-        LOG_ERROR << "RPC failed";
-    }
+        };
 }
-
