@@ -33,9 +33,6 @@
     <ClCompile Include="src\grpc\handler\deploy_grpc_reply_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\grpc\request\deploy_grpc_requst.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\service\game_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -123,12 +120,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\event\server_event_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\request\deploy_grpc_requst.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\client\deploy_async_client_call.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\service\game_scene_handler.h">

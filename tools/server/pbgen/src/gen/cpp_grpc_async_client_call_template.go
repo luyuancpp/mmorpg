@@ -1,6 +1,7 @@
 package gen
 
 const AsyncClientHeaderTemplate = `#pragma once
+#include "entt/src/entt/entity/registry.hpp"
 
 #include "proto/common/{{.ProtoFileBaseName}}.grpc.pb.h"
 #include "proto/common/{{.ProtoFileBaseName}}.pb.h"
@@ -28,7 +29,9 @@ void {{.ServiceName}}{{.Method}}(Grpc{{.ServiceName}}StubPtr& stub, const {{.Req
 
 {{- end }}
 
-void Handle{{.ServiceName}}CompletedQueueMessage(); 
+void Handle{{.ServiceName}}CompletedQueueMessage(entt::registry& registry	); 
+
+void Init{{.ServiceName}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 `
 
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
@@ -62,7 +65,7 @@ void {{.ServiceName}}{{.Method}}(Grpc{{.ServiceName}}StubPtr& stub, const {{.Req
 
 std::function<void(const std::unique_ptr<Async{{.ServiceName}}{{.Method}}GrpcClientCall>&)> Async{{.ServiceName}}{{.Method}}Handler;
 
-void AsyncCompleteGrpc{{.ServiceName}}{{.Method}}()
+void AsyncCompleteGrpc{{.ServiceName}}{{.Method}}(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -72,7 +75,7 @@ void AsyncCompleteGrpc{{.ServiceName}}{{.Method}}()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -92,15 +95,20 @@ void AsyncCompleteGrpc{{.ServiceName}}{{.Method}}()
 }
 {{- end }}
 
-void Init{{.ServiceName}}CompletedQueue() {
+void Init{{.ServiceName}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 {{- range .GrpcServices }}
-	tls.grpc_node_registry.emplace<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity());
+	registry.emplace<{{.ServiceName}}{{.Method}}CompleteQueue>(nodeEntity);
 {{- end }}
 }
 
-void Handle{{.ServiceName}}CompletedQueueMessage() {
+void Handle{{.ServiceName}}CompletedQueueMessage(entt::registry& registry) {
 {{- range .GrpcServices }}
-    AsyncCompleteGrpc{{.ServiceName}}{{.Method}}();
+	{
+		auto&& view = registry.view<{{.ServiceName}}{{.Method}}CompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpc{{.ServiceName}}{{.Method}}(completeQueueComp.cq);
+		}
+	}
 {{- end }}
 }
 

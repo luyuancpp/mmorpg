@@ -45,7 +45,7 @@ void GateServiceRegisterGame(GrpcGateServiceStubPtr& stub, const RegisterGameNod
 
 std::function<void(const std::unique_ptr<AsyncGateServiceRegisterGameGrpcClientCall>&)> AsyncGateServiceRegisterGameHandler;
 
-void AsyncCompleteGrpcGateServiceRegisterGame()
+void AsyncCompleteGrpcGateServiceRegisterGame(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -55,7 +55,7 @@ void AsyncCompleteGrpcGateServiceRegisterGame()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GateServiceRegisterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -89,7 +89,7 @@ void GateServiceUnRegisterGame(GrpcGateServiceStubPtr& stub, const UnregisterGam
 
 std::function<void(const std::unique_ptr<AsyncGateServiceUnRegisterGameGrpcClientCall>&)> AsyncGateServiceUnRegisterGameHandler;
 
-void AsyncCompleteGrpcGateServiceUnRegisterGame()
+void AsyncCompleteGrpcGateServiceUnRegisterGame(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -99,7 +99,7 @@ void AsyncCompleteGrpcGateServiceUnRegisterGame()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GateServiceUnRegisterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -133,7 +133,7 @@ void GateServicePlayerEnterGameNode(GrpcGateServiceStubPtr& stub, const Register
 
 std::function<void(const std::unique_ptr<AsyncGateServicePlayerEnterGameNodeGrpcClientCall>&)> AsyncGateServicePlayerEnterGameNodeHandler;
 
-void AsyncCompleteGrpcGateServicePlayerEnterGameNode()
+void AsyncCompleteGrpcGateServicePlayerEnterGameNode(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -143,7 +143,7 @@ void AsyncCompleteGrpcGateServicePlayerEnterGameNode()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GateServicePlayerEnterGameNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -177,7 +177,7 @@ void GateServiceSendMessageToPlayer(GrpcGateServiceStubPtr& stub, const NodeRout
 
 std::function<void(const std::unique_ptr<AsyncGateServiceSendMessageToPlayerGrpcClientCall>&)> AsyncGateServiceSendMessageToPlayerHandler;
 
-void AsyncCompleteGrpcGateServiceSendMessageToPlayer()
+void AsyncCompleteGrpcGateServiceSendMessageToPlayer(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -187,7 +187,7 @@ void AsyncCompleteGrpcGateServiceSendMessageToPlayer()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GateServiceSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -221,7 +221,7 @@ void GateServiceKickSessionByCentre(GrpcGateServiceStubPtr& stub, const KickSess
 
 std::function<void(const std::unique_ptr<AsyncGateServiceKickSessionByCentreGrpcClientCall>&)> AsyncGateServiceKickSessionByCentreHandler;
 
-void AsyncCompleteGrpcGateServiceKickSessionByCentre()
+void AsyncCompleteGrpcGateServiceKickSessionByCentre(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -231,7 +231,7 @@ void AsyncCompleteGrpcGateServiceKickSessionByCentre()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GateServiceKickSessionByCentreCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -265,7 +265,7 @@ void GateServiceRouteNodeMessage(GrpcGateServiceStubPtr& stub, const RouteMessag
 
 std::function<void(const std::unique_ptr<AsyncGateServiceRouteNodeMessageGrpcClientCall>&)> AsyncGateServiceRouteNodeMessageHandler;
 
-void AsyncCompleteGrpcGateServiceRouteNodeMessage()
+void AsyncCompleteGrpcGateServiceRouteNodeMessage(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -275,7 +275,7 @@ void AsyncCompleteGrpcGateServiceRouteNodeMessage()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GateServiceRouteNodeMessageCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -309,7 +309,7 @@ void GateServiceRoutePlayerMessage(GrpcGateServiceStubPtr& stub, const RoutePlay
 
 std::function<void(const std::unique_ptr<AsyncGateServiceRoutePlayerMessageGrpcClientCall>&)> AsyncGateServiceRoutePlayerMessageHandler;
 
-void AsyncCompleteGrpcGateServiceRoutePlayerMessage()
+void AsyncCompleteGrpcGateServiceRoutePlayerMessage(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -319,7 +319,7 @@ void AsyncCompleteGrpcGateServiceRoutePlayerMessage()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GateServiceRoutePlayerMessageCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -353,7 +353,7 @@ void GateServiceBroadcastToPlayers(GrpcGateServiceStubPtr& stub, const Broadcast
 
 std::function<void(const std::unique_ptr<AsyncGateServiceBroadcastToPlayersGrpcClientCall>&)> AsyncGateServiceBroadcastToPlayersHandler;
 
-void AsyncCompleteGrpcGateServiceBroadcastToPlayers()
+void AsyncCompleteGrpcGateServiceBroadcastToPlayers(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -363,7 +363,7 @@ void AsyncCompleteGrpcGateServiceBroadcastToPlayers()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<GateServiceBroadcastToPlayersCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -382,25 +382,65 @@ void AsyncCompleteGrpcGateServiceBroadcastToPlayers()
     }
 }
 
-void InitGateServiceCompletedQueue() {
-	tls.grpc_node_registry.emplace<GateServiceRegisterGameCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GateServiceUnRegisterGameCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GateServicePlayerEnterGameNodeCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GateServiceSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GateServiceKickSessionByCentreCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GateServiceRouteNodeMessageCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GateServiceRoutePlayerMessageCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<GateServiceBroadcastToPlayersCompleteQueue>(GlobalGrpcNodeEntity());
+void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+	registry.emplace<GateServiceRegisterGameCompleteQueue>(nodeEntity);
+	registry.emplace<GateServiceUnRegisterGameCompleteQueue>(nodeEntity);
+	registry.emplace<GateServicePlayerEnterGameNodeCompleteQueue>(nodeEntity);
+	registry.emplace<GateServiceSendMessageToPlayerCompleteQueue>(nodeEntity);
+	registry.emplace<GateServiceKickSessionByCentreCompleteQueue>(nodeEntity);
+	registry.emplace<GateServiceRouteNodeMessageCompleteQueue>(nodeEntity);
+	registry.emplace<GateServiceRoutePlayerMessageCompleteQueue>(nodeEntity);
+	registry.emplace<GateServiceBroadcastToPlayersCompleteQueue>(nodeEntity);
 }
 
-void HandleGateServiceCompletedQueueMessage() {
-    AsyncCompleteGrpcGateServiceRegisterGame();
-    AsyncCompleteGrpcGateServiceUnRegisterGame();
-    AsyncCompleteGrpcGateServicePlayerEnterGameNode();
-    AsyncCompleteGrpcGateServiceSendMessageToPlayer();
-    AsyncCompleteGrpcGateServiceKickSessionByCentre();
-    AsyncCompleteGrpcGateServiceRouteNodeMessage();
-    AsyncCompleteGrpcGateServiceRoutePlayerMessage();
-    AsyncCompleteGrpcGateServiceBroadcastToPlayers();
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry) {
+	{
+		auto&& view = registry.view<GateServiceRegisterGameCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGateServiceRegisterGame(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GateServiceUnRegisterGameCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGateServiceUnRegisterGame(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GateServicePlayerEnterGameNodeCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGateServicePlayerEnterGameNode(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GateServiceSendMessageToPlayerCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGateServiceSendMessageToPlayer(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GateServiceKickSessionByCentreCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGateServiceKickSessionByCentre(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GateServiceRouteNodeMessageCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGateServiceRouteNodeMessage(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GateServiceRoutePlayerMessageCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGateServiceRoutePlayerMessage(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<GateServiceBroadcastToPlayersCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcGateServiceBroadcastToPlayers(completeQueueComp.cq);
+		}
+	}
 }
 

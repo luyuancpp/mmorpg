@@ -1,4 +1,5 @@
 #pragma once
+#include "entt/src/entt/entity/registry.hpp"
 
 #include "proto/common/gate_service.grpc.pb.h"
 #include "proto/common/gate_service.pb.h"
@@ -105,4 +106,6 @@ public:
 class BroadcastToPlayersRequest;
 void GateServiceBroadcastToPlayers(GrpcGateServiceStubPtr& stub, const BroadcastToPlayersRequest& request);
 
-void HandleGateServiceCompletedQueueMessage(); 
+void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
+
+void InitGateServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

@@ -1,4 +1,5 @@
 #pragma once
+#include "entt/src/entt/entity/registry.hpp"
 
 #include "proto/common/db_service.grpc.pb.h"
 #include "proto/common/db_service.pb.h"
@@ -33,4 +34,6 @@ public:
 class SaveAccountRequest;
 void AccountDBServiceSave2Redis(GrpcAccountDBServiceStubPtr& stub, const SaveAccountRequest& request);
 
-void HandleAccountDBServiceCompletedQueueMessage(); 
+void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry	); 
+
+void InitAccountDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

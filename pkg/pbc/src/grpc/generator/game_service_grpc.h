@@ -1,4 +1,5 @@
 #pragma once
+#include "entt/src/entt/entity/registry.hpp"
 
 #include "proto/common/game_service.grpc.pb.h"
 #include "proto/common/game_service.pb.h"
@@ -141,4 +142,6 @@ public:
 class CreateSceneRequest;
 void GameServiceCreateScene(GrpcGameServiceStubPtr& stub, const CreateSceneRequest& request);
 
-void HandleGameServiceCompletedQueueMessage(); 
+void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
+
+void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);

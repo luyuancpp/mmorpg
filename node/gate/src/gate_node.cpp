@@ -52,8 +52,7 @@ void GateNode::Init()
     muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
         ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
 
-    void InitDeployServiceCompletedQueue();
-    InitDeployServiceCompletedQueue();
+    InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
 
     void InitGrpcDeploySercieResponseHandler();
     InitGrpcDeploySercieResponseHandler();
@@ -94,7 +93,10 @@ void GateNode::InitNodeByReqInfo()
           tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
           = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
 
-    deployRpcTimer.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
+    deployRpcTimer.RunEvery(0.001, []() {
+        HandleDeployServiceCompletedQueueMessage(tls.grpc_node_registry);
+        }
+    );
 
     {
         NodeInfoRequest request;
@@ -217,8 +219,6 @@ void GateNode::Connect2Centre()
 
 void GateNode::Connect2Login()
 {
-    void InitLoginServiceCompletedQueue();
-    InitLoginServiceCompletedQueue();
     
     for (auto& login_node_info : node_net_info_.login_info().login_info())
     {
@@ -234,8 +234,12 @@ void GateNode::Connect2Login()
             LoginService::NewStub(channel));
         tls_gate.login_consistent_node().add(login_node_info.id(), 
             login_node_id);
+        InitLoginServiceCompletedQueue(tls_gate.login_node_registry, login_node_id);
     }
-    loginGrpcSelectTimer.RunEvery(0.01, HandleLoginServiceCompletedQueueMessage);
+
+    loginGrpcSelectTimer.RunEvery(0.01, []() {
+        HandleLoginServiceCompletedQueueMessage(tls_gate.login_node_registry);
+        });
 
 }
 

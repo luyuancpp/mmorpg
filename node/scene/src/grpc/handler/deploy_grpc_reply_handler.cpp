@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "scene_node.h"
-#include "grpc/client/deploy_async_client_call.h"
 #include "grpc/deploy/deploy_client.h"
 #include "node/scene_node_info.h"
 

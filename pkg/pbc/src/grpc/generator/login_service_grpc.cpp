@@ -36,7 +36,7 @@ void LoginServiceLogin(GrpcLoginServiceStubPtr& stub, const LoginC2LRequest& req
 
 std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)> AsyncLoginServiceLoginHandler;
 
-void AsyncCompleteGrpcLoginServiceLogin()
+void AsyncCompleteGrpcLoginServiceLogin(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -46,7 +46,7 @@ void AsyncCompleteGrpcLoginServiceLogin()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<LoginServiceLoginCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -80,7 +80,7 @@ void LoginServiceCreatePlayer(GrpcLoginServiceStubPtr& stub, const CreatePlayerC
 
 std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)> AsyncLoginServiceCreatePlayerHandler;
 
-void AsyncCompleteGrpcLoginServiceCreatePlayer()
+void AsyncCompleteGrpcLoginServiceCreatePlayer(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -90,7 +90,7 @@ void AsyncCompleteGrpcLoginServiceCreatePlayer()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<LoginServiceCreatePlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -124,7 +124,7 @@ void LoginServiceEnterGame(GrpcLoginServiceStubPtr& stub, const EnterGameC2LRequ
 
 std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)> AsyncLoginServiceEnterGameHandler;
 
-void AsyncCompleteGrpcLoginServiceEnterGame()
+void AsyncCompleteGrpcLoginServiceEnterGame(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -134,7 +134,7 @@ void AsyncCompleteGrpcLoginServiceEnterGame()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<LoginServiceEnterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -168,7 +168,7 @@ void LoginServiceLeaveGame(GrpcLoginServiceStubPtr& stub, const LeaveGameC2LRequ
 
 std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)> AsyncLoginServiceLeaveGameHandler;
 
-void AsyncCompleteGrpcLoginServiceLeaveGame()
+void AsyncCompleteGrpcLoginServiceLeaveGame(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -178,7 +178,7 @@ void AsyncCompleteGrpcLoginServiceLeaveGame()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<LoginServiceLeaveGameCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -212,7 +212,7 @@ void LoginServiceDisconnect(GrpcLoginServiceStubPtr& stub, const LoginNodeDiscon
 
 std::function<void(const std::unique_ptr<AsyncLoginServiceDisconnectGrpcClientCall>&)> AsyncLoginServiceDisconnectHandler;
 
-void AsyncCompleteGrpcLoginServiceDisconnect()
+void AsyncCompleteGrpcLoginServiceDisconnect(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -222,7 +222,7 @@ void AsyncCompleteGrpcLoginServiceDisconnect()
     tm.tv_nsec = 0;
     tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (grpc::CompletionQueue::GOT_EVENT != 
-		tls.grpc_node_registry.get<LoginServiceDisconnectCompleteQueue>(GlobalGrpcNodeEntity()).cq.AsyncNext(&got_tag, &ok, tm)){
+		cq.AsyncNext(&got_tag, &ok, tm)){
         return;
     }
 
@@ -241,19 +241,44 @@ void AsyncCompleteGrpcLoginServiceDisconnect()
     }
 }
 
-void InitLoginServiceCompletedQueue() {
-	tls.grpc_node_registry.emplace<LoginServiceLoginCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<LoginServiceCreatePlayerCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<LoginServiceEnterGameCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<LoginServiceLeaveGameCompleteQueue>(GlobalGrpcNodeEntity());
-	tls.grpc_node_registry.emplace<LoginServiceDisconnectCompleteQueue>(GlobalGrpcNodeEntity());
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+	registry.emplace<LoginServiceLoginCompleteQueue>(nodeEntity);
+	registry.emplace<LoginServiceCreatePlayerCompleteQueue>(nodeEntity);
+	registry.emplace<LoginServiceEnterGameCompleteQueue>(nodeEntity);
+	registry.emplace<LoginServiceLeaveGameCompleteQueue>(nodeEntity);
+	registry.emplace<LoginServiceDisconnectCompleteQueue>(nodeEntity);
 }
 
-void HandleLoginServiceCompletedQueueMessage() {
-    AsyncCompleteGrpcLoginServiceLogin();
-    AsyncCompleteGrpcLoginServiceCreatePlayer();
-    AsyncCompleteGrpcLoginServiceEnterGame();
-    AsyncCompleteGrpcLoginServiceLeaveGame();
-    AsyncCompleteGrpcLoginServiceDisconnect();
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry) {
+	{
+		auto&& view = registry.view<LoginServiceLoginCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcLoginServiceLogin(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<LoginServiceCreatePlayerCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcLoginServiceCreatePlayer(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<LoginServiceEnterGameCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcLoginServiceEnterGame(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<LoginServiceLeaveGameCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcLoginServiceLeaveGame(completeQueueComp.cq);
+		}
+	}
+	{
+		auto&& view = registry.view<LoginServiceDisconnectCompleteQueue>();
+		for(auto&& [e, completeQueueComp] : view.each()){
+			AsyncCompleteGrpcLoginServiceDisconnect(completeQueueComp.cq);
+		}
+	}
 }
 

@@ -87,8 +87,7 @@ void CentreNode::Init()
 	InitMessageInfo();
 	InitSystemBeforeConnect();
 
-    void InitDeployServiceCompletedQueue();
-    InitDeployServiceCompletedQueue();
+    InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
 
 	void InitGrpcDeploySercieResponseHandler();
 	InitGrpcDeploySercieResponseHandler();
@@ -134,7 +133,10 @@ void CentreNode::InitNodeByReqInfo()
 		tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
 		= DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
 
-	deployRpcTimer.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
+    deployRpcTimer.RunEvery(0.001, []() {
+        HandleDeployServiceCompletedQueueMessage(tls.grpc_node_registry);
+        }
+    );
 
 	{
 		NodeInfoRequest request;
