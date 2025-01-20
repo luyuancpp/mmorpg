@@ -1,6 +1,4 @@
-#ifndef SRC_SERVER_RPCCLIENT_RPC_STUB_CLIENT_H_
-#define SRC_SERVER_RPCCLIENT_RPC_STUB_CLIENT_H_
-
+#pragma once
 #include <memory>
 
 #include "muduo/base/Logging.h"
@@ -15,14 +13,13 @@
 using namespace muduo;
 using namespace muduo::net;
 
-//todo 
 class RpcClient : noncopyable
 {
 public:
     RpcClient(EventLoop* loop,
         const InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
-          channel_(new GameChannel)
+        channel_(new GameChannel)
     {
         client_.setConnectionCallback(
             std::bind(&RpcClient::onConnection, this, _1));
@@ -31,31 +28,30 @@ public:
         client_.enableRetry();
     }
 
-	const InetAddress& local_addr()const 
+    const InetAddress& local_addr()const
     {
-		if (nullptr == client_.connection())
+        if (nullptr == client_.connection())
         {
             static InetAddress s;
             return s;
-		}
+        }
 
-        return client_.connection()->localAddress(); 
+        return client_.connection()->localAddress();
     }
 
-    const InetAddress& peer_addr()const 
-    { 
+    const InetAddress& peer_addr()const
+    {
         if (nullptr == client_.connection())
         {
-			static InetAddress s;
-			return s;
-		}
+            static InetAddress s;
+            return s;
+        }
 
-        return client_.connection()->peerAddress(); 
+        return client_.connection()->peerAddress();
     }
 
-    //bool connected()const { return nullptr != client_.connection(); }
-    inline bool connected()const { return connected_; }    
-    
+    inline bool connected()const { return connected_; }
+
     void registerService(google::protobuf::Service* service)
     {
         const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
@@ -66,38 +62,42 @@ public:
     {
         channel_->SetServiceMap(&services_);
         client_.connect();
+        LOG_INFO << "Attempting to connect to server at " << client_.connection()->peerAddress().toIpPort() << "...";
     }
 
     void CallRemoteMethod(uint32_t message_id, const ::google::protobuf::Message& request)
-	{
-		if (!connected_)
-		{
-			LOG_ERROR << "client disconnect";
-			return;
-		}
+    {
+        if (!connected_)
+        {
+            LOG_ERROR << "Failed to call remote method: Client is not connected to the server.";
+            return;
+        }
 
-		channel_->CallRemoteMethod(message_id, request);
-	}
+        LOG_INFO << "Sending request (Message ID: " << message_id << ") to remote method...";
+        channel_->CallRemoteMethod(message_id, request);
+    }
 
     void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message)
     {
         if (!connected_)
         {
-            LOG_ERROR << "client disconnect";
+            LOG_ERROR << "Failed to send request: Client is not connected to the server.";
             return;
         }
 
+        LOG_INFO << "Sending request (Message ID: " << message_id << ") with message size: " << message.ByteSizeLong() << " bytes.";
         channel_->SendRequest(message_id, message);
     }
 
-    void RouteMessageToNode(uint32_t message_id,  const ::google::protobuf::Message& request)
+    void RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& request)
     {
         if (!connected_)
         {
-            LOG_ERROR << "client disconnect";
+            LOG_ERROR << "Failed to route message: Client is not connected to the server.";
             return;
         }
 
+        LOG_INFO << "Routing message (Message ID: " << message_id << ") to node...";
         channel_->RouteMessageToNode(message_id, request);
     }
 
@@ -109,21 +109,21 @@ private:
             conn->setTcpNoDelay(true);
             channel_->SetConnection(conn);
             connected_ = true;
+            LOG_INFO << "Connected to server at " << conn->peerAddress().toIpPort() << ".";
         }
         else
         {
             connected_ = false;
+            LOG_WARN << "Disconnected from server at " << conn->peerAddress().toIpPort() << ".";
         }
+
         tls.dispatcher.trigger<OnConnected2ServerEvent>(conn);
     }
 
     bool connected_{ false };
-
     TcpClient client_;
     GameChannelPtr channel_;
     std::map<std::string, ::google::protobuf::Service*> services_;
 };
 
 using RpcClientPtr = std::shared_ptr<RpcClient>;
-
-#endif // SRC_SERVER_RPCCLIENT_RPC_STUB_CLIENT_H_
