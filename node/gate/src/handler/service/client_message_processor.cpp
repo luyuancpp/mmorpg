@@ -7,7 +7,7 @@
 #include <optional>
 
 #include "gate_node.h"
-#include "grpc/request/login_grpc_request.h"
+#include "grpc/generator/login_service_grpc.h"
 #include "pbc/common_error_tip.pb.h"
 #include "service_info/centre_service_service_info.h"
 #include "service_info/game_service_service_info.h"
@@ -145,7 +145,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     {
         LoginNodeDisconnectRequest request;
         request.set_session_id(sessionId);
-        SendDisconnectC2LRequest(*loginNode, request);
+        LoginServiceDisconnect(*loginNode, request);
     }
 
     // 通知中心服务器

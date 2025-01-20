@@ -59,6 +59,9 @@ void GateNode::Init()
     void InitGrpcDeploySercieResponseHandler();
     InitGrpcDeploySercieResponseHandler();
 
+    void InitGrpcLoginSercieResponseHandler();
+    InitGrpcLoginSercieResponseHandler();
+
     InitNodeByReqInfo();
 
     InitGameConfig();
