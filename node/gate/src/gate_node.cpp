@@ -5,6 +5,7 @@
 #include "game_config/deploy_json.h"
 #include "grpc/deploy/deploy_client.h"
 #include "grpc/generator/deploy_service_grpc.h"
+#include "grpc/generator/login_service_grpc.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "muduo/base/TimeZone.h"
@@ -20,8 +21,6 @@
 #include "time/system/time_system.h"
 
 GateNode* g_gate_node = nullptr; 
-
-void AsyncCompleteRpcLoginService();
 
 void AsyncOutput(const char* msg, int len)
 {
@@ -88,23 +87,28 @@ void GateNode::Exit()
 void GateNode::InitNodeByReqInfo()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
-    const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    const auto channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
-    extern std::unique_ptr<DeployService::Stub> gDeployServiceStub;
-    gDeployServiceStub = DeployService::NewStub(channel);
-    deploy_rpc_timer_.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
+    const std::string targetStr = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    const auto channel = grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials());
     
+    auto& deployStub =
+          tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
+          = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+
+    deployRpcTimer.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
+
     {
-        NodeInfoRequest rq;
-        rq.set_node_type(kGateNode);
-        rq.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-        DeployServiceGetNodeInfo(rq);
+        NodeInfoRequest request;
+        request.set_node_type(kGateNode);
+        request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
+        DeployServiceGetNodeInfo(deployStub, request);
     }
 
     renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
+        auto& renewDeployStub =
+        tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity());
         RenewLeaseIDRequest request;
         request.set_lease_id(g_gate_node->GetNodeInfo().lease_id());
-        DeployServiceRenewLease(request);
+        DeployServiceRenewLease(renewDeployStub, request);
         });
 }
 
@@ -124,7 +128,7 @@ void GateNode::StartServer(const nodes_info_data& data)
     Connect2Login();
 
     LOG_INFO << "gate node  start " << gate_info.DebugString();
-    deploy_rpc_timer_.Cancel();
+    deployRpcTimer.Cancel();
 }
 
 void GateNode::SetNodeId(NodeId node_id)
@@ -213,6 +217,9 @@ void GateNode::Connect2Centre()
 
 void GateNode::Connect2Login()
 {
+    void InitLoginServiceCompletedQueue();
+    InitLoginServiceCompletedQueue();
+    
     for (auto& login_node_info : node_net_info_.login_info().login_info())
     {
         entt::entity id{ login_node_info.id() };
@@ -228,9 +235,8 @@ void GateNode::Connect2Login()
         tls_gate.login_consistent_node().add(login_node_info.id(), 
             login_node_id);
     }
-    loginGrpcSelectTimer.RunEvery(0.01, AsyncCompleteRpcLoginService);
-    void InitLoginNodeComponent();
-    InitLoginNodeComponent();
+    loginGrpcSelectTimer.RunEvery(0.01, HandleLoginServiceCompletedQueueMessage);
+
 }
 
 void GateNode::InitLog ( )
@@ -261,5 +267,5 @@ void GateNode::ReleaseNodeId() const
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
     request.set_node_type(kGateNode);
-    DeployServiceReleaseID(request);
+    DeployServiceReleaseID( tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()), request);
 }

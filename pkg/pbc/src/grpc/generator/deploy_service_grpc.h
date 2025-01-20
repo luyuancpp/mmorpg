@@ -6,6 +6,8 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
+
+using GrpcDeployServiceStubPtr = std::unique_ptr<DeployService::Stub>;
 class AsyncDeployServiceGetNodeInfoGrpcClientCall
 {
 public:
@@ -17,7 +19,7 @@ public:
 };
 
 class NodeInfoRequest;
-void DeployServiceGetNodeInfo(const NodeInfoRequest& request);
+void DeployServiceGetNodeInfo(GrpcDeployServiceStubPtr& stub, const NodeInfoRequest& request);
 class AsyncDeployServiceGetIDGrpcClientCall
 {
 public:
@@ -29,7 +31,7 @@ public:
 };
 
 class GetIDRequest;
-void DeployServiceGetID(const GetIDRequest& request);
+void DeployServiceGetID(GrpcDeployServiceStubPtr& stub, const GetIDRequest& request);
 class AsyncDeployServiceReleaseIDGrpcClientCall
 {
 public:
@@ -41,7 +43,7 @@ public:
 };
 
 class ReleaseIDRequest;
-void DeployServiceReleaseID(const ReleaseIDRequest& request);
+void DeployServiceReleaseID(GrpcDeployServiceStubPtr& stub, const ReleaseIDRequest& request);
 class AsyncDeployServiceRenewLeaseGrpcClientCall
 {
 public:
@@ -53,6 +55,6 @@ public:
 };
 
 class RenewLeaseIDRequest;
-void DeployServiceRenewLease(const RenewLeaseIDRequest& request);
+void DeployServiceRenewLease(GrpcDeployServiceStubPtr& stub, const RenewLeaseIDRequest& request);
 
 void HandleDeployServiceCompletedQueueMessage(); 

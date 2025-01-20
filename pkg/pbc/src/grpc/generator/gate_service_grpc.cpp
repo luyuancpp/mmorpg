@@ -3,8 +3,6 @@
 #include "grpc/generator/gate_service_grpc.h"
 #include "thread_local/storage.h"
 
-using GrpcGateServiceStubPtr = std::unique_ptr<GateService::Stub>;
-GrpcGateServiceStubPtr gGateServiceStub;
 
 entt::entity GlobalGrpcNodeEntity();
 struct GateServiceRegisterGameCompleteQueue{
@@ -32,12 +30,12 @@ struct GateServiceBroadcastToPlayersCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void GateServiceRegisterGame(const RegisterGameNodeRequest& request)
+void GateServiceRegisterGame(GrpcGateServiceStubPtr& stub, const RegisterGameNodeRequest& request)
 {
     AsyncGateServiceRegisterGameGrpcClientCall* call = new AsyncGateServiceRegisterGameGrpcClientCall;
 
     call->response_reader =
-        gGateServiceStub->PrepareAsyncRegisterGame(&call->context, request,
+        stub->PrepareAsyncRegisterGame(&call->context, request,
 		&tls.grpc_node_registry.get<GateServiceRegisterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -76,12 +74,12 @@ void AsyncCompleteGrpcGateServiceRegisterGame()
     }
 }
 
-void GateServiceUnRegisterGame(const UnregisterGameNodeRequest& request)
+void GateServiceUnRegisterGame(GrpcGateServiceStubPtr& stub, const UnregisterGameNodeRequest& request)
 {
     AsyncGateServiceUnRegisterGameGrpcClientCall* call = new AsyncGateServiceUnRegisterGameGrpcClientCall;
 
     call->response_reader =
-        gGateServiceStub->PrepareAsyncUnRegisterGame(&call->context, request,
+        stub->PrepareAsyncUnRegisterGame(&call->context, request,
 		&tls.grpc_node_registry.get<GateServiceUnRegisterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -120,12 +118,12 @@ void AsyncCompleteGrpcGateServiceUnRegisterGame()
     }
 }
 
-void GateServicePlayerEnterGameNode(const RegisterGameNodeSessionRequest& request)
+void GateServicePlayerEnterGameNode(GrpcGateServiceStubPtr& stub, const RegisterGameNodeSessionRequest& request)
 {
     AsyncGateServicePlayerEnterGameNodeGrpcClientCall* call = new AsyncGateServicePlayerEnterGameNodeGrpcClientCall;
 
     call->response_reader =
-        gGateServiceStub->PrepareAsyncPlayerEnterGameNode(&call->context, request,
+        stub->PrepareAsyncPlayerEnterGameNode(&call->context, request,
 		&tls.grpc_node_registry.get<GateServicePlayerEnterGameNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -164,12 +162,12 @@ void AsyncCompleteGrpcGateServicePlayerEnterGameNode()
     }
 }
 
-void GateServiceSendMessageToPlayer(const NodeRouteMessageRequest& request)
+void GateServiceSendMessageToPlayer(GrpcGateServiceStubPtr& stub, const NodeRouteMessageRequest& request)
 {
     AsyncGateServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGateServiceSendMessageToPlayerGrpcClientCall;
 
     call->response_reader =
-        gGateServiceStub->PrepareAsyncSendMessageToPlayer(&call->context, request,
+        stub->PrepareAsyncSendMessageToPlayer(&call->context, request,
 		&tls.grpc_node_registry.get<GateServiceSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -208,12 +206,12 @@ void AsyncCompleteGrpcGateServiceSendMessageToPlayer()
     }
 }
 
-void GateServiceKickSessionByCentre(const KickSessionRequest& request)
+void GateServiceKickSessionByCentre(GrpcGateServiceStubPtr& stub, const KickSessionRequest& request)
 {
     AsyncGateServiceKickSessionByCentreGrpcClientCall* call = new AsyncGateServiceKickSessionByCentreGrpcClientCall;
 
     call->response_reader =
-        gGateServiceStub->PrepareAsyncKickSessionByCentre(&call->context, request,
+        stub->PrepareAsyncKickSessionByCentre(&call->context, request,
 		&tls.grpc_node_registry.get<GateServiceKickSessionByCentreCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -252,12 +250,12 @@ void AsyncCompleteGrpcGateServiceKickSessionByCentre()
     }
 }
 
-void GateServiceRouteNodeMessage(const RouteMessageRequest& request)
+void GateServiceRouteNodeMessage(GrpcGateServiceStubPtr& stub, const RouteMessageRequest& request)
 {
     AsyncGateServiceRouteNodeMessageGrpcClientCall* call = new AsyncGateServiceRouteNodeMessageGrpcClientCall;
 
     call->response_reader =
-        gGateServiceStub->PrepareAsyncRouteNodeMessage(&call->context, request,
+        stub->PrepareAsyncRouteNodeMessage(&call->context, request,
 		&tls.grpc_node_registry.get<GateServiceRouteNodeMessageCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -296,12 +294,12 @@ void AsyncCompleteGrpcGateServiceRouteNodeMessage()
     }
 }
 
-void GateServiceRoutePlayerMessage(const RoutePlayerMessageRequest& request)
+void GateServiceRoutePlayerMessage(GrpcGateServiceStubPtr& stub, const RoutePlayerMessageRequest& request)
 {
     AsyncGateServiceRoutePlayerMessageGrpcClientCall* call = new AsyncGateServiceRoutePlayerMessageGrpcClientCall;
 
     call->response_reader =
-        gGateServiceStub->PrepareAsyncRoutePlayerMessage(&call->context, request,
+        stub->PrepareAsyncRoutePlayerMessage(&call->context, request,
 		&tls.grpc_node_registry.get<GateServiceRoutePlayerMessageCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -340,12 +338,12 @@ void AsyncCompleteGrpcGateServiceRoutePlayerMessage()
     }
 }
 
-void GateServiceBroadcastToPlayers(const BroadcastToPlayersRequest& request)
+void GateServiceBroadcastToPlayers(GrpcGateServiceStubPtr& stub, const BroadcastToPlayersRequest& request)
 {
     AsyncGateServiceBroadcastToPlayersGrpcClientCall* call = new AsyncGateServiceBroadcastToPlayersGrpcClientCall;
 
     call->response_reader =
-        gGateServiceStub->PrepareAsyncBroadcastToPlayers(&call->context, request,
+        stub->PrepareAsyncBroadcastToPlayers(&call->context, request,
 		&tls.grpc_node_registry.get<GateServiceBroadcastToPlayersCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();

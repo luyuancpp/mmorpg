@@ -129,9 +129,10 @@ void CentreNode::InitNodeByReqInfo()
 {
 	const auto& deployInfo = DeployConfig::GetSingleton().DeployInfo();
 	const std::string targetStr = deployInfo.ip() + ":" + std::to_string(deployInfo.port());
-	extern std::unique_ptr<DeployService::Stub> gDeployServiceStub;
-	gDeployServiceStub = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
-	gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
+	
+	auto& deployStub =
+		tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
+		= DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
 
 	deployRpcTimer.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
 
@@ -139,13 +140,15 @@ void CentreNode::InitNodeByReqInfo()
 		NodeInfoRequest request;
 		request.set_node_type(kCentreNode);
 		request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-		DeployServiceGetNodeInfo(request);
+		DeployServiceGetNodeInfo(deployStub, request);
 	}
 
 	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
+		auto& renewDeployStub =
+		tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity());
 		RenewLeaseIDRequest request;
         request.set_lease_id(gCentreNodeInfo.GetNodeInfo().lease_id());
-		DeployServiceRenewLease(request);
+		DeployServiceRenewLease(renewDeployStub, request);
 		});
 }
 
@@ -270,5 +273,5 @@ void CentreNode::ReleaseNodeId() const
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
     request.set_node_type(kCentreNode);
-    DeployServiceReleaseID(request);
+    DeployServiceReleaseID( tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()), request);
 }

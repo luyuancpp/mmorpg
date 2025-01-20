@@ -6,6 +6,8 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
+
+using GrpcLoginServiceStubPtr = std::unique_ptr<LoginService::Stub>;
 class AsyncLoginServiceLoginGrpcClientCall
 {
 public:
@@ -17,7 +19,7 @@ public:
 };
 
 class LoginC2LRequest;
-void LoginServiceLogin(const LoginC2LRequest& request);
+void LoginServiceLogin(GrpcLoginServiceStubPtr& stub, const LoginC2LRequest& request);
 class AsyncLoginServiceCreatePlayerGrpcClientCall
 {
 public:
@@ -29,7 +31,7 @@ public:
 };
 
 class CreatePlayerC2LRequest;
-void LoginServiceCreatePlayer(const CreatePlayerC2LRequest& request);
+void LoginServiceCreatePlayer(GrpcLoginServiceStubPtr& stub, const CreatePlayerC2LRequest& request);
 class AsyncLoginServiceEnterGameGrpcClientCall
 {
 public:
@@ -41,7 +43,7 @@ public:
 };
 
 class EnterGameC2LRequest;
-void LoginServiceEnterGame(const EnterGameC2LRequest& request);
+void LoginServiceEnterGame(GrpcLoginServiceStubPtr& stub, const EnterGameC2LRequest& request);
 class AsyncLoginServiceLeaveGameGrpcClientCall
 {
 public:
@@ -53,7 +55,7 @@ public:
 };
 
 class LeaveGameC2LRequest;
-void LoginServiceLeaveGame(const LeaveGameC2LRequest& request);
+void LoginServiceLeaveGame(GrpcLoginServiceStubPtr& stub, const LeaveGameC2LRequest& request);
 class AsyncLoginServiceDisconnectGrpcClientCall
 {
 public:
@@ -65,6 +67,6 @@ public:
 };
 
 class LoginNodeDisconnectRequest;
-void LoginServiceDisconnect(const LoginNodeDisconnectRequest& request);
+void LoginServiceDisconnect(GrpcLoginServiceStubPtr& stub, const LoginNodeDisconnectRequest& request);
 
 void HandleLoginServiceCompletedQueueMessage(); 

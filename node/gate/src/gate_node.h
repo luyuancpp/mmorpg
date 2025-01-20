@@ -83,7 +83,7 @@ private:
     NodeInfo node_info_;
     RpcClientPtr zone_centre_node_;
     GateServiceHandler service_handler_;
-    TimerTaskComp deploy_rpc_timer_;
+    TimerTaskComp deployRpcTimer;
     TimerTaskComp loginGrpcSelectTimer;
     TimerTaskComp renewNodeLeaseTimer;
 };

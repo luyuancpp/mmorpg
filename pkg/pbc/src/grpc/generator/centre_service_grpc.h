@@ -6,6 +6,8 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
+
+using GrpcCentreServiceStubPtr = std::unique_ptr<CentreService::Stub>;
 class AsyncCentreServiceRegisterGameNodeGrpcClientCall
 {
 public:
@@ -17,7 +19,7 @@ public:
 };
 
 class RegisterGameNodeRequest;
-void CentreServiceRegisterGameNode(const RegisterGameNodeRequest& request);
+void CentreServiceRegisterGameNode(GrpcCentreServiceStubPtr& stub, const RegisterGameNodeRequest& request);
 class AsyncCentreServiceRegisterGateNodeGrpcClientCall
 {
 public:
@@ -29,7 +31,7 @@ public:
 };
 
 class RegisterGateNodeRequest;
-void CentreServiceRegisterGateNode(const RegisterGateNodeRequest& request);
+void CentreServiceRegisterGateNode(GrpcCentreServiceStubPtr& stub, const RegisterGateNodeRequest& request);
 class AsyncCentreServiceGatePlayerServiceGrpcClientCall
 {
 public:
@@ -41,7 +43,7 @@ public:
 };
 
 class GateClientMessageRequest;
-void CentreServiceGatePlayerService(const GateClientMessageRequest& request);
+void CentreServiceGatePlayerService(GrpcCentreServiceStubPtr& stub, const GateClientMessageRequest& request);
 class AsyncCentreServiceGateSessionDisconnectGrpcClientCall
 {
 public:
@@ -53,7 +55,7 @@ public:
 };
 
 class GateSessionDisconnectRequest;
-void CentreServiceGateSessionDisconnect(const GateSessionDisconnectRequest& request);
+void CentreServiceGateSessionDisconnect(GrpcCentreServiceStubPtr& stub, const GateSessionDisconnectRequest& request);
 class AsyncCentreServiceLoginNodeAccountLoginGrpcClientCall
 {
 public:
@@ -65,7 +67,7 @@ public:
 };
 
 class LoginRequest;
-void CentreServiceLoginNodeAccountLogin(const LoginRequest& request);
+void CentreServiceLoginNodeAccountLogin(GrpcCentreServiceStubPtr& stub, const LoginRequest& request);
 class AsyncCentreServiceLoginNodeEnterGameGrpcClientCall
 {
 public:
@@ -77,7 +79,7 @@ public:
 };
 
 class CentrePlayerGameNodeEntryRequest;
-void CentreServiceLoginNodeEnterGame(const CentrePlayerGameNodeEntryRequest& request);
+void CentreServiceLoginNodeEnterGame(GrpcCentreServiceStubPtr& stub, const CentrePlayerGameNodeEntryRequest& request);
 class AsyncCentreServiceLoginNodeLeaveGameGrpcClientCall
 {
 public:
@@ -89,7 +91,7 @@ public:
 };
 
 class LoginNodeLeaveGameRequest;
-void CentreServiceLoginNodeLeaveGame(const LoginNodeLeaveGameRequest& request);
+void CentreServiceLoginNodeLeaveGame(GrpcCentreServiceStubPtr& stub, const LoginNodeLeaveGameRequest& request);
 class AsyncCentreServiceLoginNodeSessionDisconnectGrpcClientCall
 {
 public:
@@ -101,7 +103,7 @@ public:
 };
 
 class GateSessionDisconnectRequest;
-void CentreServiceLoginNodeSessionDisconnect(const GateSessionDisconnectRequest& request);
+void CentreServiceLoginNodeSessionDisconnect(GrpcCentreServiceStubPtr& stub, const GateSessionDisconnectRequest& request);
 class AsyncCentreServicePlayerServiceGrpcClientCall
 {
 public:
@@ -113,7 +115,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void CentreServicePlayerService(const NodeRouteMessageRequest& request);
+void CentreServicePlayerService(GrpcCentreServiceStubPtr& stub, const NodeRouteMessageRequest& request);
 class AsyncCentreServiceEnterGsSucceedGrpcClientCall
 {
 public:
@@ -125,7 +127,7 @@ public:
 };
 
 class EnterGameNodeSuccessRequest;
-void CentreServiceEnterGsSucceed(const EnterGameNodeSuccessRequest& request);
+void CentreServiceEnterGsSucceed(GrpcCentreServiceStubPtr& stub, const EnterGameNodeSuccessRequest& request);
 class AsyncCentreServiceRouteNodeStringMsgGrpcClientCall
 {
 public:
@@ -137,7 +139,7 @@ public:
 };
 
 class RouteMessageRequest;
-void CentreServiceRouteNodeStringMsg(const RouteMessageRequest& request);
+void CentreServiceRouteNodeStringMsg(GrpcCentreServiceStubPtr& stub, const RouteMessageRequest& request);
 class AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall
 {
 public:
@@ -149,7 +151,7 @@ public:
 };
 
 class RoutePlayerMessageRequest;
-void CentreServiceRoutePlayerStringMsg(const RoutePlayerMessageRequest& request);
+void CentreServiceRoutePlayerStringMsg(GrpcCentreServiceStubPtr& stub, const RoutePlayerMessageRequest& request);
 class AsyncCentreServiceUnRegisterGameNodeGrpcClientCall
 {
 public:
@@ -161,6 +163,6 @@ public:
 };
 
 class UnregisterGameNodeRequest;
-void CentreServiceUnRegisterGameNode(const UnregisterGameNodeRequest& request);
+void CentreServiceUnRegisterGameNode(GrpcCentreServiceStubPtr& stub, const UnregisterGameNodeRequest& request);
 
 void HandleCentreServiceCompletedQueueMessage(); 

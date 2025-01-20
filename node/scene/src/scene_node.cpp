@@ -34,7 +34,6 @@ SceneNode* gSceneNode = nullptr;
 
 using namespace muduo::net;
 
-
 void AsyncOutput(const char* msg, int len)
 {
     gSceneNode->Log().append(msg, len);
@@ -132,7 +131,7 @@ void SceneNode::ReleaseNodeId() const
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
     request.set_node_type(kSceneNode);
-    DeployServiceReleaseID(request);
+    DeployServiceReleaseID( tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()), request);
 }
 
 void SceneNode::StartServer(const ::nodes_info_data& info)
@@ -236,23 +235,27 @@ void SceneNode::InitNodeByReqInfo()
 {
     auto& zone = ZoneConfig::GetSingleton().ConfigInfo();
     const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
-    const std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    extern std::unique_ptr<DeployService::Stub> gDeployServiceStub;
-    gDeployServiceStub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-    gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
+    const std::string targetStr = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    
+    auto& deployStub =
+       tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
+       = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+
     deployRpcTimer.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
 
     {
         NodeInfoRequest request;
         request.set_node_type(kSceneNode);
         request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-        DeployServiceGetNodeInfo(request);
+        DeployServiceGetNodeInfo(deployStub, request);
     }
 
     renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
+        auto& renewDeployStub =
+        tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity());
         RenewLeaseIDRequest request;
         request.set_lease_id(gSceneNodeInfo.GetNodeInfo().lease_id());
-        DeployServiceRenewLease(request);
+        DeployServiceRenewLease(renewDeployStub, request);
         });
 }
 
