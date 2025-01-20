@@ -539,7 +539,7 @@ void InitCompletedQueue() {
 	tls.grpc_node_registry.emplace<GameServiceCreateSceneCompleteQueue>(GlobalGrpcNodeEntity());
 }
 
-void HandleCompletedQueueMessage() {
+void HandleGameServiceCompletedQueueMessage() {
     AsyncCompleteGrpcGameServicePlayerEnterGameNode();
     AsyncCompleteGrpcGameServiceSendMessageToPlayer();
     AsyncCompleteGrpcGameServiceClientSendMessageToPlayer();

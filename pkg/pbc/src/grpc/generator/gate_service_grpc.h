@@ -102,3 +102,5 @@ public:
 
 class BroadcastToPlayersRequest;
 void GateServiceBroadcastToPlayers(const BroadcastToPlayersRequest& request);
+
+static void HandleGateServiceCompletedQueueMessage(); 

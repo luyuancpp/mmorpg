@@ -66,3 +66,5 @@ public:
 
 class LoginNodeDisconnectRequest;
 void LoginServiceDisconnect(const LoginNodeDisconnectRequest& request);
+
+static void HandleLoginServiceCompletedQueueMessage(); 
