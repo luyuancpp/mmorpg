@@ -20,7 +20,7 @@ public:
 };
 
 class NodeInfoRequest;
-void DeployServiceGetNodeInfo(GrpcDeployServiceStubPtr& stub, const NodeInfoRequest& request);
+void DeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const NodeInfoRequest& request);
 class AsyncDeployServiceGetIDGrpcClientCall
 {
 public:
@@ -32,7 +32,7 @@ public:
 };
 
 class GetIDRequest;
-void DeployServiceGetID(GrpcDeployServiceStubPtr& stub, const GetIDRequest& request);
+void DeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const GetIDRequest& request);
 class AsyncDeployServiceReleaseIDGrpcClientCall
 {
 public:
@@ -44,7 +44,7 @@ public:
 };
 
 class ReleaseIDRequest;
-void DeployServiceReleaseID(GrpcDeployServiceStubPtr& stub, const ReleaseIDRequest& request);
+void DeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const ReleaseIDRequest& request);
 class AsyncDeployServiceRenewLeaseGrpcClientCall
 {
 public:
@@ -56,7 +56,7 @@ public:
 };
 
 class RenewLeaseIDRequest;
-void DeployServiceRenewLease(GrpcDeployServiceStubPtr& stub, const RenewLeaseIDRequest& request);
+void DeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const RenewLeaseIDRequest& request);
 
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
 

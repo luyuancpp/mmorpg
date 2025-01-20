@@ -25,7 +25,8 @@ public:
 };
 
 class {{.Request}};
-void {{.ServiceName}}{{.Method}}(Grpc{{.ServiceName}}StubPtr& stub, const {{.Request}}& request);
+void {{.ServiceName}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.Request}}& request);
+
 
 {{- end }}
 
@@ -50,13 +51,13 @@ struct {{.ServiceName}}{{.Method}}CompleteQueue{
 
 {{- range .GrpcServices }}
 
-void {{.ServiceName}}{{.Method}}(Grpc{{.ServiceName}}StubPtr& stub, const {{.Request}}& request)
+void {{.ServiceName}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const {{.Request}}& request)
 {
     Async{{.ServiceName}}{{.Method}}GrpcClientCall* call = new Async{{.ServiceName}}{{.Method}}GrpcClientCall;
 
     call->response_reader =
-        stub->PrepareAsync{{.Method}}(&call->context, request,
-		&tls.grpc_node_registry.get<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity()).cq);
+        registry.get<Grpc{{.ServiceName}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, request,
+		&registry.get<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 

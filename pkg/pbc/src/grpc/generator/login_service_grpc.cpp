@@ -21,13 +21,13 @@ struct LoginServiceDisconnectCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void LoginServiceLogin(GrpcLoginServiceStubPtr& stub, const LoginC2LRequest& request)
+void LoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const LoginC2LRequest& request)
 {
     AsyncLoginServiceLoginGrpcClientCall* call = new AsyncLoginServiceLoginGrpcClientCall;
 
     call->response_reader =
-        stub->PrepareAsyncLogin(&call->context, request,
-		&tls.grpc_node_registry.get<LoginServiceLoginCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLogin(&call->context, request,
+		&registry.get<LoginServiceLoginCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 
@@ -65,13 +65,13 @@ void AsyncCompleteGrpcLoginServiceLogin(grpc::CompletionQueue& cq)
     }
 }
 
-void LoginServiceCreatePlayer(GrpcLoginServiceStubPtr& stub, const CreatePlayerC2LRequest& request)
+void LoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const CreatePlayerC2LRequest& request)
 {
     AsyncLoginServiceCreatePlayerGrpcClientCall* call = new AsyncLoginServiceCreatePlayerGrpcClientCall;
 
     call->response_reader =
-        stub->PrepareAsyncCreatePlayer(&call->context, request,
-		&tls.grpc_node_registry.get<LoginServiceCreatePlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncCreatePlayer(&call->context, request,
+		&registry.get<LoginServiceCreatePlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 
@@ -109,13 +109,13 @@ void AsyncCompleteGrpcLoginServiceCreatePlayer(grpc::CompletionQueue& cq)
     }
 }
 
-void LoginServiceEnterGame(GrpcLoginServiceStubPtr& stub, const EnterGameC2LRequest& request)
+void LoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const EnterGameC2LRequest& request)
 {
     AsyncLoginServiceEnterGameGrpcClientCall* call = new AsyncLoginServiceEnterGameGrpcClientCall;
 
     call->response_reader =
-        stub->PrepareAsyncEnterGame(&call->context, request,
-		&tls.grpc_node_registry.get<LoginServiceEnterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncEnterGame(&call->context, request,
+		&registry.get<LoginServiceEnterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 
@@ -153,13 +153,13 @@ void AsyncCompleteGrpcLoginServiceEnterGame(grpc::CompletionQueue& cq)
     }
 }
 
-void LoginServiceLeaveGame(GrpcLoginServiceStubPtr& stub, const LeaveGameC2LRequest& request)
+void LoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const LeaveGameC2LRequest& request)
 {
     AsyncLoginServiceLeaveGameGrpcClientCall* call = new AsyncLoginServiceLeaveGameGrpcClientCall;
 
     call->response_reader =
-        stub->PrepareAsyncLeaveGame(&call->context, request,
-		&tls.grpc_node_registry.get<LoginServiceLeaveGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLeaveGame(&call->context, request,
+		&registry.get<LoginServiceLeaveGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 
@@ -197,13 +197,13 @@ void AsyncCompleteGrpcLoginServiceLeaveGame(grpc::CompletionQueue& cq)
     }
 }
 
-void LoginServiceDisconnect(GrpcLoginServiceStubPtr& stub, const LoginNodeDisconnectRequest& request)
+void LoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const LoginNodeDisconnectRequest& request)
 {
     AsyncLoginServiceDisconnectGrpcClientCall* call = new AsyncLoginServiceDisconnectGrpcClientCall;
 
     call->response_reader =
-        stub->PrepareAsyncDisconnect(&call->context, request,
-		&tls.grpc_node_registry.get<LoginServiceDisconnectCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+        registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncDisconnect(&call->context, request,
+		&registry.get<LoginServiceDisconnectCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 

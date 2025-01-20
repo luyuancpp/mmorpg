@@ -20,7 +20,7 @@ public:
 };
 
 class RegisterGameNodeRequest;
-void GateServiceRegisterGame(GrpcGateServiceStubPtr& stub, const RegisterGameNodeRequest& request);
+void GateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const RegisterGameNodeRequest& request);
 class AsyncGateServiceUnRegisterGameGrpcClientCall
 {
 public:
@@ -32,7 +32,7 @@ public:
 };
 
 class UnregisterGameNodeRequest;
-void GateServiceUnRegisterGame(GrpcGateServiceStubPtr& stub, const UnregisterGameNodeRequest& request);
+void GateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const UnregisterGameNodeRequest& request);
 class AsyncGateServicePlayerEnterGameNodeGrpcClientCall
 {
 public:
@@ -44,7 +44,7 @@ public:
 };
 
 class RegisterGameNodeSessionRequest;
-void GateServicePlayerEnterGameNode(GrpcGateServiceStubPtr& stub, const RegisterGameNodeSessionRequest& request);
+void GateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const RegisterGameNodeSessionRequest& request);
 class AsyncGateServiceSendMessageToPlayerGrpcClientCall
 {
 public:
@@ -56,7 +56,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GateServiceSendMessageToPlayer(GrpcGateServiceStubPtr& stub, const NodeRouteMessageRequest& request);
+void GateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const NodeRouteMessageRequest& request);
 class AsyncGateServiceKickSessionByCentreGrpcClientCall
 {
 public:
@@ -68,7 +68,7 @@ public:
 };
 
 class KickSessionRequest;
-void GateServiceKickSessionByCentre(GrpcGateServiceStubPtr& stub, const KickSessionRequest& request);
+void GateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const KickSessionRequest& request);
 class AsyncGateServiceRouteNodeMessageGrpcClientCall
 {
 public:
@@ -80,7 +80,7 @@ public:
 };
 
 class RouteMessageRequest;
-void GateServiceRouteNodeMessage(GrpcGateServiceStubPtr& stub, const RouteMessageRequest& request);
+void GateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const RouteMessageRequest& request);
 class AsyncGateServiceRoutePlayerMessageGrpcClientCall
 {
 public:
@@ -92,7 +92,7 @@ public:
 };
 
 class RoutePlayerMessageRequest;
-void GateServiceRoutePlayerMessage(GrpcGateServiceStubPtr& stub, const RoutePlayerMessageRequest& request);
+void GateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const RoutePlayerMessageRequest& request);
 class AsyncGateServiceBroadcastToPlayersGrpcClientCall
 {
 public:
@@ -104,7 +104,7 @@ public:
 };
 
 class BroadcastToPlayersRequest;
-void GateServiceBroadcastToPlayers(GrpcGateServiceStubPtr& stub, const BroadcastToPlayersRequest& request);
+void GateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const BroadcastToPlayersRequest& request);
 
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
 
