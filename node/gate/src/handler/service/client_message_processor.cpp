@@ -145,7 +145,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     {
         LoginNodeDisconnectRequest request;
         request.set_session_id(sessionId);
-        LoginServiceDisconnect(*loginNode, request);
+        LoginServiceDisconnect(tls_gate.login_node_registry.get<GrpcLoginServiceStubPtr>(*loginNode) , request);
     }
 
     // 通知中心服务器
@@ -186,7 +186,7 @@ void SendLoginRequestToLoginNode(entt::entity loginNode, Guid sessionId, const R
 {
     LoginC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendLoginC2LRequest(loginNode, message);
+    LoginServiceLogin(tls_gate.login_node_registry.get<GrpcLoginServiceStubPtr>(loginNode), message);
 
     LOG_TRACE << "Sent LoginC2LRequest, session id: " << sessionId;
 }
@@ -195,7 +195,7 @@ void SendCreatePlayerRequestToLoginNode(entt::entity loginNode, Guid sessionId, 
 {
     CreatePlayerC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendCreatePlayerC2LRequest(loginNode, message);
+    LoginServiceCreatePlayer(tls_gate.login_node_registry.get<GrpcLoginServiceStubPtr>(loginNode), message);
 
     LOG_TRACE << "Sent CreatePlayerC2LRequest, session id: " << sessionId;
 }
@@ -204,7 +204,7 @@ void SendEnterGameRequestToLoginNode(entt::entity loginNode, Guid sessionId, con
 {
     EnterGameC2LRequest message;
     SetSessionAndParseBody(message, request, sessionId);
-    SendEnterGameC2LRequest(loginNode, message);
+    LoginServiceEnterGame(tls_gate.login_node_registry.get<GrpcLoginServiceStubPtr>(loginNode), message);
 
     LOG_TRACE << "Sent EnterGameC2LRequest, session id: " << sessionId;
 }

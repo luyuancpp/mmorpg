@@ -6,6 +6,8 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
+
+using GrpcAccountDBServiceStubPtr = std::unique_ptr<AccountDBService::Stub>;
 class AsyncAccountDBServiceLoad2RedisGrpcClientCall
 {
 public:
@@ -17,7 +19,7 @@ public:
 };
 
 class LoadAccountRequest;
-void AccountDBServiceLoad2Redis(const LoadAccountRequest& request);
+void AccountDBServiceLoad2Redis(GrpcAccountDBServiceStubPtr& stub, const LoadAccountRequest& request);
 class AsyncAccountDBServiceSave2RedisGrpcClientCall
 {
 public:
@@ -29,6 +31,6 @@ public:
 };
 
 class SaveAccountRequest;
-void AccountDBServiceSave2Redis(const SaveAccountRequest& request);
+void AccountDBServiceSave2Redis(GrpcAccountDBServiceStubPtr& stub, const SaveAccountRequest& request);
 
 void HandleAccountDBServiceCompletedQueueMessage(); 

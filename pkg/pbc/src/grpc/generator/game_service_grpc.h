@@ -6,6 +6,8 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
+
+using GrpcGameServiceStubPtr = std::unique_ptr<GameService::Stub>;
 class AsyncGameServicePlayerEnterGameNodeGrpcClientCall
 {
 public:
@@ -17,7 +19,7 @@ public:
 };
 
 class PlayerEnterGameNodeRequest;
-void GameServicePlayerEnterGameNode(const PlayerEnterGameNodeRequest& request);
+void GameServicePlayerEnterGameNode(GrpcGameServiceStubPtr& stub, const PlayerEnterGameNodeRequest& request);
 class AsyncGameServiceSendMessageToPlayerGrpcClientCall
 {
 public:
@@ -29,7 +31,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GameServiceSendMessageToPlayer(const NodeRouteMessageRequest& request);
+void GameServiceSendMessageToPlayer(GrpcGameServiceStubPtr& stub, const NodeRouteMessageRequest& request);
 class AsyncGameServiceClientSendMessageToPlayerGrpcClientCall
 {
 public:
@@ -41,7 +43,7 @@ public:
 };
 
 class ClientSendMessageToPlayerRequest;
-void GameServiceClientSendMessageToPlayer(const ClientSendMessageToPlayerRequest& request);
+void GameServiceClientSendMessageToPlayer(GrpcGameServiceStubPtr& stub, const ClientSendMessageToPlayerRequest& request);
 class AsyncGameServiceRegisterGateNodeGrpcClientCall
 {
 public:
@@ -53,7 +55,7 @@ public:
 };
 
 class RegisterGateNodeRequest;
-void GameServiceRegisterGateNode(const RegisterGateNodeRequest& request);
+void GameServiceRegisterGateNode(GrpcGameServiceStubPtr& stub, const RegisterGateNodeRequest& request);
 class AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall
 {
 public:
@@ -65,7 +67,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GameServiceCentreSendToPlayerViaGameNode(const NodeRouteMessageRequest& request);
+void GameServiceCentreSendToPlayerViaGameNode(GrpcGameServiceStubPtr& stub, const NodeRouteMessageRequest& request);
 class AsyncGameServiceInvokePlayerServiceGrpcClientCall
 {
 public:
@@ -77,7 +79,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GameServiceInvokePlayerService(const NodeRouteMessageRequest& request);
+void GameServiceInvokePlayerService(GrpcGameServiceStubPtr& stub, const NodeRouteMessageRequest& request);
 class AsyncGameServiceRouteNodeStringMsgGrpcClientCall
 {
 public:
@@ -89,7 +91,7 @@ public:
 };
 
 class RouteMessageRequest;
-void GameServiceRouteNodeStringMsg(const RouteMessageRequest& request);
+void GameServiceRouteNodeStringMsg(GrpcGameServiceStubPtr& stub, const RouteMessageRequest& request);
 class AsyncGameServiceRoutePlayerStringMsgGrpcClientCall
 {
 public:
@@ -101,7 +103,7 @@ public:
 };
 
 class RoutePlayerMessageRequest;
-void GameServiceRoutePlayerStringMsg(const RoutePlayerMessageRequest& request);
+void GameServiceRoutePlayerStringMsg(GrpcGameServiceStubPtr& stub, const RoutePlayerMessageRequest& request);
 class AsyncGameServiceUpdateSessionDetailGrpcClientCall
 {
 public:
@@ -113,7 +115,7 @@ public:
 };
 
 class RegisterPlayerSessionRequest;
-void GameServiceUpdateSessionDetail(const RegisterPlayerSessionRequest& request);
+void GameServiceUpdateSessionDetail(GrpcGameServiceStubPtr& stub, const RegisterPlayerSessionRequest& request);
 class AsyncGameServiceEnterSceneGrpcClientCall
 {
 public:
@@ -125,7 +127,7 @@ public:
 };
 
 class Centre2GsEnterSceneRequest;
-void GameServiceEnterScene(const Centre2GsEnterSceneRequest& request);
+void GameServiceEnterScene(GrpcGameServiceStubPtr& stub, const Centre2GsEnterSceneRequest& request);
 class AsyncGameServiceCreateSceneGrpcClientCall
 {
 public:
@@ -137,6 +139,6 @@ public:
 };
 
 class CreateSceneRequest;
-void GameServiceCreateScene(const CreateSceneRequest& request);
+void GameServiceCreateScene(GrpcGameServiceStubPtr& stub, const CreateSceneRequest& request);
 
 void HandleGameServiceCompletedQueueMessage(); 

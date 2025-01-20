@@ -6,6 +6,8 @@
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
+
+using GrpcGateServiceStubPtr = std::unique_ptr<GateService::Stub>;
 class AsyncGateServiceRegisterGameGrpcClientCall
 {
 public:
@@ -17,7 +19,7 @@ public:
 };
 
 class RegisterGameNodeRequest;
-void GateServiceRegisterGame(const RegisterGameNodeRequest& request);
+void GateServiceRegisterGame(GrpcGateServiceStubPtr& stub, const RegisterGameNodeRequest& request);
 class AsyncGateServiceUnRegisterGameGrpcClientCall
 {
 public:
@@ -29,7 +31,7 @@ public:
 };
 
 class UnregisterGameNodeRequest;
-void GateServiceUnRegisterGame(const UnregisterGameNodeRequest& request);
+void GateServiceUnRegisterGame(GrpcGateServiceStubPtr& stub, const UnregisterGameNodeRequest& request);
 class AsyncGateServicePlayerEnterGameNodeGrpcClientCall
 {
 public:
@@ -41,7 +43,7 @@ public:
 };
 
 class RegisterGameNodeSessionRequest;
-void GateServicePlayerEnterGameNode(const RegisterGameNodeSessionRequest& request);
+void GateServicePlayerEnterGameNode(GrpcGateServiceStubPtr& stub, const RegisterGameNodeSessionRequest& request);
 class AsyncGateServiceSendMessageToPlayerGrpcClientCall
 {
 public:
@@ -53,7 +55,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GateServiceSendMessageToPlayer(const NodeRouteMessageRequest& request);
+void GateServiceSendMessageToPlayer(GrpcGateServiceStubPtr& stub, const NodeRouteMessageRequest& request);
 class AsyncGateServiceKickSessionByCentreGrpcClientCall
 {
 public:
@@ -65,7 +67,7 @@ public:
 };
 
 class KickSessionRequest;
-void GateServiceKickSessionByCentre(const KickSessionRequest& request);
+void GateServiceKickSessionByCentre(GrpcGateServiceStubPtr& stub, const KickSessionRequest& request);
 class AsyncGateServiceRouteNodeMessageGrpcClientCall
 {
 public:
@@ -77,7 +79,7 @@ public:
 };
 
 class RouteMessageRequest;
-void GateServiceRouteNodeMessage(const RouteMessageRequest& request);
+void GateServiceRouteNodeMessage(GrpcGateServiceStubPtr& stub, const RouteMessageRequest& request);
 class AsyncGateServiceRoutePlayerMessageGrpcClientCall
 {
 public:
@@ -89,7 +91,7 @@ public:
 };
 
 class RoutePlayerMessageRequest;
-void GateServiceRoutePlayerMessage(const RoutePlayerMessageRequest& request);
+void GateServiceRoutePlayerMessage(GrpcGateServiceStubPtr& stub, const RoutePlayerMessageRequest& request);
 class AsyncGateServiceBroadcastToPlayersGrpcClientCall
 {
 public:
@@ -101,6 +103,6 @@ public:
 };
 
 class BroadcastToPlayersRequest;
-void GateServiceBroadcastToPlayers(const BroadcastToPlayersRequest& request);
+void GateServiceBroadcastToPlayers(GrpcGateServiceStubPtr& stub, const BroadcastToPlayersRequest& request);
 
 void HandleGateServiceCompletedQueueMessage(); 

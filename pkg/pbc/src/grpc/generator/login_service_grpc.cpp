@@ -3,8 +3,6 @@
 #include "grpc/generator/login_service_grpc.h"
 #include "thread_local/storage.h"
 
-using GrpcLoginServiceStubPtr = std::unique_ptr<LoginService::Stub>;
-GrpcLoginServiceStubPtr gLoginServiceStub;
 
 entt::entity GlobalGrpcNodeEntity();
 struct LoginServiceLoginCompleteQueue{
@@ -23,12 +21,12 @@ struct LoginServiceDisconnectCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void LoginServiceLogin(const LoginC2LRequest& request)
+void LoginServiceLogin(GrpcLoginServiceStubPtr& stub, const LoginC2LRequest& request)
 {
     AsyncLoginServiceLoginGrpcClientCall* call = new AsyncLoginServiceLoginGrpcClientCall;
 
     call->response_reader =
-        gLoginServiceStub->PrepareAsyncLogin(&call->context, request,
+        stub->PrepareAsyncLogin(&call->context, request,
 		&tls.grpc_node_registry.get<LoginServiceLoginCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -67,12 +65,12 @@ void AsyncCompleteGrpcLoginServiceLogin()
     }
 }
 
-void LoginServiceCreatePlayer(const CreatePlayerC2LRequest& request)
+void LoginServiceCreatePlayer(GrpcLoginServiceStubPtr& stub, const CreatePlayerC2LRequest& request)
 {
     AsyncLoginServiceCreatePlayerGrpcClientCall* call = new AsyncLoginServiceCreatePlayerGrpcClientCall;
 
     call->response_reader =
-        gLoginServiceStub->PrepareAsyncCreatePlayer(&call->context, request,
+        stub->PrepareAsyncCreatePlayer(&call->context, request,
 		&tls.grpc_node_registry.get<LoginServiceCreatePlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -111,12 +109,12 @@ void AsyncCompleteGrpcLoginServiceCreatePlayer()
     }
 }
 
-void LoginServiceEnterGame(const EnterGameC2LRequest& request)
+void LoginServiceEnterGame(GrpcLoginServiceStubPtr& stub, const EnterGameC2LRequest& request)
 {
     AsyncLoginServiceEnterGameGrpcClientCall* call = new AsyncLoginServiceEnterGameGrpcClientCall;
 
     call->response_reader =
-        gLoginServiceStub->PrepareAsyncEnterGame(&call->context, request,
+        stub->PrepareAsyncEnterGame(&call->context, request,
 		&tls.grpc_node_registry.get<LoginServiceEnterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -155,12 +153,12 @@ void AsyncCompleteGrpcLoginServiceEnterGame()
     }
 }
 
-void LoginServiceLeaveGame(const LeaveGameC2LRequest& request)
+void LoginServiceLeaveGame(GrpcLoginServiceStubPtr& stub, const LeaveGameC2LRequest& request)
 {
     AsyncLoginServiceLeaveGameGrpcClientCall* call = new AsyncLoginServiceLeaveGameGrpcClientCall;
 
     call->response_reader =
-        gLoginServiceStub->PrepareAsyncLeaveGame(&call->context, request,
+        stub->PrepareAsyncLeaveGame(&call->context, request,
 		&tls.grpc_node_registry.get<LoginServiceLeaveGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
@@ -199,12 +197,12 @@ void AsyncCompleteGrpcLoginServiceLeaveGame()
     }
 }
 
-void LoginServiceDisconnect(const LoginNodeDisconnectRequest& request)
+void LoginServiceDisconnect(GrpcLoginServiceStubPtr& stub, const LoginNodeDisconnectRequest& request)
 {
     AsyncLoginServiceDisconnectGrpcClientCall* call = new AsyncLoginServiceDisconnectGrpcClientCall;
 
     call->response_reader =
-        gLoginServiceStub->PrepareAsyncDisconnect(&call->context, request,
+        stub->PrepareAsyncDisconnect(&call->context, request,
 		&tls.grpc_node_registry.get<LoginServiceDisconnectCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();

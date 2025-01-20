@@ -9,6 +9,8 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
+using Grpc{{.ServiceName}}StubPtr = std::unique_ptr<{{.ServiceName}}::Stub>;
+
 
 {{- range .GrpcServices }}
 class Async{{.ServiceName}}{{.Method}}GrpcClientCall
@@ -22,7 +24,7 @@ public:
 };
 
 class {{.Request}};
-void {{.ServiceName}}{{.Method}}(const {{.Request}}& request);
+void {{.ServiceName}}{{.Method}}(Grpc{{.ServiceName}}StubPtr& stub, const {{.Request}}& request);
 
 {{- end }}
 
@@ -34,8 +36,6 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "grpc/generator/{{.GeneratorFileName}}.h"
 #include "thread_local/storage.h"
 
-using Grpc{{.ServiceName}}StubPtr = std::unique_ptr<{{.ServiceName}}::Stub>;
-Grpc{{.ServiceName}}StubPtr g{{.ServiceName}}Stub;
 
 entt::entity GlobalGrpcNodeEntity();
 
@@ -47,12 +47,12 @@ struct {{.ServiceName}}{{.Method}}CompleteQueue{
 
 {{- range .GrpcServices }}
 
-void {{.ServiceName}}{{.Method}}(const {{.Request}}& request)
+void {{.ServiceName}}{{.Method}}(Grpc{{.ServiceName}}StubPtr& stub, const {{.Request}}& request)
 {
     Async{{.ServiceName}}{{.Method}}GrpcClientCall* call = new Async{{.ServiceName}}{{.Method}}GrpcClientCall;
 
     call->response_reader =
-        g{{.ServiceName}}Stub->PrepareAsync{{.Method}}(&call->context, request,
+        stub->PrepareAsync{{.Method}}(&call->context, request,
 		&tls.grpc_node_registry.get<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();

@@ -9,8 +9,8 @@ using GrpcLoginStubPtr = std::unique_ptr<LoginService::Stub>;
 void InitGrpcLoginSercieResponseHandler() {
     {
         using Function = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
-        extern Function AsyncLoginServiceLoginGrpcClientCallHandler;
-        AsyncLoginServiceLoginGrpcClientCallHandler = [](const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>& call) {
+        extern Function AsyncLoginServiceLoginHandler;
+        AsyncLoginServiceLoginHandler = [](const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>& call) {
             auto it = tls_gate.sessions().find(call->reply.session_info().session_id());
             if (it == tls_gate.sessions().end())
             {
