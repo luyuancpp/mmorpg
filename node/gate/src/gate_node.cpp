@@ -60,6 +60,9 @@ void GateNode::Init()
 
     InitMessageInfo();
 
+    void InitGrpcResponseHandler();
+    InitGrpcResponseHandler();
+    
     void InitRepliedHandler();
     InitRepliedHandler();
 
