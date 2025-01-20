@@ -4,32 +4,30 @@ import (
 	"database/sql"
 	"deploy/internal/config"
 	"deploy/pb/game"
-	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"github.com/golang/protobuf/proto"
 	pbmysql "github.com/luyuancpp/pbmysql-go"
 	"github.com/zeromicro/go-zero/core/logx"
-	"os"
 )
 
 var db *sql.DB
 var PbDb *pbmysql.PbMysqlDB
 
-func NewMysqlConfig(config config.DBConfig) *mysql.Config {
+func NewMysqlConfig() *mysql.Config {
 	myCnf := mysql.NewConfig()
-	myCnf.User = config.User
-	myCnf.Passwd = config.Passwd
-	myCnf.Addr = config.Addr
-	myCnf.Net = config.Net
-	myCnf.DBName = config.DBName
+	myCnf.User = config.DeployConfig.User
+	myCnf.Passwd = config.DeployConfig.Passwd
+	myCnf.Addr = config.DeployConfig.Addr
+	myCnf.Net = config.DeployConfig.Net
+	myCnf.DBName = config.DeployConfig.DBName
 	return myCnf
 }
 
 // 创建数据库的函数
-func CreateDatabase(config config.DBConfig) error {
+func CreateDatabase() error {
 	// 使用不包含数据库名的连接配置
-	mysqlConfig := NewMysqlConfig(config)
+	mysqlConfig := NewMysqlConfig()
 	mysqlConfig.DBName = "" // 确保不指定数据库名
 
 	conn, err := mysql.NewConnector(mysqlConfig)
@@ -42,7 +40,7 @@ func CreateDatabase(config config.DBConfig) error {
 	defer tempDB.Close()
 
 	// 执行创建数据库的 SQL 语句
-	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DBName))
+	_, err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DeployConfig.DBName))
 	if err != nil {
 		logx.Error("error creating database: %w", err)
 	}
@@ -50,35 +48,22 @@ func CreateDatabase(config config.DBConfig) error {
 	return err
 }
 
-func OpenDB(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		logx.Error("error opening config file: %w", err)
-		return err
-	}
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-	dbConfig := config.DBConfig{}
-	if err := decoder.Decode(&dbConfig); err != nil {
-		return fmt.Errorf("error decoding config file: %w", err)
-	}
-
+func OpenDB() error {
 	// 创建数据库
-	if err := CreateDatabase(dbConfig); err != nil {
+	if err := CreateDatabase(); err != nil {
 		return err
 	}
 
 	// 创建带有数据库名的连接配置
-	mysqlConfig := NewMysqlConfig(dbConfig)
+	mysqlConfig := NewMysqlConfig()
 	conn, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
 		return fmt.Errorf("error creating MySQL connector: %w", err)
 	}
 
 	db = sql.OpenDB(conn)
-	db.SetMaxOpenConns(dbConfig.MaxOpenConn)
-	db.SetMaxIdleConns(dbConfig.MaxIdleConn)
+	db.SetMaxOpenConns(config.DeployConfig.MaxOpenConn)
+	db.SetMaxIdleConns(config.DeployConfig.MaxIdleConn)
 
 	PbDb = pbmysql.NewPb2DbTables()
 	if err := PbDb.OpenDB(db, mysqlConfig.DBName); err != nil {
@@ -124,9 +109,10 @@ func AlterCreateDBTable() {
 	}
 }
 
-func InitDB(path string) {
-	if err := OpenDB(path); err != nil {
+func InitDB() {
+	if err := OpenDB(); err != nil {
 		logx.Error("error opening database: %v", err)
+		return
 	}
 	InitDBTable()
 	AlterCreateDBTable()
