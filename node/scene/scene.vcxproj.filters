@@ -125,9 +125,6 @@
     <ClInclude Include="src\handler\event\server_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -196,7 +196,7 @@ void AsyncCompleteGrpcDeployServiceRenewLease()
     }
 }
 
-void InitCompletedQueue() {
+void InitDeployServiceCompletedQueue() {
 	tls.grpc_node_registry.emplace<DeployServiceGetNodeInfoCompleteQueue>(GlobalGrpcNodeEntity());
 	tls.grpc_node_registry.emplace<DeployServiceGetIDCompleteQueue>(GlobalGrpcNodeEntity());
 	tls.grpc_node_registry.emplace<DeployServiceReleaseIDCompleteQueue>(GlobalGrpcNodeEntity());

@@ -182,7 +182,6 @@ copy  $(TargetPath)  "../../bin/$(ProjectName).pdb" /Y</Command>
     <ClInclude Include="src\handler\event\server_event_handler.h" />
     <ClInclude Include="src\scene_node.h" />
     <ClInclude Include="src\grpc\client\deploy_async_client_call.h" />
-    <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h" />
     <ClInclude Include="src\grpc\request\deploy_grpc_requst.h" />
     <ClInclude Include="src\handler\event\skill_event_handler.h" />
     <ClInclude Include="src\handler\service\player\player_common_handler.h" />

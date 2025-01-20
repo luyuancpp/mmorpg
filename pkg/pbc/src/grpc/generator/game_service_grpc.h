@@ -139,4 +139,4 @@ public:
 class CreateSceneRequest;
 void GameServiceCreateScene(const CreateSceneRequest& request);
 
-static void HandleGameServiceCompletedQueueMessage(); 
+void HandleGameServiceCompletedQueueMessage(); 

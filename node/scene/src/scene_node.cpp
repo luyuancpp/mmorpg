@@ -34,7 +34,6 @@ SceneNode* gSceneNode = nullptr;
 
 using namespace muduo::net;
 
-void AsyncCompleteGrpcDeployService();
 
 void AsyncOutput(const char* msg, int len)
 {
@@ -75,6 +74,13 @@ void SceneNode::Init()
     InitGameConfig();	
     
     InitMessageInfo();
+
+    void InitDeployServiceCompletedQueue();
+    InitDeployServiceCompletedQueue();
+
+    void InitGrpcDeploySercieResponseHandler();
+    InitGrpcDeploySercieResponseHandler();
+
     InitPlayerService();
     InitRepliedHandler();
     InitPlayerServiceReplied();
@@ -234,7 +240,7 @@ void SceneNode::InitNodeByReqInfo()
     extern std::unique_ptr<DeployService::Stub> gDeployServiceStub;
     gDeployServiceStub = DeployService::NewStub(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     gDeployCq = std::make_unique_for_overwrite<CompletionQueue>();
-    deployRpcTimer.RunEvery(0.001, AsyncCompleteGrpcDeployService);
+    deployRpcTimer.RunEvery(0.001, HandleDeployServiceCompletedQueueMessage);
 
     {
         NodeInfoRequest request;

@@ -11,6 +11,7 @@ void ThreadLocalStorage::ClearForTest()
     centreNodeRegistry.clear();
     itemRegistry.clear();
     networkRegistry.clear();
+    grpc_node_registry.clear();
 
 	operatorEntity = entt::null;
 	errorEntity = entt::null;
