@@ -12,13 +12,13 @@ struct AccountDBServiceSave2RedisCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void AccountDBServiceLoad2Redis(GrpcAccountDBServiceStubPtr& stub, const LoadAccountRequest& request)
+void AccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const LoadAccountRequest& request)
 {
     AsyncAccountDBServiceLoad2RedisGrpcClientCall* call = new AsyncAccountDBServiceLoad2RedisGrpcClientCall;
 
     call->response_reader =
-        stub->PrepareAsyncLoad2Redis(&call->context, request,
-		&tls.grpc_node_registry.get<AccountDBServiceLoad2RedisCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+        registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncLoad2Redis(&call->context, request,
+		&registry.get<AccountDBServiceLoad2RedisCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 
@@ -56,13 +56,13 @@ void AsyncCompleteGrpcAccountDBServiceLoad2Redis(grpc::CompletionQueue& cq)
     }
 }
 
-void AccountDBServiceSave2Redis(GrpcAccountDBServiceStubPtr& stub, const SaveAccountRequest& request)
+void AccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const SaveAccountRequest& request)
 {
     AsyncAccountDBServiceSave2RedisGrpcClientCall* call = new AsyncAccountDBServiceSave2RedisGrpcClientCall;
 
     call->response_reader =
-        stub->PrepareAsyncSave2Redis(&call->context, request,
-		&tls.grpc_node_registry.get<AccountDBServiceSave2RedisCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+        registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncSave2Redis(&call->context, request,
+		&registry.get<AccountDBServiceSave2RedisCompleteQueue>(GlobalGrpcNodeEntity()).cq);
 
     call->response_reader->StartCall();
 

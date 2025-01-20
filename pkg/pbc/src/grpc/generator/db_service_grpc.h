@@ -20,7 +20,7 @@ public:
 };
 
 class LoadAccountRequest;
-void AccountDBServiceLoad2Redis(GrpcAccountDBServiceStubPtr& stub, const LoadAccountRequest& request);
+void AccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const LoadAccountRequest& request);
 class AsyncAccountDBServiceSave2RedisGrpcClientCall
 {
 public:
@@ -32,7 +32,7 @@ public:
 };
 
 class SaveAccountRequest;
-void AccountDBServiceSave2Redis(GrpcAccountDBServiceStubPtr& stub, const SaveAccountRequest& request);
+void AccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const SaveAccountRequest& request);
 
 void HandleAccountDBServiceCompletedQueueMessage(entt::registry& registry	); 
 

@@ -89,9 +89,8 @@ void GateNode::InitNodeByReqInfo()
     const std::string targetStr = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
     const auto channel = grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials());
     
-    auto& deployStub =
-          tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
-          = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+    tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
+    = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
 
     deployRpcTimer.RunEvery(0.001, []() {
         HandleDeployServiceCompletedQueueMessage(tls.grpc_node_registry);
@@ -102,7 +101,7 @@ void GateNode::InitNodeByReqInfo()
         NodeInfoRequest request;
         request.set_node_type(kGateNode);
         request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-        DeployServiceGetNodeInfo(deployStub, request);
+        DeployServiceGetNodeInfo(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
     }
 
     renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
@@ -110,7 +109,7 @@ void GateNode::InitNodeByReqInfo()
         tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity());
         RenewLeaseIDRequest request;
         request.set_lease_id(g_gate_node->GetNodeInfo().lease_id());
-        DeployServiceRenewLease(renewDeployStub, request);
+        DeployServiceRenewLease(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
         });
 }
 
@@ -219,7 +218,6 @@ void GateNode::Connect2Centre()
 
 void GateNode::Connect2Login()
 {
-    
     for (auto& login_node_info : node_net_info_.login_info().login_info())
     {
         entt::entity id{ login_node_info.id() };
@@ -271,5 +269,5 @@ void GateNode::ReleaseNodeId() const
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
     request.set_node_type(kGateNode);
-    DeployServiceReleaseID( tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()), request);
+    DeployServiceReleaseID(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
 }

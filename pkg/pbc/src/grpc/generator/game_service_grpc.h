@@ -20,7 +20,7 @@ public:
 };
 
 class PlayerEnterGameNodeRequest;
-void GameServicePlayerEnterGameNode(GrpcGameServiceStubPtr& stub, const PlayerEnterGameNodeRequest& request);
+void GameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const PlayerEnterGameNodeRequest& request);
 class AsyncGameServiceSendMessageToPlayerGrpcClientCall
 {
 public:
@@ -32,7 +32,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GameServiceSendMessageToPlayer(GrpcGameServiceStubPtr& stub, const NodeRouteMessageRequest& request);
+void GameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const NodeRouteMessageRequest& request);
 class AsyncGameServiceClientSendMessageToPlayerGrpcClientCall
 {
 public:
@@ -44,7 +44,7 @@ public:
 };
 
 class ClientSendMessageToPlayerRequest;
-void GameServiceClientSendMessageToPlayer(GrpcGameServiceStubPtr& stub, const ClientSendMessageToPlayerRequest& request);
+void GameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const ClientSendMessageToPlayerRequest& request);
 class AsyncGameServiceRegisterGateNodeGrpcClientCall
 {
 public:
@@ -56,7 +56,7 @@ public:
 };
 
 class RegisterGateNodeRequest;
-void GameServiceRegisterGateNode(GrpcGameServiceStubPtr& stub, const RegisterGateNodeRequest& request);
+void GameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const RegisterGateNodeRequest& request);
 class AsyncGameServiceCentreSendToPlayerViaGameNodeGrpcClientCall
 {
 public:
@@ -68,7 +68,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GameServiceCentreSendToPlayerViaGameNode(GrpcGameServiceStubPtr& stub, const NodeRouteMessageRequest& request);
+void GameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::entity nodeEntity, const NodeRouteMessageRequest& request);
 class AsyncGameServiceInvokePlayerServiceGrpcClientCall
 {
 public:
@@ -80,7 +80,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GameServiceInvokePlayerService(GrpcGameServiceStubPtr& stub, const NodeRouteMessageRequest& request);
+void GameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeEntity, const NodeRouteMessageRequest& request);
 class AsyncGameServiceRouteNodeStringMsgGrpcClientCall
 {
 public:
@@ -92,7 +92,7 @@ public:
 };
 
 class RouteMessageRequest;
-void GameServiceRouteNodeStringMsg(GrpcGameServiceStubPtr& stub, const RouteMessageRequest& request);
+void GameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const RouteMessageRequest& request);
 class AsyncGameServiceRoutePlayerStringMsgGrpcClientCall
 {
 public:
@@ -104,7 +104,7 @@ public:
 };
 
 class RoutePlayerMessageRequest;
-void GameServiceRoutePlayerStringMsg(GrpcGameServiceStubPtr& stub, const RoutePlayerMessageRequest& request);
+void GameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const RoutePlayerMessageRequest& request);
 class AsyncGameServiceUpdateSessionDetailGrpcClientCall
 {
 public:
@@ -116,7 +116,7 @@ public:
 };
 
 class RegisterPlayerSessionRequest;
-void GameServiceUpdateSessionDetail(GrpcGameServiceStubPtr& stub, const RegisterPlayerSessionRequest& request);
+void GameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeEntity, const RegisterPlayerSessionRequest& request);
 class AsyncGameServiceEnterSceneGrpcClientCall
 {
 public:
@@ -128,7 +128,7 @@ public:
 };
 
 class Centre2GsEnterSceneRequest;
-void GameServiceEnterScene(GrpcGameServiceStubPtr& stub, const Centre2GsEnterSceneRequest& request);
+void GameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, const Centre2GsEnterSceneRequest& request);
 class AsyncGameServiceCreateSceneGrpcClientCall
 {
 public:
@@ -140,7 +140,7 @@ public:
 };
 
 class CreateSceneRequest;
-void GameServiceCreateScene(GrpcGameServiceStubPtr& stub, const CreateSceneRequest& request);
+void GameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, const CreateSceneRequest& request);
 
 void HandleGameServiceCompletedQueueMessage(entt::registry& registry	); 
 
