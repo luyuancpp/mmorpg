@@ -47,33 +47,8 @@ func getRecycledIDKey(nodeType uint32) string {
 	return fmt.Sprintf("recycled_ids_%d", nodeType)
 }
 
-// 初始化 ID 计数器（如果未初始化）
-func initializeIDCounter(ctx context.Context, etcdClient *clientv3.Client, nodeType uint32) error {
-	if isInitialized {
-		// 如果已经初始化，则跳过
-		return nil
-	}
-
-	idKey := getServerTypeKey(nodeType)
-	// 确保 idKey 存在并初始化为 "0"
-	_, err := etcdClient.Put(ctx, idKey, "0")
-	if err != nil {
-		return fmt.Errorf("failed to initialize ID counter for server type %d: %v", nodeType, err)
-	}
-
-	isInitialized = true
-	logx.Info("Initialized ID counter for server type ", nodeType)
-	return nil
-}
-
 // 获取下一个自增的 ID，或者从回收池中获取
 func GenerateID(ctx context.Context, etcdClient *clientv3.Client, nodeType uint32) (uint64, error) {
-	// 初始化 ID 计数器（如果尚未初始化）
-	err := initializeIDCounter(ctx, etcdClient, nodeType)
-	if err != nil {
-		return 0, err
-	}
-
 	// 定义回收池和计数器键
 	recycledIDKey := getRecycledIDKey(nodeType)
 	serverTypeKey := getServerTypeKey(nodeType)
