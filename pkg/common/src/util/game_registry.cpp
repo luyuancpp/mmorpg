@@ -32,6 +32,15 @@ entt::entity GlobalEntity()
     return tls.globalEntity;
 }
 
+entt::entity GlobalGrpcNodeEntity()
+{
+    if (tls.globalGrpcNodeEntity == entt::null)
+    {
+        tls.globalGrpcNodeEntity = tls.grpc_node_registry.create();
+    }
+    return tls.globalGrpcNodeEntity;
+}
+
 //to check 
 void Destroy(entt::registry& registry, entt::entity entity)
 {

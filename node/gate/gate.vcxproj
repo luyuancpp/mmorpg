@@ -23,7 +23,6 @@
     <ClCompile Include="src\gate_node.cpp" />
     <ClCompile Include="src\grpc\handler\deploy_grpc_reply_handler.cpp" />
     <ClCompile Include="src\grpc\handler\login_grpc_reply_handler.cpp" />
-    <ClCompile Include="src\grpc\request\deploy_grpc_requst.cpp" />
     <ClCompile Include="src\grpc\request\login_grpc_request.cpp" />
     <ClCompile Include="src\handler\service\client_message_processor.cpp" />
     <ClCompile Include="src\handler\service\gate_service_handler.cpp" />
@@ -38,9 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\gate_node.h" />
-    <ClInclude Include="src\grpc\client\deploy_async_client_call.h" />
     <ClInclude Include="src\grpc\client\login_async_client_call.h" />
-    <ClInclude Include="src\grpc\request\deploy_grpc_requst.h" />
     <ClInclude Include="src\grpc\request\login_grpc_request.h" />
     <ClInclude Include="src\handler\service\client_message_processor.h" />
     <ClInclude Include="src\handler\service\gate_service_handler.h" />
