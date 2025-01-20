@@ -102,7 +102,7 @@ void AsyncCompleteGrpcAccountDBServiceSave2Redis()
     }
 }
 
-void InitCompletedQueue() {
+void InitAccountDBServiceCompletedQueue() {
 	tls.grpc_node_registry.emplace<AccountDBServiceLoad2RedisCompleteQueue>(GlobalGrpcNodeEntity());
 	tls.grpc_node_registry.emplace<AccountDBServiceSave2RedisCompleteQueue>(GlobalGrpcNodeEntity());
 }

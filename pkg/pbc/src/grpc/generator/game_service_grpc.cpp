@@ -525,7 +525,7 @@ void AsyncCompleteGrpcGameServiceCreateScene()
     }
 }
 
-void InitCompletedQueue() {
+void InitGameServiceCompletedQueue() {
 	tls.grpc_node_registry.emplace<GameServicePlayerEnterGameNodeCompleteQueue>(GlobalGrpcNodeEntity());
 	tls.grpc_node_registry.emplace<GameServiceSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity());
 	tls.grpc_node_registry.emplace<GameServiceClientSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity());

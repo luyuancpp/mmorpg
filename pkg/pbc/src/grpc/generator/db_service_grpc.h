@@ -31,4 +31,4 @@ public:
 class SaveAccountRequest;
 void AccountDBServiceSave2Redis(const SaveAccountRequest& request);
 
-static void HandleAccountDBServiceCompletedQueueMessage(); 
+void HandleAccountDBServiceCompletedQueueMessage(); 

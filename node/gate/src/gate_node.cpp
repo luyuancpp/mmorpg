@@ -52,6 +52,13 @@ void GateNode::Init()
     InitNodeConfig();
     muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
         ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
+
+    void InitDeployServiceCompletedQueue();
+    InitDeployServiceCompletedQueue();
+
+    void InitGrpcDeploySercieResponseHandler();
+    InitGrpcDeploySercieResponseHandler();
+
     InitNodeByReqInfo();
 
     InitGameConfig();
@@ -60,8 +67,7 @@ void GateNode::Init()
 
     InitMessageInfo();
 
-    void InitGrpcDeploySercieResponseHandler();
-    InitGrpcDeploySercieResponseHandler();
+
     
     void InitRepliedHandler();
     InitRepliedHandler();

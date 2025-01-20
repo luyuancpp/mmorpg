@@ -619,7 +619,7 @@ void AsyncCompleteGrpcCentreServiceUnRegisterGameNode()
     }
 }
 
-void InitCompletedQueue() {
+void InitCentreServiceCompletedQueue() {
 	tls.grpc_node_registry.emplace<CentreServiceRegisterGameNodeCompleteQueue>(GlobalGrpcNodeEntity());
 	tls.grpc_node_registry.emplace<CentreServiceRegisterGateNodeCompleteQueue>(GlobalGrpcNodeEntity());
 	tls.grpc_node_registry.emplace<CentreServiceGatePlayerServiceCompleteQueue>(GlobalGrpcNodeEntity());

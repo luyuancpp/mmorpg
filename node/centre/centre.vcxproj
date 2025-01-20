@@ -216,7 +216,6 @@
     <ClInclude Include="src\handler\event\player_event_handler.h" />
     <ClInclude Include="src\handler\event\scene_event_handler.h" />
     <ClInclude Include="src\handler\event\server_event_handler.h" />
-    <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h" />
     <ClInclude Include="src\handler\event\skill_event_handler.h" />
     <ClInclude Include="src\handler\service\centre_scene_handler.h" />
     <ClInclude Include="src\handler\service\player\centre_player_handler.h" />

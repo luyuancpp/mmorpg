@@ -32,7 +32,6 @@ using namespace net;
 CentreNode* gCentreNode = nullptr;
 
 void InitRepliedHandler();
-void AsyncCompleteGrpcDeployService();
 
 void AsyncOutput(const char* msg, int len)
 {
@@ -87,6 +86,9 @@ void CentreNode::Init()
 	InitRepliedHandler();
 	InitMessageInfo();
 	InitSystemBeforeConnect();
+
+    void InitDeployServiceCompletedQueue();
+    InitDeployServiceCompletedQueue();
 
 	void InitGrpcDeploySercieResponseHandler();
 	InitGrpcDeploySercieResponseHandler();

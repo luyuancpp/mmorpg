@@ -26,7 +26,7 @@ void {{.ServiceName}}{{.Method}}(const {{.Request}}& request);
 
 {{- end }}
 
-static void Handle{{.ServiceName}}CompletedQueueMessage(); 
+void Handle{{.ServiceName}}CompletedQueueMessage(); 
 `
 
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
@@ -92,7 +92,7 @@ void AsyncCompleteGrpc{{.ServiceName}}{{.Method}}()
 }
 {{- end }}
 
-void InitCompletedQueue() {
+void Init{{.ServiceName}}CompletedQueue() {
 {{- range .GrpcServices }}
 	tls.grpc_node_registry.emplace<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity());
 {{- end }}
