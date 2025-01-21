@@ -346,12 +346,12 @@ class EnterGameNodeSuccessRequest final : public ::google::protobuf::Message
 
   public:
   // uint32 game_node_id = 2;
-  void clear_game_node_id() ;
-  ::uint32_t game_node_id() const;
+  void clear_scene_node_id() ;
+  ::uint32_t scene_node_id() const;
   void set_game_node_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_game_node_id() const;
+  ::uint32_t _internal_scene_node_id() const;
   void _internal_set_game_node_id(::uint32_t value);
 
   public:
@@ -1044,19 +1044,19 @@ inline void EnterGameNodeSuccessRequest::_internal_set_player_id(::uint64_t valu
 }
 
 // uint32 game_node_id = 2;
-inline void EnterGameNodeSuccessRequest::clear_game_node_id() {
+inline void EnterGameNodeSuccessRequest::clear_scene_node_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.game_node_id_ = 0u;
 }
-inline ::uint32_t EnterGameNodeSuccessRequest::game_node_id() const {
+inline ::uint32_t EnterGameNodeSuccessRequest::scene_node_id() const {
   // @@protoc_insertion_point(field_get:EnterGameNodeSuccessRequest.game_node_id)
-  return _internal_game_node_id();
+  return _internal_scene_node_id();
 }
 inline void EnterGameNodeSuccessRequest::set_game_node_id(::uint32_t value) {
   _internal_set_game_node_id(value);
   // @@protoc_insertion_point(field_set:EnterGameNodeSuccessRequest.game_node_id)
 }
-inline ::uint32_t EnterGameNodeSuccessRequest::_internal_game_node_id() const {
+inline ::uint32_t EnterGameNodeSuccessRequest::_internal_scene_node_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.game_node_id_;
 }

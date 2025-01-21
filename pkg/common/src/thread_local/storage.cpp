@@ -6,7 +6,7 @@ void ThreadLocalStorage::ClearForTest()
 {
 	registry.clear();
 	sceneRegistry.clear();
-    gameNodeRegistry.clear();
+    sceneNodeRegistry.clear();
     gateNodeRegistry.clear();
     centreNodeRegistry.clear();
     itemRegistry.clear();

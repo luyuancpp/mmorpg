@@ -101,6 +101,9 @@ void CentreNode::StartRpcServer(const ::nodes_info_data& info)
 	{
 		rpcServer->registerService(value.get());
 	}
+
+    Node::StartRpcServer(info);
+
 	rpcServer->start();
 	deployRpcTimer.Cancel();
 	InitSystemAfterConnect();
@@ -116,7 +119,7 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::enti
 		LOG_ERROR << "gate not found ";
 		return;
 	}
-	auto gameNodeServiceAddr = tls.gameNodeRegistry.try_get<InetAddress>(gameNodeId);
+	auto gameNodeServiceAddr = tls.sceneNodeRegistry.try_get<InetAddress>(gameNodeId);
 	if (nullptr == gameNodeServiceAddr)
 	{
 		LOG_ERROR << "game not found ";
@@ -125,7 +128,7 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::enti
 	RegisterGameNodeRequest request;
 	request.mutable_rpc_server()->set_ip(gameNodeServiceAddr->toIp());
 	request.mutable_rpc_server()->set_port(gameNodeServiceAddr->port());
-	request.set_game_node_id(entt::to_integral(gameNodeId));
+	request.set_scene_node_id(entt::to_integral(gameNodeId));
 	(*gateNode)->SendRequest(GateServiceRegisterGameMessageId, request);
 }
 
@@ -139,12 +142,12 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 	else
 	{
 		auto& currentAddr = conn->peerAddress();
-		for (const auto& [e, gameNode] : tls.gameNodeRegistry.view<RpcSessionPtr>().each())
+		for (const auto& [e, gameNode] : tls.sceneNodeRegistry.view<RpcSessionPtr>().each())
 		{
 			// 如果是游戏逻辑服则删除
 			if (gameNode->connection->peerAddress().toIpPort() == currentAddr.toIpPort())
 			{
-				Destroy(tls.gameNodeRegistry, e);
+				Destroy(tls.sceneNodeRegistry, e);
 				break;
 			}
 		}

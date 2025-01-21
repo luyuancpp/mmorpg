@@ -160,7 +160,7 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
         }
 
         //todo 断线重连
-        for (auto&& [e, game_node] : tls.gameNodeRegistry.view<RpcClientPtr>().each())
+        for (auto&& [e, game_node] : tls.sceneNodeRegistry.view<RpcClientPtr>().each())
         {
             if (!IsSameAddress(game_node->peer_addr(), conn->peerAddress()))
             {
@@ -181,13 +181,13 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es) const
     }
     else
     {
-        for (const auto& [e, game_node] : tls.gameNodeRegistry.view<RpcClientPtr>().each())
+        for (const auto& [e, game_node] : tls.sceneNodeRegistry.view<RpcClientPtr>().each())
         {
             if (!IsSameAddress(game_node->peer_addr(), conn->peerAddress()))
             {
                 continue;
             }
-            Destroy(tls.gameNodeRegistry, e);
+            Destroy(tls.sceneNodeRegistry, e);
         }
     }
 }

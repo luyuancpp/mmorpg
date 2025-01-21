@@ -383,12 +383,12 @@ class PlayerNodeInfoPBComponent final : public ::google::protobuf::Message
 
   public:
   // uint32 game_node_id = 3;
-  void clear_game_node_id() ;
-  ::uint32_t game_node_id() const;
+  void clear_scene_node_id() ;
+  ::uint32_t scene_node_id() const;
   void set_game_node_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_game_node_id() const;
+  ::uint32_t _internal_scene_node_id() const;
   void _internal_set_game_node_id(::uint32_t value);
 
   public:
@@ -484,19 +484,19 @@ inline void PlayerNodeInfoPBComponent::_internal_set_centre_node_id(::uint32_t v
 }
 
 // uint32 game_node_id = 3;
-inline void PlayerNodeInfoPBComponent::clear_game_node_id() {
+inline void PlayerNodeInfoPBComponent::clear_scene_node_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.game_node_id_ = 0u;
 }
-inline ::uint32_t PlayerNodeInfoPBComponent::game_node_id() const {
+inline ::uint32_t PlayerNodeInfoPBComponent::scene_node_id() const {
   // @@protoc_insertion_point(field_get:PlayerNodeInfoPBComponent.game_node_id)
-  return _internal_game_node_id();
+  return _internal_scene_node_id();
 }
 inline void PlayerNodeInfoPBComponent::set_game_node_id(::uint32_t value) {
   _internal_set_game_node_id(value);
   // @@protoc_insertion_point(field_set:PlayerNodeInfoPBComponent.game_node_id)
 }
-inline ::uint32_t PlayerNodeInfoPBComponent::_internal_game_node_id() const {
+inline ::uint32_t PlayerNodeInfoPBComponent::_internal_scene_node_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.game_node_id_;
 }

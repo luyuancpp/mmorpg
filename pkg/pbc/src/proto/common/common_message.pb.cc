@@ -287,8 +287,9 @@ inline constexpr RegisterGameNodeRequest::Impl_::Impl_(
       : _cached_size_{0},
         rpc_client_{nullptr},
         rpc_server_{nullptr},
-        game_node_id_{0u},
-        server_type_{0u} {}
+        scene_node_id_{0u},
+        server_type_{0u},
+        scene_node_type_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR RegisterGameNodeRequest::RegisterGameNodeRequest(::_pbi::ConstantInitialized)
@@ -800,10 +801,12 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::RegisterGameNodeRequest, _impl_.rpc_client_),
         PROTOBUF_FIELD_OFFSET(::RegisterGameNodeRequest, _impl_.rpc_server_),
-        PROTOBUF_FIELD_OFFSET(::RegisterGameNodeRequest, _impl_.game_node_id_),
+        PROTOBUF_FIELD_OFFSET(::RegisterGameNodeRequest, _impl_.scene_node_id_),
         PROTOBUF_FIELD_OFFSET(::RegisterGameNodeRequest, _impl_.server_type_),
+        PROTOBUF_FIELD_OFFSET(::RegisterGameNodeRequest, _impl_.scene_node_type_),
         0,
         1,
+        ~0u,
         ~0u,
         ~0u,
         PROTOBUF_FIELD_OFFSET(::RegisterGateNodeRequest, _impl_._has_bits_),
@@ -897,13 +900,13 @@ static const ::_pbi::MigrationSchema
         {182, -1, -1, sizeof(::RouteMessageResponse)},
         {195, 206, -1, sizeof(::RoutePlayerMessageRequest)},
         {209, 220, -1, sizeof(::RoutePlayerMessageResponse)},
-        {223, 235, -1, sizeof(::RegisterGameNodeRequest)},
-        {239, 249, -1, sizeof(::RegisterGateNodeRequest)},
-        {251, -1, -1, sizeof(::UnregisterGameNodeRequest)},
-        {260, -1, -1, sizeof(::ProtoFieldCheckerTestSubPB)},
-        {269, 278, -1, sizeof(::ProtoFieldCheckerTestPB)},
-        {279, 292, -1, sizeof(::MyProtoMessage)},
-        {297, -1, -1, sizeof(::MyNestedMessage)},
+        {223, 236, -1, sizeof(::RegisterGameNodeRequest)},
+        {241, 251, -1, sizeof(::RegisterGateNodeRequest)},
+        {253, -1, -1, sizeof(::UnregisterGameNodeRequest)},
+        {262, -1, -1, sizeof(::ProtoFieldCheckerTestSubPB)},
+        {271, 280, -1, sizeof(::ProtoFieldCheckerTestPB)},
+        {281, 294, -1, sizeof(::MyProtoMessage)},
+        {299, -1, -1, sizeof(::MyNestedMessage)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
@@ -981,24 +984,24 @@ const char descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto[]
     "layerInfoExternal\"r\n\032RoutePlayerMessageR"
     "esponse\022\014\n\004body\030\001 \001(\014\022\034\n\tnode_list\030\002 \003(\013"
     "2\t.NodeInfo\022(\n\013player_info\030\003 \001(\0132\023.Playe"
-    "rInfoExternal\"\216\001\n\027RegisterGameNodeReques"
+    "rInfoExternal\"\250\001\n\027RegisterGameNodeReques"
     "t\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022#"
-    "\n\nrpc_server\030\002 \001(\0132\017.NetworkAddress\022\024\n\014g"
-    "ame_node_id\030\003 \001(\r\022\023\n\013server_type\030\004 \001(\r\"T"
-    "\n\027RegisterGateNodeRequest\022#\n\nrpc_client\030"
-    "\001 \001(\0132\017.NetworkAddress\022\024\n\014gate_node_id\030\002"
-    " \001(\r\"1\n\031UnregisterGameNodeRequest\022\024\n\014gam"
-    "e_node_id\030\001 \001(\r\"+\n\032ProtoFieldCheckerTest"
-    "SubPB\022\r\n\005items\030\001 \003(\t\"K\n\027ProtoFieldChecke"
-    "rTestPB\0220\n\013sub_message\030\001 \001(\0132\033.ProtoFiel"
-    "dCheckerTestSubPB\"\256\001\n\016MyProtoMessage\022\032\n\022"
-    "single_int32_field\030\001 \001(\005\022\032\n\022single_int64"
-    "_field\030\002 \001(\003\022\034\n\024repeated_int32_field\030\003 \003"
-    "(\005\022\034\n\024repeated_int64_field\030\004 \003(\003\022(\n\016nest"
-    "ed_message\030\005 \001(\0132\020.MyNestedMessage\"I\n\017My"
-    "NestedMessage\022\032\n\022nested_int32_field\030\001 \001("
-    "\005\022\032\n\022nested_int64_field\030\002 \001(\003B\tZ\007pb/game"
-    "b\006proto3"
+    "\n\nrpc_server\030\002 \001(\0132\017.NetworkAddress\022\025\n\rs"
+    "cene_node_id\030\003 \001(\r\022\023\n\013server_type\030\004 \001(\r\022"
+    "\027\n\017scene_node_type\030\005 \001(\r\"T\n\027RegisterGate"
+    "NodeRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Networ"
+    "kAddress\022\024\n\014gate_node_id\030\002 \001(\r\"1\n\031Unregi"
+    "sterGameNodeRequest\022\024\n\014game_node_id\030\001 \001("
+    "\r\"+\n\032ProtoFieldCheckerTestSubPB\022\r\n\005items"
+    "\030\001 \003(\t\"K\n\027ProtoFieldCheckerTestPB\0220\n\013sub"
+    "_message\030\001 \001(\0132\033.ProtoFieldCheckerTestSu"
+    "bPB\"\256\001\n\016MyProtoMessage\022\032\n\022single_int32_f"
+    "ield\030\001 \001(\005\022\032\n\022single_int64_field\030\002 \001(\003\022\034"
+    "\n\024repeated_int32_field\030\003 \003(\005\022\034\n\024repeated"
+    "_int64_field\030\004 \003(\003\022(\n\016nested_message\030\005 \001"
+    "(\0132\020.MyNestedMessage\"I\n\017MyNestedMessage\022"
+    "\032\n\022nested_int32_field\030\001 \001(\005\022\032\n\022nested_in"
+    "t64_field\030\002 \001(\003B\tZ\007pb/gameb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_deps[3] =
     {
@@ -1010,7 +1013,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fcommon_5fmessage_2epr
 const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto = {
     false,
     false,
-    2528,
+    2554,
     descriptor_table_protodef_proto_2fcommon_2fcommon_5fmessage_2eproto,
     "proto/common/common_message.proto",
     &descriptor_table_proto_2fcommon_2fcommon_5fmessage_2eproto_once,
@@ -3433,10 +3436,10 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterGameNodeSessionRequest::_table
   }
 
   // uint32 game_node_id = 2;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        2, this->_internal_game_node_id(), target);
+        2, this->_internal_scene_node_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -3464,9 +3467,9 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterGameNodeSessionRequest::_table
   }
 
   // uint32 game_node_id = 2;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_game_node_id());
+        this->_internal_scene_node_id());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -3492,7 +3495,7 @@ void RegisterGameNodeSessionRequest::MergeImpl(::google::protobuf::MessageLite& 
       _this->_impl_.session_info_->MergeFrom(*from._impl_.session_info_);
     }
   }
-  if (from._internal_game_node_id() != 0) {
+  if (from._internal_scene_node_id() != 0) {
     _this->_impl_.game_node_id_ = from._impl_.game_node_id_;
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -5875,12 +5878,12 @@ RegisterGameNodeRequest::RegisterGameNodeRequest(
                               arena, *from._impl_.rpc_server_)
                         : nullptr;
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, game_node_id_),
+               offsetof(Impl_, scene_node_id_),
            reinterpret_cast<const char *>(&from._impl_) +
-               offsetof(Impl_, game_node_id_),
-           offsetof(Impl_, server_type_) -
-               offsetof(Impl_, game_node_id_) +
-               sizeof(Impl_::server_type_));
+               offsetof(Impl_, scene_node_id_),
+           offsetof(Impl_, scene_node_type_) -
+               offsetof(Impl_, scene_node_id_) +
+               sizeof(Impl_::scene_node_type_));
 
   // @@protoc_insertion_point(copy_constructor:RegisterGameNodeRequest)
 }
@@ -5894,9 +5897,9 @@ inline void RegisterGameNodeRequest::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, rpc_client_),
            0,
-           offsetof(Impl_, server_type_) -
+           offsetof(Impl_, scene_node_type_) -
                offsetof(Impl_, rpc_client_) +
-               sizeof(Impl_::server_type_));
+               sizeof(Impl_::scene_node_type_));
 }
 RegisterGameNodeRequest::~RegisterGameNodeRequest() {
   // @@protoc_insertion_point(destructor:RegisterGameNodeRequest)
@@ -5942,9 +5945,9 @@ PROTOBUF_NOINLINE void RegisterGameNodeRequest::Clear() {
       _impl_.rpc_server_->Clear();
     }
   }
-  ::memset(&_impl_.game_node_id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.server_type_) -
-      reinterpret_cast<char*>(&_impl_.game_node_id_)) + sizeof(_impl_.server_type_));
+  ::memset(&_impl_.scene_node_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.scene_node_type_) -
+      reinterpret_cast<char*>(&_impl_.scene_node_id_)) + sizeof(_impl_.scene_node_type_));
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -5957,15 +5960,15 @@ const char* RegisterGameNodeRequest::_InternalParse(
 
 
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 2, 0, 2> RegisterGameNodeRequest::_table_ = {
+const ::_pbi::TcParseTable<3, 5, 2, 0, 2> RegisterGameNodeRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    5,  // num_field_entries
     2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_RegisterGameNodeRequest_default_instance_._instance,
@@ -5974,18 +5977,24 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> RegisterGameNodeRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::RegisterGameNodeRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint32 server_type = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RegisterGameNodeRequest, _impl_.server_type_), 63>(),
-     {32, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.server_type_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // .NetworkAddress rpc_client = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.rpc_client_)}},
     // .NetworkAddress rpc_server = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 1, 1, PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.rpc_server_)}},
-    // uint32 game_node_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RegisterGameNodeRequest, _impl_.game_node_id_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.game_node_id_)}},
+    // uint32 scene_node_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RegisterGameNodeRequest, _impl_.scene_node_id_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.scene_node_id_)}},
+    // uint32 server_type = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RegisterGameNodeRequest, _impl_.server_type_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.server_type_)}},
+    // uint32 scene_node_type = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RegisterGameNodeRequest, _impl_.scene_node_type_), 63>(),
+     {40, 63, 0, PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.scene_node_type_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -5995,11 +6004,14 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> RegisterGameNodeRequest::_table_ = {
     // .NetworkAddress rpc_server = 2;
     {PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.rpc_server_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // uint32 game_node_id = 3;
-    {PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.game_node_id_), -1, 0,
+    // uint32 scene_node_id = 3;
+    {PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.scene_node_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
     // uint32 server_type = 4;
     {PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.server_type_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint32 scene_node_type = 5;
+    {PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.scene_node_type_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }}, {{
     {::_pbi::TcParser::GetTable<::NetworkAddress>()},
@@ -6028,11 +6040,11 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> RegisterGameNodeRequest::_table_ = {
         2, *_impl_.rpc_server_, _impl_.rpc_server_->GetCachedSize(), target, stream);
   }
 
-  // uint32 game_node_id = 3;
-  if (this->_internal_game_node_id() != 0) {
+  // uint32 scene_node_id = 3;
+  if (this->_internal_scene_node_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        3, this->_internal_game_node_id(), target);
+        3, this->_internal_scene_node_id(), target);
   }
 
   // uint32 server_type = 4;
@@ -6040,6 +6052,13 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> RegisterGameNodeRequest::_table_ = {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
         4, this->_internal_server_type(), target);
+  }
+
+  // uint32 scene_node_type = 5;
+  if (this->_internal_scene_node_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+        5, this->_internal_scene_node_type(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -6074,16 +6093,22 @@ const ::_pbi::TcParseTable<2, 4, 2, 0, 2> RegisterGameNodeRequest::_table_ = {
     }
 
   }
-  // uint32 game_node_id = 3;
-  if (this->_internal_game_node_id() != 0) {
+  // uint32 scene_node_id = 3;
+  if (this->_internal_scene_node_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_game_node_id());
+        this->_internal_scene_node_id());
   }
 
   // uint32 server_type = 4;
   if (this->_internal_server_type() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
         this->_internal_server_type());
+  }
+
+  // uint32 scene_node_type = 5;
+  if (this->_internal_scene_node_type() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+        this->_internal_scene_node_type());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -6120,11 +6145,14 @@ void RegisterGameNodeRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
   }
-  if (from._internal_game_node_id() != 0) {
-    _this->_impl_.game_node_id_ = from._impl_.game_node_id_;
+  if (from._internal_scene_node_id() != 0) {
+    _this->_impl_.scene_node_id_ = from._impl_.scene_node_id_;
   }
   if (from._internal_server_type() != 0) {
     _this->_impl_.server_type_ = from._impl_.server_type_;
+  }
+  if (from._internal_scene_node_type() != 0) {
+    _this->_impl_.scene_node_type_ = from._impl_.scene_node_type_;
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -6146,8 +6174,8 @@ void RegisterGameNodeRequest::InternalSwap(RegisterGameNodeRequest* PROTOBUF_RES
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.server_type_)
-      + sizeof(RegisterGameNodeRequest::_impl_.server_type_)
+      PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.scene_node_type_)
+      + sizeof(RegisterGameNodeRequest::_impl_.scene_node_type_)
       - PROTOBUF_FIELD_OFFSET(RegisterGameNodeRequest, _impl_.rpc_client_)>(
           reinterpret_cast<char*>(&_impl_.rpc_client_),
           reinterpret_cast<char*>(&other->_impl_.rpc_client_));
@@ -6519,10 +6547,10 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> UnregisterGameNodeRequest::_table_ = {
   (void)cached_has_bits;
 
   // uint32 game_node_id = 1;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        1, this->_internal_game_node_id(), target);
+        1, this->_internal_scene_node_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -6543,9 +6571,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> UnregisterGameNodeRequest::_table_ = {
   (void) cached_has_bits;
 
   // uint32 game_node_id = 1;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_game_node_id());
+        this->_internal_scene_node_id());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -6560,7 +6588,7 @@ void UnregisterGameNodeRequest::MergeImpl(::google::protobuf::MessageLite& to_ms
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_game_node_id() != 0) {
+  if (from._internal_scene_node_id() != 0) {
     _this->_impl_.game_node_id_ = from._impl_.game_node_id_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);

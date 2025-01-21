@@ -117,9 +117,9 @@ void PlayerSceneSystem::SendToGameNodeEnterScene(entt::entity playerEntity)
     Centre2GsEnterSceneRequest request;
     request.set_scene_id(sceneInfo->guid());
     request.set_player_id(playerId);
-    CallGameNodeMethod(GameServiceEnterSceneMessageId, request, playerNodeInfo->game_node_id());
+    CallGameNodeMethod(GameServiceEnterSceneMessageId, request, playerNodeInfo->scene_node_id());
 
-    LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->game_node_id();
+    LOG_DEBUG << "Player entered scene: " << playerId << ", Scene ID: " << sceneInfo->guid() << ", Game Node ID: " << playerNodeInfo->scene_node_id();
 }
 
 void PlayerSceneSystem::ProcessPlayerEnterGameServer(entt::entity playerEntity, NodeId nodeId)
@@ -206,7 +206,7 @@ void PlayerSceneSystem::AttemptEnterNextScene(entt::entity playerEntity)
 
 	const auto fromSceneGameNode = SceneUtil::get_game_node_eid(fromSceneInfo->guid());
 	const auto toSceneGameNode = SceneUtil::get_game_node_eid(toSceneGuid);
-	if (!tls.gameNodeRegistry.valid(fromSceneGameNode) || !tls.gameNodeRegistry.valid(toSceneGameNode))
+	if (!tls.sceneNodeRegistry.valid(fromSceneGameNode) || !tls.sceneNodeRegistry.valid(toSceneGameNode))
 	{
 		LOG_ERROR << "Game nodes not valid for scene change, from: " << fromSceneInfo->guid() << ", to: " << toSceneGuid;
 		PlayerChangeSceneUtil::PopFrontChangeSceneQueue(playerEntity);

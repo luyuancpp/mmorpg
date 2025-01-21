@@ -81,12 +81,12 @@ void CentreServiceHandler::RegisterGameNode(::google::protobuf::RpcController* c
 	// Parse client and server addresses
 	const InetAddress clientAddr(request->rpc_client().ip(), request->rpc_client().port());
 	const InetAddress serverAddr(request->rpc_server().ip(), request->rpc_server().port());
-	const entt::entity gameNodeId{ request->game_node_id() };
+	const entt::entity gameNodeId{ request->scene_node_id() };
 
 	// Log client and server addresses along with game node ID
 	LOG_INFO << "Client address: " << clientAddr.toIpPort();
 	LOG_INFO << "Server address: " << serverAddr.toIpPort();
-	LOG_INFO << "Game node ID: " << request->game_node_id();
+	LOG_INFO << "Game node ID: " << request->scene_node_id();
 
 	// Search for a matching client connection and register the game node
 	bool clientFound = false;
@@ -97,19 +97,19 @@ void CentreServiceHandler::RegisterGameNode(::google::protobuf::RpcController* c
 			LOG_INFO << "Found matching client connection for registration.";
 			clientFound = true;
 
-			const auto newGameNode = tls.gameNodeRegistry.create(gameNodeId);
+			const auto newGameNode = tls.sceneNodeRegistry.create(gameNodeId);
 			if (newGameNode == entt::null)
 			{
-				LOG_ERROR << "Failed to create game node " << request->game_node_id();
+				LOG_ERROR << "Failed to create game node " << request->scene_node_id();
 				return;
 			}
 
 			// Create game node pointer and add components
 			auto gameNodePtr = std::make_shared<RpcSessionPtr::element_type>(session.connection);
-			AddMainSceneNodeComponent(tls.gameNodeRegistry, newGameNode);
-			tls.gameNodeRegistry.emplace<RpcSessionPtr>(newGameNode, gameNodePtr);
-			tls.gameNodeRegistry.emplace<InetAddress>(newGameNode, serverAddr);
-			LOG_INFO << "Game node " << request->game_node_id() << " created and registered.";
+			AddMainSceneNodeComponent(tls.sceneNodeRegistry, newGameNode);
+			tls.sceneNodeRegistry.emplace<RpcSessionPtr>(newGameNode, gameNodePtr);
+			tls.sceneNodeRegistry.emplace<InetAddress>(newGameNode, serverAddr);
+			LOG_INFO << "Game node " << request->scene_node_id() << " created and registered.";
 			break;
 		}
 	}
@@ -124,30 +124,30 @@ void CentreServiceHandler::RegisterGameNode(::google::protobuf::RpcController* c
 	LOG_INFO << "Game registered: " << MessageToJsonString(request);
 
 	// Update game node type based on server type
-	if (request->server_type() == eGameNodeType::kMainSceneCrossNode)
+	if (request->scene_node_type() == eGameNodeType::kMainSceneCrossNode)
 	{
-		tls.gameNodeRegistry.remove<MainSceneNode>(gameNodeId);
-		tls.gameNodeRegistry.emplace<CrossMainSceneNode>(gameNodeId);
-		LOG_INFO << "Game node " << request->game_node_id() << " updated to CrossMainSceneNode.";
+		tls.sceneNodeRegistry.remove<MainSceneNode>(gameNodeId);
+		tls.sceneNodeRegistry.emplace<CrossMainSceneNode>(gameNodeId);
+		LOG_INFO << "Game node " << request->scene_node_id() << " updated to CrossMainSceneNode.";
 	}
-	else if (request->server_type() == eGameNodeType::kRoomNode)
+	else if (request->scene_node_type() == eGameNodeType::kRoomNode)
 	{
-		tls.gameNodeRegistry.remove<MainSceneNode>(gameNodeId);
-		tls.gameNodeRegistry.emplace<RoomSceneNode>(gameNodeId);
-		LOG_INFO << "Game node " << request->game_node_id() << " updated to RoomSceneNode.";
+		tls.sceneNodeRegistry.remove<MainSceneNode>(gameNodeId);
+		tls.sceneNodeRegistry.emplace<RoomSceneNode>(gameNodeId);
+		LOG_INFO << "Game node " << request->scene_node_id() << " updated to RoomSceneNode.";
 	}
-	else if (request->server_type() == eGameNodeType::kRoomSceneCrossNode)
+	else if (request->scene_node_type() == eGameNodeType::kRoomSceneCrossNode)
 	{
-		tls.gameNodeRegistry.remove<MainSceneNode>(gameNodeId);
-		tls.gameNodeRegistry.emplace<CrossRoomSceneNode>(gameNodeId);
-		LOG_INFO << "Game node " << request->game_node_id() << " updated to CrossRoomSceneNode.";
+		tls.sceneNodeRegistry.remove<MainSceneNode>(gameNodeId);
+		tls.sceneNodeRegistry.emplace<CrossRoomSceneNode>(gameNodeId);
+		LOG_INFO << "Game node " << request->scene_node_id() << " updated to CrossRoomSceneNode.";
 	}
 
 	// Broadcast game registration to all gates
 	for (auto gate : tls.gateNodeRegistry.view<RpcSessionPtr>())
 	{
 		gCentreNode->BroadCastRegisterGameToGate(gameNodeId, gate);
-		LOG_INFO << "Broadcasted game registration for node " << request->game_node_id() << " to gate.";
+		LOG_INFO << "Broadcasted game registration for node " << request->scene_node_id() << " to gate.";
 	}
 	///<<< END WRITING YOUR CODE
 }
@@ -191,7 +191,7 @@ void CentreServiceHandler::RegisterGateNode(::google::protobuf::RpcController* c
 	}
 
 	// Broadcast registration to all game nodes
-	for (const auto& entity : tls.gameNodeRegistry.view<RpcSessionPtr>())
+	for (const auto& entity : tls.sceneNodeRegistry.view<RpcSessionPtr>())
 	{
 		gCentreNode->BroadCastRegisterGameToGate(entity, gateId);
 		LOG_DEBUG << "Broadcasted gate registration to game node: " << entt::to_integral(entity) << ", gate ID: " << request->gate_node_id();
@@ -255,17 +255,17 @@ void CentreServiceHandler::GateSessionDisconnect(::google::protobuf::RpcControll
 		return;
 	}
 
-	const entt::entity gameNodeId{ playerNodeInfo->game_node_id() };
-	if (!tls.gameNodeRegistry.valid(gameNodeId))
+	const entt::entity gameNodeId{ playerNodeInfo->scene_node_id() };
+	if (!tls.sceneNodeRegistry.valid(gameNodeId))
 	{
 		LOG_ERROR << "Invalid game node ID found for player: " << tls.registry.get<Guid>(playerEntity);
 		return;
 	}
 
-	const auto gameNode = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeId);
+	const auto gameNode = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(gameNodeId);
 	if (gameNode == nullptr)
 	{
-		LOG_ERROR << "RpcSessionPtr not found for game node ID: " << playerNodeInfo->game_node_id();
+		LOG_ERROR << "RpcSessionPtr not found for game node ID: " << playerNodeInfo->scene_node_id();
 		return;
 	}
 
@@ -538,14 +538,14 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		return;
 	}
 
-	playerNodeInfo->set_game_node_id(request->game_node_id());
+	playerNodeInfo->set_game_node_id(request->scene_node_id());
 
 	PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 
 	PlayerChangeSceneUtil::SetChangeGsStatus(player, ChangeSceneInfoPBComponent::eEnterGsSceneSucceed);
 	PlayerChangeSceneUtil::ProcessChangeSceneQueue(player);
 
-	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->game_node_id();
+	LOG_INFO << "Player " << playerId << " successfully entered game node " << request->scene_node_id();
 
 ///<<< END WRITING YOUR CODE
 }
@@ -669,12 +669,12 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 	case kSceneNode:
 	{
 		entt::entity game_node_id{ tlsCommonLogic.GetNextRouteNodeId() };
-		if (!tls.gameNodeRegistry.valid(game_node_id))
+		if (!tls.sceneNodeRegistry.valid(game_node_id))
 		{
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
 			return;
 		}
-		const auto game_node = tls.gameNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
+		const auto game_node = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(game_node_id);
 		if (!game_node)
 		{
 			LOG_ERROR << "Game node not found: " << tlsCommonLogic.GetNextRouteNodeId() << ", " << request->DebugString();
@@ -708,7 +708,7 @@ void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController*
     for (const auto& [e, gate_node]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
     {
 		UnregisterGameNodeRequest message;
-		message.set_game_node_id(request->game_node_id());
+		message.set_game_node_id(request->scene_node_id());
         gate_node->SendRequest(GateServiceRegisterGameMessageId, message);
     }
 ///<<< END WRITING YOUR CODE

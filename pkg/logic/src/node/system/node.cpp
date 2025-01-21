@@ -7,6 +7,7 @@
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "logic/constants/node.pb.h"
+#include "logic/event/server_event.pb.h"
 #include "muduo/base/TimeZone.h"
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
@@ -34,7 +35,13 @@ void Node::Init() {
 
     void InitGrpcDeploySercieResponseHandler();
     InitGrpcDeploySercieResponseHandler();
+}
 
+void Node::StartRpcServer(const nodes_info_data& data)
+{
+    deployRpcTimer.Cancel();
+
+    tls.dispatcher.trigger<OnServerStart>();
 }
 
 void Node::ShutdownNode() {
@@ -60,9 +67,7 @@ void Node::InitializeGameConfig() {
     LoadAllConfigAsyncWhenServerLaunch();
 }
 
-void Node::OnConfigLoadSuccessful()
-{
-
+void Node::OnConfigLoadSuccessful(){
 }
 
 void Node::InitTimeZone() {

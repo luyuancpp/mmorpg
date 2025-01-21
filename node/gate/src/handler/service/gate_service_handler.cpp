@@ -22,14 +22,14 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 {
 	///<<< BEGIN WRITING YOUR CODE
 	// Centre server notification
-	entt::entity requestGameNodeId{ request->game_node_id() };
-	if (tls.gameNodeRegistry.valid(requestGameNodeId))
+	entt::entity requestGameNodeId{ request->scene_node_id() };
+	if (tls.sceneNodeRegistry.valid(requestGameNodeId))
 	{
 		LOG_ERROR << "Game node reconnect";
 		return;
 	}
-	Destroy(tls.gameNodeRegistry, requestGameNodeId);
-	auto gameNodeId = tls.gameNodeRegistry.create(requestGameNodeId);
+	Destroy(tls.sceneNodeRegistry, requestGameNodeId);
+	auto gameNodeId = tls.sceneNodeRegistry.create(requestGameNodeId);
 	if (gameNodeId != requestGameNodeId)
 	{
 		LOG_ERROR << "Create game node failed";
@@ -37,7 +37,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 	}
 
 	InetAddress gameServiceAddr(request->rpc_server().ip(), request->rpc_server().port());
-	auto& gameNode = tls.gameNodeRegistry.emplace<RpcClientPtr>(gameNodeId,
+	auto& gameNode = tls.sceneNodeRegistry.emplace<RpcClientPtr>(gameNodeId,
 		std::make_unique<RpcClientPtr::element_type>(
 			EventLoop::getEventLoopOfCurrentThread(),
 			gameServiceAddr));
@@ -53,8 +53,8 @@ void GateServiceHandler::UnRegisterGame(::google::protobuf::RpcController* contr
 	     ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	entt::entity requestGameNodeId{ request->game_node_id() };
-	Destroy(tls.gameNodeRegistry, requestGameNodeId);
+	entt::entity requestGameNodeId{ request->scene_node_id() };
+	Destroy(tls.sceneNodeRegistry, requestGameNodeId);
 	LOG_INFO << "On game unregister: " << MessageToJsonString(request);
 	///<<< END WRITING YOUR CODE
 }
@@ -71,10 +71,10 @@ void GateServiceHandler::PlayerEnterGameNode(::google::protobuf::RpcController* 
 		return;
 	}
 	// Handle potential asynchronous issue if the GS sends while Gate is updating GS
-	sessionIt->second.gameNodeId = request->game_node_id();
+	sessionIt->second.gameNodeId = request->scene_node_id();
 	response->mutable_session_info()->set_session_id(request->session_info().session_id());
 	LOG_INFO << "Player entered GS, session ID: " << request->session_info().session_id()
-		<< ", game node ID: " << request->game_node_id();
+		<< ", game node ID: " << request->scene_node_id();
 	///<<< END WRITING YOUR CODE
 }
 

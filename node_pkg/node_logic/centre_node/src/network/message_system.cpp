@@ -15,13 +15,13 @@
 void SendToGs(uint32_t messageId, const google::protobuf::Message& message, NodeId nodeId)
 {
 	entt::entity gameNodeId{ nodeId };
-	if (!tls.gameNodeRegistry.valid(gameNodeId))
+	if (!tls.sceneNodeRegistry.valid(gameNodeId))
 	{
 		LOG_ERROR << "Game node not found -> " << entt::to_integral(nodeId);
 		return;
 	}
 
-	const auto gameSessionPtr = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeId);
+	const auto gameSessionPtr = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(gameNodeId);
 	if (!gameSessionPtr)
 	{
 		LOG_ERROR << "RpcSession not found for game node -> " << entt::to_integral(nodeId);
@@ -49,20 +49,20 @@ void SendToGsPlayer(uint32_t messageId, const google::protobuf::Message& message
     }
 
     // 获取游戏节点实体
-    entt::entity gameNodeEntity{ playerNodeInfo->game_node_id() };
+    entt::entity gameNodeEntity{ playerNodeInfo->scene_node_id() };
 
     // 检查游戏节点是否有效
-    if (!tls.gameNodeRegistry.valid(gameNodeEntity))
+    if (!tls.sceneNodeRegistry.valid(gameNodeEntity))
     {
-        LOG_ERROR << "Game node not found for player -> " << playerNodeInfo->game_node_id();
+        LOG_ERROR << "Game node not found for player -> " << playerNodeInfo->scene_node_id();
         return;
     }
 
     // 获取游戏节点的 RPC 会话
-    auto gameSessionPtr = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeEntity);
+    auto gameSessionPtr = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(gameNodeEntity);
     if (!gameSessionPtr)
     {
-        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->game_node_id()
+        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id()
             << " with message ID -> " << messageId;
         return;
     }
@@ -108,20 +108,20 @@ void SendToPlayerViaGs(uint32_t messageId, const google::protobuf::Message& mess
     }
 
     // 获取游戏节点实体
-    entt::entity gameNodeEntity{ playerNodeInfo->game_node_id() };
+    entt::entity gameNodeEntity{ playerNodeInfo->scene_node_id() };
 
     // 检查游戏节点是否有效
-    if (!tls.gameNodeRegistry.valid(gameNodeEntity))
+    if (!tls.sceneNodeRegistry.valid(gameNodeEntity))
     {
-        LOG_ERROR << "Game node not found for player -> " << playerNodeInfo->game_node_id();
+        LOG_ERROR << "Game node not found for player -> " << playerNodeInfo->scene_node_id();
         return;
     }
 
     // 获取游戏节点的 RPC 会话
-    auto rpcSession = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeEntity);
+    auto rpcSession = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(gameNodeEntity);
     if (!rpcSession)
     {
-        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->game_node_id();
+        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id();
         return;
     }
 
@@ -233,20 +233,20 @@ void CallGamePlayerMethod(uint32_t messageId, const google::protobuf::Message& m
     }
 
     // 获取对应的游戏节点 ID
-    entt::entity gameNodeEntity{ playerNodeInfo->game_node_id() };
+    entt::entity gameNodeEntity{ playerNodeInfo->scene_node_id() };
 
     // 如果游戏节点无效，返回
-    if (!tls.gameNodeRegistry.valid(gameNodeEntity))
+    if (!tls.sceneNodeRegistry.valid(gameNodeEntity))
     {
-        LOG_ERROR << "Game node not valid for player -> " << entt::to_integral(player) << ", game_node_id: " << playerNodeInfo->game_node_id();
+        LOG_ERROR << "Game node not valid for player -> " << entt::to_integral(player) << ", game_node_id: " << playerNodeInfo->scene_node_id();
         return;
     }
 
     // 获取游戏节点的 RPC 会话
-    const auto gameSession = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeEntity);
+    const auto gameSession = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(gameNodeEntity);
     if (!gameSession)
     {
-        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->game_node_id();
+        LOG_ERROR << "RpcSession not found for game node -> " << playerNodeInfo->scene_node_id();
         return;
     }
 
@@ -275,14 +275,14 @@ void CallGameNodeMethod(uint32_t messageId, const google::protobuf::Message& mes
     entt::entity gameNodeEntity{ nodeId };
 
     // 如果游戏节点无效，直接返回
-    if (!tls.gameNodeRegistry.valid(gameNodeEntity))
+    if (!tls.sceneNodeRegistry.valid(gameNodeEntity))
     {
         LOG_ERROR << "Game node entity is not valid for nodeId -> " << nodeId;
         return;
     }
 
     // 获取游戏节点的 RPC 会话
-    const auto gameNodeSession = tls.gameNodeRegistry.try_get<RpcSessionPtr>(gameNodeEntity);
+    const auto gameNodeSession = tls.sceneNodeRegistry.try_get<RpcSessionPtr>(gameNodeEntity);
     if (!gameNodeSession)
     {
         LOG_ERROR << "RpcSession not found for game node -> " << nodeId;
