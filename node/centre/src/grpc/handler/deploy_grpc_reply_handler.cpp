@@ -14,6 +14,6 @@ void InitGrpcDeploySercieResponseHandler() {
     AsyncDeployServiceGetNodeInfoHandler = [](const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>& call) {
         gCentreNodeInfo.SetNodeId(call->reply.node_id());
         gCentreNodeInfo.GetNodeInfo().set_lease_id(call->reply.lease_id());
-        gCentreNode->StartServer(call->reply.info());
+        gCentreNode->StartRpcServer(call->reply.info());
         };
 }

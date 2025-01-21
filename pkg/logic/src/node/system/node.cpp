@@ -19,17 +19,17 @@ Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
 }
 
 Node::~Node() {
-    Exit();
+    ShutdownNode();
 }
 
 void Node::Init() {
-    InitNodeConfig();
+    InitializeNodeConfig();
     InitTimeZone();
     InitLog();
-    InitGameConfig();
-    InitGrpcNode();
-    InitSystemBeforeConnect();
-    InitNodeByReqInfo();
+    InitializeGameConfig();
+    InitializeGrpcNode();
+    InitializeSystemBeforeConnection();
+    InitializeNodeFromRequestInfo();
     InitMessageInfo();
 
     void InitGrpcDeploySercieResponseHandler();
@@ -37,7 +37,7 @@ void Node::Init() {
 
 }
 
-void Node::Exit() {
+void Node::ShutdownNode() {
     muduoLog.stop();
     ReleaseNodeId();
 }
@@ -50,14 +50,19 @@ void Node::InitLog() {
     muduoLog.start();
 }
 
-void Node::InitNodeConfig() {
+void Node::InitializeNodeConfig() {
     ZoneConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void Node::InitGameConfig() {
+void Node::InitializeGameConfig() {
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();
+}
+
+void Node::OnConfigLoadSuccessful()
+{
+
 }
 
 void Node::InitTimeZone() {
@@ -65,11 +70,11 @@ void Node::InitTimeZone() {
     muduo::Logger::setTimeZone(tz);
 }
 
-void Node::InitGrpcNode() {
+void Node::InitializeGrpcNode() {
     InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
 }
 
-void Node::InitNodeByReqInfo() {
+void Node::InitializeNodeFromRequestInfo() {
     const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
     const std::string targetStr = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
     tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
@@ -91,7 +96,7 @@ void Node::InitNodeByReqInfo() {
         });
 }
 
-void Node::Connect2Centre(::google::protobuf::Service* service) {
+void Node::ConnectToCentralNode(::google::protobuf::Service* service) {
     for (auto& centre_node_info : node_net_info_.centre_info().centre_info()) {
         entt::entity id{ centre_node_info.id() };
         const auto centre_node_id = tls.centreNodeRegistry.create(id);

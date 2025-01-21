@@ -18,19 +18,19 @@ public:
 
 	inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
 
-	void InitGameConfig() override;
+	void InitializeGameConfig() override;
 	
 	void        Init() override;
-	void		Exit() override;
+	void		ShutdownNode() override;
 
 	NodeInfo& GetNodeInfo()override;
 	uint32_t GetNodeType() const override;
-    void InitSystemBeforeConnect()override;
+    void InitializeSystemBeforeConnection()override;
 
 	
 	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
 
-	void StartServer(const ::nodes_info_data& info) override;
+	void StartRpcServer(const ::nodes_info_data& info) override;
 
 	void Receive2(const OnBeConnectedEvent& es);
 

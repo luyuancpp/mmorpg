@@ -18,22 +18,23 @@ public:
     virtual ~Node();
 
     virtual void Init();
-    virtual void StartServer(const nodes_info_data& data) = 0;
-    virtual void Exit();
+    virtual void StartRpcServer(const nodes_info_data& data) = 0;
+    virtual void ShutdownNode();
     virtual void SetNodeId(NodeId node_id)final{GetNodeInfo().set_node_id(node_id);}
     virtual NodeId GetNodeId() final {return GetNodeInfo().node_id();}
     virtual uint32_t GetNodeType() const = 0;
     virtual NodeInfo& GetNodeInfo() = 0;
-    virtual void InitSystemBeforeConnect() {}
+    virtual void InitializeSystemBeforeConnection() {}
 
 protected:
     void InitLog();
-    void InitNodeConfig();
-    virtual void InitGameConfig();
+    void InitializeNodeConfig();
+    virtual void InitializeGameConfig();
+    virtual void OnConfigLoadSuccessful();
     void InitTimeZone();
-    void InitNodeByReqInfo();
-    virtual void Connect2Centre(::google::protobuf::Service* service);
-    void InitGrpcNode();
+    void InitializeNodeFromRequestInfo();
+    virtual void ConnectToCentralNode(::google::protobuf::Service* service);
+    void InitializeGrpcNode();
 
     void ReleaseNodeId();
 
@@ -41,9 +42,8 @@ protected:
 
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
-    RpcServerPtr server_;
+    RpcServerPtr rpcServer;
     NodeInfo node_info_;
-    RpcClientPtr centreNodePtr_;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
     nodes_info_data serversInfo;
