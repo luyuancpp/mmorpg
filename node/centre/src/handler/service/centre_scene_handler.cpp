@@ -11,7 +11,7 @@ void CentreSceneServiceHandler::RegisterScene(::google::protobuf::RpcController*
 	for (auto&& sceneInfo : request->scenes_info())
 	{
 		SceneUtil::CreateScene2GameNode(
-			{ .node = entt::entity{request->game_node_id()}, .sceneInfo = sceneInfo });
+			{ .node = entt::entity{request->scene_node_id()}, .sceneInfo = sceneInfo });
 	}
 	///<<< END WRITING YOUR CODE
 }
@@ -28,10 +28,10 @@ void CentreSceneServiceHandler::UnRegisterScene(::google::protobuf::RpcControlle
 		return;
 	}
 
-	const entt::entity gameNode{ request->game_node_id() };
-	if (!tls.gameNodeRegistry.valid(gameNode))
+	const entt::entity gameNode{ request->scene_node_id() };
+	if (!tls.sceneNodeRegistry.valid(gameNode))
 	{
-		LOG_ERROR << "Node not found: " << request->game_node_id();
+		LOG_ERROR << "Node not found: " << request->scene_node_id();
 		return;
 	}
 

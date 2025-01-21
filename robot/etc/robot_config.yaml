@@ -3,5 +3,5 @@ server:
   ip: "127.0.0.1"
   port: 8000
 robots:
-  count: 30
+  count: 3000
 loglevel: 1

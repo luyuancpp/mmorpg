@@ -614,10 +614,10 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> EnterGameNodeSuccessRequest::_table_ =
   }
 
   // uint32 game_node_id = 2;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        2, this->_internal_game_node_id(), target);
+        2, this->_internal_scene_node_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -644,9 +644,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> EnterGameNodeSuccessRequest::_table_ =
   }
 
   // uint32 game_node_id = 2;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_game_node_id());
+        this->_internal_scene_node_id());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -664,7 +664,7 @@ void EnterGameNodeSuccessRequest::MergeImpl(::google::protobuf::MessageLite& to_
   if (from._internal_player_id() != 0) {
     _this->_impl_.player_id_ = from._impl_.player_id_;
   }
-  if (from._internal_game_node_id() != 0) {
+  if (from._internal_scene_node_id() != 0) {
     _this->_impl_.game_node_id_ = from._impl_.game_node_id_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);

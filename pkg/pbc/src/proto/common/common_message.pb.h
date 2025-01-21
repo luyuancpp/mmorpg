@@ -269,12 +269,12 @@ class UnregisterGameNodeRequest final : public ::google::protobuf::Message
     kGameNodeIdFieldNumber = 1,
   };
   // uint32 game_node_id = 1;
-  void clear_game_node_id() ;
-  ::uint32_t game_node_id() const;
+  void clear_scene_node_id() ;
+  ::uint32_t scene_node_id() const;
   void set_game_node_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_game_node_id() const;
+  ::uint32_t _internal_scene_node_id() const;
   void _internal_set_game_node_id(::uint32_t value);
 
   public:
@@ -2471,12 +2471,12 @@ class RegisterGameNodeSessionRequest final : public ::google::protobuf::Message
 
   public:
   // uint32 game_node_id = 2;
-  void clear_game_node_id() ;
-  ::uint32_t game_node_id() const;
+  void clear_scene_node_id() ;
+  ::uint32_t scene_node_id() const;
   void set_game_node_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_game_node_id() const;
+  ::uint32_t _internal_scene_node_id() const;
   void _internal_set_game_node_id(::uint32_t value);
 
   public:
@@ -2639,8 +2639,9 @@ class RegisterGameNodeRequest final : public ::google::protobuf::Message
   enum : int {
     kRpcClientFieldNumber = 1,
     kRpcServerFieldNumber = 2,
-    kGameNodeIdFieldNumber = 3,
+    kSceneNodeIdFieldNumber = 3,
     kServerTypeFieldNumber = 4,
+    kSceneNodeTypeFieldNumber = 5,
   };
   // .NetworkAddress rpc_client = 1;
   bool has_rpc_client() const;
@@ -2672,14 +2673,14 @@ class RegisterGameNodeRequest final : public ::google::protobuf::Message
   ::NetworkAddress* _internal_mutable_rpc_server();
 
   public:
-  // uint32 game_node_id = 3;
-  void clear_game_node_id() ;
-  ::uint32_t game_node_id() const;
-  void set_game_node_id(::uint32_t value);
+  // uint32 scene_node_id = 3;
+  void clear_scene_node_id() ;
+  ::uint32_t scene_node_id() const;
+  void set_scene_node_id(::uint32_t value);
 
   private:
-  ::uint32_t _internal_game_node_id() const;
-  void _internal_set_game_node_id(::uint32_t value);
+  ::uint32_t _internal_scene_node_id() const;
+  void _internal_set_scene_node_id(::uint32_t value);
 
   public:
   // uint32 server_type = 4;
@@ -2692,12 +2693,22 @@ class RegisterGameNodeRequest final : public ::google::protobuf::Message
   void _internal_set_server_type(::uint32_t value);
 
   public:
+  // uint32 scene_node_type = 5;
+  void clear_scene_node_type() ;
+  ::uint32_t scene_node_type() const;
+  void set_scene_node_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_scene_node_type() const;
+  void _internal_set_scene_node_type(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:RegisterGameNodeRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 2,
+      3, 5, 2,
       0, 2>
       _table_;
   friend class ::google::protobuf::MessageLite;
@@ -2717,8 +2728,9 @@ class RegisterGameNodeRequest final : public ::google::protobuf::Message
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::NetworkAddress* rpc_client_;
     ::NetworkAddress* rpc_server_;
-    ::uint32_t game_node_id_;
+    ::uint32_t scene_node_id_;
     ::uint32_t server_type_;
+    ::uint32_t scene_node_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6466,19 +6478,19 @@ inline void RegisterGameNodeSessionRequest::set_allocated_session_info(::Session
 }
 
 // uint32 game_node_id = 2;
-inline void RegisterGameNodeSessionRequest::clear_game_node_id() {
+inline void RegisterGameNodeSessionRequest::clear_scene_node_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.game_node_id_ = 0u;
 }
-inline ::uint32_t RegisterGameNodeSessionRequest::game_node_id() const {
+inline ::uint32_t RegisterGameNodeSessionRequest::scene_node_id() const {
   // @@protoc_insertion_point(field_get:RegisterGameNodeSessionRequest.game_node_id)
-  return _internal_game_node_id();
+  return _internal_scene_node_id();
 }
 inline void RegisterGameNodeSessionRequest::set_game_node_id(::uint32_t value) {
   _internal_set_game_node_id(value);
   // @@protoc_insertion_point(field_set:RegisterGameNodeSessionRequest.game_node_id)
 }
-inline ::uint32_t RegisterGameNodeSessionRequest::_internal_game_node_id() const {
+inline ::uint32_t RegisterGameNodeSessionRequest::_internal_scene_node_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.game_node_id_;
 }
@@ -7898,26 +7910,26 @@ inline void RegisterGameNodeRequest::set_allocated_rpc_server(::NetworkAddress* 
   // @@protoc_insertion_point(field_set_allocated:RegisterGameNodeRequest.rpc_server)
 }
 
-// uint32 game_node_id = 3;
-inline void RegisterGameNodeRequest::clear_game_node_id() {
+// uint32 scene_node_id = 3;
+inline void RegisterGameNodeRequest::clear_scene_node_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.game_node_id_ = 0u;
+  _impl_.scene_node_id_ = 0u;
 }
-inline ::uint32_t RegisterGameNodeRequest::game_node_id() const {
-  // @@protoc_insertion_point(field_get:RegisterGameNodeRequest.game_node_id)
-  return _internal_game_node_id();
+inline ::uint32_t RegisterGameNodeRequest::scene_node_id() const {
+  // @@protoc_insertion_point(field_get:RegisterGameNodeRequest.scene_node_id)
+  return _internal_scene_node_id();
 }
-inline void RegisterGameNodeRequest::set_game_node_id(::uint32_t value) {
-  _internal_set_game_node_id(value);
-  // @@protoc_insertion_point(field_set:RegisterGameNodeRequest.game_node_id)
+inline void RegisterGameNodeRequest::set_scene_node_id(::uint32_t value) {
+  _internal_set_scene_node_id(value);
+  // @@protoc_insertion_point(field_set:RegisterGameNodeRequest.scene_node_id)
 }
-inline ::uint32_t RegisterGameNodeRequest::_internal_game_node_id() const {
+inline ::uint32_t RegisterGameNodeRequest::_internal_scene_node_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
-  return _impl_.game_node_id_;
+  return _impl_.scene_node_id_;
 }
-inline void RegisterGameNodeRequest::_internal_set_game_node_id(::uint32_t value) {
+inline void RegisterGameNodeRequest::_internal_set_scene_node_id(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
-  _impl_.game_node_id_ = value;
+  _impl_.scene_node_id_ = value;
 }
 
 // uint32 server_type = 4;
@@ -7940,6 +7952,28 @@ inline ::uint32_t RegisterGameNodeRequest::_internal_server_type() const {
 inline void RegisterGameNodeRequest::_internal_set_server_type(::uint32_t value) {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.server_type_ = value;
+}
+
+// uint32 scene_node_type = 5;
+inline void RegisterGameNodeRequest::clear_scene_node_type() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.scene_node_type_ = 0u;
+}
+inline ::uint32_t RegisterGameNodeRequest::scene_node_type() const {
+  // @@protoc_insertion_point(field_get:RegisterGameNodeRequest.scene_node_type)
+  return _internal_scene_node_type();
+}
+inline void RegisterGameNodeRequest::set_scene_node_type(::uint32_t value) {
+  _internal_set_scene_node_type(value);
+  // @@protoc_insertion_point(field_set:RegisterGameNodeRequest.scene_node_type)
+}
+inline ::uint32_t RegisterGameNodeRequest::_internal_scene_node_type() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.scene_node_type_;
+}
+inline void RegisterGameNodeRequest::_internal_set_scene_node_type(::uint32_t value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.scene_node_type_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -8064,19 +8098,19 @@ inline void RegisterGateNodeRequest::_internal_set_gate_node_id(::uint32_t value
 // UnregisterGameNodeRequest
 
 // uint32 game_node_id = 1;
-inline void UnregisterGameNodeRequest::clear_game_node_id() {
+inline void UnregisterGameNodeRequest::clear_scene_node_id() {
   PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   _impl_.game_node_id_ = 0u;
 }
-inline ::uint32_t UnregisterGameNodeRequest::game_node_id() const {
+inline ::uint32_t UnregisterGameNodeRequest::scene_node_id() const {
   // @@protoc_insertion_point(field_get:UnregisterGameNodeRequest.game_node_id)
-  return _internal_game_node_id();
+  return _internal_scene_node_id();
 }
 inline void UnregisterGameNodeRequest::set_game_node_id(::uint32_t value) {
   _internal_set_game_node_id(value);
   // @@protoc_insertion_point(field_set:UnregisterGameNodeRequest.game_node_id)
 }
-inline ::uint32_t UnregisterGameNodeRequest::_internal_game_node_id() const {
+inline ::uint32_t UnregisterGameNodeRequest::_internal_scene_node_id() const {
   PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
   return _impl_.game_node_id_;
 }

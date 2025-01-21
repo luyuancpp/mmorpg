@@ -46,7 +46,8 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 	registerGameRequest.mutable_rpc_server()->set_ip(gSceneNode->GetNodeConf().ip());
 	registerGameRequest.mutable_rpc_server()->set_port(gSceneNode->GetNodeConf().port());
 	registerGameRequest.set_server_type(gSceneNode->GetNodeType());
-	registerGameRequest.set_game_node_id(gSceneNode->GetNodeId());
+	registerGameRequest.set_scene_node_id(gSceneNode->GetNodeId());
+	registerGameRequest.set_scene_node_type(gSceneNode->GetNodeInfo().game_node_type());
 
 	LOG_INFO << "Sending RegisterGameRequest to centre node: " << entt::to_integral(centreId);
 	(*centreNode)->CallRemoteMethod(CentreServiceRegisterGameNodeMessageId, registerGameRequest);

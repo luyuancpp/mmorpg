@@ -311,10 +311,10 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterSceneRequest::_table_ = {
   (void)cached_has_bits;
 
   // uint32 game_node_id = 1;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        1, this->_internal_game_node_id(), target);
+        1, this->_internal_scene_node_id(), target);
   }
 
   // repeated .SceneInfoPBComponent scenes_info = 2;
@@ -351,9 +351,9 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> RegisterSceneRequest::_table_ = {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
   }
   // uint32 game_node_id = 1;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_game_node_id());
+        this->_internal_scene_node_id());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -370,7 +370,7 @@ void RegisterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, co
 
   _this->_internal_mutable_scenes_info()->MergeFrom(
       from._internal_scenes_info());
-  if (from._internal_game_node_id() != 0) {
+  if (from._internal_scene_node_id() != 0) {
     _this->_impl_.game_node_id_ = from._impl_.game_node_id_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -562,10 +562,10 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> UnRegisterSceneRequest::_table_ = {
   (void)cached_has_bits;
 
   // uint32 game_node_id = 1;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-        1, this->_internal_game_node_id(), target);
+        1, this->_internal_scene_node_id(), target);
   }
 
   // uint32 scene = 2;
@@ -600,9 +600,9 @@ const ::_pbi::TcParseTable<2, 3, 0, 0, 2> UnRegisterSceneRequest::_table_ = {
   (void) cached_has_bits;
 
   // uint32 game_node_id = 1;
-  if (this->_internal_game_node_id() != 0) {
+  if (this->_internal_scene_node_id() != 0) {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-        this->_internal_game_node_id());
+        this->_internal_scene_node_id());
   }
 
   // uint32 scene = 2;
@@ -629,7 +629,7 @@ void UnRegisterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, 
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from._internal_game_node_id() != 0) {
+  if (from._internal_scene_node_id() != 0) {
     _this->_impl_.game_node_id_ = from._impl_.game_node_id_;
   }
   if (from._internal_scene() != 0) {

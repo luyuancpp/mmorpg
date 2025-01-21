@@ -9,7 +9,7 @@ public:
     entt::registry globalRegistry;
 	entt::registry registry;
     entt::registry sceneRegistry;
-    entt::registry gameNodeRegistry;
+    entt::registry sceneNodeRegistry;
     entt::registry gateNodeRegistry;
     entt::registry centreNodeRegistry;
     entt::registry itemRegistry;

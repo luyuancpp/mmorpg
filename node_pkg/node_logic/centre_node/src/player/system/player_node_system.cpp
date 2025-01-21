@@ -122,7 +122,7 @@ void PlayerNodeSystem::AddGameNodePlayerToGateNode(entt::entity playerEntity)
 
 	RegisterGameNodeSessionRequest request;
 	request.mutable_session_info()->set_session_id(playerNodeInfo->gate_session_id());
-	request.set_game_node_id(playerNodeInfo->game_node_id());
+	request.set_game_node_id(playerNodeInfo->scene_node_id());
 	(*gateNode)->CallRemoteMethod(GateServicePlayerEnterGameNodeMessageId, request);
 }
 
@@ -145,7 +145,7 @@ void PlayerNodeSystem::HandleGameNodePlayerRegisteredAtGateNode(entt::entity pla
 	RegisterPlayerSessionRequest request;
 	request.set_session_id(playerNodeInfo->gate_session_id());
 	request.set_player_id(*playerId);
-	SendToGs(GameServiceUpdateSessionDetailMessageId, request, playerNodeInfo->game_node_id());
+	SendToGs(GameServiceUpdateSessionDetailMessageId, request, playerNodeInfo->scene_node_id());
 
 	
 }

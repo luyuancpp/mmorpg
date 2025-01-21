@@ -32,7 +32,7 @@ void World::InitializeSystemBeforeConnect()
     ViewSystem::Initialize();
 }
 
-void World::InitSystemAfterConnect()
+void World::ReadyForGame()
 {
 }
 

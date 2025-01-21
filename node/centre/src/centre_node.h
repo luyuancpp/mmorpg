@@ -8,7 +8,7 @@
 #include "node/system/node.h"
 #include "redis_client/redis_client.h"
 
-class CentreNode : Node
+class CentreNode : public Node
 {
 public:
 	explicit CentreNode(muduo::net::EventLoop* loop);

@@ -163,14 +163,14 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 void HandleGameNodeMessage(const Session& session, const RpcClientMessagePtr& request, Guid sessionId, const muduo::net::TcpConnectionPtr& conn)
 {
     const entt::entity gameNodeId{ session.gameNodeId };
-    if (!tls.gameNodeRegistry.valid(gameNodeId))
+    if (!tls.sceneNodeRegistry.valid(gameNodeId))
     {
         LOG_ERROR << "Invalid game node id " << session.gameNodeId << " for session id: " << sessionId;
         RpcClientSessionHandler::SendTipToClient(conn, kServerCrashed);
         return;
     }
 
-    const auto& gameNode = tls.gameNodeRegistry.get<RpcClientPtr>(gameNodeId);
+    const auto& gameNode = tls.sceneNodeRegistry.get<RpcClientPtr>(gameNodeId);
     ClientSendMessageToPlayerRequest message;
     message.mutable_message_content()->set_serialized_message(request->body());
     message.set_session_id(sessionId);

@@ -6,59 +6,46 @@
 #include "handler/service/game_service_handler.h"
 #include "network/rpc_client.h"
 #include "network/rpc_connection_event.h"
-#include "network/rpc_server.h"
+#include "node/system/node.h"
 #include "redis_client/redis_client.h"
-#include "time/comp/timer_task_comp.h"
-#include "type_define/type_define.h"
 
 #include "proto/common/deploy_service.pb.h"
 
-class SceneNode : muduo::noncopyable
+class SceneNode : public Node
 {
 public:
-    using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-
     explicit
         SceneNode(muduo::net::EventLoop* loop);
-    ~SceneNode();
+    virtual ~SceneNode() {}
 
-    inline const NodeInfo& GetNodeInfo()const;
-    const game_node_db& GetNodeConf() const;
-    inline NodeId GetNodeId()const { return GetNodeInfo().node_id();  }
-    uint32_t GetNodeType() const{ return GetNodeInfo().game_node_type(); }
-
+    NodeInfo& GetNodeInfo()override;
+    const game_node_db& GetNodeConf();
+    virtual uint32_t GetNodeType() const override;
+    
     inline [[nodiscard]] muduo::AsyncLogging& Log(){ return muduoLog; }
     
-    void StartServer(const ::nodes_info_data& info);
-    
-    void Init();
-    void Exit();
+    void Init()override;
+    void ShutdownNode()override;
 
     void Receive1(const OnConnected2ServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
 
-private:    
-    void InitNodeByReqInfo();
-    void Connect2Centre();
-
-    void InitLog();
-    static void InitNodeConfig();
-    static void InitGameConfig();
-    static void InitTimeZone();
+    virtual void OnConfigLoadSuccessful()override;
+    void StartRpcServer(const nodes_info_data& data) override;
+    virtual void InitializeSystemBeforeConnection() override;
     
-    void ReleaseNodeId() const;
+    void ConnectToCentralNode();
+    
+    virtual void ReadyForGame()override;
 
-    muduo::net::EventLoop* loop_{ nullptr };
-    muduo::AsyncLogging muduoLog;
-
+private:
     PbSyncRedisClientPtr redis;
-    RpcServerPtr rpcServer;
     nodes_info_data nodeServiceInfo;
     RpcClientPtr myZoneCentreNode;
     GameServiceHandler gameService;
-    TimerTaskComp deployRpcTimer;
     TimerTaskComp worldTimer;
-    TimerTaskComp renewNodeLeaseTimer;
 };
+
+
 
 extern SceneNode* gSceneNode;
