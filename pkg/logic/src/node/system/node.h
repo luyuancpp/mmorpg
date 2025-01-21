@@ -32,7 +32,7 @@ protected:
     virtual void InitGameConfig();
     void InitTimeZone();
     void InitNodeByReqInfo();
-    virtual void Connect2Centre();
+    virtual void Connect2Centre(::google::protobuf::Service* service);
     void InitGrpcNode();
 
     void ReleaseNodeId();
@@ -47,6 +47,7 @@ protected:
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
     nodes_info_data serversInfo;
+    nodes_info_data node_net_info_;
 };
 
 muduo::AsyncLogging& logger(); 

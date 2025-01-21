@@ -91,20 +91,19 @@ void Node::InitNodeByReqInfo() {
         });
 }
 
-void Node::Connect2Centre() {
-    /*for (auto& centre_node_info : node_net_info_.centre_info().centre_info()) {
+void Node::Connect2Centre(::google::protobuf::Service* service) {
+    for (auto& centre_node_info : node_net_info_.centre_info().centre_info()) {
         entt::entity id{ centre_node_info.id() };
         const auto centre_node_id = tls.centreNodeRegistry.create(id);
         if (centre_node_id != id) {
-            LOG_ERROR << "centre id ";
             continue;
         }
         InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
         auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
             std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
-        centre_node->registerService(&service_handler_);
+        centre_node->registerService(service);
         centre_node->connect();
-    }*/
+    }
 }
 
 void Node::ReleaseNodeId() {
