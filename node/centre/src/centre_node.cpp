@@ -1,28 +1,19 @@
 #include "centre_node.h"
 
 #include <ranges>
-#include <game_config/deploy_json.h>
 #include <grpcpp/grpcpp.h>
 
-#include "all_config.h"
-#include "grpc/deploy/deploy_client.h"
 #include "grpc/generator/deploy_service_grpc.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
 #include "handler/service/player/player_service.h"
 #include "handler/service_replied/player/player_service_replied.h"
-#include "log/constants/log_constants.h"
-#include "log/system/console_log_system.h"
-#include "muduo/base/TimeZone.h"
 #include "muduo/net/EventLoop.h"
-#include "network/network_constants.h"
 #include "network/rpc_session.h"
 #include "node/centre_node_info.h"
 #include "player/system/player_session_system.h"
-#include "proto/common/deploy_service.grpc.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "service_info/gate_service_service_info.h"
-#include "service_info/service_info.h"
 #include "thread_local/storage_centre.h"
 #include "time/system/time_system.h"
 
@@ -33,17 +24,13 @@ CentreNode* gCentreNode = nullptr;
 
 void InitRepliedHandler();
 
-void AsyncOutput(const char* msg, int len)
+muduo::AsyncLogging& logger()
 {
-	gCentreNode->Log().append(msg, len);
-#ifdef WIN32
-	Log2Console(msg, len);
-#endif
+	return  gCentreNode->Log();
 }
 
 CentreNode::CentreNode(muduo::net::EventLoop* loop)
-	: loop_(loop),
-	muduoLog{ "logs/centre", kMaxLogFileRollSize, 1 },
+	: Node(loop, "logs/centre"),
 	redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 {
 }
@@ -53,46 +40,22 @@ CentreNode::~CentreNode()
 	Exit();
 }
 
-uint32_t CentreNode::GetNodeId() const
-{
-	return gCentreNodeInfo.GetNodeId();
-}
-
-const NodeInfo& CentreNode::GetNodeInfo() const
-{
-	return gCentreNodeInfo.GetNodeInfo();
-}
-
 void CentreNode::Init()
 {
 	gCentreNode = this;
 
+    GetNodeInfo().set_node_type(kCentreNode);
+    GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
+
+	Node::Init();
+
 	InitEventCallback();
 
-	InitLog();
 	EventHandler::Register();
-	InitNodeConfig();
-
-	auto& nodeInfo = gCentreNodeInfo.GetNodeInfo();
-
-	nodeInfo.set_node_type(kCentreNode);
-	nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
-	muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
-		ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
-	InitGameConfig();
 
 	InitPlayerService();
 	InitPlayerServiceReplied();
 	InitRepliedHandler();
-	InitMessageInfo();
-	InitSystemBeforeConnect();
-
-    InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
-
-	void InitGrpcDeploySercieResponseHandler();
-	InitGrpcDeploySercieResponseHandler();
-
-	InitNodeByReqInfo();
 
 	void InitServiceHandler();
 	InitServiceHandler();
@@ -103,52 +66,26 @@ void CentreNode::InitEventCallback()
 	tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
 }
 
-
 void CentreNode::Exit()
 {
-	muduoLog.stop();
+	Node::Exit();
 	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
-	ReleaseNodeId();
+}
+
+NodeInfo& CentreNode::GetNodeInfo()
+{
+	return gCentreNodeInfo.GetNodeInfo();
+}
+
+uint32_t CentreNode::GetNodeType() const
+{
+	return kCentreNode;
 }
 
 void CentreNode::InitGameConfig()
 {
-	LoadAllConfig();
-	LoadAllConfigAsyncWhenServerLaunch();
+	Node::InitGameConfig();
 	//ConfigSystem::OnConfigLoadSuccessful();
-}
-
-void CentreNode::InitTimeZone()
-{
-	const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
-	muduo::Logger::setTimeZone(tz);
-}
-
-void CentreNode::InitNodeByReqInfo()
-{
-	const auto& deployInfo = DeployConfig::GetSingleton().DeployInfo();
-	const std::string targetStr = deployInfo.ip() + ":" + std::to_string(deployInfo.port());
-	
-    tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
-        = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
-
-    deployRpcTimer.RunEvery(0.001, []() {
-        HandleDeployServiceCompletedQueueMessage(tls.grpc_node_registry);
-        }
-    );
-
-	{
-		NodeInfoRequest request;
-		request.set_node_type(kCentreNode);
-		request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-		DeployServiceGetNodeInfo(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
-	}
-
-	renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
-		RenewLeaseIDRequest request;
-        request.set_lease_id(gCentreNodeInfo.GetNodeInfo().lease_id());
-		DeployServiceRenewLease(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
-		});
 }
 
 void CentreNode::StartServer(const ::nodes_info_data& info)
@@ -157,7 +94,7 @@ void CentreNode::StartServer(const ::nodes_info_data& info)
 	auto& myNodeInfo = serversInfo.centre_info().centre_info()[GetNodeId()];
 
 	InetAddress serviceAddr(myNodeInfo.ip(), myNodeInfo.port());
-	server_ = std::make_shared<RpcServerPtr::element_type>(loop_, serviceAddr);
+	server_ = std::make_unique<RpcServerPtr::element_type>(loop_, serviceAddr);
 
 	server_->registerService(&centreService);
 	for (auto& value : g_server_service | std::views::values)
@@ -237,24 +174,6 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 	}
 }
 
-void CentreNode::InitLog()
-{
-	InitTimeZone();
-	muduo::Logger::setOutput(AsyncOutput);
-	muduoLog.start();
-}
-
-void CentreNode::InitConfig()
-{
-
-}
-
-void CentreNode::InitNodeConfig()
-{
-	ZoneConfig::GetSingleton().Load("game.json");
-	DeployConfig::GetSingleton().Load("deploy.json");
-}
-
 void CentreNode::InitSystemBeforeConnect()
 {
 	PlayerSessionSystem::Initialize();
@@ -267,10 +186,3 @@ void CentreNode::InitSystemAfterConnect() const
 	tls_centre.redis_system().Initialize(redisAddr);
 }
 
-void CentreNode::ReleaseNodeId() const
-{
-    ReleaseIDRequest request;
-    request.set_id(GetNodeId());
-    request.set_node_type(kCentreNode);
-    DeployServiceReleaseID(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
-}

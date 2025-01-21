@@ -2,6 +2,7 @@
 
 #include <grpcpp/create_channel.h>
 
+#include "all_config.h"
 #include "game_config/deploy_json.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
@@ -10,10 +11,11 @@
 #include "network/network_constants.h"
 #include "network/rpc_session.h"
 #include "proto/common/deploy_service.grpc.pb.h"
+#include "service_info/service_info.h"
 
-Node::Node(muduo::net::EventLoop* loop)
+Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
     : loop_(loop),
-    muduoLog("logs/node", kMaxLogFileRollSize, 1) {
+    muduoLog(logFilePath, kMaxLogFileRollSize, 1) {
 }
 
 Node::~Node() {
@@ -21,11 +23,18 @@ Node::~Node() {
 }
 
 void Node::Init() {
-    InitLog();
     InitNodeConfig();
-    InitGameConfig();
-    InitNodeByReqInfo();
     InitTimeZone();
+    InitLog();
+    InitGameConfig();
+    InitGrpcNode();
+    InitSystemBeforeConnect();
+    InitNodeByReqInfo();
+    InitMessageInfo();
+
+    void InitGrpcDeploySercieResponseHandler();
+    InitGrpcDeploySercieResponseHandler();
+
 }
 
 void Node::Exit() {
@@ -34,6 +43,9 @@ void Node::Exit() {
 }
 
 void Node::InitLog() {
+    muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
+    ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
+    
     muduo::Logger::setOutput(AsyncOutput);
     muduoLog.start();
 }
@@ -44,12 +56,17 @@ void Node::InitNodeConfig() {
 }
 
 void Node::InitGameConfig() {
-    // 共享的游戏配置初始化，可以留空在基类里
+    LoadAllConfig();
+    LoadAllConfigAsyncWhenServerLaunch();
 }
 
 void Node::InitTimeZone() {
     const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
     muduo::Logger::setTimeZone(tz);
+}
+
+void Node::InitGrpcNode() {
+    InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
 }
 
 void Node::InitNodeByReqInfo() {
@@ -90,7 +107,7 @@ void Node::Connect2Centre() {
     }*/
 }
 
-void Node::ReleaseNodeId() const {
+void Node::ReleaseNodeId() {
     ReleaseIDRequest request;
     request.set_id(GetNodeId());
     request.set_node_type(GetNodeType());
