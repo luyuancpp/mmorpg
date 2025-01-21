@@ -37,7 +37,7 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 
 CentreNode::~CentreNode()
 {
-	Exit();
+	ShutdownNode();
 }
 
 void CentreNode::Init()
@@ -66,9 +66,9 @@ void CentreNode::InitEventCallback()
 	tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
 }
 
-void CentreNode::Exit()
+void CentreNode::ShutdownNode()
 {
-	Node::Exit();
+	Node::ShutdownNode();
 	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
 }
 
@@ -82,26 +82,26 @@ uint32_t CentreNode::GetNodeType() const
 	return kCentreNode;
 }
 
-void CentreNode::InitGameConfig()
+void CentreNode::InitializeGameConfig()
 {
-	Node::InitGameConfig();
+	Node::InitializeGameConfig();
 	//ConfigSystem::OnConfigLoadSuccessful();
 }
 
-void CentreNode::StartServer(const ::nodes_info_data& info)
+void CentreNode::StartRpcServer(const ::nodes_info_data& info)
 {
 	serversInfo = info;
 	auto& myNodeInfo = serversInfo.centre_info().centre_info()[GetNodeId()];
 
 	InetAddress serviceAddr(myNodeInfo.ip(), myNodeInfo.port());
-	server_ = std::make_unique<RpcServerPtr::element_type>(loop_, serviceAddr);
+	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, serviceAddr);
 
-	server_->registerService(&centreService);
+	rpcServer->registerService(&centreService);
 	for (auto& value : g_server_service | std::views::values)
 	{
-		server_->registerService(value.get());
+		rpcServer->registerService(value.get());
 	}
-	server_->start();
+	rpcServer->start();
 	deployRpcTimer.Cancel();
 	InitSystemAfterConnect();
 	LOG_INFO << "centre start " << myNodeInfo.DebugString();
@@ -174,7 +174,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 	}
 }
 
-void CentreNode::InitSystemBeforeConnect()
+void CentreNode::InitializeSystemBeforeConnection()
 {
 	PlayerSessionSystem::Initialize();
 }
