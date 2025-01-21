@@ -6,42 +6,47 @@
 #include "common/common.pb.h"
 #include "grpc/generator/deploy_service_grpc.h"
 #include "network/rpc_client.h"
+#include "network/rpc_server.h"
 #include "time/comp/timer_task_comp.h"
 #include "type_define/type_define.h"
 
-class Node {
+class Node : muduo::noncopyable{
 public:
-    Node(muduo::net::EventLoop* loop);
+    using RpcServerPtr = std::unique_ptr<muduo::net::RpcServer>;
+
+    explicit Node(muduo::net::EventLoop* loop, const std::string& logFilePath);
     virtual ~Node();
 
     virtual void Init();
     virtual void StartServer(const nodes_info_data& data) = 0;
     virtual void Exit();
-    virtual void SetNodeId(NodeId node_id);
-    virtual NodeId GetNodeId() const = 0;
+    virtual void SetNodeId(NodeId node_id)final{GetNodeInfo().set_node_id(node_id);}
+    virtual NodeId GetNodeId() final {return GetNodeInfo().node_id();}
     virtual uint32_t GetNodeType() const = 0;
     virtual NodeInfo& GetNodeInfo() = 0;
+    virtual void InitSystemBeforeConnect() {}
 
 protected:
     void InitLog();
-    virtual void InitNodeConfig();
+    void InitNodeConfig();
     virtual void InitGameConfig();
-    virtual void InitTimeZone();
-    virtual void InitNodeByReqInfo();
+    void InitTimeZone();
+    void InitNodeByReqInfo();
     virtual void Connect2Centre();
-    virtual void ReleaseNodeId() const;
+    void InitGrpcNode();
+
+    void ReleaseNodeId();
 
     static void AsyncOutput(const char* msg, int len);
 
-    // 提取共用的成员变量
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
-    std::shared_ptr<RpcClientPtr::element_type> rpcClientHandler;
-    std::unique_ptr<muduo::net::TcpServer> server_;
+    RpcServerPtr server_;
     NodeInfo node_info_;
     RpcClientPtr centreNodePtr_;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
+    nodes_info_data serversInfo;
 };
 
 muduo::AsyncLogging& logger(); 
