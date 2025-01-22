@@ -155,7 +155,7 @@ func GenerateID(ctx context.Context, etcdClient *clientv3.Client, nodeType uint3
 
 // 生成 ID 并附带租约
 func GenerateIDWithLease(ctx context.Context, etcdClient *clientv3.Client, nodeType uint32) (uint64, clientv3.LeaseID, error) {
-	// 创建一个租约（例如 60 秒）
+	idTTL := time.Duration(30 * time.Second)
 	leaseResp, err := etcdClient.Grant(ctx, int64(idTTL.Seconds()))
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to create lease: %v", err)
@@ -253,7 +253,6 @@ func ClearAllIDs(etcdClient *clientv3.Client) error {
 	return nil
 }
 
-// StartPeriodicSweep 启动定时任务，每 60 秒调用一次 SweepExpiredIDs 函数
 func StartPeriodicSweep(etcdClient *clientv3.Client, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()

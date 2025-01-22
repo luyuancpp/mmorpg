@@ -30,7 +30,7 @@ public:
 
     virtual void OnConfigLoadSuccessful()override;
     void StartRpcServer(const nodes_info_data& data) override;
-    virtual void InitializeSystemBeforeConnection() override;
+    virtual void PrepareForBeforeConnection() override;
     
     virtual void ReadyForGame()override;
 

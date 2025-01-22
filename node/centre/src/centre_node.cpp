@@ -177,7 +177,7 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 	}
 }
 
-void CentreNode::InitializeSystemBeforeConnection()
+void CentreNode::PrepareForBeforeConnection()
 {
 	PlayerSessionSystem::Initialize();
 }

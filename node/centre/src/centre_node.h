@@ -24,7 +24,7 @@ public:
 
 	NodeInfo& GetNodeInfo()override;
 	uint32_t GetNodeType() const override;
-    void InitializeSystemBeforeConnection()override;
+    void PrepareForBeforeConnection()override;
 
 	
 	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
