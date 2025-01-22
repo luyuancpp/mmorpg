@@ -3,7 +3,6 @@
   <ItemGroup>
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\game_config\deploy_json.h" />
-    <ClInclude Include="src\grpc\deploy\deploy_client.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
     <ClInclude Include="src\network\process_info.h" />
@@ -38,7 +37,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />
-    <ClCompile Include="src\grpc\deploy\deploy_client.cpp" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\network\game_channel.cc" />

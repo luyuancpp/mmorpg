@@ -22,7 +22,6 @@
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\game_config\deploy_json.h" />
     <ClInclude Include="src\global_data\async_log_file.h" />
-    <ClInclude Include="src\grpc\deploy\deploy_client.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
@@ -57,7 +56,6 @@
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />
     <ClCompile Include="src\global_data\async_log_file.cpp" />
-    <ClCompile Include="src\grpc\deploy\deploy_client.cpp" />
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\message_statistics.cpp" />
@@ -154,7 +152,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;NOMINMAX;GOOGLE_CHECK_EQ=ABSL_CHECK_EQ;GOOGLE_LOG=ABSL_LOG;GOOGLE_DCHECK=ABSL_DCHECK;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../third_party/boost/;./src/;../../third_party/protobuf/src/;../pbc/src/;../../third_party/muduo/;../..//third_party/redis/;../../third_party/sol2/include/;../../third_party/lua/src/;../../third_party/redis/deps/;../../third_party/protobuf/third_party/abseil-cpp/;../../third_party/muduo/contrib/windows/include;../config/src/;../../third_party/mysqlinclude/include;../../third_party/lua/;../../third_party/;../../third_party/zlib/;../../pkg/pbc/src/game_config/;../../third_party/rocketmq-clients/cpp/include/;../../third_party/grpc/include/;../../third_party/spdlog/include/;../pbc/src/proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third_party/boost/;./src/;../pbc/src/;../../third_party/muduo/;../..//third_party/redis/;../../third_party/sol2/include/;../../third_party/lua/src/;../../third_party/redis/deps/;../../third_party/muduo/contrib/windows/include;../config/src/;../../third_party/lua/;../../third_party/;../../third_party/zlib/;../../third_party/spdlog/include/;../pbc/src/proto/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819;4146;4244;4267;4018;</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
