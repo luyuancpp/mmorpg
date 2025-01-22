@@ -48,14 +48,14 @@ NodeInfo& SceneNode::GetNodeInfo()
     return gSceneNodeInfo.GetNodeInfo();
 }
 
-void SceneNode::Init()
+void SceneNode::Initialize()
 {
     gSceneNode = this;
     
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&SceneNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&SceneNode::Receive2>(*this);
     
-    Node::Init();
+    Node::Initialize();
     EventHandler::Register();
 
     void InitGrpcDeploySercieResponseHandler();

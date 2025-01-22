@@ -42,11 +42,11 @@ uint32_t GateNode::GetNodeType() const
     return kGateNode;
 }
 
-void GateNode::Init()
+void GateNode::Initialize()
 {
     g_gate_node = this;
 
-    Node::Init();
+    Node::Initialize();
 
     void InitGrpcDeploySercieResponseHandler();
     InitGrpcDeploySercieResponseHandler();

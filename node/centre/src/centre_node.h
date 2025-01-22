@@ -17,9 +17,9 @@ public:
 	inline PbSyncRedisClientPtr& GetRedis() { return redis_; }
 
 
-	void InitializeGameConfig() override;
+	void LoadConfigurations() override;
 	
-	void        Init() override;
+	void        Initialize() override;
 	void		ShutdownNode() override;
 
 	NodeInfo& GetNodeInfo()override;

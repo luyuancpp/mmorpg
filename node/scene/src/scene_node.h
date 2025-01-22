@@ -22,7 +22,7 @@ public:
     const game_node_db& GetNodeConf();
     virtual uint32_t GetNodeType() const override;
     
-    void Init()override;
+    void Initialize()override;
     void ShutdownNode()override;
 
     void Receive1(const OnConnected2ServerEvent& es);

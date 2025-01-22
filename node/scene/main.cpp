@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     
     EventLoop loop;
     SceneNode server(&loop);
-    server.Init();
+    server.Initialize();
     loop.loop();
     google::protobuf::ShutdownProtobufLibrary();
     return 0;
