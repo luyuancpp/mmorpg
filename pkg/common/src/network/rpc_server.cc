@@ -21,11 +21,11 @@ using namespace muduo::net;
 
 RpcServer::RpcServer(EventLoop* loop,
                      const InetAddress& listenAddr)
-    : server_(loop, listenAddr, "RpcServer")
+    : tcpServer(loop, listenAddr, "RpcServer")
 {
-  server_.setConnectionCallback(
+  tcpServer.setConnectionCallback(
       std::bind(&RpcServer::onConnection, this, _1));
-//   server_.setMessageCallback(
+//   tcpServer.setMessageCallback(
 //       std::bind(&RpcServer::onMessage, this, _1, _2, _3));
 }
 
@@ -37,7 +37,7 @@ void RpcServer::registerService(google::protobuf::Service* service)
 
 void RpcServer::start()
 {
-  server_.start();
+  tcpServer.start();
 }
 
 void RpcServer::onConnection(const TcpConnectionPtr& conn)

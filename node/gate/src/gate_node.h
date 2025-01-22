@@ -62,7 +62,6 @@ private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
-    TcpServerPtr server_;
     nodes_info_data node_net_info_;
     NodeInfo node_info_;
     RpcClientPtr zone_centre_node_;
