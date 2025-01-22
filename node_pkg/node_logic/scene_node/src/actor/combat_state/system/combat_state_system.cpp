@@ -1,5 +1,7 @@
 ﻿#include "combat_state_system.h"
 
+#include <ranges>
+
 #include "actoractioncombatstate_config.h"
 #include "common_error_tip.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
@@ -34,7 +36,7 @@ void CombatStateSystem::AddCombatState(const CombatStateAddedPbEvent& addEvent) 
         const auto [newStateIterator, wasInserted] = combatStateCollection.mutable_states()->emplace(
             addEvent.state_type(), CombatStateDetailsPbComponent{});
         if (!wasInserted) {
-            return; // 如果插入失败，直接返回
+            return; 
         }
         stateIterator = newStateIterator;
     }

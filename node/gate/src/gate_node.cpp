@@ -3,7 +3,6 @@
 #include <grpcpp/grpcpp.h>
 
 #include "game_config/deploy_json.h"
-#include "grpc/deploy/deploy_client.h"
 #include "grpc/generator/deploy_service_grpc.h"
 #include "grpc/generator/login_service_grpc.h"
 #include "log/constants/log_constants.h"
