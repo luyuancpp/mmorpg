@@ -22,20 +22,20 @@ public:
     virtual NodeInfo& GetNodeInfo() = 0;
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
 protected:
-    virtual void Init();
+    virtual void Initialize();
     virtual void StartRpcServer(const nodes_info_data& data);
     virtual void ShutdownNode();
     virtual void SetNodeId(NodeId node_id)final{GetNodeInfo().set_node_id(node_id);}
     virtual void InitializeSystemBeforeConnection() {}
     virtual void ReadyForGame(){}
-    void InitLog();
+    void SetupLogging();
     void InitializeNodeConfig();
-    virtual void InitializeGameConfig();
+    virtual void LoadConfigurations();
     virtual void OnConfigLoadSuccessful();
     void InitTimeZone();
     void InitializeNodeFromRequestInfo();
     virtual void ConnectToCentreHelper(::google::protobuf::Service* service);
-    void InitializeGrpcNode();
+    void InitializeGrpcServices();
     void InitializeLaunchTime();
     void ReleaseNodeId();
 

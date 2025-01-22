@@ -40,14 +40,14 @@ CentreNode::~CentreNode()
 	ShutdownNode();
 }
 
-void CentreNode::Init()
+void CentreNode::Initialize()
 {
 	gCentreNode = this;
 
     GetNodeInfo().set_node_type(kCentreNode);
     GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
 
-	Node::Init();
+	Node::Initialize();
 
 	InitEventCallback();
 
@@ -82,9 +82,9 @@ uint32_t CentreNode::GetNodeType() const
 	return kCentreNode;
 }
 
-void CentreNode::InitializeGameConfig()
+void CentreNode::LoadConfigurations()
 {
-	Node::InitializeGameConfig();
+	Node::LoadConfigurations();
 	//ConfigSystem::OnConfigLoadSuccessful();
 }
 

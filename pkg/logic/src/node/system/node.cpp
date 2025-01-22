@@ -24,13 +24,13 @@ Node::~Node() {
     ShutdownNode();
 }
 
-void Node::Init() {
+void Node::Initialize() {
     InitializeLaunchTime();
     InitializeNodeConfig();
     InitTimeZone();
-    InitLog();
-    InitializeGameConfig();
-    InitializeGrpcNode();
+    SetupLogging();
+    LoadConfigurations();
+    InitializeGrpcServices();
     InitializeSystemBeforeConnection();
     InitializeNodeFromRequestInfo();
     InitMessageInfo();
@@ -51,7 +51,7 @@ void Node::ShutdownNode() {
     ReleaseNodeId();
 }
 
-void Node::InitLog() {
+void Node::SetupLogging() {
     muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
     ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
     
@@ -64,7 +64,7 @@ void Node::InitializeNodeConfig() {
     DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void Node::InitializeGameConfig() {
+void Node::LoadConfigurations() {
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();
 }
@@ -77,7 +77,7 @@ void Node::InitTimeZone() {
     muduo::Logger::setTimeZone(tz);
 }
 
-void Node::InitializeGrpcNode() {
+void Node::InitializeGrpcServices() {
     InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
 }
 
