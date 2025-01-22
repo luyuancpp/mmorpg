@@ -3,10 +3,10 @@
 #include <memory>
 #include <muduo/base/AsyncLogging.h>
 #include <muduo/net/TcpServer.h>
-#include "proto/common/common.pb.h"
 #include "grpc/generator/deploy_service_grpc.h"
 #include "network/rpc_client.h"
 #include "network/rpc_server.h"
+#include "proto/common/common.pb.h"
 #include "time/comp/timer_task_comp.h"
 #include "type_define/type_define.h"
 
@@ -20,6 +20,7 @@ public:
     virtual NodeId GetNodeId() final { return GetNodeInfo().node_id(); }
     virtual uint32_t GetNodeType() const = 0;
     virtual NodeInfo& GetNodeInfo() = 0;
+    inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
 protected:
     virtual void Init();
     virtual void StartRpcServer(const nodes_info_data& data);
@@ -35,7 +36,7 @@ protected:
     void InitializeNodeFromRequestInfo();
     virtual void ConnectToCentralNode(::google::protobuf::Service* service);
     void InitializeGrpcNode();
-
+    void InitializeLaunchTime();
     void ReleaseNodeId();
 
     static void AsyncOutput(const char* msg, int len);

@@ -16,7 +16,6 @@ public:
 
 	inline PbSyncRedisClientPtr& GetRedis() { return redis_; }
 
-	inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
 
 	void InitializeGameConfig() override;
 	

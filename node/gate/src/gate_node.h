@@ -14,40 +14,31 @@
 #include "network/codec/codec.h"
 #include "network/codec/dispatcher.h"
 #include "time/comp/timer_task_comp.h"
-#include "type_define/type_define.h"
 
 #include "proto/common/deploy_service.pb.h"
 #include "log/constants/log_constants.h"
+#include "node/system/node.h"
 
-class GateNode : noncopyable
+class GateNode : public  Node
 {
 public:
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     explicit GateNode(EventLoop* loop);
-    ~GateNode();
-
+    ~GateNode() override;
     inline ProtobufCodec& Codec() { return codec_; }
     inline GateServiceHandler& GetServiceHandler() { return service_handler_; }
-    inline uint32_t GetNodeId()const { return node_info_.node_id(); }
     inline RpcClientPtr& GetZoneCentreNode() { return zone_centre_node_; }
     inline  NodeInfo& GetNodeInfo() { return node_info_; }
-    inline [[nodiscard]] muduo::AsyncLogging& Log ( ) { return muduo_log_; }
+    uint32_t GetNodeType() const override;
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
                             const ::google::protobuf::Message& message) const { rpcClientHandler.SendMessageToClient(conn, message); }
+    void Init()override;
+    void ShutdownNode()override;
+    void StartRpcServer(const nodes_info_data& data)override;
 
-    void Init();
-    void Exit();
-    
-    void InitNodeByReqInfo();
-    
-    void StartServer(const nodes_info_data& data);
-
-    void SetNodeId(NodeId node_id);
-    
-    void Receive1(const OnConnected2ServerEvent& es) const;
-
+    void Receive1(const OnConnected2ServerEvent& es) ;
 private:
     void OnConnection(const TcpConnectionPtr& conn)
     {
@@ -66,15 +57,8 @@ private:
         conn->shutdown();
     }
 
-    void InitLog();
-    static void InitNodeConfig();
-    static void InitGameConfig();
-    static void InitTimeZone();
-    
-    void ReleaseNodeId() const;
 
-    muduo::net::EventLoop* loop_{ nullptr };
-    muduo::AsyncLogging muduo_log_;
+private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
@@ -83,9 +67,7 @@ private:
     NodeInfo node_info_;
     RpcClientPtr zone_centre_node_;
     GateServiceHandler service_handler_;
-    TimerTaskComp deployRpcTimer;
     TimerTaskComp loginGrpcSelectTimer;
-    TimerTaskComp renewNodeLeaseTimer;
 };
 
 extern GateNode* g_gate_node;

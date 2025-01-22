@@ -16,13 +16,11 @@ class SceneNode : public Node
 public:
     explicit
         SceneNode(muduo::net::EventLoop* loop);
-    virtual ~SceneNode() {}
+    ~SceneNode() override {}
 
     NodeInfo& GetNodeInfo()override;
     const game_node_db& GetNodeConf();
     virtual uint32_t GetNodeType() const override;
-    
-    inline [[nodiscard]] muduo::AsyncLogging& Log(){ return muduoLog; }
     
     void Init()override;
     void ShutdownNode()override;
