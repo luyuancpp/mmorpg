@@ -13,6 +13,7 @@
 #include "network/rpc_session.h"
 #include "proto/common/deploy_service.grpc.pb.h"
 #include "service_info/service_info.h"
+#include "time/system/time_system.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
     : loop_(loop),
@@ -24,6 +25,7 @@ Node::~Node() {
 }
 
 void Node::Init() {
+    InitializeLaunchTime();
     InitializeNodeConfig();
     InitTimeZone();
     InitLog();
@@ -77,6 +79,11 @@ void Node::InitTimeZone() {
 
 void Node::InitializeGrpcNode() {
     InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
+}
+
+void Node::InitializeLaunchTime()
+{
+    node_info_.set_launch_time(TimeUtil::NowSecondsUTC());
 }
 
 void Node::InitializeNodeFromRequestInfo() {

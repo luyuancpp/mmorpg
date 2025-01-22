@@ -22,17 +22,13 @@
 
 GateNode* g_gate_node = nullptr; 
 
-void AsyncOutput(const char* msg, int len)
+muduo::AsyncLogging& logger()
 {
-    g_gate_node->Log().append(msg, len);
-#ifdef WIN32
-    Log2Console(msg, len);
-#endif
+    return  g_gate_node->Log();
 }
 
 GateNode::GateNode(EventLoop* loop)
-    : loop_(loop),
-    muduo_log_{"logs/gate", kMaxLogFileRollSize, 1},
+    : Node(loop, "logs/gate"),
     dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),
     codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
     rpcClientHandler(codec_, dispatcher_)
@@ -40,19 +36,18 @@ GateNode::GateNode(EventLoop* loop)
 
 GateNode::~GateNode()
 {
-    Exit();
+}
+
+uint32_t GateNode::GetNodeType() const
+{
+    return kGateNode;
 }
 
 void GateNode::Init()
 {
     g_gate_node = this;
-    
-    InitLog();
-    InitNodeConfig();
-    muduo::Logger::setLogLevel(static_cast <muduo::Logger::LogLevel> (
-        ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
 
-    InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
+    Node::Init();
 
     void InitGrpcDeploySercieResponseHandler();
     InitGrpcDeploySercieResponseHandler();
@@ -60,71 +55,33 @@ void GateNode::Init()
     void InitGrpcLoginSercieResponseHandler();
     InitGrpcLoginSercieResponseHandler();
 
-    InitNodeByReqInfo();
-
-    InitGameConfig();
-
-    node_info_.set_launch_time(TimeUtil::NowSecondsUTC());
-
-    InitMessageInfo();
-
-
-    
     void InitRepliedHandler();
     InitRepliedHandler();
 
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateNode::Receive1>(*this);
 }
 
-void GateNode::Exit()
+void GateNode::ShutdownNode()
 {
-    muduo_log_.stop();
     tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateNode::Receive1>(*this);
-    ReleaseNodeId();
 }
 
-void GateNode::InitNodeByReqInfo()
-{
-    const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
-    const std::string targetStr = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-    const auto channel = grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials());
-    
-    tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity()) 
-    = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
-
-    deployRpcTimer.RunEvery(0.001, []() {
-        HandleDeployServiceCompletedQueueMessage(tls.grpc_node_registry);
-        }
-    );
-
-    {
-        NodeInfoRequest request;
-        request.set_node_type(kGateNode);
-        request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
-        DeployServiceGetNodeInfo(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
-    }
-
-    renewNodeLeaseTimer.RunEvery(kRenewLeaseTime, []() {
-        auto& renewDeployStub =
-        tls.grpc_node_registry.get<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity());
-        RenewLeaseIDRequest request;
-        request.set_lease_id(g_gate_node->GetNodeInfo().lease_id());
-        DeployServiceRenewLease(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
-        });
-}
-
-void GateNode::StartServer(const nodes_info_data& data)
+void GateNode::StartRpcServer(const nodes_info_data& data)
 {
     node_net_info_ = std::move(data);
+    
     auto& gate_info = node_net_info_.gate_info().gate_info()[GetNodeId()];
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
+    
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
         std::bind(&GateNode::OnConnection, this, _1));
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
+    
     tls_gate.session_id_gen().set_node_id(GetNodeId());
+    
     Connect2Centre();
     Connect2Login();
 
@@ -132,12 +89,7 @@ void GateNode::StartServer(const nodes_info_data& data)
     deployRpcTimer.Cancel();
 }
 
-void GateNode::SetNodeId(NodeId node_id)
-{
-    node_info_.set_node_id(node_id);
-}
-
-void GateNode::Receive1(const OnConnected2ServerEvent& es) const
+void GateNode::Receive1(const OnConnected2ServerEvent& es) 
 {
     if ( auto& conn = es.conn_ ; conn->connected())
     {
@@ -239,35 +191,4 @@ void GateNode::Connect2Login()
         HandleLoginServiceCompletedQueueMessage(tls_gate.login_node_registry);
         });
 
-}
-
-void GateNode::InitLog ( )
-{
-    InitTimeZone();
-    muduo::Logger::setOutput(AsyncOutput);
-    muduo_log_.start();
-}
-
-void GateNode::InitNodeConfig()
-{
-    ZoneConfig::GetSingleton().Load("game.json");
-    DeployConfig::GetSingleton().Load("deploy.json");
-}
-
-void GateNode::InitGameConfig ( )
-{
-}
-
-void GateNode::InitTimeZone()
-{
-    const muduo::TimeZone tz("zoneinfo/Asia/Hong_Kong");
-    muduo::Logger::setTimeZone(tz);
-}
-
-void GateNode::ReleaseNodeId() const
-{
-    ReleaseIDRequest request;
-    request.set_id(GetNodeId());
-    request.set_node_type(kGateNode);
-    DeployServiceReleaseID(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
 }
