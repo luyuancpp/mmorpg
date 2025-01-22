@@ -1,4 +1,7 @@
 ﻿#include "actor_action_state_system.h"
+
+#include <ranges>
+
 #include "actoractionstate_config.h"
 #include "common_error_tip.pb.h"
 #include "actor/action_state/constants/actor_state_constants.h"
