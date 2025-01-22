@@ -8,7 +8,7 @@
 
 #include "grpc/generator/deploy_service_grpc.h"
 
-void InitGrpcDeploySercieResponseHandler() {
+void InitGrpcDeployServiceResponseHandler() {
     using Function = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
     extern Function AsyncDeployServiceGetNodeInfoHandler;
     AsyncDeployServiceGetNodeInfoHandler = [](const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>& call) {

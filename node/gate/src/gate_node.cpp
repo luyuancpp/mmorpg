@@ -48,8 +48,8 @@ void GateNode::Initialize()
 
     Node::Initialize();
 
-    void InitGrpcDeploySercieResponseHandler();
-    InitGrpcDeploySercieResponseHandler();
+    void InitGrpcDeployServiceResponseHandler();
+    InitGrpcDeployServiceResponseHandler();
 
     void InitGrpcLoginSercieResponseHandler();
     InitGrpcLoginSercieResponseHandler();
