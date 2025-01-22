@@ -28,7 +28,7 @@ public:
     ~GateNode() override;
     inline ProtobufCodec& Codec() { return codec_; }
     inline GateServiceHandler& GetServiceHandler() { return service_handler_; }
-    inline RpcClientPtr& GetZoneCentreNode() { return zone_centre_node_; }
+    inline RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
     inline  NodeInfo& GetNodeInfo() { return node_info_; }
     uint32_t GetNodeType() const override;
 
@@ -45,8 +45,6 @@ private:
         rpcClientHandler.OnConnection(conn);
     }
 
-    void Connect2Centre();
-
     void Connect2Login();
 
     void OnUnknownMessage(const TcpConnectionPtr& conn,
@@ -62,9 +60,7 @@ private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
-    nodes_info_data node_net_info_;
     NodeInfo node_info_;
-    RpcClientPtr zone_centre_node_;
     GateServiceHandler service_handler_;
     TimerTaskComp loginGrpcSelectTimer;
 };

@@ -67,9 +67,9 @@ void GateNode::ShutdownNode()
 
 void GateNode::StartRpcServer(const nodes_info_data& data)
 {
-    node_net_info_ = std::move(data);
+    nodesInfo = std::move(data);
     
-    auto& gate_info = node_net_info_.gate_info().gate_info()[GetNodeId()];
+    auto& gate_info = nodesInfo.gate_info().gate_info()[GetNodeId()];
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     
     rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, gate_addr);
@@ -81,7 +81,7 @@ void GateNode::StartRpcServer(const nodes_info_data& data)
     
     tls_gate.session_id_gen().set_node_id(GetNodeId());
     
-    Connect2Centre();
+    ConnectToCentreHelper(&service_handler_);
     Connect2Login();
 
     LOG_INFO << "gate node  start " << gate_info.DebugString();
@@ -143,33 +143,9 @@ void GateNode::Receive1(const OnConnected2ServerEvent& es)
     }
 }
 
-void GateNode::Connect2Centre()
-{
-    for (auto& centre_node_info : node_net_info_.centre_info().centre_info())
-    {
-        entt::entity id{ centre_node_info.id() };
-        const auto centre_node_id = tls.centreNodeRegistry.create(id);
-        if (centre_node_id != id)
-        {
-            LOG_ERROR << "centre id ";
-            continue;
-        }
-        InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-        auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
-            std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
-        centre_node->registerService(&service_handler_);
-        centre_node->connect();
-        if (centre_node_info.zone_id() == 
-            ZoneConfig::GetSingleton().ConfigInfo().zone_id())
-        {
-            zone_centre_node_ = centre_node;
-        }
-    }
-}
-
 void GateNode::Connect2Login()
 {
-    for (auto& login_node_info : node_net_info_.login_info().login_info())
+    for (auto& login_node_info : nodesInfo.login_info().login_info())
     {
         entt::entity id{ login_node_info.id() };
         auto login_node_id = tls_gate.login_node_registry.create(id);
