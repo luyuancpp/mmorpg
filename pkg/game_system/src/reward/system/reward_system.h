@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <string>
+
 #include "entt/src/entt/entity/registry.hpp"
 
 struct RewardComp;
