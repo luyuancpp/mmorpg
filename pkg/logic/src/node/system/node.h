@@ -26,18 +26,18 @@ protected:
     virtual void StartRpcServer(const nodes_info_data& data);
     virtual void ShutdownNode();
     virtual void SetNodeId(NodeId node_id)final{GetNodeInfo().set_node_id(node_id);}
-    virtual void InitializeSystemBeforeConnection() {}
+    virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
     void SetupLogging();
-    void InitializeNodeConfig();
     virtual void LoadConfigurations();
-    virtual void OnConfigLoadSuccessful();
-    void InitTimeZone();
+    virtual void OnConfigLoadSuccessful(){}
+    void InitializeTimeZone();
     void InitializeNodeFromRequestInfo();
     virtual void ConnectToCentreHelper(::google::protobuf::Service* service);
     void InitializeGrpcServices();
     void InitializeLaunchTime();
     void ReleaseNodeId();
+    void SetupMessageHandlers();
 
     static void AsyncOutput(const char* msg, int len);
 

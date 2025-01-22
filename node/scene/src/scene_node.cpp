@@ -112,9 +112,9 @@ void SceneNode::StartRpcServer(const ::nodes_info_data& info)
     LOG_INFO << "game node  start " << GetNodeConf().DebugString();
 }
 
-void SceneNode::InitializeSystemBeforeConnection()
+void SceneNode::PrepareForBeforeConnection()
 {
-    Node::InitializeSystemBeforeConnection();
+    Node::PrepareForBeforeConnection();
 }
 
 void SceneNode::ReadyForGame()
