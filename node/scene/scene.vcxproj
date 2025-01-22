@@ -93,7 +93,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
-      <EnableModules>true</EnableModules>
+      <EnableModules>false</EnableModules>
       <BuildStlModules>true</BuildStlModules>
     </ClCompile>
     <Link>
