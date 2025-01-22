@@ -90,8 +90,8 @@ void CentreNode::InitializeGameConfig()
 
 void CentreNode::StartRpcServer(const ::nodes_info_data& info)
 {
-	serversInfo = info;
-	auto& myNodeInfo = serversInfo.centre_info().centre_info()[GetNodeId()];
+	nodesInfo = info;
+	auto& myNodeInfo = nodesInfo.centre_info().centre_info()[GetNodeId()];
 
 	InetAddress serviceAddr(myNodeInfo.ip(), myNodeInfo.port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, serviceAddr);
@@ -184,8 +184,8 @@ void CentreNode::InitializeSystemBeforeConnection()
 
 void CentreNode::InitSystemAfterConnect() const
 {
-	InetAddress redisAddr(serversInfo.redis_info().redis_info(0).ip(),
-		serversInfo.redis_info().redis_info(0).port());
+	InetAddress redisAddr(nodesInfo.redis_info().redis_info(0).ip(),
+		nodesInfo.redis_info().redis_info(0).port());
 	tls_centre.redis_system().Initialize(redisAddr);
 }
 

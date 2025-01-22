@@ -32,13 +32,10 @@ public:
     void StartRpcServer(const nodes_info_data& data) override;
     virtual void InitializeSystemBeforeConnection() override;
     
-    void ConnectToCentralNode();
-    
     virtual void ReadyForGame()override;
 
 private:
     PbSyncRedisClientPtr redis;
-    nodes_info_data nodeServiceInfo;
     RpcClientPtr myZoneCentreNode;
     GameServiceHandler gameService;
     TimerTaskComp worldTimer;

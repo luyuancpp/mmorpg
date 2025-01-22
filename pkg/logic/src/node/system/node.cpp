@@ -108,18 +108,26 @@ void Node::InitializeNodeFromRequestInfo() {
         });
 }
 
-void Node::ConnectToCentralNode(::google::protobuf::Service* service) {
-    for (auto& centre_node_info : node_net_info_.centre_info().centre_info()) {
+void Node::ConnectToCentreHelper(::google::protobuf::Service* service) {
+    for (auto& centre_node_info : nodesInfo.centre_info().centre_info()) {
         entt::entity id{ centre_node_info.id() };
         const auto centre_node_id = tls.centreNodeRegistry.create(id);
         if (centre_node_id != id) {
-            continue;
+            continue;  // 如果创建失败则跳过
         }
+
         InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
         auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
             std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
+
+        // 注册服务
         centre_node->registerService(service);
         centre_node->connect();
+
+        // 如果需要，进行区域判断（如果有）
+        if (centre_node_info.zone_id() == ZoneConfig::GetSingleton().ConfigInfo().zone_id()) {
+            zoneCentreNode = centre_node;
+        }
     }
 }
 

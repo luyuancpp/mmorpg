@@ -41,7 +41,7 @@ private:
 private:
 	PbSyncRedisClientPtr redis_;
 	CentreServiceHandler centreService;
-	nodes_info_data serversInfo;
+	nodes_info_data nodesInfo;
 };
 
 extern CentreNode* gCentreNode ;

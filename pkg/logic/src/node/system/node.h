@@ -34,7 +34,7 @@ protected:
     virtual void OnConfigLoadSuccessful();
     void InitTimeZone();
     void InitializeNodeFromRequestInfo();
-    virtual void ConnectToCentralNode(::google::protobuf::Service* service);
+    virtual void ConnectToCentreHelper(::google::protobuf::Service* service);
     void InitializeGrpcNode();
     void InitializeLaunchTime();
     void ReleaseNodeId();
@@ -47,8 +47,8 @@ protected:
     NodeInfo node_info_;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
-    nodes_info_data serversInfo;
-    nodes_info_data node_net_info_;
+    nodes_info_data nodesInfo;
+    RpcClientPtr zoneCentreNode;
 };
 
 muduo::AsyncLogging& logger(); 
