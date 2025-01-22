@@ -73,12 +73,12 @@ void GateNode::StartRpcServer(const nodes_info_data& data)
     auto& gate_info = node_net_info_.gate_info().gate_info()[GetNodeId()];
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     
-    server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
-    server_->setConnectionCallback(
+    rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, gate_addr);
+    rpcServer->GetTcpServer().setConnectionCallback(
         std::bind(&GateNode::OnConnection, this, _1));
-    server_->setMessageCallback(
+    rpcServer->GetTcpServer().setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
-    server_->start();
+    rpcServer->start();
     
     tls_gate.session_id_gen().set_node_id(GetNodeId());
     

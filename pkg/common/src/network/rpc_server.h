@@ -34,14 +34,14 @@ class RpcServer
   RpcServer(EventLoop* loop,
             const InetAddress& listenAddr);
 
-  void setThreadNum(int numThreads)
-  {
-    server_.setThreadNum(numThreads);
-  }
-
   void registerService(::google::protobuf::Service*);
   void start();
-
+    
+    [[nodiscard]] TcpServer& GetTcpServer() 
+    {
+        return tcpServer;
+    }
+    
  private:
   void onConnection(const TcpConnectionPtr& conn);
 
@@ -49,12 +49,14 @@ class RpcServer
   //                Buffer* buf,
   //                Timestamp time);
 
-  TcpServer server_;
+  TcpServer tcpServer;
+
+
+
   std::map<std::string, ::google::protobuf::Service*> services_;
 };
 
 }  // namespace net
 }  // namespace muduo
-
 
 #endif  // COMMON_SRC_GAME_RPC_rpc_server_H_
