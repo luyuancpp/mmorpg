@@ -41,10 +41,23 @@ void Node::StartRpcServer(const nodes_info_data& data) {
     tls.dispatcher.trigger<OnServerStart>();  // 启动服务器
 }
 
+
+//优雅关闭和资源释放
 void Node::ShutdownNode() {
-    muduoLog.stop();  // 停止日志
-    ReleaseNodeId();  // 释放节点 ID
+    // 停止日志系统
+    muduoLog.stop();
+
+    // 释放节点 ID
+    ReleaseNodeId();
+
+    // 取消所有定时任务
+    deployRpcTimer.Cancel();
+    renewNodeLeaseTimer.Cancel();
+
+    // 关闭所有 gRPC 连接等
+    
 }
+
 
 void Node::SetupLogging() {
     muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
@@ -79,9 +92,14 @@ void Node::InitializeNodeFromRequestInfo() {
     const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
     const std::string targetStr = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
 
-    // 创建 gRPC 通道并初始化 gRPC 客户端
-    tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
-        = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+    try {
+        // 创建 gRPC 通道并初始化 gRPC 客户端
+        tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
+            = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+    }
+    catch (const std::exception& e) {
+       LOG_FATAL <<  "Failed to initialize gRPC service: " << std::string(e.what());
+    }
 
     // 定时处理部署服务的完成队列
     deployRpcTimer.RunEvery(0.001, []() {
@@ -136,12 +154,12 @@ void Node::SetupMessageHandlers()
 {
     InitMessageInfo();
 
-    void InitGrpcDeploySercieResponseHandler();
-    InitGrpcDeploySercieResponseHandler();
+    void InitGrpcDeployServiceResponseHandler();
+    InitGrpcDeployServiceResponseHandler();
 }
 
 void Node::AsyncOutput(const char* msg, int len) {
-    logger().append(msg, len);  // 异步输出日志
+    logger().append(msg, len);
 #ifdef WIN32
     Log2Console(msg, len);  // 在 Windows 系统上输出到控制台
 #endif

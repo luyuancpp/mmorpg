@@ -58,8 +58,8 @@ void SceneNode::Initialize()
     Node::Initialize();
     EventHandler::Register();
 
-    void InitGrpcDeploySercieResponseHandler();
-    InitGrpcDeploySercieResponseHandler();
+    void InitGrpcDeployServiceResponseHandler();
+    InitGrpcDeployServiceResponseHandler();
 
     InitPlayerService();
     
