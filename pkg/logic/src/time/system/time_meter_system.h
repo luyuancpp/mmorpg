@@ -49,7 +49,7 @@ public:
 };
 
 
-class TimeMeterMillisecondUtil {
+class TimeMeterMillisecondSystem {
 public:
 	// 返回剩余时间（毫秒）
 	static uint64_t Remaining(const TimeMeterComp& timeMeterComp) {
