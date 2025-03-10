@@ -17,14 +17,14 @@ public:
 	inline PbSyncRedisClientPtr& GetRedis() { return redis_; }
 
 
-	void InitializeGameConfig() override;
+	void LoadConfigurations() override;
 	
-	void        Init() override;
+	void        Initialize() override;
 	void		ShutdownNode() override;
 
 	NodeInfo& GetNodeInfo()override;
 	uint32_t GetNodeType() const override;
-    void InitializeSystemBeforeConnection()override;
+    void PrepareForBeforeConnection()override;
 
 	
 	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
@@ -41,7 +41,7 @@ private:
 private:
 	PbSyncRedisClientPtr redis_;
 	CentreServiceHandler centreService;
-	nodes_info_data serversInfo;
+	nodes_info_data nodesInfo;
 };
 
 extern CentreNode* gCentreNode ;

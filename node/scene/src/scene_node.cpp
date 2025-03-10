@@ -48,18 +48,18 @@ NodeInfo& SceneNode::GetNodeInfo()
     return gSceneNodeInfo.GetNodeInfo();
 }
 
-void SceneNode::Init()
+void SceneNode::Initialize()
 {
     gSceneNode = this;
     
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&SceneNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&SceneNode::Receive2>(*this);
     
-    Node::Init();
+    Node::Initialize();
     EventHandler::Register();
 
-    void InitGrpcDeploySercieResponseHandler();
-    InitGrpcDeploySercieResponseHandler();
+    void InitGrpcDeployServiceResponseHandler();
+    InitGrpcDeployServiceResponseHandler();
 
     InitPlayerService();
     
@@ -80,7 +80,7 @@ void SceneNode::ShutdownNode(){
 
 void SceneNode::StartRpcServer(const ::nodes_info_data& info)
 {
-    nodeServiceInfo = info;
+    nodesInfo = info;
     
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
     tlsGame.redis.Initialize(redis_addr);
@@ -104,7 +104,7 @@ void SceneNode::StartRpcServer(const ::nodes_info_data& info)
 
     Node::StartRpcServer(info);
 
-    ConnectToCentralNode();
+    ConnectToCentreHelper(&gameService);
     
     ReadyForGame();
     
@@ -112,9 +112,9 @@ void SceneNode::StartRpcServer(const ::nodes_info_data& info)
     LOG_INFO << "game node  start " << GetNodeConf().DebugString();
 }
 
-void SceneNode::InitializeSystemBeforeConnection()
+void SceneNode::PrepareForBeforeConnection()
 {
-    Node::InitializeSystemBeforeConnection();
+    Node::PrepareForBeforeConnection();
 }
 
 void SceneNode::ReadyForGame()
@@ -186,7 +186,7 @@ void SceneNode::OnConfigLoadSuccessful()
 
 const game_node_db& SceneNode::GetNodeConf() 
 {
-    return nodeServiceInfo.game_info().game_info(GetNodeId());
+    return nodesInfo.game_info().game_info(GetNodeId());
 }
 
 uint32_t SceneNode::GetNodeType() const
@@ -194,28 +194,3 @@ uint32_t SceneNode::GetNodeType() const
     return kSceneNode;
 }
 
-void SceneNode::ConnectToCentralNode()
-{
-    for (auto& centre_node_info : nodeServiceInfo.centre_info().centre_info())
-    {
-        entt::entity id{ centre_node_info.id() };
-        
-        const auto   centre_node_id = tls.centreNodeRegistry.create(id);
-        if (centre_node_id != id)
-        {
-            continue;
-        }
-        
-        InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-        const auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
-            std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
-        
-        centre_node->registerService(&gameService);
-        centre_node->connect();
-        if (centre_node_info.zone_id() ==
-            ZoneConfig::GetSingleton().ConfigInfo().zone_id())
-        {
-            myZoneCentreNode = centre_node;
-        }
-    }
-}

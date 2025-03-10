@@ -22,7 +22,7 @@ public:
     const game_node_db& GetNodeConf();
     virtual uint32_t GetNodeType() const override;
     
-    void Init()override;
+    void Initialize()override;
     void ShutdownNode()override;
 
     void Receive1(const OnConnected2ServerEvent& es);
@@ -30,15 +30,12 @@ public:
 
     virtual void OnConfigLoadSuccessful()override;
     void StartRpcServer(const nodes_info_data& data) override;
-    virtual void InitializeSystemBeforeConnection() override;
-    
-    void ConnectToCentralNode();
+    virtual void PrepareForBeforeConnection() override;
     
     virtual void ReadyForGame()override;
 
 private:
     PbSyncRedisClientPtr redis;
-    nodes_info_data nodeServiceInfo;
     RpcClientPtr myZoneCentreNode;
     GameServiceHandler gameService;
     TimerTaskComp worldTimer;
