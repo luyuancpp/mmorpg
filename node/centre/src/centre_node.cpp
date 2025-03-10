@@ -40,14 +40,14 @@ CentreNode::~CentreNode()
 	ShutdownNode();
 }
 
-void CentreNode::Init()
+void CentreNode::Initialize()
 {
 	gCentreNode = this;
 
     GetNodeInfo().set_node_type(kCentreNode);
     GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
 
-	Node::Init();
+	Node::Initialize();
 
 	InitEventCallback();
 
@@ -82,16 +82,16 @@ uint32_t CentreNode::GetNodeType() const
 	return kCentreNode;
 }
 
-void CentreNode::InitializeGameConfig()
+void CentreNode::LoadConfigurations()
 {
-	Node::InitializeGameConfig();
+	Node::LoadConfigurations();
 	//ConfigSystem::OnConfigLoadSuccessful();
 }
 
 void CentreNode::StartRpcServer(const ::nodes_info_data& info)
 {
-	serversInfo = info;
-	auto& myNodeInfo = serversInfo.centre_info().centre_info()[GetNodeId()];
+	nodesInfo = info;
+	auto& myNodeInfo = nodesInfo.centre_info().centre_info()[GetNodeId()];
 
 	InetAddress serviceAddr(myNodeInfo.ip(), myNodeInfo.port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, serviceAddr);
@@ -177,15 +177,15 @@ void CentreNode::Receive2(const OnBeConnectedEvent& es)
 	}
 }
 
-void CentreNode::InitializeSystemBeforeConnection()
+void CentreNode::PrepareForBeforeConnection()
 {
 	PlayerSessionSystem::Initialize();
 }
 
 void CentreNode::InitSystemAfterConnect() const
 {
-	InetAddress redisAddr(serversInfo.redis_info().redis_info(0).ip(),
-		serversInfo.redis_info().redis_info(0).port());
+	InetAddress redisAddr(nodesInfo.redis_info().redis_info(0).ip(),
+		nodesInfo.redis_info().redis_info(0).port());
 	tls_centre.redis_system().Initialize(redisAddr);
 }
 

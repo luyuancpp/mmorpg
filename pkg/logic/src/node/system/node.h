@@ -22,22 +22,22 @@ public:
     virtual NodeInfo& GetNodeInfo() = 0;
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
 protected:
-    virtual void Init();
+    virtual void Initialize();
     virtual void StartRpcServer(const nodes_info_data& data);
     virtual void ShutdownNode();
     virtual void SetNodeId(NodeId node_id)final{GetNodeInfo().set_node_id(node_id);}
-    virtual void InitializeSystemBeforeConnection() {}
+    virtual void PrepareForBeforeConnection() {}
     virtual void ReadyForGame(){}
-    void InitLog();
-    void InitializeNodeConfig();
-    virtual void InitializeGameConfig();
-    virtual void OnConfigLoadSuccessful();
-    void InitTimeZone();
+    void SetupLogging();
+    virtual void LoadConfigurations();
+    virtual void OnConfigLoadSuccessful(){}
+    void InitializeTimeZone();
     void InitializeNodeFromRequestInfo();
-    virtual void ConnectToCentralNode(::google::protobuf::Service* service);
-    void InitializeGrpcNode();
+    virtual void ConnectToCentreHelper(::google::protobuf::Service* service);
+    void InitializeGrpcServices();
     void InitializeLaunchTime();
     void ReleaseNodeId();
+    void SetupMessageHandlers();
 
     static void AsyncOutput(const char* msg, int len);
 
@@ -47,8 +47,8 @@ protected:
     NodeInfo node_info_;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
-    nodes_info_data serversInfo;
-    nodes_info_data node_net_info_;
+    nodes_info_data nodesInfo;
+    RpcClientPtr zoneCentreNode;
 };
 
 muduo::AsyncLogging& logger(); 
