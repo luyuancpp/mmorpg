@@ -1,0 +1,17 @@
+server:
+  port: 5555
+spring:
+  application:
+    name: test-server
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+  data:
+    redis:
+      host: localhost
+sa-token:
+  is-read-cookie: false
+
+grpc:
+  server:
+    port: 5556
