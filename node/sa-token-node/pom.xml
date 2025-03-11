@@ -11,7 +11,7 @@
     <groupId>com.example</groupId>
     <artifactId>sa-token-grpc-node</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>grpc-server</name>
+    <name>sa-token-grpc-node</name>
     <description>grpc-server</description>
     <url/>
     <licenses>
