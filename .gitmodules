@@ -29,7 +29,7 @@
 [submodule "third_party/grpc"]
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
-	branch = v1.70.x
+	branch = v1.71.x
 [submodule "pkg/muduo_windows/src"]
 	path = pkg/muduo_windows/src
 	url = https://github.com/luyuancpp/muduo-cross-platform.git
