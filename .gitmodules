@@ -18,7 +18,7 @@
 	url = https://github.com/recastnavigation/recastnavigation.git
 [submodule "third_party/boost"]
 	path = third_party/boost
-	url = https://github.com/luyuancpp/boost.git
+	url = https://github.com/boostorg/boost.git
 [submodule "third_party/spdlog"]
 	path = third_party/spdlog
 	url = https://github.com/gabime/spdlog.git
