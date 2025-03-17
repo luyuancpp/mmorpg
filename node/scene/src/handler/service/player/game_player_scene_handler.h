@@ -27,19 +27,19 @@ public:
 		{
 		case 0:
 			EnterScene(player,
-			::google::protobuf::internal::DownCast<const GsEnterSceneRequest*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const GsEnterSceneRequest*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
 			LeaveScene(player,
-			::google::protobuf::internal::DownCast<const GsLeaveSceneRequest*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const GsLeaveSceneRequest*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 2:
 			EnterSceneS2C(player,
-			::google::protobuf::internal::DownCast<const EnterSceneS2CRequest*>(request),
-			::google::protobuf::internal::DownCast<EnterScenerS2CResponse*>(response));
-			TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<EnterScenerS2CResponse*>(response));
+			static_cast<const EnterSceneS2CRequest*>(request),
+			static_cast<EnterScenerS2CResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(static_cast<EnterScenerS2CResponse*>(response));
 		break;
 		default:
 		break;

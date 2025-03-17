@@ -28,17 +28,17 @@ public:
 		case 0:
 			EnterScene(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
 			LeaveScene(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 2:
 			EnterSceneS2C(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<EnterScenerS2CResponse*>(response));
+			static_cast<EnterScenerS2CResponse*>(response));
 		break;
 		default:
 		break;

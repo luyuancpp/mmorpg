@@ -4,8 +4,8 @@
 void Pb2sol2centre_scene()
 {
 tls_lua_state.new_usertype<RegisterSceneRequest>("RegisterSceneRequest",
-"game_node_id",
-sol::property(&RegisterSceneRequest::game_node_id, &RegisterSceneRequest::set_game_node_id),
+"scene_node_id",
+sol::property(&RegisterSceneRequest::scene_node_id, &RegisterSceneRequest::set_scene_node_id),
 "add_scenes_info",
 &RegisterSceneRequest::add_scenes_info,
 "scenes_info",
@@ -26,8 +26,8 @@ tls_lua_state.new_usertype<RegisterSceneResponse>("RegisterSceneResponse",
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<UnRegisterSceneRequest>("UnRegisterSceneRequest",
-"game_node_id",
-sol::property(&UnRegisterSceneRequest::game_node_id, &UnRegisterSceneRequest::set_game_node_id),
+"scene_node_id",
+sol::property(&UnRegisterSceneRequest::scene_node_id, &UnRegisterSceneRequest::set_scene_node_id),
 "scene",
 sol::property(&UnRegisterSceneRequest::scene, &UnRegisterSceneRequest::set_scene),
 "reason",

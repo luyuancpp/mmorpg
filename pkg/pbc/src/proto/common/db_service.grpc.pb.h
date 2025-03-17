@@ -24,6 +24,7 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/stub_options.h>
 #include <grpcpp/support/sync_stream.h>
+#include <grpcpp/ports_def.inc>
 
 class AccountDBService final {
  public:
@@ -754,4 +755,5 @@ class PlayerDBService final {
 };
 
 
+#include <grpcpp/ports_undef.inc>
 #endif  // GRPC_proto_2fcommon_2fdb_5fservice_2eproto__INCLUDED

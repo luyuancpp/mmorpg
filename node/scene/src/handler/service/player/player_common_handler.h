@@ -23,13 +23,13 @@ public:
 		{
 		case 0:
 			SendTipToClient(player,
-			::google::protobuf::internal::DownCast<const TipInfoMessage*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const TipInfoMessage*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 1:
 			KickPlayer(player,
-			::google::protobuf::internal::DownCast<const TipInfoMessage*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const TipInfoMessage*>(request),
+			static_cast<Empty*>(response));
 		break;
 		default:
 		break;

@@ -4,7 +4,6 @@ option go_package = "pb/game";
 
 import "proto/common/empty.proto";
 import "proto/common/c2gate.proto";
-import "proto/common/mysql_database_table.proto";
 import "proto/common/session.proto";
 
 message LoginC2LRequest

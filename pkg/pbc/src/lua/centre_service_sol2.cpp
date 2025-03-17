@@ -20,8 +20,8 @@ sol::base_classes, sol::bases<::google::protobuf::Message>());
 tls_lua_state.new_usertype<EnterGameNodeSuccessRequest>("EnterGameNodeSuccessRequest",
 "player_id",
 sol::property(&EnterGameNodeSuccessRequest::player_id, &EnterGameNodeSuccessRequest::set_player_id),
-"game_node_id",
-sol::property(&EnterGameNodeSuccessRequest::game_node_id, &EnterGameNodeSuccessRequest::set_game_node_id),
+"scene_node_id",
+sol::property(&EnterGameNodeSuccessRequest::scene_node_id, &EnterGameNodeSuccessRequest::set_scene_node_id),
 "DebugString",
 &EnterGameNodeSuccessRequest::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

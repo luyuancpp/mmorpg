@@ -24,12 +24,12 @@ public:
 		case 0:
 			Centre2GsLogin(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
 			ExitGame(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		default:
 		break;

@@ -18,6 +18,9 @@ const (
 	DBDescDirectory           = "../bin/proto_desc/"
 	ProtoDescExtension        = ".desc"
 	ProtoDirName              = "proto/"
+	ThirdPartyDirectory       = "third_party/"
+	GrpcDirectory             = ProjectDir + ThirdPartyDirectory + "grpc/"
+	ProtoBufferDirectory      = GrpcDirectory + "third_party/protobuf/src/"
 )
 
 // 常量：文件扩展名

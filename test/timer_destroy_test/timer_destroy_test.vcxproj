@@ -113,7 +113,7 @@
       <AdditionalIncludeDirectories>../../pkg/common/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/redis/;../../third_party/;../../;../../pkg/pbc/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/logic/src/;../../pkg/pbc/src/;../../node/centre/src/;../../pkg/config/src/;../../pkg/config/src/pbc/;../../third_party/muduo/contrib/windows/include/;../../third_party/grpc/third_party/protobuf/src/;../../third_party/grpc/third_party/abseil-cpp/;../../third_party/grpc/third_party/googletest/googletest/include/;../../third_party/grpc/third_party/googletest/googlemock/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

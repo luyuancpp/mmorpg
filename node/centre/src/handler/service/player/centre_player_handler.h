@@ -19,8 +19,8 @@ public:
 		{
 		case 0:
 			Test(player,
-			::google::protobuf::internal::DownCast<const google::protobuf::Empty*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const google::protobuf::Empty*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		default:
 		break;

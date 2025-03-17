@@ -107,8 +107,8 @@ tls_lua_state.new_usertype<RegisterGameNodeSessionRequest>("RegisterGameNodeSess
 [](RegisterGameNodeSessionRequest& pb) ->decltype(auto){ return pb.session_info();},
 "mutable_session_info",
 [](RegisterGameNodeSessionRequest& pb) ->decltype(auto){ return pb.mutable_session_info();},
-"game_node_id",
-sol::property(&RegisterGameNodeSessionRequest::game_node_id, &RegisterGameNodeSessionRequest::set_game_node_id),
+"scene_node_id",
+sol::property(&RegisterGameNodeSessionRequest::scene_node_id, &RegisterGameNodeSessionRequest::set_scene_node_id),
 "DebugString",
 &RegisterGameNodeSessionRequest::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());
@@ -287,8 +287,8 @@ sol::property(&RegisterGateNodeRequest::gate_node_id, &RegisterGateNodeRequest::
 sol::base_classes, sol::bases<::google::protobuf::Message>());
 
 tls_lua_state.new_usertype<UnregisterGameNodeRequest>("UnregisterGameNodeRequest",
-"game_node_id",
-sol::property(&UnregisterGameNodeRequest::game_node_id, &UnregisterGameNodeRequest::set_game_node_id),
+"scene_node_id",
+sol::property(&UnregisterGameNodeRequest::scene_node_id, &UnregisterGameNodeRequest::set_scene_node_id),
 "DebugString",
 &UnregisterGameNodeRequest::DebugString,
 sol::base_classes, sol::bases<::google::protobuf::Message>());

@@ -24,7 +24,7 @@ void ProtobufCodec::fillEmptyBuffer(Buffer* buf, const google::protobuf::Message
   // buf->retrieveAll();
   assert(buf->readableBytes() == 0);
 
-  const std::string& typeName = message.GetTypeName();
+  const std::string typeName = std::string(message.GetTypeName());
   int32_t nameLen = static_cast<int32_t>(typeName.size()+1);
   buf->appendInt32(nameLen);
   buf->append(typeName.c_str(), nameLen);

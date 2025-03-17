@@ -31,23 +31,23 @@ public:
 		{
 		case 0:
 			EnterScene(player,
-			::google::protobuf::internal::DownCast<const CentreEnterSceneRequest*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const CentreEnterSceneRequest*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
 			LeaveScene(player,
-			::google::protobuf::internal::DownCast<const CentreLeaveSceneRequest*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const CentreLeaveSceneRequest*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 2:
 			LeaveSceneAsyncSavePlayerComplete(player,
-			::google::protobuf::internal::DownCast<const CentreLeaveSceneAsyncSavePlayerCompleteRequest*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const CentreLeaveSceneAsyncSavePlayerCompleteRequest*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 3:
 			SceneInfoC2S(player,
-			::google::protobuf::internal::DownCast<const SceneInfoRequest*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const SceneInfoRequest*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		default:
 		break;

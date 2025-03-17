@@ -20,7 +20,7 @@ public:
 		case 0:
 			Test(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		default:
 		break;

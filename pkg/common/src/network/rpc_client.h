@@ -55,7 +55,7 @@ public:
     void registerService(google::protobuf::Service* service)
     {
         const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-        services_[desc->full_name()] = service;
+        services_[std::string(desc->full_name())] = service;
     }
 
     void connect()

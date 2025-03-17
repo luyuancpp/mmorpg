@@ -15,7 +15,7 @@ constexpr  size_t kMaxMessageByteSize = 2048;
 
 // 处理未知的 Protobuf 消息
 void HandleUnknownProtobufMessage(const TcpConnectionPtr&, const MessagePtr& message, muduo::Timestamp) {
-    LOG_ERROR << "Unknown Protobuf message received: " << message->GetTypeName();
+    LOG_ERROR << "Unknown Protobuf message received: " << message->GetTypeName().data();
 }
 
 // 全局响应分发器

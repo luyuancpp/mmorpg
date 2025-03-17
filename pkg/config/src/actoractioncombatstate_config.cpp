@@ -1,6 +1,5 @@
 #include "google/protobuf/util/json_util.h"
 #include "src/util/file2string.h"
-#include "muduo/base/Logging.h"
 #include "common_error_tip.pb.h"
 #include "actoractioncombatstate_config.h"
 
@@ -21,10 +20,19 @@ void ActorActionCombatStateConfigurationTable::Load() {
 }
 
 
-std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateConfigurationTable::GetTable(const uint32_t keyId) {
-    const auto it = kv_data_.find(keyId);
+std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateConfigurationTable::GetTable(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
     if (it == kv_data_.end()) {
-        LOG_ERROR << "ActorActionCombatState table not found for ID: " << keyId;
+       LOG_ERROR << "ActorActionCombatState table not found for ID: " << tableId;
+        return { nullptr, kInvalidTableId };
+    }
+    return { it->second, kSuccess };
+}
+
+
+std::pair<const ActorActionCombatStateTable*, uint32_t> ActorActionCombatStateConfigurationTable::GetTableWithoutErrorLogging(const uint32_t tableId) {
+    const auto it = kv_data_.find(tableId);
+    if (it == kv_data_.end()) {
         return { nullptr, kInvalidTableId };
     }
     return { it->second, kSuccess };
