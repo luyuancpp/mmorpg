@@ -32,22 +32,22 @@ public:
 		case 0:
 			EnterScene(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
 			LeaveScene(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 2:
 			LeaveSceneAsyncSavePlayerComplete(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 3:
 			SceneInfoC2S(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		default:
 		break;

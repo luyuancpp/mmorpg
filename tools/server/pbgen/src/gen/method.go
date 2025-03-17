@@ -101,11 +101,11 @@ func getPlayerMethodHandlerFunctions(methodList RPCMethods) string {
 
 		callFunctionList.WriteString(config.Tab2 + "case " + strconv.Itoa(i) + ":\n")
 		callFunctionList.WriteString(config.Tab3 + method.Method + "(player,\n")
-		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<const " + method.Request + "*>(request),\n")
-		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
+		callFunctionList.WriteString(config.Tab3 + "static_cast<const " + method.Request + "*>(request),\n")
+		callFunctionList.WriteString(config.Tab3 + "static_cast<" + method.Response + "*>(response));\n")
 
 		if !strings.Contains(method.Response, config.EmptyResponseName) {
-			callFunctionList.WriteString(config.Tab3 + "TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
+			callFunctionList.WriteString(config.Tab3 + "TRANSFER_ERROR_MESSAGE(static_cast<" + method.Response + "*>(response));\n")
 		}
 
 		callFunctionList.WriteString(config.Tab2 + "break;\n")
@@ -155,7 +155,7 @@ func getPlayerMethodRepliedHandlerFunctions(methodList RPCMethods) string {
 		callFunctionList.WriteString(config.Tab2 + "case " + strconv.Itoa(i) + ":\n")
 		callFunctionList.WriteString(config.Tab3 + method.Method + "(player,\n")
 		callFunctionList.WriteString(config.Tab3 + "nullptr,\n")
-		callFunctionList.WriteString(config.Tab3 + "::google::protobuf::internal::DownCast<" + method.Response + "*>(response));\n")
+		callFunctionList.WriteString(config.Tab3 + "static_cast<" + method.Response + "*>(response));\n")
 		callFunctionList.WriteString(config.Tab2 + "break;\n")
 	}
 

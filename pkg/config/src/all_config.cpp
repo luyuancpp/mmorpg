@@ -10,6 +10,7 @@
 #include "testmultikey_config.h"
 #include "test_config.h"
 #include "item_config.h"
+#include "actoractioncombatstate_config.h"
 #include "actoractionstate_config.h"
 #include "globalvariable_config.h"
 #include "mainscene_config.h"
@@ -29,6 +30,7 @@ void LoadAllConfig()
     TestMultiKeyConfigurationTable::Instance().Load();
     TestConfigurationTable::Instance().Load();
     ItemConfigurationTable::Instance().Load();
+    ActorActionCombatStateConfigurationTable::Instance().Load();
     ActorActionStateConfigurationTable::Instance().Load();
     GlobalVariableConfigurationTable::Instance().Load();
     MainSceneConfigurationTable::Instance().Load();
@@ -43,7 +45,7 @@ void LoadAllConfig()
 
 void LoadAllConfigAsyncWhenServerLaunch()
 {
-    static muduo::CountDownLatch latch_(17);
+    static muduo::CountDownLatch latch_(18);
 
     /// Begin
     {
@@ -116,6 +118,17 @@ void LoadAllConfigAsyncWhenServerLaunch()
         std::thread t([&]() {
 
     ItemConfigurationTable::Instance().Load();
+            latch_.countDown();
+        });
+        t.detach();
+    }
+    /// End
+
+    /// Begin
+    {
+        std::thread t([&]() {
+
+    ActorActionCombatStateConfigurationTable::Instance().Load();
             latch_.countDown();
         });
         t.detach();

@@ -47,44 +47,44 @@ public:
 		{
 		case 0:
 			EnterScene(player,
-			::google::protobuf::internal::DownCast<const EnterSceneC2SRequest*>(request),
-			::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
-			TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
+			static_cast<const EnterSceneC2SRequest*>(request),
+			static_cast<EnterSceneC2SResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(static_cast<EnterSceneC2SResponse*>(response));
 		break;
 		case 1:
 			NotifyEnterScene(player,
-			::google::protobuf::internal::DownCast<const EnterSceneS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const EnterSceneS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 2:
 			SceneInfoC2S(player,
-			::google::protobuf::internal::DownCast<const SceneInfoRequest*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const SceneInfoRequest*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 3:
 			NotifySceneInfo(player,
-			::google::protobuf::internal::DownCast<const SceneInfoS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const SceneInfoS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 4:
 			NotifyActorCreate(player,
-			::google::protobuf::internal::DownCast<const ActorCreateS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const ActorCreateS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 5:
 			NotifyActorDestroy(player,
-			::google::protobuf::internal::DownCast<const ActorDestroyS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const ActorDestroyS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 6:
 			NotifyActorListCreate(player,
-			::google::protobuf::internal::DownCast<const ActorListCreateS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const ActorListCreateS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 7:
 			NotifyActorListDestroy(player,
-			::google::protobuf::internal::DownCast<const ActorListDestroyS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const ActorListDestroyS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		default:
 		break;

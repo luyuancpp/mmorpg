@@ -73,7 +73,7 @@ message NodeRoutingMessageBody
 message RegisterGameNodeSessionRequest
 {
   SessionDetails session_info = 1;  // 会话详情
-  uint32 game_node_id = 2;          // 游戏节点 ID
+  uint32 scene_node_id = 2;          // 游戏节点 ID
 }
 
 // 注册游戏节点会话响应
@@ -163,7 +163,7 @@ message RegisterGateNodeRequest
 // 注销游戏节点请求
 message UnregisterGameNodeRequest
 {
-  uint32 game_node_id = 1;  // 游戏节点 ID
+  uint32 scene_node_id = 1;  // 游戏节点 ID
 }
 
 

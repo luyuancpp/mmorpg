@@ -31,25 +31,25 @@ public:
 		{
 		case 0:
 			ReleaseSkill(player,
-			::google::protobuf::internal::DownCast<const ReleaseSkillSkillRequest*>(request),
-			::google::protobuf::internal::DownCast<ReleaseSkillSkillResponse*>(response));
-			TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<ReleaseSkillSkillResponse*>(response));
+			static_cast<const ReleaseSkillSkillRequest*>(request),
+			static_cast<ReleaseSkillSkillResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(static_cast<ReleaseSkillSkillResponse*>(response));
 		break;
 		case 1:
 			NotifySkillUsed(player,
-			::google::protobuf::internal::DownCast<const SkillUsedS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const SkillUsedS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 2:
 			NotifySkillInterrupted(player,
-			::google::protobuf::internal::DownCast<const SkillInterruptedS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const SkillInterruptedS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 3:
 			GetSkillList(player,
-			::google::protobuf::internal::DownCast<const GetSkillListRequest*>(request),
-			::google::protobuf::internal::DownCast<GetSkillListResponse*>(response));
-			TRANSFER_ERROR_MESSAGE(::google::protobuf::internal::DownCast<GetSkillListResponse*>(response));
+			static_cast<const GetSkillListRequest*>(request),
+			static_cast<GetSkillListResponse*>(response));
+			TRANSFER_ERROR_MESSAGE(static_cast<GetSkillListResponse*>(response));
 		break;
 		default:
 		break;

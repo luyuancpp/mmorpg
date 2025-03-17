@@ -51,7 +51,7 @@ private:
                                  const MessagePtr& message,
                                  Timestamp)
     {
-        LOG_ERROR << "onUnknownMessage: " << message->GetTypeName();
+        LOG_ERROR << "onUnknownMessage: " << message->GetTypeName().data();
         conn->shutdown();
     }
 

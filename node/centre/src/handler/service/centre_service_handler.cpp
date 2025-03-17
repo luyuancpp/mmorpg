@@ -538,7 +538,7 @@ void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* con
 		return;
 	}
 
-	playerNodeInfo->set_game_node_id(request->scene_node_id());
+	playerNodeInfo->set_scene_node_id(request->scene_node_id());
 
 	PlayerNodeSystem::AddGameNodePlayerToGateNode(player);
 
@@ -708,7 +708,7 @@ void CentreServiceHandler::UnRegisterGameNode(::google::protobuf::RpcController*
     for (const auto& [e, gate_node]: tls.gateNodeRegistry.view<RpcSessionPtr>().each())
     {
 		UnregisterGameNodeRequest message;
-		message.set_game_node_id(request->scene_node_id());
+		message.set_scene_node_id(request->scene_node_id());
         gate_node->SendRequest(GateServiceRegisterGameMessageId, message);
     }
 ///<<< END WRITING YOUR CODE

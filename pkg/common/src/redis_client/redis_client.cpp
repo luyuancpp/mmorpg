@@ -27,7 +27,7 @@ void MessageSyncRedisClient::Connect(const std::string& redis_server_addr, int32
 void MessageSyncRedisClient::Save(const google::protobuf::Message& message)
 {
     const auto * desc = message.GetDescriptor();
-    Save(message, desc->full_name());
+    Save(message, std::string(desc->full_name()));
 }
 
 void MessageSyncRedisClient::Save(const google::protobuf::Message& message, Guid guid)
@@ -36,11 +36,11 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, Guid
 
     if (kInvalidGuid == guid)
     {
-        LOG_ERROR << "Message Save To Redis Game Guid Key Empty : " << desc->full_name();
+        LOG_ERROR << "Message Save To Redis Game Guid Key Empty : " << desc->full_name().data();
         return;
     }
 
-    std::string key = desc->full_name() + std::to_string(guid);
+    std::string key = std::string(desc->full_name()) + std::to_string(guid);
     Save(message, key);
 }
 
@@ -49,7 +49,7 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, cons
     if (key.empty())
     {
         const auto* desc = message.GetDescriptor();
-        LOG_ERROR << "Message Save To Redis Key Empty : " << desc->full_name();
+        LOG_ERROR << "Message Save To Redis Key Empty : " << desc->full_name().data();
         return;
     }
 
@@ -68,13 +68,13 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, cons
 void MessageSyncRedisClient::Load(google::protobuf::Message& message)
 {
     const auto* desc = message.GetDescriptor();
-    Load(message, desc->full_name());
+    Load(message, desc->full_name().data());
 }
 
 void MessageSyncRedisClient::Load(google::protobuf::Message& message, Guid guid)
 {
     const auto* desc = message.GetDescriptor();
-    std::string key = desc->full_name() + std::to_string(guid);
+    std::string key = std::string(desc->full_name()) + std::to_string(guid);
     Load(message, key);
 }
 
@@ -83,7 +83,7 @@ void MessageSyncRedisClient::Load(google::protobuf::Message& message, const std:
     if (key.empty())
     {
         const auto* desc = message.GetDescriptor();
-        LOG_ERROR << "Message Load From Redis Key Empty : " << desc->full_name();
+        LOG_ERROR << "Message Load From Redis Key Empty : " << desc->full_name().data();
         return;
     }
 

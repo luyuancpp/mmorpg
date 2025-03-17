@@ -39,33 +39,33 @@ public:
 		{
 		case 0:
 			SyncBaseAttribute(player,
-			::google::protobuf::internal::DownCast<const BaseAttributeSyncDataS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const BaseAttributeSyncDataS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 1:
 			SyncAttribute2Frames(player,
-			::google::protobuf::internal::DownCast<const AttributeDelta2FramesS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const AttributeDelta2FramesS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 2:
 			SyncAttribute5Frames(player,
-			::google::protobuf::internal::DownCast<const AttributeDelta5FramesS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const AttributeDelta5FramesS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 3:
 			SyncAttribute10Frames(player,
-			::google::protobuf::internal::DownCast<const AttributeDelta10FramesS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const AttributeDelta10FramesS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 4:
 			SyncAttribute30Frames(player,
-			::google::protobuf::internal::DownCast<const AttributeDelta30FramesS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const AttributeDelta30FramesS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		case 5:
 			SyncAttribute60Frames(player,
-			::google::protobuf::internal::DownCast<const AttributeDelta60FramesS2C*>(request),
-			::google::protobuf::internal::DownCast<Empty*>(response));
+			static_cast<const AttributeDelta60FramesS2C*>(request),
+			static_cast<Empty*>(response));
 		break;
 		default:
 		break;

@@ -23,13 +23,13 @@ public:
 		{
 		case 0:
 			Centre2GsLogin(player,
-			::google::protobuf::internal::DownCast<const Centre2GsLoginRequest*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const Centre2GsLoginRequest*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
 			ExitGame(player,
-			::google::protobuf::internal::DownCast<const GameNodeExitGameRequest*>(request),
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
+			static_cast<const GameNodeExitGameRequest*>(request),
+			static_cast<google::protobuf::Empty*>(response));
 		break;
 		default:
 		break;
