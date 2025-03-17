@@ -43,3 +43,6 @@
 [submodule "third_party/exprtk"]
 	path = third_party/exprtk
 	url = https://github.com/ArashPartow/exprtk.git
+[submodule "third_party/yaml-cpp"]
+	path = third_party/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
