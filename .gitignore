@@ -68,3 +68,5 @@ lib/LIST.TXT
 *.tmp
 bin/vsout/
 *md5
+
+tools/proto/pbgen/bin/
