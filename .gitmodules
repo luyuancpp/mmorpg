@@ -26,10 +26,12 @@
 [submodule "pkg/muduo_windows/src"]
 	path = pkg/muduo_windows/src
 	url = https://github.com/luyuancpp/muduo-cross-platform.git
+	ignore = dirty
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://github.com/madler/zlib.git
 	branch = master
+	ignore = dirty
 [submodule "third_party/hexagons_grids"]
 	path = third_party/hexagons_grids
 	url = https://github.com/luyuancpp/game_hexagons_grids.git
@@ -46,3 +48,4 @@
 	path = third_party/grpc
 	url = https://github.com/grpc/grpc.git
 	branch = v1.71.x
+	ignore = dirty
