@@ -1,31 +1,44 @@
 import mysql.connector
 import random
+import logging
+
+# 配置日志记录
+logging.basicConfig(level=logging.INFO)
 
 
 # 连接到 MySQL 数据库
 def connect_to_db():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='root',
-        database='deploy'  # 修改为你的数据库名称 "deploy"
-    )
+    try:
+        return mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='root',
+            database='deploy'  # 修改为你的数据库名称 "deploy"
+        )
+    except mysql.connector.Error as err:
+        logging.error(f"Error: {err}")
+        raise
 
 
 # 清空表中的数据
 def clear_table(cursor, table_name):
-    truncate_query = f"TRUNCATE TABLE {table_name}"
-    cursor.execute(truncate_query)
-    print(f"Table {table_name} has been cleared.")
+    try:
+        truncate_query = f"TRUNCATE TABLE {table_name}"
+        cursor.execute(truncate_query)
+        logging.info(f"Table {table_name} has been cleared.")
+    except mysql.connector.Error as err:
+        logging.error(f"Error clearing table {table_name}: {err}")
+        raise
 
 
 # 初始化端口管理
 def initialize_ports():
     return {
-        'gate_node_db': 20000,
-        'centre_node_db': 30000,
-        'login_node_db': 40000,
-        'game_node_db': 60000,
+        'gate_node_db': 2000,
+        'centre_node_db': 3000,
+        'login_node_db': 4000,
+        'game_node_db': 6000,
+        'database_node_db': 10000,
     }
 
 
@@ -33,10 +46,13 @@ def initialize_ports():
 def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id_counter):
     ip = "127.0.0.1"
 
-    # 对于 centre_node_db 表，zone_id 固定，唯一递增
+    # 对于 centre_node_db 和 database_node_db 表，zone_id 固定，唯一递增
     if table_name == 'centre_node_db':
-        zone_id = zone_id_counter['centre_node_db']
+        zone_id = zone_id_counter['centre_node_db']  # centre_node_db 自增的 zone_id
         zone_id_counter['centre_node_db'] += 1  # centre 的 zone_id 递增
+    elif table_name == 'database_node_db':
+        zone_id = zone_id_counter['database_node_db']  # database_node_db 自增的 zone_id
+        zone_id_counter['database_node_db'] += 1  # database_node_db 的 zone_id 递增
     else:
         # 对于其他表，zone_id 每组递增
         zone_id = zone_id_counter[table_name]
@@ -54,8 +70,8 @@ def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id
 
     used_ports.add(current_port)
 
-    # 对于 login_node_db，返回 addr 格式 "127.0.0.1:port"
-    if table_name == 'login_node_db':
+    # 对于 login_node_db 和 database_node_db，返回 addr 格式 "127.0.0.1:port"
+    if table_name == 'login_node_db' or table_name == 'database_node_db':
         addr = f"{ip}:{current_port}"
         return addr, None, zone_id
 
@@ -65,22 +81,28 @@ def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id
 
 # 插入数据到表
 def insert_data_to_table(cursor, table_name, used_ports, port_counter, zone_id_counter, nodes_per_group):
+    data_to_insert = []
     # 根据每个表需要插入的节点数进行插入
     for i in range(nodes_per_group):  # 动态生成节点数
-        if table_name == 'login_node_db':
+        if table_name == 'login_node_db' or table_name == 'database_node_db':
             addr, _, zone_id = generate_simulated_data(i, table_name, used_ports, port_counter, zone_id_counter)
-            insert_query = f"""
-            INSERT INTO {table_name} (addr, zone_id)
-            VALUES (%s, %s)
-            """
-            cursor.execute(insert_query, (addr, zone_id))
+            data_to_insert.append((addr, zone_id))
         else:
             ip, port, zone_id = generate_simulated_data(i, table_name, used_ports, port_counter, zone_id_counter)
-            insert_query = f"""
-            INSERT INTO {table_name} (ip, port, zone_id)
-            VALUES (%s, %s, %s)
-            """
-            cursor.execute(insert_query, (ip, port, zone_id))
+            data_to_insert.append((ip, port, zone_id))
+
+    try:
+        # 批量插入数据
+        if table_name == 'login_node_db' or table_name == 'database_node_db':
+            insert_query = f"INSERT INTO {table_name} (addr, zone_id) VALUES (%s, %s)"
+        else:
+            insert_query = f"INSERT INTO {table_name} (ip, port, zone_id) VALUES (%s, %s, %s)"
+
+        cursor.executemany(insert_query, data_to_insert)
+        logging.info(f"Inserted {len(data_to_insert)} records into {table_name}")
+    except mysql.connector.Error as err:
+        logging.error(f"Error inserting data into {table_name}: {err}")
+        raise
 
 
 # 主函数
@@ -90,7 +112,7 @@ def main():
     cursor = conn.cursor()
 
     # 定义表名列表
-    tables = ['centre_node_db', 'game_node_db', 'gate_node_db', 'login_node_db']
+    tables = ['centre_node_db', 'game_node_db', 'gate_node_db', 'login_node_db', 'database_node_db']
 
     # 用于追踪已使用的端口
     used_ports = set()
@@ -100,10 +122,11 @@ def main():
 
     # 配置每个表需要插入的节点数量
     nodes_per_group = {
-        'login_node_db': 3,  # 每个 login_node_db 插入 3 个节点
-        'gate_node_db': 5,  # 每个 gate_node_db 插入 5 个节点
-        'game_node_db': 12,  # 每个 game_node_db 插入 12 个节点
-        'centre_node_db': 12  # centre_node_db 插入 12 个节点
+        'login_node_db': 30,  # 每个 login_node_db 插入 3 个节点
+        'gate_node_db': 50,  # 每个 gate_node_db 插入 5 个节点
+        'game_node_db': 120,  # 每个 game_node_db 插入 12 个节点
+        'centre_node_db': 12,  # 每个 centre_node_db 插入 12 个节点
+        'database_node_db': 12  # 每个 database_node_db 插入 12 个节点
     }
 
     # 初始化 zone_id 自增
@@ -111,7 +134,8 @@ def main():
         'gate_node_db': 1,  # gate_node_db 从 zone_id 1 开始
         'game_node_db': 1,  # game_node_db 从 zone_id 1 开始
         'centre_node_db': 1,  # centre_node_db 从 zone_id 1 开始
-        'login_node_db': 1  # login_node_db 从 zone_id 1 开始
+        'login_node_db': 1,  # login_node_db 从 zone_id 1 开始
+        'database_node_db': 1  # database_node_db 从 zone_id 1 开始
     }
 
     # 清空并填充数据到每个表
