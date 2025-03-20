@@ -46,9 +46,10 @@ def initialize_ports():
 def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id_counter, zone_id_step):
     ip = "127.0.0.1"
 
-    # 获取当前表的 zone_id，并且按步长递增
+    # 获取当前表的 zone_id，并且每生成 `zone_id_step` 个节点后递增一次
     zone_id = zone_id_counter[table_name]
-    zone_id_counter[table_name] += zone_id_step  # 使用步长进行自增
+    if index > 0 and index % zone_id_step == 0:
+        zone_id_counter[table_name] += 1  # 达到步长时，递增 zone_id
 
     # 获取当前表的起始端口
     current_port = port_counter[table_name]
@@ -131,11 +132,11 @@ def main():
 
     # 定义每个表的 zone_id 步长
     zone_id_steps = {
-        'gate_node_db': 1,  # 步长为 1
-        'game_node_db': 2,  # 步长为 2
-        'centre_node_db': 1,  # 步长为 1
-        'login_node_db': 3,  # 步长为 3
-        'database_node_db': 4  # 步长为 4
+        'gate_node_db': 12,  # 每 12 个节点递增一次 zone_id
+        'game_node_db': 12,  # 每 12 个节点递增一次 zone_id
+        'centre_node_db': 12,  # 每 12 个节点递增一次 zone_id
+        'login_node_db': 10,  # 每 10 个节点递增一次 zone_id
+        'database_node_db': 10  # 每 10 个节点递增一次 zone_id
     }
 
     # 清空并填充数据到每个表
