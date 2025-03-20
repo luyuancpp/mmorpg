@@ -24,6 +24,7 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/stub_options.h>
 #include <grpcpp/support/sync_stream.h>
+#include <grpcpp/ports_def.inc>
 
 class LoginService final {
  public:
@@ -861,4 +862,5 @@ class LoginService final {
 };
 
 
+#include <grpcpp/ports_undef.inc>
 #endif  // GRPC_proto_2fcommon_2flogin_5fservice_2eproto__INCLUDED
