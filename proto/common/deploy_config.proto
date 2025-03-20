@@ -22,9 +22,6 @@ message GameConfigInfo
   repeated string mq_topics = 5;
   string access_point = 6;
   uint32 message_body_size = 7;
-  uint32 total = 8;
-  string access_key = 9;
-  string access_secret = 10;
 }
 
 

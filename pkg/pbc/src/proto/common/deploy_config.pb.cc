@@ -31,18 +31,11 @@ inline constexpr GameConfigInfo::Impl_::Impl_(
         access_point_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        access_key_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        access_secret_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
         zone_id_{0u},
         lobby_id_{0u},
         loglevel_{0u},
         server_type_{0u},
         message_body_size_{0u},
-        total_{0u},
         _cached_size_{0} {}
 
 template <typename>
@@ -142,9 +135,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.mq_topics_),
         PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.access_point_),
         PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.message_body_size_),
-        PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.total_),
-        PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.access_key_),
-        PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.access_secret_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -162,19 +152,17 @@ const char descriptor_table_protodef_proto_2fcommon_2fdeploy_5fconfig_2eproto[] 
     "onnetionParam\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\022"
     "\017\n\007db_host\030\003 \001(\t\022\017\n\007db_user\030\004 \001(\t\022\023\n\013db_"
     "password\030\005 \001(\t\022\017\n\007db_port\030\006 \001(\r\022\021\n\tdb_db"
-    "name\030\007 \001(\t\"\330\001\n\016GameConfigInfo\022\017\n\007zone_id"
+    "name\030\007 \001(\t\"\236\001\n\016GameConfigInfo\022\017\n\007zone_id"
     "\030\001 \001(\r\022\020\n\010lobby_id\030\002 \001(\r\022\020\n\010loglevel\030\003 \001"
     "(\r\022\023\n\013server_type\030\004 \001(\r\022\021\n\tmq_topics\030\005 \003"
     "(\t\022\024\n\014access_point\030\006 \001(\t\022\031\n\021message_body"
-    "_size\030\007 \001(\r\022\r\n\005total\030\010 \001(\r\022\022\n\naccess_key"
-    "\030\t \001(\t\022\025\n\raccess_secret\030\n \001(\tB\tZ\007pb/game"
-    "b\006proto3"
+    "_size\030\007 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fdeploy_5fconfig_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdeploy_5fconfig_2eproto = {
     false,
     false,
-    408,
+    350,
     descriptor_table_protodef_proto_2fcommon_2fdeploy_5fconfig_2eproto,
     "proto/common/deploy_config.proto",
     &descriptor_table_proto_2fcommon_2fdeploy_5fconfig_2eproto_once,
@@ -616,8 +604,6 @@ inline PROTOBUF_NDEBUG_INLINE GameConfigInfo::Impl_::Impl_(
     const Impl_& from, const ::GameConfigInfo& from_msg)
       : mq_topics_{visibility, arena, from.mq_topics_},
         access_point_(arena, from.access_point_),
-        access_key_(arena, from.access_key_),
-        access_secret_(arena, from.access_secret_),
         _cached_size_{0} {}
 
 GameConfigInfo::GameConfigInfo(
@@ -637,9 +623,9 @@ GameConfigInfo::GameConfigInfo(
                offsetof(Impl_, zone_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, zone_id_),
-           offsetof(Impl_, total_) -
+           offsetof(Impl_, message_body_size_) -
                offsetof(Impl_, zone_id_) +
-               sizeof(Impl_::total_));
+               sizeof(Impl_::message_body_size_));
 
   // @@protoc_insertion_point(copy_constructor:GameConfigInfo)
 }
@@ -648,8 +634,6 @@ inline PROTOBUF_NDEBUG_INLINE GameConfigInfo::Impl_::Impl_(
     ::google::protobuf::Arena* arena)
       : mq_topics_{visibility, arena},
         access_point_(arena),
-        access_key_(arena),
-        access_secret_(arena),
         _cached_size_{0} {}
 
 inline void GameConfigInfo::SharedCtor(::_pb::Arena* arena) {
@@ -657,9 +641,9 @@ inline void GameConfigInfo::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, zone_id_),
            0,
-           offsetof(Impl_, total_) -
+           offsetof(Impl_, message_body_size_) -
                offsetof(Impl_, zone_id_) +
-               sizeof(Impl_::total_));
+               sizeof(Impl_::message_body_size_));
 }
 GameConfigInfo::~GameConfigInfo() {
   // @@protoc_insertion_point(destructor:GameConfigInfo)
@@ -670,8 +654,6 @@ inline void GameConfigInfo::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.access_point_.Destroy();
-  this_._impl_.access_key_.Destroy();
-  this_._impl_.access_secret_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -723,15 +705,15 @@ const ::google::protobuf::internal::ClassData* GameConfigInfo::GetClassData() co
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 10, 0, 75, 2> GameConfigInfo::_table_ = {
+const ::_pbi::TcParseTable<3, 7, 0, 44, 2> GameConfigInfo::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    10, 120,  // max_field_number, fast_idx_mask
+    7, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294966272,  // skipmap
+    4294967168,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    10,  // num_field_entries
+    7,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     _class_data_.base(),
@@ -763,20 +745,6 @@ const ::_pbi::TcParseTable<4, 10, 0, 75, 2> GameConfigInfo::_table_ = {
     // uint32 message_body_size = 7;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameConfigInfo, _impl_.message_body_size_), 63>(),
      {56, 63, 0, PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.message_body_size_)}},
-    // uint32 total = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameConfigInfo, _impl_.total_), 63>(),
-     {64, 63, 0, PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.total_)}},
-    // string access_key = 9;
-    {::_pbi::TcParser::FastUS1,
-     {74, 63, 0, PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.access_key_)}},
-    // string access_secret = 10;
-    {::_pbi::TcParser::FastUS1,
-     {82, 63, 0, PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.access_secret_)}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -801,24 +769,13 @@ const ::_pbi::TcParseTable<4, 10, 0, 75, 2> GameConfigInfo::_table_ = {
     // uint32 message_body_size = 7;
     {PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.message_body_size_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // uint32 total = 8;
-    {PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.total_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
-    // string access_key = 9;
-    {PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.access_key_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // string access_secret = 10;
-    {PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.access_secret_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\16\0\0\0\0\11\14\0\0\12\15\0\0\0\0\0"
+    "\16\0\0\0\0\11\14\0"
     "GameConfigInfo"
     "mq_topics"
     "access_point"
-    "access_key"
-    "access_secret"
   }},
 };
 
@@ -831,11 +788,9 @@ PROTOBUF_NOINLINE void GameConfigInfo::Clear() {
 
   _impl_.mq_topics_.Clear();
   _impl_.access_point_.ClearToEmpty();
-  _impl_.access_key_.ClearToEmpty();
-  _impl_.access_secret_.ClearToEmpty();
   ::memset(&_impl_.zone_id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.total_) -
-      reinterpret_cast<char*>(&_impl_.zone_id_)) + sizeof(_impl_.total_));
+      reinterpret_cast<char*>(&_impl_.message_body_size_) -
+      reinterpret_cast<char*>(&_impl_.zone_id_)) + sizeof(_impl_.message_body_size_));
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -905,29 +860,6 @@ PROTOBUF_NOINLINE void GameConfigInfo::Clear() {
                 7, this_._internal_message_body_size(), target);
           }
 
-          // uint32 total = 8;
-          if (this_._internal_total() != 0) {
-            target = stream->EnsureSpace(target);
-            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-                8, this_._internal_total(), target);
-          }
-
-          // string access_key = 9;
-          if (!this_._internal_access_key().empty()) {
-            const std::string& _s = this_._internal_access_key();
-            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GameConfigInfo.access_key");
-            target = stream->WriteStringMaybeAliased(9, _s, target);
-          }
-
-          // string access_secret = 10;
-          if (!this_._internal_access_secret().empty()) {
-            const std::string& _s = this_._internal_access_secret();
-            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GameConfigInfo.access_secret");
-            target = stream->WriteStringMaybeAliased(10, _s, target);
-          }
-
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -969,16 +901,6 @@ PROTOBUF_NOINLINE void GameConfigInfo::Clear() {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                               this_._internal_access_point());
             }
-            // string access_key = 9;
-            if (!this_._internal_access_key().empty()) {
-              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                              this_._internal_access_key());
-            }
-            // string access_secret = 10;
-            if (!this_._internal_access_secret().empty()) {
-              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                              this_._internal_access_secret());
-            }
             // uint32 zone_id = 1;
             if (this_._internal_zone_id() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
@@ -1004,11 +926,6 @@ PROTOBUF_NOINLINE void GameConfigInfo::Clear() {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
                   this_._internal_message_body_size());
             }
-            // uint32 total = 8;
-            if (this_._internal_total() != 0) {
-              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-                  this_._internal_total());
-            }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
                                                      &this_._impl_._cached_size_);
@@ -1026,12 +943,6 @@ void GameConfigInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   if (!from._internal_access_point().empty()) {
     _this->_internal_set_access_point(from._internal_access_point());
   }
-  if (!from._internal_access_key().empty()) {
-    _this->_internal_set_access_key(from._internal_access_key());
-  }
-  if (!from._internal_access_secret().empty()) {
-    _this->_internal_set_access_secret(from._internal_access_secret());
-  }
   if (from._internal_zone_id() != 0) {
     _this->_impl_.zone_id_ = from._impl_.zone_id_;
   }
@@ -1046,9 +957,6 @@ void GameConfigInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   }
   if (from._internal_message_body_size() != 0) {
     _this->_impl_.message_body_size_ = from._impl_.message_body_size_;
-  }
-  if (from._internal_total() != 0) {
-    _this->_impl_.total_ = from._impl_.total_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -1068,11 +976,9 @@ void GameConfigInfo::InternalSwap(GameConfigInfo* PROTOBUF_RESTRICT other) {
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.mq_topics_.InternalSwap(&other->_impl_.mq_topics_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.access_point_, &other->_impl_.access_point_, arena);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.access_key_, &other->_impl_.access_key_, arena);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.access_secret_, &other->_impl_.access_secret_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.total_)
-      + sizeof(GameConfigInfo::_impl_.total_)
+      PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.message_body_size_)
+      + sizeof(GameConfigInfo::_impl_.message_body_size_)
       - PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.zone_id_)>(
           reinterpret_cast<char*>(&_impl_.zone_id_),
           reinterpret_cast<char*>(&other->_impl_.zone_id_));

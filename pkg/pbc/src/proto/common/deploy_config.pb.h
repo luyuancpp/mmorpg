@@ -217,14 +217,11 @@ class GameConfigInfo final
   enum : int {
     kMqTopicsFieldNumber = 5,
     kAccessPointFieldNumber = 6,
-    kAccessKeyFieldNumber = 9,
-    kAccessSecretFieldNumber = 10,
     kZoneIdFieldNumber = 1,
     kLobbyIdFieldNumber = 2,
     kLoglevelFieldNumber = 3,
     kServerTypeFieldNumber = 4,
     kMessageBodySizeFieldNumber = 7,
-    kTotalFieldNumber = 8,
   };
   // repeated string mq_topics = 5;
   int mq_topics_size() const;
@@ -262,38 +259,6 @@ class GameConfigInfo final
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_access_point(
       const std::string& value);
   std::string* _internal_mutable_access_point();
-
-  public:
-  // string access_key = 9;
-  void clear_access_key() ;
-  const std::string& access_key() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_access_key(Arg_&& arg, Args_... args);
-  std::string* mutable_access_key();
-  PROTOBUF_NODISCARD std::string* release_access_key();
-  void set_allocated_access_key(std::string* value);
-
-  private:
-  const std::string& _internal_access_key() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_access_key(
-      const std::string& value);
-  std::string* _internal_mutable_access_key();
-
-  public:
-  // string access_secret = 10;
-  void clear_access_secret() ;
-  const std::string& access_secret() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_access_secret(Arg_&& arg, Args_... args);
-  std::string* mutable_access_secret();
-  PROTOBUF_NODISCARD std::string* release_access_secret();
-  void set_allocated_access_secret(std::string* value);
-
-  private:
-  const std::string& _internal_access_secret() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_access_secret(
-      const std::string& value);
-  std::string* _internal_mutable_access_secret();
 
   public:
   // uint32 zone_id = 1;
@@ -346,23 +311,13 @@ class GameConfigInfo final
   void _internal_set_message_body_size(::uint32_t value);
 
   public:
-  // uint32 total = 8;
-  void clear_total() ;
-  ::uint32_t total() const;
-  void set_total(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_total() const;
-  void _internal_set_total(::uint32_t value);
-
-  public:
   // @@protoc_insertion_point(class_scope:GameConfigInfo)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 10, 0,
-      75, 2>
+      3, 7, 0,
+      44, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -381,14 +336,11 @@ class GameConfigInfo final
                           const GameConfigInfo& from_msg);
     ::google::protobuf::RepeatedPtrField<std::string> mq_topics_;
     ::google::protobuf::internal::ArenaStringPtr access_point_;
-    ::google::protobuf::internal::ArenaStringPtr access_key_;
-    ::google::protobuf::internal::ArenaStringPtr access_secret_;
     ::uint32_t zone_id_;
     ::uint32_t lobby_id_;
     ::uint32_t loglevel_;
     ::uint32_t server_type_;
     ::uint32_t message_body_size_;
-    ::uint32_t total_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1213,124 +1165,6 @@ inline ::uint32_t GameConfigInfo::_internal_message_body_size() const {
 inline void GameConfigInfo::_internal_set_message_body_size(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.message_body_size_ = value;
-}
-
-// uint32 total = 8;
-inline void GameConfigInfo::clear_total() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.total_ = 0u;
-}
-inline ::uint32_t GameConfigInfo::total() const {
-  // @@protoc_insertion_point(field_get:GameConfigInfo.total)
-  return _internal_total();
-}
-inline void GameConfigInfo::set_total(::uint32_t value) {
-  _internal_set_total(value);
-  // @@protoc_insertion_point(field_set:GameConfigInfo.total)
-}
-inline ::uint32_t GameConfigInfo::_internal_total() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.total_;
-}
-inline void GameConfigInfo::_internal_set_total(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.total_ = value;
-}
-
-// string access_key = 9;
-inline void GameConfigInfo::clear_access_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_key_.ClearToEmpty();
-}
-inline const std::string& GameConfigInfo::access_key() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:GameConfigInfo.access_key)
-  return _internal_access_key();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void GameConfigInfo::set_access_key(Arg_&& arg,
-                                                     Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:GameConfigInfo.access_key)
-}
-inline std::string* GameConfigInfo::mutable_access_key() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_access_key();
-  // @@protoc_insertion_point(field_mutable:GameConfigInfo.access_key)
-  return _s;
-}
-inline const std::string& GameConfigInfo::_internal_access_key() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.access_key_.Get();
-}
-inline void GameConfigInfo::_internal_set_access_key(const std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_key_.Set(value, GetArena());
-}
-inline std::string* GameConfigInfo::_internal_mutable_access_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.access_key_.Mutable( GetArena());
-}
-inline std::string* GameConfigInfo::release_access_key() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:GameConfigInfo.access_key)
-  return _impl_.access_key_.Release();
-}
-inline void GameConfigInfo::set_allocated_access_key(std::string* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_key_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.access_key_.IsDefault()) {
-    _impl_.access_key_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:GameConfigInfo.access_key)
-}
-
-// string access_secret = 10;
-inline void GameConfigInfo::clear_access_secret() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_secret_.ClearToEmpty();
-}
-inline const std::string& GameConfigInfo::access_secret() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:GameConfigInfo.access_secret)
-  return _internal_access_secret();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void GameConfigInfo::set_access_secret(Arg_&& arg,
-                                                     Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_secret_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:GameConfigInfo.access_secret)
-}
-inline std::string* GameConfigInfo::mutable_access_secret() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_access_secret();
-  // @@protoc_insertion_point(field_mutable:GameConfigInfo.access_secret)
-  return _s;
-}
-inline const std::string& GameConfigInfo::_internal_access_secret() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.access_secret_.Get();
-}
-inline void GameConfigInfo::_internal_set_access_secret(const std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_secret_.Set(value, GetArena());
-}
-inline std::string* GameConfigInfo::_internal_mutable_access_secret() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.access_secret_.Mutable( GetArena());
-}
-inline std::string* GameConfigInfo::release_access_secret() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:GameConfigInfo.access_secret)
-  return _impl_.access_secret_.Release();
-}
-inline void GameConfigInfo::set_allocated_access_secret(std::string* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_secret_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.access_secret_.IsDefault()) {
-    _impl_.access_secret_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:GameConfigInfo.access_secret)
 }
 
 #ifdef __GNUC__
