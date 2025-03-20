@@ -34,12 +34,12 @@ def clear_table(cursor, table_name):
 # 初始化端口管理
 def initialize_ports():
     return {
-        'gate_node_db': 2000,
-        'centre_node_db': 3000,
-        'login_node_db': 4000,
-        'game_node_db': 6000,
+        'gate_node_db': 12000,
+        'centre_node_db': 13000,
+        'login_node_db': 14000,
+        'game_node_db': 16000,
         'database_node_db': 10000,
-        'redis_node_db': 11000,  # 添加 redis_node_db 的起始端口
+        'redis_node_db': 3000,
     }
 
 
