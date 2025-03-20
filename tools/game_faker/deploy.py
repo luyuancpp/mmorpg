@@ -117,10 +117,10 @@ def main():
 
     # 配置每个表需要插入的节点数量（现在表示总数）
     total_nodes = {
-        'login_node_db': 30,  # 总共插入 30 个 login_node_db 节点
+        'login_node_db': 1,  # 总共插入 30 个 login_node_db 节点
         'gate_node_db': 50,  # 总共插入 50 个 gate_node_db 节点
         'game_node_db': 120,  # 总共插入 120 个 game_node_db 节点
-        'centre_node_db': 12,  # 总共插入 12 个 centre_node_db 节点
+        'centre_node_db': 1,  # 总共插入 12 个 centre_node_db 节点
         'database_node_db': 12,  # 总共插入 12 个 database_node_db 节点
         'redis_node_db': 12  # 总共插入 12 个 redis_node_db 节点
     }
