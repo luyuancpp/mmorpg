@@ -1,5 +1,4 @@
 import mysql.connector
-import random
 import logging
 
 # 配置日志记录
@@ -138,11 +137,11 @@ def main():
 
     # 定义每个表的 zone_id 步长
     zone_id_steps = {
-        'gate_node_db': 12,  # 每 12 个节点递增一次 zone_id
+        'gate_node_db': 1,  # 每 12 个节点递增一次 zone_id
         'game_node_db': 12,  # 每 12 个节点递增一次 zone_id
-        'centre_node_db': 12,  # 每 12 个节点递增一次 zone_id
+        'centre_node_db': 1,  # 每 12 个节点递增一次 zone_id
         'login_node_db': 10,  # 每 10 个节点递增一次 zone_id
-        'database_node_db': 10,  # 每 10 个节点递增一次 zone_id
+        'database_node_db': 1,  # 每 10 个节点递增一次 zone_id
         'redis_node_db': 1  # 每 12 个节点递增一次 zone_id (和 centre_node_db 一样)
     }
 
