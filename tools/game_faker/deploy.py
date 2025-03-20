@@ -22,16 +22,26 @@ def clear_table(cursor, table_name):
 # 初始化端口管理
 def initialize_ports():
     return {
-        'gate_node_db': 20000,  # gate_node_db 从 20000 开始
-        'game_node_db': 21000,  # game_node_db 从 21000 开始
-        'centre_node_db': 22000,  # centre_node_db 从 22000 开始
-        'login_node_db': 23000,  # login_node_db 从 23000 开始
+        'gate_node_db': 20000,
+        'centre_node_db': 30000,
+        'login_node_db': 40000,
+        'game_node_db': 60000,
     }
 
 
 # 生成模拟数据
 def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id_counter):
     ip = "127.0.0.1"
+
+    # 对于 centre_node_db 表，zone_id 固定，唯一递增
+    if table_name == 'centre_node_db':
+        zone_id = zone_id_counter['centre_node_db']
+        zone_id_counter['centre_node_db'] += 1  # centre 的 zone_id 递增
+    else:
+        # 对于其他表，zone_id 每组递增
+        zone_id = zone_id_counter[table_name]
+        if index == 0:  # 如果是每组的第一个节点，递增 zone_id
+            zone_id_counter[table_name] += 1
 
     # 获取当前表的起始端口
     current_port = port_counter[table_name]
@@ -47,12 +57,9 @@ def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id
     # 对于 login_node_db，返回 addr 格式 "127.0.0.1:port"
     if table_name == 'login_node_db':
         addr = f"{ip}:{current_port}"
-        return addr, None, None
+        return addr, None, zone_id
 
-    # 对其他表，zone_id 自增
-    zone_id = zone_id_counter[table_name]
-    zone_id_counter[table_name] += 1  # 自增 zone_id
-
+    # 对其他表，返回 ip, port 和 zone_id
     return ip, current_port, zone_id
 
 
@@ -61,12 +68,12 @@ def insert_data_to_table(cursor, table_name, used_ports, port_counter, zone_id_c
     # 根据每个表需要插入的节点数进行插入
     for i in range(nodes_per_group):  # 动态生成节点数
         if table_name == 'login_node_db':
-            addr, _, _ = generate_simulated_data(i, table_name, used_ports, port_counter, zone_id_counter)
+            addr, _, zone_id = generate_simulated_data(i, table_name, used_ports, port_counter, zone_id_counter)
             insert_query = f"""
-            INSERT INTO {table_name} (addr)
-            VALUES (%s)
+            INSERT INTO {table_name} (addr, zone_id)
+            VALUES (%s, %s)
             """
-            cursor.execute(insert_query, (addr,))
+            cursor.execute(insert_query, (addr, zone_id))
         else:
             ip, port, zone_id = generate_simulated_data(i, table_name, used_ports, port_counter, zone_id_counter)
             insert_query = f"""
@@ -94,9 +101,9 @@ def main():
     # 配置每个表需要插入的节点数量
     nodes_per_group = {
         'login_node_db': 3,  # 每个 login_node_db 插入 3 个节点
-        'gate_node_db': 6,  # 每个 gate_node_db 插入 6 个节点
+        'gate_node_db': 5,  # 每个 gate_node_db 插入 5 个节点
         'game_node_db': 12,  # 每个 game_node_db 插入 12 个节点
-        'centre_node_db': 10  # 假设 centre_node_db 插入 10 个节点
+        'centre_node_db': 12  # centre_node_db 插入 12 个节点
     }
 
     # 初始化 zone_id 自增
