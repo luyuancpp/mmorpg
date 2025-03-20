@@ -39,6 +39,7 @@ def initialize_ports():
         'login_node_db': 4000,
         'game_node_db': 6000,
         'database_node_db': 10000,
+        'redis_node_db': 11000,  # 添加 redis_node_db 的起始端口
     }
 
 
@@ -104,7 +105,7 @@ def main():
     cursor = conn.cursor()
 
     # 定义表名列表
-    tables = ['centre_node_db', 'game_node_db', 'gate_node_db', 'login_node_db', 'database_node_db']
+    tables = ['centre_node_db', 'game_node_db', 'gate_node_db', 'login_node_db', 'database_node_db', 'redis_node_db']
 
     # 用于追踪已使用的端口
     used_ports = set()
@@ -118,7 +119,8 @@ def main():
         'gate_node_db': 50,  # 总共插入 50 个 gate_node_db 节点
         'game_node_db': 120,  # 总共插入 120 个 game_node_db 节点
         'centre_node_db': 12,  # 总共插入 12 个 centre_node_db 节点
-        'database_node_db': 12  # 总共插入 12 个 database_node_db 节点
+        'database_node_db': 12,  # 总共插入 12 个 database_node_db 节点
+        'redis_node_db': 12  # 总共插入 12 个 redis_node_db 节点
     }
 
     # 初始化 zone_id 自增
@@ -127,7 +129,8 @@ def main():
         'game_node_db': 1,  # game_node_db 从 zone_id 1 开始
         'centre_node_db': 1,  # centre_node_db 从 zone_id 1 开始
         'login_node_db': 1,  # login_node_db 从 zone_id 1 开始
-        'database_node_db': 1  # database_node_db 从 zone_id 1 开始
+        'database_node_db': 1,  # database_node_db 从 zone_id 1 开始
+        'redis_node_db': 1  # redis_node_db 从 zone_id 1 开始
     }
 
     # 定义每个表的 zone_id 步长
@@ -136,7 +139,8 @@ def main():
         'game_node_db': 12,  # 每 12 个节点递增一次 zone_id
         'centre_node_db': 12,  # 每 12 个节点递增一次 zone_id
         'login_node_db': 10,  # 每 10 个节点递增一次 zone_id
-        'database_node_db': 10  # 每 10 个节点递增一次 zone_id
+        'database_node_db': 10,  # 每 10 个节点递增一次 zone_id
+        'redis_node_db': 12  # 每 12 个节点递增一次 zone_id (和 centre_node_db 一样)
     }
 
     # 清空并填充数据到每个表
