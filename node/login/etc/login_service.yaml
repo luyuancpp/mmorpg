@@ -1,5 +1,5 @@
 Name: loginservice.rpc
-ListenOn: 127.0.0.1:9000
+ListenOn: 127.0.0.1:14000
 Etcd:
   Hosts:
   - 127.0.0.1:2379
