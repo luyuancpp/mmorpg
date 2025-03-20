@@ -45,7 +45,7 @@ void GameServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeE
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncPlayerEnterGameNode(&call->context, request,
-		&registry.get<GameServicePlayerEnterGameNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServicePlayerEnterGameNodeCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -89,7 +89,7 @@ void GameServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeE
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncSendMessageToPlayer(&call->context, request,
-		&registry.get<GameServiceSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -133,7 +133,7 @@ void GameServiceClientSendMessageToPlayer(entt::registry& registry, entt::entity
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncClientSendMessageToPlayer(&call->context, request,
-		&registry.get<GameServiceClientSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceClientSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -177,7 +177,7 @@ void GameServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEnti
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterGateNode(&call->context, request,
-		&registry.get<GameServiceRegisterGateNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceRegisterGateNodeCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -221,7 +221,7 @@ void GameServiceCentreSendToPlayerViaGameNode(entt::registry& registry, entt::en
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncCentreSendToPlayerViaGameNode(&call->context, request,
-		&registry.get<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceCentreSendToPlayerViaGameNodeCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -265,7 +265,7 @@ void GameServiceInvokePlayerService(entt::registry& registry, entt::entity nodeE
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncInvokePlayerService(&call->context, request,
-		&registry.get<GameServiceInvokePlayerServiceCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceInvokePlayerServiceCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -309,7 +309,7 @@ void GameServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEn
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncRouteNodeStringMsg(&call->context, request,
-		&registry.get<GameServiceRouteNodeStringMsgCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceRouteNodeStringMsgCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -353,7 +353,7 @@ void GameServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity node
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncRoutePlayerStringMsg(&call->context, request,
-		&registry.get<GameServiceRoutePlayerStringMsgCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceRoutePlayerStringMsgCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -397,7 +397,7 @@ void GameServiceUpdateSessionDetail(entt::registry& registry, entt::entity nodeE
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncUpdateSessionDetail(&call->context, request,
-		&registry.get<GameServiceUpdateSessionDetailCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceUpdateSessionDetailCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -441,7 +441,7 @@ void GameServiceEnterScene(entt::registry& registry, entt::entity nodeEntity, co
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncEnterScene(&call->context, request,
-		&registry.get<GameServiceEnterSceneCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceEnterSceneCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -485,7 +485,7 @@ void GameServiceCreateScene(entt::registry& registry, entt::entity nodeEntity, c
 
     call->response_reader =
         registry.get<GrpcGameServiceStubPtr>(nodeEntity)->PrepareAsyncCreateScene(&call->context, request,
-		&registry.get<GameServiceCreateSceneCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GameServiceCreateSceneCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 

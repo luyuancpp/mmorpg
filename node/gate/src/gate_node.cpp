@@ -155,7 +155,7 @@ void GateNode::Connect2Login()
             continue;
         }
         auto channel = grpc::CreateChannel(login_node_info.addr(), grpc::InsecureChannelCredentials());
-        tls_gate.login_node_registry.emplace<std::unique_ptr<LoginService::Stub>>(login_node_id,
+        tls_gate.login_node_registry.emplace<GrpcLoginServiceStubPtr>(login_node_id,
             LoginService::NewStub(channel));
         tls_gate.login_consistent_node().add(login_node_info.id(), 
             login_node_id);

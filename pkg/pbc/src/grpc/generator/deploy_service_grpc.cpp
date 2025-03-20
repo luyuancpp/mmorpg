@@ -24,7 +24,7 @@ void DeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity,
 
     call->response_reader =
         registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetNodeInfo(&call->context, request,
-		&registry.get<DeployServiceGetNodeInfoCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<DeployServiceGetNodeInfoCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -68,7 +68,7 @@ void DeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const
 
     call->response_reader =
         registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncGetID(&call->context, request,
-		&registry.get<DeployServiceGetIDCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<DeployServiceGetIDCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -112,7 +112,7 @@ void DeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, c
 
     call->response_reader =
         registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncReleaseID(&call->context, request,
-		&registry.get<DeployServiceReleaseIDCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<DeployServiceReleaseIDCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -156,7 +156,7 @@ void DeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, 
 
     call->response_reader =
         registry.get<GrpcDeployServiceStubPtr>(nodeEntity)->PrepareAsyncRenewLease(&call->context, request,
-		&registry.get<DeployServiceRenewLeaseCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<DeployServiceRenewLeaseCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 

@@ -18,7 +18,7 @@ void AccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntit
 
     call->response_reader =
         registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncLoad2Redis(&call->context, request,
-		&registry.get<AccountDBServiceLoad2RedisCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<AccountDBServiceLoad2RedisCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -62,7 +62,7 @@ void AccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntit
 
     call->response_reader =
         registry.get<GrpcAccountDBServiceStubPtr>(nodeEntity)->PrepareAsyncSave2Redis(&call->context, request,
-		&registry.get<AccountDBServiceSave2RedisCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<AccountDBServiceSave2RedisCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 

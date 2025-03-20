@@ -36,7 +36,7 @@ void GateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, 
 
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRegisterGame(&call->context, request,
-		&registry.get<GateServiceRegisterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GateServiceRegisterGameCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -80,7 +80,7 @@ void GateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity
 
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncUnRegisterGame(&call->context, request,
-		&registry.get<GateServiceUnRegisterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GateServiceUnRegisterGameCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -124,7 +124,7 @@ void GateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeE
 
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncPlayerEnterGameNode(&call->context, request,
-		&registry.get<GateServicePlayerEnterGameNodeCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GateServicePlayerEnterGameNodeCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -168,7 +168,7 @@ void GateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeE
 
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncSendMessageToPlayer(&call->context, request,
-		&registry.get<GateServiceSendMessageToPlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GateServiceSendMessageToPlayerCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -212,7 +212,7 @@ void GateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeE
 
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncKickSessionByCentre(&call->context, request,
-		&registry.get<GateServiceKickSessionByCentreCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GateServiceKickSessionByCentreCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -256,7 +256,7 @@ void GateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEnti
 
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRouteNodeMessage(&call->context, request,
-		&registry.get<GateServiceRouteNodeMessageCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GateServiceRouteNodeMessageCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -300,7 +300,7 @@ void GateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEn
 
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncRoutePlayerMessage(&call->context, request,
-		&registry.get<GateServiceRoutePlayerMessageCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GateServiceRoutePlayerMessageCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -344,7 +344,7 @@ void GateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEn
 
     call->response_reader =
         registry.get<GrpcGateServiceStubPtr>(nodeEntity)->PrepareAsyncBroadcastToPlayers(&call->context, request,
-		&registry.get<GateServiceBroadcastToPlayersCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<GateServiceBroadcastToPlayersCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
