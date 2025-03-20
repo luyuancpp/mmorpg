@@ -48,8 +48,7 @@ def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id
 
     # 获取当前表的 zone_id，并且按步长递增
     zone_id = zone_id_counter[table_name]
-    if index == 0:  # 如果是每组的第一个节点，递增 zone_id
-        zone_id_counter[table_name] += zone_id_step  # 使用步长进行自增
+    zone_id_counter[table_name] += zone_id_step  # 使用步长进行自增
 
     # 获取当前表的起始端口
     current_port = port_counter[table_name]
@@ -72,10 +71,10 @@ def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id
 
 
 # 插入数据到表
-def insert_data_to_table(cursor, table_name, used_ports, port_counter, zone_id_counter, nodes_per_group, zone_id_step):
+def insert_data_to_table(cursor, table_name, used_ports, port_counter, zone_id_counter, total_nodes, zone_id_step):
     data_to_insert = []
     # 根据每个表需要插入的节点数进行插入
-    for i in range(nodes_per_group):  # 动态生成节点数
+    for i in range(total_nodes):  # 动态生成节点数
         if table_name == 'login_node_db' or table_name == 'database_node_db':
             addr, _, zone_id = generate_simulated_data(i, table_name, used_ports, port_counter, zone_id_counter, zone_id_step)
             data_to_insert.append((addr, zone_id))
@@ -112,13 +111,13 @@ def main():
     # 初始化端口管理
     port_counter = initialize_ports()
 
-    # 配置每个表需要插入的节点数量
-    nodes_per_group = {
-        'login_node_db': 30,  # 每个 login_node_db 插入 30 个节点
-        'gate_node_db': 50,  # 每个 gate_node_db 插入 50 个节点
-        'game_node_db': 120,  # 每个 game_node_db 插入 120 个节点
-        'centre_node_db': 12,  # 每个 centre_node_db 插入 12 个节点
-        'database_node_db': 12  # 每个 database_node_db 插入 12 个节点
+    # 配置每个表需要插入的节点数量（现在表示总数）
+    total_nodes = {
+        'login_node_db': 30,  # 总共插入 30 个 login_node_db 节点
+        'gate_node_db': 50,  # 总共插入 50 个 gate_node_db 节点
+        'game_node_db': 120,  # 总共插入 120 个 game_node_db 节点
+        'centre_node_db': 12,  # 总共插入 12 个 centre_node_db 节点
+        'database_node_db': 12  # 总共插入 12 个 database_node_db 节点
     }
 
     # 初始化 zone_id 自增
@@ -142,7 +141,7 @@ def main():
     # 清空并填充数据到每个表
     for table in tables:
         clear_table(cursor, table)  # 清空表数据
-        insert_data_to_table(cursor, table, used_ports, port_counter, zone_id_counter, nodes_per_group[table], zone_id_steps[table])  # 插入模拟数据
+        insert_data_to_table(cursor, table, used_ports, port_counter, zone_id_counter, total_nodes[table], zone_id_steps[table])  # 插入模拟数据
 
     # 提交事务
     conn.commit()
