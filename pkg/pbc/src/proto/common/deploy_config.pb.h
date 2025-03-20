@@ -216,7 +216,6 @@ class GameConfigInfo final
   // accessors -------------------------------------------------------
   enum : int {
     kMqTopicsFieldNumber = 5,
-    kAccessPointFieldNumber = 6,
     kZoneIdFieldNumber = 1,
     kLobbyIdFieldNumber = 2,
     kLoglevelFieldNumber = 3,
@@ -243,22 +242,6 @@ class GameConfigInfo final
   private:
   const ::google::protobuf::RepeatedPtrField<std::string>& _internal_mq_topics() const;
   ::google::protobuf::RepeatedPtrField<std::string>* _internal_mutable_mq_topics();
-
-  public:
-  // string access_point = 6;
-  void clear_access_point() ;
-  const std::string& access_point() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_access_point(Arg_&& arg, Args_... args);
-  std::string* mutable_access_point();
-  PROTOBUF_NODISCARD std::string* release_access_point();
-  void set_allocated_access_point(std::string* value);
-
-  private:
-  const std::string& _internal_access_point() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_access_point(
-      const std::string& value);
-  std::string* _internal_mutable_access_point();
 
   public:
   // uint32 zone_id = 1;
@@ -316,8 +299,8 @@ class GameConfigInfo final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 7, 0,
-      44, 2>
+      3, 6, 0,
+      32, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -335,7 +318,6 @@ class GameConfigInfo final
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const GameConfigInfo& from_msg);
     ::google::protobuf::RepeatedPtrField<std::string> mq_topics_;
-    ::google::protobuf::internal::ArenaStringPtr access_point_;
     ::uint32_t zone_id_;
     ::uint32_t lobby_id_;
     ::uint32_t loglevel_;
@@ -1095,54 +1077,6 @@ inline ::google::protobuf::RepeatedPtrField<std::string>*
 GameConfigInfo::_internal_mutable_mq_topics() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.mq_topics_;
-}
-
-// string access_point = 6;
-inline void GameConfigInfo::clear_access_point() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_point_.ClearToEmpty();
-}
-inline const std::string& GameConfigInfo::access_point() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:GameConfigInfo.access_point)
-  return _internal_access_point();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void GameConfigInfo::set_access_point(Arg_&& arg,
-                                                     Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_point_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:GameConfigInfo.access_point)
-}
-inline std::string* GameConfigInfo::mutable_access_point() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_access_point();
-  // @@protoc_insertion_point(field_mutable:GameConfigInfo.access_point)
-  return _s;
-}
-inline const std::string& GameConfigInfo::_internal_access_point() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.access_point_.Get();
-}
-inline void GameConfigInfo::_internal_set_access_point(const std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_point_.Set(value, GetArena());
-}
-inline std::string* GameConfigInfo::_internal_mutable_access_point() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.access_point_.Mutable( GetArena());
-}
-inline std::string* GameConfigInfo::release_access_point() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:GameConfigInfo.access_point)
-  return _impl_.access_point_.Release();
-}
-inline void GameConfigInfo::set_allocated_access_point(std::string* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.access_point_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.access_point_.IsDefault()) {
-    _impl_.access_point_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:GameConfigInfo.access_point)
 }
 
 // uint32 message_body_size = 7;

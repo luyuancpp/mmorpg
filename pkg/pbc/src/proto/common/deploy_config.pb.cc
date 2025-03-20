@@ -28,9 +28,6 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr GameConfigInfo::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : mq_topics_{},
-        access_point_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
         zone_id_{0u},
         lobby_id_{0u},
         loglevel_{0u},
@@ -133,7 +130,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.loglevel_),
         PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.server_type_),
         PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.mq_topics_),
-        PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.access_point_),
         PROTOBUF_FIELD_OFFSET(::GameConfigInfo, _impl_.message_body_size_),
 };
 
@@ -152,17 +148,17 @@ const char descriptor_table_protodef_proto_2fcommon_2fdeploy_5fconfig_2eproto[] 
     "onnetionParam\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\022"
     "\017\n\007db_host\030\003 \001(\t\022\017\n\007db_user\030\004 \001(\t\022\023\n\013db_"
     "password\030\005 \001(\t\022\017\n\007db_port\030\006 \001(\r\022\021\n\tdb_db"
-    "name\030\007 \001(\t\"\236\001\n\016GameConfigInfo\022\017\n\007zone_id"
+    "name\030\007 \001(\t\"\210\001\n\016GameConfigInfo\022\017\n\007zone_id"
     "\030\001 \001(\r\022\020\n\010lobby_id\030\002 \001(\r\022\020\n\010loglevel\030\003 \001"
     "(\r\022\023\n\013server_type\030\004 \001(\r\022\021\n\tmq_topics\030\005 \003"
-    "(\t\022\024\n\014access_point\030\006 \001(\t\022\031\n\021message_body"
-    "_size\030\007 \001(\rB\tZ\007pb/gameb\006proto3"
+    "(\t\022\031\n\021message_body_size\030\007 \001(\rB\tZ\007pb/game"
+    "b\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fdeploy_5fconfig_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdeploy_5fconfig_2eproto = {
     false,
     false,
-    350,
+    328,
     descriptor_table_protodef_proto_2fcommon_2fdeploy_5fconfig_2eproto,
     "proto/common/deploy_config.proto",
     &descriptor_table_proto_2fcommon_2fdeploy_5fconfig_2eproto_once,
@@ -603,7 +599,6 @@ inline PROTOBUF_NDEBUG_INLINE GameConfigInfo::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from, const ::GameConfigInfo& from_msg)
       : mq_topics_{visibility, arena, from.mq_topics_},
-        access_point_(arena, from.access_point_),
         _cached_size_{0} {}
 
 GameConfigInfo::GameConfigInfo(
@@ -633,7 +628,6 @@ inline PROTOBUF_NDEBUG_INLINE GameConfigInfo::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : mq_topics_{visibility, arena},
-        access_point_(arena),
         _cached_size_{0} {}
 
 inline void GameConfigInfo::SharedCtor(::_pb::Arena* arena) {
@@ -653,7 +647,6 @@ inline void GameConfigInfo::SharedDtor(MessageLite& self) {
   GameConfigInfo& this_ = static_cast<GameConfigInfo&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.access_point_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -669,7 +662,7 @@ constexpr auto GameConfigInfo::InternalNewImpl_() {
                   ::google::protobuf::Message::internal_visibility()),
   });
   if (arena_bits.has_value()) {
-    return ::google::protobuf::internal::MessageCreator::CopyInit(
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
         sizeof(GameConfigInfo), alignof(GameConfigInfo), *arena_bits);
   } else {
     return ::google::protobuf::internal::MessageCreator(&GameConfigInfo::PlacementNew_,
@@ -705,15 +698,15 @@ const ::google::protobuf::internal::ClassData* GameConfigInfo::GetClassData() co
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 7, 0, 44, 2> GameConfigInfo::_table_ = {
+const ::_pbi::TcParseTable<3, 6, 0, 32, 2> GameConfigInfo::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
     7, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967168,  // skipmap
+    4294967200,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    7,  // num_field_entries
+    6,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     _class_data_.base(),
@@ -739,9 +732,7 @@ const ::_pbi::TcParseTable<3, 7, 0, 44, 2> GameConfigInfo::_table_ = {
     // repeated string mq_topics = 5;
     {::_pbi::TcParser::FastUR1,
      {42, 63, 0, PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.mq_topics_)}},
-    // string access_point = 6;
-    {::_pbi::TcParser::FastUS1,
-     {50, 63, 0, PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.access_point_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint32 message_body_size = 7;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameConfigInfo, _impl_.message_body_size_), 63>(),
      {56, 63, 0, PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.message_body_size_)}},
@@ -763,19 +754,15 @@ const ::_pbi::TcParseTable<3, 7, 0, 44, 2> GameConfigInfo::_table_ = {
     // repeated string mq_topics = 5;
     {PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.mq_topics_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
-    // string access_point = 6;
-    {PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.access_point_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // uint32 message_body_size = 7;
     {PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.message_body_size_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
-    "\16\0\0\0\0\11\14\0"
+    "\16\0\0\0\0\11\0\0"
     "GameConfigInfo"
     "mq_topics"
-    "access_point"
   }},
 };
 
@@ -787,7 +774,6 @@ PROTOBUF_NOINLINE void GameConfigInfo::Clear() {
   (void) cached_has_bits;
 
   _impl_.mq_topics_.Clear();
-  _impl_.access_point_.ClearToEmpty();
   ::memset(&_impl_.zone_id_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.message_body_size_) -
       reinterpret_cast<char*>(&_impl_.zone_id_)) + sizeof(_impl_.message_body_size_));
@@ -845,14 +831,6 @@ PROTOBUF_NOINLINE void GameConfigInfo::Clear() {
             target = stream->WriteString(5, s, target);
           }
 
-          // string access_point = 6;
-          if (!this_._internal_access_point().empty()) {
-            const std::string& _s = this_._internal_access_point();
-            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "GameConfigInfo.access_point");
-            target = stream->WriteStringMaybeAliased(6, _s, target);
-          }
-
           // uint32 message_body_size = 7;
           if (this_._internal_message_body_size() != 0) {
             target = stream->EnsureSpace(target);
@@ -896,11 +874,6 @@ PROTOBUF_NOINLINE void GameConfigInfo::Clear() {
             }
           }
            {
-            // string access_point = 6;
-            if (!this_._internal_access_point().empty()) {
-              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                              this_._internal_access_point());
-            }
             // uint32 zone_id = 1;
             if (this_._internal_zone_id() != 0) {
               total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
@@ -940,9 +913,6 @@ void GameConfigInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
   (void) cached_has_bits;
 
   _this->_internal_mutable_mq_topics()->MergeFrom(from._internal_mq_topics());
-  if (!from._internal_access_point().empty()) {
-    _this->_internal_set_access_point(from._internal_access_point());
-  }
   if (from._internal_zone_id() != 0) {
     _this->_impl_.zone_id_ = from._impl_.zone_id_;
   }
@@ -971,11 +941,8 @@ void GameConfigInfo::CopyFrom(const GameConfigInfo& from) {
 
 void GameConfigInfo::InternalSwap(GameConfigInfo* PROTOBUF_RESTRICT other) {
   using std::swap;
-  auto* arena = GetArena();
-  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.mq_topics_.InternalSwap(&other->_impl_.mq_topics_);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.access_point_, &other->_impl_.access_point_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(GameConfigInfo, _impl_.message_body_size_)
       + sizeof(GameConfigInfo::_impl_.message_body_size_)
