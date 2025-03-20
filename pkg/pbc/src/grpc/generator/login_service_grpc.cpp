@@ -27,7 +27,7 @@ void LoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const 
 
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLogin(&call->context, request,
-		&registry.get<LoginServiceLoginCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<LoginServiceLoginCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -71,7 +71,7 @@ void LoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity,
 
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncCreatePlayer(&call->context, request,
-		&registry.get<LoginServiceCreatePlayerCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<LoginServiceCreatePlayerCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -115,7 +115,7 @@ void LoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, co
 
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncEnterGame(&call->context, request,
-		&registry.get<LoginServiceEnterGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<LoginServiceEnterGameCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -159,7 +159,7 @@ void LoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, co
 
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncLeaveGame(&call->context, request,
-		&registry.get<LoginServiceLeaveGameCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<LoginServiceLeaveGameCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
@@ -203,7 +203,7 @@ void LoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, c
 
     call->response_reader =
         registry.get<GrpcLoginServiceStubPtr>(nodeEntity)->PrepareAsyncDisconnect(&call->context, request,
-		&registry.get<LoginServiceDisconnectCompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<LoginServiceDisconnectCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 

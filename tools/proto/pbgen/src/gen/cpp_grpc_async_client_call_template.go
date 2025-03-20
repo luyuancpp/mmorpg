@@ -41,8 +41,6 @@ const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
 #include "thread_local/storage.h"
 
 
-entt::entity GlobalGrpcNodeEntity();
-
 {{- range .GrpcServices }}
 struct {{.ServiceName}}{{.Method}}CompleteQueue{
 	grpc::CompletionQueue cq;
@@ -57,7 +55,7 @@ void {{.ServiceName}}{{.Method}}(entt::registry& registry, entt::entity nodeEnti
 
     call->response_reader =
         registry.get<Grpc{{.ServiceName}}StubPtr>(nodeEntity)->PrepareAsync{{.Method}}(&call->context, request,
-		&registry.get<{{.ServiceName}}{{.Method}}CompleteQueue>(GlobalGrpcNodeEntity()).cq);
+		&registry.get<{{.ServiceName}}{{.Method}}CompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
