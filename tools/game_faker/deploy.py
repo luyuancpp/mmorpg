@@ -61,6 +61,9 @@ def generate_simulated_data(index, table_name, used_ports, port_counter, zone_id
         port_counter[table_name] += 1
         current_port = port_counter[table_name]
 
+    if table_name == 'redis_node_db':
+        current_port = 3306  # 固定端口为 3306
+
     used_ports.add(current_port)
 
     # 对于 login_node_db 和 database_node_db，返回 addr 格式 "127.0.0.1:port"
@@ -140,7 +143,7 @@ def main():
         'centre_node_db': 12,  # 每 12 个节点递增一次 zone_id
         'login_node_db': 10,  # 每 10 个节点递增一次 zone_id
         'database_node_db': 10,  # 每 10 个节点递增一次 zone_id
-        'redis_node_db': 12  # 每 12 个节点递增一次 zone_id (和 centre_node_db 一样)
+        'redis_node_db': 1  # 每 12 个节点递增一次 zone_id (和 centre_node_db 一样)
     }
 
     # 清空并填充数据到每个表
