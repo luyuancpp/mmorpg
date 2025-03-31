@@ -46,6 +46,7 @@
     <ClInclude Include="src\util\defer.h" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\util\game_registry.h" />
+    <ClInclude Include="src\util\network_utils.h" />
     <ClInclude Include="src\util\node_id_generator.h" />
     <ClInclude Include="src\util\pb.h" />
     <ClInclude Include="src\util\proto_field_checker.h" />
@@ -72,6 +73,7 @@
     <ClCompile Include="src\thread_local\storage_lua.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
+    <ClCompile Include="src\util\network_utils.cpp" />
     <ClCompile Include="src\util\pb.cpp" />
     <ClCompile Include="src\util\proto_field_checker.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
