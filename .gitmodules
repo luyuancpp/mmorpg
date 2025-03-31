@@ -49,3 +49,6 @@
 	url = https://github.com/grpc/grpc.git
 	branch = v1.71.x
 	ignore = dirty
+[submodule "third_party/curl"]
+	path = third_party/curl
+	url = https://github.com/curl/curl.git
