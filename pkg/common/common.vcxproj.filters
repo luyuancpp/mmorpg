@@ -34,6 +34,7 @@
     <ClInclude Include="src\util\node_id_generator.h" />
     <ClInclude Include="src\util\stacktrace_system.h" />
     <ClInclude Include="src\util\proto_field_checker.h" />
+    <ClInclude Include="src\network\boost_etcd_client.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\deploy_json.cpp" />
@@ -55,6 +56,7 @@
     <ClCompile Include="src\network\message_statistics.cpp" />
     <ClCompile Include="src\test\test.cpp" />
     <ClCompile Include="src\util\proto_field_checker.cpp" />
+    <ClCompile Include="src\network\boost_etcd_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\autogen.bat" />
