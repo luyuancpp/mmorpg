@@ -3,7 +3,7 @@
 #include <grpcpp/create_channel.h>
 
 #include "all_config.h"
-#include "game_config/deploy_json.h"
+#include "config_loader/config.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "logic/constants/node.pb.h"
@@ -13,6 +13,7 @@
 #include "network/rpc_session.h"
 #include "proto/common/deploy_service.grpc.pb.h"
 #include "service_info/service_info.h"
+#include "thread_local/storage_common_logic.h"
 #include "time/system/time_system.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
@@ -60,14 +61,14 @@ void Node::ShutdownNode() {
 
 
 void Node::SetupLogging() {
-    muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(ZoneConfig::GetSingleton().ConfigInfo().loglevel()));
+    muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(tlsCommonLogic.GetBaseDeployConfig().log_level()));
     muduo::Logger::setOutput(AsyncOutput);
     muduoLog.start();  // 启动日志
 }
 
 void Node::LoadConfigurations() {
-    ZoneConfig::GetSingleton().Load("game.json");  // 加载游戏配置
-    DeployConfig::GetSingleton().Load("deploy.json");  // 加载部署配置
+    readBaseDeployConfig("etc/base_deploy_config.yaml", tlsCommonLogic.GetBaseDeployConfig());
+    readGameConfig("etc/game_config.yaml", tlsCommonLogic.GetGameConfig());
 
     LoadAllConfig();
     LoadAllConfigAsyncWhenServerLaunch();
@@ -89,8 +90,8 @@ void Node::InitializeLaunchTime() {
 }
 
 void Node::InitializeNodeFromRequestInfo() {
-    const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
-    const std::string targetStr = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    //todo const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
+    std::string targetStr;// = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
 
     try {
         // 创建 gRPC 通道并初始化 gRPC 客户端
@@ -109,7 +110,7 @@ void Node::InitializeNodeFromRequestInfo() {
     // 创建请求并获取节点信息
     NodeInfoRequest request;
     request.set_node_type(GetNodeType());  // 使用子类实现具体类型
-    request.set_zone_id(ZoneConfig::GetSingleton().ConfigInfo().zone_id());
+    request.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
     DeployServiceGetNodeInfo(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
 
     // 定时更新节点租约
@@ -137,7 +138,7 @@ void Node::ConnectToCentreHelper(::google::protobuf::Service* service) {
         centre_node->connect();
 
         // 判断是否为当前区域的中心节点
-        if (centre_node_info.zone_id() == ZoneConfig::GetSingleton().ConfigInfo().zone_id()) {
+        if (centre_node_info.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
             zoneCentreNode = centre_node;
         }
     }

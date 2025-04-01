@@ -26,7 +26,7 @@ std::string get_local_ip() {
 	}
 }
 
-int get_available_port(uint32_t start_port, uint32_t max_port) {
+uint16_t get_available_port(uint16_t start_port, uint16_t max_port) {
 	boost::asio::io_context io_context;  // 使用 io_context 替代 io_service
 	boost::asio::ip::tcp::acceptor acceptor(io_context);
 

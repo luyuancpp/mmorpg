@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+// 服务配置，避免与 protobuf 的 Service 冲突
+message ServiceConfig {
+    string name = 1;
+    string url = 2;
+}
+
+// 基础部署配置
+message BaseDeployConfig {
+    repeated string etcd_hosts = 1;      // Etcd 主机列表
+    uint32 log_level = 2;                 // 日志级别，使用 uint32
+    repeated ServiceConfig services = 3;  // 服务列表
+}
+
+// 游戏配置
+message GameConfig {
+    uint32 scene_node_type = 1;  // 场景节点类型，使用 uint32
+    uint32 zone_id = 2;          // 区域ID，使用 uint32
+}
