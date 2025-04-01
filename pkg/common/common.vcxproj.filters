@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="src\config_expression\config_expression.h" />
-    <ClInclude Include="src\game_config\deploy_json.h" />
+    <ClInclude Include="src\config_loader\service_discovery.h" />
     <ClInclude Include="src\muduowindow\TimerId.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
     <ClInclude Include="src\network\process_info.h" />
@@ -38,7 +38,7 @@
     <ClInclude Include="src\util\network_utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\game_config\deploy_json.cpp" />
+    <ClCompile Include="src\config_loader\service_discovery.cpp" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\network\game_channel.cc" />

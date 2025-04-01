@@ -2,9 +2,6 @@
 
 #include "grpc/generator/centre_service_grpc.h"
 #include "thread_local/storage.h"
-
-
-entt::entity GlobalGrpcNodeEntity();
 struct CentreServiceRegisterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
 };

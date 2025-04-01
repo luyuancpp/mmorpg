@@ -2,7 +2,6 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "game_config/deploy_json.h"
 #include "grpc/generator/deploy_service_grpc.h"
 #include "grpc/generator/login_service_grpc.h"
 #include "log/constants/log_constants.h"
@@ -18,6 +17,7 @@
 #include "service_info/service_info.h"
 #include "thread_local/storage_gate.h"
 #include "time/system/time_system.h"
+#include "util/network_utils.h"
 
 GateNode* g_gate_node = nullptr; 
 
@@ -70,7 +70,7 @@ void GateNode::StartRpcServer(const nodes_info_data& data)
     nodesInfo = std::move(data);
     
     auto& gate_info = nodesInfo.gate_info().gate_info()[GetNodeId()];
-    InetAddress gate_addr(gate_info.ip(), gate_info.port());
+    InetAddress gate_addr(get_local_ip(), get_available_port());
     
     rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, gate_addr);
     rpcServer->GetTcpServer().setConnectionCallback(

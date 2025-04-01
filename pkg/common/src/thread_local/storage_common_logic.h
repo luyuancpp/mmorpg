@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config_loader/config.h"
 #include "proto/common/common_message.pb.h"
 #include "type_define/type_define.h"
 
@@ -18,9 +19,28 @@ public:
     uint64_t GetSessionId() const { return current_session_id_; }
 
     entt::entity GetPlayer(Guid player_uid);
-    inline PlayerListMap& GetPlayerList() { return playerList; }
-    inline const PlayerListMap& GetPlayerList() const { return playerList; }
+    PlayerListMap& GetPlayerList() { return playerList; }
+    const PlayerListMap& GetPlayerList() const { return playerList; }
+    
+    [[nodiscard]] ::BaseDeployConfig& GetBaseDeployConfig()
+    {
+        return BaseDeployConfig;
+    }
 
+    void SetBaseDeployConfig(const ::BaseDeployConfig& baseDeployConfig)
+    {
+        BaseDeployConfig = baseDeployConfig;
+    }
+
+    [[nodiscard]] GameConfig& GetGameConfig()
+    {
+        return GameConfig;
+    }
+
+    void SetGameConfig(const GameConfig& gameConfig)
+    {
+        GameConfig = gameConfig;
+    }
 private:
     RoutingNodeInfo route_data_;
     std::string route_msg_body_;
@@ -29,6 +49,8 @@ private:
     uint64_t current_session_id_{kInvalidSessionId};
     std::string prev_node_replied_;
     PlayerListMap playerList;
+    BaseDeployConfig BaseDeployConfig;
+    GameConfig GameConfig;
 };
 
 extern thread_local ThreadLocalStorageCommonLogic tlsCommonLogic;

@@ -2,9 +2,6 @@
 
 #include "grpc/generator/deploy_service_grpc.h"
 #include "thread_local/storage.h"
-
-
-entt::entity GlobalGrpcNodeEntity();
 struct DeployServiceGetNodeInfoCompleteQueue{
 	grpc::CompletionQueue cq;
 };

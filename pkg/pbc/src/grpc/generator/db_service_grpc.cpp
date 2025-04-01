@@ -2,9 +2,6 @@
 
 #include "grpc/generator/db_service_grpc.h"
 #include "thread_local/storage.h"
-
-
-entt::entity GlobalGrpcNodeEntity();
 struct AccountDBServiceLoad2RedisCompleteQueue{
 	grpc::CompletionQueue cq;
 };

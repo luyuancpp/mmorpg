@@ -16,6 +16,7 @@
 #include "service_info/gate_service_service_info.h"
 #include "thread_local/storage_centre.h"
 #include "time/system/time_system.h"
+#include "util/network_utils.h"
 
 using namespace muduo;
 using namespace net;
@@ -93,7 +94,7 @@ void CentreNode::StartRpcServer(const ::nodes_info_data& info)
 	nodesInfo = info;
 	auto& myNodeInfo = nodesInfo.centre_info().centre_info()[GetNodeId()];
 
-	InetAddress serviceAddr(myNodeInfo.ip(), myNodeInfo.port());
+	InetAddress serviceAddr(get_local_ip(), get_available_port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, serviceAddr);
 
 	rpcServer->registerService(&centreService);

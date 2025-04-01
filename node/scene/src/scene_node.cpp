@@ -2,30 +2,25 @@
 
 #include <ranges>
 
-#include "all_config.h"
 #include "core/config/config_system.h"
-#include "game_config/deploy_json.h"
 #include "grpc/generator/deploy_service_grpc.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
 #include "handler/service/player/player_service.h"
 #include "handler/service_replied/player/player_service_replied.h"
 #include "log/constants/log_constants.h"
-#include "log/system/console_log_system.h"
 #include "muduo/base/Logging.h"
-#include "muduo/base/TimeZone.h"
 #include "muduo/net/InetAddress.h"
-#include "network/network_constants.h"
 #include "network/rpc_session.h"
 #include "node/scene_node_info.h"
-#include "proto/common/deploy_service.grpc.pb.h"
 #include "proto/logic/constants/node.pb.h"
 #include "proto/logic/event/server_event.pb.h"
-#include "service_info/service_info.h"
 #include "thread_local/storage.h"
+#include "thread_local/storage_common_logic.h"
 #include "thread_local/storage_game.h"
 #include "time/system/time_system.h"
 #include "util/game_registry.h"
+#include "util/network_utils.h"
 #include "world/world.h"
 
 SceneNode* gSceneNode = nullptr;
@@ -87,11 +82,11 @@ void SceneNode::StartRpcServer(const ::nodes_info_data& info)
 
     auto& nodeInfo = gSceneNodeInfo.GetNodeInfo();
 
-    nodeInfo.set_game_node_type(ZoneConfig::GetSingleton().ConfigInfo().server_type());
+    nodeInfo.set_game_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
     nodeInfo.set_node_type(eNodeType::kSceneNode);
     nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
 
-    InetAddress service_addr(GetNodeConf().ip(), GetNodeConf().port());
+    InetAddress service_addr(get_local_ip(), get_available_port());
     rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
     
     rpcServer->registerService(&gameService);
