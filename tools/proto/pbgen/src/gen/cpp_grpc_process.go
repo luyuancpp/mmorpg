@@ -24,6 +24,7 @@ type GrpcServiceTemplateData struct {
 	ProtoFileBaseName string
 	GeneratorFileName string
 	ServiceName       string
+	IncludeName       string
 }
 
 // generateHandlerCases creates the cases for the switch statement based on the method.
@@ -40,7 +41,7 @@ func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcSer
 }
 
 // Generates a Go file using the provided handler and response names.
-func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []GrpcService, text string, ServiceName string) error {
+func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []GrpcService, text string, ServiceName string, IncludeName string) error {
 	// Create the file
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -61,6 +62,7 @@ func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []
 		ProtoFileBaseName: protoFileBaseName,
 		GeneratorFileName: filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
 		ServiceName:       ServiceName,
+		IncludeName:       IncludeName,
 	}
 
 	// Write the content to the file
@@ -80,29 +82,32 @@ func CppGrpcCallClient() {
 				return
 			}
 
-			if !strings.Contains(serviceMethods[0].Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) {
+			if !(strings.Contains(serviceMethods[0].Path, config.ProtoDirectoryNames[config.CommonProtoDirIndex]) ||
+				strings.Contains(serviceMethods[0].Path, config.ProtoDirectoryNames[config.EtcdProtoDirIndex])) {
 				return
 			}
 
 			for _, method := range serviceMethods {
-
 				grpcServices = generateGrpcMethod(method, grpcServices)
 			}
 
+			method := serviceMethods[0]
 			// Generate different handler files based on the templates
 			if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcHeaderExtension,
-				serviceMethods[0].FileBaseName(),
+				method.FileBaseName(),
 				grpcServices,
 				AsyncClientHeaderTemplate,
-				serviceMethods[0].Service); err != nil {
+				method.GrpcServiceNameWithNamespaceNoColon(),
+				method.GrpcIncludeHeadName()); err != nil {
 				log.Fatal(err)
 			}
 
 			if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcCppExtension,
-				serviceMethods[0].FileBaseName(),
+				method.FileBaseName(),
 				grpcServices,
 				AsyncClientCppHandleTemplate,
-				serviceMethods[0].Service); err != nil {
+				method.GrpcServiceNameWithNamespaceNoColon(),
+				method.GrpcIncludeHeadName()); err != nil {
 				log.Fatal(err)
 			}
 		}()

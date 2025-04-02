@@ -14,6 +14,7 @@ const (
 	ProtoPbhEx                = ".pb.h"
 	ProtoGoEx                 = ".pb.go"
 	GrpcPbcEx                 = ".grpc.pb.cc"
+	GrpcPbhEx                 = ".grpc.pb.h"
 	GrpcEx                    = "grpc"
 	DBDescDirectory           = "../bin/proto_desc/"
 	ProtoDescExtension        = ".desc"
@@ -135,6 +136,8 @@ const (
 	MysqlName                = "mysql"
 	PlayerServiceName        = "player_service.cpp"
 	PlayerRepliedServiceName = "player_service_replied.cpp"
+	PbPackage                = "package"
+	GoPackage                = "go_package"
 )
 
 // 常量：项目源目录
@@ -156,7 +159,7 @@ var (
 		"logic/client_player/",
 		"logic/server_player/",
 		"logic/constants/",
-		"etcd/"
+		"etcd/",
 	}
 
 	ProtoDirectories     []string
@@ -170,6 +173,8 @@ var (
 	LogicProtoDirIndex     = 3
 	ClientPlayerDirIndex   = 4
 	ServerPlayerDirIndex   = 5
+	LogicConstantsDirIndex = 6
+	EtcdProtoDirIndex      = 7
 )
 
 // 常量：其他常量

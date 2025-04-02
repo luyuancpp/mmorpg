@@ -74,3 +74,8 @@
 73=DeployServiceReleaseID
 74=DeployServiceRenewLease
 75=GameServiceEnterScene
+76=KVPut
+77=KVRange
+78=KVDeleteRange
+79=KVTxn
+80=KVCompact

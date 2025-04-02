@@ -33,12 +33,20 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 	var methodIndex uint64
 	var rpcServiceInfo RPCServiceInfo
 	ccGenericServices := false
+	var goPackageName string
+	var pbPackageName string
 
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		if strings.Contains(line, config.CcGenericServices) {
 			ccGenericServices = true
+		}
+
+		if strings.Contains(line, config.GoPackage) {
+			goPackageName = strings.ReplaceAll(strings.Split(line, " ")[3], ";", "")
+		} else if strings.Contains(line, config.PbPackage) {
+			pbPackageName = strings.ReplaceAll(strings.Split(line, " ")[1], ";", "")
 		}
 
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
@@ -60,6 +68,8 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 				FileName:          fd.Name(),
 				Path:              filePath,
 				CcGenericServices: ccGenericServices,
+				PbPackage:         pbPackageName,
+				GoPackage:         goPackageName,
 			}
 			rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
 			atomic.AddUint64(&MaxMessageId, 1)

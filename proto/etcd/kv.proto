@@ -1,9 +1,9 @@
 syntax = "proto3";
 package mvccpb;
 
-import "proto/common/version.proto";
+import "proto/etcd/version.proto";
 
-option go_package = "go.etcd.io/etcd/api/v3/mvccpb";
+option go_package = "game/etcdserverpb";
 
 message KeyValue {
   // key is the key in bytes. An empty key is not allowed.

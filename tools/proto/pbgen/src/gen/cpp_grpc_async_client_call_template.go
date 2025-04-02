@@ -3,8 +3,7 @@ package gen
 const AsyncClientHeaderTemplate = `#pragma once
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "proto/common/{{.ProtoFileBaseName}}.grpc.pb.h"
-#include "proto/common/{{.ProtoFileBaseName}}.pb.h"
+{{.IncludeName}}
 
 using grpc::ClientContext;
 using grpc::Status;

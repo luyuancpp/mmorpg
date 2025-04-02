@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-import "proto/common/kv.proto";
+import "proto/etcd/kv.proto";
 
-import "proto/common/version.proto";
+import "proto/etcd/version.proto";
 
-option go_package = "go.etcd.io/etcd/api/v3/etcdserverpb";
+option go_package = "game/etcdserverpb";
 
 package etcdserverpb;
 
@@ -15,7 +15,7 @@ service KV {
   // Put puts the given key into the key-value store.
   // A put request increments the revision of the key-value store
   // and generates one event in the event history.
-  rpc Put(PutRequest) returns (PutResponse) ;
+  rpc Put (PutRequest) returns (PutResponse) ;
   // DeleteRange deletes the given range from the key-value store.
   // A delete request increments the revision of the key-value store
   // and generates a delete event in the event history for every deleted key.

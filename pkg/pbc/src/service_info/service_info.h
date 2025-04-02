@@ -18,7 +18,7 @@ using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
 void InitMessageInfo();
 
-constexpr uint32_t kMaxMessageLen = 76;
+constexpr uint32_t kMaxMessageLen = 81;
 
 extern std::array<RpcService, kMaxMessageLen> gMessageInfo;
 

@@ -19,6 +19,8 @@ type RPCMethod struct {
 	FileName          string
 	Path              string
 	CcGenericServices bool
+	PbPackage         string
+	GoPackage         string
 }
 
 // RPCMethods 是RPCMethod的切片
@@ -99,9 +101,17 @@ func (info *RPCMethod) PbcHeadName() string {
 	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
 }
 
+func (info *RPCMethod) GrpcHeadName() string {
+	return strings.Replace(info.FileName, config.ProtoEx, config.GrpcPbhEx, 1)
+}
+
 // IncludeName 返回包含头文件名
 func (info *RPCMethod) IncludeName() string {
 	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, config.ProtoDirName, 1) + info.PbcHeadName() + "\"\n"
+}
+
+func (info *RPCMethod) GrpcIncludeHeadName() string {
+	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, config.ProtoDirName, 1) + info.GrpcHeadName() + "\"\n"
 }
 
 func (info *RPCMethod) ServiceInfoIncludeName() string {
@@ -132,6 +142,20 @@ func (info *RPCMethod) CppRepliedHandlerClassName() string {
 func (info *RPCMethod) IsPlayerService() bool {
 	return strings.Contains(info.Path, config.ProtoDirectoryNames[config.ClientPlayerDirIndex]) ||
 		strings.Contains(info.Path, config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
+}
+
+func (info *RPCMethod) FullGrpcServiceNameWithNamespace() string {
+	if len(info.PbPackage) <= 0 {
+		return info.Service
+	}
+	return info.PbPackage + "::" + info.Service
+}
+
+func (info *RPCMethod) GrpcServiceNameWithNamespaceNoColon() string {
+	if len(info.PbPackage) <= 0 {
+		return info.Service
+	}
+	return info.PbPackage + info.Service
 }
 
 // Len 返回RPCMethods的长度
