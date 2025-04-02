@@ -61,6 +61,9 @@ void Pb2sol2function_switch();
 void Pb2sol2node();
 void Pb2sol2scene();
 void Pb2sol2test_switch();
+void Pb2sol2etcd();
+void Pb2sol2kv();
+void Pb2sol2version();
 
 void pb2sol2()
 {
@@ -124,5 +127,8 @@ Pb2sol2function_switch();
 Pb2sol2node();
 Pb2sol2scene();
 Pb2sol2test_switch();
+Pb2sol2etcd();
+Pb2sol2kv();
+Pb2sol2version();
 
 }

@@ -44,7 +44,7 @@ class PlayerSkillServiceImpl final : public PlayerSkillService{};
 
 
 std::unordered_set<uint32_t> gClientToServerMessageId;
-std::array<RpcService, 76> gMessageInfo;
+std::array<RpcService, 81> gMessageInfo;
 
 void InitMessageInfo()
 {

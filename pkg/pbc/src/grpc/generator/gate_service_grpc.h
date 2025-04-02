@@ -2,7 +2,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "proto/common/gate_service.grpc.pb.h"
-#include "proto/common/gate_service.pb.h"
+
 
 using grpc::ClientContext;
 using grpc::Status;
