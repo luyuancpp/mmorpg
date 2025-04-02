@@ -37,7 +37,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Redis:        redis.NewClient(&redis.Options{Addr: config.RedisConfig.Addr}),
 		DbClient:     &dbClient,
 		DeployClient: &deployClient,
-		CentreClient: centre.NewCentreClient(config.CentreClientConf.Ip, config.CentreClientConf.Port),
+		//CentreClient: centre.NewCentreClient(config.CentreClientConf.Ip, config.CentreClientConf.Port),
 	}
 }
 

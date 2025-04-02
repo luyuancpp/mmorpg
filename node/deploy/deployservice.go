@@ -2,7 +2,6 @@ package main
 
 import (
 	"deploy/internal/config"
-	"deploy/internal/logic/pkg/db"
 	"deploy/internal/logic/pkg/node_id_etcd"
 	deployserviceServer "deploy/internal/server/deployservice"
 	"deploy/internal/svc"
@@ -35,7 +34,7 @@ func main() {
 	}
 
 	// 检查是否处于临时维护模式
-	if config.DeployConfig.MaintenanceMode {
+	if false {
 		go func() {
 			// 如果是临时维护模式，延迟60秒后再启动定时任务
 			logx.Info("In maintenance mode, delaying periodic sweep start...")
@@ -56,9 +55,6 @@ func main() {
 
 	// 调用 StartPeriodicSweep 启动定时任务，每隔 60 秒调用一次 SweepExpiredIDs
 	go node_id_etcd.StartPeriodicSweep(ctx.NodeEtcdClient, 30*time.Second)
-
-	db.InitDB()
-	defer db.PbDb.Close()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterDeployServiceServer(grpcServer, deployserviceServer.NewDeployServiceServer(ctx))
