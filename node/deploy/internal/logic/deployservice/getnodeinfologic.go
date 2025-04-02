@@ -2,10 +2,7 @@ package deployservicelogic
 
 import (
 	"context"
-	"deploy/internal/logic/pkg/db"
 	"deploy/internal/logic/pkg/node_id_etcd"
-	"strconv"
-
 	"deploy/internal/svc"
 	"deploy/pb/game"
 
@@ -46,14 +43,6 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 
 	response.NodeId = uint32(id)
 	response.LeaseId = uint64(leaseID)
-
-	zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
-	db.PbDb.LoadOneByWhereCase(response.Info.GetDatabaseInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetLoginInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetCentreInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetGameInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetGateInfo(), "where zone_id="+zoneId)
-	db.PbDb.LoadListByWhereCase(response.Info.GetRedisInfo(), "where zone_id="+zoneId)
 
 	return response, nil
 }
