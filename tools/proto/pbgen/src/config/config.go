@@ -156,6 +156,7 @@ var (
 		"logic/client_player/",
 		"logic/server_player/",
 		"logic/constants/",
+		"etcd/"
 	}
 
 	ProtoDirectories     []string
