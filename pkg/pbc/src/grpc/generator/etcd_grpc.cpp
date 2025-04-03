@@ -2,38 +2,38 @@
 
 #include "grpc/generator/etcd_grpc.h"
 #include "thread_local/storage.h"
-struct KVRangeCompleteQueue{
+struct etcdserverpbKVRangeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-struct KVPutCompleteQueue{
+struct etcdserverpbKVPutCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-struct KVDeleteRangeCompleteQueue{
+struct etcdserverpbKVDeleteRangeCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-struct KVTxnCompleteQueue{
+struct etcdserverpbKVTxnCompleteQueue{
 	grpc::CompletionQueue cq;
 };
-struct KVCompactCompleteQueue{
+struct etcdserverpbKVCompactCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void KVRange(entt::registry& registry, entt::entity nodeEntity, const RangeRequest& request)
+void etcdserverpbKVRange(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::RangeRequest& request)
 {
-    AsyncKVRangeGrpcClientCall* call = new AsyncKVRangeGrpcClientCall;
+    AsyncetcdserverpbKVRangeGrpcClientCall* call = new AsyncetcdserverpbKVRangeGrpcClientCall;
 
     call->response_reader =
-        registry.get<GrpcKVStubPtr>(nodeEntity)->PrepareAsyncRange(&call->context, request,
-		&registry.get<KVRangeCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncRange(&call->context, request,
+		&registry.get<etcdserverpbKVRangeCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncKVRangeGrpcClientCall>&)> AsyncKVRangeHandler;
+std::function<void(const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>&)> AsyncetcdserverpbKVRangeHandler;
 
-void AsyncCompleteGrpcKVRange(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVRange(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -47,37 +47,37 @@ void AsyncCompleteGrpcKVRange(grpc::CompletionQueue& cq)
         return;
     }
 
-    std::unique_ptr<AsyncKVRangeGrpcClientCall> call(static_cast<AsyncKVRangeGrpcClientCall*>(got_tag));
+    std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall> call(static_cast<AsyncetcdserverpbKVRangeGrpcClientCall*>(got_tag));
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
     if (call->status.ok()){
-		if(AsyncKVRangeHandler){
-			AsyncKVRangeHandler(call);
+		if(AsyncetcdserverpbKVRangeHandler){
+			AsyncetcdserverpbKVRangeHandler(call);
 		}
     }else{
         LOG_ERROR << call->status.error_message();
     }
 }
 
-void KVPut(entt::registry& registry, entt::entity nodeEntity, const PutRequest& request)
+void etcdserverpbKVPut(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::PutRequest& request)
 {
-    AsyncKVPutGrpcClientCall* call = new AsyncKVPutGrpcClientCall;
+    AsyncetcdserverpbKVPutGrpcClientCall* call = new AsyncetcdserverpbKVPutGrpcClientCall;
 
     call->response_reader =
-        registry.get<GrpcKVStubPtr>(nodeEntity)->PrepareAsyncPut(&call->context, request,
-		&registry.get<KVPutCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncPut(&call->context, request,
+		&registry.get<etcdserverpbKVPutCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncKVPutGrpcClientCall>&)> AsyncKVPutHandler;
+std::function<void(const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>&)> AsyncetcdserverpbKVPutHandler;
 
-void AsyncCompleteGrpcKVPut(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVPut(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -91,37 +91,37 @@ void AsyncCompleteGrpcKVPut(grpc::CompletionQueue& cq)
         return;
     }
 
-    std::unique_ptr<AsyncKVPutGrpcClientCall> call(static_cast<AsyncKVPutGrpcClientCall*>(got_tag));
+    std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall> call(static_cast<AsyncetcdserverpbKVPutGrpcClientCall*>(got_tag));
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
     if (call->status.ok()){
-		if(AsyncKVPutHandler){
-			AsyncKVPutHandler(call);
+		if(AsyncetcdserverpbKVPutHandler){
+			AsyncetcdserverpbKVPutHandler(call);
 		}
     }else{
         LOG_ERROR << call->status.error_message();
     }
 }
 
-void KVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const DeleteRangeRequest& request)
+void etcdserverpbKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::DeleteRangeRequest& request)
 {
-    AsyncKVDeleteRangeGrpcClientCall* call = new AsyncKVDeleteRangeGrpcClientCall;
+    AsyncetcdserverpbKVDeleteRangeGrpcClientCall* call = new AsyncetcdserverpbKVDeleteRangeGrpcClientCall;
 
     call->response_reader =
-        registry.get<GrpcKVStubPtr>(nodeEntity)->PrepareAsyncDeleteRange(&call->context, request,
-		&registry.get<KVDeleteRangeCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncDeleteRange(&call->context, request,
+		&registry.get<etcdserverpbKVDeleteRangeCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncKVDeleteRangeGrpcClientCall>&)> AsyncKVDeleteRangeHandler;
+std::function<void(const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&)> AsyncetcdserverpbKVDeleteRangeHandler;
 
-void AsyncCompleteGrpcKVDeleteRange(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVDeleteRange(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -135,37 +135,37 @@ void AsyncCompleteGrpcKVDeleteRange(grpc::CompletionQueue& cq)
         return;
     }
 
-    std::unique_ptr<AsyncKVDeleteRangeGrpcClientCall> call(static_cast<AsyncKVDeleteRangeGrpcClientCall*>(got_tag));
+    std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall> call(static_cast<AsyncetcdserverpbKVDeleteRangeGrpcClientCall*>(got_tag));
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
     if (call->status.ok()){
-		if(AsyncKVDeleteRangeHandler){
-			AsyncKVDeleteRangeHandler(call);
+		if(AsyncetcdserverpbKVDeleteRangeHandler){
+			AsyncetcdserverpbKVDeleteRangeHandler(call);
 		}
     }else{
         LOG_ERROR << call->status.error_message();
     }
 }
 
-void KVTxn(entt::registry& registry, entt::entity nodeEntity, const TxnRequest& request)
+void etcdserverpbKVTxn(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::TxnRequest& request)
 {
-    AsyncKVTxnGrpcClientCall* call = new AsyncKVTxnGrpcClientCall;
+    AsyncetcdserverpbKVTxnGrpcClientCall* call = new AsyncetcdserverpbKVTxnGrpcClientCall;
 
     call->response_reader =
-        registry.get<GrpcKVStubPtr>(nodeEntity)->PrepareAsyncTxn(&call->context, request,
-		&registry.get<KVTxnCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncTxn(&call->context, request,
+		&registry.get<etcdserverpbKVTxnCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncKVTxnGrpcClientCall>&)> AsyncKVTxnHandler;
+std::function<void(const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>&)> AsyncetcdserverpbKVTxnHandler;
 
-void AsyncCompleteGrpcKVTxn(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVTxn(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -179,37 +179,37 @@ void AsyncCompleteGrpcKVTxn(grpc::CompletionQueue& cq)
         return;
     }
 
-    std::unique_ptr<AsyncKVTxnGrpcClientCall> call(static_cast<AsyncKVTxnGrpcClientCall*>(got_tag));
+    std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall> call(static_cast<AsyncetcdserverpbKVTxnGrpcClientCall*>(got_tag));
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
     if (call->status.ok()){
-		if(AsyncKVTxnHandler){
-			AsyncKVTxnHandler(call);
+		if(AsyncetcdserverpbKVTxnHandler){
+			AsyncetcdserverpbKVTxnHandler(call);
 		}
     }else{
         LOG_ERROR << call->status.error_message();
     }
 }
 
-void KVCompact(entt::registry& registry, entt::entity nodeEntity, const CompactionRequest& request)
+void etcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::CompactionRequest& request)
 {
-    AsyncKVCompactGrpcClientCall* call = new AsyncKVCompactGrpcClientCall;
+    AsyncetcdserverpbKVCompactGrpcClientCall* call = new AsyncetcdserverpbKVCompactGrpcClientCall;
 
     call->response_reader =
-        registry.get<GrpcKVStubPtr>(nodeEntity)->PrepareAsyncCompact(&call->context, request,
-		&registry.get<KVCompactCompleteQueue>(nodeEntity).cq);
+        registry.get<GrpcetcdserverpbKVStubPtr>(nodeEntity)->PrepareAsyncCompact(&call->context, request,
+		&registry.get<etcdserverpbKVCompactCompleteQueue>(nodeEntity).cq);
 
     call->response_reader->StartCall();
 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncKVCompactGrpcClientCall>&)> AsyncKVCompactHandler;
+std::function<void(const std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall>&)> AsyncetcdserverpbKVCompactHandler;
 
-void AsyncCompleteGrpcKVCompact(grpc::CompletionQueue& cq)
+void AsyncCompleteGrpcetcdserverpbKVCompact(grpc::CompletionQueue& cq)
 {
     void* got_tag;
     bool ok = false;
@@ -223,15 +223,15 @@ void AsyncCompleteGrpcKVCompact(grpc::CompletionQueue& cq)
         return;
     }
 
-    std::unique_ptr<AsyncKVCompactGrpcClientCall> call(static_cast<AsyncKVCompactGrpcClientCall*>(got_tag));
+    std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall> call(static_cast<AsyncetcdserverpbKVCompactGrpcClientCall*>(got_tag));
 	if (!ok){
 		LOG_ERROR << "RPC failed";
 		return;
 	}
 
     if (call->status.ok()){
-		if(AsyncKVCompactHandler){
-			AsyncKVCompactHandler(call);
+		if(AsyncetcdserverpbKVCompactHandler){
+			AsyncetcdserverpbKVCompactHandler(call);
 		}
     }else{
         LOG_ERROR << call->status.error_message();
@@ -239,42 +239,42 @@ void AsyncCompleteGrpcKVCompact(grpc::CompletionQueue& cq)
 }
 
 void InitetcdserverpbKVCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
-	registry.emplace<KVRangeCompleteQueue>(nodeEntity);
-	registry.emplace<KVPutCompleteQueue>(nodeEntity);
-	registry.emplace<KVDeleteRangeCompleteQueue>(nodeEntity);
-	registry.emplace<KVTxnCompleteQueue>(nodeEntity);
-	registry.emplace<KVCompactCompleteQueue>(nodeEntity);
+	registry.emplace<etcdserverpbKVRangeCompleteQueue>(nodeEntity);
+	registry.emplace<etcdserverpbKVPutCompleteQueue>(nodeEntity);
+	registry.emplace<etcdserverpbKVDeleteRangeCompleteQueue>(nodeEntity);
+	registry.emplace<etcdserverpbKVTxnCompleteQueue>(nodeEntity);
+	registry.emplace<etcdserverpbKVCompactCompleteQueue>(nodeEntity);
 }
 
 void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry) {
 	{
-		auto&& view = registry.view<KVRangeCompleteQueue>();
+		auto&& view = registry.view<etcdserverpbKVRangeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcKVRange(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVRange(completeQueueComp.cq);
 		}
 	}
 	{
-		auto&& view = registry.view<KVPutCompleteQueue>();
+		auto&& view = registry.view<etcdserverpbKVPutCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcKVPut(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVPut(completeQueueComp.cq);
 		}
 	}
 	{
-		auto&& view = registry.view<KVDeleteRangeCompleteQueue>();
+		auto&& view = registry.view<etcdserverpbKVDeleteRangeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcKVDeleteRange(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVDeleteRange(completeQueueComp.cq);
 		}
 	}
 	{
-		auto&& view = registry.view<KVTxnCompleteQueue>();
+		auto&& view = registry.view<etcdserverpbKVTxnCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcKVTxn(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVTxn(completeQueueComp.cq);
 		}
 	}
 	{
-		auto&& view = registry.view<KVCompactCompleteQueue>();
+		auto&& view = registry.view<etcdserverpbKVCompactCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
-			AsyncCompleteGrpcKVCompact(completeQueueComp.cq);
+			AsyncCompleteGrpcetcdserverpbKVCompact(completeQueueComp.cq);
 		}
 	}
 }

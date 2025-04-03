@@ -144,18 +144,25 @@ func (info *RPCMethod) IsPlayerService() bool {
 		strings.Contains(info.Path, config.ProtoDirectoryNames[config.ServerPlayerDirIndex])
 }
 
-func (info *RPCMethod) FullGrpcServiceNameWithNamespace() string {
+func (info *RPCMethod) GetServiceFullNameWithColon() string {
 	if len(info.PbPackage) <= 0 {
 		return info.Service
 	}
 	return info.PbPackage + "::" + info.Service
 }
 
-func (info *RPCMethod) GrpcServiceNameWithNamespaceNoColon() string {
+func (info *RPCMethod) GetServiceFullNameWithNoColon() string {
 	if len(info.PbPackage) <= 0 {
 		return info.Service
 	}
 	return info.PbPackage + info.Service
+}
+
+func (info *RPCMethod) GetPackageNameWithColon() string {
+	if len(info.PbPackage) <= 0 {
+		return ""
+	}
+	return info.PbPackage + "::"
 }
 
 // Len 返回RPCMethods的长度

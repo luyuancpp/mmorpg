@@ -12,36 +12,48 @@ import (
 )
 
 type GrpcService struct {
-	Request      string
-	Response     string
-	Method       string
-	ServiceName  string
-	FileBaseName string
+	Request                    string
+	Response                   string
+	Method                     string
+	ServiceName                string
+	FileBaseName               string
+	ServiceFullNameWithColon   string
+	ServiceFullNameWithNoColon string
+	PbPackageName              string
+	PackageNameWithColon       string
 }
 
 type GrpcServiceTemplateData struct {
-	GrpcServices      []GrpcService
-	ProtoFileBaseName string
-	GeneratorFileName string
-	ServiceName       string
-	IncludeName       string
+	GrpcServices               []GrpcService
+	ServiceName                string
+	ProtoFileBaseName          string
+	GeneratorFileName          string
+	IncludeName                string
+	ServiceFullNameWithColon   string
+	ServiceFullNameWithNoColon string
+	PbPackageName              string
+	PackageNameWithColon       string
 }
 
 // generateHandlerCases creates the cases for the switch statement based on the method.
 func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcService {
 	grpcService := GrpcService{
-		Request:      method.Request,
-		Response:     method.Response,
-		Method:       method.Method,
-		ServiceName:  method.Service,
-		FileBaseName: strings.ToLower(method.FileBaseName()),
+		Request:                    method.Request,
+		Response:                   method.Response,
+		Method:                     method.Method,
+		ServiceName:                method.Service,
+		FileBaseName:               strings.ToLower(method.FileBaseName()),
+		ServiceFullNameWithColon:   method.GetServiceFullNameWithColon(),
+		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
+		PbPackageName:              method.PbPackage,
+		PackageNameWithColon:       method.GetPackageNameWithColon(),
 	}
 	grpcServices = append(grpcServices, grpcService)
 	return grpcServices
 }
 
 // Generates a Go file using the provided handler and response names.
-func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []GrpcService, text string, ServiceName string, IncludeName string) error {
+func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []GrpcService, text string, method *RPCMethod) error {
 	// Create the file
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -58,11 +70,15 @@ func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []
 
 	// Fill the template with handler name and response type
 	data := GrpcServiceTemplateData{
-		GrpcServices:      grpcServices,
-		ProtoFileBaseName: protoFileBaseName,
-		GeneratorFileName: filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
-		ServiceName:       ServiceName,
-		IncludeName:       IncludeName,
+		GrpcServices:               grpcServices,
+		ServiceName:                method.Service,
+		ProtoFileBaseName:          protoFileBaseName,
+		GeneratorFileName:          filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
+		IncludeName:                method.GrpcIncludeHeadName(),
+		ServiceFullNameWithColon:   method.GetServiceFullNameWithColon(),
+		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
+		PbPackageName:              method.PbPackage,
+		PackageNameWithColon:       method.GetPackageNameWithColon(),
 	}
 
 	// Write the content to the file
@@ -97,8 +113,7 @@ func CppGrpcCallClient() {
 				method.FileBaseName(),
 				grpcServices,
 				AsyncClientHeaderTemplate,
-				method.GrpcServiceNameWithNamespaceNoColon(),
-				method.GrpcIncludeHeadName()); err != nil {
+				method); err != nil {
 				log.Fatal(err)
 			}
 
@@ -106,8 +121,7 @@ func CppGrpcCallClient() {
 				method.FileBaseName(),
 				grpcServices,
 				AsyncClientCppHandleTemplate,
-				method.GrpcServiceNameWithNamespaceNoColon(),
-				method.GrpcIncludeHeadName()); err != nil {
+				method); err != nil {
 				log.Fatal(err)
 			}
 		}()
