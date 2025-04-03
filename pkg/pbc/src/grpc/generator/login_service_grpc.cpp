@@ -18,7 +18,7 @@ struct LoginServiceDisconnectCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void LoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const LoginC2LRequest& request)
+void LoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const  LoginC2LRequest& request)
 {
     AsyncLoginServiceLoginGrpcClientCall* call = new AsyncLoginServiceLoginGrpcClientCall;
 
@@ -62,7 +62,7 @@ void AsyncCompleteGrpcLoginServiceLogin(grpc::CompletionQueue& cq)
     }
 }
 
-void LoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const CreatePlayerC2LRequest& request)
+void LoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const  CreatePlayerC2LRequest& request)
 {
     AsyncLoginServiceCreatePlayerGrpcClientCall* call = new AsyncLoginServiceCreatePlayerGrpcClientCall;
 
@@ -106,7 +106,7 @@ void AsyncCompleteGrpcLoginServiceCreatePlayer(grpc::CompletionQueue& cq)
     }
 }
 
-void LoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const EnterGameC2LRequest& request)
+void LoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, const  EnterGameC2LRequest& request)
 {
     AsyncLoginServiceEnterGameGrpcClientCall* call = new AsyncLoginServiceEnterGameGrpcClientCall;
 
@@ -150,7 +150,7 @@ void AsyncCompleteGrpcLoginServiceEnterGame(grpc::CompletionQueue& cq)
     }
 }
 
-void LoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const LeaveGameC2LRequest& request)
+void LoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  LeaveGameC2LRequest& request)
 {
     AsyncLoginServiceLeaveGameGrpcClientCall* call = new AsyncLoginServiceLeaveGameGrpcClientCall;
 
@@ -194,7 +194,7 @@ void AsyncCompleteGrpcLoginServiceLeaveGame(grpc::CompletionQueue& cq)
     }
 }
 
-void LoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const LoginNodeDisconnectRequest& request)
+void LoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, const  LoginNodeDisconnectRequest& request)
 {
     AsyncLoginServiceDisconnectGrpcClientCall* call = new AsyncLoginServiceDisconnectGrpcClientCall;
 

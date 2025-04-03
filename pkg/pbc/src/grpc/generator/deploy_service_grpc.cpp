@@ -15,7 +15,7 @@ struct DeployServiceRenewLeaseCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void DeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const NodeInfoRequest& request)
+void DeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const  NodeInfoRequest& request)
 {
     AsyncDeployServiceGetNodeInfoGrpcClientCall* call = new AsyncDeployServiceGetNodeInfoGrpcClientCall;
 
@@ -59,7 +59,7 @@ void AsyncCompleteGrpcDeployServiceGetNodeInfo(grpc::CompletionQueue& cq)
     }
 }
 
-void DeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const GetIDRequest& request)
+void DeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const  GetIDRequest& request)
 {
     AsyncDeployServiceGetIDGrpcClientCall* call = new AsyncDeployServiceGetIDGrpcClientCall;
 
@@ -103,7 +103,7 @@ void AsyncCompleteGrpcDeployServiceGetID(grpc::CompletionQueue& cq)
     }
 }
 
-void DeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const ReleaseIDRequest& request)
+void DeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const  ReleaseIDRequest& request)
 {
     AsyncDeployServiceReleaseIDGrpcClientCall* call = new AsyncDeployServiceReleaseIDGrpcClientCall;
 
@@ -147,7 +147,7 @@ void AsyncCompleteGrpcDeployServiceReleaseID(grpc::CompletionQueue& cq)
     }
 }
 
-void DeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const RenewLeaseIDRequest& request)
+void DeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const  RenewLeaseIDRequest& request)
 {
     AsyncDeployServiceRenewLeaseGrpcClientCall* call = new AsyncDeployServiceRenewLeaseGrpcClientCall;
 

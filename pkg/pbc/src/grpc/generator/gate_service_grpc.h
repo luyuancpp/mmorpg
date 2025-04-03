@@ -15,96 +15,96 @@ public:
     ClientContext context;
     Status status;
 
-    Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader< Empty>> response_reader;
+     Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<  Empty>> response_reader;
 };
 
 class RegisterGameNodeRequest;
-void GateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const RegisterGameNodeRequest& request);
+void GateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeRequest& request);
 class AsyncGateServiceUnRegisterGameGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader< Empty>> response_reader;
+     Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<  Empty>> response_reader;
 };
 
 class UnregisterGameNodeRequest;
-void GateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const UnregisterGameNodeRequest& request);
+void GateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  UnregisterGameNodeRequest& request);
 class AsyncGateServicePlayerEnterGameNodeGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    RegisterGameNodeSessionResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< RegisterGameNodeSessionResponse>> response_reader;
+     RegisterGameNodeSessionResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  RegisterGameNodeSessionResponse>> response_reader;
 };
 
 class RegisterGameNodeSessionRequest;
-void GateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const RegisterGameNodeSessionRequest& request);
+void GateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeSessionRequest& request);
 class AsyncGateServiceSendMessageToPlayerGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader< Empty>> response_reader;
+     Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<  Empty>> response_reader;
 };
 
 class NodeRouteMessageRequest;
-void GateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const NodeRouteMessageRequest& request);
+void GateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request);
 class AsyncGateServiceKickSessionByCentreGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader< Empty>> response_reader;
+     Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<  Empty>> response_reader;
 };
 
 class KickSessionRequest;
-void GateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const KickSessionRequest& request);
+void GateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const  KickSessionRequest& request);
 class AsyncGateServiceRouteNodeMessageGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    RouteMessageResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< RouteMessageResponse>> response_reader;
+     RouteMessageResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  RouteMessageResponse>> response_reader;
 };
 
 class RouteMessageRequest;
-void GateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const RouteMessageRequest& request);
+void GateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request);
 class AsyncGateServiceRoutePlayerMessageGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    RoutePlayerMessageResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< RoutePlayerMessageResponse>> response_reader;
+     RoutePlayerMessageResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  RoutePlayerMessageResponse>> response_reader;
 };
 
 class RoutePlayerMessageRequest;
-void GateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const RoutePlayerMessageRequest& request);
+void GateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request);
 class AsyncGateServiceBroadcastToPlayersGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader< Empty>> response_reader;
+     Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<  Empty>> response_reader;
 };
 
 class BroadcastToPlayersRequest;
-void GateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const BroadcastToPlayersRequest& request);
+void GateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const  BroadcastToPlayersRequest& request);
 
 void HandleGateServiceCompletedQueueMessage(entt::registry& registry	); 
 

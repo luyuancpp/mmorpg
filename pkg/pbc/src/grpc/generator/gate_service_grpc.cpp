@@ -27,7 +27,7 @@ struct GateServiceBroadcastToPlayersCompleteQueue{
 	grpc::CompletionQueue cq;
 };
 
-void GateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const RegisterGameNodeRequest& request)
+void GateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeRequest& request)
 {
     AsyncGateServiceRegisterGameGrpcClientCall* call = new AsyncGateServiceRegisterGameGrpcClientCall;
 
@@ -71,7 +71,7 @@ void AsyncCompleteGrpcGateServiceRegisterGame(grpc::CompletionQueue& cq)
     }
 }
 
-void GateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const UnregisterGameNodeRequest& request)
+void GateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  UnregisterGameNodeRequest& request)
 {
     AsyncGateServiceUnRegisterGameGrpcClientCall* call = new AsyncGateServiceUnRegisterGameGrpcClientCall;
 
@@ -115,7 +115,7 @@ void AsyncCompleteGrpcGateServiceUnRegisterGame(grpc::CompletionQueue& cq)
     }
 }
 
-void GateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const RegisterGameNodeSessionRequest& request)
+void GateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeSessionRequest& request)
 {
     AsyncGateServicePlayerEnterGameNodeGrpcClientCall* call = new AsyncGateServicePlayerEnterGameNodeGrpcClientCall;
 
@@ -159,7 +159,7 @@ void AsyncCompleteGrpcGateServicePlayerEnterGameNode(grpc::CompletionQueue& cq)
     }
 }
 
-void GateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const NodeRouteMessageRequest& request)
+void GateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request)
 {
     AsyncGateServiceSendMessageToPlayerGrpcClientCall* call = new AsyncGateServiceSendMessageToPlayerGrpcClientCall;
 
@@ -203,7 +203,7 @@ void AsyncCompleteGrpcGateServiceSendMessageToPlayer(grpc::CompletionQueue& cq)
     }
 }
 
-void GateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const KickSessionRequest& request)
+void GateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const  KickSessionRequest& request)
 {
     AsyncGateServiceKickSessionByCentreGrpcClientCall* call = new AsyncGateServiceKickSessionByCentreGrpcClientCall;
 
@@ -247,7 +247,7 @@ void AsyncCompleteGrpcGateServiceKickSessionByCentre(grpc::CompletionQueue& cq)
     }
 }
 
-void GateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const RouteMessageRequest& request)
+void GateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request)
 {
     AsyncGateServiceRouteNodeMessageGrpcClientCall* call = new AsyncGateServiceRouteNodeMessageGrpcClientCall;
 
@@ -291,7 +291,7 @@ void AsyncCompleteGrpcGateServiceRouteNodeMessage(grpc::CompletionQueue& cq)
     }
 }
 
-void GateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const RoutePlayerMessageRequest& request)
+void GateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request)
 {
     AsyncGateServiceRoutePlayerMessageGrpcClientCall* call = new AsyncGateServiceRoutePlayerMessageGrpcClientCall;
 
@@ -335,7 +335,7 @@ void AsyncCompleteGrpcGateServiceRoutePlayerMessage(grpc::CompletionQueue& cq)
     }
 }
 
-void GateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const BroadcastToPlayersRequest& request)
+void GateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const  BroadcastToPlayersRequest& request)
 {
     AsyncGateServiceBroadcastToPlayersGrpcClientCall* call = new AsyncGateServiceBroadcastToPlayersGrpcClientCall;
 

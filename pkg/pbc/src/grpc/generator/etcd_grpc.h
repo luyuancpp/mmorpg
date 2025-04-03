@@ -4,73 +4,71 @@
 #include "proto/etcd/etcd.grpc.pb.h"
 
 
-using namespace etcdserverpb;
-
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcetcdserverpbKVStubPtr = std::unique_ptr<KV::Stub>;
-class AsyncKVRangeGrpcClientCall
+using GrpcetcdserverpbKVStubPtr = std::unique_ptr<etcdserverpb::KV::Stub>;
+class AsyncetcdserverpbKVRangeGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    RangeResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< RangeResponse>> response_reader;
+     etcdserverpb::RangeResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  etcdserverpb::RangeResponse>> response_reader;
 };
 
 class RangeRequest;
-void KVRange(entt::registry& registry, entt::entity nodeEntity, const etcdserverpb::RangeRequest& request);
-class AsyncKVPutGrpcClientCall
+void etcdserverpbKVRange(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::RangeRequest& request);
+class AsyncetcdserverpbKVPutGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    PutResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< PutResponse>> response_reader;
+     etcdserverpb::PutResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  etcdserverpb::PutResponse>> response_reader;
 };
 
 class PutRequest;
-void KVPut(entt::registry& registry, entt::entity nodeEntity, const PutRequest& request);
-class AsyncKVDeleteRangeGrpcClientCall
+void etcdserverpbKVPut(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::PutRequest& request);
+class AsyncetcdserverpbKVDeleteRangeGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    DeleteRangeResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< DeleteRangeResponse>> response_reader;
+     etcdserverpb::DeleteRangeResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  etcdserverpb::DeleteRangeResponse>> response_reader;
 };
 
 class DeleteRangeRequest;
-void KVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const DeleteRangeRequest& request);
-class AsyncKVTxnGrpcClientCall
+void etcdserverpbKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::DeleteRangeRequest& request);
+class AsyncetcdserverpbKVTxnGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    TxnResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< TxnResponse>> response_reader;
+     etcdserverpb::TxnResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  etcdserverpb::TxnResponse>> response_reader;
 };
 
 class TxnRequest;
-void KVTxn(entt::registry& registry, entt::entity nodeEntity, const TxnRequest& request);
-class AsyncKVCompactGrpcClientCall
+void etcdserverpbKVTxn(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::TxnRequest& request);
+class AsyncetcdserverpbKVCompactGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    CompactionResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< CompactionResponse>> response_reader;
+     etcdserverpb::CompactionResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  etcdserverpb::CompactionResponse>> response_reader;
 };
 
 class CompactionRequest;
-void KVCompact(entt::registry& registry, entt::entity nodeEntity, const CompactionRequest& request);
+void etcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity, const  etcdserverpb::CompactionRequest& request);
 
 void HandleetcdserverpbKVCompletedQueueMessage(entt::registry& registry	); 
 

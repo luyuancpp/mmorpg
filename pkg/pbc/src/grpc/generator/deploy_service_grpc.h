@@ -15,48 +15,48 @@ public:
     ClientContext context;
     Status status;
 
-    NodeInfoResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< NodeInfoResponse>> response_reader;
+     NodeInfoResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  NodeInfoResponse>> response_reader;
 };
 
 class NodeInfoRequest;
-void DeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const NodeInfoRequest& request);
+void DeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const  NodeInfoRequest& request);
 class AsyncDeployServiceGetIDGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    GetIDResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< GetIDResponse>> response_reader;
+     GetIDResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  GetIDResponse>> response_reader;
 };
 
 class GetIDRequest;
-void DeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const GetIDRequest& request);
+void DeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const  GetIDRequest& request);
 class AsyncDeployServiceReleaseIDGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    ReleaseIDResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< ReleaseIDResponse>> response_reader;
+     ReleaseIDResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  ReleaseIDResponse>> response_reader;
 };
 
 class ReleaseIDRequest;
-void DeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const ReleaseIDRequest& request);
+void DeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const  ReleaseIDRequest& request);
 class AsyncDeployServiceRenewLeaseGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
 
-    RenewLeaseIDResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader< RenewLeaseIDResponse>> response_reader;
+     RenewLeaseIDResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<  RenewLeaseIDResponse>> response_reader;
 };
 
 class RenewLeaseIDRequest;
-void DeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const RenewLeaseIDRequest& request);
+void DeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const  RenewLeaseIDRequest& request);
 
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
 
