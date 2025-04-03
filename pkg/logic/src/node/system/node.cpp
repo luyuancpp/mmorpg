@@ -98,10 +98,11 @@ void Node::InitializeNodeFromRequestInfo() {
     try {
         // 创建 gRPC 通道并初始化 gRPC 客户端
         tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
-            = DeployService::NewStub(grpc::CreateChannel(targetStr[0], grpc::InsecureChannelCredentials()));
+            = DeployService::NewStub(grpc::CreateChannel("127.0.0.1:1000", grpc::InsecureChannelCredentials()));
 
         tls.grpc_node_registry.emplace<GrpcetcdserverpbKVStubPtr>(GlobalGrpcNodeEntity())
-            = etcdserverpb::KV::NewStub(grpc::CreateChannel(targetStr[0], grpc::InsecureChannelCredentials()));
+            = etcdserverpb::KV::NewStub(grpc::CreateChannel("127.0.0.1:2379", grpc::InsecureChannelCredentials()));
+
     }
     catch (const std::exception& e) {
        LOG_FATAL <<  "Failed to initialize gRPC service: " << std::string(e.what());
@@ -115,8 +116,12 @@ void Node::InitializeNodeFromRequestInfo() {
 
     {
         etcdserverpb::RangeRequest request;
-        request.set_key("deployservice.rpc");  // 设置查询前缀
-        request.set_range_end("deployservice.rpd");
+		std::string prefix = "deployservice.rpc";  // 设置查询前缀
+        request.set_key(prefix);  // 设置查询前缀
+		// 设置 range_end 为 prefix + 1
+		std::string range_end = prefix;
+		range_end[range_end.size() - 1] = range_end[range_end.size() - 1] + 1; // 将最后一个字符加 1
+		request.set_range_end(range_end);  // 设置 range_end
 
         etcdserverpbKVRange(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
     }
