@@ -4,6 +4,8 @@
 
 #include "all_config.h"
 #include "config_loader/config.h"
+#include "grpc/generator/deploy_service_grpc.h"
+#include "grpc/generator/etcd_grpc.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
 #include "logic/constants/node.pb.h"
@@ -81,8 +83,8 @@ void Node::InitializeTimeZone() {
 }
 
 void Node::InitializeGrpcServices() {
-    // 初始化 gRPC 部署服务
     InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
+    InitetcdserverpbKVCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
 }
 
 void Node::InitializeLaunchTime() {
@@ -91,12 +93,15 @@ void Node::InitializeLaunchTime() {
 
 void Node::InitializeNodeFromRequestInfo() {
     //todo const auto& deploy_info = DeployConfig::GetSingleton().DeployInfo();
-    std::string targetStr;// = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    auto& targetStr = tlsCommonLogic.GetBaseDeployConfig().etcd_hosts();
 
     try {
         // 创建 gRPC 通道并初始化 gRPC 客户端
         tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
-            = DeployService::NewStub(grpc::CreateChannel(targetStr, grpc::InsecureChannelCredentials()));
+            = DeployService::NewStub(grpc::CreateChannel(targetStr[0], grpc::InsecureChannelCredentials()));
+
+        tls.grpc_node_registry.emplace<GrpcetcdserverpbKVStubPtr>(GlobalGrpcNodeEntity())
+            = etcdserverpb::KV::NewStub(grpc::CreateChannel(targetStr[0], grpc::InsecureChannelCredentials()));
     }
     catch (const std::exception& e) {
        LOG_FATAL <<  "Failed to initialize gRPC service: " << std::string(e.what());
@@ -105,12 +110,21 @@ void Node::InitializeNodeFromRequestInfo() {
     // 定时处理部署服务的完成队列
     deployRpcTimer.RunEvery(0.001, []() {
         HandleDeployServiceCompletedQueueMessage(tls.grpc_node_registry);
+        HandleetcdserverpbKVCompletedQueueMessage(tls.grpc_node_registry);
     });
+
+    {
+        etcdserverpb::RangeRequest request;
+        request.set_key("deployservice.rpc");  // 设置查询前缀
+        request.set_range_end("deployservice.rpd");
+
+        etcdserverpbKVRange(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
+    }
+    
 
     // 创建请求并获取节点信息
     NodeInfoRequest request;
     request.set_node_type(GetNodeType());  // 使用子类实现具体类型
-    request.set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
     DeployServiceGetNodeInfo(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
 
     // 定时更新节点租约
@@ -157,6 +171,9 @@ void Node::SetupMessageHandlers()
 
     void InitGrpcDeployServiceResponseHandler();
     InitGrpcDeployServiceResponseHandler();
+
+    void InitGrpcetcdserverpbKVResponseHandler();
+    InitGrpcetcdserverpbKVResponseHandler();
 }
 
 void Node::AsyncOutput(const char* msg, int len) {

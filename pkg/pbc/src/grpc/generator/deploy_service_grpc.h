@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "proto/common/deploy_service.grpc.pb.h"
@@ -14,50 +15,64 @@ class AsyncDeployServiceGetNodeInfoGrpcClientCall
 public:
     ClientContext context;
     Status status;
-
-     NodeInfoResponse reply;
+    NodeInfoResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<  NodeInfoResponse>> response_reader;
 };
 
 class NodeInfoRequest;
 void DeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const  NodeInfoRequest& request);
+
+using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
+
+extern AsyncDeployServiceGetNodeInfoHandlerFunctionType  AsyncDeployServiceGetNodeInfoHandler;;
 class AsyncDeployServiceGetIDGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
-
-     GetIDResponse reply;
+    GetIDResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<  GetIDResponse>> response_reader;
 };
 
 class GetIDRequest;
 void DeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const  GetIDRequest& request);
+
+using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
+
+extern AsyncDeployServiceGetIDHandlerFunctionType  AsyncDeployServiceGetIDHandler;;
 class AsyncDeployServiceReleaseIDGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
-
-     ReleaseIDResponse reply;
+    ReleaseIDResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<  ReleaseIDResponse>> response_reader;
 };
 
 class ReleaseIDRequest;
 void DeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const  ReleaseIDRequest& request);
+
+using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
+
+extern AsyncDeployServiceReleaseIDHandlerFunctionType  AsyncDeployServiceReleaseIDHandler;;
 class AsyncDeployServiceRenewLeaseGrpcClientCall
 {
 public:
     ClientContext context;
     Status status;
-
-     RenewLeaseIDResponse reply;
+    RenewLeaseIDResponse reply;
     std::unique_ptr<ClientAsyncResponseReader<  RenewLeaseIDResponse>> response_reader;
 };
 
 class RenewLeaseIDRequest;
 void DeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const  RenewLeaseIDRequest& request);
 
+using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall>&)>;
+
+extern AsyncDeployServiceRenewLeaseHandlerFunctionType  AsyncDeployServiceRenewLeaseHandler;;
+
 void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
 
 void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
+

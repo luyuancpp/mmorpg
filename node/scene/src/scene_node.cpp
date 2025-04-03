@@ -3,7 +3,6 @@
 #include <ranges>
 
 #include "core/config/config_system.h"
-#include "grpc/generator/deploy_service_grpc.h"
 #include "handler/event/event_handler.h"
 #include "handler/service/register_handler.h"
 #include "handler/service/player/player_service.h"
@@ -53,8 +52,6 @@ void SceneNode::Initialize()
     Node::Initialize();
     EventHandler::Register();
 
-    void InitGrpcDeployServiceResponseHandler();
-    InitGrpcDeployServiceResponseHandler();
 
     InitPlayerService();
     
