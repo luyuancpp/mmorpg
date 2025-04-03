@@ -1,6 +1,7 @@
 package gen
 
 const AsyncClientHeaderTemplate = `#pragma once
+#include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
 {{.IncludeName}}
@@ -18,20 +19,24 @@ class Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall
 public:
     ClientContext context;
     Status status;
-
-     {{.PackageNameWithColon}}{{.Response}} reply;
+    {{.PackageNameWithColon}}{{.Response}} reply;
     std::unique_ptr<ClientAsyncResponseReader<  {{.PackageNameWithColon}}{{.Response}}>> response_reader;
 };
 
 class {{.Request}};
 void {{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::entity nodeEntity, const  {{.PackageNameWithColon}}{{.Request}}& request);
 
+using Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
+
+Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.ServiceFullNameWithNoColon}}{{.Method}}Handler;;
 
 {{- end }}
 
 void Handle{{.ServiceFullNameWithNoColon}}CompletedQueueMessage(entt::registry& registry	); 
 
 void Init{{.ServiceFullNameWithNoColon}}CompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+
+
 `
 
 const AsyncClientCppHandleTemplate = `#include "muduo/base/Logging.h"
@@ -61,7 +66,8 @@ void {{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)> Async{{.ServiceFullNameWithNoColon}}{{.Method}}Handler;
+using Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
+Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.ServiceFullNameWithNoColon}}{{.Method}}Handler;
 
 void AsyncCompleteGrpc{{.ServiceFullNameWithNoColon}}{{.Method}}(grpc::CompletionQueue& cq)
 {

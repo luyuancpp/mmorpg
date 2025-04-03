@@ -108,6 +108,9 @@
     <ClCompile Include="src\handler\event\actor_combat_state_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\grpc\handler\etcd_grpc_reply_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\event\event_handler.h">

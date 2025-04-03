@@ -31,7 +31,8 @@ void LoginServiceLogin(entt::registry& registry, entt::entity nodeEntity, const 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)> AsyncLoginServiceLoginHandler;
+using AsyncLoginServiceLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLoginGrpcClientCall>&)>;
+AsyncLoginServiceLoginHandlerFunctionType  AsyncLoginServiceLoginHandler;
 
 void AsyncCompleteGrpcLoginServiceLogin(grpc::CompletionQueue& cq)
 {
@@ -75,7 +76,8 @@ void LoginServiceCreatePlayer(entt::registry& registry, entt::entity nodeEntity,
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)> AsyncLoginServiceCreatePlayerHandler;
+using AsyncLoginServiceCreatePlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceCreatePlayerGrpcClientCall>&)>;
+AsyncLoginServiceCreatePlayerHandlerFunctionType  AsyncLoginServiceCreatePlayerHandler;
 
 void AsyncCompleteGrpcLoginServiceCreatePlayer(grpc::CompletionQueue& cq)
 {
@@ -119,7 +121,8 @@ void LoginServiceEnterGame(entt::registry& registry, entt::entity nodeEntity, co
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)> AsyncLoginServiceEnterGameHandler;
+using AsyncLoginServiceEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceEnterGameGrpcClientCall>&)>;
+AsyncLoginServiceEnterGameHandlerFunctionType  AsyncLoginServiceEnterGameHandler;
 
 void AsyncCompleteGrpcLoginServiceEnterGame(grpc::CompletionQueue& cq)
 {
@@ -163,7 +166,8 @@ void LoginServiceLeaveGame(entt::registry& registry, entt::entity nodeEntity, co
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)> AsyncLoginServiceLeaveGameHandler;
+using AsyncLoginServiceLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceLeaveGameGrpcClientCall>&)>;
+AsyncLoginServiceLeaveGameHandlerFunctionType  AsyncLoginServiceLeaveGameHandler;
 
 void AsyncCompleteGrpcLoginServiceLeaveGame(grpc::CompletionQueue& cq)
 {
@@ -207,7 +211,8 @@ void LoginServiceDisconnect(entt::registry& registry, entt::entity nodeEntity, c
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncLoginServiceDisconnectGrpcClientCall>&)> AsyncLoginServiceDisconnectHandler;
+using AsyncLoginServiceDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncLoginServiceDisconnectGrpcClientCall>&)>;
+AsyncLoginServiceDisconnectHandlerFunctionType  AsyncLoginServiceDisconnectHandler;
 
 void AsyncCompleteGrpcLoginServiceDisconnect(grpc::CompletionQueue& cq)
 {

@@ -31,7 +31,8 @@ void etcdserverpbKVRange(entt::registry& registry, entt::entity nodeEntity, cons
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>&)> AsyncetcdserverpbKVRangeHandler;
+using AsyncetcdserverpbKVRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>&)>;
+AsyncetcdserverpbKVRangeHandlerFunctionType  AsyncetcdserverpbKVRangeHandler;
 
 void AsyncCompleteGrpcetcdserverpbKVRange(grpc::CompletionQueue& cq)
 {
@@ -75,7 +76,8 @@ void etcdserverpbKVPut(entt::registry& registry, entt::entity nodeEntity, const 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>&)> AsyncetcdserverpbKVPutHandler;
+using AsyncetcdserverpbKVPutHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVPutGrpcClientCall>&)>;
+AsyncetcdserverpbKVPutHandlerFunctionType  AsyncetcdserverpbKVPutHandler;
 
 void AsyncCompleteGrpcetcdserverpbKVPut(grpc::CompletionQueue& cq)
 {
@@ -119,7 +121,8 @@ void etcdserverpbKVDeleteRange(entt::registry& registry, entt::entity nodeEntity
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&)> AsyncetcdserverpbKVDeleteRangeHandler;
+using AsyncetcdserverpbKVDeleteRangeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVDeleteRangeGrpcClientCall>&)>;
+AsyncetcdserverpbKVDeleteRangeHandlerFunctionType  AsyncetcdserverpbKVDeleteRangeHandler;
 
 void AsyncCompleteGrpcetcdserverpbKVDeleteRange(grpc::CompletionQueue& cq)
 {
@@ -163,7 +166,8 @@ void etcdserverpbKVTxn(entt::registry& registry, entt::entity nodeEntity, const 
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>&)> AsyncetcdserverpbKVTxnHandler;
+using AsyncetcdserverpbKVTxnHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVTxnGrpcClientCall>&)>;
+AsyncetcdserverpbKVTxnHandlerFunctionType  AsyncetcdserverpbKVTxnHandler;
 
 void AsyncCompleteGrpcetcdserverpbKVTxn(grpc::CompletionQueue& cq)
 {
@@ -207,7 +211,8 @@ void etcdserverpbKVCompact(entt::registry& registry, entt::entity nodeEntity, co
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 }
 
-std::function<void(const std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall>&)> AsyncetcdserverpbKVCompactHandler;
+using AsyncetcdserverpbKVCompactHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncetcdserverpbKVCompactGrpcClientCall>&)>;
+AsyncetcdserverpbKVCompactHandlerFunctionType  AsyncetcdserverpbKVCompactHandler;
 
 void AsyncCompleteGrpcetcdserverpbKVCompact(grpc::CompletionQueue& cq)
 {

@@ -2,7 +2,6 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "grpc/generator/deploy_service_grpc.h"
 #include "grpc/generator/login_service_grpc.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log_system.h"
@@ -48,8 +47,6 @@ void GateNode::Initialize()
 
     Node::Initialize();
 
-    void InitGrpcDeployServiceResponseHandler();
-    InitGrpcDeployServiceResponseHandler();
 
     void InitGrpcLoginSercieResponseHandler();
     InitGrpcLoginSercieResponseHandler();
