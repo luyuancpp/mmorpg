@@ -46,7 +46,7 @@ void SceneNode::Initialize()
 {
     gSceneNode = this;
     
-    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&SceneNode::Receive1>(*this);
+    tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&SceneNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().connect<&SceneNode::Receive2>(*this);
     
     Node::Initialize();
@@ -62,7 +62,7 @@ void SceneNode::Initialize()
 void SceneNode::ShutdownNode(){
     Node::ShutdownNode();
     
-    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&SceneNode::Receive1>(*this);
+    tls.dispatcher.sink<OnConnected2TcpServerEvent>().disconnect<&SceneNode::Receive1>(*this);
     tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&SceneNode::Receive2>(*this);
 }
 
@@ -98,7 +98,7 @@ void SceneNode::ReadyForGame()
     World::ReadyForGame();
 }
 
-void SceneNode::Receive1(const OnConnected2ServerEvent& es)
+void SceneNode::Receive1(const OnConnected2TcpServerEvent& es)
 {
     if ( auto& conn = es.conn_ ; conn->connected())
     {

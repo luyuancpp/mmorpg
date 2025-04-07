@@ -24,7 +24,7 @@ public:
     void Initialize()override;
     void ShutdownNode()override;
 
-    void Receive1(const OnConnected2ServerEvent& es);
+    void Receive1(const OnConnected2TcpServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);
 
     virtual void OnConfigLoadSuccessful()override;
