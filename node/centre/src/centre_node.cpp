@@ -55,12 +55,6 @@ void CentreNode::InitEventCallback()
 	tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreNode::Receive2>(*this);
 }
 
-void CentreNode::ShutdownNode()
-{
-	Node::ShutdownNode();
-	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreNode::Receive2>(*this);
-}
-
 NodeInfo& CentreNode::GetNodeInfo()
 {
 	return gCentreNodeInfo.GetNodeInfo();

@@ -54,11 +54,6 @@ void GateNode::Initialize()
     tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&GateNode::Receive1>(*this);
 }
 
-void GateNode::ShutdownNode()
-{
-    tls.dispatcher.sink<OnConnected2TcpServerEvent>().disconnect<&GateNode::Receive1>(*this);
-}
-
 void GateNode::StartRpcServer(const nodes_info_data& data)
 {
     nodesInfo = std::move(data);

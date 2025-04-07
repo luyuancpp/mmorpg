@@ -59,13 +59,6 @@ void SceneNode::Initialize()
     World::InitializeSystemBeforeConnect();
 }
 
-void SceneNode::ShutdownNode(){
-    Node::ShutdownNode();
-    
-    tls.dispatcher.sink<OnConnected2TcpServerEvent>().disconnect<&SceneNode::Receive1>(*this);
-    tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&SceneNode::Receive2>(*this);
-}
-
 void SceneNode::StartRpcServer(const ::nodes_info_data& info)
 {
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());

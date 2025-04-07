@@ -18,7 +18,6 @@ public:
 
 
 	void        Initialize() override;
-	void		ShutdownNode() override;
 
 	NodeInfo& GetNodeInfo()override;
 	uint32_t GetNodeType() const override;
