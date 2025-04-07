@@ -32,19 +32,19 @@ static constexpr ::_pbi::MigrationSchema* schemas = nullptr;
 static constexpr ::_pb::Message* const* file_default_instances = nullptr;
 const char descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n proto/logic/constants/node.proto*^\n\teN"
+    "\n proto/logic/constants/node.proto*k\n\teN"
     "odeType\022\017\n\013kCentreNode\020\000\022\016\n\nkSceneNode\020\001"
     "\022\016\n\nkLoginNode\020\002\022\r\n\tkGateNode\020\003\022\021\n\rkData"
-    "baseNode\020\004*d\n\reGameNodeType\022\022\n\016kMainScen"
-    "eNode\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023kMainSceneCros"
-    "sNode\020\002\022\027\n\023kRoomSceneCrossNode\020\003B\tZ\007pb/g"
-    "ameb\006proto3"
+    "baseNode\020\004\022\013\n\007kDeploy\020\005*d\n\reGameNodeType"
+    "\022\022\n\016kMainSceneNode\020\000\022\r\n\tkRoomNode\020\001\022\027\n\023k"
+    "MainSceneCrossNode\020\002\022\027\n\023kRoomSceneCrossN"
+    "ode\020\003B\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto = {
     false,
     false,
-    251,
+    264,
     descriptor_table_protodef_proto_2flogic_2fconstants_2fnode_2eproto,
     "proto/logic/constants/node.proto",
     &descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto_once,
@@ -62,9 +62,9 @@ const ::google::protobuf::EnumDescriptor* eNodeType_descriptor() {
   return file_level_enum_descriptors_proto_2flogic_2fconstants_2fnode_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t eNodeType_internal_data_[] = {
-    327680u, 0u, };
+    393216u, 0u, };
 bool eNodeType_IsValid(int value) {
-  return 0 <= value && value <= 4;
+  return 0 <= value && value <= 5;
 }
 const ::google::protobuf::EnumDescriptor* eGameNodeType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2flogic_2fconstants_2fnode_2eproto);

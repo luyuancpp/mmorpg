@@ -8,25 +8,24 @@ bool readBaseDeployConfig(const std::string& filename, BaseDeployConfig& baseCon
 	YAML::Node root = YAML::LoadFile(filename);
 
 	// 解析 Etcd 配置
-	if (root["Etcd"]["Hosts"]) {
-		for (const auto& host : root["Etcd"]["Hosts"]) {
-			baseConfig.add_etcd_hosts(host.as<std::string>());
-		}
+	for (const auto& host : root["Etcd"]["Hosts"]) {
+		baseConfig.add_etcd_hosts(host.as<std::string>());
 	}
 
 	// 解析日志级别配置 (uint32 类型)
-	if (root["LogLevel"]) {
-		baseConfig.set_log_level(root["LogLevel"].as<uint32_t>());
-	}
+	baseConfig.set_log_level(root["LogLevel"].as<uint32_t>());
 
 	// 解析服务列表
-	if (root["services"]) {
-		for (const auto& service : root["services"]) {
-			// 使用 auto 进行类型推导
-			auto* s = baseConfig.add_services();
-			s->set_name(service["name"].as<std::string>());
-			s->set_url(service["url"].as<std::string>());
-		}
+	for (const auto& service : root["services"]) {
+		// 使用 auto 进行类型推导
+		auto* s = baseConfig.add_services();
+		s->set_name(service["name"].as<std::string>());
+		s->set_url(service["url"].as<std::string>());
+	}
+
+	// 解析服务前缀列表
+	for (const auto& prefix : root["service_discovery_prefixes"]) {
+		baseConfig.mutable_service_discovery_prefixes()->Add(prefix.as<std::string>());
 	}
 
 	return true;

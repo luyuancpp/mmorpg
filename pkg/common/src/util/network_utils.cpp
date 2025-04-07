@@ -50,3 +50,21 @@ uint16_t get_available_port(uint16_t start_port, uint16_t max_port) {
 	return -1;  // 返回 -1 表示没有找到可用端口
 }
 
+void ParseIpPort(const std::string& input, std::string& ip, uint16_t& port) {
+	// 将输入字符串解析成 IP 地址和端口
+	std::istringstream ss(input);
+	std::string host;
+
+	// 使用 ':' 分隔 IP 和端口
+	std::getline(ss, host, ':');
+	ip = host;  // 提取 IP 地址部分
+
+	// 获取端口
+	std::getline(ss, host);
+	port = std::stoi(host);  // 转换为整数端口
+}
+
+std::string FormatIpAndPort()
+{
+	return get_local_ip() + ":" + std::to_string(get_available_port());
+}

@@ -28,7 +28,7 @@ void {{.ServiceFullNameWithNoColon}}{{.Method}}(entt::registry& registry, entt::
 
 using Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType = std::function<void(const std::unique_ptr<Async{{.ServiceFullNameWithNoColon}}{{.Method}}GrpcClientCall>&)>;
 
-Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.ServiceFullNameWithNoColon}}{{.Method}}Handler;;
+extern Async{{.ServiceFullNameWithNoColon}}{{.Method}}HandlerFunctionType  Async{{.ServiceFullNameWithNoColon}}{{.Method}}Handler;;
 
 {{- end }}
 
