@@ -45,7 +45,7 @@ void OnGameServiceClientSendMessageToPlayerRepliedHandler(const TcpConnectionPtr
         LOG_ERROR << "conn id not found  session id " << "," << replied->session_id();
         return;
     }
-    g_gate_node->Codec().send(it->second.conn, replied->message_content());
+    gGateNode->Codec().send(it->second.conn, replied->message_content());
 ///<<< END WRITING YOUR CODE
 }
 

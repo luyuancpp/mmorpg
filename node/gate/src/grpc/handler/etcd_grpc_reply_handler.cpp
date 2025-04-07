@@ -12,7 +12,7 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 	AsyncetcdserverpbKVRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			for (const auto& kv : call->reply.kvs()) {
-				if (kv.value() == g_gate_node->FormatIpAndPort())
+				if (kv.value() == gGateNode->FormatIpAndPort())
 				{
 					continue;
 				}
@@ -20,7 +20,7 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 				if (NodeSystem::GetServiceTypeFromPrefix(kv.key()) == kDeploy) {
 
 					// 定时更新节点租约
-					g_gate_node->InitializeDeployService(kv.value());
+					gGateNode->InitializeDeployService(kv.value());
 
 					// 处理部署服务的键值对
 					LOG_INFO << "Deploy Service Key: " << kv.key() << ", Value: " << kv.value();

@@ -17,7 +17,7 @@ void InitGrpcLoginSercieResponseHandler() {
                 LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
                 return;
             }
-            g_gate_node->SendMessageToClient(it->second.conn, call->reply.client_msg_body());
+            gGateNode->SendMessageToClient(it->second.conn, call->reply.client_msg_body());
         };
     }
 
@@ -31,7 +31,7 @@ void InitGrpcLoginSercieResponseHandler() {
                 LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
                 return;
             }
-            g_gate_node->SendMessageToClient(it->second.conn, call->reply.client_msg_body());
+            gGateNode->SendMessageToClient(it->second.conn, call->reply.client_msg_body());
         };
     }
 
@@ -45,7 +45,7 @@ void InitGrpcLoginSercieResponseHandler() {
                 LOG_DEBUG << "conn id not found  session id " << "," << call->reply.session_info().session_id();
                 return;
             }
-            g_gate_node->SendMessageToClient(it->second.conn, call->reply.client_msg_body());
+            gGateNode->SendMessageToClient(it->second.conn, call->reply.client_msg_body());
         };
     }
 

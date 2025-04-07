@@ -16,7 +16,6 @@ public:
 
 	inline PbSyncRedisClientPtr& GetRedis() { return redis_; }
 
-
 	void        Initialize() override;
 
 	NodeInfo& GetNodeInfo()override;
