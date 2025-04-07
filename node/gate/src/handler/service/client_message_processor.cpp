@@ -94,7 +94,7 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
     MessageContent message;
     message.set_serialized_message(tipMessage.SerializeAsString());
     message.set_message_id(PlayerClientCommonServiceSendTipToClientMessageId);
-    g_gate_node->Codec().send(conn, message);
+    gGateNode->Codec().send(conn, message);
 
     LOG_ERROR << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
@@ -151,7 +151,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
     // 通知中心服务器
     GateSessionDisconnectRequest request;
     request.mutable_session_info()->set_session_id(sessionId);
-    g_gate_node->GetZoneCentreNode()->CallRemoteMethod(CentreServiceGateSessionDisconnectMessageId, request);
+    gGateNode->GetZoneCentreNode()->CallRemoteMethod(CentreServiceGateSessionDisconnectMessageId, request);
 
     // 删除会话
     tls_gate.sessions().erase(sessionId);

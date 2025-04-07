@@ -6,8 +6,8 @@
 
 void InitGrpcDeployServiceResponseHandler() {
     AsyncDeployServiceGetNodeInfoHandlerFunctionType AsyncDeployServiceGetNodeInfoHandler = [](const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>& call) {
-        g_gate_node->GetNodeInfo().set_lease_id(call->reply.lease_id());
-        g_gate_node->GetNodeInfo().set_node_id(call->reply.node_id());
-        g_gate_node->StartRpcServer(call->reply.info());
+        gGateNode->GetNodeInfo().set_lease_id(call->reply.lease_id());
+        gGateNode->GetNodeInfo().set_node_id(call->reply.node_id());
+        gGateNode->StartRpcServer(call->reply.info());
         };
 }

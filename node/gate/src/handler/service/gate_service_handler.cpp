@@ -41,7 +41,7 @@ void GateServiceHandler::RegisterGame(::google::protobuf::RpcController* control
 		std::make_unique<RpcClientPtr::element_type>(
 			EventLoop::getEventLoopOfCurrentThread(),
 			gameServiceAddr));
-	gameNode->registerService(&g_gate_node->GetServiceHandler());
+	gameNode->registerService(&gGateNode->GetServiceHandler());
 	gameNode->connect();
 
 	LOG_INFO << "On game register: " << MessageToJsonString(request);
@@ -93,7 +93,7 @@ void GateServiceHandler::SendMessageToPlayer(::google::protobuf::RpcController* 
 
 		return;
 	}
-	g_gate_node->SendMessageToClient(sessionIt->second.conn, request->message_content());
+	gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
 	//LOG_TRACE << "Player message routed, session ID: " << request->head().session_id();
 	///<<< END WRITING YOUR CODE
 }
@@ -143,7 +143,7 @@ void GateServiceHandler::BroadcastToPlayers(::google::protobuf::RpcController* c
 
 			continue;
 		}
-		g_gate_node->SendMessageToClient(sessionIt->second.conn, request->message_content());
+		gGateNode->SendMessageToClient(sessionIt->second.conn, request->message_content());
 		//LOG_TRACE << "Broadcast message sent to session ID: " << sessionId;
 	}
 	///<<< END WRITING YOUR CODE

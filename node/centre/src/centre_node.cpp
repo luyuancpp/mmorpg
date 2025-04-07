@@ -90,12 +90,14 @@ void CentreNode::BroadCastRegisterGameToGate(entt::entity gameNodeId, entt::enti
 		LOG_ERROR << "gate not found ";
 		return;
 	}
+
 	auto gameNodeServiceAddr = tls.sceneNodeRegistry.try_get<InetAddress>(gameNodeId);
 	if (nullptr == gameNodeServiceAddr)
 	{
 		LOG_ERROR << "game not found ";
 		return;
 	}
+
 	RegisterGameNodeRequest request;
 	request.mutable_rpc_server()->set_ip(gameNodeServiceAddr->toIp());
 	request.mutable_rpc_server()->set_port(gameNodeServiceAddr->port());

@@ -54,7 +54,6 @@ private:
         conn->shutdown();
     }
 
-
 private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
@@ -64,4 +63,4 @@ private:
     TimerTaskComp loginGrpcSelectTimer;
 };
 
-extern GateNode* g_gate_node;
+extern GateNode* gGateNode;

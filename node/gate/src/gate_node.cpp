@@ -18,11 +18,11 @@
 #include "time/system/time_system.h"
 #include "util/network_utils.h"
 
-GateNode* g_gate_node = nullptr; 
+GateNode* gGateNode = nullptr; 
 
 muduo::AsyncLogging& logger()
 {
-    return  g_gate_node->Log();
+    return  gGateNode->Log();
 }
 
 GateNode::GateNode(EventLoop* loop)
@@ -43,7 +43,7 @@ uint32_t GateNode::GetNodeType() const
 
 void GateNode::Initialize()
 {
-    g_gate_node = this;
+    gGateNode = this;
 
     Node::Initialize();
 
