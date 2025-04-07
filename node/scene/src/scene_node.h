@@ -16,10 +16,9 @@ class SceneNode : public Node
 public:
     explicit
         SceneNode(muduo::net::EventLoop* loop);
-    ~SceneNode() override {}
+	~SceneNode() override = default;
 
     NodeInfo& GetNodeInfo()override;
-    const game_node_db& GetNodeConf();
     virtual uint32_t GetNodeType() const override;
     
     void Initialize()override;

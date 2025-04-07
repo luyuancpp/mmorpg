@@ -16,7 +16,7 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 		if (call->status.ok()) {
 
 			for (const auto& kv : call->reply.kvs()) {
-				if (kv.value() == FormatIpAndPort())
+				if (kv.value() == gCentreNode->FormatIpAndPort())
 				{
 					continue;
 				}

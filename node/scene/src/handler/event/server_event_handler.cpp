@@ -43,8 +43,8 @@ void ServerEventHandler::OnConnect2CentreHandler(const OnConnect2Centre& event)
 	RegisterGameNodeRequest registerGameRequest;
 	registerGameRequest.mutable_rpc_client()->set_ip(centreLocalAddr.toIp());
 	registerGameRequest.mutable_rpc_client()->set_port(centreLocalAddr.port());
-	registerGameRequest.mutable_rpc_server()->set_ip(gSceneNode->GetNodeConf().ip());
-	registerGameRequest.mutable_rpc_server()->set_port(gSceneNode->GetNodeConf().port());
+	registerGameRequest.mutable_rpc_server()->set_ip(gSceneNode->GetIp());
+	registerGameRequest.mutable_rpc_server()->set_port(gSceneNode->GetPort());
 	registerGameRequest.set_server_type(gSceneNode->GetNodeType());
 	registerGameRequest.set_scene_node_id(gSceneNode->GetNodeId());
 	registerGameRequest.set_scene_node_type(gSceneNode->GetNodeInfo().game_node_type());

@@ -12,7 +12,7 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 	AsyncetcdserverpbKVRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
 			for (const auto& kv : call->reply.kvs()) {
-				if (kv.value() == FormatIpAndPort())
+				if (kv.value() == g_gate_node->FormatIpAndPort())
 				{
 					continue;
 				}

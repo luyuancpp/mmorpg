@@ -25,6 +25,9 @@ public:
 	TimerTaskComp& GetRenewNodeLeaseTimer() { return renewNodeLeaseTimer; }
 	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
 	[[nodiscard]] const nodes_info_data& GetNodesInfo() const { return nodesInfo; }
+    std::string FormatIpAndPort() const;
+	std::string GetIp() const;
+	uint32_t GetPort() const;
 
     void InitializeDeployService(const std::string& service_address);
 protected:
@@ -41,7 +44,8 @@ protected:
     void InitializeNodeFromRequestInfo();
     virtual void ConnectToCentreHelper(::google::protobuf::Service* service);
     void InitializeGrpcServices();
-    void InitializeLaunchTime();
+    void InitializeIpPort();
+	void InitializeMiscellaneous();
     void ReleaseNodeId();
     void SetupMessageHandlers();
     void SendEtcdRangeRequest(const std::string& prefix);
@@ -51,7 +55,7 @@ protected:
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
     RpcServerPtr rpcServer;
-    NodeInfo node_info_;
+    NodeInfo nodeInfo;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
     nodes_info_data nodesInfo;

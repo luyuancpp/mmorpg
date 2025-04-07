@@ -83,7 +83,7 @@ func main() {
 
 	//gen.WriteLoadClientLuaFile()
 	gen.WriteEventHandlerFile()
-	gen.WriteSol2LuaFile()
+	//gen.WriteSol2LuaFile()
 	util.Wg.Wait()
 	//所有文件的proto读完以后
 	gen.InitServiceId()
