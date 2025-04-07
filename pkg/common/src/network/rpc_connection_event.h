@@ -4,9 +4,9 @@
 
 #include "network/game_channel.h"
 
-struct OnConnected2ServerEvent
+struct OnConnected2TcpServerEvent
 {
-    OnConnected2ServerEvent(const muduo::net::TcpConnectionPtr& conn)
+    OnConnected2TcpServerEvent(const muduo::net::TcpConnectionPtr& conn)
         : conn_(conn)
     {   
     }

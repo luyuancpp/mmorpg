@@ -117,7 +117,7 @@ private:
             LOG_WARN << "Disconnected from server at " << conn->peerAddress().toIpPort() << ".";
         }
 
-        tls.dispatcher.trigger<OnConnected2ServerEvent>(conn);
+        tls.dispatcher.trigger<OnConnected2TcpServerEvent>(conn);
     }
 
     bool connected_{ false };

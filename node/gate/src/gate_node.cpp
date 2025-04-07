@@ -51,12 +51,12 @@ void GateNode::Initialize()
     InitGrpcLoginSercieResponseHandler();
 
 
-    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateNode::Receive1>(*this);
+    tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&GateNode::Receive1>(*this);
 }
 
 void GateNode::ShutdownNode()
 {
-    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateNode::Receive1>(*this);
+    tls.dispatcher.sink<OnConnected2TcpServerEvent>().disconnect<&GateNode::Receive1>(*this);
 }
 
 void GateNode::StartRpcServer(const nodes_info_data& data)
@@ -78,7 +78,7 @@ void GateNode::StartRpcServer(const nodes_info_data& data)
     LOG_INFO << "gate node  start " << gate_info.DebugString();
 }
 
-void GateNode::Receive1(const OnConnected2ServerEvent& es) 
+void GateNode::Receive1(const OnConnected2TcpServerEvent& es) 
 {
     if ( auto& conn = es.conn_ ; conn->connected())
     {

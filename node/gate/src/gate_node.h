@@ -38,7 +38,7 @@ public:
     void ShutdownNode()override;
     void StartRpcServer(const nodes_info_data& data)override;
 
-    void Receive1(const OnConnected2ServerEvent& es) ;
+    void Receive1(const OnConnected2TcpServerEvent& es) ;
 private:
     void OnConnection(const TcpConnectionPtr& conn)
     {
