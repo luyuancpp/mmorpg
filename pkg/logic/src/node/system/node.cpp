@@ -79,6 +79,9 @@ void Node::StartRpcServer(const nodes_info_data& data) {
 
 //优雅关闭和资源释放
 void Node::ShutdownNode() {
+
+	tls.dispatcher.clear();  // 清除所有事件处理器
+
     // 停止日志系统
     muduoLog.stop();
 
