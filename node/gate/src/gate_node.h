@@ -29,7 +29,7 @@ public:
     inline ProtobufCodec& Codec() { return codec_; }
     inline GateServiceHandler& GetServiceHandler() { return service_handler_; }
     inline RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
-    inline  NodeInfo& GetNodeInfo() { return node_info_; }
+    inline  NodeInfo& GetNodeInfo() { return nodeInfo; }
     uint32_t GetNodeType() const override;
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
@@ -60,7 +60,7 @@ private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     RpcClientSessionHandler rpcClientHandler;
-    NodeInfo node_info_;
+    NodeInfo nodeInfo;
     GateServiceHandler service_handler_;
     TimerTaskComp loginGrpcSelectTimer;
 };

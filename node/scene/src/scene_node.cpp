@@ -52,11 +52,7 @@ void SceneNode::Initialize()
     Node::Initialize();
     EventHandler::Register();
 
-
     InitPlayerService();
-    
-    void InitRepliedHandler();
-    InitRepliedHandler();
     
     InitPlayerServiceReplied();
     
@@ -72,27 +68,14 @@ void SceneNode::ShutdownNode(){
 
 void SceneNode::StartRpcServer(const ::nodes_info_data& info)
 {
-    nodesInfo = info;
-    
     InetAddress redis_addr(info.redis_info().redis_info(0).ip(), info.redis_info().redis_info(0).port());
     tlsGame.redis.Initialize(redis_addr);
 
-    auto& nodeInfo = gSceneNodeInfo.GetNodeInfo();
-
-    nodeInfo.set_game_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
-    nodeInfo.set_node_type(eNodeType::kSceneNode);
-    nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());
-
-    InetAddress service_addr(get_local_ip(), get_available_port());
-    rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
-    
     rpcServer->registerService(&gameService);
-    for ( auto & val : g_server_service | std::views::values )
+    for ( auto & val : gNodeService | std::views::values )
     {
         rpcServer->registerService(val.get());
     }
-
-    rpcServer->start();
 
     Node::StartRpcServer(info);
 
@@ -101,7 +84,7 @@ void SceneNode::StartRpcServer(const ::nodes_info_data& info)
     ReadyForGame();
     
     worldTimer.RunEvery(tlsGame.frameTime.delta_time(), World::Update);
-    LOG_INFO << "game node  start " << GetNodeConf().DebugString();
+    LOG_INFO << "game node  start at " << GetNodeInfo().DebugString();
 }
 
 void SceneNode::PrepareForBeforeConnection()
@@ -174,11 +157,6 @@ void SceneNode::Receive2(const OnBeConnectedEvent& es)
 void SceneNode::OnConfigLoadSuccessful()
 {
     ConfigSystem::OnConfigLoadSuccessful();
-}
-
-const game_node_db& SceneNode::GetNodeConf() 
-{
-    return nodesInfo.game_info().game_info(GetNodeId());
 }
 
 uint32_t SceneNode::GetNodeType() const

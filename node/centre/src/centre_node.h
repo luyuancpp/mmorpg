@@ -12,13 +12,11 @@ class CentreNode : public Node
 {
 public:
 	explicit CentreNode(muduo::net::EventLoop* loop);
-	~CentreNode() override;
+	~CentreNode() override = default;
 
 	inline PbSyncRedisClientPtr& GetRedis() { return redis_; }
 
 
-	void LoadConfigurations() override;
-	
 	void        Initialize() override;
 	void		ShutdownNode() override;
 

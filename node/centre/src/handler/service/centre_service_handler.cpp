@@ -592,8 +592,8 @@ void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController*
 		return;
 	}
 
-	const auto it = g_server_service.find(message_info.serviceName);
-	if (it == g_server_service.end())
+	const auto it = gNodeService.find(message_info.serviceName);
+	if (it == gNodeService.end())
 	{
 		LOG_ERROR << "Server service handler not found for message ID: " << route_data.message_id();
 		return;

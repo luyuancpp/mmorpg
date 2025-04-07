@@ -47,12 +47,9 @@ void GateNode::Initialize()
 
     Node::Initialize();
 
-
     void InitGrpcLoginSercieResponseHandler();
     InitGrpcLoginSercieResponseHandler();
 
-    void InitRepliedHandler();
-    InitRepliedHandler();
 
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateNode::Receive1>(*this);
 }
@@ -67,14 +64,11 @@ void GateNode::StartRpcServer(const nodes_info_data& data)
     nodesInfo = std::move(data);
     
     auto& gate_info = nodesInfo.gate_info().gate_info()[GetNodeId()];
-    InetAddress gate_addr(get_local_ip(), get_available_port());
-    
-    rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, gate_addr);
+
     rpcServer->GetTcpServer().setConnectionCallback(
         std::bind(&GateNode::OnConnection, this, _1));
     rpcServer->GetTcpServer().setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
-    rpcServer->start();
     
     tls_gate.session_id_gen().set_node_id(GetNodeId());
     
@@ -82,7 +76,6 @@ void GateNode::StartRpcServer(const nodes_info_data& data)
     Connect2Login();
 
     LOG_INFO << "gate node  start " << gate_info.DebugString();
-    deployRpcTimer.Cancel();
 }
 
 void GateNode::Receive1(const OnConnected2ServerEvent& es) 
@@ -145,18 +138,20 @@ void GateNode::Connect2Login()
     for (auto& login_node_info : nodesInfo.login_info().login_info())
     {
         entt::entity id{ login_node_info.id() };
-        auto login_node_id = tls_gate.login_node_registry.create(id);
-        if (login_node_id != id)
+        auto loginNodeId = tls_gate.login_node_registry.create(id);
+        if (loginNodeId != id)
         {
             LOG_ERROR << "login id ";
             continue;
         }
+
         auto channel = grpc::CreateChannel(login_node_info.addr(), grpc::InsecureChannelCredentials());
-        tls_gate.login_node_registry.emplace<GrpcLoginServiceStubPtr>(login_node_id,
+        tls_gate.login_node_registry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
             LoginService::NewStub(channel));
         tls_gate.login_consistent_node().add(login_node_info.id(), 
-            login_node_id);
-        InitLoginServiceCompletedQueue(tls_gate.login_node_registry, login_node_id);
+            loginNodeId);
+
+        InitLoginServiceCompletedQueue(tls_gate.login_node_registry, loginNodeId);
     }
 
     loginGrpcSelectTimer.RunEvery(0.01, []() {

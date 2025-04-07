@@ -17,6 +17,7 @@
 #include "service_info/service_info.h"
 #include "thread_local/storage_common_logic.h"
 #include "time/system/time_system.h"
+#include "util/network_utils.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
     : loop_(loop),
@@ -47,18 +48,32 @@ void Node::InitializeDeployService(const std::string& service_address)
 }
 
 void Node::Initialize() {
-    InitializeLaunchTime();            // 初始化启动时间
     LoadConfigurations();              // 加载配置
     InitializeTimeZone();              // 初始化时区
     SetupLogging();                    // 设置日志系统
     InitializeGrpcServices();          // 初始化 gRPC 服务
-    PrepareForBeforeConnection();            // 准备连接前的工作
+    PrepareForBeforeConnection();      // 准备连接前的工作
     InitializeNodeFromRequestInfo();   // 从请求中初始化节点信息
     SetupMessageHandlers();            // 设置消息处理器
+    InitializeIpPort();                // 初始化 IP 和端口
+    InitializeMiscellaneous();         // 初始化杂项
+}   
+
+void Node::InitializeMiscellaneous() {
+	nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());  // 记录节点的启动时间
+    GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
+    GetNodeInfo().set_node_type(GetNodeType());
 }
 
 void Node::StartRpcServer(const nodes_info_data& data) {
+	InetAddress service_addr(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
+	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
+
+	rpcServer->start();
+
     tls.dispatcher.trigger<OnServerStart>();  // 启动服务器
+
+	deployRpcTimer.Cancel();
 }
 
 
@@ -104,8 +119,10 @@ void Node::InitializeGrpcServices() {
     InitetcdserverpbKVCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
 }
 
-void Node::InitializeLaunchTime() {
-    node_info_.set_launch_time(TimeUtil::NowSecondsUTC());  // 记录节点的启动时间
+void Node::InitializeIpPort()
+{
+    nodeInfo.mutable_endpoint()->set_ip(get_local_ip());
+	nodeInfo.mutable_endpoint()->set_port(get_available_port());
 }
 
 void Node::InitializeNodeFromRequestInfo() {
@@ -175,6 +192,10 @@ void Node::SetupMessageHandlers()
 
     void InitGrpcetcdserverpbKVResponseHandler();
     InitGrpcetcdserverpbKVResponseHandler();
+
+	void InitRepliedHandler();
+	InitRepliedHandler();
+
 }
 
 void Node::SendEtcdRangeRequest(const std::string& prefix)
@@ -195,4 +216,19 @@ void Node::AsyncOutput(const char* msg, int len) {
 #ifdef WIN32
     Log2Console(msg, len);  // 在 Windows 系统上输出到控制台
 #endif
+}
+
+std::string Node::FormatIpAndPort()const
+{
+	return ::FormatIpAndPort(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
+}
+
+std::string Node::GetIp() const
+{
+	return nodeInfo.endpoint().ip();
+}
+
+uint32_t Node::GetPort() const
+{
+	return nodeInfo.endpoint().port();
 }

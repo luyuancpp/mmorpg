@@ -365,12 +365,12 @@ func writeRegisterFile(dst string, cb checkRepliedCb) {
 		data.WriteString(firstMethodInfo.CppHandlerIncludeName())
 
 		// Append instance creation for the service handler
-		instanceData.WriteString(fmt.Sprintf("%sg_server_service.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());\n",
+		instanceData.WriteString(fmt.Sprintf("%gNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());\n",
 			config.Tab, firstMethodInfo.Service, firstMethodInfo.Service, config.HandlerFileName))
 	}
 
 	// Finalize the data string with the unordered_map declaration and initialization function
-	data.WriteString("\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_server_service;\n\n")
+	data.WriteString("\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;\n\n")
 	data.WriteString("void InitServiceHandler()\n{\n")
 	data.WriteString(instanceData.String())
 	data.WriteString("}")

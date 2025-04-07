@@ -64,7 +64,8 @@ void ParseIpPort(const std::string& input, std::string& ip, uint16_t& port) {
 	port = std::stoi(host);  // 转换为整数端口
 }
 
-std::string FormatIpAndPort()
+
+std::string FormatIpAndPort(const std::string& ip, uint32_t port)
 {
-	return get_local_ip() + ":" + std::to_string(get_available_port());
+	return ip + ":" + std::to_string(port);
 }

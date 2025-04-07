@@ -22,8 +22,6 @@ using namespace net;
 
 CentreNode* gCentreNode = nullptr;
 
-void InitRepliedHandler();
-
 muduo::AsyncLogging& logger()
 {
 	return  gCentreNode->Log();
@@ -35,17 +33,9 @@ CentreNode::CentreNode(muduo::net::EventLoop* loop)
 {
 }
 
-CentreNode::~CentreNode()
-{
-	ShutdownNode();
-}
-
 void CentreNode::Initialize()
 {
 	gCentreNode = this;
-
-    GetNodeInfo().set_node_type(kCentreNode);
-    GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());
 
 	Node::Initialize();
 
@@ -55,7 +45,6 @@ void CentreNode::Initialize()
 
 	InitPlayerService();
 	InitPlayerServiceReplied();
-	InitRepliedHandler();
 
 	void InitServiceHandler();
 	InitServiceHandler();
@@ -82,32 +71,20 @@ uint32_t CentreNode::GetNodeType() const
 	return kCentreNode;
 }
 
-void CentreNode::LoadConfigurations()
-{
-	Node::LoadConfigurations();
-	//ConfigSystem::OnConfigLoadSuccessful();
-}
-
 void CentreNode::StartRpcServer(const ::nodes_info_data& info)
 {
 	nodesInfo = info;
-	auto& myNodeInfo = nodesInfo.centre_info().centre_info()[GetNodeId()];
-
-	InetAddress serviceAddr(get_local_ip(), get_available_port());
-	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, serviceAddr);
 
 	rpcServer->registerService(&centreService);
-	for (auto& value : g_server_service | std::views::values)
+	for (auto& value : gNodeService | std::views::values)
 	{
 		rpcServer->registerService(value.get());
 	}
 
     Node::StartRpcServer(info);
 
-	rpcServer->start();
-	deployRpcTimer.Cancel();
 	InitSystemAfterConnect();
-	LOG_INFO << "centre start " << myNodeInfo.DebugString();
+	LOG_INFO << "centre start " << GetNodeInfo().DebugString();
 }
 
 
