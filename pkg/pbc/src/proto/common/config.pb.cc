@@ -85,6 +85,7 @@ inline constexpr BaseDeployConfig::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : etcd_hosts_{},
         services_{},
+        service_discovery_prefixes_{},
         log_level_{0u},
         _cached_size_{0} {}
 
@@ -135,6 +136,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.etcd_hosts_),
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.log_level_),
         PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.services_),
+        PROTOBUF_FIELD_OFFSET(::BaseDeployConfig, _impl_.service_discovery_prefixes_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::GameConfig, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -151,7 +153,7 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, -1, -1, sizeof(::ServiceConfig)},
         {10, -1, -1, sizeof(::BaseDeployConfig)},
-        {21, -1, -1, sizeof(::GameConfig)},
+        {22, -1, -1, sizeof(::GameConfig)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_ServiceConfig_default_instance_._instance,
@@ -161,17 +163,18 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\031proto/common/config.proto\"*\n\rServiceCo"
-    "nfig\022\014\n\004name\030\001 \001(\t\022\013\n\003url\030\002 \001(\t\"[\n\020BaseD"
+    "nfig\022\014\n\004name\030\001 \001(\t\022\013\n\003url\030\002 \001(\t\"\177\n\020BaseD"
     "eployConfig\022\022\n\netcd_hosts\030\001 \003(\t\022\021\n\tlog_l"
     "evel\030\002 \001(\r\022 \n\010services\030\003 \003(\0132\016.ServiceCo"
-    "nfig\"6\n\nGameConfig\022\027\n\017scene_node_type\030\001 "
-    "\001(\r\022\017\n\007zone_id\030\002 \001(\rB\tZ\007pb/gameb\006proto3"
+    "nfig\022\"\n\032service_discovery_prefixes\030\004 \003(\t"
+    "\"6\n\nGameConfig\022\027\n\017scene_node_type\030\001 \001(\r\022"
+    "\017\n\007zone_id\030\002 \001(\rB\tZ\007pb/gameb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fconfig_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fconfig_2eproto = {
     false,
     false,
-    239,
+    275,
     descriptor_table_protodef_proto_2fcommon_2fconfig_2eproto,
     "proto/common/config.proto",
     &descriptor_table_proto_2fcommon_2fconfig_2eproto_once,
@@ -464,6 +467,7 @@ inline PROTOBUF_NDEBUG_INLINE BaseDeployConfig::Impl_::Impl_(
     const Impl_& from, const ::BaseDeployConfig& from_msg)
       : etcd_hosts_{visibility, arena, from.etcd_hosts_},
         services_{visibility, arena, from.services_},
+        service_discovery_prefixes_{visibility, arena, from.service_discovery_prefixes_},
         _cached_size_{0} {}
 
 BaseDeployConfig::BaseDeployConfig(
@@ -488,6 +492,7 @@ inline PROTOBUF_NDEBUG_INLINE BaseDeployConfig::Impl_::Impl_(
     ::google::protobuf::Arena* arena)
       : etcd_hosts_{visibility, arena},
         services_{visibility, arena},
+        service_discovery_prefixes_{visibility, arena},
         _cached_size_{0} {}
 
 inline void BaseDeployConfig::SharedCtor(::_pb::Arena* arena) {
@@ -517,6 +522,10 @@ constexpr auto BaseDeployConfig::InternalNewImpl_() {
                   ::google::protobuf::Message::internal_visibility()),
       PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.services_) +
           decltype(BaseDeployConfig::_impl_.services_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+      PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.service_discovery_prefixes_) +
+          decltype(BaseDeployConfig::_impl_.service_discovery_prefixes_)::
               InternalGetArenaOffset(
                   ::google::protobuf::Message::internal_visibility()),
   });
@@ -557,15 +566,15 @@ const ::google::protobuf::internal::ClassData* BaseDeployConfig::GetClassData() 
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 1, 35, 2> BaseDeployConfig::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 1, 61, 2> BaseDeployConfig::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
+    4,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
@@ -575,7 +584,9 @@ const ::_pbi::TcParseTable<2, 3, 1, 35, 2> BaseDeployConfig::_table_ = {
     ::_pbi::TcParser::GetTable<::BaseDeployConfig>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // repeated string service_discovery_prefixes = 4;
+    {::_pbi::TcParser::FastUR1,
+     {34, 63, 0, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.service_discovery_prefixes_)}},
     // repeated string etcd_hosts = 1;
     {::_pbi::TcParser::FastUR1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.etcd_hosts_)}},
@@ -597,12 +608,16 @@ const ::_pbi::TcParseTable<2, 3, 1, 35, 2> BaseDeployConfig::_table_ = {
     // repeated .ServiceConfig services = 3;
     {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.services_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    // repeated string service_discovery_prefixes = 4;
+    {PROTOBUF_FIELD_OFFSET(BaseDeployConfig, _impl_.service_discovery_prefixes_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
   }}, {{
     {::_pbi::TcParser::GetTable<::ServiceConfig>()},
   }}, {{
-    "\20\12\0\0\0\0\0\0"
+    "\20\12\0\0\32\0\0\0"
     "BaseDeployConfig"
     "etcd_hosts"
+    "service_discovery_prefixes"
   }},
 };
 
@@ -615,6 +630,7 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
 
   _impl_.etcd_hosts_.Clear();
   _impl_.services_.Clear();
+  _impl_.service_discovery_prefixes_.Clear();
   _impl_.log_level_ = 0u;
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -660,6 +676,14 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
                     target, stream);
           }
 
+          // repeated string service_discovery_prefixes = 4;
+          for (int i = 0, n = this_._internal_service_discovery_prefixes_size(); i < n; ++i) {
+            const auto& s = this_._internal_service_discovery_prefixes().Get(i);
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "BaseDeployConfig.service_discovery_prefixes");
+            target = stream->WriteString(4, s, target);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -701,6 +725,15 @@ PROTOBUF_NOINLINE void BaseDeployConfig::Clear() {
                 total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
               }
             }
+            // repeated string service_discovery_prefixes = 4;
+            {
+              total_size +=
+                  1 * ::google::protobuf::internal::FromIntSize(this_._internal_service_discovery_prefixes().size());
+              for (int i = 0, n = this_._internal_service_discovery_prefixes().size(); i < n; ++i) {
+                total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
+                    this_._internal_service_discovery_prefixes().Get(i));
+              }
+            }
           }
            {
             // uint32 log_level = 2;
@@ -724,6 +757,7 @@ void BaseDeployConfig::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   _this->_internal_mutable_etcd_hosts()->MergeFrom(from._internal_etcd_hosts());
   _this->_internal_mutable_services()->MergeFrom(
       from._internal_services());
+  _this->_internal_mutable_service_discovery_prefixes()->MergeFrom(from._internal_service_discovery_prefixes());
   if (from._internal_log_level() != 0) {
     _this->_impl_.log_level_ = from._impl_.log_level_;
   }
@@ -743,6 +777,7 @@ void BaseDeployConfig::InternalSwap(BaseDeployConfig* PROTOBUF_RESTRICT other) {
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   _impl_.etcd_hosts_.InternalSwap(&other->_impl_.etcd_hosts_);
   _impl_.services_.InternalSwap(&other->_impl_.services_);
+  _impl_.service_discovery_prefixes_.InternalSwap(&other->_impl_.service_discovery_prefixes_);
         swap(_impl_.log_level_, other->_impl_.log_level_);
 }
 

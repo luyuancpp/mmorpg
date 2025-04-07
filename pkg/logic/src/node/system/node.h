@@ -21,6 +21,12 @@ public:
     virtual uint32_t GetNodeType() const = 0;
     virtual NodeInfo& GetNodeInfo() = 0;
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
+	TimerTaskComp& GetDeployRpcTimer() { return deployRpcTimer; }
+	TimerTaskComp& GetRenewNodeLeaseTimer() { return renewNodeLeaseTimer; }
+	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
+	[[nodiscard]] const nodes_info_data& GetNodesInfo() const { return nodesInfo; }
+
+    void InitializeDeployService(const std::string& service_address);
 protected:
     virtual void Initialize();
     virtual void StartRpcServer(const nodes_info_data& data);
@@ -38,6 +44,7 @@ protected:
     void InitializeLaunchTime();
     void ReleaseNodeId();
     void SetupMessageHandlers();
+    void SendEtcdRangeRequest(const std::string& prefix);
 
     static void AsyncOutput(const char* msg, int len);
 

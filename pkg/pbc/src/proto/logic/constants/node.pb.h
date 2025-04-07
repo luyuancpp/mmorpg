@@ -60,6 +60,7 @@ enum eNodeType : int {
   kLoginNode = 2,
   kGateNode = 3,
   kDatabaseNode = 4,
+  kDeploy = 5,
   eNodeType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   eNodeType_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -69,8 +70,8 @@ enum eNodeType : int {
 bool eNodeType_IsValid(int value);
 extern const uint32_t eNodeType_internal_data_[];
 constexpr eNodeType eNodeType_MIN = static_cast<eNodeType>(0);
-constexpr eNodeType eNodeType_MAX = static_cast<eNodeType>(4);
-constexpr int eNodeType_ARRAYSIZE = 4 + 1;
+constexpr eNodeType eNodeType_MAX = static_cast<eNodeType>(5);
+constexpr int eNodeType_ARRAYSIZE = 5 + 1;
 const ::google::protobuf::EnumDescriptor*
 eNodeType_descriptor();
 template <typename T>
@@ -83,7 +84,7 @@ const std::string& eNodeType_Name(T value) {
 template <>
 inline const std::string& eNodeType_Name(eNodeType value) {
   return ::google::protobuf::internal::NameOfDenseEnum<eNodeType_descriptor,
-                                                 0, 4>(
+                                                 0, 5>(
       static_cast<int>(value));
 }
 inline bool eNodeType_Parse(absl::string_view name, eNodeType* value) {

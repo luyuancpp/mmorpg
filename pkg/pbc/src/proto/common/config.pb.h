@@ -638,6 +638,7 @@ class BaseDeployConfig final
   enum : int {
     kEtcdHostsFieldNumber = 1,
     kServicesFieldNumber = 3,
+    kServiceDiscoveryPrefixesFieldNumber = 4,
     kLogLevelFieldNumber = 2,
   };
   // repeated string etcd_hosts = 1;
@@ -679,6 +680,28 @@ class BaseDeployConfig final
   const ::ServiceConfig& services(int index) const;
   ::ServiceConfig* add_services();
   const ::google::protobuf::RepeatedPtrField<::ServiceConfig>& services() const;
+  // repeated string service_discovery_prefixes = 4;
+  int service_discovery_prefixes_size() const;
+  private:
+  int _internal_service_discovery_prefixes_size() const;
+
+  public:
+  void clear_service_discovery_prefixes() ;
+  const std::string& service_discovery_prefixes(int index) const;
+  std::string* mutable_service_discovery_prefixes(int index);
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_service_discovery_prefixes(int index, Arg_&& value, Args_... args);
+  std::string* add_service_discovery_prefixes();
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void add_service_discovery_prefixes(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<std::string>& service_discovery_prefixes() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* mutable_service_discovery_prefixes();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<std::string>& _internal_service_discovery_prefixes() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* _internal_mutable_service_discovery_prefixes();
+
+  public:
   // uint32 log_level = 2;
   void clear_log_level() ;
   ::uint32_t log_level() const;
@@ -694,8 +717,8 @@ class BaseDeployConfig final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 1,
-      35, 2>
+      2, 4, 1,
+      61, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -714,6 +737,7 @@ class BaseDeployConfig final
                           const BaseDeployConfig& from_msg);
     ::google::protobuf::RepeatedPtrField<std::string> etcd_hosts_;
     ::google::protobuf::RepeatedPtrField< ::ServiceConfig > services_;
+    ::google::protobuf::RepeatedPtrField<std::string> service_discovery_prefixes_;
     ::uint32_t log_level_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -971,6 +995,70 @@ inline ::google::protobuf::RepeatedPtrField<::ServiceConfig>*
 BaseDeployConfig::_internal_mutable_services() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.services_;
+}
+
+// repeated string service_discovery_prefixes = 4;
+inline int BaseDeployConfig::_internal_service_discovery_prefixes_size() const {
+  return _internal_service_discovery_prefixes().size();
+}
+inline int BaseDeployConfig::service_discovery_prefixes_size() const {
+  return _internal_service_discovery_prefixes_size();
+}
+inline void BaseDeployConfig::clear_service_discovery_prefixes() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.service_discovery_prefixes_.Clear();
+}
+inline std::string* BaseDeployConfig::add_service_discovery_prefixes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  std::string* _s = _internal_mutable_service_discovery_prefixes()->Add();
+  // @@protoc_insertion_point(field_add_mutable:BaseDeployConfig.service_discovery_prefixes)
+  return _s;
+}
+inline const std::string& BaseDeployConfig::service_discovery_prefixes(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BaseDeployConfig.service_discovery_prefixes)
+  return _internal_service_discovery_prefixes().Get(index);
+}
+inline std::string* BaseDeployConfig::mutable_service_discovery_prefixes(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:BaseDeployConfig.service_discovery_prefixes)
+  return _internal_mutable_service_discovery_prefixes()->Mutable(index);
+}
+template <typename Arg_, typename... Args_>
+inline void BaseDeployConfig::set_service_discovery_prefixes(int index, Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::AssignToString(
+      *_internal_mutable_service_discovery_prefixes()->Mutable(index),
+      std::forward<Arg_>(value), args... );
+  // @@protoc_insertion_point(field_set:BaseDeployConfig.service_discovery_prefixes)
+}
+template <typename Arg_, typename... Args_>
+inline void BaseDeployConfig::add_service_discovery_prefixes(Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::google::protobuf::internal::AddToRepeatedPtrField(*_internal_mutable_service_discovery_prefixes(),
+                               std::forward<Arg_>(value),
+                               args... );
+  // @@protoc_insertion_point(field_add:BaseDeployConfig.service_discovery_prefixes)
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+BaseDeployConfig::service_discovery_prefixes() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:BaseDeployConfig.service_discovery_prefixes)
+  return _internal_service_discovery_prefixes();
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+BaseDeployConfig::mutable_service_discovery_prefixes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:BaseDeployConfig.service_discovery_prefixes)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_service_discovery_prefixes();
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+BaseDeployConfig::_internal_service_discovery_prefixes() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.service_discovery_prefixes_;
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+BaseDeployConfig::_internal_mutable_service_discovery_prefixes() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.service_discovery_prefixes_;
 }
 
 // -------------------------------------------------------------------
