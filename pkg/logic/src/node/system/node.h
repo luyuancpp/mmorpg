@@ -30,7 +30,7 @@ public:
 	uint32_t GetPort() const;
 
     void InitializeDeployService(const std::string& service_address);
-    bool ParseJsonToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
+    void HandleServiceNode(const std::string& key, const std::string& value);
 
 protected:
     virtual void Initialize();
@@ -52,7 +52,7 @@ protected:
     void SetupMessageHandlers();
     void SendEtcdRangeRequest(const std::string& prefix);
 	void RegisterService();
-
+	bool ParseJsonToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
     static void AsyncOutput(const char* msg, int len);
 
     muduo::net::EventLoop* loop_;

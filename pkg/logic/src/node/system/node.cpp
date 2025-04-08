@@ -20,6 +20,7 @@
 #include "time/system/time_system.h"
 #include "util/network_utils.h"
 #include "node/comp/node_comp.h"
+#include "node/system/node_system.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
     : loop_(loop),
@@ -279,4 +280,30 @@ bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t service
 	}
 
 	return true;  // 解析成功
+}
+
+// 处理服务节点的逻辑
+void Node::HandleServiceNode(const std::string& key, const std::string& value) {
+
+	// 获取服务节点类型
+	auto serviceNodeType = NodeSystem::GetServiceTypeFromPrefix(key);
+
+	if (serviceNodeType == kDeploy) {
+		// 处理部署服务
+		InitializeDeployService(value);
+		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
+	}
+	else if (eNodeType_IsValid(serviceNodeType)) {
+		// 解析有效的服务节点
+		if (ParseJsonToServiceNode(value, serviceNodeType)) {
+			LOG_INFO << "Service Node Key: " << key << ", Value: " << value;
+		}
+		else {
+			LOG_ERROR << "Failed to parse JSON for Service Node Key: " << key << ", Value: " << value;
+		}
+	}
+	else {
+		// 无效的服务类型
+		LOG_ERROR << "Unknown service type for key: " << key;
+	}
 }
