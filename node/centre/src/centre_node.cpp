@@ -65,17 +65,15 @@ uint32_t CentreNode::GetNodeType() const
 	return kCentreNode;
 }
 
-void CentreNode::StartRpcServer(const ::nodes_info_data& info)
+void CentreNode::StartRpcServer()
 {
-	nodesInfo = info;
-
 	rpcServer->registerService(&centreService);
 	for (auto& value : gNodeService | std::views::values)
 	{
 		rpcServer->registerService(value.get());
 	}
 
-    Node::StartRpcServer(info);
+    Node::StartRpcServer();
 
 	InitSystemAfterConnect();
 	LOG_INFO << "centre start " << GetNodeInfo().DebugString();
@@ -162,8 +160,7 @@ std::string CentreNode::GetServiceName() const
 
 void CentreNode::InitSystemAfterConnect() const
 {
-	InetAddress redisAddr(nodesInfo.redis_info().redis_info(0).ip(),
-		nodesInfo.redis_info().redis_info(0).port());
+	InetAddress redisAddr("127.0.0.1", 6379);
 	tls_centre.redis_system().Initialize(redisAddr);
 }
 

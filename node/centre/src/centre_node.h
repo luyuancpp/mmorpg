@@ -30,7 +30,7 @@ public:
 	
 	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
 
-	void StartRpcServer(const ::nodes_info_data& info) override;
+	void StartRpcServer() override;
 
 	void Receive2(const OnBeConnectedEvent& es);
 
@@ -42,7 +42,6 @@ private:
 private:
 	PbSyncRedisClientPtr redis_;
 	CentreServiceHandler centreService;
-	nodes_info_data nodesInfo;
 };
 
 extern CentreNode* gCentreNode ;
