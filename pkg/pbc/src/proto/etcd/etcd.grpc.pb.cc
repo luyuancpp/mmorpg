@@ -250,5 +250,279 @@ KV::Service::~Service() {
 }
 
 
+static const char* Watch_method_names[] = {
+  "/etcdserverpb.Watch/Watch",
+};
+
+std::unique_ptr< Watch::Stub> Watch::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
+  (void)options;
+  std::unique_ptr< Watch::Stub> stub(new Watch::Stub(channel, options));
+  return stub;
+}
+
+Watch::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
+  : channel_(channel), rpcmethod_Watch_(Watch_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::BIDI_STREAMING, channel)
+  {}
+
+::grpc::ClientReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* Watch::Stub::WatchRaw(::grpc::ClientContext* context) {
+  return ::grpc::internal::ClientReaderWriterFactory< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>::Create(channel_.get(), rpcmethod_Watch_, context);
+}
+
+void Watch::Stub::async::Watch(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::etcdserverpb::WatchRequest,::etcdserverpb::WatchResponse>* reactor) {
+  ::grpc::internal::ClientCallbackReaderWriterFactory< ::etcdserverpb::WatchRequest,::etcdserverpb::WatchResponse>::Create(stub_->channel_.get(), stub_->rpcmethod_Watch_, context, reactor);
+}
+
+::grpc::ClientAsyncReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* Watch::Stub::AsyncWatchRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>::Create(channel_.get(), cq, rpcmethod_Watch_, context, true, tag);
+}
+
+::grpc::ClientAsyncReaderWriter< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>* Watch::Stub::PrepareAsyncWatchRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>::Create(channel_.get(), cq, rpcmethod_Watch_, context, false, nullptr);
+}
+
+Watch::Service::Service() {
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Watch_method_names[0],
+      ::grpc::internal::RpcMethod::BIDI_STREAMING,
+      new ::grpc::internal::BidiStreamingHandler< Watch::Service, ::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>(
+          [](Watch::Service* service,
+             ::grpc::ServerContext* ctx,
+             ::grpc::ServerReaderWriter<::etcdserverpb::WatchResponse,
+             ::etcdserverpb::WatchRequest>* stream) {
+               return service->Watch(ctx, stream);
+             }, this)));
+}
+
+Watch::Service::~Service() {
+}
+
+::grpc::Status Watch::Service::Watch(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::etcdserverpb::WatchResponse, ::etcdserverpb::WatchRequest>* stream) {
+  (void) context;
+  (void) stream;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+
+static const char* Lease_method_names[] = {
+  "/etcdserverpb.Lease/LeaseGrant",
+  "/etcdserverpb.Lease/LeaseRevoke",
+  "/etcdserverpb.Lease/LeaseKeepAlive",
+  "/etcdserverpb.Lease/LeaseTimeToLive",
+  "/etcdserverpb.Lease/LeaseLeases",
+};
+
+std::unique_ptr< Lease::Stub> Lease::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
+  (void)options;
+  std::unique_ptr< Lease::Stub> stub(new Lease::Stub(channel, options));
+  return stub;
+}
+
+Lease::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
+  : channel_(channel), rpcmethod_LeaseGrant_(Lease_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LeaseRevoke_(Lease_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LeaseKeepAlive_(Lease_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::BIDI_STREAMING, channel)
+  , rpcmethod_LeaseTimeToLive_(Lease_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LeaseLeases_(Lease_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  {}
+
+::grpc::Status Lease::Stub::LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::etcdserverpb::LeaseGrantResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::etcdserverpb::LeaseGrantRequest, ::etcdserverpb::LeaseGrantResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaseGrant_, context, request, response);
+}
+
+void Lease::Stub::async::LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::etcdserverpb::LeaseGrantRequest, ::etcdserverpb::LeaseGrantResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaseGrant_, context, request, response, std::move(f));
+}
+
+void Lease::Stub::async::LeaseGrant(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaseGrant_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseGrantResponse>* Lease::Stub::PrepareAsyncLeaseGrantRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::etcdserverpb::LeaseGrantResponse, ::etcdserverpb::LeaseGrantRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaseGrant_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseGrantResponse>* Lease::Stub::AsyncLeaseGrantRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseGrantRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLeaseGrantRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status Lease::Stub::LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::etcdserverpb::LeaseRevokeResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::etcdserverpb::LeaseRevokeRequest, ::etcdserverpb::LeaseRevokeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaseRevoke_, context, request, response);
+}
+
+void Lease::Stub::async::LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::etcdserverpb::LeaseRevokeRequest, ::etcdserverpb::LeaseRevokeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaseRevoke_, context, request, response, std::move(f));
+}
+
+void Lease::Stub::async::LeaseRevoke(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaseRevoke_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseRevokeResponse>* Lease::Stub::PrepareAsyncLeaseRevokeRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::etcdserverpb::LeaseRevokeResponse, ::etcdserverpb::LeaseRevokeRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaseRevoke_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseRevokeResponse>* Lease::Stub::AsyncLeaseRevokeRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseRevokeRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLeaseRevokeRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::ClientReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* Lease::Stub::LeaseKeepAliveRaw(::grpc::ClientContext* context) {
+  return ::grpc::internal::ClientReaderWriterFactory< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>::Create(channel_.get(), rpcmethod_LeaseKeepAlive_, context);
+}
+
+void Lease::Stub::async::LeaseKeepAlive(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::etcdserverpb::LeaseKeepAliveRequest,::etcdserverpb::LeaseKeepAliveResponse>* reactor) {
+  ::grpc::internal::ClientCallbackReaderWriterFactory< ::etcdserverpb::LeaseKeepAliveRequest,::etcdserverpb::LeaseKeepAliveResponse>::Create(stub_->channel_.get(), stub_->rpcmethod_LeaseKeepAlive_, context, reactor);
+}
+
+::grpc::ClientAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* Lease::Stub::AsyncLeaseKeepAliveRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>::Create(channel_.get(), cq, rpcmethod_LeaseKeepAlive_, context, true, tag);
+}
+
+::grpc::ClientAsyncReaderWriter< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>* Lease::Stub::PrepareAsyncLeaseKeepAliveRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>::Create(channel_.get(), cq, rpcmethod_LeaseKeepAlive_, context, false, nullptr);
+}
+
+::grpc::Status Lease::Stub::LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::etcdserverpb::LeaseTimeToLiveResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::etcdserverpb::LeaseTimeToLiveRequest, ::etcdserverpb::LeaseTimeToLiveResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaseTimeToLive_, context, request, response);
+}
+
+void Lease::Stub::async::LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::etcdserverpb::LeaseTimeToLiveRequest, ::etcdserverpb::LeaseTimeToLiveResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaseTimeToLive_, context, request, response, std::move(f));
+}
+
+void Lease::Stub::async::LeaseTimeToLive(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaseTimeToLive_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseTimeToLiveResponse>* Lease::Stub::PrepareAsyncLeaseTimeToLiveRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::etcdserverpb::LeaseTimeToLiveResponse, ::etcdserverpb::LeaseTimeToLiveRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaseTimeToLive_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseTimeToLiveResponse>* Lease::Stub::AsyncLeaseTimeToLiveRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLeaseTimeToLiveRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status Lease::Stub::LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::etcdserverpb::LeaseLeasesResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::etcdserverpb::LeaseLeasesRequest, ::etcdserverpb::LeaseLeasesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaseLeases_, context, request, response);
+}
+
+void Lease::Stub::async::LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::etcdserverpb::LeaseLeasesRequest, ::etcdserverpb::LeaseLeasesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaseLeases_, context, request, response, std::move(f));
+}
+
+void Lease::Stub::async::LeaseLeases(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaseLeases_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseLeasesResponse>* Lease::Stub::PrepareAsyncLeaseLeasesRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::etcdserverpb::LeaseLeasesResponse, ::etcdserverpb::LeaseLeasesRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaseLeases_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::etcdserverpb::LeaseLeasesResponse>* Lease::Stub::AsyncLeaseLeasesRaw(::grpc::ClientContext* context, const ::etcdserverpb::LeaseLeasesRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLeaseLeasesRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+Lease::Service::Service() {
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Lease_method_names[0],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Lease::Service, ::etcdserverpb::LeaseGrantRequest, ::etcdserverpb::LeaseGrantResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Lease::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::etcdserverpb::LeaseGrantRequest* req,
+             ::etcdserverpb::LeaseGrantResponse* resp) {
+               return service->LeaseGrant(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Lease_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Lease::Service, ::etcdserverpb::LeaseRevokeRequest, ::etcdserverpb::LeaseRevokeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Lease::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::etcdserverpb::LeaseRevokeRequest* req,
+             ::etcdserverpb::LeaseRevokeResponse* resp) {
+               return service->LeaseRevoke(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Lease_method_names[2],
+      ::grpc::internal::RpcMethod::BIDI_STREAMING,
+      new ::grpc::internal::BidiStreamingHandler< Lease::Service, ::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>(
+          [](Lease::Service* service,
+             ::grpc::ServerContext* ctx,
+             ::grpc::ServerReaderWriter<::etcdserverpb::LeaseKeepAliveResponse,
+             ::etcdserverpb::LeaseKeepAliveRequest>* stream) {
+               return service->LeaseKeepAlive(ctx, stream);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Lease_method_names[3],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Lease::Service, ::etcdserverpb::LeaseTimeToLiveRequest, ::etcdserverpb::LeaseTimeToLiveResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Lease::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::etcdserverpb::LeaseTimeToLiveRequest* req,
+             ::etcdserverpb::LeaseTimeToLiveResponse* resp) {
+               return service->LeaseTimeToLive(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Lease_method_names[4],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Lease::Service, ::etcdserverpb::LeaseLeasesRequest, ::etcdserverpb::LeaseLeasesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Lease::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::etcdserverpb::LeaseLeasesRequest* req,
+             ::etcdserverpb::LeaseLeasesResponse* resp) {
+               return service->LeaseLeases(ctx, req, resp);
+             }, this)));
+}
+
+Lease::Service::~Service() {
+}
+
+::grpc::Status Lease::Service::LeaseGrant(::grpc::ServerContext* context, const ::etcdserverpb::LeaseGrantRequest* request, ::etcdserverpb::LeaseGrantResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Lease::Service::LeaseRevoke(::grpc::ServerContext* context, const ::etcdserverpb::LeaseRevokeRequest* request, ::etcdserverpb::LeaseRevokeResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Lease::Service::LeaseKeepAlive(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::etcdserverpb::LeaseKeepAliveResponse, ::etcdserverpb::LeaseKeepAliveRequest>* stream) {
+  (void) context;
+  (void) stream;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Lease::Service::LeaseTimeToLive(::grpc::ServerContext* context, const ::etcdserverpb::LeaseTimeToLiveRequest* request, ::etcdserverpb::LeaseTimeToLiveResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Lease::Service::LeaseLeases(::grpc::ServerContext* context, const ::etcdserverpb::LeaseLeasesRequest* request, ::etcdserverpb::LeaseLeasesResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+
 }  // namespace etcdserverpb
 

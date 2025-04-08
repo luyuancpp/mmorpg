@@ -25,6 +25,86 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 namespace etcdserverpb {
+              template <typename>
+PROTOBUF_CONSTEXPR WatchProgressRequest::WatchProgressRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct WatchProgressRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR WatchProgressRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~WatchProgressRequestDefaultTypeInternal() {}
+  union {
+    WatchProgressRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 WatchProgressRequestDefaultTypeInternal _WatchProgressRequest_default_instance_;
+
+inline constexpr WatchCreateRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : filters_{},
+        _filters_cached_byte_size_{0},
+        key_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        range_end_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        start_revision_{::int64_t{0}},
+        watch_id_{::int64_t{0}},
+        progress_notify_{false},
+        prev_kv_{false},
+        fragment_{false},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR WatchCreateRequest::WatchCreateRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct WatchCreateRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR WatchCreateRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~WatchCreateRequestDefaultTypeInternal() {}
+  union {
+    WatchCreateRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 WatchCreateRequestDefaultTypeInternal _WatchCreateRequest_default_instance_;
+
+inline constexpr WatchCancelRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : watch_id_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR WatchCancelRequest::WatchCancelRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct WatchCancelRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR WatchCancelRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~WatchCancelRequestDefaultTypeInternal() {}
+  union {
+    WatchCancelRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 WatchCancelRequestDefaultTypeInternal _WatchCancelRequest_default_instance_;
 
 inline constexpr ResponseHeader::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -129,6 +209,177 @@ struct PutRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PutRequestDefaultTypeInternal _PutRequest_default_instance_;
 
+inline constexpr LeaseTimeToLiveRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : id_{::int64_t{0}},
+        keys_{false},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseTimeToLiveRequest::LeaseTimeToLiveRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseTimeToLiveRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseTimeToLiveRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseTimeToLiveRequestDefaultTypeInternal() {}
+  union {
+    LeaseTimeToLiveRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseTimeToLiveRequestDefaultTypeInternal _LeaseTimeToLiveRequest_default_instance_;
+
+inline constexpr LeaseStatus::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : id_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseStatus::LeaseStatus(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseStatusDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseStatusDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseStatusDefaultTypeInternal() {}
+  union {
+    LeaseStatus _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseStatusDefaultTypeInternal _LeaseStatus_default_instance_;
+
+inline constexpr LeaseRevokeRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : id_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseRevokeRequest::LeaseRevokeRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseRevokeRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseRevokeRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseRevokeRequestDefaultTypeInternal() {}
+  union {
+    LeaseRevokeRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseRevokeRequestDefaultTypeInternal _LeaseRevokeRequest_default_instance_;
+              template <typename>
+PROTOBUF_CONSTEXPR LeaseLeasesRequest::LeaseLeasesRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct LeaseLeasesRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseLeasesRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseLeasesRequestDefaultTypeInternal() {}
+  union {
+    LeaseLeasesRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseLeasesRequestDefaultTypeInternal _LeaseLeasesRequest_default_instance_;
+
+inline constexpr LeaseKeepAliveRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : id_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseKeepAliveRequest::LeaseKeepAliveRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseKeepAliveRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseKeepAliveRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseKeepAliveRequestDefaultTypeInternal() {}
+  union {
+    LeaseKeepAliveRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseKeepAliveRequestDefaultTypeInternal _LeaseKeepAliveRequest_default_instance_;
+
+inline constexpr LeaseGrantRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : ttl_{::int64_t{0}},
+        id_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseGrantRequest::LeaseGrantRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseGrantRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseGrantRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseGrantRequestDefaultTypeInternal() {}
+  union {
+    LeaseGrantRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseGrantRequestDefaultTypeInternal _LeaseGrantRequest_default_instance_;
+
+inline constexpr LeaseCheckpoint::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : id_{::int64_t{0}},
+        remaining_ttl_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseCheckpoint::LeaseCheckpoint(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseCheckpointDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseCheckpointDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseCheckpointDefaultTypeInternal() {}
+  union {
+    LeaseCheckpoint _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseCheckpointDefaultTypeInternal _LeaseCheckpoint_default_instance_;
+
 inline constexpr DeleteRangeRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : key_(
@@ -219,6 +470,32 @@ struct CompactionRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CompactionRequestDefaultTypeInternal _CompactionRequest_default_instance_;
+
+inline constexpr WatchRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : request_union_{},
+        _cached_size_{0},
+        _oneof_case_{} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR WatchRequest::WatchRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct WatchRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR WatchRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~WatchRequestDefaultTypeInternal() {}
+  union {
+    WatchRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 WatchRequestDefaultTypeInternal _WatchRequest_default_instance_;
 
 inline constexpr RequestOp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -327,6 +604,193 @@ struct PutResponseDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PutResponseDefaultTypeInternal _PutResponse_default_instance_;
 
+inline constexpr LeaseTimeToLiveResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        keys_{},
+        header_{nullptr},
+        id_{::int64_t{0}},
+        ttl_{::int64_t{0}},
+        grantedttl_{::int64_t{0}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseTimeToLiveResponse::LeaseTimeToLiveResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseTimeToLiveResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseTimeToLiveResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseTimeToLiveResponseDefaultTypeInternal() {}
+  union {
+    LeaseTimeToLiveResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseTimeToLiveResponseDefaultTypeInternal _LeaseTimeToLiveResponse_default_instance_;
+
+inline constexpr LeaseRevokeResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        header_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseRevokeResponse::LeaseRevokeResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseRevokeResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseRevokeResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseRevokeResponseDefaultTypeInternal() {}
+  union {
+    LeaseRevokeResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseRevokeResponseDefaultTypeInternal _LeaseRevokeResponse_default_instance_;
+
+inline constexpr LeaseLeasesResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        leases_{},
+        header_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseLeasesResponse::LeaseLeasesResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseLeasesResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseLeasesResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseLeasesResponseDefaultTypeInternal() {}
+  union {
+    LeaseLeasesResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseLeasesResponseDefaultTypeInternal _LeaseLeasesResponse_default_instance_;
+
+inline constexpr LeaseKeepAliveResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        header_{nullptr},
+        id_{::int64_t{0}},
+        ttl_{::int64_t{0}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseKeepAliveResponse::LeaseKeepAliveResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseKeepAliveResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseKeepAliveResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseKeepAliveResponseDefaultTypeInternal() {}
+  union {
+    LeaseKeepAliveResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseKeepAliveResponseDefaultTypeInternal _LeaseKeepAliveResponse_default_instance_;
+
+inline constexpr LeaseGrantResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        error_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        header_{nullptr},
+        id_{::int64_t{0}},
+        ttl_{::int64_t{0}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseGrantResponse::LeaseGrantResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseGrantResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseGrantResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseGrantResponseDefaultTypeInternal() {}
+  union {
+    LeaseGrantResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseGrantResponseDefaultTypeInternal _LeaseGrantResponse_default_instance_;
+
+inline constexpr LeaseCheckpointResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        header_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseCheckpointResponse::LeaseCheckpointResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseCheckpointResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseCheckpointResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseCheckpointResponseDefaultTypeInternal() {}
+  union {
+    LeaseCheckpointResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseCheckpointResponseDefaultTypeInternal _LeaseCheckpointResponse_default_instance_;
+
+inline constexpr LeaseCheckpointRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : checkpoints_{},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR LeaseCheckpointRequest::LeaseCheckpointRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct LeaseCheckpointRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR LeaseCheckpointRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~LeaseCheckpointRequestDefaultTypeInternal() {}
+  union {
+    LeaseCheckpointRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LeaseCheckpointRequestDefaultTypeInternal _LeaseCheckpointRequest_default_instance_;
+
 inline constexpr DeleteRangeResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -378,6 +842,40 @@ struct CompactionResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CompactionResponseDefaultTypeInternal _CompactionResponse_default_instance_;
+
+inline constexpr WatchResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        events_{},
+        cancel_reason_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        header_{nullptr},
+        watch_id_{::int64_t{0}},
+        compact_revision_{::int64_t{0}},
+        created_{false},
+        canceled_{false},
+        fragment_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR WatchResponse::WatchResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct WatchResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR WatchResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~WatchResponseDefaultTypeInternal() {}
+  union {
+    WatchResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 WatchResponseDefaultTypeInternal _WatchResponse_default_instance_;
 
 inline constexpr ResponseOp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -432,7 +930,7 @@ struct TxnResponseDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TxnResponseDefaultTypeInternal _TxnResponse_default_instance_;
 }  // namespace etcdserverpb
-static const ::_pb::EnumDescriptor* file_level_enum_descriptors_proto_2fetcd_2fetcd_2eproto[4];
+static const ::_pb::EnumDescriptor* file_level_enum_descriptors_proto_2fetcd_2fetcd_2eproto[5];
 static constexpr const ::_pb::ServiceDescriptor**
     file_level_service_descriptors_proto_2fetcd_2fetcd_2eproto = nullptr;
 const ::uint32_t
@@ -627,6 +1125,229 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::etcdserverpb::CompactionResponse, _impl_.header_),
         0,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchRequest, _impl_._oneof_case_[0]),
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        ::_pbi::kInvalidFieldOffsetTag,
+        ::_pbi::kInvalidFieldOffsetTag,
+        ::_pbi::kInvalidFieldOffsetTag,
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchRequest, _impl_.request_union_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _impl_.range_end_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _impl_.start_revision_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _impl_.progress_notify_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _impl_.filters_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _impl_.prev_kv_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _impl_.watch_id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCreateRequest, _impl_.fragment_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCancelRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchCancelRequest, _impl_.watch_id_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchProgressRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_.header_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_.watch_id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_.created_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_.canceled_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_.compact_revision_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_.cancel_reason_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_.fragment_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchResponse, _impl_.events_),
+        0,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantRequest, _impl_.ttl_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantRequest, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantResponse, _impl_.header_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantResponse, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantResponse, _impl_.ttl_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseGrantResponse, _impl_.error_),
+        0,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseRevokeRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseRevokeRequest, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseRevokeResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseRevokeResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseRevokeResponse, _impl_.header_),
+        0,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseCheckpoint, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseCheckpoint, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseCheckpoint, _impl_.remaining_ttl_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseCheckpointRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseCheckpointRequest, _impl_.checkpoints_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseCheckpointResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseCheckpointResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseCheckpointResponse, _impl_.header_),
+        0,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseKeepAliveRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseKeepAliveRequest, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseKeepAliveResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseKeepAliveResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseKeepAliveResponse, _impl_.header_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseKeepAliveResponse, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseKeepAliveResponse, _impl_.ttl_),
+        0,
+        ~0u,
+        ~0u,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveRequest, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveRequest, _impl_.keys_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveResponse, _impl_.header_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveResponse, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveResponse, _impl_.ttl_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveResponse, _impl_.grantedttl_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseTimeToLiveResponse, _impl_.keys_),
+        0,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseLeasesRequest, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseStatus, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseStatus, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseLeasesResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseLeasesResponse, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseLeasesResponse, _impl_.header_),
+        PROTOBUF_FIELD_OFFSET(::etcdserverpb::LeaseLeasesResponse, _impl_.leases_),
+        0,
+        ~0u,
 };
 
 static const ::_pbi::MigrationSchema
@@ -645,6 +1366,25 @@ static const ::_pbi::MigrationSchema
         {155, 166, -1, sizeof(::etcdserverpb::TxnResponse)},
         {169, -1, -1, sizeof(::etcdserverpb::CompactionRequest)},
         {179, 188, -1, sizeof(::etcdserverpb::CompactionResponse)},
+        {189, -1, -1, sizeof(::etcdserverpb::WatchRequest)},
+        {201, -1, -1, sizeof(::etcdserverpb::WatchCreateRequest)},
+        {217, -1, -1, sizeof(::etcdserverpb::WatchCancelRequest)},
+        {226, -1, -1, sizeof(::etcdserverpb::WatchProgressRequest)},
+        {234, 250, -1, sizeof(::etcdserverpb::WatchResponse)},
+        {258, -1, -1, sizeof(::etcdserverpb::LeaseGrantRequest)},
+        {268, 280, -1, sizeof(::etcdserverpb::LeaseGrantResponse)},
+        {284, -1, -1, sizeof(::etcdserverpb::LeaseRevokeRequest)},
+        {293, 302, -1, sizeof(::etcdserverpb::LeaseRevokeResponse)},
+        {303, -1, -1, sizeof(::etcdserverpb::LeaseCheckpoint)},
+        {313, -1, -1, sizeof(::etcdserverpb::LeaseCheckpointRequest)},
+        {322, 331, -1, sizeof(::etcdserverpb::LeaseCheckpointResponse)},
+        {332, -1, -1, sizeof(::etcdserverpb::LeaseKeepAliveRequest)},
+        {341, 352, -1, sizeof(::etcdserverpb::LeaseKeepAliveResponse)},
+        {355, -1, -1, sizeof(::etcdserverpb::LeaseTimeToLiveRequest)},
+        {365, 378, -1, sizeof(::etcdserverpb::LeaseTimeToLiveResponse)},
+        {383, -1, -1, sizeof(::etcdserverpb::LeaseLeasesRequest)},
+        {391, -1, -1, sizeof(::etcdserverpb::LeaseStatus)},
+        {400, 410, -1, sizeof(::etcdserverpb::LeaseLeasesResponse)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::etcdserverpb::_ResponseHeader_default_instance_._instance,
@@ -661,6 +1401,25 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::etcdserverpb::_TxnResponse_default_instance_._instance,
     &::etcdserverpb::_CompactionRequest_default_instance_._instance,
     &::etcdserverpb::_CompactionResponse_default_instance_._instance,
+    &::etcdserverpb::_WatchRequest_default_instance_._instance,
+    &::etcdserverpb::_WatchCreateRequest_default_instance_._instance,
+    &::etcdserverpb::_WatchCancelRequest_default_instance_._instance,
+    &::etcdserverpb::_WatchProgressRequest_default_instance_._instance,
+    &::etcdserverpb::_WatchResponse_default_instance_._instance,
+    &::etcdserverpb::_LeaseGrantRequest_default_instance_._instance,
+    &::etcdserverpb::_LeaseGrantResponse_default_instance_._instance,
+    &::etcdserverpb::_LeaseRevokeRequest_default_instance_._instance,
+    &::etcdserverpb::_LeaseRevokeResponse_default_instance_._instance,
+    &::etcdserverpb::_LeaseCheckpoint_default_instance_._instance,
+    &::etcdserverpb::_LeaseCheckpointRequest_default_instance_._instance,
+    &::etcdserverpb::_LeaseCheckpointResponse_default_instance_._instance,
+    &::etcdserverpb::_LeaseKeepAliveRequest_default_instance_._instance,
+    &::etcdserverpb::_LeaseKeepAliveResponse_default_instance_._instance,
+    &::etcdserverpb::_LeaseTimeToLiveRequest_default_instance_._instance,
+    &::etcdserverpb::_LeaseTimeToLiveResponse_default_instance_._instance,
+    &::etcdserverpb::_LeaseLeasesRequest_default_instance_._instance,
+    &::etcdserverpb::_LeaseStatus_default_instance_._instance,
+    &::etcdserverpb::_LeaseLeasesResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fetcd_2fetcd_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -733,16 +1492,78 @@ const char descriptor_table_protodef_proto_2fetcd_2fetcd_2eproto[] ABSL_ATTRIBUT
     "nseOp:\007\202\265\030\0033.0\"@\n\021CompactionRequest\022\020\n\010r"
     "evision\030\001 \001(\003\022\020\n\010physical\030\002 \001(\010:\007\202\265\030\0033.0"
     "\"K\n\022CompactionResponse\022,\n\006header\030\001 \001(\0132\034"
-    ".etcdserverpb.ResponseHeader:\007\202\265\030\0033.02\340\002"
-    "\n\002KV\022@\n\005Range\022\032.etcdserverpb.RangeReques"
-    "t\032\033.etcdserverpb.RangeResponse\022:\n\003Put\022\030."
-    "etcdserverpb.PutRequest\032\031.etcdserverpb.P"
-    "utResponse\022R\n\013DeleteRange\022 .etcdserverpb"
-    ".DeleteRangeRequest\032!.etcdserverpb.Delet"
-    "eRangeResponse\022:\n\003Txn\022\030.etcdserverpb.Txn"
-    "Request\032\031.etcdserverpb.TxnResponse\022L\n\007Co"
-    "mpact\022\037.etcdserverpb.CompactionRequest\032 "
-    ".etcdserverpb.CompactionResponseB\023Z\021game"
+    ".etcdserverpb.ResponseHeader:\007\202\265\030\0033.0\"\351\001"
+    "\n\014WatchRequest\022:\n\016create_request\030\001 \001(\0132 "
+    ".etcdserverpb.WatchCreateRequestH\000\022:\n\016ca"
+    "ncel_request\030\002 \001(\0132 .etcdserverpb.WatchC"
+    "ancelRequestH\000\022G\n\020progress_request\030\003 \001(\013"
+    "2\".etcdserverpb.WatchProgressRequestB\007\212\265"
+    "\030\0033.4H\000:\007\202\265\030\0033.0B\017\n\rrequest_union\"\265\002\n\022Wa"
+    "tchCreateRequest\022\013\n\003key\030\001 \001(\014\022\021\n\trange_e"
+    "nd\030\002 \001(\014\022\026\n\016start_revision\030\003 \001(\003\022\027\n\017prog"
+    "ress_notify\030\004 \001(\010\022E\n\007filters\030\005 \003(\0162+.etc"
+    "dserverpb.WatchCreateRequest.FilterTypeB"
+    "\007\212\265\030\0033.1\022\030\n\007prev_kv\030\006 \001(\010B\007\212\265\030\0033.1\022\031\n\010wa"
+    "tch_id\030\007 \001(\003B\007\212\265\030\0033.4\022\031\n\010fragment\030\010 \001(\010B"
+    "\007\212\265\030\0033.4\".\n\nFilterType\022\t\n\005NOPUT\020\000\022\014\n\010NOD"
+    "ELETE\020\001\032\007\222\265\030\0033.1:\007\202\265\030\0033.0\"8\n\022WatchCancel"
+    "Request\022\031\n\010watch_id\030\001 \001(\003B\007\212\265\030\0033.1:\007\202\265\030\003"
+    "3.1\"\037\n\024WatchProgressRequest:\007\202\265\030\0033.4\"\357\001\n"
+    "\rWatchResponse\022,\n\006header\030\001 \001(\0132\034.etcdser"
+    "verpb.ResponseHeader\022\020\n\010watch_id\030\002 \001(\003\022\017"
+    "\n\007created\030\003 \001(\010\022\020\n\010canceled\030\004 \001(\010\022\030\n\020com"
+    "pact_revision\030\005 \001(\003\022\036\n\rcancel_reason\030\006 \001"
+    "(\tB\007\212\265\030\0033.4\022\031\n\010fragment\030\007 \001(\010B\007\212\265\030\0033.4\022\035"
+    "\n\006events\030\013 \003(\0132\r.mvccpb.Event:\007\202\265\030\0033.0\"5"
+    "\n\021LeaseGrantRequest\022\013\n\003TTL\030\001 \001(\003\022\n\n\002ID\030\002"
+    " \001(\003:\007\202\265\030\0033.0\"s\n\022LeaseGrantResponse\022,\n\006h"
+    "eader\030\001 \001(\0132\034.etcdserverpb.ResponseHeade"
+    "r\022\n\n\002ID\030\002 \001(\003\022\013\n\003TTL\030\003 \001(\003\022\r\n\005error\030\004 \001("
+    "\t:\007\202\265\030\0033.0\")\n\022LeaseRevokeRequest\022\n\n\002ID\030\001"
+    " \001(\003:\007\202\265\030\0033.0\"L\n\023LeaseRevokeResponse\022,\n\006"
+    "header\030\001 \001(\0132\034.etcdserverpb.ResponseHead"
+    "er:\007\202\265\030\0033.0\"=\n\017LeaseCheckpoint\022\n\n\002ID\030\001 \001"
+    "(\003\022\025\n\rremaining_TTL\030\002 \001(\003:\007\202\265\030\0033.4\"U\n\026Le"
+    "aseCheckpointRequest\0222\n\013checkpoints\030\001 \003("
+    "\0132\035.etcdserverpb.LeaseCheckpoint:\007\202\265\030\0033."
+    "4\"P\n\027LeaseCheckpointResponse\022,\n\006header\030\001"
+    " \001(\0132\034.etcdserverpb.ResponseHeader:\007\202\265\030\003"
+    "3.4\",\n\025LeaseKeepAliveRequest\022\n\n\002ID\030\001 \001(\003"
+    ":\007\202\265\030\0033.0\"h\n\026LeaseKeepAliveResponse\022,\n\006h"
+    "eader\030\001 \001(\0132\034.etcdserverpb.ResponseHeade"
+    "r\022\n\n\002ID\030\002 \001(\003\022\013\n\003TTL\030\003 \001(\003:\007\202\265\030\0033.0\";\n\026L"
+    "easeTimeToLiveRequest\022\n\n\002ID\030\001 \001(\003\022\014\n\004key"
+    "s\030\002 \001(\010:\007\202\265\030\0033.1\"\213\001\n\027LeaseTimeToLiveResp"
+    "onse\022,\n\006header\030\001 \001(\0132\034.etcdserverpb.Resp"
+    "onseHeader\022\n\n\002ID\030\002 \001(\003\022\013\n\003TTL\030\003 \001(\003\022\022\n\ng"
+    "rantedTTL\030\004 \001(\003\022\014\n\004keys\030\005 \003(\014:\007\202\265\030\0033.1\"\035"
+    "\n\022LeaseLeasesRequest:\007\202\265\030\0033.3\"\"\n\013LeaseSt"
+    "atus\022\n\n\002ID\030\001 \001(\003:\007\202\265\030\0033.3\"w\n\023LeaseLeases"
+    "Response\022,\n\006header\030\001 \001(\0132\034.etcdserverpb."
+    "ResponseHeader\022)\n\006leases\030\002 \003(\0132\031.etcdser"
+    "verpb.LeaseStatus:\007\202\265\030\0033.32\340\002\n\002KV\022@\n\005Ran"
+    "ge\022\032.etcdserverpb.RangeRequest\032\033.etcdser"
+    "verpb.RangeResponse\022:\n\003Put\022\030.etcdserverp"
+    "b.PutRequest\032\031.etcdserverpb.PutResponse\022"
+    "R\n\013DeleteRange\022 .etcdserverpb.DeleteRang"
+    "eRequest\032!.etcdserverpb.DeleteRangeRespo"
+    "nse\022:\n\003Txn\022\030.etcdserverpb.TxnRequest\032\031.e"
+    "tcdserverpb.TxnResponse\022L\n\007Compact\022\037.etc"
+    "dserverpb.CompactionRequest\032 .etcdserver"
+    "pb.CompactionResponse2M\n\005Watch\022D\n\005Watch\022"
+    "\032.etcdserverpb.WatchRequest\032\033.etcdserver"
+    "pb.WatchResponse(\0010\0012\301\003\n\005Lease\022O\n\nLeaseG"
+    "rant\022\037.etcdserverpb.LeaseGrantRequest\032 ."
+    "etcdserverpb.LeaseGrantResponse\022R\n\013Lease"
+    "Revoke\022 .etcdserverpb.LeaseRevokeRequest"
+    "\032!.etcdserverpb.LeaseRevokeResponse\022_\n\016L"
+    "easeKeepAlive\022#.etcdserverpb.LeaseKeepAl"
+    "iveRequest\032$.etcdserverpb.LeaseKeepAlive"
+    "Response(\0010\001\022^\n\017LeaseTimeToLive\022$.etcdse"
+    "rverpb.LeaseTimeToLiveRequest\032%.etcdserv"
+    "erpb.LeaseTimeToLiveResponse\022R\n\013LeaseLea"
+    "ses\022 .etcdserverpb.LeaseLeasesRequest\032!."
+    "etcdserverpb.LeaseLeasesResponseB\023Z\021game"
     "/etcdserverpbb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_proto_2fetcd_2fetcd_2eproto_deps[2] =
@@ -754,13 +1575,13 @@ static ::absl::once_flag descriptor_table_proto_2fetcd_2fetcd_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fetcd_2fetcd_2eproto = {
     false,
     false,
-    3181,
+    5661,
     descriptor_table_protodef_proto_2fetcd_2fetcd_2eproto,
     "proto/etcd/etcd.proto",
     &descriptor_table_proto_2fetcd_2fetcd_2eproto_once,
     descriptor_table_proto_2fetcd_2fetcd_2eproto_deps,
     2,
-    14,
+    33,
     schemas,
     file_default_instances,
     TableStruct_proto_2fetcd_2fetcd_2eproto::offsets,
@@ -854,6 +1675,26 @@ constexpr Compare_CompareTarget Compare::LEASE;
 constexpr Compare_CompareTarget Compare::CompareTarget_MIN;
 constexpr Compare_CompareTarget Compare::CompareTarget_MAX;
 constexpr int Compare::CompareTarget_ARRAYSIZE;
+
+#endif  // (__cplusplus < 201703) &&
+        // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
+const ::google::protobuf::EnumDescriptor* WatchCreateRequest_FilterType_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fetcd_2fetcd_2eproto);
+  return file_level_enum_descriptors_proto_2fetcd_2fetcd_2eproto[4];
+}
+PROTOBUF_CONSTINIT const uint32_t WatchCreateRequest_FilterType_internal_data_[] = {
+    131072u, 0u, };
+bool WatchCreateRequest_FilterType_IsValid(int value) {
+  return 0 <= value && value <= 1;
+}
+#if (__cplusplus < 201703) && \
+  (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
+
+constexpr WatchCreateRequest_FilterType WatchCreateRequest::NOPUT;
+constexpr WatchCreateRequest_FilterType WatchCreateRequest::NODELETE;
+constexpr WatchCreateRequest_FilterType WatchCreateRequest::FilterType_MIN;
+constexpr WatchCreateRequest_FilterType WatchCreateRequest::FilterType_MAX;
+constexpr int WatchCreateRequest::FilterType_ARRAYSIZE;
 
 #endif  // (__cplusplus < 201703) &&
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
@@ -5811,6 +6652,5125 @@ void CompactionResponse::InternalSwap(CompactionResponse* PROTOBUF_RESTRICT othe
 }
 
 ::google::protobuf::Metadata CompactionResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class WatchRequest::_Internal {
+ public:
+  static constexpr ::int32_t kOneofCaseOffset =
+      PROTOBUF_FIELD_OFFSET(::etcdserverpb::WatchRequest, _impl_._oneof_case_);
+};
+
+void WatchRequest::set_allocated_create_request(::etcdserverpb::WatchCreateRequest* create_request) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  clear_request_union();
+  if (create_request) {
+    ::google::protobuf::Arena* submessage_arena = create_request->GetArena();
+    if (message_arena != submessage_arena) {
+      create_request = ::google::protobuf::internal::GetOwnedMessage(message_arena, create_request, submessage_arena);
+    }
+    set_has_create_request();
+    _impl_.request_union_.create_request_ = create_request;
+  }
+  // @@protoc_insertion_point(field_set_allocated:etcdserverpb.WatchRequest.create_request)
+}
+void WatchRequest::set_allocated_cancel_request(::etcdserverpb::WatchCancelRequest* cancel_request) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  clear_request_union();
+  if (cancel_request) {
+    ::google::protobuf::Arena* submessage_arena = cancel_request->GetArena();
+    if (message_arena != submessage_arena) {
+      cancel_request = ::google::protobuf::internal::GetOwnedMessage(message_arena, cancel_request, submessage_arena);
+    }
+    set_has_cancel_request();
+    _impl_.request_union_.cancel_request_ = cancel_request;
+  }
+  // @@protoc_insertion_point(field_set_allocated:etcdserverpb.WatchRequest.cancel_request)
+}
+void WatchRequest::set_allocated_progress_request(::etcdserverpb::WatchProgressRequest* progress_request) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  clear_request_union();
+  if (progress_request) {
+    ::google::protobuf::Arena* submessage_arena = progress_request->GetArena();
+    if (message_arena != submessage_arena) {
+      progress_request = ::google::protobuf::internal::GetOwnedMessage(message_arena, progress_request, submessage_arena);
+    }
+    set_has_progress_request();
+    _impl_.request_union_.progress_request_ = progress_request;
+  }
+  // @@protoc_insertion_point(field_set_allocated:etcdserverpb.WatchRequest.progress_request)
+}
+WatchRequest::WatchRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.WatchRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE WatchRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::WatchRequest& from_msg)
+      : request_union_{},
+        _cached_size_{0},
+        _oneof_case_{from._oneof_case_[0]} {}
+
+WatchRequest::WatchRequest(
+    ::google::protobuf::Arena* arena,
+    const WatchRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  WatchRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  switch (request_union_case()) {
+    case REQUEST_UNION_NOT_SET:
+      break;
+      case kCreateRequest:
+        _impl_.request_union_.create_request_ = ::google::protobuf::Message::CopyConstruct<::etcdserverpb::WatchCreateRequest>(arena, *from._impl_.request_union_.create_request_);
+        break;
+      case kCancelRequest:
+        _impl_.request_union_.cancel_request_ = ::google::protobuf::Message::CopyConstruct<::etcdserverpb::WatchCancelRequest>(arena, *from._impl_.request_union_.cancel_request_);
+        break;
+      case kProgressRequest:
+        _impl_.request_union_.progress_request_ = ::google::protobuf::Message::CopyConstruct<::etcdserverpb::WatchProgressRequest>(arena, *from._impl_.request_union_.progress_request_);
+        break;
+  }
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.WatchRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE WatchRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : request_union_{},
+        _cached_size_{0},
+        _oneof_case_{} {}
+
+inline void WatchRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+WatchRequest::~WatchRequest() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.WatchRequest)
+  SharedDtor(*this);
+}
+inline void WatchRequest::SharedDtor(MessageLite& self) {
+  WatchRequest& this_ = static_cast<WatchRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  if (this_.has_request_union()) {
+    this_.clear_request_union();
+  }
+  this_._impl_.~Impl_();
+}
+
+void WatchRequest::clear_request_union() {
+// @@protoc_insertion_point(one_of_clear_start:etcdserverpb.WatchRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  switch (request_union_case()) {
+    case kCreateRequest: {
+      if (GetArena() == nullptr) {
+        delete _impl_.request_union_.create_request_;
+      } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.request_union_.create_request_);
+      }
+      break;
+    }
+    case kCancelRequest: {
+      if (GetArena() == nullptr) {
+        delete _impl_.request_union_.cancel_request_;
+      } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.request_union_.cancel_request_);
+      }
+      break;
+    }
+    case kProgressRequest: {
+      if (GetArena() == nullptr) {
+        delete _impl_.request_union_.progress_request_;
+      } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.request_union_.progress_request_);
+      }
+      break;
+    }
+    case REQUEST_UNION_NOT_SET: {
+      break;
+    }
+  }
+  _impl_._oneof_case_[0] = REQUEST_UNION_NOT_SET;
+}
+
+
+inline void* WatchRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) WatchRequest(arena);
+}
+constexpr auto WatchRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(WatchRequest),
+                                            alignof(WatchRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull WatchRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_WatchRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &WatchRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<WatchRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &WatchRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<WatchRequest>(), &WatchRequest::ByteSizeLong,
+            &WatchRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(WatchRequest, _impl_._cached_size_),
+        false,
+    },
+    &WatchRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* WatchRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 3, 3, 0, 2> WatchRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    3, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    3,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::WatchRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .etcdserverpb.WatchCreateRequest create_request = 1;
+    {PROTOBUF_FIELD_OFFSET(WatchRequest, _impl_.request_union_.create_request_), _Internal::kOneofCaseOffset + 0, 0,
+    (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .etcdserverpb.WatchCancelRequest cancel_request = 2;
+    {PROTOBUF_FIELD_OFFSET(WatchRequest, _impl_.request_union_.cancel_request_), _Internal::kOneofCaseOffset + 0, 1,
+    (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .etcdserverpb.WatchProgressRequest progress_request = 3 [(.versionpb.etcd_version_field) = "3.4"];
+    {PROTOBUF_FIELD_OFFSET(WatchRequest, _impl_.request_union_.progress_request_), _Internal::kOneofCaseOffset + 0, 2,
+    (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::WatchCreateRequest>()},
+    {::_pbi::TcParser::GetTable<::etcdserverpb::WatchCancelRequest>()},
+    {::_pbi::TcParser::GetTable<::etcdserverpb::WatchProgressRequest>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void WatchRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.WatchRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  clear_request_union();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* WatchRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const WatchRequest& this_ = static_cast<const WatchRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* WatchRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const WatchRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.WatchRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          switch (this_.request_union_case()) {
+            case kCreateRequest: {
+              target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                  1, *this_._impl_.request_union_.create_request_, this_._impl_.request_union_.create_request_->GetCachedSize(), target,
+                  stream);
+              break;
+            }
+            case kCancelRequest: {
+              target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                  2, *this_._impl_.request_union_.cancel_request_, this_._impl_.request_union_.cancel_request_->GetCachedSize(), target,
+                  stream);
+              break;
+            }
+            case kProgressRequest: {
+              target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                  3, *this_._impl_.request_union_.progress_request_, this_._impl_.request_union_.progress_request_->GetCachedSize(), target,
+                  stream);
+              break;
+            }
+            default:
+              break;
+          }
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.WatchRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t WatchRequest::ByteSizeLong(const MessageLite& base) {
+          const WatchRequest& this_ = static_cast<const WatchRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t WatchRequest::ByteSizeLong() const {
+          const WatchRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.WatchRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          switch (this_.request_union_case()) {
+            // .etcdserverpb.WatchCreateRequest create_request = 1;
+            case kCreateRequest: {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.request_union_.create_request_);
+              break;
+            }
+            // .etcdserverpb.WatchCancelRequest cancel_request = 2;
+            case kCancelRequest: {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.request_union_.cancel_request_);
+              break;
+            }
+            // .etcdserverpb.WatchProgressRequest progress_request = 3 [(.versionpb.etcd_version_field) = "3.4"];
+            case kProgressRequest: {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.request_union_.progress_request_);
+              break;
+            }
+            case REQUEST_UNION_NOT_SET: {
+              break;
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void WatchRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<WatchRequest*>(&to_msg);
+  auto& from = static_cast<const WatchRequest&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.WatchRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (const uint32_t oneof_from_case = from._impl_._oneof_case_[0]) {
+    const uint32_t oneof_to_case = _this->_impl_._oneof_case_[0];
+    const bool oneof_needs_init = oneof_to_case != oneof_from_case;
+    if (oneof_needs_init) {
+      if (oneof_to_case != 0) {
+        _this->clear_request_union();
+      }
+      _this->_impl_._oneof_case_[0] = oneof_from_case;
+    }
+
+    switch (oneof_from_case) {
+      case kCreateRequest: {
+        if (oneof_needs_init) {
+          _this->_impl_.request_union_.create_request_ =
+              ::google::protobuf::Message::CopyConstruct<::etcdserverpb::WatchCreateRequest>(arena, *from._impl_.request_union_.create_request_);
+        } else {
+          _this->_impl_.request_union_.create_request_->MergeFrom(from._internal_create_request());
+        }
+        break;
+      }
+      case kCancelRequest: {
+        if (oneof_needs_init) {
+          _this->_impl_.request_union_.cancel_request_ =
+              ::google::protobuf::Message::CopyConstruct<::etcdserverpb::WatchCancelRequest>(arena, *from._impl_.request_union_.cancel_request_);
+        } else {
+          _this->_impl_.request_union_.cancel_request_->MergeFrom(from._internal_cancel_request());
+        }
+        break;
+      }
+      case kProgressRequest: {
+        if (oneof_needs_init) {
+          _this->_impl_.request_union_.progress_request_ =
+              ::google::protobuf::Message::CopyConstruct<::etcdserverpb::WatchProgressRequest>(arena, *from._impl_.request_union_.progress_request_);
+        } else {
+          _this->_impl_.request_union_.progress_request_->MergeFrom(from._internal_progress_request());
+        }
+        break;
+      }
+      case REQUEST_UNION_NOT_SET:
+        break;
+    }
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void WatchRequest::CopyFrom(const WatchRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.WatchRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void WatchRequest::InternalSwap(WatchRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_.request_union_, other->_impl_.request_union_);
+  swap(_impl_._oneof_case_[0], other->_impl_._oneof_case_[0]);
+}
+
+::google::protobuf::Metadata WatchRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class WatchCreateRequest::_Internal {
+ public:
+};
+
+WatchCreateRequest::WatchCreateRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.WatchCreateRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE WatchCreateRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::WatchCreateRequest& from_msg)
+      : filters_{visibility, arena, from.filters_},
+        _filters_cached_byte_size_{0},
+        key_(arena, from.key_),
+        range_end_(arena, from.range_end_),
+        _cached_size_{0} {}
+
+WatchCreateRequest::WatchCreateRequest(
+    ::google::protobuf::Arena* arena,
+    const WatchCreateRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  WatchCreateRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, start_revision_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, start_revision_),
+           offsetof(Impl_, fragment_) -
+               offsetof(Impl_, start_revision_) +
+               sizeof(Impl_::fragment_));
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.WatchCreateRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE WatchCreateRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : filters_{visibility, arena},
+        _filters_cached_byte_size_{0},
+        key_(arena),
+        range_end_(arena),
+        _cached_size_{0} {}
+
+inline void WatchCreateRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, start_revision_),
+           0,
+           offsetof(Impl_, fragment_) -
+               offsetof(Impl_, start_revision_) +
+               sizeof(Impl_::fragment_));
+}
+WatchCreateRequest::~WatchCreateRequest() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.WatchCreateRequest)
+  SharedDtor(*this);
+}
+inline void WatchCreateRequest::SharedDtor(MessageLite& self) {
+  WatchCreateRequest& this_ = static_cast<WatchCreateRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.key_.Destroy();
+  this_._impl_.range_end_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* WatchCreateRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) WatchCreateRequest(arena);
+}
+constexpr auto WatchCreateRequest::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.filters_) +
+          decltype(WatchCreateRequest::_impl_.filters_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
+        sizeof(WatchCreateRequest), alignof(WatchCreateRequest), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&WatchCreateRequest::PlacementNew_,
+                                 sizeof(WatchCreateRequest),
+                                 alignof(WatchCreateRequest));
+  }
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull WatchCreateRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_WatchCreateRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &WatchCreateRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<WatchCreateRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &WatchCreateRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<WatchCreateRequest>(), &WatchCreateRequest::ByteSizeLong,
+            &WatchCreateRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_._cached_size_),
+        false,
+    },
+    &WatchCreateRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* WatchCreateRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 8, 0, 0, 2> WatchCreateRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    8, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967040,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    8,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::WatchCreateRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bool fragment = 8 [(.versionpb.etcd_version_field) = "3.4"];
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(WatchCreateRequest, _impl_.fragment_), 63>(),
+     {64, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.fragment_)}},
+    // bytes key = 1;
+    {::_pbi::TcParser::FastBS1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.key_)}},
+    // bytes range_end = 2;
+    {::_pbi::TcParser::FastBS1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.range_end_)}},
+    // int64 start_revision = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(WatchCreateRequest, _impl_.start_revision_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.start_revision_)}},
+    // bool progress_notify = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(WatchCreateRequest, _impl_.progress_notify_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.progress_notify_)}},
+    // repeated .etcdserverpb.WatchCreateRequest.FilterType filters = 5 [(.versionpb.etcd_version_field) = "3.1"];
+    {::_pbi::TcParser::FastV32P1,
+     {42, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.filters_)}},
+    // bool prev_kv = 6 [(.versionpb.etcd_version_field) = "3.1"];
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(WatchCreateRequest, _impl_.prev_kv_), 63>(),
+     {48, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.prev_kv_)}},
+    // int64 watch_id = 7 [(.versionpb.etcd_version_field) = "3.4"];
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(WatchCreateRequest, _impl_.watch_id_), 63>(),
+     {56, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.watch_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // bytes key = 1;
+    {PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.key_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
+    // bytes range_end = 2;
+    {PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.range_end_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
+    // int64 start_revision = 3;
+    {PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.start_revision_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // bool progress_notify = 4;
+    {PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.progress_notify_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+    // repeated .etcdserverpb.WatchCreateRequest.FilterType filters = 5 [(.versionpb.etcd_version_field) = "3.1"];
+    {PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.filters_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedOpenEnum)},
+    // bool prev_kv = 6 [(.versionpb.etcd_version_field) = "3.1"];
+    {PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.prev_kv_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+    // int64 watch_id = 7 [(.versionpb.etcd_version_field) = "3.4"];
+    {PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.watch_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // bool fragment = 8 [(.versionpb.etcd_version_field) = "3.4"];
+    {PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.fragment_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void WatchCreateRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.WatchCreateRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.filters_.Clear();
+  _impl_.key_.ClearToEmpty();
+  _impl_.range_end_.ClearToEmpty();
+  ::memset(&_impl_.start_revision_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.fragment_) -
+      reinterpret_cast<char*>(&_impl_.start_revision_)) + sizeof(_impl_.fragment_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* WatchCreateRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const WatchCreateRequest& this_ = static_cast<const WatchCreateRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* WatchCreateRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const WatchCreateRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.WatchCreateRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // bytes key = 1;
+          if (!this_._internal_key().empty()) {
+            const std::string& _s = this_._internal_key();
+            target = stream->WriteBytesMaybeAliased(1, _s, target);
+          }
+
+          // bytes range_end = 2;
+          if (!this_._internal_range_end().empty()) {
+            const std::string& _s = this_._internal_range_end();
+            target = stream->WriteBytesMaybeAliased(2, _s, target);
+          }
+
+          // int64 start_revision = 3;
+          if (this_._internal_start_revision() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<3>(
+                    stream, this_._internal_start_revision(), target);
+          }
+
+          // bool progress_notify = 4;
+          if (this_._internal_progress_notify() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                4, this_._internal_progress_notify(), target);
+          }
+
+          // repeated .etcdserverpb.WatchCreateRequest.FilterType filters = 5 [(.versionpb.etcd_version_field) = "3.1"];
+          {
+            std::size_t byte_size =
+                                              this_._impl_._filters_cached_byte_size_.Get();
+            if (byte_size > 0) {
+              target = stream->WriteEnumPacked(
+                  5, this_._internal_filters(), byte_size, target);
+            }
+          }
+
+          // bool prev_kv = 6 [(.versionpb.etcd_version_field) = "3.1"];
+          if (this_._internal_prev_kv() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                6, this_._internal_prev_kv(), target);
+          }
+
+          // int64 watch_id = 7 [(.versionpb.etcd_version_field) = "3.4"];
+          if (this_._internal_watch_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<7>(
+                    stream, this_._internal_watch_id(), target);
+          }
+
+          // bool fragment = 8 [(.versionpb.etcd_version_field) = "3.4"];
+          if (this_._internal_fragment() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                8, this_._internal_fragment(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.WatchCreateRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t WatchCreateRequest::ByteSizeLong(const MessageLite& base) {
+          const WatchCreateRequest& this_ = static_cast<const WatchCreateRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t WatchCreateRequest::ByteSizeLong() const {
+          const WatchCreateRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.WatchCreateRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // repeated .etcdserverpb.WatchCreateRequest.FilterType filters = 5 [(.versionpb.etcd_version_field) = "3.1"];
+            {
+              total_size += ::_pbi::WireFormatLite::EnumSizeWithPackedTagSize(
+                  this_._internal_filters(), 1, this_._impl_._filters_cached_byte_size_);
+            }
+          }
+           {
+            // bytes key = 1;
+            if (!this_._internal_key().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                              this_._internal_key());
+            }
+            // bytes range_end = 2;
+            if (!this_._internal_range_end().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                              this_._internal_range_end());
+            }
+            // int64 start_revision = 3;
+            if (this_._internal_start_revision() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_start_revision());
+            }
+            // int64 watch_id = 7 [(.versionpb.etcd_version_field) = "3.4"];
+            if (this_._internal_watch_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_watch_id());
+            }
+            // bool progress_notify = 4;
+            if (this_._internal_progress_notify() != 0) {
+              total_size += 2;
+            }
+            // bool prev_kv = 6 [(.versionpb.etcd_version_field) = "3.1"];
+            if (this_._internal_prev_kv() != 0) {
+              total_size += 2;
+            }
+            // bool fragment = 8 [(.versionpb.etcd_version_field) = "3.4"];
+            if (this_._internal_fragment() != 0) {
+              total_size += 2;
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void WatchCreateRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<WatchCreateRequest*>(&to_msg);
+  auto& from = static_cast<const WatchCreateRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.WatchCreateRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_filters()->MergeFrom(from._internal_filters());
+  if (!from._internal_key().empty()) {
+    _this->_internal_set_key(from._internal_key());
+  }
+  if (!from._internal_range_end().empty()) {
+    _this->_internal_set_range_end(from._internal_range_end());
+  }
+  if (from._internal_start_revision() != 0) {
+    _this->_impl_.start_revision_ = from._impl_.start_revision_;
+  }
+  if (from._internal_watch_id() != 0) {
+    _this->_impl_.watch_id_ = from._impl_.watch_id_;
+  }
+  if (from._internal_progress_notify() != 0) {
+    _this->_impl_.progress_notify_ = from._impl_.progress_notify_;
+  }
+  if (from._internal_prev_kv() != 0) {
+    _this->_impl_.prev_kv_ = from._impl_.prev_kv_;
+  }
+  if (from._internal_fragment() != 0) {
+    _this->_impl_.fragment_ = from._impl_.fragment_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void WatchCreateRequest::CopyFrom(const WatchCreateRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.WatchCreateRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void WatchCreateRequest::InternalSwap(WatchCreateRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.filters_.InternalSwap(&other->_impl_.filters_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.key_, &other->_impl_.key_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.range_end_, &other->_impl_.range_end_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.fragment_)
+      + sizeof(WatchCreateRequest::_impl_.fragment_)
+      - PROTOBUF_FIELD_OFFSET(WatchCreateRequest, _impl_.start_revision_)>(
+          reinterpret_cast<char*>(&_impl_.start_revision_),
+          reinterpret_cast<char*>(&other->_impl_.start_revision_));
+}
+
+::google::protobuf::Metadata WatchCreateRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class WatchCancelRequest::_Internal {
+ public:
+};
+
+WatchCancelRequest::WatchCancelRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.WatchCancelRequest)
+}
+WatchCancelRequest::WatchCancelRequest(
+    ::google::protobuf::Arena* arena, const WatchCancelRequest& from)
+    : WatchCancelRequest(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE WatchCancelRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void WatchCancelRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.watch_id_ = {};
+}
+WatchCancelRequest::~WatchCancelRequest() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.WatchCancelRequest)
+  SharedDtor(*this);
+}
+inline void WatchCancelRequest::SharedDtor(MessageLite& self) {
+  WatchCancelRequest& this_ = static_cast<WatchCancelRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* WatchCancelRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) WatchCancelRequest(arena);
+}
+constexpr auto WatchCancelRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(WatchCancelRequest),
+                                            alignof(WatchCancelRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull WatchCancelRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_WatchCancelRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &WatchCancelRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<WatchCancelRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &WatchCancelRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<WatchCancelRequest>(), &WatchCancelRequest::ByteSizeLong,
+            &WatchCancelRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(WatchCancelRequest, _impl_._cached_size_),
+        false,
+    },
+    &WatchCancelRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* WatchCancelRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> WatchCancelRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::WatchCancelRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 watch_id = 1 [(.versionpb.etcd_version_field) = "3.1"];
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(WatchCancelRequest, _impl_.watch_id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(WatchCancelRequest, _impl_.watch_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int64 watch_id = 1 [(.versionpb.etcd_version_field) = "3.1"];
+    {PROTOBUF_FIELD_OFFSET(WatchCancelRequest, _impl_.watch_id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void WatchCancelRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.WatchCancelRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.watch_id_ = ::int64_t{0};
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* WatchCancelRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const WatchCancelRequest& this_ = static_cast<const WatchCancelRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* WatchCancelRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const WatchCancelRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.WatchCancelRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // int64 watch_id = 1 [(.versionpb.etcd_version_field) = "3.1"];
+          if (this_._internal_watch_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<1>(
+                    stream, this_._internal_watch_id(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.WatchCancelRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t WatchCancelRequest::ByteSizeLong(const MessageLite& base) {
+          const WatchCancelRequest& this_ = static_cast<const WatchCancelRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t WatchCancelRequest::ByteSizeLong() const {
+          const WatchCancelRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.WatchCancelRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+           {
+            // int64 watch_id = 1 [(.versionpb.etcd_version_field) = "3.1"];
+            if (this_._internal_watch_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_watch_id());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void WatchCancelRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<WatchCancelRequest*>(&to_msg);
+  auto& from = static_cast<const WatchCancelRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.WatchCancelRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_watch_id() != 0) {
+    _this->_impl_.watch_id_ = from._impl_.watch_id_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void WatchCancelRequest::CopyFrom(const WatchCancelRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.WatchCancelRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void WatchCancelRequest::InternalSwap(WatchCancelRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.watch_id_, other->_impl_.watch_id_);
+}
+
+::google::protobuf::Metadata WatchCancelRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class WatchProgressRequest::_Internal {
+ public:
+};
+
+WatchProgressRequest::WatchProgressRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.WatchProgressRequest)
+}
+WatchProgressRequest::WatchProgressRequest(
+    ::google::protobuf::Arena* arena,
+    const WatchProgressRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  WatchProgressRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.WatchProgressRequest)
+}
+
+inline void* WatchProgressRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) WatchProgressRequest(arena);
+}
+constexpr auto WatchProgressRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(WatchProgressRequest),
+                                            alignof(WatchProgressRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull WatchProgressRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_WatchProgressRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &WatchProgressRequest::MergeImpl,
+        ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<WatchProgressRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &WatchProgressRequest::SharedDtor,
+        ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<WatchProgressRequest>(), &WatchProgressRequest::ByteSizeLong,
+            &WatchProgressRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(WatchProgressRequest, _impl_._cached_size_),
+        false,
+    },
+    &WatchProgressRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* WatchProgressRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 0, 0, 0, 2> WatchProgressRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    0, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967295,  // skipmap
+    offsetof(decltype(_table_), field_names),  // no field_entries
+    0,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::WatchProgressRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }},
+  // no field_entries, or aux_entries
+  {{
+  }},
+};
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata WatchProgressRequest::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class WatchResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<WatchResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_._has_bits_);
+};
+
+void WatchResponse::clear_events() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.events_.Clear();
+}
+WatchResponse::WatchResponse(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.WatchResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE WatchResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::WatchResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        events_{visibility, arena, from.events_},
+        cancel_reason_(arena, from.cancel_reason_) {}
+
+WatchResponse::WatchResponse(
+    ::google::protobuf::Arena* arena,
+    const WatchResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  WatchResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.header_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(
+                              arena, *from._impl_.header_)
+                        : nullptr;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, watch_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, watch_id_),
+           offsetof(Impl_, fragment_) -
+               offsetof(Impl_, watch_id_) +
+               sizeof(Impl_::fragment_));
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.WatchResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE WatchResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0},
+        events_{visibility, arena},
+        cancel_reason_(arena) {}
+
+inline void WatchResponse::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, header_),
+           0,
+           offsetof(Impl_, fragment_) -
+               offsetof(Impl_, header_) +
+               sizeof(Impl_::fragment_));
+}
+WatchResponse::~WatchResponse() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.WatchResponse)
+  SharedDtor(*this);
+}
+inline void WatchResponse::SharedDtor(MessageLite& self) {
+  WatchResponse& this_ = static_cast<WatchResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.cancel_reason_.Destroy();
+  delete this_._impl_.header_;
+  this_._impl_.~Impl_();
+}
+
+inline void* WatchResponse::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) WatchResponse(arena);
+}
+constexpr auto WatchResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.events_) +
+          decltype(WatchResponse::_impl_.events_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
+        sizeof(WatchResponse), alignof(WatchResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&WatchResponse::PlacementNew_,
+                                 sizeof(WatchResponse),
+                                 alignof(WatchResponse));
+  }
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull WatchResponse::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_WatchResponse_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &WatchResponse::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<WatchResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &WatchResponse::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<WatchResponse>(), &WatchResponse::ByteSizeLong,
+            &WatchResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_._cached_size_),
+        false,
+    },
+    &WatchResponse::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* WatchResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<4, 8, 2, 56, 2> WatchResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    11, 120,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294966144,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    8,  // num_field_entries
+    2,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::WatchResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .etcdserverpb.ResponseHeader header = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.header_)}},
+    // int64 watch_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(WatchResponse, _impl_.watch_id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.watch_id_)}},
+    // bool created = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(WatchResponse, _impl_.created_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.created_)}},
+    // bool canceled = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(WatchResponse, _impl_.canceled_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.canceled_)}},
+    // int64 compact_revision = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(WatchResponse, _impl_.compact_revision_), 63>(),
+     {40, 63, 0, PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.compact_revision_)}},
+    // string cancel_reason = 6 [(.versionpb.etcd_version_field) = "3.4"];
+    {::_pbi::TcParser::FastUS1,
+     {50, 63, 0, PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.cancel_reason_)}},
+    // bool fragment = 7 [(.versionpb.etcd_version_field) = "3.4"];
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(WatchResponse, _impl_.fragment_), 63>(),
+     {56, 63, 0, PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.fragment_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    // repeated .mvccpb.Event events = 11;
+    {::_pbi::TcParser::FastMtR1,
+     {90, 63, 1, PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.events_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.header_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // int64 watch_id = 2;
+    {PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.watch_id_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // bool created = 3;
+    {PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.created_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+    // bool canceled = 4;
+    {PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.canceled_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+    // int64 compact_revision = 5;
+    {PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.compact_revision_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // string cancel_reason = 6 [(.versionpb.etcd_version_field) = "3.4"];
+    {PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.cancel_reason_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // bool fragment = 7 [(.versionpb.etcd_version_field) = "3.4"];
+    {PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.fragment_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+    // repeated .mvccpb.Event events = 11;
+    {PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.events_), -1, 1,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::ResponseHeader>()},
+    {::_pbi::TcParser::GetTable<::mvccpb::Event>()},
+  }}, {{
+    "\32\0\0\0\0\0\15\0\0\0\0\0\0\0\0\0"
+    "etcdserverpb.WatchResponse"
+    "cancel_reason"
+  }},
+};
+
+PROTOBUF_NOINLINE void WatchResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.WatchResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.events_.Clear();
+  _impl_.cancel_reason_.ClearToEmpty();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.header_ != nullptr);
+    _impl_.header_->Clear();
+  }
+  ::memset(&_impl_.watch_id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.fragment_) -
+      reinterpret_cast<char*>(&_impl_.watch_id_)) + sizeof(_impl_.fragment_));
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* WatchResponse::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const WatchResponse& this_ = static_cast<const WatchResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* WatchResponse::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const WatchResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.WatchResponse)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .etcdserverpb.ResponseHeader header = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.header_, this_._impl_.header_->GetCachedSize(), target,
+                stream);
+          }
+
+          // int64 watch_id = 2;
+          if (this_._internal_watch_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<2>(
+                    stream, this_._internal_watch_id(), target);
+          }
+
+          // bool created = 3;
+          if (this_._internal_created() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                3, this_._internal_created(), target);
+          }
+
+          // bool canceled = 4;
+          if (this_._internal_canceled() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                4, this_._internal_canceled(), target);
+          }
+
+          // int64 compact_revision = 5;
+          if (this_._internal_compact_revision() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<5>(
+                    stream, this_._internal_compact_revision(), target);
+          }
+
+          // string cancel_reason = 6 [(.versionpb.etcd_version_field) = "3.4"];
+          if (!this_._internal_cancel_reason().empty()) {
+            const std::string& _s = this_._internal_cancel_reason();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "etcdserverpb.WatchResponse.cancel_reason");
+            target = stream->WriteStringMaybeAliased(6, _s, target);
+          }
+
+          // bool fragment = 7 [(.versionpb.etcd_version_field) = "3.4"];
+          if (this_._internal_fragment() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                7, this_._internal_fragment(), target);
+          }
+
+          // repeated .mvccpb.Event events = 11;
+          for (unsigned i = 0, n = static_cast<unsigned>(
+                                   this_._internal_events_size());
+               i < n; i++) {
+            const auto& repfield = this_._internal_events().Get(i);
+            target =
+                ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                    11, repfield, repfield.GetCachedSize(),
+                    target, stream);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.WatchResponse)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t WatchResponse::ByteSizeLong(const MessageLite& base) {
+          const WatchResponse& this_ = static_cast<const WatchResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t WatchResponse::ByteSizeLong() const {
+          const WatchResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.WatchResponse)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // repeated .mvccpb.Event events = 11;
+            {
+              total_size += 1UL * this_._internal_events_size();
+              for (const auto& msg : this_._internal_events()) {
+                total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+              }
+            }
+          }
+           {
+            // string cancel_reason = 6 [(.versionpb.etcd_version_field) = "3.4"];
+            if (!this_._internal_cancel_reason().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_cancel_reason());
+            }
+          }
+           {
+            // .etcdserverpb.ResponseHeader header = 1;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.header_);
+            }
+          }
+           {
+            // int64 watch_id = 2;
+            if (this_._internal_watch_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_watch_id());
+            }
+            // int64 compact_revision = 5;
+            if (this_._internal_compact_revision() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_compact_revision());
+            }
+            // bool created = 3;
+            if (this_._internal_created() != 0) {
+              total_size += 2;
+            }
+            // bool canceled = 4;
+            if (this_._internal_canceled() != 0) {
+              total_size += 2;
+            }
+            // bool fragment = 7 [(.versionpb.etcd_version_field) = "3.4"];
+            if (this_._internal_fragment() != 0) {
+              total_size += 2;
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void WatchResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<WatchResponse*>(&to_msg);
+  auto& from = static_cast<const WatchResponse&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.WatchResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_events()->MergeFrom(
+      from._internal_events());
+  if (!from._internal_cancel_reason().empty()) {
+    _this->_internal_set_cancel_reason(from._internal_cancel_reason());
+  }
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.header_ != nullptr);
+    if (_this->_impl_.header_ == nullptr) {
+      _this->_impl_.header_ =
+          ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(arena, *from._impl_.header_);
+    } else {
+      _this->_impl_.header_->MergeFrom(*from._impl_.header_);
+    }
+  }
+  if (from._internal_watch_id() != 0) {
+    _this->_impl_.watch_id_ = from._impl_.watch_id_;
+  }
+  if (from._internal_compact_revision() != 0) {
+    _this->_impl_.compact_revision_ = from._impl_.compact_revision_;
+  }
+  if (from._internal_created() != 0) {
+    _this->_impl_.created_ = from._impl_.created_;
+  }
+  if (from._internal_canceled() != 0) {
+    _this->_impl_.canceled_ = from._impl_.canceled_;
+  }
+  if (from._internal_fragment() != 0) {
+    _this->_impl_.fragment_ = from._impl_.fragment_;
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void WatchResponse::CopyFrom(const WatchResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.WatchResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void WatchResponse::InternalSwap(WatchResponse* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.events_.InternalSwap(&other->_impl_.events_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.cancel_reason_, &other->_impl_.cancel_reason_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.fragment_)
+      + sizeof(WatchResponse::_impl_.fragment_)
+      - PROTOBUF_FIELD_OFFSET(WatchResponse, _impl_.header_)>(
+          reinterpret_cast<char*>(&_impl_.header_),
+          reinterpret_cast<char*>(&other->_impl_.header_));
+}
+
+::google::protobuf::Metadata WatchResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseGrantRequest::_Internal {
+ public:
+};
+
+LeaseGrantRequest::LeaseGrantRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseGrantRequest)
+}
+LeaseGrantRequest::LeaseGrantRequest(
+    ::google::protobuf::Arena* arena, const LeaseGrantRequest& from)
+    : LeaseGrantRequest(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseGrantRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseGrantRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, ttl_),
+           0,
+           offsetof(Impl_, id_) -
+               offsetof(Impl_, ttl_) +
+               sizeof(Impl_::id_));
+}
+LeaseGrantRequest::~LeaseGrantRequest() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseGrantRequest)
+  SharedDtor(*this);
+}
+inline void LeaseGrantRequest::SharedDtor(MessageLite& self) {
+  LeaseGrantRequest& this_ = static_cast<LeaseGrantRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseGrantRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseGrantRequest(arena);
+}
+constexpr auto LeaseGrantRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseGrantRequest),
+                                            alignof(LeaseGrantRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseGrantRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseGrantRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseGrantRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseGrantRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseGrantRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseGrantRequest>(), &LeaseGrantRequest::ByteSizeLong,
+            &LeaseGrantRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseGrantRequest, _impl_._cached_size_),
+        false,
+    },
+    &LeaseGrantRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseGrantRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> LeaseGrantRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseGrantRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 ID = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseGrantRequest, _impl_.id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseGrantRequest, _impl_.id_)}},
+    // int64 TTL = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseGrantRequest, _impl_.ttl_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseGrantRequest, _impl_.ttl_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int64 TTL = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseGrantRequest, _impl_.ttl_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // int64 ID = 2;
+    {PROTOBUF_FIELD_OFFSET(LeaseGrantRequest, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseGrantRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseGrantRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.ttl_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.id_) -
+      reinterpret_cast<char*>(&_impl_.ttl_)) + sizeof(_impl_.id_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseGrantRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseGrantRequest& this_ = static_cast<const LeaseGrantRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseGrantRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseGrantRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseGrantRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // int64 TTL = 1;
+          if (this_._internal_ttl() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<1>(
+                    stream, this_._internal_ttl(), target);
+          }
+
+          // int64 ID = 2;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<2>(
+                    stream, this_._internal_id(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseGrantRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseGrantRequest::ByteSizeLong(const MessageLite& base) {
+          const LeaseGrantRequest& this_ = static_cast<const LeaseGrantRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseGrantRequest::ByteSizeLong() const {
+          const LeaseGrantRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseGrantRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // int64 TTL = 1;
+            if (this_._internal_ttl() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_ttl());
+            }
+            // int64 ID = 2;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseGrantRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseGrantRequest*>(&to_msg);
+  auto& from = static_cast<const LeaseGrantRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseGrantRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_ttl() != 0) {
+    _this->_impl_.ttl_ = from._impl_.ttl_;
+  }
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseGrantRequest::CopyFrom(const LeaseGrantRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseGrantRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseGrantRequest::InternalSwap(LeaseGrantRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(LeaseGrantRequest, _impl_.id_)
+      + sizeof(LeaseGrantRequest::_impl_.id_)
+      - PROTOBUF_FIELD_OFFSET(LeaseGrantRequest, _impl_.ttl_)>(
+          reinterpret_cast<char*>(&_impl_.ttl_),
+          reinterpret_cast<char*>(&other->_impl_.ttl_));
+}
+
+::google::protobuf::Metadata LeaseGrantRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseGrantResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<LeaseGrantResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_._has_bits_);
+};
+
+LeaseGrantResponse::LeaseGrantResponse(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseGrantResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseGrantResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::LeaseGrantResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        error_(arena, from.error_) {}
+
+LeaseGrantResponse::LeaseGrantResponse(
+    ::google::protobuf::Arena* arena,
+    const LeaseGrantResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LeaseGrantResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.header_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(
+                              arena, *from._impl_.header_)
+                        : nullptr;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, id_),
+           offsetof(Impl_, ttl_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::ttl_));
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.LeaseGrantResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseGrantResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0},
+        error_(arena) {}
+
+inline void LeaseGrantResponse::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, header_),
+           0,
+           offsetof(Impl_, ttl_) -
+               offsetof(Impl_, header_) +
+               sizeof(Impl_::ttl_));
+}
+LeaseGrantResponse::~LeaseGrantResponse() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseGrantResponse)
+  SharedDtor(*this);
+}
+inline void LeaseGrantResponse::SharedDtor(MessageLite& self) {
+  LeaseGrantResponse& this_ = static_cast<LeaseGrantResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.error_.Destroy();
+  delete this_._impl_.header_;
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseGrantResponse::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseGrantResponse(arena);
+}
+constexpr auto LeaseGrantResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(LeaseGrantResponse),
+                                            alignof(LeaseGrantResponse));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseGrantResponse::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseGrantResponse_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseGrantResponse::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseGrantResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseGrantResponse::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseGrantResponse>(), &LeaseGrantResponse::ByteSizeLong,
+            &LeaseGrantResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_._cached_size_),
+        false,
+    },
+    &LeaseGrantResponse::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseGrantResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 1, 45, 2> LeaseGrantResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseGrantResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string error = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.error_)}},
+    // .etcdserverpb.ResponseHeader header = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.header_)}},
+    // int64 ID = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseGrantResponse, _impl_.id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.id_)}},
+    // int64 TTL = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseGrantResponse, _impl_.ttl_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.ttl_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.header_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // int64 ID = 2;
+    {PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.id_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // int64 TTL = 3;
+    {PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.ttl_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // string error = 4;
+    {PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.error_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::ResponseHeader>()},
+  }}, {{
+    "\37\0\0\0\5\0\0\0"
+    "etcdserverpb.LeaseGrantResponse"
+    "error"
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseGrantResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseGrantResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.error_.ClearToEmpty();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.header_ != nullptr);
+    _impl_.header_->Clear();
+  }
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.ttl_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.ttl_));
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseGrantResponse::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseGrantResponse& this_ = static_cast<const LeaseGrantResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseGrantResponse::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseGrantResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseGrantResponse)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .etcdserverpb.ResponseHeader header = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.header_, this_._impl_.header_->GetCachedSize(), target,
+                stream);
+          }
+
+          // int64 ID = 2;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<2>(
+                    stream, this_._internal_id(), target);
+          }
+
+          // int64 TTL = 3;
+          if (this_._internal_ttl() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<3>(
+                    stream, this_._internal_ttl(), target);
+          }
+
+          // string error = 4;
+          if (!this_._internal_error().empty()) {
+            const std::string& _s = this_._internal_error();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "etcdserverpb.LeaseGrantResponse.error");
+            target = stream->WriteStringMaybeAliased(4, _s, target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseGrantResponse)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseGrantResponse::ByteSizeLong(const MessageLite& base) {
+          const LeaseGrantResponse& this_ = static_cast<const LeaseGrantResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseGrantResponse::ByteSizeLong() const {
+          const LeaseGrantResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseGrantResponse)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // string error = 4;
+            if (!this_._internal_error().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_error());
+            }
+          }
+           {
+            // .etcdserverpb.ResponseHeader header = 1;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.header_);
+            }
+          }
+           {
+            // int64 ID = 2;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+            // int64 TTL = 3;
+            if (this_._internal_ttl() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_ttl());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseGrantResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseGrantResponse*>(&to_msg);
+  auto& from = static_cast<const LeaseGrantResponse&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseGrantResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_error().empty()) {
+    _this->_internal_set_error(from._internal_error());
+  }
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.header_ != nullptr);
+    if (_this->_impl_.header_ == nullptr) {
+      _this->_impl_.header_ =
+          ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(arena, *from._impl_.header_);
+    } else {
+      _this->_impl_.header_->MergeFrom(*from._impl_.header_);
+    }
+  }
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  if (from._internal_ttl() != 0) {
+    _this->_impl_.ttl_ = from._impl_.ttl_;
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseGrantResponse::CopyFrom(const LeaseGrantResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseGrantResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseGrantResponse::InternalSwap(LeaseGrantResponse* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.error_, &other->_impl_.error_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.ttl_)
+      + sizeof(LeaseGrantResponse::_impl_.ttl_)
+      - PROTOBUF_FIELD_OFFSET(LeaseGrantResponse, _impl_.header_)>(
+          reinterpret_cast<char*>(&_impl_.header_),
+          reinterpret_cast<char*>(&other->_impl_.header_));
+}
+
+::google::protobuf::Metadata LeaseGrantResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseRevokeRequest::_Internal {
+ public:
+};
+
+LeaseRevokeRequest::LeaseRevokeRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseRevokeRequest)
+}
+LeaseRevokeRequest::LeaseRevokeRequest(
+    ::google::protobuf::Arena* arena, const LeaseRevokeRequest& from)
+    : LeaseRevokeRequest(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseRevokeRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseRevokeRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.id_ = {};
+}
+LeaseRevokeRequest::~LeaseRevokeRequest() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseRevokeRequest)
+  SharedDtor(*this);
+}
+inline void LeaseRevokeRequest::SharedDtor(MessageLite& self) {
+  LeaseRevokeRequest& this_ = static_cast<LeaseRevokeRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseRevokeRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseRevokeRequest(arena);
+}
+constexpr auto LeaseRevokeRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseRevokeRequest),
+                                            alignof(LeaseRevokeRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseRevokeRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseRevokeRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseRevokeRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseRevokeRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseRevokeRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseRevokeRequest>(), &LeaseRevokeRequest::ByteSizeLong,
+            &LeaseRevokeRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseRevokeRequest, _impl_._cached_size_),
+        false,
+    },
+    &LeaseRevokeRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseRevokeRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> LeaseRevokeRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseRevokeRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 ID = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseRevokeRequest, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseRevokeRequest, _impl_.id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int64 ID = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseRevokeRequest, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseRevokeRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseRevokeRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.id_ = ::int64_t{0};
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseRevokeRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseRevokeRequest& this_ = static_cast<const LeaseRevokeRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseRevokeRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseRevokeRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseRevokeRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // int64 ID = 1;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<1>(
+                    stream, this_._internal_id(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseRevokeRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseRevokeRequest::ByteSizeLong(const MessageLite& base) {
+          const LeaseRevokeRequest& this_ = static_cast<const LeaseRevokeRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseRevokeRequest::ByteSizeLong() const {
+          const LeaseRevokeRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseRevokeRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+           {
+            // int64 ID = 1;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseRevokeRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseRevokeRequest*>(&to_msg);
+  auto& from = static_cast<const LeaseRevokeRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseRevokeRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseRevokeRequest::CopyFrom(const LeaseRevokeRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseRevokeRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseRevokeRequest::InternalSwap(LeaseRevokeRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.id_, other->_impl_.id_);
+}
+
+::google::protobuf::Metadata LeaseRevokeRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseRevokeResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<LeaseRevokeResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(LeaseRevokeResponse, _impl_._has_bits_);
+};
+
+LeaseRevokeResponse::LeaseRevokeResponse(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseRevokeResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseRevokeResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::LeaseRevokeResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+LeaseRevokeResponse::LeaseRevokeResponse(
+    ::google::protobuf::Arena* arena,
+    const LeaseRevokeResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LeaseRevokeResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.header_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(
+                              arena, *from._impl_.header_)
+                        : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.LeaseRevokeResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseRevokeResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseRevokeResponse::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.header_ = {};
+}
+LeaseRevokeResponse::~LeaseRevokeResponse() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseRevokeResponse)
+  SharedDtor(*this);
+}
+inline void LeaseRevokeResponse::SharedDtor(MessageLite& self) {
+  LeaseRevokeResponse& this_ = static_cast<LeaseRevokeResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.header_;
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseRevokeResponse::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseRevokeResponse(arena);
+}
+constexpr auto LeaseRevokeResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseRevokeResponse),
+                                            alignof(LeaseRevokeResponse));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseRevokeResponse::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseRevokeResponse_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseRevokeResponse::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseRevokeResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseRevokeResponse::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseRevokeResponse>(), &LeaseRevokeResponse::ByteSizeLong,
+            &LeaseRevokeResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseRevokeResponse, _impl_._cached_size_),
+        false,
+    },
+    &LeaseRevokeResponse::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseRevokeResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> LeaseRevokeResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(LeaseRevokeResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseRevokeResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(LeaseRevokeResponse, _impl_.header_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseRevokeResponse, _impl_.header_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::ResponseHeader>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseRevokeResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseRevokeResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.header_ != nullptr);
+    _impl_.header_->Clear();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseRevokeResponse::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseRevokeResponse& this_ = static_cast<const LeaseRevokeResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseRevokeResponse::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseRevokeResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseRevokeResponse)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .etcdserverpb.ResponseHeader header = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.header_, this_._impl_.header_->GetCachedSize(), target,
+                stream);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseRevokeResponse)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseRevokeResponse::ByteSizeLong(const MessageLite& base) {
+          const LeaseRevokeResponse& this_ = static_cast<const LeaseRevokeResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseRevokeResponse::ByteSizeLong() const {
+          const LeaseRevokeResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseRevokeResponse)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+           {
+            // .etcdserverpb.ResponseHeader header = 1;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.header_);
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseRevokeResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseRevokeResponse*>(&to_msg);
+  auto& from = static_cast<const LeaseRevokeResponse&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseRevokeResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.header_ != nullptr);
+    if (_this->_impl_.header_ == nullptr) {
+      _this->_impl_.header_ =
+          ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(arena, *from._impl_.header_);
+    } else {
+      _this->_impl_.header_->MergeFrom(*from._impl_.header_);
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseRevokeResponse::CopyFrom(const LeaseRevokeResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseRevokeResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseRevokeResponse::InternalSwap(LeaseRevokeResponse* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.header_, other->_impl_.header_);
+}
+
+::google::protobuf::Metadata LeaseRevokeResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseCheckpoint::_Internal {
+ public:
+};
+
+LeaseCheckpoint::LeaseCheckpoint(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseCheckpoint)
+}
+LeaseCheckpoint::LeaseCheckpoint(
+    ::google::protobuf::Arena* arena, const LeaseCheckpoint& from)
+    : LeaseCheckpoint(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseCheckpoint::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseCheckpoint::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           0,
+           offsetof(Impl_, remaining_ttl_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::remaining_ttl_));
+}
+LeaseCheckpoint::~LeaseCheckpoint() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseCheckpoint)
+  SharedDtor(*this);
+}
+inline void LeaseCheckpoint::SharedDtor(MessageLite& self) {
+  LeaseCheckpoint& this_ = static_cast<LeaseCheckpoint&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseCheckpoint::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseCheckpoint(arena);
+}
+constexpr auto LeaseCheckpoint::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseCheckpoint),
+                                            alignof(LeaseCheckpoint));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseCheckpoint::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseCheckpoint_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseCheckpoint::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseCheckpoint>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseCheckpoint::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseCheckpoint>(), &LeaseCheckpoint::ByteSizeLong,
+            &LeaseCheckpoint::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseCheckpoint, _impl_._cached_size_),
+        false,
+    },
+    &LeaseCheckpoint::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseCheckpoint::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> LeaseCheckpoint::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseCheckpoint>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 remaining_TTL = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseCheckpoint, _impl_.remaining_ttl_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseCheckpoint, _impl_.remaining_ttl_)}},
+    // int64 ID = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseCheckpoint, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseCheckpoint, _impl_.id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int64 ID = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseCheckpoint, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // int64 remaining_TTL = 2;
+    {PROTOBUF_FIELD_OFFSET(LeaseCheckpoint, _impl_.remaining_ttl_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseCheckpoint::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseCheckpoint)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.remaining_ttl_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.remaining_ttl_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseCheckpoint::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseCheckpoint& this_ = static_cast<const LeaseCheckpoint&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseCheckpoint::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseCheckpoint& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseCheckpoint)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // int64 ID = 1;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<1>(
+                    stream, this_._internal_id(), target);
+          }
+
+          // int64 remaining_TTL = 2;
+          if (this_._internal_remaining_ttl() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<2>(
+                    stream, this_._internal_remaining_ttl(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseCheckpoint)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseCheckpoint::ByteSizeLong(const MessageLite& base) {
+          const LeaseCheckpoint& this_ = static_cast<const LeaseCheckpoint&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseCheckpoint::ByteSizeLong() const {
+          const LeaseCheckpoint& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseCheckpoint)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // int64 ID = 1;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+            // int64 remaining_TTL = 2;
+            if (this_._internal_remaining_ttl() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_remaining_ttl());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseCheckpoint::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseCheckpoint*>(&to_msg);
+  auto& from = static_cast<const LeaseCheckpoint&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseCheckpoint)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  if (from._internal_remaining_ttl() != 0) {
+    _this->_impl_.remaining_ttl_ = from._impl_.remaining_ttl_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseCheckpoint::CopyFrom(const LeaseCheckpoint& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseCheckpoint)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseCheckpoint::InternalSwap(LeaseCheckpoint* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(LeaseCheckpoint, _impl_.remaining_ttl_)
+      + sizeof(LeaseCheckpoint::_impl_.remaining_ttl_)
+      - PROTOBUF_FIELD_OFFSET(LeaseCheckpoint, _impl_.id_)>(
+          reinterpret_cast<char*>(&_impl_.id_),
+          reinterpret_cast<char*>(&other->_impl_.id_));
+}
+
+::google::protobuf::Metadata LeaseCheckpoint::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseCheckpointRequest::_Internal {
+ public:
+};
+
+LeaseCheckpointRequest::LeaseCheckpointRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseCheckpointRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseCheckpointRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::LeaseCheckpointRequest& from_msg)
+      : checkpoints_{visibility, arena, from.checkpoints_},
+        _cached_size_{0} {}
+
+LeaseCheckpointRequest::LeaseCheckpointRequest(
+    ::google::protobuf::Arena* arena,
+    const LeaseCheckpointRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LeaseCheckpointRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.LeaseCheckpointRequest)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseCheckpointRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : checkpoints_{visibility, arena},
+        _cached_size_{0} {}
+
+inline void LeaseCheckpointRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+LeaseCheckpointRequest::~LeaseCheckpointRequest() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseCheckpointRequest)
+  SharedDtor(*this);
+}
+inline void LeaseCheckpointRequest::SharedDtor(MessageLite& self) {
+  LeaseCheckpointRequest& this_ = static_cast<LeaseCheckpointRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseCheckpointRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseCheckpointRequest(arena);
+}
+constexpr auto LeaseCheckpointRequest::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(LeaseCheckpointRequest, _impl_.checkpoints_) +
+          decltype(LeaseCheckpointRequest::_impl_.checkpoints_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(LeaseCheckpointRequest), alignof(LeaseCheckpointRequest), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&LeaseCheckpointRequest::PlacementNew_,
+                                 sizeof(LeaseCheckpointRequest),
+                                 alignof(LeaseCheckpointRequest));
+  }
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseCheckpointRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseCheckpointRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseCheckpointRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseCheckpointRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseCheckpointRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseCheckpointRequest>(), &LeaseCheckpointRequest::ByteSizeLong,
+            &LeaseCheckpointRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseCheckpointRequest, _impl_._cached_size_),
+        false,
+    },
+    &LeaseCheckpointRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseCheckpointRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> LeaseCheckpointRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseCheckpointRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated .etcdserverpb.LeaseCheckpoint checkpoints = 1;
+    {::_pbi::TcParser::FastMtR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseCheckpointRequest, _impl_.checkpoints_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated .etcdserverpb.LeaseCheckpoint checkpoints = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseCheckpointRequest, _impl_.checkpoints_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::LeaseCheckpoint>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseCheckpointRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseCheckpointRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.checkpoints_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseCheckpointRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseCheckpointRequest& this_ = static_cast<const LeaseCheckpointRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseCheckpointRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseCheckpointRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseCheckpointRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // repeated .etcdserverpb.LeaseCheckpoint checkpoints = 1;
+          for (unsigned i = 0, n = static_cast<unsigned>(
+                                   this_._internal_checkpoints_size());
+               i < n; i++) {
+            const auto& repfield = this_._internal_checkpoints().Get(i);
+            target =
+                ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                    1, repfield, repfield.GetCachedSize(),
+                    target, stream);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseCheckpointRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseCheckpointRequest::ByteSizeLong(const MessageLite& base) {
+          const LeaseCheckpointRequest& this_ = static_cast<const LeaseCheckpointRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseCheckpointRequest::ByteSizeLong() const {
+          const LeaseCheckpointRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseCheckpointRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // repeated .etcdserverpb.LeaseCheckpoint checkpoints = 1;
+            {
+              total_size += 1UL * this_._internal_checkpoints_size();
+              for (const auto& msg : this_._internal_checkpoints()) {
+                total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+              }
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseCheckpointRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseCheckpointRequest*>(&to_msg);
+  auto& from = static_cast<const LeaseCheckpointRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseCheckpointRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_checkpoints()->MergeFrom(
+      from._internal_checkpoints());
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseCheckpointRequest::CopyFrom(const LeaseCheckpointRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseCheckpointRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseCheckpointRequest::InternalSwap(LeaseCheckpointRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.checkpoints_.InternalSwap(&other->_impl_.checkpoints_);
+}
+
+::google::protobuf::Metadata LeaseCheckpointRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseCheckpointResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<LeaseCheckpointResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(LeaseCheckpointResponse, _impl_._has_bits_);
+};
+
+LeaseCheckpointResponse::LeaseCheckpointResponse(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseCheckpointResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseCheckpointResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::LeaseCheckpointResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+LeaseCheckpointResponse::LeaseCheckpointResponse(
+    ::google::protobuf::Arena* arena,
+    const LeaseCheckpointResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LeaseCheckpointResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.header_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(
+                              arena, *from._impl_.header_)
+                        : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.LeaseCheckpointResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseCheckpointResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseCheckpointResponse::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.header_ = {};
+}
+LeaseCheckpointResponse::~LeaseCheckpointResponse() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseCheckpointResponse)
+  SharedDtor(*this);
+}
+inline void LeaseCheckpointResponse::SharedDtor(MessageLite& self) {
+  LeaseCheckpointResponse& this_ = static_cast<LeaseCheckpointResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.header_;
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseCheckpointResponse::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseCheckpointResponse(arena);
+}
+constexpr auto LeaseCheckpointResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseCheckpointResponse),
+                                            alignof(LeaseCheckpointResponse));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseCheckpointResponse::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseCheckpointResponse_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseCheckpointResponse::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseCheckpointResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseCheckpointResponse::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseCheckpointResponse>(), &LeaseCheckpointResponse::ByteSizeLong,
+            &LeaseCheckpointResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseCheckpointResponse, _impl_._cached_size_),
+        false,
+    },
+    &LeaseCheckpointResponse::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseCheckpointResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> LeaseCheckpointResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(LeaseCheckpointResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseCheckpointResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(LeaseCheckpointResponse, _impl_.header_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseCheckpointResponse, _impl_.header_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::ResponseHeader>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseCheckpointResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseCheckpointResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.header_ != nullptr);
+    _impl_.header_->Clear();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseCheckpointResponse::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseCheckpointResponse& this_ = static_cast<const LeaseCheckpointResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseCheckpointResponse::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseCheckpointResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseCheckpointResponse)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .etcdserverpb.ResponseHeader header = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.header_, this_._impl_.header_->GetCachedSize(), target,
+                stream);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseCheckpointResponse)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseCheckpointResponse::ByteSizeLong(const MessageLite& base) {
+          const LeaseCheckpointResponse& this_ = static_cast<const LeaseCheckpointResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseCheckpointResponse::ByteSizeLong() const {
+          const LeaseCheckpointResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseCheckpointResponse)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+           {
+            // .etcdserverpb.ResponseHeader header = 1;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.header_);
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseCheckpointResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseCheckpointResponse*>(&to_msg);
+  auto& from = static_cast<const LeaseCheckpointResponse&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseCheckpointResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.header_ != nullptr);
+    if (_this->_impl_.header_ == nullptr) {
+      _this->_impl_.header_ =
+          ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(arena, *from._impl_.header_);
+    } else {
+      _this->_impl_.header_->MergeFrom(*from._impl_.header_);
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseCheckpointResponse::CopyFrom(const LeaseCheckpointResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseCheckpointResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseCheckpointResponse::InternalSwap(LeaseCheckpointResponse* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.header_, other->_impl_.header_);
+}
+
+::google::protobuf::Metadata LeaseCheckpointResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseKeepAliveRequest::_Internal {
+ public:
+};
+
+LeaseKeepAliveRequest::LeaseKeepAliveRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseKeepAliveRequest)
+}
+LeaseKeepAliveRequest::LeaseKeepAliveRequest(
+    ::google::protobuf::Arena* arena, const LeaseKeepAliveRequest& from)
+    : LeaseKeepAliveRequest(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseKeepAliveRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseKeepAliveRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.id_ = {};
+}
+LeaseKeepAliveRequest::~LeaseKeepAliveRequest() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseKeepAliveRequest)
+  SharedDtor(*this);
+}
+inline void LeaseKeepAliveRequest::SharedDtor(MessageLite& self) {
+  LeaseKeepAliveRequest& this_ = static_cast<LeaseKeepAliveRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseKeepAliveRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseKeepAliveRequest(arena);
+}
+constexpr auto LeaseKeepAliveRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseKeepAliveRequest),
+                                            alignof(LeaseKeepAliveRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseKeepAliveRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseKeepAliveRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseKeepAliveRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseKeepAliveRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseKeepAliveRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseKeepAliveRequest>(), &LeaseKeepAliveRequest::ByteSizeLong,
+            &LeaseKeepAliveRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseKeepAliveRequest, _impl_._cached_size_),
+        false,
+    },
+    &LeaseKeepAliveRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseKeepAliveRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> LeaseKeepAliveRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseKeepAliveRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 ID = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseKeepAliveRequest, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseKeepAliveRequest, _impl_.id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int64 ID = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseKeepAliveRequest, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseKeepAliveRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseKeepAliveRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.id_ = ::int64_t{0};
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseKeepAliveRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseKeepAliveRequest& this_ = static_cast<const LeaseKeepAliveRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseKeepAliveRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseKeepAliveRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseKeepAliveRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // int64 ID = 1;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<1>(
+                    stream, this_._internal_id(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseKeepAliveRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseKeepAliveRequest::ByteSizeLong(const MessageLite& base) {
+          const LeaseKeepAliveRequest& this_ = static_cast<const LeaseKeepAliveRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseKeepAliveRequest::ByteSizeLong() const {
+          const LeaseKeepAliveRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseKeepAliveRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+           {
+            // int64 ID = 1;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseKeepAliveRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseKeepAliveRequest*>(&to_msg);
+  auto& from = static_cast<const LeaseKeepAliveRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseKeepAliveRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseKeepAliveRequest::CopyFrom(const LeaseKeepAliveRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseKeepAliveRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseKeepAliveRequest::InternalSwap(LeaseKeepAliveRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.id_, other->_impl_.id_);
+}
+
+::google::protobuf::Metadata LeaseKeepAliveRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseKeepAliveResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<LeaseKeepAliveResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_._has_bits_);
+};
+
+LeaseKeepAliveResponse::LeaseKeepAliveResponse(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseKeepAliveResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseKeepAliveResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::LeaseKeepAliveResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+LeaseKeepAliveResponse::LeaseKeepAliveResponse(
+    ::google::protobuf::Arena* arena,
+    const LeaseKeepAliveResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LeaseKeepAliveResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.header_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(
+                              arena, *from._impl_.header_)
+                        : nullptr;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, id_),
+           offsetof(Impl_, ttl_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::ttl_));
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.LeaseKeepAliveResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseKeepAliveResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseKeepAliveResponse::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, header_),
+           0,
+           offsetof(Impl_, ttl_) -
+               offsetof(Impl_, header_) +
+               sizeof(Impl_::ttl_));
+}
+LeaseKeepAliveResponse::~LeaseKeepAliveResponse() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseKeepAliveResponse)
+  SharedDtor(*this);
+}
+inline void LeaseKeepAliveResponse::SharedDtor(MessageLite& self) {
+  LeaseKeepAliveResponse& this_ = static_cast<LeaseKeepAliveResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.header_;
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseKeepAliveResponse::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseKeepAliveResponse(arena);
+}
+constexpr auto LeaseKeepAliveResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseKeepAliveResponse),
+                                            alignof(LeaseKeepAliveResponse));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseKeepAliveResponse::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseKeepAliveResponse_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseKeepAliveResponse::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseKeepAliveResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseKeepAliveResponse::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseKeepAliveResponse>(), &LeaseKeepAliveResponse::ByteSizeLong,
+            &LeaseKeepAliveResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_._cached_size_),
+        false,
+    },
+    &LeaseKeepAliveResponse::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseKeepAliveResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 1, 0, 2> LeaseKeepAliveResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseKeepAliveResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .etcdserverpb.ResponseHeader header = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_.header_)}},
+    // int64 ID = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseKeepAliveResponse, _impl_.id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_.id_)}},
+    // int64 TTL = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseKeepAliveResponse, _impl_.ttl_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_.ttl_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_.header_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // int64 ID = 2;
+    {PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_.id_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // int64 TTL = 3;
+    {PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_.ttl_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::ResponseHeader>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseKeepAliveResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseKeepAliveResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.header_ != nullptr);
+    _impl_.header_->Clear();
+  }
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.ttl_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.ttl_));
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseKeepAliveResponse::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseKeepAliveResponse& this_ = static_cast<const LeaseKeepAliveResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseKeepAliveResponse::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseKeepAliveResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseKeepAliveResponse)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .etcdserverpb.ResponseHeader header = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.header_, this_._impl_.header_->GetCachedSize(), target,
+                stream);
+          }
+
+          // int64 ID = 2;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<2>(
+                    stream, this_._internal_id(), target);
+          }
+
+          // int64 TTL = 3;
+          if (this_._internal_ttl() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<3>(
+                    stream, this_._internal_ttl(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseKeepAliveResponse)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseKeepAliveResponse::ByteSizeLong(const MessageLite& base) {
+          const LeaseKeepAliveResponse& this_ = static_cast<const LeaseKeepAliveResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseKeepAliveResponse::ByteSizeLong() const {
+          const LeaseKeepAliveResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseKeepAliveResponse)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // .etcdserverpb.ResponseHeader header = 1;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.header_);
+            }
+          }
+           {
+            // int64 ID = 2;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+            // int64 TTL = 3;
+            if (this_._internal_ttl() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_ttl());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseKeepAliveResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseKeepAliveResponse*>(&to_msg);
+  auto& from = static_cast<const LeaseKeepAliveResponse&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseKeepAliveResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.header_ != nullptr);
+    if (_this->_impl_.header_ == nullptr) {
+      _this->_impl_.header_ =
+          ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(arena, *from._impl_.header_);
+    } else {
+      _this->_impl_.header_->MergeFrom(*from._impl_.header_);
+    }
+  }
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  if (from._internal_ttl() != 0) {
+    _this->_impl_.ttl_ = from._impl_.ttl_;
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseKeepAliveResponse::CopyFrom(const LeaseKeepAliveResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseKeepAliveResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseKeepAliveResponse::InternalSwap(LeaseKeepAliveResponse* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_.ttl_)
+      + sizeof(LeaseKeepAliveResponse::_impl_.ttl_)
+      - PROTOBUF_FIELD_OFFSET(LeaseKeepAliveResponse, _impl_.header_)>(
+          reinterpret_cast<char*>(&_impl_.header_),
+          reinterpret_cast<char*>(&other->_impl_.header_));
+}
+
+::google::protobuf::Metadata LeaseKeepAliveResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseTimeToLiveRequest::_Internal {
+ public:
+};
+
+LeaseTimeToLiveRequest::LeaseTimeToLiveRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseTimeToLiveRequest)
+}
+LeaseTimeToLiveRequest::LeaseTimeToLiveRequest(
+    ::google::protobuf::Arena* arena, const LeaseTimeToLiveRequest& from)
+    : LeaseTimeToLiveRequest(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseTimeToLiveRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseTimeToLiveRequest::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           0,
+           offsetof(Impl_, keys_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::keys_));
+}
+LeaseTimeToLiveRequest::~LeaseTimeToLiveRequest() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseTimeToLiveRequest)
+  SharedDtor(*this);
+}
+inline void LeaseTimeToLiveRequest::SharedDtor(MessageLite& self) {
+  LeaseTimeToLiveRequest& this_ = static_cast<LeaseTimeToLiveRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseTimeToLiveRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseTimeToLiveRequest(arena);
+}
+constexpr auto LeaseTimeToLiveRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseTimeToLiveRequest),
+                                            alignof(LeaseTimeToLiveRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseTimeToLiveRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseTimeToLiveRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseTimeToLiveRequest::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseTimeToLiveRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseTimeToLiveRequest::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseTimeToLiveRequest>(), &LeaseTimeToLiveRequest::ByteSizeLong,
+            &LeaseTimeToLiveRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveRequest, _impl_._cached_size_),
+        false,
+    },
+    &LeaseTimeToLiveRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseTimeToLiveRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> LeaseTimeToLiveRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseTimeToLiveRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bool keys = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(LeaseTimeToLiveRequest, _impl_.keys_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveRequest, _impl_.keys_)}},
+    // int64 ID = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseTimeToLiveRequest, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveRequest, _impl_.id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int64 ID = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveRequest, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // bool keys = 2;
+    {PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveRequest, _impl_.keys_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseTimeToLiveRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseTimeToLiveRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.keys_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.keys_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseTimeToLiveRequest::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseTimeToLiveRequest& this_ = static_cast<const LeaseTimeToLiveRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseTimeToLiveRequest::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseTimeToLiveRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseTimeToLiveRequest)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // int64 ID = 1;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<1>(
+                    stream, this_._internal_id(), target);
+          }
+
+          // bool keys = 2;
+          if (this_._internal_keys() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                2, this_._internal_keys(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseTimeToLiveRequest)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseTimeToLiveRequest::ByteSizeLong(const MessageLite& base) {
+          const LeaseTimeToLiveRequest& this_ = static_cast<const LeaseTimeToLiveRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseTimeToLiveRequest::ByteSizeLong() const {
+          const LeaseTimeToLiveRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseTimeToLiveRequest)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // int64 ID = 1;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+            // bool keys = 2;
+            if (this_._internal_keys() != 0) {
+              total_size += 2;
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseTimeToLiveRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseTimeToLiveRequest*>(&to_msg);
+  auto& from = static_cast<const LeaseTimeToLiveRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseTimeToLiveRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  if (from._internal_keys() != 0) {
+    _this->_impl_.keys_ = from._impl_.keys_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseTimeToLiveRequest::CopyFrom(const LeaseTimeToLiveRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseTimeToLiveRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseTimeToLiveRequest::InternalSwap(LeaseTimeToLiveRequest* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveRequest, _impl_.keys_)
+      + sizeof(LeaseTimeToLiveRequest::_impl_.keys_)
+      - PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveRequest, _impl_.id_)>(
+          reinterpret_cast<char*>(&_impl_.id_),
+          reinterpret_cast<char*>(&other->_impl_.id_));
+}
+
+::google::protobuf::Metadata LeaseTimeToLiveRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseTimeToLiveResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<LeaseTimeToLiveResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_._has_bits_);
+};
+
+LeaseTimeToLiveResponse::LeaseTimeToLiveResponse(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseTimeToLiveResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseTimeToLiveResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::LeaseTimeToLiveResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        keys_{visibility, arena, from.keys_} {}
+
+LeaseTimeToLiveResponse::LeaseTimeToLiveResponse(
+    ::google::protobuf::Arena* arena,
+    const LeaseTimeToLiveResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LeaseTimeToLiveResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.header_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(
+                              arena, *from._impl_.header_)
+                        : nullptr;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, id_),
+           offsetof(Impl_, grantedttl_) -
+               offsetof(Impl_, id_) +
+               sizeof(Impl_::grantedttl_));
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.LeaseTimeToLiveResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseTimeToLiveResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0},
+        keys_{visibility, arena} {}
+
+inline void LeaseTimeToLiveResponse::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, header_),
+           0,
+           offsetof(Impl_, grantedttl_) -
+               offsetof(Impl_, header_) +
+               sizeof(Impl_::grantedttl_));
+}
+LeaseTimeToLiveResponse::~LeaseTimeToLiveResponse() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseTimeToLiveResponse)
+  SharedDtor(*this);
+}
+inline void LeaseTimeToLiveResponse::SharedDtor(MessageLite& self) {
+  LeaseTimeToLiveResponse& this_ = static_cast<LeaseTimeToLiveResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.header_;
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseTimeToLiveResponse::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseTimeToLiveResponse(arena);
+}
+constexpr auto LeaseTimeToLiveResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.keys_) +
+          decltype(LeaseTimeToLiveResponse::_impl_.keys_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(LeaseTimeToLiveResponse), alignof(LeaseTimeToLiveResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&LeaseTimeToLiveResponse::PlacementNew_,
+                                 sizeof(LeaseTimeToLiveResponse),
+                                 alignof(LeaseTimeToLiveResponse));
+  }
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseTimeToLiveResponse::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseTimeToLiveResponse_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseTimeToLiveResponse::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseTimeToLiveResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseTimeToLiveResponse::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseTimeToLiveResponse>(), &LeaseTimeToLiveResponse::ByteSizeLong,
+            &LeaseTimeToLiveResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_._cached_size_),
+        false,
+    },
+    &LeaseTimeToLiveResponse::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseTimeToLiveResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 1, 0, 2> LeaseTimeToLiveResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseTimeToLiveResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .etcdserverpb.ResponseHeader header = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.header_)}},
+    // int64 ID = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseTimeToLiveResponse, _impl_.id_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.id_)}},
+    // int64 TTL = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseTimeToLiveResponse, _impl_.ttl_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.ttl_)}},
+    // int64 grantedTTL = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseTimeToLiveResponse, _impl_.grantedttl_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.grantedttl_)}},
+    // repeated bytes keys = 5;
+    {::_pbi::TcParser::FastBR1,
+     {42, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.keys_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.header_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // int64 ID = 2;
+    {PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.id_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // int64 TTL = 3;
+    {PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.ttl_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // int64 grantedTTL = 4;
+    {PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.grantedttl_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // repeated bytes keys = 5;
+    {PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.keys_), -1, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kBytes | ::_fl::kRepSString)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::ResponseHeader>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseTimeToLiveResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseTimeToLiveResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.keys_.Clear();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.header_ != nullptr);
+    _impl_.header_->Clear();
+  }
+  ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.grantedttl_) -
+      reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.grantedttl_));
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseTimeToLiveResponse::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseTimeToLiveResponse& this_ = static_cast<const LeaseTimeToLiveResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseTimeToLiveResponse::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseTimeToLiveResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseTimeToLiveResponse)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .etcdserverpb.ResponseHeader header = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.header_, this_._impl_.header_->GetCachedSize(), target,
+                stream);
+          }
+
+          // int64 ID = 2;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<2>(
+                    stream, this_._internal_id(), target);
+          }
+
+          // int64 TTL = 3;
+          if (this_._internal_ttl() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<3>(
+                    stream, this_._internal_ttl(), target);
+          }
+
+          // int64 grantedTTL = 4;
+          if (this_._internal_grantedttl() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<4>(
+                    stream, this_._internal_grantedttl(), target);
+          }
+
+          // repeated bytes keys = 5;
+          for (int i = 0, n = this_._internal_keys_size(); i < n; ++i) {
+            const auto& s = this_._internal_keys().Get(i);
+            target = stream->WriteBytes(5, s, target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseTimeToLiveResponse)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseTimeToLiveResponse::ByteSizeLong(const MessageLite& base) {
+          const LeaseTimeToLiveResponse& this_ = static_cast<const LeaseTimeToLiveResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseTimeToLiveResponse::ByteSizeLong() const {
+          const LeaseTimeToLiveResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseTimeToLiveResponse)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // repeated bytes keys = 5;
+            {
+              total_size +=
+                  1 * ::google::protobuf::internal::FromIntSize(this_._internal_keys().size());
+              for (int i = 0, n = this_._internal_keys().size(); i < n; ++i) {
+                total_size += ::google::protobuf::internal::WireFormatLite::BytesSize(
+                    this_._internal_keys().Get(i));
+              }
+            }
+          }
+           {
+            // .etcdserverpb.ResponseHeader header = 1;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.header_);
+            }
+          }
+           {
+            // int64 ID = 2;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+            // int64 TTL = 3;
+            if (this_._internal_ttl() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_ttl());
+            }
+            // int64 grantedTTL = 4;
+            if (this_._internal_grantedttl() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_grantedttl());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseTimeToLiveResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseTimeToLiveResponse*>(&to_msg);
+  auto& from = static_cast<const LeaseTimeToLiveResponse&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseTimeToLiveResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_keys()->MergeFrom(from._internal_keys());
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.header_ != nullptr);
+    if (_this->_impl_.header_ == nullptr) {
+      _this->_impl_.header_ =
+          ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(arena, *from._impl_.header_);
+    } else {
+      _this->_impl_.header_->MergeFrom(*from._impl_.header_);
+    }
+  }
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  if (from._internal_ttl() != 0) {
+    _this->_impl_.ttl_ = from._impl_.ttl_;
+  }
+  if (from._internal_grantedttl() != 0) {
+    _this->_impl_.grantedttl_ = from._impl_.grantedttl_;
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseTimeToLiveResponse::CopyFrom(const LeaseTimeToLiveResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseTimeToLiveResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseTimeToLiveResponse::InternalSwap(LeaseTimeToLiveResponse* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.keys_.InternalSwap(&other->_impl_.keys_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.grantedttl_)
+      + sizeof(LeaseTimeToLiveResponse::_impl_.grantedttl_)
+      - PROTOBUF_FIELD_OFFSET(LeaseTimeToLiveResponse, _impl_.header_)>(
+          reinterpret_cast<char*>(&_impl_.header_),
+          reinterpret_cast<char*>(&other->_impl_.header_));
+}
+
+::google::protobuf::Metadata LeaseTimeToLiveResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseLeasesRequest::_Internal {
+ public:
+};
+
+LeaseLeasesRequest::LeaseLeasesRequest(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseLeasesRequest)
+}
+LeaseLeasesRequest::LeaseLeasesRequest(
+    ::google::protobuf::Arena* arena,
+    const LeaseLeasesRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LeaseLeasesRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.LeaseLeasesRequest)
+}
+
+inline void* LeaseLeasesRequest::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseLeasesRequest(arena);
+}
+constexpr auto LeaseLeasesRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseLeasesRequest),
+                                            alignof(LeaseLeasesRequest));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseLeasesRequest::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseLeasesRequest_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseLeasesRequest::MergeImpl,
+        ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<LeaseLeasesRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseLeasesRequest::SharedDtor,
+        ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<LeaseLeasesRequest>(), &LeaseLeasesRequest::ByteSizeLong,
+            &LeaseLeasesRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseLeasesRequest, _impl_._cached_size_),
+        false,
+    },
+    &LeaseLeasesRequest::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseLeasesRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 0, 0, 0, 2> LeaseLeasesRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    0, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967295,  // skipmap
+    offsetof(decltype(_table_), field_names),  // no field_entries
+    0,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseLeasesRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }},
+  // no field_entries, or aux_entries
+  {{
+  }},
+};
+
+
+
+
+
+
+
+
+::google::protobuf::Metadata LeaseLeasesRequest::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseStatus::_Internal {
+ public:
+};
+
+LeaseStatus::LeaseStatus(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseStatus)
+}
+LeaseStatus::LeaseStatus(
+    ::google::protobuf::Arena* arena, const LeaseStatus& from)
+    : LeaseStatus(arena) {
+  MergeFrom(from);
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseStatus::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0} {}
+
+inline void LeaseStatus::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.id_ = {};
+}
+LeaseStatus::~LeaseStatus() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseStatus)
+  SharedDtor(*this);
+}
+inline void LeaseStatus::SharedDtor(MessageLite& self) {
+  LeaseStatus& this_ = static_cast<LeaseStatus&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseStatus::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseStatus(arena);
+}
+constexpr auto LeaseStatus::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(LeaseStatus),
+                                            alignof(LeaseStatus));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseStatus::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseStatus_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseStatus::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseStatus>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseStatus::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseStatus>(), &LeaseStatus::ByteSizeLong,
+            &LeaseStatus::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseStatus, _impl_._cached_size_),
+        false,
+    },
+    &LeaseStatus::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseStatus::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> LeaseStatus::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseStatus>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 ID = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LeaseStatus, _impl_.id_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(LeaseStatus, _impl_.id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int64 ID = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseStatus, _impl_.id_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseStatus::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseStatus)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.id_ = ::int64_t{0};
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseStatus::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseStatus& this_ = static_cast<const LeaseStatus&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseStatus::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseStatus& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseStatus)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // int64 ID = 1;
+          if (this_._internal_id() != 0) {
+            target = ::google::protobuf::internal::WireFormatLite::
+                WriteInt64ToArrayWithField<1>(
+                    stream, this_._internal_id(), target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseStatus)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseStatus::ByteSizeLong(const MessageLite& base) {
+          const LeaseStatus& this_ = static_cast<const LeaseStatus&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseStatus::ByteSizeLong() const {
+          const LeaseStatus& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseStatus)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+           {
+            // int64 ID = 1;
+            if (this_._internal_id() != 0) {
+              total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+                  this_._internal_id());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseStatus::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseStatus*>(&to_msg);
+  auto& from = static_cast<const LeaseStatus&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseStatus)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_id() != 0) {
+    _this->_impl_.id_ = from._impl_.id_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseStatus::CopyFrom(const LeaseStatus& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseStatus)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseStatus::InternalSwap(LeaseStatus* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+        swap(_impl_.id_, other->_impl_.id_);
+}
+
+::google::protobuf::Metadata LeaseStatus::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class LeaseLeasesResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<LeaseLeasesResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(LeaseLeasesResponse, _impl_._has_bits_);
+};
+
+LeaseLeasesResponse::LeaseLeasesResponse(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:etcdserverpb.LeaseLeasesResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseLeasesResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::etcdserverpb::LeaseLeasesResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        leases_{visibility, arena, from.leases_} {}
+
+LeaseLeasesResponse::LeaseLeasesResponse(
+    ::google::protobuf::Arena* arena,
+    const LeaseLeasesResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  LeaseLeasesResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.header_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(
+                              arena, *from._impl_.header_)
+                        : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:etcdserverpb.LeaseLeasesResponse)
+}
+inline PROTOBUF_NDEBUG_INLINE LeaseLeasesResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0},
+        leases_{visibility, arena} {}
+
+inline void LeaseLeasesResponse::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.header_ = {};
+}
+LeaseLeasesResponse::~LeaseLeasesResponse() {
+  // @@protoc_insertion_point(destructor:etcdserverpb.LeaseLeasesResponse)
+  SharedDtor(*this);
+}
+inline void LeaseLeasesResponse::SharedDtor(MessageLite& self) {
+  LeaseLeasesResponse& this_ = static_cast<LeaseLeasesResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.header_;
+  this_._impl_.~Impl_();
+}
+
+inline void* LeaseLeasesResponse::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) LeaseLeasesResponse(arena);
+}
+constexpr auto LeaseLeasesResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(LeaseLeasesResponse, _impl_.leases_) +
+          decltype(LeaseLeasesResponse::_impl_.leases_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(LeaseLeasesResponse), alignof(LeaseLeasesResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&LeaseLeasesResponse::PlacementNew_,
+                                 sizeof(LeaseLeasesResponse),
+                                 alignof(LeaseLeasesResponse));
+  }
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull LeaseLeasesResponse::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_LeaseLeasesResponse_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &LeaseLeasesResponse::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<LeaseLeasesResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &LeaseLeasesResponse::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<LeaseLeasesResponse>(), &LeaseLeasesResponse::ByteSizeLong,
+            &LeaseLeasesResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(LeaseLeasesResponse, _impl_._cached_size_),
+        false,
+    },
+    &LeaseLeasesResponse::kDescriptorMethods,
+    &descriptor_table_proto_2fetcd_2fetcd_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* LeaseLeasesResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 2, 0, 2> LeaseLeasesResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(LeaseLeasesResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    2,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::etcdserverpb::LeaseLeasesResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated .etcdserverpb.LeaseStatus leases = 2;
+    {::_pbi::TcParser::FastMtR1,
+     {18, 63, 1, PROTOBUF_FIELD_OFFSET(LeaseLeasesResponse, _impl_.leases_)}},
+    // .etcdserverpb.ResponseHeader header = 1;
+    {::_pbi::TcParser::FastMtS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(LeaseLeasesResponse, _impl_.header_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .etcdserverpb.ResponseHeader header = 1;
+    {PROTOBUF_FIELD_OFFSET(LeaseLeasesResponse, _impl_.header_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // repeated .etcdserverpb.LeaseStatus leases = 2;
+    {PROTOBUF_FIELD_OFFSET(LeaseLeasesResponse, _impl_.leases_), -1, 1,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::etcdserverpb::ResponseHeader>()},
+    {::_pbi::TcParser::GetTable<::etcdserverpb::LeaseStatus>()},
+  }}, {{
+  }},
+};
+
+PROTOBUF_NOINLINE void LeaseLeasesResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:etcdserverpb.LeaseLeasesResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.leases_.Clear();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.header_ != nullptr);
+    _impl_.header_->Clear();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* LeaseLeasesResponse::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const LeaseLeasesResponse& this_ = static_cast<const LeaseLeasesResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* LeaseLeasesResponse::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const LeaseLeasesResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:etcdserverpb.LeaseLeasesResponse)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          cached_has_bits = this_._impl_._has_bits_[0];
+          // .etcdserverpb.ResponseHeader header = 1;
+          if (cached_has_bits & 0x00000001u) {
+            target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                1, *this_._impl_.header_, this_._impl_.header_->GetCachedSize(), target,
+                stream);
+          }
+
+          // repeated .etcdserverpb.LeaseStatus leases = 2;
+          for (unsigned i = 0, n = static_cast<unsigned>(
+                                   this_._internal_leases_size());
+               i < n; i++) {
+            const auto& repfield = this_._internal_leases().Get(i);
+            target =
+                ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                    2, repfield, repfield.GetCachedSize(),
+                    target, stream);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:etcdserverpb.LeaseLeasesResponse)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t LeaseLeasesResponse::ByteSizeLong(const MessageLite& base) {
+          const LeaseLeasesResponse& this_ = static_cast<const LeaseLeasesResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t LeaseLeasesResponse::ByteSizeLong() const {
+          const LeaseLeasesResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:etcdserverpb.LeaseLeasesResponse)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // repeated .etcdserverpb.LeaseStatus leases = 2;
+            {
+              total_size += 1UL * this_._internal_leases_size();
+              for (const auto& msg : this_._internal_leases()) {
+                total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+              }
+            }
+          }
+           {
+            // .etcdserverpb.ResponseHeader header = 1;
+            cached_has_bits = this_._impl_._has_bits_[0];
+            if (cached_has_bits & 0x00000001u) {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.header_);
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void LeaseLeasesResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<LeaseLeasesResponse*>(&to_msg);
+  auto& from = static_cast<const LeaseLeasesResponse&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:etcdserverpb.LeaseLeasesResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_leases()->MergeFrom(
+      from._internal_leases());
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.header_ != nullptr);
+    if (_this->_impl_.header_ == nullptr) {
+      _this->_impl_.header_ =
+          ::google::protobuf::Message::CopyConstruct<::etcdserverpb::ResponseHeader>(arena, *from._impl_.header_);
+    } else {
+      _this->_impl_.header_->MergeFrom(*from._impl_.header_);
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void LeaseLeasesResponse::CopyFrom(const LeaseLeasesResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:etcdserverpb.LeaseLeasesResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void LeaseLeasesResponse::InternalSwap(LeaseLeasesResponse* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.leases_.InternalSwap(&other->_impl_.leases_);
+  swap(_impl_.header_, other->_impl_.header_);
+}
+
+::google::protobuf::Metadata LeaseLeasesResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)
