@@ -14,30 +14,7 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 		if (call->status.ok()) {
 
 			for (const auto& kv : call->reply.kvs()) {
-				if (kv.value() == gGateNode->FormatIpAndPort())
-				{
-					continue;
-				}
-
-				auto serviceNodeType = NodeSystem::GetServiceTypeFromPrefix(kv.key());
-
-				if (serviceNodeType == kDeploy) {
-
-					// 定时更新节点租约
-					gGateNode->InitializeDeployService(kv.value());
-
-					// 处理部署服务的键值对
-					LOG_INFO << "Deploy Service Key: " << kv.key() << ", Value: " << kv.value();
-				}
-				else if (eNodeType_IsValid(serviceNodeType)) {
-					
-					gGateNode->ParseJsonToServiceNode(kv.value(), serviceNodeType);
-
-					LOG_INFO << "Service Node Key: " << kv.key() << ", Value: " << kv.value();
-				}
-				else {
-					LOG_ERROR << "Unknown service type for key: " << kv.key();
-				}
+				gGateNode->HandleServiceNode(kv.key(), kv.value());
 			}
 		}
 		else {

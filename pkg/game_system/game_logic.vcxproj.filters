@@ -8,7 +8,6 @@
     <ClCompile Include="src\scene\system\node_scene_system.cpp" />
     <ClCompile Include="src\scene\system\scene_system.cpp" />
     <ClCompile Include="src\reward\system\reward_system.cpp" />
-    <ClCompile Include="src\node\system\node_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\mission\comp\mission_comp.h" />
@@ -26,7 +25,5 @@
     <ClInclude Include="src\reward\comp\reward_comp.h" />
     <ClInclude Include="src\network\constants\network_constants.h" />
     <ClInclude Include="src\network\system\error_handling_system.h" />
-    <ClInclude Include="src\node\constants\node_constants.h" />
-    <ClInclude Include="src\node\system\node_system.h" />
   </ItemGroup>
 </Project>
