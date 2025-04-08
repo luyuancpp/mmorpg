@@ -288,10 +288,13 @@ void Node::HandleServiceNode(const std::string& key, const std::string& value) {
 	// 获取服务节点类型
 	auto serviceNodeType = NodeSystem::GetServiceTypeFromPrefix(key);
 
-	if (serviceNodeType == kDeploy) {
+	if (serviceNodeType == kDeployNode) {
 		// 处理部署服务
 		InitializeDeployService(value);
 		LOG_INFO << "Deploy Service Key: " << key << ", Value: " << value;
+	}
+	if (serviceNodeType == kLoginNode) {
+
 	}
 	else if (eNodeType_IsValid(serviceNodeType)) {
 		// 解析有效的服务节点
