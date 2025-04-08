@@ -93,7 +93,7 @@ func main() {
 	//所有service初始化完以后
 	gen.WriteGoMessageId()
 	gen.WriteServiceRegisterInfoFile()
-	gen.WriteLuaServiceHeadHandlerFile()
+	//gen.WriteLuaServiceHeadHandlerFile()
 	//gen.WriteClientServiceHeadHandlerFile()
 	gen.GoRobotHandlerGenerator()
 	util.Wg.Wait()

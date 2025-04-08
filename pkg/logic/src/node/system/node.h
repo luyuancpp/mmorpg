@@ -49,6 +49,7 @@ protected:
     void ReleaseNodeId();
     void SetupMessageHandlers();
     void SendEtcdRangeRequest(const std::string& prefix);
+	void SendRegisterService(const std::string& key, const std::string& value);
 
     static void AsyncOutput(const char* msg, int len);
 

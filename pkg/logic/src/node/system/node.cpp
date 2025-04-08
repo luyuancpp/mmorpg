@@ -51,11 +51,11 @@ void Node::Initialize() {
     LoadConfigurations();              // 加载配置
     InitializeTimeZone();              // 初始化时区
     SetupLogging();                    // 设置日志系统
+	InitializeIpPort();                // 初始化 IP 和端口
     InitializeGrpcServices();          // 初始化 gRPC 服务
     PrepareForBeforeConnection();      // 准备连接前的工作
     InitializeNodeFromRequestInfo();   // 从请求中初始化节点信息
     SetupMessageHandlers();            // 设置消息处理器
-    InitializeIpPort();                // 初始化 IP 和端口
     InitializeMiscellaneous();         // 初始化杂项
 }   
 
@@ -212,6 +212,15 @@ void Node::SendEtcdRangeRequest(const std::string& prefix)
 	request.set_range_end(range_end);  // 设置 range_end
 
 	etcdserverpbKVRange(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
+}
+
+void Node::SendRegisterService(const std::string& key, const std::string& value)
+{
+	etcdserverpb::PutRequest request;
+	request.set_key(key);  
+	request.set_value(value);  
+	
+    etcdserverpbKVPut(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
 }
 
 void Node::AsyncOutput(const char* msg, int len) {
