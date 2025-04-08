@@ -75,9 +75,8 @@ void CentreNode::StartRpcServer()
 		rpcServer->registerService(value.get());
 	}
 
-
 	InitSystemAfterConnect();
-	LOG_INFO << "centre start " << GetNodeInfo().DebugString();
+	LOG_INFO << "centre start at " << GetNodeInfo().DebugString();
 }
 
 
