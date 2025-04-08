@@ -67,13 +67,14 @@ uint32_t CentreNode::GetNodeType() const
 
 void CentreNode::StartRpcServer()
 {
+	Node::StartRpcServer();
+
 	rpcServer->registerService(&centreService);
 	for (auto& value : gNodeService | std::views::values)
 	{
 		rpcServer->registerService(value.get());
 	}
 
-    Node::StartRpcServer();
 
 	InitSystemAfterConnect();
 	LOG_INFO << "centre start " << GetNodeInfo().DebugString();

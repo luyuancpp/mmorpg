@@ -25,9 +25,9 @@ public:
 	TimerTaskComp& GetDeployRpcTimer() { return deployRpcTimer; }
 	TimerTaskComp& GetRenewNodeLeaseTimer() { return renewNodeLeaseTimer; }
 	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
-    std::string FormatIpAndPort() const;
-	std::string GetIp() const;
-	uint32_t GetPort() const;
+    std::string FormatIpAndPort() ;
+	std::string GetIp();
+	uint32_t GetPort();
 
     void InitializeDeployService(const std::string& service_address);
     void HandleServiceNode(const std::string& key, const std::string& value);
@@ -58,7 +58,6 @@ protected:
     muduo::net::EventLoop* loop_;
     muduo::AsyncLogging muduoLog;
     RpcServerPtr rpcServer;
-    NodeInfo nodeInfo;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
     RpcClientPtr zoneCentreNode;
