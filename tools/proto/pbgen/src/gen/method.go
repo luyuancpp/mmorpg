@@ -365,7 +365,7 @@ func writeRegisterFile(dst string, cb checkRepliedCb) {
 		data.WriteString(firstMethodInfo.CppHandlerIncludeName())
 
 		// Append instance creation for the service handler
-		instanceData.WriteString(fmt.Sprintf("%gNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());\n",
+		instanceData.WriteString(fmt.Sprintf("%sgNodeService.emplace(\"%s\", std::make_unique_for_overwrite<%s%s>());\n",
 			config.Tab, firstMethodInfo.Service, firstMethodInfo.Service, config.HandlerFileName))
 	}
 

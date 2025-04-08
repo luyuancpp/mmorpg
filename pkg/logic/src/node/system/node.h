@@ -20,6 +20,7 @@ public:
     virtual NodeId GetNodeId() final { return GetNodeInfo().node_id(); }
     virtual uint32_t GetNodeType() const = 0;
     virtual NodeInfo& GetNodeInfo() = 0;
+	virtual std::string GetServiceName() const = 0;
     inline [[nodiscard]] muduo::AsyncLogging& Log() { return muduoLog; }
 	TimerTaskComp& GetDeployRpcTimer() { return deployRpcTimer; }
 	TimerTaskComp& GetRenewNodeLeaseTimer() { return renewNodeLeaseTimer; }
@@ -49,7 +50,7 @@ protected:
     void ReleaseNodeId();
     void SetupMessageHandlers();
     void SendEtcdRangeRequest(const std::string& prefix);
-	void SendRegisterService(const std::string& key, const std::string& value);
+	void RegisterService();
 
     static void AsyncOutput(const char* msg, int len);
 

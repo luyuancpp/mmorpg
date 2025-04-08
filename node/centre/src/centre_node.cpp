@@ -155,6 +155,11 @@ void CentreNode::PrepareForBeforeConnection()
 	PlayerSessionSystem::Initialize();
 }
 
+std::string CentreNode::GetServiceName() const
+{
+	return "centreservcie.rpc";
+}
+
 void CentreNode::InitSystemAfterConnect() const
 {
 	InetAddress redisAddr(nodesInfo.redis_info().redis_info(0).ip(),

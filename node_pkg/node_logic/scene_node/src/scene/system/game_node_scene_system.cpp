@@ -15,8 +15,8 @@
 
 
 void GameNodeSceneSystem::InitializeNodeScenes() {
-	if (!(gSceneNodeInfo.GetNodeInfo().game_node_type() == eGameNodeType::kMainSceneNode ||
-		gSceneNodeInfo.GetNodeInfo().game_node_type() == eGameNodeType::kMainSceneCrossNode)) {
+	if (!(gSceneNodeInfo.GetNodeInfo().scene_node_type() == eGameNodeType::kMainSceneNode ||
+		gSceneNodeInfo.GetNodeInfo().scene_node_type() == eGameNodeType::kMainSceneCrossNode)) {
 		return;
 	}
 

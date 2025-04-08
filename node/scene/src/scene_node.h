@@ -19,9 +19,12 @@ public:
 	~SceneNode() override = default;
 
     NodeInfo& GetNodeInfo()override;
+
     virtual uint32_t GetNodeType() const override;
     
     void Initialize()override;
+
+    std::string GetServiceName() const override;
 
     void Receive1(const OnConnected2TcpServerEvent& es);
     void Receive2(const OnBeConnectedEvent& es);

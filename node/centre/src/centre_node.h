@@ -19,8 +19,13 @@ public:
 	void        Initialize() override;
 
 	NodeInfo& GetNodeInfo()override;
+
 	uint32_t GetNodeType() const override;
+
     void PrepareForBeforeConnection()override;
+
+	std::string GetServiceName() const override;
+
 
 	
 	static void BroadCastRegisterGameToGate(entt::entity gs, entt::entity gate);
