@@ -7,17 +7,21 @@
 #include "network/network_constants.h"
 #include "util/network_utils.h"
 #include "gate_node.h"
+#include "node/comp/node_comp.h"
 
 void InitGrpcetcdserverpbKVResponseHandler() {
 	AsyncetcdserverpbKVRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
+
 			for (const auto& kv : call->reply.kvs()) {
 				if (kv.value() == gGateNode->FormatIpAndPort())
 				{
 					continue;
 				}
 
-				if (NodeSystem::GetServiceTypeFromPrefix(kv.key()) == kDeploy) {
+				auto serviceNodeType = NodeSystem::GetServiceTypeFromPrefix(kv.key());
+
+				if (serviceNodeType == kDeploy) {
 
 					// 定时更新节点租约
 					gGateNode->InitializeDeployService(kv.value());
@@ -25,23 +29,11 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 					// 处理部署服务的键值对
 					LOG_INFO << "Deploy Service Key: " << kv.key() << ", Value: " << kv.value();
 				}
-				else if (NodeSystem::GetServiceTypeFromPrefix(kv.key()) == kSceneNode) {
-					// 处理场景节点的键值对
-					LOG_INFO << "Scene Node Key: " << kv.key() << ", Value: " << kv.value();
-				}
-				else if (NodeSystem::GetServiceTypeFromPrefix(kv.key()) == kGateNode) {
-					// 处理网关节点的键值对
-					LOG_INFO << "Gate Node Key: " << kv.key() << ", Value: " << kv.value();
-				}
-				else if (NodeSystem::GetServiceTypeFromPrefix(kv.key()) == kCentreNode) {
-					// 处理中心节点的键值对
-					LOG_INFO << "Centre Node Key: " << kv.key() << ", Value: " << kv.value();
-				}
-				else if (NodeSystem::GetServiceTypeFromPrefix(kv.key()) == kLoginNode) {
-					NodeInfoListPBComponent nodeInfoList;
+				else if (eNodeType_IsValid(serviceNodeType)) {
+					
+					gGateNode->ParseJsonToServiceNode(kv.value(), serviceNodeType);
 
-					// 处理登录节点的键值对
-					LOG_INFO << "Login Node Key: " << kv.key() << ", Value: " << kv.value();
+					LOG_INFO << "Service Node Key: " << kv.key() << ", Value: " << kv.value();
 				}
 				else {
 					LOG_ERROR << "Unknown service type for key: " << kv.key();

@@ -30,6 +30,8 @@ public:
 	uint32_t GetPort() const;
 
     void InitializeDeployService(const std::string& service_address);
+    bool ParseJsonToServiceNode(const std::string& json_value, uint32_t serviceNodeType);
+
 protected:
     virtual void Initialize();
     virtual void StartRpcServer();
