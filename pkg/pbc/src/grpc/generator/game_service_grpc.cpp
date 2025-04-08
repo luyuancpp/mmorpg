@@ -1,6 +1,6 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/.h"
+#include "grpc/generator/game_service_grpc.h"
 #include "thread_local/storage.h"
 struct GameServicePlayerEnterGameNodeCompleteQueue{
 	grpc::CompletionQueue cq;
@@ -531,7 +531,7 @@ void AsyncCompleteGrpcGameServiceCreateScene(grpc::CompletionQueue& cq)
     }
 }
 
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+void InitGameServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<GameServicePlayerEnterGameNodeCompleteQueue>(nodeEntity);
 	registry.emplace<GameServiceSendMessageToPlayerCompleteQueue>(nodeEntity);
 	registry.emplace<GameServiceClientSendMessageToPlayerCompleteQueue>(nodeEntity);
@@ -545,7 +545,7 @@ void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<GameServiceCreateSceneCompleteQueue>(nodeEntity);
 }
 
-void HandleCompletedQueueMessage(entt::registry& registry) {
+void HandleGameServiceCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<GameServicePlayerEnterGameNodeCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){

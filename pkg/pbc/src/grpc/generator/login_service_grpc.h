@@ -2,13 +2,14 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
+#include "proto/common/login_service.grpc.pb.h"
 
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcStubPtr = std::unique_ptr<::Stub>;
+using GrpcLoginServiceStubPtr = std::unique_ptr<LoginService::Stub>;
 class AsyncLoginServiceLoginGrpcClientCall
 {
 public:
@@ -85,8 +86,8 @@ using AsyncLoginServiceDisconnectHandlerFunctionType = std::function<void(const 
 
 extern AsyncLoginServiceDisconnectHandlerFunctionType  AsyncLoginServiceDisconnectHandler;;
 
-void HandleCompletedQueueMessage(entt::registry& registry	); 
+void HandleLoginServiceCompletedQueueMessage(entt::registry& registry	); 
 
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void InitLoginServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 

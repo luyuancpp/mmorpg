@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
 	"strings"
@@ -20,12 +21,12 @@ type GrpcService struct {
 	ServiceFullNameWithNoColon string
 	PbPackageName              string
 	PackageNameWithColon       string
+	IncludeName                string
 }
 
 type GrpcServiceTemplateData struct {
 	GrpcServices               []GrpcService
 	ServiceName                string
-	ProtoFileBaseName          string
 	GeneratorFileName          string
 	IncludeName                string
 	ServiceFullNameWithColon   string
@@ -46,6 +47,7 @@ func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcSer
 		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
 		PbPackageName:              method.PbPackage,
 		PackageNameWithColon:       method.GetPackageNameWithColon(),
+		IncludeName:                method.GrpcIncludeHeadName(),
 	}
 	grpcServices = append(grpcServices, grpcService)
 	return grpcServices
@@ -66,9 +68,18 @@ func generateGrpcFile(fileName string, grpcServices []GrpcService, text string) 
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
+	firstService := grpcServices[0]
+
 	// 填充模板数据
 	data := GrpcServiceTemplateData{
-		GrpcServices: grpcServices,
+		GrpcServices:               grpcServices,
+		ServiceName:                firstService.ServiceName,
+		IncludeName:                firstService.IncludeName,
+		GeneratorFileName:          filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
+		ServiceFullNameWithColon:   firstService.ServiceFullNameWithColon,
+		ServiceFullNameWithNoColon: firstService.ServiceFullNameWithNoColon,
+		PbPackageName:              firstService.PbPackageName,
+		PackageNameWithColon:       firstService.PackageNameWithColon,
 	}
 
 	// 将内容写入文件

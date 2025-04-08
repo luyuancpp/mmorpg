@@ -2,13 +2,14 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
+#include "proto/common/db_service.grpc.pb.h"
 
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcStubPtr = std::unique_ptr<::Stub>;
+using GrpcPlayerDBServiceStubPtr = std::unique_ptr<PlayerDBService::Stub>;
 class AsyncPlayerDBServiceLoad2RedisGrpcClientCall
 {
 public:
@@ -70,8 +71,8 @@ using AsyncAccountDBServiceSave2RedisHandlerFunctionType = std::function<void(co
 
 extern AsyncAccountDBServiceSave2RedisHandlerFunctionType  AsyncAccountDBServiceSave2RedisHandler;;
 
-void HandleCompletedQueueMessage(entt::registry& registry	); 
+void HandlePlayerDBServiceCompletedQueueMessage(entt::registry& registry	); 
 
-void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void InitPlayerDBServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 

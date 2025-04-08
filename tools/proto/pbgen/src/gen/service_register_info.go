@@ -56,13 +56,28 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 			RpcServiceMap.Store(service, &rpcServiceInfo)
 			continue
 		} else if strings.Contains(line, "rpc ") {
+			// 去除多余的空格
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
+			// 分割 line 按空格分割
 			splitList := strings.Split(line, " ")
+
+			// 检查是否是流式 RPC
+			var requestType, responseType string
+			if strings.Contains(splitList[2], "stream") {
+				requestType = splitList[3]
+				responseType = splitList[6]
+
+			} else {
+				requestType = splitList[2]
+				responseType = splitList[4]
+			}
+
+			// 创建 RPCMethod 实例
 			rpcMethodInfo := RPCMethod{
 				Service:           service,
 				Method:            splitList[1],
-				Request:           strings.Replace(splitList[2], ".", "::", -1),
-				Response:          strings.Replace(splitList[4], ".", "::", -1),
+				Request:           strings.Replace(requestType, ".", "::", -1),
+				Response:          strings.Replace(responseType, ".", "::", -1),
 				Id:                math.MaxUint64,
 				Index:             methodIndex,
 				FileName:          fd.Name(),
@@ -71,6 +86,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 				PbPackage:         pbPackageName,
 				GoPackage:         goPackageName,
 			}
+
 			result, ok := RpcServiceMap.Load(service)
 			if !ok {
 				fmt.Errorf("error reading file %s: %w", fd.Name(), err)
