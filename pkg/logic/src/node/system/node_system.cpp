@@ -3,7 +3,7 @@
 
 eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 	if (prefix.find("deploy") != std::string::npos) {
-		return eNodeType::kDeploy;
+		return eNodeType::kDeployNode;
 	}
 	else if (prefix.find("scene") != std::string::npos) {
 		return  eNodeType::kSceneNode;

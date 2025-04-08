@@ -9,7 +9,8 @@ enum eNodeType
 	kLoginNode = 2;//登录服务器
 	kGateNode = 3;//网关服务器
 	kDatabaseNode = 4;//数据库服务器
-	kDeploy = 5;//配置服务器
+	kDeployNode = 5;//配置服务器
+	kRedisNode = 6;
 };
 
 enum eGameNodeType
