@@ -138,7 +138,7 @@ void GateNode::Connect2Login()
 
     for (auto& loginNodeInfo : serviceNodeList[kLoginNode].node_list())
     {
-        entt::entity id{ loginNodeInfo.lease_id() };
+        entt::entity id{ loginNodeInfo.node_id() };
         auto loginNodeId = tls_gate.loginNodeRegistry.create(id);
         if (loginNodeId != id)
         {
@@ -150,7 +150,7 @@ void GateNode::Connect2Login()
             grpc::InsecureChannelCredentials());
         tls_gate.loginNodeRegistry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
             LoginService::NewStub(channel));
-        tls_gate.login_consistent_node().add(loginNodeInfo.lease_id(), 
+        tls_gate.login_consistent_node().add(loginNodeInfo.node_id(),
             loginNodeId);
 
         InitLoginServiceCompletedQueue(tls_gate.loginNodeRegistry, loginNodeId);
