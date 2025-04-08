@@ -5,107 +5,14 @@ option go_package = "pb/game";
 
 import "proto/common/db_base.proto";
 
-message database_node_db
-{
-  option(OptionTableName)  = "database_node_db";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-  uint32 id = 1;
-  string addr = 2;
-  uint32 zone_id = 3;
-}
-
-message login_node_list_db
-{
-  repeated login_node_db login_info = 1;
-}
-
-message centre_node_list_db
-{
-  repeated centre_node_db centre_info = 1;
-}
-
-message gate_node_list_db
-{
-  repeated gate_node_db gate_info = 1;
-}
-
-message game_node_list_db
-{
-  repeated game_node_db game_info = 1; 
-}
-
 message redis_node_list_db
 {
   repeated redis_node_db redis_info = 1; 
 }
 
-message nodes_info_data
-{
-  database_node_db database_info = 1;
-  login_node_list_db login_info = 2;
-  centre_node_list_db centre_info = 3;
-  gate_node_list_db gate_info = 4;
-  game_node_list_db game_info = 5; 
-  redis_node_list_db redis_info = 6;
-}
-
-message login_node_db
-{
-  option(OptionTableName)  = "login_node_db";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-  uint32 id = 1;
-  string addr = 2;
-  uint32 zone_id = 3;
-}
-
-message centre_node_db
-{
-  option(OptionTableName)  = "centre_node_db";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-  uint32 id = 1;
-  string ip = 2;
-  uint32 port = 3;
-  uint32 zone_id = 4;
-}
-
-message lobby_node_db
-{
-  option(OptionTableName)  = "lobby_node_db";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-  uint32 id = 1;
-  string ip = 2;
-  uint32 port = 3;
-}
-
 message redis_node_db
 {
   option(OptionTableName)  = "redis_node_db";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-  uint32 id = 1;
-  string ip = 2;
-  uint32 port = 3;
-  uint32 zone_id = 4;
-}
-
-message game_node_db
-{
-  option(OptionTableName)  = "game_node_db";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-  uint32 id = 1;
-  string ip = 2;
-  uint32 port = 3;
-  uint32 zone_id = 4;
-}
-
-message gate_node_db
-{
-  option(OptionTableName)  = "gate_node_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -122,7 +29,7 @@ message NodeInfoRequest
 
 message NodeInfoResponse
 {
-  nodes_info_data info = 1;
+  redis_node_list_db redis_info = 1;
   uint32 node_id = 2;
   uint64 lease_id = 3; //租约
 }

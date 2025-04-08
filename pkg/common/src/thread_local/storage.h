@@ -14,7 +14,7 @@ public:
     entt::registry centreNodeRegistry;
     entt::registry itemRegistry;
     entt::registry networkRegistry;
-    entt::registry grpc_node_registry;
+    entt::registry globalNodeRegistry;
 
 	entt::dispatcher dispatcher;
 

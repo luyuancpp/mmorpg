@@ -17,6 +17,7 @@
 #include "thread_local/storage_gate.h"
 #include "time/system/time_system.h"
 #include "util/network_utils.h"
+#include "node/comp/node_comp.h"
 
 GateNode* gGateNode = nullptr; 
 
@@ -59,12 +60,8 @@ void GateNode::Initialize()
     tls.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&GateNode::Receive1>(*this);
 }
 
-void GateNode::StartRpcServer(const nodes_info_data& data)
+void GateNode::StartRpcServer()
 {
-    nodesInfo = std::move(data);
-    
-    auto& gate_info = nodesInfo.gate_info().gate_info()[GetNodeId()];
-
     rpcServer->GetTcpServer().setConnectionCallback(
         std::bind(&GateNode::OnConnection, this, _1));
     rpcServer->GetTcpServer().setMessageCallback(
@@ -75,7 +72,7 @@ void GateNode::StartRpcServer(const nodes_info_data& data)
     ConnectToCentreHelper(&service_handler_);
     Connect2Login();
 
-    LOG_INFO << "gate node  start " << gate_info.DebugString();
+    LOG_INFO << "gate node  start at" << GetNodeInfo().DebugString();
 }
 
 void GateNode::Receive1(const OnConnected2TcpServerEvent& es) 
@@ -135,27 +132,30 @@ void GateNode::Receive1(const OnConnected2TcpServerEvent& es)
 
 void GateNode::Connect2Login()
 {
-    for (auto& login_node_info : nodesInfo.login_info().login_info())
+	auto& serviceNodeList = tls.globalNodeRegistry.get<ServiceNodeList>(GlobalGrpcNodeEntity());
+
+    for (auto& loginNodeInfo : serviceNodeList[kLoginNode])
     {
-        entt::entity id{ login_node_info.id() };
-        auto loginNodeId = tls_gate.login_node_registry.create(id);
+        entt::entity id{ loginNodeInfo.lease_id() };
+        auto loginNodeId = tls_gate.loginNodeRegistry.create(id);
         if (loginNodeId != id)
         {
             LOG_ERROR << "login id ";
             continue;
         }
 
-        auto channel = grpc::CreateChannel(login_node_info.addr(), grpc::InsecureChannelCredentials());
-        tls_gate.login_node_registry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
+        auto channel = grpc::CreateChannel(::FormatIpAndPort(loginNodeInfo.endpoint().ip(), loginNodeInfo.endpoint().port()), 
+            grpc::InsecureChannelCredentials());
+        tls_gate.loginNodeRegistry.emplace<GrpcLoginServiceStubPtr>(loginNodeId,
             LoginService::NewStub(channel));
-        tls_gate.login_consistent_node().add(login_node_info.id(), 
+        tls_gate.login_consistent_node().add(loginNodeInfo.lease_id(), 
             loginNodeId);
 
-        InitLoginServiceCompletedQueue(tls_gate.login_node_registry, loginNodeId);
+        InitLoginServiceCompletedQueue(tls_gate.loginNodeRegistry, loginNodeId);
     }
 
     loginGrpcSelectTimer.RunEvery(0.01, []() {
-        HandleLoginServiceCompletedQueueMessage(tls_gate.login_node_registry);
+        HandleLoginServiceCompletedQueueMessage(tls_gate.loginNodeRegistry);
         });
 
 }

@@ -37,6 +37,10 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 					// 处理中心节点的键值对
 					LOG_INFO << "Centre Node Key: " << kv.key() << ", Value: " << kv.value();
 				}
+				else if (NodeSystem::GetServiceTypeFromPrefix(kv.key()) == kLoginNode) {
+					// 处理登录节点的键值对
+					LOG_INFO << "Login Node Key: " << kv.key() << ", Value: " << kv.value();
+				}
 				else {
 					LOG_ERROR << "Unknown service type for key: " << kv.key();
 				}

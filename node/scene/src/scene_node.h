@@ -30,7 +30,7 @@ public:
     void Receive2(const OnBeConnectedEvent& es);
 
     virtual void OnConfigLoadSuccessful()override;
-    void StartRpcServer(const nodes_info_data& data) override;
+    void StartRpcServer() override;
     virtual void PrepareForBeforeConnection() override;
     
     virtual void ReadyForGame()override;

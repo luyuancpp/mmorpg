@@ -19,6 +19,7 @@
 #include "thread_local/storage_common_logic.h"
 #include "time/system/time_system.h"
 #include "util/network_utils.h"
+#include "node/comp/node_comp.h"
 
 Node::Node(muduo::net::EventLoop* loop, const std::string& logFilePath)
     : loop_(loop),
@@ -32,19 +33,19 @@ Node::~Node() {
 
 void Node::InitializeDeployService(const std::string& service_address)
 {
-	tls.grpc_node_registry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
+	tls.globalNodeRegistry.emplace<GrpcDeployServiceStubPtr>(GlobalGrpcNodeEntity())
 		= DeployService::NewStub(grpc::CreateChannel(service_address, grpc::InsecureChannelCredentials()));
 
 	// 创建请求并获取节点信息
 	NodeInfoRequest request;
 	request.set_node_type(GetNodeType());  // 使用子类实现具体类型
-	DeployServiceGetNodeInfo(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
+	DeployServiceGetNodeInfo(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 
 	// 定时更新节点租约
 	GetRenewNodeLeaseTimer().RunEvery(kRenewLeaseTime, [this]() {
 		RenewLeaseIDRequest request;
 		request.set_lease_id(GetNodeInfo().lease_id());
-		DeployServiceRenewLease(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
+		DeployServiceRenewLease(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 		});
 }
 
@@ -62,13 +63,15 @@ void Node::Initialize() {
 }   
 
 void Node::InitializeMiscellaneous() {
-	nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());  // 记录节点的启动时间
+    GetNodeInfo().set_launch_time(TimeUtil::NowSecondsUTC());  // 记录节点的启动时间
     GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
     GetNodeInfo().set_node_type(GetNodeType());
     GetNodeInfo().set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
+
+	tls.globalNodeRegistry.emplace<ServiceNodeList>(GlobalGrpcNodeEntity());   
 }
 
-void Node::StartRpcServer(const nodes_info_data& data) {
+void Node::StartRpcServer() {
 	InetAddress service_addr(GetNodeInfo().endpoint().ip(), GetNodeInfo().endpoint().port());
 	rpcServer = std::make_unique<RpcServerPtr::element_type>(loop_, service_addr);
 
@@ -121,8 +124,8 @@ void Node::InitializeTimeZone() {
 }
 
 void Node::InitializeGrpcServices() {
-    InitDeployServiceCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
-    InitetcdserverpbKVCompletedQueue(tls.grpc_node_registry, GlobalGrpcNodeEntity());
+    InitDeployServiceCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
+    InitetcdserverpbKVCompletedQueue(tls.globalNodeRegistry, GlobalGrpcNodeEntity());
 }
 
 void Node::InitializeIpPort()
@@ -137,7 +140,7 @@ void Node::InitializeNodeFromRequestInfo() {
 
     try {
 
-        tls.grpc_node_registry.emplace<GrpcetcdserverpbKVStubPtr>(GlobalGrpcNodeEntity())
+        tls.globalNodeRegistry.emplace<GrpcetcdserverpbKVStubPtr>(GlobalGrpcNodeEntity())
             = etcdserverpb::KV::NewStub(grpc::CreateChannel(*tlsCommonLogic.GetBaseDeployConfig().etcd_hosts().begin(), grpc::InsecureChannelCredentials()));
 
 
@@ -152,41 +155,41 @@ void Node::InitializeNodeFromRequestInfo() {
 
     // 定时处理部署服务的完成队列
     deployRpcTimer.RunEvery(0.001, []() {
-        HandleDeployServiceCompletedQueueMessage(tls.grpc_node_registry);
-        HandleetcdserverpbKVCompletedQueueMessage(tls.grpc_node_registry);
+        HandleDeployServiceCompletedQueueMessage(tls.globalNodeRegistry);
+        HandleetcdserverpbKVCompletedQueueMessage(tls.globalNodeRegistry);
     });
 
 
 }
 
 void Node::ConnectToCentreHelper(::google::protobuf::Service* service) {
-    for (auto& centre_node_info : nodesInfo.centre_info().centre_info()) {
-        entt::entity id{ centre_node_info.id() };
-        const auto centre_node_id = tls.centreNodeRegistry.create(id);
-        if (centre_node_id != id) {
-            continue;  // 如果创建失败，则跳过该中心节点
-        }
+    //for (auto& centre_node_info : nodesInfo.centre_info().centre_info()) {
+    //    entt::entity id{ centre_node_info.id() };
+    //    const auto centre_node_id = tls.centreNodeRegistry.create(id);
+    //    if (centre_node_id != id) {
+    //        continue;  // 如果创建失败，则跳过该中心节点
+    //    }
 
-        InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
-        auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
-            std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
+    //    InetAddress centre_addr(centre_node_info.ip(), centre_node_info.port());
+    //    auto& centre_node = tls.centreNodeRegistry.emplace<RpcClientPtr>(centre_node_id,
+    //        std::make_shared<RpcClientPtr::element_type>(loop_, centre_addr));
 
-        // 注册服务并连接
-        centre_node->registerService(service);
-        centre_node->connect();
+    //    // 注册服务并连接
+    //    centre_node->registerService(service);
+    //    centre_node->connect();
 
-        // 判断是否为当前区域的中心节点
-        if (centre_node_info.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
-            zoneCentreNode = centre_node;
-        }
-    }
+    //    // 判断是否为当前区域的中心节点
+    //    if (centre_node_info.zone_id() == tlsCommonLogic.GetGameConfig().zone_id()) {
+    //        zoneCentreNode = centre_node;
+    //    }
+    //}
 }
 
 void Node::ReleaseNodeId() {
     ReleaseIDRequest request;
     request.set_id(GetNodeId());  // 获取节点 ID
     request.set_node_type(GetNodeType());  // 获取节点类型
-    DeployServiceReleaseID(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);  // 释放节点 ID
+    DeployServiceReleaseID(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);  // 释放节点 ID
 }
 
 void Node::SetupMessageHandlers()
@@ -214,7 +217,7 @@ void Node::SendEtcdRangeRequest(const std::string& prefix)
 	range_end[range_end.size() - 1] = range_end[range_end.size() - 1] + 1; // 将最后一个字符加 1
 	request.set_range_end(range_end);  // 设置 range_end
 
-	etcdserverpbKVRange(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
+	etcdserverpbKVRange(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 }
 
 void Node::RegisterService()
@@ -229,7 +232,7 @@ void Node::RegisterService()
 		LOG_ERROR << "Failed to convert message to JSON: " << result.message().data();
     }
 	
-    etcdserverpbKVPut(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
+    etcdserverpbKVPut(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 }
 
 void Node::AsyncOutput(const char* msg, int len) {

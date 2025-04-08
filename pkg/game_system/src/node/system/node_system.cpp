@@ -14,6 +14,12 @@ eNodeType NodeSystem::GetServiceTypeFromPrefix(const std::string& prefix) {
 	else if (prefix.find("centre") != std::string::npos) {
 		return eNodeType::kCentreNode;
 	}
+	else if (prefix.find("login") != std::string::npos) {
+		return eNodeType::kLoginNode;
+	}
+	else if (prefix.find("database") != std::string::npos) {
+		return eNodeType::kDatabaseNode;
+	}
 	else {
 		LOG_ERROR << "Unknown service type for prefix: " << prefix;
 	}

@@ -11,7 +11,7 @@ class ThreadLocalStorageGate
 {
 public:
 	ThreadLocalStorageGate();
-    entt::registry login_node_registry;
+    entt::registry loginNodeRegistry;
     ConsistentHashNode<uint64_t,entt::entity>& login_consistent_node() { return login_consistent_node_; }
     SessionList& sessions() { return session_list_; }
     SessionIdGenerator& session_id_gen() { return session_id_gen_; }

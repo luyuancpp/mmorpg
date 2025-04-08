@@ -25,7 +25,6 @@ public:
 	TimerTaskComp& GetDeployRpcTimer() { return deployRpcTimer; }
 	TimerTaskComp& GetRenewNodeLeaseTimer() { return renewNodeLeaseTimer; }
 	[[nodiscard]] RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
-	[[nodiscard]] const nodes_info_data& GetNodesInfo() const { return nodesInfo; }
     std::string FormatIpAndPort() const;
 	std::string GetIp() const;
 	uint32_t GetPort() const;
@@ -33,7 +32,7 @@ public:
     void InitializeDeployService(const std::string& service_address);
 protected:
     virtual void Initialize();
-    virtual void StartRpcServer(const nodes_info_data& data);
+    virtual void StartRpcServer();
     virtual void ShutdownNode();
     virtual void SetNodeId(NodeId node_id)final{GetNodeInfo().set_node_id(node_id);}
     virtual void PrepareForBeforeConnection() {}
@@ -60,7 +59,6 @@ protected:
     NodeInfo nodeInfo;
     TimerTaskComp deployRpcTimer;
     TimerTaskComp renewNodeLeaseTimer;
-    nodes_info_data nodesInfo;
     RpcClientPtr zoneCentreNode;
 };
 
