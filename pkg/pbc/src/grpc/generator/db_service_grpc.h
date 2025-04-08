@@ -20,7 +20,7 @@ public:
 };
 
 class LoadAccountRequest;
-void AccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const  LoadAccountRequest& request);
+void SendAccountDBServiceLoad2Redis(entt::registry& registry, entt::entity nodeEntity, const  LoadAccountRequest& request);
 
 using AsyncAccountDBServiceLoad2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceLoad2RedisGrpcClientCall>&)>;
 
@@ -35,7 +35,7 @@ public:
 };
 
 class SaveAccountRequest;
-void AccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const  SaveAccountRequest& request);
+void SendAccountDBServiceSave2Redis(entt::registry& registry, entt::entity nodeEntity, const  SaveAccountRequest& request);
 
 using AsyncAccountDBServiceSave2RedisHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncAccountDBServiceSave2RedisGrpcClientCall>&)>;
 

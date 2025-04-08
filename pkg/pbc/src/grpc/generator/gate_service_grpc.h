@@ -20,7 +20,7 @@ public:
 };
 
 class RegisterGameNodeRequest;
-void GateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeRequest& request);
+void SendGateServiceRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeRequest& request);
 
 using AsyncGateServiceRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRegisterGameGrpcClientCall>&)>;
 
@@ -35,7 +35,7 @@ public:
 };
 
 class UnregisterGameNodeRequest;
-void GateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  UnregisterGameNodeRequest& request);
+void SendGateServiceUnRegisterGame(entt::registry& registry, entt::entity nodeEntity, const  UnregisterGameNodeRequest& request);
 
 using AsyncGateServiceUnRegisterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceUnRegisterGameGrpcClientCall>&)>;
 
@@ -50,7 +50,7 @@ public:
 };
 
 class RegisterGameNodeSessionRequest;
-void GateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeSessionRequest& request);
+void SendGateServicePlayerEnterGameNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeSessionRequest& request);
 
 using AsyncGateServicePlayerEnterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServicePlayerEnterGameNodeGrpcClientCall>&)>;
 
@@ -65,7 +65,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void GateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request);
+void SendGateServiceSendMessageToPlayer(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request);
 
 using AsyncGateServiceSendMessageToPlayerHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceSendMessageToPlayerGrpcClientCall>&)>;
 
@@ -80,7 +80,7 @@ public:
 };
 
 class KickSessionRequest;
-void GateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const  KickSessionRequest& request);
+void SendGateServiceKickSessionByCentre(entt::registry& registry, entt::entity nodeEntity, const  KickSessionRequest& request);
 
 using AsyncGateServiceKickSessionByCentreHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceKickSessionByCentreGrpcClientCall>&)>;
 
@@ -95,7 +95,7 @@ public:
 };
 
 class RouteMessageRequest;
-void GateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request);
+void SendGateServiceRouteNodeMessage(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request);
 
 using AsyncGateServiceRouteNodeMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRouteNodeMessageGrpcClientCall>&)>;
 
@@ -110,7 +110,7 @@ public:
 };
 
 class RoutePlayerMessageRequest;
-void GateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request);
+void SendGateServiceRoutePlayerMessage(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request);
 
 using AsyncGateServiceRoutePlayerMessageHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceRoutePlayerMessageGrpcClientCall>&)>;
 
@@ -125,7 +125,7 @@ public:
 };
 
 class BroadcastToPlayersRequest;
-void GateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const  BroadcastToPlayersRequest& request);
+void SendGateServiceBroadcastToPlayers(entt::registry& registry, entt::entity nodeEntity, const  BroadcastToPlayersRequest& request);
 
 using AsyncGateServiceBroadcastToPlayersHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncGateServiceBroadcastToPlayersGrpcClientCall>&)>;
 

@@ -20,7 +20,7 @@ public:
 };
 
 class RegisterGameNodeRequest;
-void CentreServiceRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeRequest& request);
+void SendCentreServiceRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGameNodeRequest& request);
 
 using AsyncCentreServiceRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterGameNodeGrpcClientCall>&)>;
 
@@ -35,7 +35,7 @@ public:
 };
 
 class RegisterGateNodeRequest;
-void CentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGateNodeRequest& request);
+void SendCentreServiceRegisterGateNode(entt::registry& registry, entt::entity nodeEntity, const  RegisterGateNodeRequest& request);
 
 using AsyncCentreServiceRegisterGateNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRegisterGateNodeGrpcClientCall>&)>;
 
@@ -50,7 +50,7 @@ public:
 };
 
 class GateClientMessageRequest;
-void CentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, const  GateClientMessageRequest& request);
+void SendCentreServiceGatePlayerService(entt::registry& registry, entt::entity nodeEntity, const  GateClientMessageRequest& request);
 
 using AsyncCentreServiceGatePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceGatePlayerServiceGrpcClientCall>&)>;
 
@@ -65,7 +65,7 @@ public:
 };
 
 class GateSessionDisconnectRequest;
-void CentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  GateSessionDisconnectRequest& request);
+void SendCentreServiceGateSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  GateSessionDisconnectRequest& request);
 
 using AsyncCentreServiceGateSessionDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceGateSessionDisconnectGrpcClientCall>&)>;
 
@@ -80,7 +80,7 @@ public:
 };
 
 class LoginRequest;
-void CentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, const  LoginRequest& request);
+void SendCentreServiceLoginNodeAccountLogin(entt::registry& registry, entt::entity nodeEntity, const  LoginRequest& request);
 
 using AsyncCentreServiceLoginNodeAccountLoginHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeAccountLoginGrpcClientCall>&)>;
 
@@ -95,7 +95,7 @@ public:
 };
 
 class CentrePlayerGameNodeEntryRequest;
-void CentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, const  CentrePlayerGameNodeEntryRequest& request);
+void SendCentreServiceLoginNodeEnterGame(entt::registry& registry, entt::entity nodeEntity, const  CentrePlayerGameNodeEntryRequest& request);
 
 using AsyncCentreServiceLoginNodeEnterGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeEnterGameGrpcClientCall>&)>;
 
@@ -110,7 +110,7 @@ public:
 };
 
 class LoginNodeLeaveGameRequest;
-void CentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  LoginNodeLeaveGameRequest& request);
+void SendCentreServiceLoginNodeLeaveGame(entt::registry& registry, entt::entity nodeEntity, const  LoginNodeLeaveGameRequest& request);
 
 using AsyncCentreServiceLoginNodeLeaveGameHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeLeaveGameGrpcClientCall>&)>;
 
@@ -125,7 +125,7 @@ public:
 };
 
 class GateSessionDisconnectRequest;
-void CentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  GateSessionDisconnectRequest& request);
+void SendCentreServiceLoginNodeSessionDisconnect(entt::registry& registry, entt::entity nodeEntity, const  GateSessionDisconnectRequest& request);
 
 using AsyncCentreServiceLoginNodeSessionDisconnectHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceLoginNodeSessionDisconnectGrpcClientCall>&)>;
 
@@ -140,7 +140,7 @@ public:
 };
 
 class NodeRouteMessageRequest;
-void CentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request);
+void SendCentreServicePlayerService(entt::registry& registry, entt::entity nodeEntity, const  NodeRouteMessageRequest& request);
 
 using AsyncCentreServicePlayerServiceHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServicePlayerServiceGrpcClientCall>&)>;
 
@@ -155,7 +155,7 @@ public:
 };
 
 class EnterGameNodeSuccessRequest;
-void CentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const  EnterGameNodeSuccessRequest& request);
+void SendCentreServiceEnterGsSucceed(entt::registry& registry, entt::entity nodeEntity, const  EnterGameNodeSuccessRequest& request);
 
 using AsyncCentreServiceEnterGsSucceedHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceEnterGsSucceedGrpcClientCall>&)>;
 
@@ -170,7 +170,7 @@ public:
 };
 
 class RouteMessageRequest;
-void CentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request);
+void SendCentreServiceRouteNodeStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RouteMessageRequest& request);
 
 using AsyncCentreServiceRouteNodeStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRouteNodeStringMsgGrpcClientCall>&)>;
 
@@ -185,7 +185,7 @@ public:
 };
 
 class RoutePlayerMessageRequest;
-void CentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request);
+void SendCentreServiceRoutePlayerStringMsg(entt::registry& registry, entt::entity nodeEntity, const  RoutePlayerMessageRequest& request);
 
 using AsyncCentreServiceRoutePlayerStringMsgHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceRoutePlayerStringMsgGrpcClientCall>&)>;
 
@@ -200,7 +200,7 @@ public:
 };
 
 class UnregisterGameNodeRequest;
-void CentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  UnregisterGameNodeRequest& request);
+void SendCentreServiceUnRegisterGameNode(entt::registry& registry, entt::entity nodeEntity, const  UnregisterGameNodeRequest& request);
 
 using AsyncCentreServiceUnRegisterGameNodeHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncCentreServiceUnRegisterGameNodeGrpcClientCall>&)>;
 

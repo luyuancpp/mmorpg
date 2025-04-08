@@ -41,13 +41,13 @@ void Node::InitializeDeployService(const std::string& service_address)
 	// 创建请求并获取节点信息
 	NodeInfoRequest request;
 	request.set_node_type(GetNodeType());  // 使用子类实现具体类型
-	DeployServiceGetNodeInfo(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+	SendDeployServiceGetNodeInfo(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 
 	// 定时更新节点租约
 	GetRenewNodeLeaseTimer().RunEvery(kRenewLeaseTime, [this]() {
 		RenewLeaseIDRequest request;
 		request.set_lease_id(GetNodeInfo().lease_id());
-		DeployServiceRenewLease(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+		SendDeployServiceRenewLease(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 		});
 }
 
@@ -194,7 +194,7 @@ void Node::ReleaseNodeId() {
     ReleaseIDRequest request;
     request.set_id(GetNodeId());  // 获取节点 ID
     request.set_node_type(GetNodeType());  // 获取节点类型
-    DeployServiceReleaseID(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);  // 释放节点 ID
+    SendDeployServiceReleaseID(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);  // 释放节点 ID
 }
 
 void Node::SetupMessageHandlers()
@@ -222,7 +222,7 @@ void Node::SendEtcdRangeRequest(const std::string& prefix)
 	range_end[range_end.size() - 1] = range_end[range_end.size() - 1] + 1; // 将最后一个字符加 1
 	request.set_range_end(range_end);  // 设置 range_end
 
-	etcdserverpbKVRange(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+    SendetcdserverpbKVRange(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 }
 
 void Node::RegisterService()
@@ -239,7 +239,7 @@ void Node::RegisterService()
 		LOG_ERROR << "Failed to convert message to JSON: " << result.message().data();
     }
 	
-    etcdserverpbKVPut(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
+    SendetcdserverpbKVPut(tls.globalNodeRegistry, GlobalGrpcNodeEntity(), request);
 }
 
 void Node::AsyncOutput(const char* msg, int len) {
@@ -273,7 +273,7 @@ bool Node::ParseJsonToServiceNode(const std::string& jsonValue, uint32_t service
 	}
 
 	// 调用 JsonStringToMessage 函数将 JSON 字符串解析到 protobuf 消息
-	auto result = google::protobuf::util::JsonStringToMessage(jsonValue, &serviceNodeList[serviceNodeType]);
+	auto result = google::protobuf::util::JsonStringToMessage(jsonValue, serviceNodeList[serviceNodeType].add_node_list());
 
 	if (!result.ok()) {
 		// 解析失败时记录错误日志

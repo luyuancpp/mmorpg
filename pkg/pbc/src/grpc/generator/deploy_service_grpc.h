@@ -20,7 +20,7 @@ public:
 };
 
 class NodeInfoRequest;
-void DeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const  NodeInfoRequest& request);
+void SendDeployServiceGetNodeInfo(entt::registry& registry, entt::entity nodeEntity, const  NodeInfoRequest& request);
 
 using AsyncDeployServiceGetNodeInfoHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetNodeInfoGrpcClientCall>&)>;
 
@@ -35,7 +35,7 @@ public:
 };
 
 class GetIDRequest;
-void DeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const  GetIDRequest& request);
+void SendDeployServiceGetID(entt::registry& registry, entt::entity nodeEntity, const  GetIDRequest& request);
 
 using AsyncDeployServiceGetIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceGetIDGrpcClientCall>&)>;
 
@@ -50,7 +50,7 @@ public:
 };
 
 class ReleaseIDRequest;
-void DeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const  ReleaseIDRequest& request);
+void SendDeployServiceReleaseID(entt::registry& registry, entt::entity nodeEntity, const  ReleaseIDRequest& request);
 
 using AsyncDeployServiceReleaseIDHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceReleaseIDGrpcClientCall>&)>;
 
@@ -65,7 +65,7 @@ public:
 };
 
 class RenewLeaseIDRequest;
-void DeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const  RenewLeaseIDRequest& request);
+void SendDeployServiceRenewLease(entt::registry& registry, entt::entity nodeEntity, const  RenewLeaseIDRequest& request);
 
 using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const std::unique_ptr<AsyncDeployServiceRenewLeaseGrpcClientCall>&)>;
 
