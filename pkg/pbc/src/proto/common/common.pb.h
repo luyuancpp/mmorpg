@@ -937,7 +937,8 @@ class NodeInfo final
     kNodeTypeFieldNumber = 2,
     kLaunchTimeFieldNumber = 3,
     kLeaseIdFieldNumber = 5,
-    kGameNodeTypeFieldNumber = 4,
+    kSceneNodeTypeFieldNumber = 4,
+    kZoneIdFieldNumber = 7,
   };
   // .EndpointPBComponent endpoint = 6;
   bool has_endpoint() const;
@@ -994,14 +995,24 @@ class NodeInfo final
   void _internal_set_lease_id(::uint64_t value);
 
   public:
-  // uint32 game_node_type = 4;
-  void clear_game_node_type() ;
-  ::uint32_t game_node_type() const;
+  // uint32 scene_node_type = 4;
+  void clear_scene_node_type() ;
+  ::uint32_t scene_node_type() const;
   void set_scene_node_type(::uint32_t value);
 
   private:
-  ::uint32_t _internal_game_node_type() const;
-  void _internal_set_game_node_type(::uint32_t value);
+  ::uint32_t _internal_scene_node_type() const;
+  void _internal_set_scene_node_type(::uint32_t value);
+
+  public:
+  // uint32 zone_id = 7;
+  void clear_zone_id() ;
+  ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:NodeInfo)
@@ -1009,7 +1020,7 @@ class NodeInfo final
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      3, 6, 1,
+      3, 7, 1,
       0, 2>
       _table_;
 
@@ -1034,7 +1045,8 @@ class NodeInfo final
     ::uint32_t node_type_;
     ::uint64_t launch_time_;
     ::uint64_t lease_id_;
-    ::uint32_t game_node_type_;
+    ::uint32_t scene_node_type_;
+    ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1197,26 +1209,26 @@ inline void NodeInfo::_internal_set_launch_time(::uint64_t value) {
   _impl_.launch_time_ = value;
 }
 
-// uint32 game_node_type = 4;
-inline void NodeInfo::clear_game_node_type() {
+// uint32 scene_node_type = 4;
+inline void NodeInfo::clear_scene_node_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.game_node_type_ = 0u;
+  _impl_.scene_node_type_ = 0u;
 }
-inline ::uint32_t NodeInfo::game_node_type() const {
-  // @@protoc_insertion_point(field_get:NodeInfo.game_node_type)
-  return _internal_game_node_type();
+inline ::uint32_t NodeInfo::scene_node_type() const {
+  // @@protoc_insertion_point(field_get:NodeInfo.scene_node_type)
+  return _internal_scene_node_type();
 }
 inline void NodeInfo::set_scene_node_type(::uint32_t value) {
-  _internal_set_game_node_type(value);
-  // @@protoc_insertion_point(field_set:NodeInfo.game_node_type)
+  _internal_set_scene_node_type(value);
+  // @@protoc_insertion_point(field_set:NodeInfo.scene_node_type)
 }
-inline ::uint32_t NodeInfo::_internal_game_node_type() const {
+inline ::uint32_t NodeInfo::_internal_scene_node_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.game_node_type_;
+  return _impl_.scene_node_type_;
 }
-inline void NodeInfo::_internal_set_game_node_type(::uint32_t value) {
+inline void NodeInfo::_internal_set_scene_node_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.game_node_type_ = value;
+  _impl_.scene_node_type_ = value;
 }
 
 // uint64 lease_id = 5;
@@ -1335,6 +1347,28 @@ inline void NodeInfo::set_allocated_endpoint(::EndpointPBComponent* value) {
 
   _impl_.endpoint_ = reinterpret_cast<::EndpointPBComponent*>(value);
   // @@protoc_insertion_point(field_set_allocated:NodeInfo.endpoint)
+}
+
+// uint32 zone_id = 7;
+inline void NodeInfo::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+}
+inline ::uint32_t NodeInfo::zone_id() const {
+  // @@protoc_insertion_point(field_get:NodeInfo.zone_id)
+  return _internal_zone_id();
+}
+inline void NodeInfo::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  // @@protoc_insertion_point(field_set:NodeInfo.zone_id)
+}
+inline ::uint32_t NodeInfo::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void NodeInfo::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
 }
 
 // -------------------------------------------------------------------

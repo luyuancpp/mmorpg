@@ -15,6 +15,8 @@ void InitGrpcetcdserverpbKVResponseHandler() {
 	AsyncetcdserverpbKVRangeHandler = [](const std::unique_ptr<AsyncetcdserverpbKVRangeGrpcClientCall>& call) {
 		if (call->status.ok()) {
 
+			LOG_INFO << call->reply.DebugString();
+
 			for (const auto& kv : call->reply.kvs()) {
 				if (kv.value() == gCentreNode->FormatIpAndPort())
 				{
