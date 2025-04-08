@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"pbgen/config"
 	"pbgen/util"
 	"strings"
@@ -52,47 +51,45 @@ func generateGrpcMethod(method *RPCMethod, grpcServices []GrpcService) []GrpcSer
 	return grpcServices
 }
 
-// Generates a Go file using the provided handler and response names.
-func generateGrpcFile(fileName string, protoFileBaseName string, grpcServices []GrpcService, text string, method *RPCMethod) error {
-	// Create the file
+// 修改后的 generateGrpcFile 函数
+func generateGrpcFile(fileName string, grpcServices []GrpcService, text string) error {
+	// 创建文件
 	file, err := os.Create(fileName)
 	if err != nil {
 		return fmt.Errorf("could not create file: %w", err)
 	}
-
 	defer file.Close()
 
-	// Template for the Go file content
+	// 模板内容
 	tmpl, err := template.New(fileName).Parse(text)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	// Fill the template with handler name and response type
+	// 填充模板数据
 	data := GrpcServiceTemplateData{
-		GrpcServices:               grpcServices,
-		ServiceName:                method.Service,
-		ProtoFileBaseName:          protoFileBaseName,
-		GeneratorFileName:          filepath.Base(strings.TrimSuffix(fileName, filepath.Ext(fileName))),
-		IncludeName:                method.GrpcIncludeHeadName(),
-		ServiceFullNameWithColon:   method.GetServiceFullNameWithColon(),
-		ServiceFullNameWithNoColon: method.GetServiceFullNameWithNoColon(),
-		PbPackageName:              method.PbPackage,
-		PackageNameWithColon:       method.GetPackageNameWithColon(),
+		GrpcServices: grpcServices,
 	}
 
-	// Write the content to the file
+	// 将内容写入文件
 	return tmpl.Execute(file, data)
 }
 
 func CppGrpcCallClient() {
+	// 以 proto 文件为单位处理服务
+	protoServiceMap := make(map[string][]*RPCMethod) // 将服务按 proto 文件分组
+
 	for _, serviceMethods := range ServiceMethodMap {
+		// 对每个 serviceMethods，按 Proto 文件进行分组
+		protoFile := serviceMethods[0].FileBaseName() // 假设所有服务在同一个 proto 文件
+		protoServiceMap[protoFile] = append(protoServiceMap[protoFile], serviceMethods...)
+	}
 
+	// 对每个 proto 文件生成一个文件
+	for protoFile, serviceMethods := range protoServiceMap {
 		util.Wg.Add(1)
-		go func() {
+		go func(protoFile string, serviceMethods []*RPCMethod) {
 			defer util.Wg.Done()
-
-			grpcServices := make([]GrpcService, 0)
 
 			if len(serviceMethods) <= 0 {
 				return
@@ -103,28 +100,23 @@ func CppGrpcCallClient() {
 				return
 			}
 
+			grpcServices := make([]GrpcService, 0)
+			// 为每个方法生成 GrpcService 对象
 			for _, method := range serviceMethods {
 				grpcServices = generateGrpcMethod(method, grpcServices)
 			}
 
-			method := serviceMethods[0]
-			// Generate different handler files based on the templates
-			if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcHeaderExtension,
-				method.FileBaseName(),
-				grpcServices,
-				AsyncClientHeaderTemplate,
-				method); err != nil {
+			// 生成 C++ 文件（只生成一个文件包含所有服务）
+			filePath := config.CppGenGrpcDirectory + protoFile + config.GrpcHeaderExtension
+			if err := generateGrpcFile(filePath, grpcServices, AsyncClientHeaderTemplate); err != nil {
 				log.Fatal(err)
 			}
 
-			if err := generateGrpcFile(config.CppGenGrpcDirectory+serviceMethods[0].FileBaseName()+config.GrpcCppExtension,
-				method.FileBaseName(),
-				grpcServices,
-				AsyncClientCppHandleTemplate,
-				method); err != nil {
+			// 生成对应的 .cpp 文件
+			filePathCpp := config.CppGenGrpcDirectory + protoFile + config.GrpcCppExtension
+			if err := generateGrpcFile(filePathCpp, grpcServices, AsyncClientCppHandleTemplate); err != nil {
 				log.Fatal(err)
 			}
-		}()
+		}(protoFile, serviceMethods)
 	}
-
 }

@@ -31,7 +31,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 	scanner := bufio.NewScanner(f)
 	var service string
 	var methodIndex uint64
-	var rpcServiceInfo RPCServiceInfo
 	ccGenericServices := false
 	var goPackageName string
 	var pbPackageName string
@@ -51,6 +50,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			service = strings.ReplaceAll(strings.Split(line, " ")[1], "{", "")
+			rpcServiceInfo := RPCServiceInfo{}
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
 			RpcServiceMap.Store(service, &rpcServiceInfo)
@@ -71,12 +71,15 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) error {
 				PbPackage:         pbPackageName,
 				GoPackage:         goPackageName,
 			}
+			result, ok := RpcServiceMap.Load(service)
+			if !ok {
+				fmt.Errorf("error reading file %s: %w", fd.Name(), err)
+			}
+			rpcServiceInfo := result.(*RPCServiceInfo)
 			rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
 			atomic.AddUint64(&MaxMessageId, 1)
 			methodIndex++
 			continue
-		} else if len(service) > 0 && strings.Contains(line, "}") {
-			break
 		}
 	}
 

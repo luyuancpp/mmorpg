@@ -2,14 +2,13 @@
 #include <memory>
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "proto/common/deploy_service.grpc.pb.h"
 
 
 using grpc::ClientContext;
 using grpc::Status;
 using grpc::ClientAsyncResponseReader;
 
-using GrpcDeployServiceStubPtr = std::unique_ptr<DeployService::Stub>;
+using GrpcStubPtr = std::unique_ptr<::Stub>;
 class AsyncDeployServiceGetNodeInfoGrpcClientCall
 {
 public:
@@ -71,8 +70,8 @@ using AsyncDeployServiceRenewLeaseHandlerFunctionType = std::function<void(const
 
 extern AsyncDeployServiceRenewLeaseHandlerFunctionType  AsyncDeployServiceRenewLeaseHandler;;
 
-void HandleDeployServiceCompletedQueueMessage(entt::registry& registry	); 
+void HandleCompletedQueueMessage(entt::registry& registry	); 
 
-void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
+void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity);
 
 

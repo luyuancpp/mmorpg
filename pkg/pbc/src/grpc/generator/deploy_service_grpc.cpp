@@ -1,6 +1,6 @@
 #include "muduo/base/Logging.h"
 
-#include "grpc/generator/deploy_service_grpc.h"
+#include "grpc/generator/.h"
 #include "thread_local/storage.h"
 struct DeployServiceGetNodeInfoCompleteQueue{
 	grpc::CompletionQueue cq;
@@ -195,14 +195,14 @@ void AsyncCompleteGrpcDeployServiceRenewLease(grpc::CompletionQueue& cq)
     }
 }
 
-void InitDeployServiceCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
+void InitCompletedQueue(entt::registry& registry, entt::entity nodeEntity) {
 	registry.emplace<DeployServiceGetNodeInfoCompleteQueue>(nodeEntity);
 	registry.emplace<DeployServiceGetIDCompleteQueue>(nodeEntity);
 	registry.emplace<DeployServiceReleaseIDCompleteQueue>(nodeEntity);
 	registry.emplace<DeployServiceRenewLeaseCompleteQueue>(nodeEntity);
 }
 
-void HandleDeployServiceCompletedQueueMessage(entt::registry& registry) {
+void HandleCompletedQueueMessage(entt::registry& registry) {
 	{
 		auto&& view = registry.view<DeployServiceGetNodeInfoCompleteQueue>();
 		for(auto&& [e, completeQueueComp] : view.each()){
