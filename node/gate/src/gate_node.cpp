@@ -140,7 +140,7 @@ void GateNode::Connect2Login()
         auto loginNodeId = tls_gate.loginNodeRegistry.create(id);
         if (loginNodeId != id)
         {
-            LOG_ERROR << "login id ";
+			LOG_ERROR << "Login node not found for entity: " << entt::to_integral(loginNodeId);
             continue;
         }
 
