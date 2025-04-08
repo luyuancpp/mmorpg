@@ -41,6 +41,11 @@ uint32_t GateNode::GetNodeType() const
     return kGateNode;
 }
 
+std::string GateNode::GetServiceName() const
+{
+    return "gateservice.rpc";
+}
+
 void GateNode::Initialize()
 {
     gGateNode = this;

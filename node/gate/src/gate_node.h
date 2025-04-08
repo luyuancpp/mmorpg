@@ -31,6 +31,7 @@ public:
     inline RpcClientPtr& GetZoneCentreNode() { return zoneCentreNode; }
     inline  NodeInfo& GetNodeInfo() { return nodeInfo; }
     uint32_t GetNodeType() const override;
+    std::string GetServiceName() const override;
 
     inline void SendMessageToClient(const muduo::net::TcpConnectionPtr& conn,
                             const ::google::protobuf::Message& message) const { rpcClientHandler.SendMessageToClient(conn, message); }

@@ -4,6 +4,7 @@
 
 #include "all_config.h"
 #include "config_loader/config.h"
+#include "google/protobuf/util/json_util.h"
 #include "grpc/generator/deploy_service_grpc.h"
 #include "grpc/generator/etcd_grpc.h"
 #include "log/constants/log_constants.h"
@@ -57,12 +58,14 @@ void Node::Initialize() {
     InitializeNodeFromRequestInfo();   // 从请求中初始化节点信息
     SetupMessageHandlers();            // 设置消息处理器
     InitializeMiscellaneous();         // 初始化杂项
+    RegisterService();
 }   
 
 void Node::InitializeMiscellaneous() {
 	nodeInfo.set_launch_time(TimeUtil::NowSecondsUTC());  // 记录节点的启动时间
     GetNodeInfo().set_scene_node_type(tlsCommonLogic.GetGameConfig().scene_node_type());
     GetNodeInfo().set_node_type(GetNodeType());
+    GetNodeInfo().set_zone_id(tlsCommonLogic.GetGameConfig().zone_id());
 }
 
 void Node::StartRpcServer(const nodes_info_data& data) {
@@ -214,11 +217,17 @@ void Node::SendEtcdRangeRequest(const std::string& prefix)
 	etcdserverpbKVRange(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
 }
 
-void Node::SendRegisterService(const std::string& key, const std::string& value)
+void Node::RegisterService()
 {
 	etcdserverpb::PutRequest request;
-	request.set_key(key);  
-	request.set_value(value);  
+	request.set_key(GetServiceName());  
+
+    auto result = google::protobuf::util::MessageToJsonString(GetNodeInfo(), request.mutable_value());
+
+    if (!result.ok())
+    {
+		LOG_ERROR << "Failed to convert message to JSON: " << result.message().data();
+    }
 	
     etcdserverpbKVPut(tls.grpc_node_registry, GlobalGrpcNodeEntity(), request);
 }
