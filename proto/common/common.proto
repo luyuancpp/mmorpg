@@ -21,6 +21,11 @@ message NodeInfo
   uint32 zone_id = 7;
 }
 
+message NodeInfoListPBComponent
+{
+  repeated NodeInfo node_list = 1;
+}
+
 message NetworkAddress
 {
   string ip = 1;
